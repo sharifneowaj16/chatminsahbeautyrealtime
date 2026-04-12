@@ -1,0 +1,36 @@
+services:
+  realtime-service:
+    build:
+      context: ./realtime-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "3001"
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      FB_APP_SECRET: ${FB_APP_SECRET}
+      FB_VERIFY_TOKEN: ${FB_VERIFY_TOKEN}
+      FB_PAGE_ACCESS_TOKEN: ${FB_PAGE_ACCESS_TOKEN}
+      FB_PAGE_ID: ${FB_PAGE_ID}
+      WS_AUTH_SECRET: ${WS_AUTH_SECRET}
+      REPLY_API_SECRET: ${REPLY_API_SECRET}
+      NEXTJS_INTERNAL_URL: http://nextjs-app:3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.realtime.rule=Host(`realtime.minsahbeauty.cloud`)"
+      - "traefik.http.routers.realtime.entrypoints=websecure"
+      - "traefik.http.routers.realtime.tls.certresolver=letsencrypt"
+      - "traefik.http.services.realtime.loadbalancer.server.port=3001"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - traefik-public
+      - internal
+
+networks:
+  traefik-public:
+    external: true
+  internal:
+    external: true

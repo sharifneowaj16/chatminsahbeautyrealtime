@@ -1,0 +1,9 @@
+[phases.build]
+cmds = [
+  "npm ci",
+  "npx prisma generate --schema prisma/schema.prisma",
+  "npm run build"
+]
+
+[start]
+cmd = "node dist/index.js"
