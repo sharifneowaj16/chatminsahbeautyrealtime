@@ -45,6 +45,17 @@ export const minio = new Proxy({} as Client, {
 
 export const BUCKET_NAME  = process.env.MINIO_BUCKET_NAME || 'minsah-beauty';
 const PUBLIC_URL           = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || '';
+const PUBLIC_BUCKET_PREFIXES = [
+  'products/*',
+  'categories/*',
+  'brands/*',
+  'avatars/*',
+  'banners/*',
+  'blog/*',
+  'media/*',
+  'uploads/*',
+  'facebook/*',
+];
 
 // ─── Cache TTL (1 year — immutable product images) ──────────────────────────
 // Browser + CDN দুটোই এই header দেখে cache করবে
@@ -76,16 +87,9 @@ export async function initializeBucket(): Promise<void> {
         Effect: 'Allow',
         Principal: { AWS: ['*'] },
         Action: ['s3:GetObject'],
-        Resource: [
-          `arn:aws:s3:::${BUCKET_NAME}/products/*`,
-          `arn:aws:s3:::${BUCKET_NAME}/categories/*`,
-          `arn:aws:s3:::${BUCKET_NAME}/brands/*`,
-          `arn:aws:s3:::${BUCKET_NAME}/avatars/*`,
-          `arn:aws:s3:::${BUCKET_NAME}/banners/*`,
-          `arn:aws:s3:::${BUCKET_NAME}/blog/*`,
-          `arn:aws:s3:::${BUCKET_NAME}/media/*`,
-          `arn:aws:s3:::${BUCKET_NAME}/uploads/*`,
-        ],
+        Resource: PUBLIC_BUCKET_PREFIXES.map(
+          (prefix) => `arn:aws:s3:::${BUCKET_NAME}/${prefix}`
+        ),
       }],
     };
 

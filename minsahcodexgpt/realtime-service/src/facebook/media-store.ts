@@ -15,6 +15,17 @@ const DEFAULT_EXTENSION_BY_TYPE: Record<MessengerAttachmentType, string> = {
 let ensuredDir: Promise<void> | null = null
 let ensuredBucket: Promise<void> | null = null
 let minioClient: MinioClient | null = null
+const PUBLIC_BUCKET_PREFIXES = [
+  'products/*',
+  'categories/*',
+  'brands/*',
+  'avatars/*',
+  'banners/*',
+  'blog/*',
+  'media/*',
+  'uploads/*',
+  'facebook/*',
+]
 
 function sanitizeFileStem(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -137,6 +148,23 @@ async function ensureMinioBucket(): Promise<void> {
       if (!exists) {
         await client.makeBucket(bucket, getConfig().MINIO_REGION)
       }
+
+      await client.setBucketPolicy(
+        bucket,
+        JSON.stringify({
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: { AWS: ['*'] },
+              Action: ['s3:GetObject'],
+              Resource: PUBLIC_BUCKET_PREFIXES.map(
+                (prefix) => `arn:aws:s3:::${bucket}/${prefix}`
+              ),
+            },
+          ],
+        })
+      )
     })().catch((error) => {
       ensuredBucket = null
       throw error

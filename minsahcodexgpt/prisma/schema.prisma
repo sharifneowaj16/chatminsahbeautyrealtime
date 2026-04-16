@@ -995,6 +995,102 @@ model FbMessage {
   @@index([timestamp])
 }
 
+model FbWebhookAudit {
+  id               String                    @id @default(cuid())
+  source           String                    @default("facebook_messenger")
+  pageId           String?
+  signatureValid   Boolean                   @default(false)
+  eventCount       Int                       @default(0)
+  processedEvents  Int                       @default(0)
+  failedEvents     Int                       @default(0)
+  processingStatus FbWebhookProcessingStatus @default(RECEIVED)
+  rawBody          String                    @db.Text
+  payload          Json?
+  error            String?                   @db.Text
+  receivedAt       DateTime                  @default(now())
+  processedAt      DateTime?
+
+  @@index([processingStatus, receivedAt])
+  @@index([pageId, receivedAt])
+}
+
+model FbOutboxMessage {
+  id              String                @id
+  pageId          String
+  customerPsid    String
+  agentId         String
+  clientMessageId String?               @unique
+  text            String                @db.Text
+  attachmentUrl   String?
+  attachmentType  FbAttachmentType?
+  conversationId  String?
+  localMessageId  String?
+  fbMessageId     String?               @unique
+  state           FbOutboxState         @default(PENDING)
+  attempts        Int                   @default(0)
+  lastError       String?               @db.Text
+  lastAttemptAt   DateTime?
+  queuedAt        DateTime              @default(now())
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  failedAt        DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  statusEvents    FbOutboxStatusEvent[]
+
+  @@index([customerPsid, queuedAt])
+  @@index([state, queuedAt])
+  @@index([pageId, customerPsid])
+}
+
+model FbOutboxStatusEvent {
+  id              String          @id @default(cuid())
+  outboxMessageId String
+  outboxMessage   FbOutboxMessage @relation(fields: [outboxMessageId], references: [id], onDelete: Cascade)
+  state           FbOutboxState
+  attempt         Int
+  fbMessageId     String?
+  conversationId  String?
+  localMessageId  String?
+  error           String?         @db.Text
+  metadata        Json?
+  createdAt       DateTime        @default(now())
+
+  @@index([outboxMessageId, createdAt])
+  @@index([fbMessageId])
+}
+
+model FbDeadLetterJob {
+  id              String             @id @default(cuid())
+  source          FbDeadLetterSource
+  dedupeKey       String             @unique
+  jobType         String
+  pageId          String?
+  threadId        String?
+  fbMessageId     String?
+  outboxMessageId String?
+  status          FbDeadLetterStatus @default(OPEN)
+  attempts        Int                @default(0)
+  maxAttempts     Int
+  failureCount    Int                @default(1)
+  replayCount     Int                @default(0)
+  lastError       String?            @db.Text
+  payload         Json
+  firstFailedAt   DateTime           @default(now())
+  lastFailedAt    DateTime           @default(now())
+  lastRequeuedAt  DateTime?
+  resolvedAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status, lastFailedAt])
+  @@index([source, status])
+  @@index([pageId, threadId])
+  @@index([fbMessageId])
+  @@index([outboxMessageId])
+}
+
 // ==========================================
 // Enums
 // ==========================================
@@ -1067,4 +1163,40 @@ enum GiftStatus {
 enum FbSenderType {
   CUSTOMER
   PAGE
+}
+
+enum FbAttachmentType {
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
+
+enum FbOutboxState {
+  PENDING
+  QUEUED
+  RETRYING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum FbWebhookProcessingStatus {
+  RECEIVED
+  PROCESSED
+  PARTIAL_ERROR
+  FAILED
+}
+
+enum FbDeadLetterSource {
+  REPLAY_QUEUE
+  MEDIA_RETRY
+  OUTGOING_RETRY
+}
+
+enum FbDeadLetterStatus {
+  OPEN
+  REQUEUED
+  RESOLVED
 }
