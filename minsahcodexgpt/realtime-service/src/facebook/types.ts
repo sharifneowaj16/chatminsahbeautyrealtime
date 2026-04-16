@@ -31,7 +31,21 @@ export interface FbMessagingEvent {
 
 export interface FbAttachment {
   type: 'image' | 'video' | 'audio' | 'file' | 'location' | 'template'
-  payload: Record<string, unknown>
+  payload?: {
+    url?: string
+  }
+  file_url?: string
+  mime_type?: string
+  name?: string
+  image_data?: {
+    url?: string
+  }
+  video_data?: {
+    url?: string
+  }
+  audio_data?: {
+    url?: string
+  }
 }
 
 export interface FbChange {
@@ -50,7 +64,10 @@ export interface FbFeedChangeValue {
   created_time?: number
 }
 
-export type ParsedFbEvent = ParsedIncomingMessage | ParsedPostComment
+export type ParsedFbEvent =
+  | ParsedIncomingMessage
+  | ParsedOutgoingReceipt
+  | ParsedPostComment
 
 export interface ParsedIncomingMessage {
   type: 'incoming_message'
@@ -59,6 +76,8 @@ export interface ParsedIncomingMessage {
   recipientId: string
   messageId: string
   text: string
+  attachmentUrl?: string
+  attachmentType?: 'image' | 'video' | 'audio' | 'file'
   timestamp: Date
 }
 
@@ -73,9 +92,19 @@ export interface ParsedPostComment {
   timestamp: Date
 }
 
+export interface ParsedOutgoingReceipt {
+  type: 'outgoing_receipt'
+  pageId: string
+  threadId: string
+  receiptState: 'delivered' | 'read'
+  watermark: Date
+  timestamp: Date
+}
+
 export type WsInboxEvent =
   | WsNewMessage
   | WsOutgoingMessage
+  | WsOutgoingStatus
   | WsPostComment
   | WsConversationRead
 
@@ -85,7 +114,10 @@ export interface WsNewMessage {
   messageId: string
   threadId: string
   pageId: string
+  senderName?: string
   text: string
+  attachmentUrl?: string
+  attachmentType?: 'image' | 'video' | 'audio' | 'file'
   timestamp: string
   isNew: boolean
 }
@@ -95,9 +127,30 @@ export interface WsOutgoingMessage {
   conversationId: string
   messageId: string
   threadId: string
+  pageId: string
   text: string
+  attachmentUrl?: string
+  attachmentType?: 'image' | 'video' | 'audio' | 'file'
   senderType: 'PAGE'
   timestamp: string
+}
+
+export interface WsOutgoingStatus {
+  type: 'outgoing_status'
+  jobId: string
+  threadId: string
+  pageId: string
+  state: 'queued' | 'retrying' | 'sent' | 'failed' | 'delivered' | 'read'
+  text: string
+  attachmentUrl?: string
+  attachmentType?: 'image' | 'video' | 'audio' | 'file'
+  timestamp: string
+  attempt: number
+  clientMessageId?: string
+  conversationId?: string
+  messageId?: string
+  fbMessageId?: string
+  error?: string
 }
 
 export interface WsPostComment {

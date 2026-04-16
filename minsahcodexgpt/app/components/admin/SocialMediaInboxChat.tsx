@@ -54,6 +54,7 @@ import {
 export interface SocialMessage {
   id: string;
   externalId?: string;
+  clientMessageId?: string;
   platform: 'facebook' | 'instagram' | 'whatsapp' | 'youtube';
   type: 'comment' | 'message' | 'dm' | 'mention';
   conversationId: string;
@@ -68,7 +69,7 @@ export interface SocialMessage {
       mimeType?: string;
     }>;
   };
-  status: 'unread' | 'read' | 'replied';
+  status: 'unread' | 'read' | 'sending' | 'queued' | 'retrying' | 'sent' | 'delivered' | 'seen' | 'failed';
   timestamp: string;
   isIncoming: boolean;
 }
@@ -97,12 +98,33 @@ interface ApiRecord {
   }>;
 }
 
+interface ApiConversationRecord {
+  conversationId: string;
+  platform: 'facebook';
+  participant: {
+    id: string;
+    name: string;
+    avatar?: string | null;
+  };
+  latestMessage: ApiRecord;
+  unreadCount: number;
+  searchText: string;
+}
+
+interface ApiPageInfo {
+  nextConversationCursor: string | null;
+  hasMoreConversations: boolean;
+  nextMessageCursor?: string | null;
+  hasMoreMessages?: boolean;
+}
+
 interface Conversation {
   conversationId: string;
   platform: SocialMessage['platform'];
   participant: SocialMessage['sender'];
   latestMessage: SocialMessage;
   unreadCount: number;
+  searchText: string;
 }
 
 interface DraftAttachment {
@@ -110,6 +132,18 @@ interface DraftAttachment {
   file: File;
   previewUrl: string;
   type: NonNullable<SocialMessage['content']['media']>[number]['type'];
+}
+
+interface UploadedDraftAttachment {
+  type: 'image' | 'video' | 'audio' | 'file';
+  url: string;
+  fileName?: string;
+  mimeType?: string;
+  thumbnail?: string;
+}
+
+function normalizeDraftUploadType(type: DraftAttachment['type']): UploadedDraftAttachment['type'] {
+  return type === 'document' ? 'file' : type;
 }
 
 interface SyncProgress {
@@ -123,6 +157,11 @@ interface SyncProgress {
 }
 
 type ConnectionStatus = 'connecting' | 'live' | 'polling' | 'offline';
+const MOBILE_MEDIA_QUERY = '(max-width: 639px)';
+const CONVERSATION_PAGE_SIZE = 40;
+const THREAD_MESSAGE_LIMIT = 250;
+const CONVERSATION_ITEM_HEIGHT = 77;
+const CONVERSATION_OVERSCAN = 6;
 
 // ─────────────────────────────────────────────────────── helpers ──
 
@@ -157,10 +196,153 @@ function mapRecord(m: ApiRecord): SocialMessage {
         }))
         .filter((a) => Boolean(a.url)),
     },
-    status: m.isIncoming ? (m.isRead ? 'read' : 'unread') : 'replied',
+    status: m.isIncoming ? (m.isRead ? 'read' : 'unread') : 'sent',
     timestamp: m.timestamp,
     isIncoming: m.isIncoming,
   };
+}
+
+function mapConversationRecord(record: ApiConversationRecord): Conversation {
+  const latestMessage = mapRecord(record.latestMessage);
+  return {
+    conversationId: record.conversationId,
+    platform: record.platform,
+    participant: {
+      id: record.participant.id,
+      name: record.participant.name,
+      avatar: record.participant.avatar ?? undefined,
+    },
+    latestMessage,
+    unreadCount: record.unreadCount,
+    searchText: record.searchText,
+  };
+}
+
+function buildConversationSummary(items: SocialMessage[]): Conversation {
+  const sorted = [...items].sort((a, b) =>
+    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+  const latestMessage = sorted[sorted.length - 1];
+  const participant =
+    [...sorted].reverse().find((message) => message.isIncoming)?.sender ?? sorted[0].sender;
+
+  return {
+    conversationId: latestMessage.conversationId,
+    platform: latestMessage.platform,
+    participant,
+    latestMessage,
+    unreadCount: sorted.filter((message) => message.isIncoming && message.status === 'unread').length,
+    searchText: sorted
+      .map((message) => [
+        message.sender.name,
+        fixEncoding(message.content.text),
+        ...(message.content.media?.map((media) => media.fileName ?? media.mimeType ?? media.type) ?? []),
+      ].join(' '))
+      .join(' ')
+      .toLowerCase(),
+  };
+}
+
+function buildConversationsFromMessages(messages: SocialMessage[]): Conversation[] {
+  const grouped = new Map<string, SocialMessage[]>();
+
+  for (const message of messages) {
+    const conversationId = message.conversationId || message.id;
+    const bucket = grouped.get(conversationId);
+    if (bucket) {
+      bucket.push(message);
+    } else {
+      grouped.set(conversationId, [message]);
+    }
+  }
+
+  return Array.from(grouped.values())
+    .map((items) => buildConversationSummary(items))
+    .sort(
+      (left, right) =>
+        new Date(right.latestMessage.timestamp).getTime() -
+        new Date(left.latestMessage.timestamp).getTime()
+    );
+}
+
+function upsertConversationFromMessage(
+  conversations: Conversation[],
+  message: SocialMessage
+) {
+  const existing = conversations.find(
+    (conversation) => conversation.conversationId === message.conversationId
+  );
+
+  const participant = message.isIncoming
+    ? message.sender
+    : existing?.participant ?? {
+        id: message.conversationId,
+        name: 'Minsah Beauty',
+      };
+
+  const latestMessage =
+    !existing ||
+    new Date(message.timestamp).getTime() >=
+      new Date(existing.latestMessage.timestamp).getTime()
+      ? message
+      : existing.latestMessage;
+
+  const unreadCount = message.isIncoming && message.status === 'unread'
+    ? (existing?.unreadCount ?? 0) + 1
+    : existing?.unreadCount ?? 0;
+
+  const nextConversation: Conversation = {
+    conversationId: message.conversationId,
+    platform: message.platform,
+    participant,
+    latestMessage,
+    unreadCount,
+    searchText: [
+      existing?.searchText ?? '',
+      participant.name,
+      fixEncoding(message.content.text),
+      ...(message.content.media?.map((media) => media.fileName ?? media.mimeType ?? media.type) ?? []),
+    ]
+      .join(' ')
+      .toLowerCase(),
+  };
+
+  return [...conversations.filter(
+    (conversation) => conversation.conversationId !== message.conversationId
+  ), nextConversation].sort(
+    (left, right) =>
+      new Date(right.latestMessage.timestamp).getTime() -
+      new Date(left.latestMessage.timestamp).getTime()
+  );
+}
+
+function markConversationRead(
+  conversations: Conversation[],
+  conversationId: string
+) {
+  return conversations.map((conversation) =>
+    conversation.conversationId === conversationId
+      ? { ...conversation, unreadCount: 0 }
+      : conversation
+  );
+}
+
+function buildWsMedia(event: Extract<InboxWsEvent, { type: 'new_message' | 'outgoing_message' }>): MediaItem[] | undefined {
+  if (!event.attachmentUrl) {
+    return undefined;
+  }
+
+  return [{
+    type: normalizeType(event.attachmentType || 'file'),
+    url: event.attachmentUrl,
+    thumbnail: event.attachmentType === 'image' ? event.attachmentUrl : undefined,
+  }];
+}
+
+function sortMessagesChronologically(messages: SocialMessage[]) {
+  return [...messages].sort(
+    (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
+  );
 }
 
 function fmtTime(ts: string) {
@@ -197,6 +379,49 @@ function inferAttachType(file: File): MediaItem['type'] {
   if (file.type.startsWith('video/')) return 'video';
   if (file.type.startsWith('audio/')) return 'audio';
   return 'file';
+}
+
+function getDraftPreviewIcon(type: DraftAttachment['type']) {
+  if (type === 'video') return VideoIcon;
+  if (type === 'audio') return FileAudio;
+  return FileText;
+}
+
+function normalizeOutgoingStatus(
+  status: SocialMessage['status']
+): 'sending' | 'queued' | 'retrying' | 'sent' | 'delivered' | 'seen' | 'failed' {
+  if (
+    status === 'sending' ||
+    status === 'queued' ||
+    status === 'retrying' ||
+    status === 'sent' ||
+    status === 'delivered' ||
+    status === 'seen' ||
+    status === 'failed'
+  ) {
+    return status;
+  }
+
+  return 'sent';
+}
+
+function getOutgoingStatusLabel(status: SocialMessage['status']) {
+  switch (normalizeOutgoingStatus(status)) {
+    case 'sending':
+      return 'Sending...';
+    case 'queued':
+      return 'Queued';
+    case 'retrying':
+      return 'Retrying...';
+    case 'delivered':
+      return 'Delivered';
+    case 'seen':
+      return 'Seen';
+    case 'failed':
+      return 'Failed';
+    default:
+      return 'Sent';
+  }
 }
 
 // Play a soft notification sound using Web Audio API
@@ -302,6 +527,7 @@ function ConnectionDot({ status }: { status: ConnectionStatus }) {
 
 export default function SocialMediaInboxChat() {
   const [messages, setMessages] = useState<SocialMessage[]>([]);
+  const [conversationItems, setConversationItems] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [filterPlatform, setFilterPlatform] = useState('facebook');
@@ -317,21 +543,72 @@ export default function SocialMediaInboxChat() {
   const [replyError, setReplyError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<DraftAttachment[]>([]);
   const [showChat, setShowChat] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [newMessageBanner, setNewMessageBanner] = useState<string | null>(null);
+  const [nextConversationCursor, setNextConversationCursor] = useState<string | null>(null);
+  const [hasMoreConversations, setHasMoreConversations] = useState(false);
+  const [loadingMoreConversations, setLoadingMoreConversations] = useState(false);
+  const [conversationScrollTop, setConversationScrollTop] = useState(0);
+  const [conversationViewportHeight, setConversationViewportHeight] = useState(0);
+  const [nextThreadCursor, setNextThreadCursor] = useState<string | null>(null);
+  const [hasMoreThreadMessages, setHasMoreThreadMessages] = useState(false);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
 
   const fileRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const conversationListRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<SocialMessage[]>([]);
+  const conversationsRef = useRef<Conversation[]>([]);
+  const unreadCountRef = useRef(0);
   const lastMessageCountRef = useRef(0);
-  const prevUnreadRef = useRef(0);
   const selectedRef = useRef<string | null>(null);
+  const sendMarkReadRef = useRef<(threadId: string, conversationId: string) => boolean>(() => false);
+  const pendingReadRef = useRef(new Set<string>());
+  const pendingReadTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const prependingMessagesRef = useRef(false);
+  const previousThreadScrollHeightRef = useRef(0);
   selectedRef.current = selected;
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    conversationsRef.current = conversationItems;
+  }, [conversationItems]);
+
+  useEffect(() => {
+    unreadCountRef.current = unreadCount;
+  }, [unreadCount]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const updateViewport = () => {
+      setIsMobile(mediaQuery.matches);
+      if (!mediaQuery.matches) {
+        setShowChat(false);
+      }
+    };
+
+    updateViewport();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', updateViewport);
+      return () => mediaQuery.removeEventListener('change', updateViewport);
+    }
+
+    mediaQuery.addListener(updateViewport);
+    return () => mediaQuery.removeListener(updateViewport);
+  }, []);
 
   // ─────────────────────────── notifications ──
 
@@ -364,52 +641,173 @@ export default function SocialMediaInboxChat() {
 
   // ─────────────────────────────────────────── data fetching ──
 
-  const fetchMessages = useCallback(async (skeleton = false) => {
-    if (skeleton) setInitialLoading(true);
+  const fetchConversationThread = useCallback(async (
+    conversationId: string,
+    options?: {
+      appendOlder?: boolean;
+      cursor?: string | null;
+    }
+  ) => {
+    if (!conversationId) {
+      setMessages([]);
+      setNextThreadCursor(null);
+      setHasMoreThreadMessages(false);
+      return;
+    }
+
     try {
       const params = new URLSearchParams();
+      params.set('platform', 'facebook');
+      params.set('conversationId', conversationId);
+      params.set('messageLimit', String(THREAD_MESSAGE_LIMIT));
+      if (options?.cursor) {
+        params.set('messageCursor', options.cursor);
+      }
+
+      const response = await fetch(`/api/social/messages?${params}`, {
+        cache: 'no-store',
+      });
+      const data = (await response.json()) as {
+        messages?: ApiRecord[];
+        conversation?: ApiConversationRecord | null;
+        pageInfo?: ApiPageInfo;
+      };
+
+      if (selectedRef.current !== conversationId) {
+        return;
+      }
+
+      const incoming = (data.messages ?? []).map(mapRecord);
+      setMessages((previous) => {
+        if (options?.appendOlder) {
+          const existingIds = new Set(previous.map((message) => message.id));
+          const older = incoming.filter((message) => !existingIds.has(message.id));
+          return sortMessagesChronologically([...older, ...previous]);
+        }
+
+        const incomingIds = new Set(incoming.map((message) => message.id));
+        const optimistic = previous.filter(
+          (message) =>
+            message.conversationId === conversationId &&
+            !message.isIncoming &&
+            !incomingIds.has(message.id)
+        );
+
+        return sortMessagesChronologically([...incoming, ...optimistic]);
+      });
+
+      setNextThreadCursor(data.pageInfo?.nextMessageCursor ?? null);
+      setHasMoreThreadMessages(Boolean(data.pageInfo?.hasMoreMessages));
+
+      const conversation = data.conversation;
+      if (conversation && !options?.appendOlder) {
+        setConversationItems((previous) => {
+          const mapped = mapConversationRecord(conversation);
+          return [
+            ...previous.filter(
+              (conversation) => conversation.conversationId !== mapped.conversationId
+            ),
+            mapped,
+          ].sort(
+            (left, right) =>
+              new Date(right.latestMessage.timestamp).getTime() -
+              new Date(left.latestMessage.timestamp).getTime()
+          );
+        });
+      }
+    } catch {
+      // ignore thread refresh failures; realtime/socket can still patch local state
+    } finally {
+      setLoadingOlderMessages(false);
+    }
+  }, []);
+
+  const fetchMessages = useCallback(async (
+    skeleton = false,
+    options?: {
+      append?: boolean;
+      cursor?: string | null;
+    }
+  ) => {
+    if (skeleton) setInitialLoading(true);
+    try {
+      if (filterPlatform === 'facebook') {
+        const params = new URLSearchParams();
+        params.set('platform', 'facebook');
+        params.set('conversationLimit', String(CONVERSATION_PAGE_SIZE));
+        if (options?.cursor) {
+          params.set('conversationCursor', options.cursor);
+        }
+
+        const response = await fetch(`/api/social/messages?${params}`, {
+          cache: 'no-store',
+        });
+        const data = (await response.json()) as {
+          unreadCount?: number;
+          conversations?: ApiConversationRecord[];
+          pageInfo?: ApiPageInfo;
+        };
+
+        const incomingConversations = (data.conversations ?? []).map(mapConversationRecord);
+        setConversationItems((previous) => {
+          if (!options?.append) {
+            return incomingConversations;
+          }
+
+          const merged = new Map(
+            previous.map((conversation) => [conversation.conversationId, conversation])
+          );
+
+          for (const conversation of incomingConversations) {
+            merged.set(conversation.conversationId, conversation);
+          }
+
+          return Array.from(merged.values()).sort(
+            (left, right) =>
+              new Date(right.latestMessage.timestamp).getTime() -
+              new Date(left.latestMessage.timestamp).getTime()
+          );
+        });
+
+        setUnreadCount(data.unreadCount ?? 0);
+        setNextConversationCursor(data.pageInfo?.nextConversationCursor ?? null);
+        setHasMoreConversations(Boolean(data.pageInfo?.hasMoreConversations));
+
+        if (!options?.append && selectedRef.current) {
+          void fetchConversationThread(selectedRef.current);
+        }
+
+        return;
+      }
+
+      const params = new URLSearchParams();
       if (filterPlatform !== 'all') params.set('platform', filterPlatform);
-      const res = await fetch(
+      params.set('limit', '300');
+      const response = await fetch(
         `/api/social/messages${params.toString() ? `?${params}` : ''}`,
         { cache: 'no-store' }
       );
-      const data = (await res.json()) as { messages: ApiRecord[]; unreadCount: number };
+      const data = (await response.json()) as { messages: ApiRecord[]; unreadCount: number };
       const incoming = (data.messages || []).map(mapRecord);
 
-      setMessages((prev) => {
-        const ids = new Set(incoming.map((m) => m.id));
-        const optimistic = prev.filter((m) => !ids.has(m.id) && !m.isIncoming);
-
-        // Detect truly new incoming messages (not in prev)
-        const prevIds = new Set(prev.map((m) => m.id));
-        const brandNew = incoming.filter((m) => m.isIncoming && !prevIds.has(m.id));
-
-        if (brandNew.length > 0 && prev.length > 0) {
-          // Play sound for new messages
-          playNotificationSound();
-
-          // Browser notification
-          const newest = brandNew[brandNew.length - 1];
-          sendBrowserNotification(
-            `New message from ${newest.sender.name}`,
-            fixEncoding(newest.content.text).slice(0, 100),
-            newest.sender.avatar
-          );
-
-          // Show banner if not looking at this conversation
-          if (selectedRef.current !== newest.conversationId) {
-            setNewMessageBanner(`New message from ${newest.sender.name}`);
-            setTimeout(() => setNewMessageBanner(null), 4000);
-          }
-        }
-
+      setMessages((previous) => {
+        const ids = new Set(incoming.map((message) => message.id));
+        const optimistic = previous.filter(
+          (message) => !ids.has(message.id) && !message.isIncoming
+        );
         return [...incoming, ...optimistic];
       });
-
+      setConversationItems(buildConversationsFromMessages(incoming));
       setUnreadCount(data.unreadCount || 0);
-    } catch { /* silent */ }
-    finally { setInitialLoading(false); }
-  }, [filterPlatform, sendBrowserNotification]);
+      setNextConversationCursor(null);
+      setHasMoreConversations(false);
+    } catch {
+      // silent
+    } finally {
+      setInitialLoading(false);
+      setLoadingMoreConversations(false);
+    }
+  }, [fetchConversationThread, filterPlatform]);
 
   useEffect(() => {
     void fetchMessages(true);
@@ -417,11 +815,216 @@ export default function SocialMediaInboxChat() {
 
   const handleWsEvent = useCallback((event: InboxWsEvent) => {
     if (filterPlatform !== 'all' && filterPlatform !== 'facebook') return;
-    if (event.type === 'pong' || event.type === 'connected') return;
-    void fetchMessages(false);
-  }, [fetchMessages, filterPlatform]);
+    if (event.type === 'pong' || event.type === 'connected' || event.type === 'subscribed') return;
+
+    if (event.type === 'conversation_read') {
+      pendingReadRef.current.delete(event.conversationId);
+      const pendingTimer = pendingReadTimersRef.current.get(event.conversationId);
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        pendingReadTimersRef.current.delete(event.conversationId);
+      }
+
+      let clearedUnread = 0;
+      const nextMessages = messagesRef.current.map((message) => {
+        if (
+          message.conversationId === event.conversationId &&
+          message.isIncoming &&
+          message.status === 'unread'
+        ) {
+          clearedUnread += 1;
+          return { ...message, status: 'read' as const };
+        }
+
+        return message;
+      });
+
+      messagesRef.current = nextMessages;
+      setMessages(nextMessages);
+      setConversationItems((previous) => markConversationRead(previous, event.conversationId));
+
+      if (clearedUnread > 0) {
+        const nextUnread = Math.max(0, unreadCountRef.current - clearedUnread);
+        unreadCountRef.current = nextUnread;
+        setUnreadCount(nextUnread);
+      }
+
+      return;
+    }
+
+    if (event.type === 'outgoing_status') {
+      const nextMessages = messagesRef.current.map((message) => {
+        const matchesByClient =
+          event.clientMessageId &&
+          message.clientMessageId === event.clientMessageId;
+        const matchesByMessageId =
+          event.messageId &&
+          message.id === event.messageId;
+        const matchesByExternalId =
+          event.fbMessageId &&
+          message.externalId === event.fbMessageId;
+
+        if (!matchesByClient && !matchesByMessageId && !matchesByExternalId) {
+          return message;
+        }
+
+        return {
+          ...message,
+          id: event.messageId || message.id,
+          externalId: event.fbMessageId || message.externalId,
+          conversationId: event.conversationId || message.conversationId,
+          timestamp: event.timestamp || message.timestamp,
+          status: event.state === 'read'
+            ? 'seen'
+            : normalizeOutgoingStatus(event.state),
+        };
+      });
+
+      messagesRef.current = nextMessages;
+      setMessages(nextMessages);
+      setConversationItems((previous) =>
+        previous.map((conversation) => {
+          const latestMessage = conversation.latestMessage;
+          const matchesByClient =
+            event.clientMessageId &&
+            latestMessage.clientMessageId === event.clientMessageId;
+          const matchesByMessageId =
+            event.messageId &&
+            latestMessage.id === event.messageId;
+          const matchesByExternalId =
+            event.fbMessageId &&
+            latestMessage.externalId === event.fbMessageId;
+
+          if (!matchesByClient && !matchesByMessageId && !matchesByExternalId) {
+            return conversation;
+          }
+
+          return {
+            ...conversation,
+            latestMessage: {
+              ...latestMessage,
+              id: event.messageId || latestMessage.id,
+              externalId: event.fbMessageId || latestMessage.externalId,
+              conversationId: event.conversationId || latestMessage.conversationId,
+              timestamp: event.timestamp || latestMessage.timestamp,
+              status:
+                event.state === 'read'
+                  ? 'seen'
+                  : normalizeOutgoingStatus(event.state),
+            },
+          };
+        })
+      );
+
+      if (event.state === 'failed' && event.error) {
+        setReplyError(event.error);
+      }
+
+      return;
+    }
+
+    if (event.type === 'post_comment') {
+      void fetchMessages(false);
+      return;
+    }
+
+    const isIncoming = event.type === 'new_message';
+    const isActiveConversation = selectedRef.current === event.conversationId;
+    const timestamp = event.timestamp;
+    const media = buildWsMedia(event);
+    const currentMessages = messagesRef.current;
+    const currentConversations = conversationsRef.current;
+    const activeConversationSummary = currentConversations.find(
+      (conversation) => conversation.conversationId === event.conversationId
+    );
+
+    if (
+      isActiveConversation &&
+      currentMessages.some(
+        (message) => message.id === event.messageId || message.externalId === event.messageId
+      )
+    ) {
+      return;
+    }
+
+    const conversationMessage =
+      currentMessages.find((message) => message.conversationId === event.conversationId) ??
+      activeConversationSummary?.latestMessage;
+    const senderName = isIncoming
+      ? ('senderName' in event && event.senderName) || conversationMessage?.sender.name || event.threadId
+      : 'Minsah Beauty';
+
+    const appendedMessage: SocialMessage = {
+      id: event.messageId,
+      externalId: event.type === 'outgoing_message' ? event.messageId : undefined,
+      platform: 'facebook',
+      type: 'message',
+      conversationId: event.conversationId,
+      sender: {
+        id: isIncoming ? event.threadId : 'page',
+        name: senderName,
+        avatar: conversationMessage?.sender.avatar,
+      },
+      content: {
+        text: event.text,
+        media,
+      },
+      status: isIncoming
+        ? (isActiveConversation ? 'read' : 'unread')
+        : 'sent',
+      timestamp,
+      isIncoming,
+    };
+
+    setConversationItems((previous) => upsertConversationFromMessage(previous, appendedMessage));
+
+    if (isActiveConversation) {
+      const nextMessages = sortMessagesChronologically(
+        isIncoming
+          ? [...currentMessages, appendedMessage]
+          : [
+              ...currentMessages.filter((message) => !(
+                message.id.startsWith('optimistic-') &&
+                !message.isIncoming &&
+                message.conversationId === event.conversationId &&
+                message.content.text === event.text
+              )),
+              appendedMessage,
+            ]
+      );
+
+      messagesRef.current = nextMessages;
+      setMessages(nextMessages);
+    }
+
+    if (!isIncoming) {
+      return;
+    }
+
+    if (isActiveConversation) {
+      sendMarkReadRef.current(event.threadId, event.conversationId);
+      return;
+    }
+
+    const nextUnread = unreadCountRef.current + 1;
+    unreadCountRef.current = nextUnread;
+    setUnreadCount(nextUnread);
+
+    if (currentConversations.length > 0) {
+      playNotificationSound();
+      sendBrowserNotification(
+        `New message from ${appendedMessage.sender.name}`,
+        fixEncoding(appendedMessage.content.text).slice(0, 100),
+        appendedMessage.sender.avatar
+      );
+
+      setNewMessageBanner(`New message from ${appendedMessage.sender.name}`);
+      setTimeout(() => setNewMessageBanner(null), 4000);
+    }
+  }, [fetchMessages, filterPlatform, sendBrowserNotification]);
 
   const { sendMarkRead, status: socketStatus } = useInboxSocket(handleWsEvent);
+  sendMarkReadRef.current = sendMarkRead;
 
   useEffect(() => {
     setConnectionStatus(
@@ -433,62 +1036,45 @@ export default function SocialMediaInboxChat() {
     );
   }, [socketStatus]);
 
-  // Auto-sync on first load if no messages
+  // Auto-sync on first load if no conversations
   useEffect(() => {
-    if (!initialLoading && messages.length === 0 && filterPlatform === 'facebook') {
+    if (
+      !initialLoading &&
+      conversationItems.length === 0 &&
+      filterPlatform === 'facebook'
+    ) {
       void syncFacebook(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLoading]);
+  }, [conversationItems.length, filterPlatform, initialLoading]);
 
   // ─────────────────────────────────────────────── conversations ──
 
-  const filtered = useMemo(() => messages.filter((m) => {
-    if (filterPlatform !== 'all' && m.platform !== filterPlatform) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      if (!fixEncoding(m.content.text).toLowerCase().includes(q) &&
-          !m.sender.name.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  }), [messages, filterPlatform, search]);
+  const conversations = conversationItems;
 
-  const conversations = useMemo<Conversation[]>(() => {
-    const map = new Map<string, SocialMessage[]>();
-    for (const m of filtered) {
-      const k = m.conversationId || m.id;
-      const arr = map.get(k);
-      if (arr) arr.push(m); else map.set(k, [m]);
+  const visibleConversations = useMemo(() => {
+    if (!search.trim()) {
+      return conversations;
     }
-    return Array.from(map.entries())
-      .map(([cid, items]) => {
-        const sorted = [...items].sort((a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-        const latest = sorted[sorted.length - 1];
-        const participant =
-          [...sorted].reverse().find((m) => m.isIncoming)?.sender ?? sorted[0].sender;
-        return {
-          conversationId: cid,
-          platform: latest.platform,
-          participant,
-          latestMessage: latest,
-          unreadCount: sorted.filter((m) => m.isIncoming && m.status === 'unread').length,
-        };
-      })
-      .sort((a, b) =>
-        new Date(b.latestMessage.timestamp).getTime() -
-        new Date(a.latestMessage.timestamp).getTime()
-      );
-  }, [filtered]);
+
+    const query = search.trim().toLowerCase();
+    return conversations.filter((conversation) => conversation.searchText.includes(query));
+  }, [conversations, search]);
+
+  useEffect(() => {
+    setConversationScrollTop(0);
+    if (conversationListRef.current) {
+      conversationListRef.current.scrollTop = 0;
+    }
+  }, [filterPlatform, search]);
 
   // Auto-select first conversation
   useEffect(() => {
-    if (!conversations.length) { if (selected) setSelected(null); return; }
-    if (!conversations.some((c) => c.conversationId === selected)) {
-      setSelected(conversations[0].conversationId);
+    if (!visibleConversations.length) { if (selected) setSelected(null); return; }
+    if (!visibleConversations.some((c) => c.conversationId === selected)) {
+      setSelected(visibleConversations[0].conversationId);
     }
-  }, [conversations, selected]);
+  }, [visibleConversations, selected]);
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.conversationId === selected) ?? null,
@@ -497,17 +1083,72 @@ export default function SocialMediaInboxChat() {
 
   const threadMessages = useMemo(
     () => selected
-      ? filtered
+      ? messages
           .filter((m) => m.conversationId === selected)
           .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
       : [],
-    [filtered, selected]
+    [messages, selected]
   );
+
+  useEffect(() => {
+    if (filterPlatform !== 'facebook') {
+      setNextThreadCursor(null);
+      setHasMoreThreadMessages(false);
+      setLoadingOlderMessages(false);
+      return;
+    }
+
+    if (!selected) {
+      setMessages([]);
+      setNextThreadCursor(null);
+      setHasMoreThreadMessages(false);
+      setLoadingOlderMessages(false);
+      return;
+    }
+
+    void fetchConversationThread(selected);
+  }, [fetchConversationThread, filterPlatform, selected]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (
+      filterPlatform !== 'facebook' ||
+      !selected ||
+      !nextThreadCursor ||
+      !hasMoreThreadMessages ||
+      loadingOlderMessages
+    ) {
+      return;
+    }
+
+    setLoadingOlderMessages(true);
+    prependingMessagesRef.current = true;
+    previousThreadScrollHeightRef.current = scrollRef.current?.scrollHeight ?? 0;
+    await fetchConversationThread(selected, {
+      appendOlder: true,
+      cursor: nextThreadCursor,
+    });
+  }, [
+    fetchConversationThread,
+    filterPlatform,
+    hasMoreThreadMessages,
+    loadingOlderMessages,
+    nextThreadCursor,
+    selected,
+  ]);
 
   // Auto-scroll on new messages (only if near bottom)
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    if (prependingMessagesRef.current) {
+      const heightDelta =
+        el.scrollHeight - previousThreadScrollHeightRef.current;
+      el.scrollTop += heightDelta;
+      prependingMessagesRef.current = false;
+      previousThreadScrollHeightRef.current = 0;
+      lastMessageCountRef.current = threadMessages.length;
+      return;
+    }
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
     if (isNearBottom || threadMessages.length !== lastMessageCountRef.current) {
       endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -520,35 +1161,170 @@ export default function SocialMediaInboxChat() {
     const el = scrollRef.current;
     if (!el) return;
     setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 300);
-  }, []);
+
+    if (
+      filterPlatform === 'facebook' &&
+      hasMoreThreadMessages &&
+      !loadingOlderMessages &&
+      el.scrollTop < 120
+    ) {
+      void loadOlderMessages();
+    }
+  }, [
+    filterPlatform,
+    hasMoreThreadMessages,
+    loadOlderMessages,
+    loadingOlderMessages,
+  ]);
+
+  useEffect(() => {
+    const element = conversationListRef.current;
+    if (!element) {
+      return;
+    }
+
+    const updateViewport = () => {
+      setConversationViewportHeight(element.clientHeight);
+    };
+
+    updateViewport();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(updateViewport);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [visibleConversations.length]);
+
+  const loadMoreConversations = useCallback(async () => {
+    if (
+      filterPlatform !== 'facebook' ||
+      !hasMoreConversations ||
+      !nextConversationCursor ||
+      loadingMoreConversations
+    ) {
+      return;
+    }
+
+    setLoadingMoreConversations(true);
+    await fetchMessages(false, {
+      append: true,
+      cursor: nextConversationCursor,
+    });
+  }, [
+    fetchMessages,
+    filterPlatform,
+    hasMoreConversations,
+    loadingMoreConversations,
+    nextConversationCursor,
+  ]);
+
+  const onConversationListScroll = useCallback(() => {
+    const element = conversationListRef.current;
+    if (!element) {
+      return;
+    }
+
+    setConversationScrollTop(element.scrollTop);
+
+    if (
+      filterPlatform === 'facebook' &&
+      hasMoreConversations &&
+      !loadingMoreConversations &&
+      element.scrollHeight - element.scrollTop - element.clientHeight <
+        CONVERSATION_ITEM_HEIGHT * 4
+    ) {
+      void loadMoreConversations();
+    }
+  }, [
+    filterPlatform,
+    hasMoreConversations,
+    loadMoreConversations,
+    loadingMoreConversations,
+  ]);
+
+  const virtualConversationWindow = useMemo(() => {
+    const totalHeight = visibleConversations.length * CONVERSATION_ITEM_HEIGHT;
+    const viewportHeight = conversationViewportHeight || 1;
+    const startIndex = Math.max(
+      0,
+      Math.floor(conversationScrollTop / CONVERSATION_ITEM_HEIGHT) - CONVERSATION_OVERSCAN
+    );
+    const visibleCount =
+      Math.ceil(viewportHeight / CONVERSATION_ITEM_HEIGHT) + CONVERSATION_OVERSCAN * 2;
+    const endIndex = Math.min(
+      visibleConversations.length,
+      startIndex + visibleCount
+    );
+
+    return {
+      items: visibleConversations.slice(startIndex, endIndex),
+      offsetTop: startIndex * CONVERSATION_ITEM_HEIGHT,
+      totalHeight,
+    };
+  }, [conversationScrollTop, conversationViewportHeight, visibleConversations]);
 
   // Auto-mark-as-read
   useEffect(() => {
     if (!selected) return;
-    const hasUnread = messages.some(
+    const unreadMessages = messages.filter(
       (m) => m.conversationId === selected && m.isIncoming && m.status === 'unread'
     );
-    if (!hasUnread) return;
-    setMessages((prev) =>
-      prev.map((m) => m.conversationId === selected && m.isIncoming ? { ...m, status: 'read' as const } : m)
-    );
-    setUnreadCount((prev) =>
-      Math.max(0, prev - messages.filter((m) => m.conversationId === selected && m.isIncoming && m.status === 'unread').length)
-    );
-    if (activeConversation?.platform === 'facebook') {
-      sendMarkRead(activeConversation.participant.id, selected);
+    if (unreadMessages.length === 0 || !activeConversation) return;
+    if (pendingReadRef.current.has(selected)) return;
+
+    pendingReadRef.current.add(selected);
+
+    if (activeConversation.platform === 'facebook') {
+      const sent = sendMarkRead(activeConversation.participant.id, selected);
+      if (!sent) {
+        pendingReadRef.current.delete(selected);
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        pendingReadRef.current.delete(selected);
+        pendingReadTimersRef.current.delete(selected);
+        void fetchMessages(false);
+      }, 4000);
+
+      pendingReadTimersRef.current.set(selected, timer);
       return;
     }
-    void fetch('/api/social/messages', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        conversationId: selected,
-        platform: activeConversation?.platform,
-      }),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, activeConversation, sendMarkRead]);
+    void (async () => {
+      try {
+        const response = await fetch('/api/social/messages', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversationId: selected,
+            platform: activeConversation.platform,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to mark conversation as read');
+        }
+
+        messagesRef.current = messagesRef.current.map((message) =>
+          message.conversationId === selected && message.isIncoming
+            ? { ...message, status: 'read' as const }
+            : message
+        );
+        setMessages(messagesRef.current);
+
+        const nextUnread = Math.max(0, unreadCountRef.current - unreadMessages.length);
+        unreadCountRef.current = nextUnread;
+        setUnreadCount(nextUnread);
+      } catch {
+        // Preserve unread state if the server update fails.
+      } finally {
+        pendingReadRef.current.delete(selected);
+      }
+    })();
+  }, [activeConversation, fetchMessages, messages, selected, sendMarkRead]);
 
   useEffect(() => {
     if (activeConversation?.platform !== 'facebook' && drafts.length) clearDrafts();
@@ -565,9 +1341,7 @@ export default function SocialMediaInboxChat() {
   const send = async () => {
     if ((!replyText.trim() && !drafts.length) || sending || !activeConversation) return;
 
-    const thread = messages
-      .filter((m) => m.conversationId === selected)
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const thread = threadMessages;
     const target = [...thread].reverse().find((m) => m.isIncoming) ?? thread[thread.length - 1];
     if (!target) return;
 
@@ -576,29 +1350,102 @@ export default function SocialMediaInboxChat() {
       setReplyError('Realtime inbox migration currently supports Facebook only.');
       return;
     }
-    if (drafts.length > 0) {
-      setReplyError('Attachment replies are not supported in the realtime inbox yet.');
-      return;
-    }
 
     setSending(true);
     setReplyError(null);
     setAiSuggestion('');
-
-    const oId = `optimistic-${Date.now()}`;
-    const oMsg: SocialMessage = {
-      id: oId, platform: target.platform, type: target.type,
-      conversationId: selected!,
-      sender: { id: 'page', name: 'Minsah Beauty' },
-      content: { text: replyText.trim() },
-      status: 'replied', timestamp: new Date().toISOString(), isIncoming: false,
-    };
-    setMessages((prev) => [...prev, oMsg]);
+    const savedDrafts = [...drafts];
+    const clientMessageBase = `client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticUnits: SocialMessage[] = [
+      ...(savedText
+        ? [{
+            id: `optimistic-${clientMessageBase}:0`,
+            clientMessageId: `${clientMessageBase}:0`,
+            platform: target.platform,
+            type: target.type,
+            conversationId: selected!,
+            sender: { id: 'page', name: 'Minsah Beauty' },
+            content: {
+              text: savedText,
+            },
+            status: 'sending' as const,
+            timestamp: new Date().toISOString(),
+            isIncoming: false,
+          }]
+        : []),
+      ...savedDrafts.map((draft, index) => {
+        const unitIndex = savedText ? index + 1 : index;
+        return {
+          id: `optimistic-${clientMessageBase}:${unitIndex}`,
+          clientMessageId: `${clientMessageBase}:${unitIndex}`,
+          platform: target.platform,
+          type: target.type,
+          conversationId: selected!,
+          sender: { id: 'page', name: 'Minsah Beauty' },
+          content: {
+            text: `[${normalizeDraftUploadType(draft.type)} attachment]`,
+            media: [{
+              type: normalizeDraftUploadType(draft.type),
+              url: draft.previewUrl,
+              thumbnail: draft.type === 'image' ? draft.previewUrl : undefined,
+              fileName: draft.file.name,
+              mimeType: draft.file.type,
+            }],
+          },
+          status: 'sending' as const,
+          timestamp: new Date().toISOString(),
+          isIncoming: false,
+        };
+      }),
+    ];
+    setMessages((prev) => sortMessagesChronologically([...prev, ...optimisticUnits]));
+    if (optimisticUnits.length > 0) {
+      setConversationItems((previous) =>
+        optimisticUnits.reduce(
+          (accumulator, message) => upsertConversationFromMessage(accumulator, message),
+          previous
+        )
+      );
+    }
     setReplyText('');
-    clearDrafts();
     if (taRef.current) taRef.current.style.height = 'auto';
 
     try {
+      let attachments: UploadedDraftAttachment[] = [];
+
+      if (savedDrafts.length > 0) {
+        attachments = await Promise.all(
+          savedDrafts.map(async (draft) => {
+            const formData = new FormData();
+            formData.append('file', draft.file);
+
+            const uploadRes = await fetch('/api/admin/social/upload', {
+              method: 'POST',
+              body: formData,
+            });
+
+            const uploadData = (await uploadRes.json().catch(() => null)) as {
+              error?: string;
+              url?: string;
+              fileName?: string;
+              mimeType?: string;
+            } | null;
+
+            if (!uploadRes.ok || !uploadData?.url) {
+              throw new Error(uploadData?.error || 'Attachment upload failed');
+            }
+
+            return {
+              type: normalizeDraftUploadType(draft.type),
+              url: uploadData.url,
+              fileName: uploadData.fileName ?? draft.file.name,
+              mimeType: uploadData.mimeType ?? draft.file.type,
+              thumbnail: draft.type === 'image' ? uploadData.url : undefined,
+            };
+          })
+        );
+      }
+
       const res = await fetch('/api/admin/inbox/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -607,14 +1454,106 @@ export default function SocialMediaInboxChat() {
           commentId: target.type === 'comment' ? target.externalId : undefined,
           recipientPsid: target.type === 'comment' ? undefined : activeConversation.participant.id,
           text: savedText,
+          attachments,
+          clientMessageId: clientMessageBase,
         }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        deliveries?: Array<{
+          queued: false;
+          recipientId: string;
+          messageId: string;
+          conversationId: string;
+          dbMessageId: string;
+          clientMessageId?: string;
+        }>;
+        queuedDeliveries?: Array<{
+          queued: true;
+          jobId: string;
+          text: string;
+          attachmentType?: 'image' | 'video' | 'audio' | 'file';
+          error: string;
+          clientMessageId?: string;
+        }>;
+      };
       if (!res.ok) throw new Error(data.error || 'Reply failed');
-      setMessages((prev) => prev.filter((m) => m.id !== oId));
-      void fetchMessages(false);
+
+      const deliveries = data.deliveries ?? [];
+      const queuedDeliveries = data.queuedDeliveries ?? [];
+
+      setMessages((prev) => prev.map((message) => {
+        const delivered = deliveries.find(
+          (delivery) => delivery.clientMessageId && delivery.clientMessageId === message.clientMessageId
+        );
+        if (delivered) {
+          return {
+            ...message,
+            id: delivered.dbMessageId,
+            externalId: delivered.messageId,
+            conversationId: delivered.conversationId || message.conversationId,
+            status: 'sent' as const,
+          };
+        }
+
+        const queued = queuedDeliveries.find(
+          (delivery) => delivery.clientMessageId && delivery.clientMessageId === message.clientMessageId
+        );
+        if (queued) {
+          return {
+            ...message,
+            status: 'queued' as const,
+          };
+        }
+
+        return message;
+      }));
+      setConversationItems((previous) =>
+        previous.map((conversation) => {
+          const queued = queuedDeliveries.find(
+            (delivery) =>
+              delivery.clientMessageId &&
+              delivery.clientMessageId === conversation.latestMessage.clientMessageId
+          );
+          const delivered = deliveries.find(
+            (delivery) =>
+              delivery.clientMessageId &&
+              delivery.clientMessageId === conversation.latestMessage.clientMessageId
+          );
+
+          if (delivered) {
+            return {
+              ...conversation,
+              latestMessage: {
+                ...conversation.latestMessage,
+                id: delivered.dbMessageId,
+                externalId: delivered.messageId,
+                conversationId: delivered.conversationId || conversation.latestMessage.conversationId,
+                status: 'sent',
+              },
+            };
+          }
+
+          if (queued) {
+            return {
+              ...conversation,
+              latestMessage: {
+                ...conversation.latestMessage,
+                status: 'queued',
+              },
+            };
+          }
+
+          return conversation;
+        })
+      );
+
+      clearDrafts();
     } catch (e) {
-      setMessages((prev) => prev.filter((m) => m.id !== oId));
+      setMessages((prev) =>
+        prev.filter((m) => !(m.clientMessageId && m.clientMessageId.startsWith(clientMessageBase)))
+      );
+      void fetchMessages(false);
       setReplyText(savedText);
       setReplyError(e instanceof Error ? e.message : 'Reply failed');
     } finally {
@@ -628,12 +1567,13 @@ export default function SocialMediaInboxChat() {
     if (!activeConversation || aiLoading) return;
     setAiLoading(true);
     setAiSuggestion('');
+    setReplyError(null);
     try {
       const history = threadMessages.slice(-10).map((m) => ({
         role: m.isIncoming ? 'user' : 'assistant' as const,
         content: fixEncoding(m.content.text),
       }));
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/admin/inbox/ai-suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -647,10 +1587,20 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
           messages: history,
         }),
       });
-      const json = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-      const text = json.content?.find((b) => b.type === 'text')?.text ?? '';
+      const json = (await res.json().catch(() => null)) as
+        | { error?: string; suggestion?: string }
+        | null;
+      if (!res.ok) {
+        throw new Error(json?.error || 'AI suggestion failed');
+      }
+      const text = json?.suggestion ?? '';
+      if (!text) {
+        throw new Error('AI suggestion was empty');
+      }
       setAiSuggestion(text);
-    } catch { /* silent */ }
+    } catch (error) {
+      setReplyError(error instanceof Error ? error.message : 'AI suggestion failed');
+    }
     finally { setAiLoading(false); }
   };
 
@@ -667,11 +1617,30 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
     setSyncingFb(true);
     setSyncProgress({ stage: 'starting', processedConversations: 0, totalConversations: 0, processedMessages: 0, processedAttachments: 0 });
     try {
-      await fetchMessages(false);
-      setSyncProgress((prev) => ({
-        ...prev,
+      const res = await fetch('/api/admin/inbox/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = (await res.json().catch(() => null)) as {
+        error?: string;
+        synced?: number;
+        conversations?: number;
+      } | null;
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Facebook sync failed');
+      }
+
+      setSyncProgress({
         stage: 'completed',
-      }));
+        processedConversations: data?.conversations ?? 0,
+        totalConversations: data?.conversations ?? 0,
+        processedMessages: data?.synced ?? 0,
+        processedAttachments: 0,
+      });
+
+      await fetchMessages(false);
     } catch (error) {
       setSyncProgress((prev) => ({
         ...prev,
@@ -715,7 +1684,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
     e.target.value = '';
   };
 
-  const canAttach = false;
+  const canAttach = activeConversation?.platform === 'facebook';
 
   // ─────────────────────────────────────────────────── render ──
 
@@ -772,7 +1741,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
       {/* ═══════════════════════════ SIDEBAR ═══════════════════════════ */}
       <aside style={{
-        display: showChat ? 'none' : 'flex',
+        display: isMobile && showChat ? 'none' : 'flex',
         flexDirection: 'column',
         width: 320,
         flexShrink: 0,
@@ -790,7 +1759,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <a href="/admin/marketing?tab=inbox" style={{
+              <a href="/admin/marketing" style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 30, height: 30, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.15)', color: '#fff',
@@ -850,7 +1819,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
           }}>
             <ConnectionDot status={connectionStatus} />
             <span style={{ fontSize: 11, color: 'rgba(255,230,210,0.7)' }}>
-              {conversations.length} chats
+              {visibleConversations.length} chats
             </span>
           </div>
         </div>
@@ -934,20 +1903,35 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         </div>
 
         {/* Conversation list */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {conversations.length === 0 ? (
+        <div
+          ref={conversationListRef}
+          onScroll={onConversationListScroll}
+          style={{ flex: 1, overflowY: 'auto' }}
+        >
+          {visibleConversations.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 8, color: '#8E6545' }}>
               <MessageSquare size={36} strokeWidth={1.2} opacity={0.4} />
               <p style={{ fontSize: 13, margin: 0 }}>
-                {filterPlatform === 'facebook' ? 'Click sync to load conversations' : 'No conversations'}
+                {search.trim()
+                  ? 'No conversations match your search'
+                  : filterPlatform === 'facebook'
+                    ? 'Click sync to load conversations'
+                    : 'No conversations'}
               </p>
             </div>
           ) : (
-            conversations.map((conv) => (
+            <div style={{ height: virtualConversationWindow.totalHeight, position: 'relative' }}>
+              <div style={{ transform: `translateY(${virtualConversationWindow.offsetTop}px)` }}>
+                {virtualConversationWindow.items.map((conv) => (
               <button
                 key={conv.conversationId}
                 className={`conv-item ${selected === conv.conversationId ? 'conv-item-active' : ''}`}
-                onClick={() => { setSelected(conv.conversationId); setShowChat(true); }}
+                onClick={() => {
+                  setSelected(conv.conversationId);
+                  if (isMobile) {
+                    setShowChat(true);
+                  }
+                }}
                 style={{
                   display: 'flex', width: '100%', alignItems: 'center', gap: 10,
                   padding: '12px 14px', textAlign: 'left', background: 'transparent',
@@ -955,6 +1939,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   borderBottom: '1px solid #f5ede8',
                   borderLeft: `3px solid ${selected === conv.conversationId ? '#64320D' : 'transparent'}`,
                   transition: 'all 0.12s',
+                  minHeight: CONVERSATION_ITEM_HEIGHT,
                 }}
               >
                 <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -999,14 +1984,33 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   </div>
                 </div>
               </button>
-            ))
+                ))}
+              </div>
+              {filterPlatform === 'facebook' && loadingMoreConversations && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  left: 12,
+                  right: 12,
+                  padding: '8px 10px',
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.88)',
+                  border: '1px solid #ede5de',
+                  fontSize: 11,
+                  color: '#8E6545',
+                  textAlign: 'center',
+                }}>
+                  Loading more conversations...
+                </div>
+              )}
+            </div>
           )}
         </div>
       </aside>
 
       {/* ═══════════════════════════ CHAT PANEL ═══════════════════════════ */}
       <main style={{
-        flex: 1, display: (!showChat && typeof window !== 'undefined' && window.innerWidth < 640) ? 'none' : 'flex',
+        flex: 1, display: isMobile && !showChat ? 'none' : 'flex',
         flexDirection: 'column', minWidth: 0, height: '100%',
         background: '#f8f4f1',
       }}>
@@ -1023,7 +2027,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
               <button onClick={() => setShowChat(false)} style={{
                 width: 34, height: 34, borderRadius: '50%', border: 'none',
                 background: '#f8f4f1', cursor: 'pointer', color: '#64320D',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                display: isMobile ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center',
               }}>
                 <ArrowLeft size={16} />
               </button>
@@ -1105,6 +2109,28 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
               style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}
             >
               <div style={{ maxWidth: 700, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {activeConversation?.platform === 'facebook' && hasMoreThreadMessages && (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 14px' }}>
+                    <button
+                      onClick={() => void loadOlderMessages()}
+                      disabled={loadingOlderMessages}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 999,
+                        border: '1px solid #e5d6cb',
+                        background: '#fff',
+                        color: '#64320D',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: loadingOlderMessages ? 'not-allowed' : 'pointer',
+                        opacity: loadingOlderMessages ? 0.7 : 1,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      {loadingOlderMessages ? 'Loading older messages...' : 'Load older messages'}
+                    </button>
+                  </div>
+                )}
                 {threadMessages.map((msg, i) => {
                   const prev = threadMessages[i - 1];
                   const next = threadMessages[i + 1];
@@ -1180,7 +2206,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
                             {isOptimistic && (
                               <p style={{ margin: '4px 0 0', textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
-                                Sending…
+                                {getOutgoingStatusLabel(msg.status)}
                               </p>
                             )}
                           </div>
@@ -1195,7 +2221,20 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                               </span>
                               {!msg.isIncoming && (
-                                <CheckCheck size={12} color={msg.status === 'replied' ? '#64320D' : '#a8957f'} />
+                                <>
+                                  <span style={{ fontSize: 10, color: '#a8957f' }}>
+                                    {getOutgoingStatusLabel(msg.status)}
+                                  </span>
+                                  <CheckCheck
+                                    size={12}
+                                    color={
+                                      normalizeOutgoingStatus(msg.status) === 'delivered' ||
+                                      normalizeOutgoingStatus(msg.status) === 'seen'
+                                        ? '#64320D'
+                                        : '#a8957f'
+                                    }
+                                  />
+                                </>
                               )}
                             </div>
                           )}
@@ -1260,9 +2299,20 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                       </button>
                       {d.type === 'image' ? (
                         <img src={d.previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : d.type === 'video' ? (
+                        <video
+                          src={d.previewUrl}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
                       ) : (
                         <div style={{ width: '100%', height: '100%', background: '#f8f4f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <FileAudio size={24} color="#8E6545" />
+                          {(() => {
+                            const PreviewIcon = getDraftPreviewIcon(d.type);
+                            return <PreviewIcon size={24} color="#8E6545" />;
+                          })()}
                         </div>
                       )}
                     </div>

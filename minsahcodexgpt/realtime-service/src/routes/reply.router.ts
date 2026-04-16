@@ -4,20 +4,36 @@ import { getConfig } from '../config'
 import {
   GraphApiError,
   replyToComment,
-  sendMessengerReply,
 } from '../facebook/graph.client'
-import { saveOutgoingMessage } from '../db/repository'
-import { publishInboxEvent } from '../realtime/pubsub'
+import { sendOutgoingNowOrQueue } from '../facebook/outgoing-retry'
 
 export const replyRouter = Router()
+
+interface OutgoingUnit {
+  text: string
+  attachmentUrl?: string
+  attachmentType?: 'image' | 'video' | 'audio' | 'file'
+}
 
 const replySchema = z.object({
   type: z.enum(['messenger', 'comment']),
   recipientPsid: z.string().optional(),
   commentId: z.string().optional(),
   pageId: z.string().optional(),
-  text: z.string().min(1).max(2000),
+  text: z.string().max(2000).default(''),
+  attachments: z
+    .array(
+      z.object({
+        type: z.enum(['image', 'video', 'audio', 'file']),
+        url: z.string().url(),
+        fileName: z.string().optional(),
+        mimeType: z.string().optional(),
+        thumbnail: z.string().optional(),
+      })
+    )
+    .default([]),
   agentId: z.string().min(1),
+  clientMessageId: z.string().optional(),
 })
 
 replyRouter.post('/', async (req: Request, res: Response) => {
@@ -41,33 +57,91 @@ replyRouter.post('/', async (req: Request, res: Response) => {
         return
       }
 
-      const { messageId, recipientId } = await sendMessengerReply(
-        parsed.data.recipientPsid,
-        parsed.data.text
-      )
+      if (!parsed.data.text.trim() && parsed.data.attachments.length === 0) {
+        res.status(400).json({ error: 'text or attachments required for messenger reply' })
+        return
+      }
 
-      const { conversationId } = await saveOutgoingMessage(
-        {
-          fbMessageId: messageId,
+      const outgoingUnits: OutgoingUnit[] = [
+        ...(parsed.data.text.trim()
+          ? [
+              {
+                text: parsed.data.text.trim(),
+              },
+            ]
+          : []),
+        ...parsed.data.attachments.map((attachment) => ({
+          text: `[${attachment.type} attachment]`,
+          attachmentUrl: attachment.url,
+          attachmentType: attachment.type,
+        })),
+      ]
+
+      let conversationId = ''
+      let lastMessageId = ''
+      const deliveries: Array<{
+        queued: false
+        recipientId: string
+        messageId: string
+        conversationId: string
+        dbMessageId: string
+        clientMessageId?: string
+      }> = []
+      const queuedDeliveries: Array<{
+        queued: true
+        jobId: string
+        text: string
+        attachmentType?: 'image' | 'video' | 'audio' | 'file'
+        error: string
+        clientMessageId?: string
+      }> = []
+
+      for (const [index, unit] of outgoingUnits.entries()) {
+        const clientMessageId = parsed.data.clientMessageId
+          ? `${parsed.data.clientMessageId}:${index}`
+          : undefined
+        const sendResult = await sendOutgoingNowOrQueue({
           pageId,
-          customerPsid: recipientId,
-          text: parsed.data.text,
-          timestamp: new Date(),
-        },
-        parsed.data.agentId
-      )
+          customerPsid: parsed.data.recipientPsid,
+          agentId: parsed.data.agentId,
+          text: unit.text,
+          attachmentUrl: unit.attachmentUrl,
+          attachmentType: unit.attachmentType,
+          clientMessageId,
+        })
 
-      await publishInboxEvent({
-        type: 'outgoing_message',
+        if (sendResult.queued) {
+          queuedDeliveries.push({
+            queued: true,
+            jobId: sendResult.jobId,
+            text: unit.text,
+            attachmentType: unit.attachmentType,
+            error: sendResult.error,
+            clientMessageId,
+          })
+          continue
+        }
+
+        conversationId = sendResult.conversationId || conversationId
+        lastMessageId = sendResult.fbMessageId
+        deliveries.push({
+          queued: false,
+          recipientId: sendResult.recipientId,
+          messageId: sendResult.fbMessageId,
+          conversationId: sendResult.conversationId,
+          dbMessageId: sendResult.messageId,
+          clientMessageId,
+        })
+      }
+
+      res.status(queuedDeliveries.length > 0 ? 202 : 200).json({
+        ok: true,
+        queued: queuedDeliveries.length > 0,
+        messageId: lastMessageId,
         conversationId,
-        messageId,
-        threadId: parsed.data.recipientPsid,
-        text: parsed.data.text,
-        senderType: 'PAGE',
-        timestamp: new Date().toISOString(),
+        deliveries,
+        queuedDeliveries,
       })
-
-      res.json({ ok: true, messageId, conversationId })
       return
     }
 
@@ -76,7 +150,17 @@ replyRouter.post('/', async (req: Request, res: Response) => {
       return
     }
 
-    const { id } = await replyToComment(parsed.data.commentId, parsed.data.text)
+    if (parsed.data.attachments.length > 0) {
+      res.status(400).json({ error: 'attachments are not supported for comment replies' })
+      return
+    }
+
+    if (!parsed.data.text.trim()) {
+      res.status(400).json({ error: 'text required for comment reply' })
+      return
+    }
+
+    const { id } = await replyToComment(parsed.data.commentId, parsed.data.text.trim())
     res.json({ ok: true, replyId: id })
   } catch (error) {
     if (error instanceof GraphApiError) {

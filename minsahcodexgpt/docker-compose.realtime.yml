@@ -13,9 +13,23 @@ services:
       FB_VERIFY_TOKEN: ${FACEBOOK_VERIFY_TOKEN}
       FB_PAGE_ACCESS_TOKEN: ${FACEBOOK_ACCESS_TOKEN}
       FB_PAGE_ID: ${FACEBOOK_PAGE_ID}
+      REALTIME_PUBLIC_BASE_URL: https://realtime.minsahbeauty.cloud
+      MEDIA_STORAGE_BACKEND: ${MEDIA_STORAGE_BACKEND:-local}
+      MEDIA_STORAGE_DIR: /app/data
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-}
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-}
+      FB_MEDIA_MAX_BYTES: 52428800
       WS_AUTH_SECRET: ${WS_AUTH_SECRET}
       REPLY_API_SECRET: ${REPLY_API_SECRET}
       NEXTJS_INTERNAL_URL: http://nextjs-app:3000
+    volumes:
+      - realtime_media:/app/data
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.realtime.rule=Host(`realtime.minsahbeauty.cloud`)"
@@ -31,3 +45,6 @@ networks:
     external: true
   internal:
     external: true
+
+volumes:
+  realtime_media:

@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { AdminMarketingClient } from '@/components/admin/admin-marketing-client';
 
-type MarketingTab = 'overview' | 'social' | 'inbox' | 'whatsapp' | 'email' | 'sms' | 'google';
+type MarketingTab = 'overview' | 'social' | 'whatsapp' | 'email' | 'sms' | 'google';
 
 interface MarketingPageProps {
   searchParams: Promise<{ tab?: string }>;
@@ -10,7 +10,7 @@ interface MarketingPageProps {
 export default async function MarketingPage({ searchParams }: MarketingPageProps) {
   const params = await searchParams;
   const tab = params.tab as MarketingTab;
-  const initialTab: MarketingTab = tab && ['overview', 'social', 'inbox', 'whatsapp', 'email', 'sms', 'google'].includes(tab)
+  const initialTab: MarketingTab = tab && ['overview', 'social', 'whatsapp', 'email', 'sms', 'google'].includes(tab)
     ? tab
     : 'overview';
 

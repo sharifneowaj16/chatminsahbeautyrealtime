@@ -7,7 +7,7 @@ import {
   INBOX_EVENTS_CHANNEL,
   publishInboxEvent,
 } from './pubsub'
-import { getConfig } from '../config'
+import { verifyWsAccessToken } from './ws-auth'
 
 interface MarkReadPayload {
   type: 'mark_read'
@@ -15,9 +15,21 @@ interface MarkReadPayload {
   conversationId?: string
 }
 
+interface SubscribeInboxPayload {
+  type: 'subscribe_inbox'
+  platforms?: Array<'facebook'>
+}
+
+type InboxClientPayload = MarkReadPayload | SubscribeInboxPayload
+
+interface ClientState {
+  subscriptions: Set<'facebook'>
+}
+
 export class InboxWsServer {
   private readonly wss: WebSocketServer
   private readonly clients = new Set<WebSocket>()
+  private readonly clientState = new WeakMap<WebSocket, ClientState>()
   private subscribed = false
 
   constructor(server: http.Server) {
@@ -26,12 +38,16 @@ export class InboxWsServer {
       path: '/ws',
       verifyClient: ({ req }: { req: import('http').IncomingMessage }) => {
         const url = new URL(req.url ?? '/', 'http://localhost')
-        return url.searchParams.get('token') === getConfig().WS_AUTH_SECRET
+        const token = url.searchParams.get('token')
+        return token ? Boolean(verifyWsAccessToken(token)) : false
       },
     })
 
     this.wss.on('connection', (socket) => {
       this.clients.add(socket)
+      this.clientState.set(socket, {
+        subscriptions: new Set(),
+      })
 
       socket.send(
         JSON.stringify({
@@ -43,7 +59,30 @@ export class InboxWsServer {
 
       socket.on('message', async (raw) => {
         try {
-          const payload = JSON.parse(raw.toString()) as MarkReadPayload
+          const payload = JSON.parse(raw.toString()) as InboxClientPayload
+
+          if (payload.type === 'subscribe_inbox') {
+            const state = this.clientState.get(socket)
+            if (!state) {
+              return
+            }
+
+            state.subscriptions = new Set(
+              (payload.platforms ?? ['facebook']).filter(
+                (platform): platform is 'facebook' => platform === 'facebook'
+              )
+            )
+
+            socket.send(
+              JSON.stringify({
+                type: 'subscribed',
+                platforms: Array.from(state.subscriptions),
+                ts: Date.now(),
+              })
+            )
+            return
+          }
+
           if (payload.type !== 'mark_read') {
             return
           }
@@ -69,10 +108,12 @@ export class InboxWsServer {
 
       socket.on('close', () => {
         this.clients.delete(socket)
+        this.clientState.delete(socket)
       })
 
       socket.on('error', () => {
         this.clients.delete(socket)
+        this.clientState.delete(socket)
       })
     })
 
@@ -112,15 +153,31 @@ export class InboxWsServer {
   broadcast(event: WsInboxEvent): void {
     const payload = JSON.stringify(event)
     for (const client of this.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(payload)
+      if (client.readyState !== WebSocket.OPEN) {
+        continue
       }
+
+      const state = this.clientState.get(client)
+      if (!state || !this.matchesSubscription(event, state)) {
+        continue
+      }
+
+      client.send(payload)
     }
+  }
+
+  private matchesSubscription(event: WsInboxEvent, state: ClientState): boolean {
+    if (event.type === 'conversation_read') {
+      return true
+    }
+
+    return state.subscriptions.has('facebook')
   }
 
   async close(): Promise<void> {
     await new Promise<void>((resolve) => {
       for (const client of this.clients) {
+        this.clientState.delete(client)
         client.close()
       }
       this.wss.close(() => resolve())

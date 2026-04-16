@@ -117,7 +117,7 @@ const menuItems: MenuItem[] = [
     children: [
       { title: 'Overview', href: '/admin/marketing' },
       { title: 'Social Media', href: '/admin/marketing?tab=social', icon: Globe },
-      { title: 'Social Inbox', href: '/admin/marketing?tab=inbox', icon: MessageCircle, badge: 5 },
+      { title: 'Social Inbox', href: '/admin/inbox', icon: MessageCircle, badge: 5 },
       { title: 'WhatsApp Business', href: '/admin/marketing?tab=whatsapp', icon: Smartphone },
       { title: 'Email Marketing', href: '/admin/marketing?tab=email', icon: Mail },
       { title: 'SMS Marketing', href: '/admin/marketing?tab=sms', icon: Smartphone },

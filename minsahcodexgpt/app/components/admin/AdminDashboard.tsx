@@ -104,7 +104,7 @@ export default function AdminDashboard() {
                 Open Marketing Hub
               </a>
               <a
-                href="/admin/marketing?tab=inbox"
+                href="/admin/inbox"
                 className="px-6 py-3 bg-purple-700/50 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors border border-purple-400"
               >
                 Social Inbox (5)
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Marketing Quick Links</h3>
           <div className="space-y-3">
             <a
-              href="/admin/marketing?tab=inbox"
+              href="/admin/inbox"
               className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all group"
             >
               <div className="flex items-center gap-3">

@@ -27,8 +27,21 @@ function createMinioClient(): Client {
   return new Client({ endPoint: endpoint, port, useSSL, accessKey: accessKey || '', secretKey: secretKey || '' });
 }
 
-export const minio = globalForMinio.minio ?? createMinioClient();
-globalForMinio.minio = minio;
+function getMinioClient(): Client {
+  if (!globalForMinio.minio) {
+    globalForMinio.minio = createMinioClient();
+  }
+
+  return globalForMinio.minio;
+}
+
+export const minio = new Proxy({} as Client, {
+  get(_target, prop, receiver) {
+    const client = getMinioClient();
+    const value = Reflect.get(client as object, prop, receiver);
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});
 
 export const BUCKET_NAME  = process.env.MINIO_BUCKET_NAME || 'minsah-beauty';
 const PUBLIC_URL           = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || '';

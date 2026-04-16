@@ -2,7 +2,21 @@ import http from 'http'
 import { createApp } from './app'
 import { getConfig } from './config'
 import { prisma } from './db/client'
+import {
+  disconnectFacebookMediaRetry,
+  startFacebookMediaRetryWorker,
+} from './facebook/media-retry'
+import { startFacebookInboxSyncScheduler } from './facebook/inbox-sync'
+import {
+  disconnectOutgoingRetryQueue,
+  startOutgoingRetryWorker,
+} from './facebook/outgoing-retry'
+import {
+  disconnectFacebookReplayQueue,
+  startFacebookReplayWorker,
+} from './facebook/replay-queue'
 import { disconnectRedis } from './realtime/pubsub'
+import { disconnectDistributedLockRedis } from './realtime/distributed-lock'
 import { InboxWsServer } from './realtime/ws-server'
 
 async function main() {
@@ -22,6 +36,10 @@ async function main() {
 
   await wsServer.subscribeToRedis()
   console.log('[server] realtime service ready')
+  const stopFacebookSync = startFacebookInboxSyncScheduler()
+  const stopFacebookMediaRetry = startFacebookMediaRetryWorker()
+  const stopOutgoingRetry = startOutgoingRetryWorker()
+  const stopFacebookReplay = startFacebookReplayWorker()
 
   let isShuttingDown = false
 
@@ -32,10 +50,18 @@ async function main() {
 
     isShuttingDown = true
     console.log(`[server] ${signal} received, shutting down`)
+    stopFacebookSync()
+    stopFacebookMediaRetry()
+    stopOutgoingRetry()
+    stopFacebookReplay()
 
     httpServer.close(async () => {
       try {
         await wsServer.close()
+        await disconnectFacebookMediaRetry()
+        await disconnectOutgoingRetryQueue()
+        await disconnectFacebookReplayQueue()
+        await disconnectDistributedLockRedis()
         await disconnectRedis()
         await prisma.$disconnect()
         console.log('[server] shutdown complete')

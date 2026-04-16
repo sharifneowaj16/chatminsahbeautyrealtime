@@ -1,4 +1,5 @@
-import type { FbWebhookBody, ParsedFbEvent } from './types'
+import type { FbAttachment, FbWebhookBody, ParsedFbEvent } from './types'
+import { buildIncomingMessageParts } from './attachments'
 
 export function parseWebhookPayload(body: FbWebhookBody): ParsedFbEvent[] {
   if (body.object !== 'page') {
@@ -11,18 +12,51 @@ export function parseWebhookPayload(body: FbWebhookBody): ParsedFbEvent[] {
     if (Array.isArray(entry.messaging)) {
       for (const event of entry.messaging) {
         if (event.message?.is_echo) continue
-        if (event.delivery || event.read) continue
 
-        if (event.message?.text) {
+        if (event.delivery?.watermark) {
           events.push({
-            type: 'incoming_message',
+            type: 'outgoing_receipt',
             pageId: entry.id,
-            senderId: event.sender.id,
-            recipientId: event.recipient.id,
-            messageId: event.message.mid,
-            text: event.message.text,
+            threadId: event.sender.id,
+            receiptState: 'delivered',
+            watermark: new Date(event.delivery.watermark),
             timestamp: new Date(event.timestamp),
           })
+          continue
+        }
+
+        if (event.read?.watermark) {
+          events.push({
+            type: 'outgoing_receipt',
+            pageId: entry.id,
+            threadId: event.sender.id,
+            receiptState: 'read',
+            watermark: new Date(event.read.watermark),
+            timestamp: new Date(event.timestamp),
+          })
+          continue
+        }
+
+        if (event.message?.mid) {
+          const parts = buildIncomingMessageParts(
+            event.message.mid,
+            event.message.text,
+            event.message.attachments as FbAttachment[] | undefined
+          )
+
+          for (const part of parts) {
+            events.push({
+              type: 'incoming_message',
+              pageId: entry.id,
+              senderId: event.sender.id,
+              recipientId: event.recipient.id,
+              messageId: part.messageId,
+              text: part.text,
+              attachmentUrl: part.attachmentUrl,
+              attachmentType: part.attachmentType,
+              timestamp: new Date(event.timestamp),
+            })
+          }
         }
       }
     }

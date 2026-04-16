@@ -3,20 +3,26 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MarketingHub from '@/app/components/admin/MarketingHub';
-import SocialMediaInbox from '@/app/components/admin/SocialMediaInbox';
 import WhatsAppIntegration from '@/app/components/admin/WhatsAppIntegration';
 import GoogleServicesIntegration from '@/app/components/admin/GoogleServicesIntegration';
 import {
   Megaphone,
-  MessageCircle,
   Smartphone,
   Globe,
   Mail,
   Bell,
   BarChart,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-type MarketingTab = 'overview' | 'social' | 'inbox' | 'whatsapp' | 'email' | 'sms' | 'google';
+type MarketingTab = 'overview' | 'social' | 'whatsapp' | 'email' | 'sms' | 'google';
+
+interface MarketingTabItem {
+  id: MarketingTab;
+  name: string;
+  icon: LucideIcon;
+  badge?: string;
+}
 
 interface AdminMarketingClientProps {
   initialTab: MarketingTab;
@@ -31,10 +37,9 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
     router.push(`/admin/marketing?tab=${tab}`, { scroll: false });
   };
 
-  const tabs = [
+  const tabs: MarketingTabItem[] = [
     { id: 'overview' as MarketingTab, name: 'Overview', icon: BarChart },
     { id: 'social' as MarketingTab, name: 'Social Media', icon: Globe },
-    { id: 'inbox' as MarketingTab, name: 'Social Inbox', icon: MessageCircle, badge: 5 },
     { id: 'whatsapp' as MarketingTab, name: 'WhatsApp', icon: Smartphone },
     { id: 'email' as MarketingTab, name: 'Email Marketing', icon: Mail },
     { id: 'sms' as MarketingTab, name: 'SMS Marketing', icon: Bell },
@@ -88,9 +93,7 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
       {/* Content */}
       <div
         className={
-          activeTab === 'inbox'
-            ? 'h-[calc(100vh-132px)] overflow-hidden md:h-[calc(100vh-180px)]'
-            : 'h-[calc(100vh-180px)]'
+          'h-[calc(100vh-180px)]'
         }
       >
         {activeTab === 'overview' && (
@@ -102,14 +105,6 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
           <div className="p-6">
             <MarketingHub />
           </div>
-        )}
-        {activeTab === 'inbox' && (
-          <SocialMediaInbox
-            className="h-full"
-            initialPlatform="facebook"
-            title="Facebook Inbox"
-            description="Manage Facebook messages and comment replies from one place"
-          />
         )}
         {activeTab === 'whatsapp' && (
           <WhatsAppIntegration />

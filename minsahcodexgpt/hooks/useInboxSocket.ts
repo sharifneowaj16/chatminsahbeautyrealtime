@@ -7,7 +7,10 @@ export type InboxWsEvent =
       messageId: string
       threadId: string
       pageId: string
+      senderName?: string
       text: string
+      attachmentUrl?: string
+      attachmentType?: 'image' | 'video' | 'audio' | 'file'
       timestamp: string
       isNew: boolean
     }
@@ -16,9 +19,29 @@ export type InboxWsEvent =
       conversationId: string
       messageId: string
       threadId: string
+      pageId: string
       text: string
+      attachmentUrl?: string
+      attachmentType?: 'image' | 'video' | 'audio' | 'file'
       timestamp: string
       senderType: 'PAGE'
+    }
+  | {
+      type: 'outgoing_status'
+      jobId: string
+      threadId: string
+      pageId: string
+      state: 'queued' | 'retrying' | 'sent' | 'failed' | 'delivered' | 'read'
+      text: string
+      attachmentUrl?: string
+      attachmentType?: 'image' | 'video' | 'audio' | 'file'
+      timestamp: string
+      attempt: number
+      clientMessageId?: string
+      conversationId?: string
+      messageId?: string
+      fbMessageId?: string
+      error?: string
     }
   | {
       type: 'post_comment'
@@ -31,6 +54,7 @@ export type InboxWsEvent =
       timestamp: string
     }
   | { type: 'conversation_read'; threadId: string; conversationId: string }
+  | { type: 'subscribed'; platforms: Array<'facebook'>; ts: number }
   | { type: 'connected'; clientId: string; ts: number }
   | { type: 'pong'; ts: number }
 
@@ -41,6 +65,7 @@ export function useInboxSocket(onEvent: (event: InboxWsEvent) => void) {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
   const onEventRef = useRef(onEvent)
+  const connectAttemptRef = useRef(0)
   const [status, setStatus] = useState<SocketStatus>('connecting')
 
   useEffect(() => {
@@ -52,47 +77,75 @@ export function useInboxSocket(onEvent: (event: InboxWsEvent) => void) {
       return
     }
 
-    const secret = process.env.NEXT_PUBLIC_WS_AUTH_SECRET
     const url = process.env.NEXT_PUBLIC_REALTIME_WS_URL
 
-    if (!secret || !url) {
-      console.error(
-        '[useInboxSocket] Missing NEXT_PUBLIC_WS_AUTH_SECRET or NEXT_PUBLIC_REALTIME_WS_URL'
-      )
+    if (!url) {
+      console.error('[useInboxSocket] Missing NEXT_PUBLIC_REALTIME_WS_URL')
       setStatus('offline')
       return
     }
 
     setStatus('connecting')
-    const ws = new WebSocket(`${url}?token=${encodeURIComponent(secret)}`)
-    wsRef.current = ws
+    const attempt = ++connectAttemptRef.current
 
-    ws.onopen = () => {
-      setStatus('live')
-    }
-
-    ws.onmessage = (event) => {
+    void (async () => {
       try {
-        const payload = JSON.parse(event.data) as InboxWsEvent
-        if (payload.type === 'connected') {
-          setStatus('live')
+        const tokenResponse = await fetch('/api/admin/inbox/ws-token', {
+          cache: 'no-store',
+          credentials: 'include',
+        })
+
+        if (!tokenResponse.ok) {
+          throw new Error(`WS token request failed with status ${tokenResponse.status}`)
         }
-        onEventRef.current(payload)
+
+        const tokenData = (await tokenResponse.json()) as { token?: string }
+        if (!tokenData.token || !mountedRef.current || attempt !== connectAttemptRef.current) {
+          return
+        }
+
+        const ws = new WebSocket(`${url}?token=${encodeURIComponent(tokenData.token)}`)
+        wsRef.current = ws
+
+        ws.onopen = () => {
+          setStatus('live')
+          ws.send(
+            JSON.stringify({
+              type: 'subscribe_inbox',
+              platforms: ['facebook'],
+            })
+          )
+        }
+
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data) as InboxWsEvent
+            if (payload.type === 'connected' || payload.type === 'subscribed') {
+              setStatus('live')
+            }
+            onEventRef.current(payload)
+          } catch {
+            // Ignore malformed payloads
+          }
+        }
+
+        ws.onclose = () => {
+          setStatus('offline')
+          if (mountedRef.current) {
+            reconnectTimeoutRef.current = setTimeout(connect, 3000)
+          }
+        }
+
+        ws.onerror = () => {
+          ws.close()
+        }
       } catch {
-        // Ignore malformed payloads
+        setStatus('offline')
+        if (mountedRef.current) {
+          reconnectTimeoutRef.current = setTimeout(connect, 5000)
+        }
       }
-    }
-
-    ws.onclose = () => {
-      setStatus('offline')
-      if (mountedRef.current) {
-        reconnectTimeoutRef.current = setTimeout(connect, 3000)
-      }
-    }
-
-    ws.onerror = () => {
-      ws.close()
-    }
+    })()
   }, [])
 
   useEffect(() => {
@@ -110,7 +163,7 @@ export function useInboxSocket(onEvent: (event: InboxWsEvent) => void) {
 
   const sendMarkRead = useCallback((threadId: string, conversationId: string) => {
     if (wsRef.current?.readyState !== WebSocket.OPEN) {
-      return
+      return false
     }
 
     wsRef.current.send(
@@ -120,6 +173,7 @@ export function useInboxSocket(onEvent: (event: InboxWsEvent) => void) {
         conversationId,
       })
     )
+    return true
   }, [])
 
   return { sendMarkRead, status }

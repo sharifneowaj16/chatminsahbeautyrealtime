@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { redis } from '@/lib/cache/redis';
-import { minio } from '@/lib/storage/minio';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('health');
@@ -69,6 +68,7 @@ async function checkMinio(): Promise<ServiceHealth> {
   const start = Date.now();
   try {
     const bucketName = process.env.MINIO_BUCKET_NAME || 'minsah-beauty';
+    const { minio } = await import('@/lib/storage/minio');
     await minio.bucketExists(bucketName);
     return {
       status: 'healthy',

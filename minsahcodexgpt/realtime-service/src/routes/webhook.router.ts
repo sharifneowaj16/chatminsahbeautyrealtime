@@ -1,8 +1,16 @@
 import { Router, type Request, type Response } from 'express'
+import type { Prisma } from '../../prisma/generated/prisma'
 import { getConfig } from '../config'
-import { upsertConversationAndSaveMessage } from '../db/repository'
+import {
+  createWebhookAudit,
+  finalizeWebhookAudit,
+  findLatestOutgoingMessageForReceipt,
+  recordOutboxReceipt,
+} from '../db/repository'
+import { getAttachmentTypeHint } from '../facebook/attachments'
 import { parseWebhookPayload } from '../facebook/events'
-import { getMessengerProfile } from '../facebook/graph.client'
+import { processIncomingInboxMessage } from '../facebook/inbox-processor'
+import { scheduleInboxReplayJob } from '../facebook/replay-queue'
 import { verifyFacebookSignature } from '../facebook/signature'
 import type { FbWebhookBody, ParsedFbEvent } from '../facebook/types'
 import { publishInboxEvent } from '../realtime/pubsub'
@@ -41,49 +49,91 @@ webhookRouter.post('/facebook', async (req: Request, res: Response) => {
   }
 
   const events = parseWebhookPayload(body)
+  const audit = await createWebhookAudit({
+    pageId: body.entry[0]?.id,
+    rawBody: rawBody.toString('utf8'),
+    payload: body as unknown as Prisma.InputJsonValue,
+    signatureValid: true,
+    eventCount: events.length,
+  })
+  let processedEvents = 0
+  let failedEvents = 0
+  let lastError: string | undefined
 
   for (const event of events) {
     try {
       await processEvent(event)
+      processedEvents += 1
     } catch (error) {
       console.error('[webhook] event processing error', { event, error })
+      failedEvents += 1
+      lastError = error instanceof Error ? error.message : 'Webhook event processing failed'
+      await scheduleReplayForEvent(event)
     }
   }
+
+  await finalizeWebhookAudit({
+    id: audit.id,
+    processingStatus:
+      failedEvents === 0
+        ? 'PROCESSED'
+        : processedEvents > 0
+          ? 'PARTIAL_ERROR'
+          : 'FAILED',
+    processedEvents,
+    failedEvents,
+    error: lastError,
+  })
 
   res.status(200).json({ ok: true, processed: events.length })
 })
 
 async function processEvent(event: ParsedFbEvent): Promise<void> {
   if (event.type === 'incoming_message') {
-    let customerName: string | undefined
+    await processIncomingInboxMessage({
+      pageId: event.pageId,
+      senderId: event.senderId,
+      messageId: event.messageId,
+      text: event.text,
+      attachmentUrl: event.attachmentUrl,
+      attachmentType: event.attachmentType,
+      timestamp: event.timestamp,
+      publishEvent: true,
+    })
+    return
+  }
 
-    try {
-      const profile = await getMessengerProfile(event.senderId)
-      customerName = profile.name ?? undefined
-    } catch (error) {
-      console.warn('[webhook] profile lookup failed', error)
+  if (event.type === 'outgoing_receipt') {
+    const message = await findLatestOutgoingMessageForReceipt({
+      threadId: event.threadId,
+      watermark: event.watermark,
+    })
+
+    if (!message) {
+      return
     }
 
-    const result = await upsertConversationAndSaveMessage({
-      fbMessageId: event.messageId,
-      pageId: event.pageId,
-      customerPsid: event.senderId,
-      customerName,
-      text: event.text,
-      timestamp: event.timestamp,
+    const outbox = await recordOutboxReceipt({
+      fbMessageId: message.fbMessageId,
+      state: event.receiptState === 'delivered' ? 'DELIVERED' : 'READ',
     })
 
     await publishInboxEvent({
-      type: 'new_message',
-      conversationId: result.conversationId,
-      messageId: result.messageId,
-      threadId: event.senderId,
+      type: 'outgoing_status',
+      jobId: outbox?.jobId ?? message.jobId ?? `receipt:${event.receiptState}:${message.fbMessageId}`,
+      threadId: event.threadId,
       pageId: event.pageId,
-      text: event.text,
+      state: event.receiptState,
+      text: message.text,
+      attachmentUrl: message.attachmentUrl,
+      attachmentType: getAttachmentTypeHint(message.attachmentUrl) ?? undefined,
       timestamp: event.timestamp.toISOString(),
-      isNew: result.isNew,
+      attempt: 0,
+      clientMessageId: outbox?.clientMessageId ?? message.clientMessageId,
+      conversationId: outbox?.conversationId ?? message.conversationId,
+      messageId: outbox?.localMessageId ?? message.messageId,
+      fbMessageId: message.fbMessageId,
     })
-
     return
   }
 
@@ -97,4 +147,25 @@ async function processEvent(event: ParsedFbEvent): Promise<void> {
     text: event.text,
     timestamp: event.timestamp.toISOString(),
   })
+}
+
+async function scheduleReplayForEvent(event: ParsedFbEvent): Promise<void> {
+  if (event.type !== 'incoming_message') {
+    return
+  }
+
+  try {
+    await scheduleInboxReplayJob({
+      type: 'incoming_message',
+      pageId: event.pageId,
+      senderId: event.senderId,
+      fbMessageId: event.messageId,
+      text: event.text,
+      attachmentUrl: event.attachmentUrl,
+      attachmentType: event.attachmentType,
+      timestamp: event.timestamp.toISOString(),
+    })
+  } catch (error) {
+    console.error('[webhook] replay enqueue failed', { event, error })
+  }
 }
