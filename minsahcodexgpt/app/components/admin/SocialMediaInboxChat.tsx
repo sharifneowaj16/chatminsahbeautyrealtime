@@ -118,6 +118,15 @@ interface ApiPageInfo {
   hasMoreMessages?: boolean;
 }
 
+async function parseApiResponse<T>(response: Response): Promise<T | null> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().includes('application/json')) {
+    return null;
+  }
+
+  return response.json().catch(() => null);
+}
+
 interface Conversation {
   conversationId: string;
   platform: SocialMessage['platform'];
@@ -1424,7 +1433,12 @@ export default function SocialMediaInboxChat() {
               body: formData,
             });
 
-            const uploadData = (await uploadRes.json().catch(() => null)) as {
+            const uploadData = (await parseApiResponse<{
+              error?: string;
+              url?: string;
+              fileName?: string;
+              mimeType?: string;
+            }>(uploadRes)) as {
               error?: string;
               url?: string;
               fileName?: string;
@@ -1458,7 +1472,7 @@ export default function SocialMediaInboxChat() {
           clientMessageId: clientMessageBase,
         }),
       });
-      const data = (await res.json()) as {
+      const data = (await parseApiResponse<{
         error?: string;
         deliveries?: Array<{
           queued: false;
@@ -1476,11 +1490,36 @@ export default function SocialMediaInboxChat() {
           error: string;
           clientMessageId?: string;
         }>;
-      };
-      if (!res.ok) throw new Error(data.error || 'Reply failed');
+      }>(res)) as {
+        error?: string;
+        deliveries?: Array<{
+          queued: false;
+          recipientId: string;
+          messageId: string;
+          conversationId: string;
+          dbMessageId: string;
+          clientMessageId?: string;
+        }>;
+        queuedDeliveries?: Array<{
+          queued: true;
+          jobId: string;
+          text: string;
+          attachmentType?: 'image' | 'video' | 'audio' | 'file';
+          error: string;
+          clientMessageId?: string;
+        }>;
+      } | null;
+      if (!res.ok) {
+        throw new Error(
+          data?.error ||
+          (res.status === 401
+            ? 'Admin session expired. Please log in again.'
+            : 'Reply failed')
+        );
+      }
 
-      const deliveries = data.deliveries ?? [];
-      const queuedDeliveries = data.queuedDeliveries ?? [];
+      const deliveries = data?.deliveries ?? [];
+      const queuedDeliveries = data?.queuedDeliveries ?? [];
 
       setMessages((prev) => prev.map((message) => {
         const delivered = deliveries.find(
@@ -1720,8 +1759,9 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
   return (
     <div style={{
       display: 'flex', height: '100%', width: '100%', overflow: 'hidden',
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-      background: '#f8f4f1',
+      fontFamily: "'Manrope', 'Segoe UI', sans-serif",
+      background: 'radial-gradient(circle at top left, #f6eee7 0%, #f1e5db 28%, #ede6df 52%, #f7f4ef 100%)',
+      color: '#24140b',
     }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
@@ -1729,48 +1769,50 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes progressBar { from{width:0} to{width:100%} }
         * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ddd4cc; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #c4b5a8; }
-        .conv-item:hover { background: #f0e8e2 !important; }
-        .conv-item-active { background: linear-gradient(90deg, #fdf0e8, #faf5f1) !important; border-left-color: #64320D !important; }
+        ::-webkit-scrollbar-thumb { background: rgba(123, 84, 54, 0.22); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(123, 84, 54, 0.34); }
+        .conv-item:hover { background: rgba(255,255,255,0.72) !important; border-color: rgba(117,74,37,0.16) !important; transform: translateY(-1px); }
+        .conv-item-active { background: linear-gradient(180deg, #ffffff 0%, #fbf4ec 100%) !important; border-color: rgba(100,50,13,0.28) !important; box-shadow: 0 12px 26px rgba(72,43,18,0.08); }
       `}</style>
 
       {/* ═══════════════════════════ SIDEBAR ═══════════════════════════ */}
       <aside style={{
         display: isMobile && showChat ? 'none' : 'flex',
         flexDirection: 'column',
-        width: 320,
+        width: isMobile ? '100%' : 372,
         flexShrink: 0,
-        background: '#fff',
-        borderRight: '1px solid #ede5de',
+        padding: isMobile ? 12 : 18,
+        gap: 14,
         height: '100%',
       }}
-        className="sm:flex"
       >
         {/* Brand header */}
         <div style={{
-          background: 'linear-gradient(135deg, #64320D 0%, #421C00 100%)',
-          padding: '14px 16px',
+          background: 'linear-gradient(160deg, rgba(74,35,12,0.96) 0%, rgba(48,22,9,0.96) 62%, rgba(98,54,28,0.94) 100%)',
+          padding: '18px 18px 16px',
+          borderRadius: 28,
+          boxShadow: '0 20px 45px rgba(47, 24, 10, 0.20)',
           flexShrink: 0,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               <a href="/admin/marketing" style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 30, height: 30, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.15)', color: '#fff',
+                width: 38, height: 38, borderRadius: 14,
+                background: 'rgba(255,255,255,0.09)', color: '#fff4ec',
                 textDecoration: 'none',
+                flexShrink: 0,
               }}>
-                <ArrowLeft size={15} />
+                <ArrowLeft size={16} />
               </a>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>Minsah Inbox</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,244,236,0.74)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Customer Operations</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#fff4ec', lineHeight: 1.1, marginTop: 3 }}>Minsah Inbox</div>
                 {unreadCount > 0 && (
-                  <div style={{ fontSize: 11, color: 'rgba(255,230,210,0.9)', marginTop: 1 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,230,210,0.9)', marginTop: 4 }}>
                     {unreadCount} unread
                   </div>
                 )}
@@ -1783,13 +1825,13 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 onClick={() => notificationsEnabled ? setNotificationsEnabled(false) : requestNotifications()}
                 title={notificationsEnabled ? 'Notifications on' : 'Enable notifications'}
                 style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  background: notificationsEnabled ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.15)',
-                  border: 'none', cursor: 'pointer', color: '#fff',
+                  width: 38, height: 38, borderRadius: 14,
+                  background: notificationsEnabled ? 'rgba(93,210,132,0.18)' : 'rgba(255,255,255,0.09)',
+                  border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', color: '#fff4ec',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                {notificationsEnabled ? <Bell size={14} /> : <BellOff size={14} />}
+                {notificationsEnabled ? <Bell size={16} /> : <BellOff size={16} />}
               </button>
 
               {/* Sync button */}
@@ -1799,14 +1841,14 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   disabled={syncingFb}
                   title="Sync ALL Facebook conversations"
                   style={{
-                    width: 30, height: 30, borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.15)',
-                    border: 'none', cursor: syncingFb ? 'not-allowed' : 'pointer',
-                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 38, height: 38, borderRadius: 14,
+                    background: 'rgba(255,255,255,0.09)',
+                    border: '1px solid rgba(255,255,255,0.08)', cursor: syncingFb ? 'not-allowed' : 'pointer',
+                    color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     opacity: syncingFb ? 0.7 : 1,
                   }}
                 >
-                  <RefreshCw size={14} style={{ animation: syncingFb ? 'spin 1s linear infinite' : 'none' }} />
+                  <RefreshCw size={16} style={{ animation: syncingFb ? 'spin 1s linear infinite' : 'none' }} />
                 </button>
               )}
             </div>
@@ -1815,10 +1857,10 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
           {/* Connection status */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: '5px 10px',
+            background: 'rgba(255,255,255,0.10)', borderRadius: 18, padding: '12px 14px',
           }}>
             <ConnectionDot status={connectionStatus} />
-            <span style={{ fontSize: 11, color: 'rgba(255,230,210,0.7)' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,230,210,0.75)', letterSpacing: '0.04em' }}>
               {visibleConversations.length} chats
             </span>
           </div>
@@ -1826,23 +1868,23 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
         {/* Sync progress */}
         {syncingFb && (
-          <div style={{ padding: '10px 14px', background: '#fef9f5', borderBottom: '1px solid #ede5de', flexShrink: 0 }}>
+          <div style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.10)', borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <Zap size={12} color="#64320D" />
-              <span style={{ fontSize: 11, color: '#64320D', fontWeight: 600 }}>
+              <Zap size={12} color="#fff4ec" />
+              <span style={{ fontSize: 12, color: '#fff4ec', fontWeight: 700 }}>
                 {syncLabel}
               </span>
             </div>
-            <div style={{ height: 3, background: '#f0dfd4', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.12)', borderRadius: 999, overflow: 'hidden' }}>
               <div style={{
-                height: '100%', borderRadius: 4,
-                background: 'linear-gradient(90deg, #64320D, #a05a2c)',
+                height: '100%', borderRadius: 999,
+                background: 'linear-gradient(90deg, #ffe0c2, #ffffff)',
                 width: `${syncPercent || 5}%`,
                 transition: 'width 0.3s ease',
               }} />
             </div>
             {syncProgress.totalConversations > 0 && (
-              <div style={{ fontSize: 10, color: '#8E6545', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,230,210,0.8)', marginTop: 6 }}>
                 {syncProgress.processedConversations} / {syncProgress.totalConversations} conversations
               </div>
             )}
@@ -1852,34 +1894,35 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         {/* Completed/error banner */}
         {!syncingFb && syncLabel && (
           <div style={{
-            padding: '8px 14px', flexShrink: 0, fontSize: 11, fontWeight: 500,
+            padding: '11px 14px', borderRadius: 16, flexShrink: 0, fontSize: 12, fontWeight: 600,
             background: syncProgress.stage === 'error' ? '#fef2f2' : '#f0fdf4',
             color: syncProgress.stage === 'error' ? '#dc2626' : '#16a34a',
-            borderBottom: '1px solid #ede5de',
+            border: `1px solid ${syncProgress.stage === 'error' ? '#fecaca' : '#d6ead8'}`,
           }}>
             {syncLabel}
           </div>
         )}
 
         {/* Search */}
-        <div style={{ padding: '10px 12px', borderBottom: '1px solid #ede5de', flexShrink: 0 }}>
+        <div style={{ padding: 14, borderRadius: 28, background: 'rgba(255,255,255,0.54)', border: '1px solid rgba(115,75,42,0.10)', boxShadow: '0 18px 40px rgba(78,53,36,0.08)', backdropFilter: 'blur(12px)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ paddingBottom: 12, flexShrink: 0 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            background: '#f8f4f1', borderRadius: 10, padding: '8px 12px',
+            background: '#fbf7f3', borderRadius: 18, padding: '13px 14px', border: '1px solid rgba(115,75,42,0.08)',
           }}>
-            <Search size={14} color="#8E6545" />
+            <Search size={15} color="#8d684e" />
             <input
               type="text" value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search conversations…"
+              placeholder="Search conversations"
               style={{
                 flex: 1, border: 'none', background: 'transparent',
-                fontSize: 13, color: '#421C00', outline: 'none',
+                fontSize: 14, color: '#24140b', outline: 'none',
               }}
             />
             {search && (
-              <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8E6545', padding: 0 }}>
-                <X size={13} />
+              <button onClick={() => setSearch('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#8d684e', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={14} />
               </button>
             )}
           </div>
@@ -1887,15 +1930,16 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
         {/* Platform tabs */}
         <div style={{
-          display: 'flex', gap: 4, padding: '8px 12px',
-          borderBottom: '1px solid #ede5de', flexShrink: 0,
+          display: 'flex', gap: 8, paddingBottom: 12,
+          flexShrink: 0,
         }}>
           {PLATFORM_TABS.map((tab) => (
             <button key={tab.id} onClick={() => setFilterPlatform(tab.id)} style={{
-              flex: 1, padding: '6px 4px', border: 'none', borderRadius: 8, cursor: 'pointer',
-              fontSize: 11, fontWeight: 600, transition: 'all 0.15s',
-              background: filterPlatform === tab.id ? '#64320D' : 'transparent',
-              color: filterPlatform === tab.id ? '#fff' : '#8E6545',
+              flex: 1, padding: '10px 8px', border: '1px solid rgba(115,75,42,0.10)', borderRadius: 14, cursor: 'pointer',
+              fontSize: 12, fontWeight: 700, transition: 'all 0.15s',
+              background: filterPlatform === tab.id ? '#4d260f' : '#fff',
+              color: filterPlatform === tab.id ? '#fff4ec' : '#8d684e',
+              boxShadow: filterPlatform === tab.id ? '0 10px 20px rgba(77,38,15,0.18)' : 'none',
             }}>
               {tab.label}
             </button>
@@ -1906,17 +1950,17 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         <div
           ref={conversationListRef}
           onScroll={onConversationListScroll}
-          style={{ flex: 1, overflowY: 'auto' }}
+          style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}
         >
           {visibleConversations.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 8, color: '#8E6545' }}>
-              <MessageSquare size={36} strokeWidth={1.2} opacity={0.4} />
-              <p style={{ fontSize: 13, margin: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 260, gap: 10, color: '#8d684e', textAlign: 'center', padding: 24 }}>
+              <MessageSquare size={42} strokeWidth={1.25} opacity={0.42} />
+              <p style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#422617' }}>
                 {search.trim()
-                  ? 'No conversations match your search'
+                  ? 'No matching conversations'
                   : filterPlatform === 'facebook'
-                    ? 'Click sync to load conversations'
-                    : 'No conversations'}
+                    ? 'Inbox is waiting for conversations'
+                    : 'No conversations yet'}
               </p>
             </div>
           ) : (
@@ -1934,49 +1978,51 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 }}
                 style={{
                   display: 'flex', width: '100%', alignItems: 'center', gap: 10,
-                  padding: '12px 14px', textAlign: 'left', background: 'transparent',
-                  border: 'none', cursor: 'pointer',
-                  borderBottom: '1px solid #f5ede8',
-                  borderLeft: `3px solid ${selected === conv.conversationId ? '#64320D' : 'transparent'}`,
+                  padding: '14px 14px 13px', textAlign: 'left', background: 'rgba(255,255,255,0.46)',
+                  border: '1px solid rgba(115,75,42,0.08)', cursor: 'pointer',
+                  borderBottom: '1px solid rgba(115,75,42,0.08)',
+                  borderLeft: '1px solid rgba(115,75,42,0.08)',
+                  borderRadius: 22,
                   transition: 'all 0.12s',
                   minHeight: CONVERSATION_ITEM_HEIGHT,
+                  marginBottom: 10,
                 }}
               >
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <Avatar src={conv.participant.avatar} name={conv.participant.name} size={44} />
-                  <span style={{ position: 'absolute', bottom: -1, right: -1 }}>
-                    <PlatBadge platform={conv.platform} size={15} />
+                  <Avatar src={conv.participant.avatar} name={conv.participant.name} size={46} />
+                  <span style={{ position: 'absolute', bottom: -3, right: -3 }}>
+                    <PlatBadge platform={conv.platform} size={16} />
                   </span>
                 </div>
 
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
                     <span style={{
-                      fontSize: 13, fontWeight: conv.unreadCount > 0 ? 700 : 600,
-                      color: '#1a0a00', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      fontSize: 14, fontWeight: conv.unreadCount > 0 ? 800 : 700,
+                      color: '#27160d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {conv.participant.name}
                     </span>
-                    <span style={{ fontSize: 10, color: '#8E6545', flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, color: '#87644a', flexShrink: 0 }}>
                       {fmtTime(conv.latestMessage.timestamp)}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6 }}>
                     <span style={{
-                      fontSize: 12, color: conv.unreadCount > 0 ? '#421C00' : '#8E6545',
+                      fontSize: 12, color: conv.unreadCount > 0 ? '#3d2517' : '#8d684e',
                       fontWeight: conv.unreadCount > 0 ? 600 : 400,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {!conv.latestMessage.isIncoming && <span style={{ color: '#64320D' }}>You: </span>}
-                      {fixEncoding(conv.latestMessage.content.text) || '📎 Attachment'}
+                      {fixEncoding(conv.latestMessage.content.text) || 'Attachment'}
                     </span>
                     {conv.unreadCount > 0 && (
                       <span style={{
-                        minWidth: 18, height: 18, borderRadius: 9,
-                        background: '#64320D', color: '#fff',
-                        fontSize: 10, fontWeight: 700,
+                        minWidth: 22, height: 22, borderRadius: 999,
+                        background: '#4d260f', color: '#fff4ec',
+                        fontSize: 11, fontWeight: 800,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '0 5px', flexShrink: 0,
+                        padding: '0 7px', flexShrink: 0,
                       }}>
                         {conv.unreadCount}
                       </span>
@@ -2006,41 +2052,51 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
             </div>
           )}
         </div>
+        </div>
       </aside>
 
       {/* ═══════════════════════════ CHAT PANEL ═══════════════════════════ */}
       <main style={{
         flex: 1, display: isMobile && !showChat ? 'none' : 'flex',
         flexDirection: 'column', minWidth: 0, height: '100%',
-        background: '#f8f4f1',
+        background: 'transparent', padding: isMobile ? '12px 12px 12px 0' : 18, paddingLeft: 0,
+        position: 'relative',
       }}>
         {activeConversation ? (
-          <>
+          <div style={{
+            display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%',
+            borderRadius: isMobile ? 0 : 34,
+            background: 'rgba(255,255,255,0.56)',
+            border: isMobile ? 'none' : '1px solid rgba(115,75,42,0.10)',
+            boxShadow: isMobile ? 'none' : '0 24px 50px rgba(78,53,36,0.10)',
+            backdropFilter: 'blur(10px)',
+            overflow: 'hidden',
+          }}>
             {/* Chat header */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 12,
-              padding: '10px 16px', background: '#fff',
-              borderBottom: '1px solid #ede5de', flexShrink: 0,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+              padding: isMobile ? '16px 16px 14px' : '20px 24px 18px',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(252,248,242,0.70) 100%)',
+              borderBottom: '1px solid rgba(115,75,42,0.10)', flexShrink: 0,
             }}>
               {/* Mobile back */}
               <button onClick={() => setShowChat(false)} style={{
-                width: 34, height: 34, borderRadius: '50%', border: 'none',
-                background: '#f8f4f1', cursor: 'pointer', color: '#64320D',
+                width: 40, height: 40, borderRadius: 14, border: '1px solid rgba(115,75,42,0.08)',
+                background: '#fffaf5', cursor: 'pointer', color: '#64320D',
                 display: isMobile ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center',
               }}>
-                <ArrowLeft size={16} />
+                <ArrowLeft size={17} />
               </button>
 
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Avatar src={activeConversation.participant.avatar} name={activeConversation.participant.name} size={40} />
-                <span style={{ position: 'absolute', bottom: -1, right: -1 }}>
-                  <PlatBadge platform={activeConversation.platform} size={14} />
+                <Avatar src={activeConversation.participant.avatar} name={activeConversation.participant.name} size={48} />
+                <span style={{ position: 'absolute', bottom: -2, right: -2 }}>
+                  <PlatBadge platform={activeConversation.platform} size={16} />
                 </span>
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a0a00', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 19, fontWeight: 800, color: '#23120a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.1 }}>
                   {activeConversation.participant.name}
                 </div>
                 <div style={{ fontSize: 11, color: '#8E6545', textTransform: 'capitalize', marginTop: 1 }}>
@@ -2054,37 +2110,40 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 disabled={aiLoading}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '6px 12px', borderRadius: 20,
-                  background: aiLoading ? '#f0dfd4' : 'linear-gradient(135deg, #64320D, #a05a2c)',
-                  color: '#fff', border: 'none', cursor: aiLoading ? 'not-allowed' : 'pointer',
-                  fontSize: 12, fontWeight: 600, transition: 'all 0.15s',
+                  padding: isMobile ? '10px 12px' : '10px 16px', borderRadius: 16,
+                  background: aiLoading ? '#eadbcf' : '#4d260f',
+                  color: '#fff4ec', border: 'none', cursor: aiLoading ? 'not-allowed' : 'pointer',
+                  fontSize: 12, fontWeight: 800, boxShadow: aiLoading ? 'none' : '0 12px 22px rgba(77,38,15,0.16)',
                 }}
               >
-                {aiLoading ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={12} />}
-                <span>AI Reply</span>
+                {aiLoading ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={14} />}
+                {!isMobile && <span>Draft Reply</span>}
               </button>
             </div>
 
             {/* AI suggestion */}
             {aiSuggestion && (
               <div style={{
-                display: 'flex', gap: 10, padding: '10px 14px',
-                background: '#fef9f5', borderBottom: '1px solid #ede5de', flexShrink: 0,
+                display: 'flex', gap: 12, padding: '14px 15px',
+                margin: isMobile ? '12px 14px 0' : '16px 18px 0',
+                background: '#fffaf4', border: '1px solid rgba(115,75,42,0.10)', borderRadius: 22, flexShrink: 0,
                 animation: 'slideDown 0.2s ease',
               }}>
-                <Bot size={15} color="#64320D" style={{ flexShrink: 0, marginTop: 2 }} />
-                <p style={{ flex: 1, fontSize: 13, color: '#421C00', margin: 0, lineHeight: 1.5 }}>{aiSuggestion}</p>
+                <div style={{ width: 34, height: 34, borderRadius: 12, background: '#4d260f', color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Bot size={16} />
+                </div>
+                <p style={{ flex: 1, fontSize: 14, color: '#321d11', margin: 0, lineHeight: 1.65 }}>{aiSuggestion}</p>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button onClick={acceptSuggestion} style={{
-                    padding: '4px 10px', borderRadius: 12,
-                    background: '#64320D', color: '#fff', border: 'none',
-                    fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                    padding: '9px 13px', borderRadius: 14,
+                    background: '#4d260f', color: '#fff4ec', border: 'none',
+                    fontSize: 12, fontWeight: 800, cursor: 'pointer',
                   }}>Use</button>
                   <button onClick={() => setAiSuggestion('')} style={{
-                    width: 24, height: 24, borderRadius: '50%',
-                    background: '#f0dfd4', border: 'none', cursor: 'pointer', color: '#64320D',
+                    width: 34, height: 34, borderRadius: 14,
+                    background: '#f3e4d7', border: 'none', cursor: 'pointer', color: '#64320D',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}><X size={12} /></button>
+                  }}><X size={14} /></button>
                 </div>
               </div>
             )}
@@ -2092,12 +2151,13 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
             {/* New message banner */}
             {newMessageBanner && (
               <div style={{
-                padding: '8px 14px', background: '#1877f2', color: '#fff',
-                fontSize: 12, fontWeight: 500, flexShrink: 0,
+                padding: '12px 14px', background: '#2f7bf6', color: '#fff',
+                fontSize: 12, fontWeight: 700, flexShrink: 0,
+                margin: isMobile ? '12px 14px 0' : '16px 18px 0', borderRadius: 18,
                 animation: 'slideDown 0.2s ease',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                <Zap size={12} />
+                <Zap size={14} />
                 {newMessageBanner}
               </div>
             )}
@@ -2106,25 +2166,24 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
             <div
               ref={scrollRef}
               onScroll={onScroll}
-              style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}
+              style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: isMobile ? '16px 14px 12px' : '20px 24px 16px' }}
             >
-              <div style={{ maxWidth: 700, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
                 {activeConversation?.platform === 'facebook' && hasMoreThreadMessages && (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0 18px' }}>
                     <button
                       onClick={() => void loadOlderMessages()}
                       disabled={loadingOlderMessages}
                       style={{
-                        padding: '7px 14px',
+                        padding: '9px 16px',
                         borderRadius: 999,
-                        border: '1px solid #e5d6cb',
-                        background: '#fff',
+                        border: '1px solid rgba(115,75,42,0.10)',
+                        background: '#fffaf5',
                         color: '#64320D',
                         fontSize: 12,
-                        fontWeight: 600,
+                        fontWeight: 800,
                         cursor: loadingOlderMessages ? 'not-allowed' : 'pointer',
                         opacity: loadingOlderMessages ? 0.7 : 1,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                       }}
                     >
                       {loadingOlderMessages ? 'Loading older messages...' : 'Load older messages'}
@@ -2141,14 +2200,13 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   const showAvatar = msg.isIncoming && (!next || !next.isIncoming || next.sender.id !== msg.sender.id);
 
                   return (
-                    <div key={msg.id} style={{ marginTop: sameSenderAsPrev ? 2 : 12, animation: 'fadeIn 0.2s ease' }}>
+                    <div key={msg.id} style={{ marginTop: sameSenderAsPrev ? 6 : 18, animation: 'fadeIn 0.2s ease' }}>
                       {showDivider && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '12px 0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 0 14px' }}>
                           <span style={{
-                            padding: '3px 12px', borderRadius: 12,
-                            background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(4px)',
-                            fontSize: 11, color: '#8E6545', fontWeight: 500,
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                            padding: '6px 12px', borderRadius: 999,
+                            background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(115,75,42,0.08)',
+                            fontSize: 11, color: '#87644a', fontWeight: 700,
                           }}>
                             {fmtDivider(msg.timestamp)}
                           </span>
@@ -2157,40 +2215,41 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, justifyContent: msg.isIncoming ? 'flex-start' : 'flex-end' }}>
                         {msg.isIncoming && (
-                          <div style={{ width: 28, flexShrink: 0, alignSelf: 'flex-end' }}>
-                            {showAvatar && <Avatar src={msg.sender.avatar} name={msg.sender.name} size={28} />}
+                          <div style={{ width: 34, flexShrink: 0, alignSelf: 'flex-end' }}>
+                            {showAvatar && <Avatar src={msg.sender.avatar} name={msg.sender.name} size={34} />}
                           </div>
                         )}
 
-                        <div style={{ maxWidth: '70%', opacity: isOptimistic ? 0.6 : 1 }}>
+                        <div style={{ maxWidth: isMobile ? '88%' : '72%', opacity: isOptimistic ? 0.7 : 1 }}>
                           {msg.isIncoming && !sameSenderAsPrev && (
-                            <p style={{ fontSize: 10, color: '#8E6545', fontWeight: 600, marginBottom: 2, marginLeft: 2 }}>
+                            <p style={{ fontSize: 11, color: '#7a573f', fontWeight: 800, marginBottom: 6, marginLeft: 2 }}>
                               {msg.sender.name}
                             </p>
                           )}
 
                           <div style={{
-                            padding: '9px 13px', fontSize: 13, lineHeight: 1.5,
+                            padding: msg.content.media?.length ? '12px 12px 10px' : '12px 14px', fontSize: 14, lineHeight: 1.65,
                             borderRadius: msg.isIncoming
-                              ? `${sameSenderAsPrev ? 4 : 16}px 16px 16px ${sameSenderAsNext ? 4 : 16}px`
-                              : `16px ${sameSenderAsPrev ? 4 : 16}px ${sameSenderAsNext ? 4 : 16}px 16px`,
+                              ? `${sameSenderAsPrev ? 12 : 24}px 24px 24px ${sameSenderAsNext ? 12 : 24}px`
+                              : `24px ${sameSenderAsPrev ? 12 : 24}px ${sameSenderAsNext ? 12 : 24}px 24px`,
                             background: msg.isIncoming
-                              ? '#fff'
-                              : 'linear-gradient(135deg, #64320D 0%, #421C00 100%)',
-                            color: msg.isIncoming ? '#1a0a00' : '#fff',
+                              ? 'linear-gradient(180deg, #ffffff 0%, #fdf8f3 100%)'
+                              : 'linear-gradient(180deg, #562b12 0%, #3f1f0e 100%)',
+                            color: msg.isIncoming ? '#23140d' : '#fff7f0',
                             boxShadow: msg.isIncoming
-                              ? '0 1px 2px rgba(0,0,0,0.08)'
-                              : '0 1px 4px rgba(100,50,13,0.3)',
-                            border: msg.isIncoming ? '1px solid #f0e6df' : 'none',
+                              ? '0 10px 26px rgba(67,44,29,0.06)'
+                              : '0 14px 30px rgba(61,29,10,0.18)',
+                            border: `1px solid ${msg.isIncoming ? 'rgba(115,75,42,0.09)' : 'rgba(255,255,255,0.08)'}`,
                           }}>
                             {/* Type badge */}
                             {!sameSenderAsPrev && msg.type !== 'message' && (
                               <span style={{
-                                display: 'inline-block', marginBottom: 4,
-                                padding: '1px 7px', borderRadius: 8, fontSize: 10, fontWeight: 600,
-                                background: msg.isIncoming ? '#f0e6df' : 'rgba(255,255,255,0.2)',
-                                color: msg.isIncoming ? '#64320D' : 'rgba(255,255,255,0.9)',
+                                display: 'inline-block', marginBottom: 8,
+                                padding: '4px 8px', borderRadius: 999, fontSize: 10, fontWeight: 800,
+                                background: msg.isIncoming ? '#f4e6d8' : 'rgba(255,255,255,0.10)',
+                                color: msg.isIncoming ? '#64320D' : 'rgba(255,244,236,0.92)',
                                 textTransform: 'capitalize',
+                                letterSpacing: '0.04em',
                               }}>
                                 {msg.type}
                               </span>
@@ -2213,16 +2272,17 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
                           {!sameSenderAsNext && (
                             <div style={{
-                              display: 'flex', alignItems: 'center', gap: 3, marginTop: 3,
+                              display: 'flex', alignItems: 'center', gap: 5, marginTop: 7,
                               justifyContent: msg.isIncoming ? 'flex-start' : 'flex-end',
                               paddingLeft: msg.isIncoming ? 4 : 0,
+                              paddingRight: msg.isIncoming ? 0 : 4,
                             }}>
-                              <span style={{ fontSize: 10, color: '#a8957f' }}>
+                              <span style={{ fontSize: 11, color: '#a08167' }}>
                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                               </span>
                               {!msg.isIncoming && (
                                 <>
-                                  <span style={{ fontSize: 10, color: '#a8957f' }}>
+                                  <span style={{ fontSize: 11, color: '#a08167' }}>
                                     {getOutgoingStatusLabel(msg.status)}
                                   </span>
                                   <CheckCheck
@@ -2252,27 +2312,27 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
               <button
                 onClick={() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
                 style={{
-                  position: 'absolute', bottom: 90, right: 20,
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: '#64320D', color: '#fff', border: 'none', cursor: 'pointer',
+                  position: 'absolute', bottom: isMobile ? 112 : 126, right: isMobile ? 20 : 34,
+                  width: 42, height: 42, borderRadius: 16,
+                  background: '#4d260f', color: '#fff4ec', border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(100,50,13,0.4)',
+                  boxShadow: '0 14px 28px rgba(77,38,15,0.22)',
                   animation: 'slideUp 0.2s ease',
                 }}
               >
-                <ChevronDown size={16} />
+                <ChevronDown size={18} />
               </button>
             )}
 
             {/* Compose area */}
             <div style={{
-              padding: '10px 14px', background: '#fff',
-              borderTop: '1px solid #ede5de', flexShrink: 0,
+              padding: isMobile ? '14px 14px 16px' : '18px 22px 20px', background: 'rgba(255,255,255,0.84)',
+              borderTop: '1px solid rgba(115,75,42,0.10)', flexShrink: 0,
             }}>
               {replyError && (
                 <div style={{
-                  marginBottom: 8, padding: '7px 12px', borderRadius: 10,
-                  background: '#fef2f2', color: '#dc2626', fontSize: 12,
+                  marginBottom: 12, padding: '11px 14px', borderRadius: 16,
+                  background: '#fff3f2', color: '#b42318', fontSize: 12, border: '1px solid #fecaca',
                 }}>
                   {replyError}
                 </div>
@@ -2280,22 +2340,22 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
               {/* Draft previews */}
               {drafts.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
                   {drafts.map((d) => (
                     <div key={d.id} style={{
-                      position: 'relative', width: 72, height: 72,
-                      borderRadius: 10, overflow: 'hidden', border: '1px solid #ede5de',
+                      position: 'relative', width: 88, height: 88,
+                      borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(115,75,42,0.10)', background: '#fffaf5',
                     }}>
                       <button
                         onClick={() => { URL.revokeObjectURL(d.previewUrl); setDrafts((p) => p.filter((x) => x.id !== d.id)); }}
                         style={{
-                          position: 'absolute', top: 3, right: 3, zIndex: 1,
-                          width: 18, height: 18, borderRadius: '50%',
-                          background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer',
-                          color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          position: 'absolute', top: 6, right: 6, zIndex: 1,
+                          width: 22, height: 22, borderRadius: 999,
+                          background: 'rgba(35,20,11,0.72)', border: 'none', cursor: 'pointer',
+                          color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}
                       >
-                        <X size={10} />
+                        <X size={12} />
                       </button>
                       {d.type === 'image' ? (
                         <img src={d.previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -2308,10 +2368,10 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       ) : (
-                        <div style={{ width: '100%', height: '100%', background: '#f8f4f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '100%', height: '100%', background: '#fffaf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {(() => {
                             const PreviewIcon = getDraftPreviewIcon(d.type);
-                            return <PreviewIcon size={24} color="#8E6545" />;
+                            return <PreviewIcon size={24} color="#64320D" />;
                           })()}
                         </div>
                       )}
@@ -2322,28 +2382,29 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
               {!canAttach && drafts.length === 0 && (
                 <p style={{ fontSize: 11, color: '#a8957f', marginBottom: 8 }}>
-                  Attachment replies are currently unavailable in the realtime inbox.
+                  Attachment replies are unavailable for this platform in the realtime inbox.
                 </p>
               )}
 
               <div style={{
                 display: 'flex', alignItems: 'flex-end', gap: 8,
-                background: '#f8f4f1', borderRadius: 16,
-                padding: '6px 8px', border: '1px solid #ede5de',
+                background: '#fcf8f4', borderRadius: 24,
+                padding: '10px 10px 10px 12px', border: '1px solid rgba(115,75,42,0.10)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)',
               }}>
                 <input ref={fileRef} type="file" accept="image/*,video/*,audio/*" multiple style={{ display: 'none' }} onChange={onFileChange} />
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={!canAttach || sending}
                   style={{
-                    width: 34, height: 34, borderRadius: '50%',
-                    background: '#fff', border: '1px solid #ede5de',
+                    width: 42, height: 42, borderRadius: 16,
+                    background: '#fff', border: '1px solid rgba(115,75,42,0.10)',
                     cursor: canAttach && !sending ? 'pointer' : 'not-allowed',
                     color: '#8E6545', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, opacity: !canAttach ? 0.4 : 1,
+                    flexShrink: 0, opacity: !canAttach ? 0.45 : 1,
                   }}
                 >
-                  <Paperclip size={15} />
+                  <Paperclip size={17} />
                 </button>
 
                 <textarea
@@ -2352,18 +2413,18 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   onChange={(e) => {
                     setReplyText(e.target.value);
                     e.target.style.height = 'auto';
-                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 140)}px`;
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
                   }}
                   rows={1}
-                  placeholder="Write a reply… (Enter to send)"
+                  placeholder="Reply with text, image, video, or audio"
                   style={{
                     flex: 1, border: 'none', background: 'transparent',
-                    resize: 'none', fontSize: 13, color: '#1a0a00',
-                    outline: 'none', padding: '8px 0', minHeight: 36, maxHeight: 120,
-                    fontFamily: 'inherit', lineHeight: 1.5,
+                    resize: 'none', fontSize: 14, color: '#24140b',
+                    outline: 'none', padding: '9px 0', minHeight: 42, maxHeight: 140,
+                    fontFamily: 'inherit', lineHeight: 1.6,
                   }}
                 />
 
@@ -2371,51 +2432,54 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   onClick={() => void send()}
                   disabled={(!replyText.trim() && !drafts.length) || sending}
                   style={{
-                    width: 34, height: 34, borderRadius: '50%',
+                    width: 46, height: 46, borderRadius: 18,
                     background: (!replyText.trim() && !drafts.length) || sending
-                      ? '#f0dfd4'
-                      : 'linear-gradient(135deg, #64320D, #421C00)',
+                      ? '#e8ddd4'
+                      : '#4d260f',
                     border: 'none', cursor: 'pointer',
-                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, transition: 'all 0.15s',
-                    boxShadow: (!replyText.trim() && !drafts.length) ? 'none' : '0 2px 6px rgba(100,50,13,0.35)',
+                    boxShadow: (!replyText.trim() && !drafts.length) ? 'none' : '0 14px 24px rgba(77,38,15,0.18)',
                   }}
                 >
-                  <Send size={15} />
+                  <Send size={17} />
                 </button>
               </div>
 
-              <p style={{ fontSize: 10, color: '#c4b5a8', textAlign: 'center', marginTop: 6 }}>
-                Enter to send · Shift+Enter for new line
+              <p style={{ fontSize: 11, color: '#b09780', textAlign: 'center', marginTop: 8 }}>
+                Press Enter to send. Shift + Enter adds a new line.
               </p>
             </div>
-          </>
+          </div>
         ) : (
           /* Empty state */
-          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }}>
             <div style={{
-              width: 72, height: 72, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #64320D, #a05a2c)',
+              width: 84, height: 84, borderRadius: 28,
+              background: 'linear-gradient(180deg, #5a2d12 0%, #3d1f0d 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 16px 30px rgba(61,31,13,0.18)',
             }}>
-              <Bot size={36} color="#fff" />
+              <MessageSquare size={34} color="#fff4ec" />
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a0a00', margin: '0 0 6px' }}>Minsah Beauty Inbox</h2>
-              <p style={{ fontSize: 13, color: '#8E6545', margin: 0 }}>Select a conversation to start replying</p>
+            <div style={{ textAlign: 'center', maxWidth: 420 }}>
+              <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#9a7c63', fontWeight: 800, marginBottom: 10 }}>Realtime Customer Inbox</div>
+              <h2 style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.1, color: '#23120a', margin: '0 0 10px' }}>Select a conversation and start working the thread.</h2>
+              <p style={{ fontSize: 15, color: '#7a573f', margin: 0, lineHeight: 1.7 }}>Open a chat from the left rail or run a Facebook sync to pull fresh conversations into the inbox.</p>
             </div>
             {filterPlatform === 'facebook' && !syncingFb && (
               <button
                 onClick={() => void syncFacebook()}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '10px 20px', borderRadius: 20,
-                  background: 'linear-gradient(135deg, #64320D, #421C00)',
-                  color: '#fff', border: 'none', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600, marginTop: 4,
+                  padding: '12px 18px', borderRadius: 16,
+                  background: '#4d260f',
+                  color: '#fff4ec', border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 800, marginTop: 10,
+                  boxShadow: '0 14px 26px rgba(77,38,15,0.18)',
                 }}
               >
-                <RefreshCw size={14} />
+                <RefreshCw size={15} />
                 Refresh Facebook Inbox
               </button>
             )}
@@ -2436,18 +2500,18 @@ function renderMedia(
   if (media.type === 'image') {
     return (
       <a key={key} href={media.url} target="_blank" rel="noreferrer"
-        style={{ display: 'block', borderRadius: 10, overflow: 'hidden', border: `1px solid ${isIncoming ? '#f0e6df' : 'rgba(255,255,255,0.2)'}` }}>
+        style={{ display: 'block', borderRadius: 18, overflow: 'hidden', border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}`, boxShadow: isIncoming ? '0 8px 20px rgba(67,44,29,0.05)' : 'none' }}>
         <img src={media.thumbnail || media.url} alt={media.fileName || 'Image'}
-          style={{ maxHeight: 220, width: '100%', objectFit: 'cover', display: 'block' }} />
+          style={{ maxHeight: 260, width: '100%', objectFit: 'cover', display: 'block' }} />
       </a>
     );
   }
   if (media.type === 'video') {
     return (
-      <div key={key} style={{ borderRadius: 10, overflow: 'hidden', background: '#000', border: `1px solid ${isIncoming ? '#f0e6df' : 'rgba(255,255,255,0.2)'}` }}>
-        <video controls preload="metadata" poster={media.thumbnail} style={{ maxHeight: 220, width: '100%' }} src={media.url} />
+      <div key={key} style={{ borderRadius: 18, overflow: 'hidden', background: '#000', border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}` }}>
+        <video controls preload="metadata" poster={media.thumbnail} style={{ maxHeight: 260, width: '100%' }} src={media.url} />
         {media.fileName && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', fontSize: 11, color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.7)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 12px', fontSize: 11, color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.7)' }}>
             <VideoIcon size={12} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{media.fileName}</span>
           </div>
@@ -2457,19 +2521,19 @@ function renderMedia(
   }
   if (media.type === 'audio') {
     return (
-      <div key={key} style={{ borderRadius: 10, padding: '8px 10px', border: `1px solid ${isIncoming ? '#f0e6df' : 'rgba(255,255,255,0.2)'}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.8)', marginBottom: 6 }}>
+      <div key={key} style={{ borderRadius: 18, padding: '12px 12px', border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}`, background: isIncoming ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.8)', marginBottom: 8 }}>
           <FileAudio size={12} />
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{media.fileName || 'Audio'}</span>
         </div>
-        <audio controls preload="metadata" style={{ width: '100%', height: 32 }} src={media.url} />
+        <audio controls preload="metadata" style={{ width: '100%', height: 36 }} src={media.url} />
       </div>
     );
   }
   return (
     <a key={key} href={media.url} target="_blank" rel="noreferrer" style={{
-      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10,
-      border: `1px solid ${isIncoming ? '#f0e6df' : 'rgba(255,255,255,0.2)'}`,
+      display: 'flex', alignItems: 'center', gap: 8, padding: '12px 12px', borderRadius: 18,
+      border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}`,
       color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.8)',
       fontSize: 12, textDecoration: 'none',
     }}>
