@@ -1,14 +1,5 @@
 import { getConfig } from '../config'
 
-interface DebugTokenData {
-  data?: {
-    is_valid?: boolean
-    expires_at?: number
-    scopes?: string[]
-    app_id?: string
-  }
-}
-
 interface AccountsResponse {
   data?: Array<{
     id: string
@@ -36,19 +27,62 @@ export function isTokenHealthy(): boolean {
 
 async function checkTokenValidity(token: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `${getGraphApiBase()}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`
-    )
+    const config = getConfig()
+    const response = await fetch(`${getGraphApiBase()}/${config.FB_PAGE_ID}?fields=id`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
 
     if (!response.ok) {
       return false
     }
 
-    const data = (await response.json()) as DebugTokenData
-    return data.data?.is_valid === true
+    const data = (await response.json()) as { id?: string; error?: unknown }
+    return Boolean(data.id) && !data.error
   } catch {
     return false
   }
+}
+
+async function fetchAccountsWithSystemUserToken(
+  systemUserToken: string
+): Promise<AccountsResponse | null> {
+  const primaryResponse = await fetch(
+    `${getGraphApiBase()}/me/accounts?access_token=${encodeURIComponent(systemUserToken)}`
+  )
+
+  if (primaryResponse.ok) {
+    return (await primaryResponse.json()) as AccountsResponse
+  }
+
+  const meResponse = await fetch(
+    `${getGraphApiBase()}/me?access_token=${encodeURIComponent(systemUserToken)}`
+  )
+
+  if (!meResponse.ok) {
+    const body = await primaryResponse.text().catch(() => '')
+    console.error('[token-health] /me/accounts failed:', body || primaryResponse.statusText)
+    return null
+  }
+
+  const me = (await meResponse.json()) as { id?: string }
+  if (!me.id) {
+    console.error('[token-health] system user ID lookup failed')
+    return null
+  }
+
+  const fallbackResponse = await fetch(
+    `${getGraphApiBase()}/${me.id}/accounts?access_token=${encodeURIComponent(systemUserToken)}`
+  )
+
+  if (!fallbackResponse.ok) {
+    const body = await fallbackResponse.text().catch(() => '')
+    console.error('[token-health] fallback accounts lookup failed:', body || fallbackResponse.statusText)
+    return null
+  }
+
+  return (await fallbackResponse.json()) as AccountsResponse
 }
 
 async function refreshPageToken(): Promise<string | null> {
@@ -60,17 +94,10 @@ async function refreshPageToken(): Promise<string | null> {
   }
 
   try {
-    const response = await fetch(
-      `${getGraphApiBase()}/me/accounts?access_token=${encodeURIComponent(config.FB_SYSTEM_USER_TOKEN)}`
-    )
-
-    if (!response.ok) {
-      const body = await response.text().catch(() => '')
-      console.error('[token-health] /me/accounts failed:', body || response.statusText)
+    const data = await fetchAccountsWithSystemUserToken(config.FB_SYSTEM_USER_TOKEN)
+    if (!data) {
       return null
     }
-
-    const data = (await response.json()) as AccountsResponse
     const page = data.data?.find((entry) => entry.id === config.FB_PAGE_ID)
 
     if (!page?.access_token) {

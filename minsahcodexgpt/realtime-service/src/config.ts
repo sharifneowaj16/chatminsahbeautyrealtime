@@ -5,6 +5,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
+  FB_APP_ID: z.string().optional(),
   FB_APP_SECRET: z.string().min(10, 'FB_APP_SECRET is required'),
   FB_VERIFY_TOKEN: z.string().min(8, 'FB_VERIFY_TOKEN is required'),
   FB_PAGE_ACCESS_TOKEN: z.string().min(10, 'FB_PAGE_ACCESS_TOKEN is required'),

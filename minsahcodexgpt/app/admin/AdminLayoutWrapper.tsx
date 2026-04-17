@@ -20,9 +20,7 @@ import {
   X,
   ChevronDown,
   Search,
-  Bell,
   Globe,
-  MessageCircle,
   MessageSquare,
   Smartphone,
   Mail,
@@ -131,7 +129,6 @@ const menuItems: MenuItem[] = [
     href: '/admin/inbox',
     icon: MessageSquare,
     permission: PERMISSIONS.CONTENT_MANAGE,
-    badge: 0,
   },
   {
     title: 'Content',
@@ -267,7 +264,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
     );
   };
 
-  const filteredMenuItems = menuItems.filter(item => !item.permission || hasPermission(item.permission));
+  const filteredMenuItems = useMemo(
+    () => menuItems.filter(item => !item.permission || hasPermission(item.permission)),
+    [hasPermission]
+  );
   const resolvedMenuItems = useMemo(
     () =>
       filteredMenuItems.map((item) =>

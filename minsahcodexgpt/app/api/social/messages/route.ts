@@ -49,6 +49,10 @@ type MessageCursor = {
   timestamp: string
 }
 
+function getFacebookPageId() {
+  return process.env.FACEBOOK_PAGE_ID ?? process.env.FB_PAGE_ID
+}
+
 function clampLimit(value: string | null, fallback = 300) {
   const parsed = Number.parseInt(value ?? '', 10)
   if (Number.isNaN(parsed) || parsed <= 0) {
@@ -272,7 +276,7 @@ async function getFacebookConversationThread(
   messageLimit: number,
   cursor: MessageCursor | null
 ) {
-  const pageId = process.env.FACEBOOK_PAGE_ID
+  const pageId = getFacebookPageId()
 
   const conversation = await prisma.fbConversation.findFirst({
     where: {
@@ -370,7 +374,7 @@ async function getFacebookConversationThread(
 }
 
 async function getFacebookMessages(limit: number, unreadOnly: boolean) {
-  const pageId = process.env.FACEBOOK_PAGE_ID
+  const pageId = getFacebookPageId()
 
   const conversations = await prisma.fbConversation.findMany({
     where: {
@@ -422,7 +426,7 @@ async function getFacebookConversations(
   unreadOnly: boolean,
   cursor: ConversationCursor | null
 ) {
-  const pageId = process.env.FACEBOOK_PAGE_ID
+  const pageId = getFacebookPageId()
 
   const where = {
     ...(pageId ? { pageId } : {}),
@@ -561,7 +565,7 @@ async function getLegacyMessages(
 }
 
 async function getUnreadCountSummary(platform: string | null) {
-  const pageId = process.env.FACEBOOK_PAGE_ID
+  const pageId = getFacebookPageId()
   const includeFacebook = !platform || platform === 'all' || platform === 'facebook'
   const includeLegacy = !platform || platform === 'all' || platform !== 'facebook'
   const [facebookUnread, legacyUnread] = await Promise.all([
@@ -695,7 +699,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { id, conversationId, platform, markAll } = await request.json()
-    const pageId = process.env.FACEBOOK_PAGE_ID
+    const pageId = getFacebookPageId()
 
     if (markAll) {
       if (!platform || platform === 'all' || platform === 'facebook') {
