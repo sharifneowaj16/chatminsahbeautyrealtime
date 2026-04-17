@@ -560,6 +560,38 @@ async function getLegacyMessages(
   }
 }
 
+async function getUnreadCountSummary(platform: string | null) {
+  const pageId = process.env.FACEBOOK_PAGE_ID
+  const includeFacebook = !platform || platform === 'all' || platform === 'facebook'
+  const includeLegacy = !platform || platform === 'all' || platform !== 'facebook'
+  const [facebookUnread, legacyUnread] = await Promise.all([
+    prisma.fbConversation.aggregate({
+      where: {
+        ...(includeFacebook ? {} : { id: '__none__' }),
+        ...(pageId ? { pageId } : {}),
+      },
+      _sum: {
+        unreadCount: true,
+      },
+    }),
+    prisma.socialMessage.count({
+      where: {
+        ...(includeLegacy
+          ? platform && platform !== 'all' && platform !== 'facebook'
+            ? { platform }
+            : {}
+          : { platform: '__none__' }),
+        isRead: false,
+        isIncoming: true,
+      },
+    }),
+  ])
+
+  return {
+    unreadCount: (facebookUnread._sum.unreadCount ?? 0) + legacyUnread,
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const admin = await getVerifiedAdmin(request)
@@ -569,6 +601,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = request.nextUrl
     const platform = searchParams.get('platform')
+    const mode = searchParams.get('mode')
     const unreadOnly = searchParams.get('unread') === 'true'
     const limit = clampLimit(searchParams.get('limit'))
     const conversationLimit = clampLimit(searchParams.get('conversationLimit'), 40)
@@ -578,6 +611,38 @@ export async function GET(request: NextRequest) {
       searchParams.get('conversationCursor')
     )
     const messageCursor = decodeMessageCursor(searchParams.get('messageCursor'))
+
+    if (mode === 'unread_count') {
+      return NextResponse.json(await getUnreadCountSummary(platform))
+    }
+
+    if (mode === 'conversations') {
+      const data = await getFacebookConversations(
+        conversationLimit,
+        unreadOnly,
+        conversationCursor
+      )
+      return NextResponse.json({
+        conversations: data.conversations,
+        unreadCount: data.unreadCount,
+        pageInfo: data.pageInfo,
+      })
+    }
+
+    if (conversationId && (!platform || platform === 'facebook')) {
+      const data = await getFacebookConversationThread(
+        conversationId,
+        unreadOnly,
+        messageLimit,
+        messageCursor
+      )
+      return NextResponse.json({
+        messages: data.messages,
+        unreadCount: data.unreadCount,
+        conversation: data.conversation,
+        pageInfo: data.pageInfo,
+      })
+    }
 
     if (platform === 'facebook') {
       const data = conversationId

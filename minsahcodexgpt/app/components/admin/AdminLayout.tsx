@@ -30,7 +30,8 @@ import {
   Tag,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare
 } from 'lucide-react';
 import { Star as StarIconSolid } from 'lucide-react';
 
@@ -62,6 +63,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [adminUser, setAdminUser] = useState<AdminUser>({
     name: 'Admin User',
     email: 'admin@minsahbeauty.com',
@@ -72,6 +74,40 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadInboxUnreadCount = async () => {
+      try {
+        const response = await fetch('/api/social/messages?mode=unread_count', {
+          cache: 'no-store',
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { unreadCount?: number };
+        if (!cancelled) {
+          setInboxUnreadCount(data.unreadCount ?? 0);
+        }
+      } catch {
+        // Ignore badge refresh errors.
+      }
+    };
+
+    void loadInboxUnreadCount();
+    const interval = window.setInterval(() => {
+      void loadInboxUnreadCount();
+    }, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [pathname]);
 
   // Navigation structure
   const navigation: NavigationItem[] = [
@@ -107,6 +143,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: Archive,
       current: pathname.startsWith('/admin/inventory'),
       badge: 3, // Low stock alerts
+    },
+    {
+      name: 'Inbox',
+      href: '/admin/inbox',
+      icon: MessageSquare,
+      current: pathname.startsWith('/admin/inbox'),
+      badge: inboxUnreadCount || undefined,
     },
     {
       name: 'Marketing',

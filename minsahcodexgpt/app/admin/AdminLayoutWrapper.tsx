@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
@@ -23,6 +23,7 @@ import {
   Bell,
   Globe,
   MessageCircle,
+  MessageSquare,
   Smartphone,
   Mail,
   Megaphone,
@@ -117,7 +118,6 @@ const menuItems: MenuItem[] = [
     children: [
       { title: 'Overview', href: '/admin/marketing' },
       { title: 'Social Media', href: '/admin/marketing?tab=social', icon: Globe },
-      { title: 'Social Inbox', href: '/admin/inbox', icon: MessageCircle, badge: 5 },
       { title: 'WhatsApp Business', href: '/admin/marketing?tab=whatsapp', icon: Smartphone },
       { title: 'Email Marketing', href: '/admin/marketing?tab=email', icon: Mail },
       { title: 'SMS Marketing', href: '/admin/marketing?tab=sms', icon: Smartphone },
@@ -125,6 +125,13 @@ const menuItems: MenuItem[] = [
       { title: 'Coupons', href: '/admin/coupons' },
       { title: 'Promotions', href: '/admin/promotions' },
     ],
+  },
+  {
+    title: 'Inbox',
+    href: '/admin/inbox',
+    icon: MessageSquare,
+    permission: PERMISSIONS.CONTENT_MANAGE,
+    badge: 0,
   },
   {
     title: 'Content',
@@ -163,6 +170,7 @@ interface AdminLayoutWrapperProps {
 export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   // const [notifications, setNotifications] = useState(5); <-- এটি আর দরকার নেই কারণ AdminNotificationBell নিজেই নোটিফিকেশন হ্যান্ডেল করবে
   const router = useRouter();
   const pathname = usePathname();
@@ -190,6 +198,44 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
       setExpandedItems([activeItem.title]);
     }
   }, [pathname, user, isLoading]);
+
+  useEffect(() => {
+    if (!user || isLoading) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadInboxUnreadCount = async () => {
+      try {
+        const response = await fetch('/api/social/messages?mode=unread_count', {
+          cache: 'no-store',
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { unreadCount?: number };
+        if (!cancelled) {
+          setInboxUnreadCount(data.unreadCount ?? 0);
+        }
+      } catch {
+        // Ignore badge refresh errors.
+      }
+    };
+
+    void loadInboxUnreadCount();
+    const interval = window.setInterval(() => {
+      void loadInboxUnreadCount();
+    }, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [isLoading, pathname, user]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -222,6 +268,15 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   };
 
   const filteredMenuItems = menuItems.filter(item => !item.permission || hasPermission(item.permission));
+  const resolvedMenuItems = useMemo(
+    () =>
+      filteredMenuItems.map((item) =>
+        item.title === 'Inbox'
+          ? { ...item, badge: inboxUnreadCount || undefined }
+          : item
+      ),
+    [filteredMenuItems, inboxUnreadCount]
+  );
 
   const isActive = (href: string) => {
     if (href === '/admin') {
@@ -288,7 +343,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {filteredMenuItems.map((item) => {
+            {resolvedMenuItems.map((item) => {
               const isExpanded = expandedItems.includes(item.title);
               const hasChildren = item.children && item.children.length > 0;
               const active = isActive(item.href);

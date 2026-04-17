@@ -15,6 +15,7 @@ import {
   disconnectFacebookReplayQueue,
   startFacebookReplayWorker,
 } from './facebook/replay-queue'
+import { startTokenHealthCheck } from './facebook/token-health'
 import { disconnectRedis } from './realtime/pubsub'
 import { disconnectDistributedLockRedis } from './realtime/distributed-lock'
 import { InboxWsServer } from './realtime/ws-server'
@@ -36,6 +37,7 @@ async function main() {
 
   await wsServer.subscribeToRedis()
   console.log('[server] realtime service ready')
+  const stopTokenHealthCheck = startTokenHealthCheck()
   const stopFacebookSync = startFacebookInboxSyncScheduler()
   const stopFacebookMediaRetry = startFacebookMediaRetryWorker()
   const stopOutgoingRetry = startOutgoingRetryWorker()
@@ -50,6 +52,7 @@ async function main() {
 
     isShuttingDown = true
     console.log(`[server] ${signal} received, shutting down`)
+    stopTokenHealthCheck()
     stopFacebookSync()
     stopFacebookMediaRetry()
     stopOutgoingRetry()

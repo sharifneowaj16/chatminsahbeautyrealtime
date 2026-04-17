@@ -4,6 +4,7 @@ import { acquireDistributedLock } from '../realtime/distributed-lock'
 import { buildIncomingMessageParts } from './attachments'
 import { processIncomingInboxMessage, processOutgoingInboxMessage } from './inbox-processor'
 import { scheduleInboxReplayJob } from './replay-queue'
+import { getCurrentPageToken } from './token-health'
 
 interface FacebookParticipant {
   id: string
@@ -83,8 +84,17 @@ let lastSyncStatus: {
   active: false,
 }
 
-async function fetchGraphPage<T>(url: string): Promise<GraphPage<T>> {
-  const response = await fetch(url)
+function getGraphApiBase(): string {
+  const config = getConfig()
+  return `https://graph.facebook.com/${config.FB_GRAPH_API_VERSION}`
+}
+
+async function fetchGraphPage<T>(url: string, accessToken: string): Promise<GraphPage<T>> {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
 
   if (!response.ok) {
     throw new Error(`Facebook Graph API request failed with status ${response.status}`)
@@ -94,14 +104,15 @@ async function fetchGraphPage<T>(url: string): Promise<GraphPage<T>> {
 }
 
 async function fetchAllConversations(accessToken: string): Promise<FacebookConversation[]> {
+  const config = getConfig()
   const conversations: FacebookConversation[] = []
   let url =
-    `https://graph.facebook.com/v19.0/me/conversations` +
+    `${getGraphApiBase()}/${config.FB_PAGE_ID}/conversations` +
     `?fields=id,participants` +
-    `&limit=100&access_token=${encodeURIComponent(accessToken)}`
+    `&limit=100`
 
   while (url) {
-    const page = await fetchGraphPage<FacebookConversation>(url)
+    const page = await fetchGraphPage<FacebookConversation>(url, accessToken)
     conversations.push(...(page.data ?? []))
     url = page.paging?.next ?? ''
   }
@@ -120,12 +131,12 @@ async function fetchAllMessages(
     since !== null ? Math.max(0, Math.floor((since.getTime() - overlapMs) / 1000)) : null
   const sinceQuery = sinceSeconds !== null ? `&since=${sinceSeconds}` : ''
   let url =
-    `https://graph.facebook.com/v19.0/${conversationId}/messages` +
+    `${getGraphApiBase()}/${conversationId}/messages` +
     `?fields=id,message,from,created_time,attachments{type,payload,file_url,image_data,video_data,audio_data}` +
-    `&limit=100${sinceQuery}&access_token=${encodeURIComponent(accessToken)}`
+    `&limit=100${sinceQuery}`
 
   while (url) {
-    const page = await fetchGraphPage<FacebookMessage>(url)
+    const page = await fetchGraphPage<FacebookMessage>(url, accessToken)
     messages.push(...(page.data ?? []))
     url = page.paging?.next ?? ''
   }
@@ -230,11 +241,12 @@ async function runFacebookInboxSync(
   startedAt: Date
 ): Promise<SyncFacebookInboxResult> {
   const config = getConfig()
+  const accessToken = getCurrentPageToken()
   const mode = options.mode ?? 'incremental'
   const publishEvents = options.publishEvents ?? mode === 'incremental'
   const reason = options.reason ?? mode
 
-  const conversations = await fetchAllConversations(config.FB_PAGE_ACCESS_TOKEN)
+  const conversations = await fetchAllConversations(accessToken)
   const customerThreadIds = conversations
     .map((conversation) =>
       conversation.participants?.data?.find((participant) => participant.id !== config.FB_PAGE_ID)?.id
@@ -261,7 +273,7 @@ async function runFacebookInboxSync(
     try {
       messages = await fetchAllMessages(
         conversation.id,
-        config.FB_PAGE_ACCESS_TOKEN,
+        accessToken,
         cursorByThreadId.get(customer.id) ?? null,
         config.FB_SYNC_MESSAGE_OVERLAP_MS
       )

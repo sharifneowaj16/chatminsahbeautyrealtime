@@ -1,6 +1,5 @@
 import { getConfig } from '../config'
-
-const GRAPH_API_BASE = 'https://graph.facebook.com/v19.0'
+import { getCurrentPageToken } from './token-health'
 
 export class GraphApiError extends Error {
   constructor(
@@ -30,11 +29,15 @@ export interface MessengerProfile {
   name: string | null
 }
 
+function getGraphApiBase(): string {
+  return `https://graph.facebook.com/${getConfig().FB_GRAPH_API_VERSION}`
+}
+
 export async function sendMessengerText(
   recipientPsid: string,
   text: string
 ): Promise<SendMessageResult> {
-  const { FB_PAGE_ACCESS_TOKEN } = getConfig()
+  const FB_PAGE_ACCESS_TOKEN = getCurrentPageToken()
 
   return sendMessengerPayload(FB_PAGE_ACCESS_TOKEN, recipientPsid, {
     message: { text },
@@ -45,7 +48,7 @@ export async function sendMessengerAttachment(
   recipientPsid: string,
   attachment: MessengerAttachmentInput
 ): Promise<SendMessageResult> {
-  const { FB_PAGE_ACCESS_TOKEN } = getConfig()
+  const FB_PAGE_ACCESS_TOKEN = getCurrentPageToken()
 
   return sendMessengerPayload(FB_PAGE_ACCESS_TOKEN, recipientPsid, {
     message: {
@@ -88,7 +91,7 @@ async function sendMessengerPayload(
   recipientPsid: string,
   payload: Record<string, unknown>
 ): Promise<SendMessageResult> {
-  const response = await fetch(`${GRAPH_API_BASE}/me/messages`, {
+  const response = await fetch(`${getGraphApiBase()}/me/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -127,9 +130,9 @@ function normalizeAttachmentType(type: MessengerAttachmentInput['type']): Messen
 }
 
 export async function replyToComment(commentId: string, text: string): Promise<{ id: string }> {
-  const { FB_PAGE_ACCESS_TOKEN } = getConfig()
+  const FB_PAGE_ACCESS_TOKEN = getCurrentPageToken()
 
-  const response = await fetch(`${GRAPH_API_BASE}/${commentId}/comments`, {
+  const response = await fetch(`${getGraphApiBase()}/${commentId}/comments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -153,11 +156,12 @@ export async function replyToComment(commentId: string, text: string): Promise<{
 }
 
 export async function getMessengerProfile(psid: string): Promise<MessengerProfile> {
-  const { FB_PAGE_ACCESS_TOKEN } = getConfig()
-
-  const response = await fetch(
-    `${GRAPH_API_BASE}/${psid}?fields=name&access_token=${encodeURIComponent(FB_PAGE_ACCESS_TOKEN)}`
-  )
+  const FB_PAGE_ACCESS_TOKEN = getCurrentPageToken()
+  const response = await fetch(`${getGraphApiBase()}/${psid}?fields=name`, {
+    headers: {
+      Authorization: `Bearer ${FB_PAGE_ACCESS_TOKEN}`,
+    },
+  })
 
   const body = (await response.json().catch(() => null)) as
     | { id?: string; name?: string; error?: { message?: string } }

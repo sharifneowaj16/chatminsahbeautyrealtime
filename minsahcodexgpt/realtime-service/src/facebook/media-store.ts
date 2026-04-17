@@ -4,6 +4,7 @@ import { Client as MinioClient } from 'minio'
 import path from 'path'
 import { getConfig } from '../config'
 import type { MessengerAttachmentType } from './attachments'
+import { getCurrentPageToken } from './token-health'
 
 const DEFAULT_EXTENSION_BY_TYPE: Record<MessengerAttachmentType, string> = {
   image: '.jpg',
@@ -236,7 +237,7 @@ export async function persistIncomingFacebookMedia(input: {
   try {
     const response = await fetch(sourceUrl, {
       headers: {
-        Authorization: `Bearer ${getConfig().FB_PAGE_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${getCurrentPageToken()}`,
       },
     })
 
