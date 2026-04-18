@@ -5,6 +5,7 @@ COPY package*.json ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN npx prisma generate --schema prisma/schema.prisma
 
 COPY tsconfig.json ./
@@ -22,9 +23,10 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma/generated ./prisma/generated
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 
 EXPOSE 3001
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
   CMD wget -qO- http://localhost:3001/health || exit 1
 
 CMD ["node", "dist/index.js"]
