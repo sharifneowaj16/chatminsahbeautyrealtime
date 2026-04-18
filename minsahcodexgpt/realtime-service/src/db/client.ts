@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../../prisma/generated/prisma/client'
 
@@ -12,7 +13,7 @@ function createPrismaClient(): PrismaClient {
     throw new Error('DATABASE_URL environment variable is not set')
   }
 
-  const adapter = new PrismaPg(connectionString)
+  const adapter = new PrismaPg({ connectionString })
   return new PrismaClient({ adapter })
 }
 
