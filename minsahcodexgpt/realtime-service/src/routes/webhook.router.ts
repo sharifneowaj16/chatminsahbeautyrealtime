@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express'
-import type { Prisma } from '../../prisma/generated/prisma'
+import type { Prisma } from '../../prisma/generated/prisma/client'
 import { getConfig } from '../config'
 import {
   createWebhookAudit,
