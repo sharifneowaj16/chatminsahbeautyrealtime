@@ -27,9 +27,13 @@ COPY --from=builder /app/prisma/generated ./prisma/generated
 COPY prisma.config.ts ./
 COPY prisma ./prisma
 
+# entrypoint: migrate তারপর start
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
   CMD wget -qO- http://localhost:3001/health || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["./docker-entrypoint.sh"]
