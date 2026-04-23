@@ -688,6 +688,7 @@ export default function SocialMediaInboxChat() {
       params.set('platform', 'facebook');
       params.set('conversationId', conversationId);
       params.set('messageLimit', String(THREAD_MESSAGE_LIMIT));
+      params.set('unreadSummary', 'false');
       if (options?.cursor) {
         params.set('messageCursor', options.cursor);
       }
@@ -1800,9 +1801,9 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
   return (
     <div style={{
       display: 'flex', height: '100%', width: '100%', overflow: 'hidden',
-      fontFamily: "'Manrope', 'Segoe UI', sans-serif",
-      background: 'radial-gradient(circle at top left, #f6eee7 0%, #f1e5db 28%, #ede6df 52%, #f7f4ef 100%)',
-      color: '#24140b',
+      fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
+      background: 'radial-gradient(circle at top left, #e8f5e9 0%, #f1f8e9 35%, #f6fbf7 100%)',
+      color: '#1f2937',
     }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
@@ -1832,7 +1833,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
       >
         {/* Brand header */}
         <div style={{
-          background: 'linear-gradient(160deg, rgba(74,35,12,0.96) 0%, rgba(48,22,9,0.96) 62%, rgba(98,54,28,0.94) 100%)',
+          background: 'linear-gradient(160deg, rgba(7,94,84,0.96) 0%, rgba(18,140,126,0.94) 62%, rgba(37,211,102,0.9) 100%)',
           padding: '18px 18px 16px',
           borderRadius: 28,
           boxShadow: '0 20px 45px rgba(47, 24, 10, 0.20)',
@@ -1992,8 +1993,8 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
             <button key={tab.id} onClick={() => setFilterPlatform(tab.id)} style={{
               flex: 1, padding: '10px 8px', border: '1px solid rgba(115,75,42,0.10)', borderRadius: 14, cursor: 'pointer',
               fontSize: 12, fontWeight: 700, transition: 'all 0.15s',
-              background: filterPlatform === tab.id ? '#4d260f' : '#fff',
-              color: filterPlatform === tab.id ? '#fff4ec' : '#8d684e',
+              background: filterPlatform === tab.id ? '#128C7E' : '#fff',
+              color: filterPlatform === tab.id ? '#ffffff' : '#4b5563',
               boxShadow: filterPlatform === tab.id ? '0 10px 20px rgba(77,38,15,0.18)' : 'none',
             }}>
               {tab.label}
@@ -2074,7 +2075,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                     {conv.unreadCount > 0 && (
                       <span style={{
                         minWidth: 22, height: 22, borderRadius: 999,
-                        background: '#4d260f', color: '#fff4ec',
+                        background: '#128C7E', color: '#ffffff',
                         fontSize: 11, fontWeight: 800,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         padding: '0 7px', flexShrink: 0,
@@ -2290,12 +2291,12 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                               ? `${sameSenderAsPrev ? 12 : 24}px 24px 24px ${sameSenderAsNext ? 12 : 24}px`
                               : `24px ${sameSenderAsPrev ? 12 : 24}px ${sameSenderAsNext ? 12 : 24}px 24px`,
                             background: msg.isIncoming
-                              ? 'linear-gradient(180deg, #ffffff 0%, #fdf8f3 100%)'
-                              : 'linear-gradient(180deg, #562b12 0%, #3f1f0e 100%)',
-                            color: msg.isIncoming ? '#23140d' : '#fff7f0',
+                              ? 'linear-gradient(180deg, #ffffff 0%, #f6f7f7 100%)'
+                              : 'linear-gradient(180deg, #DCF8C6 0%, #d2f5b2 100%)',
+                            color: '#111827',
                             boxShadow: msg.isIncoming
                               ? '0 10px 26px rgba(67,44,29,0.06)'
-                              : '0 14px 30px rgba(61,29,10,0.18)',
+                              : '0 10px 24px rgba(18,140,126,0.12)',
                             border: `1px solid ${msg.isIncoming ? 'rgba(115,75,42,0.09)' : 'rgba(255,255,255,0.08)'}`,
                           }}>
                             {/* Type badge */}
@@ -2371,7 +2372,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 style={{
                   position: 'absolute', bottom: isMobile ? 112 : 126, right: isMobile ? 20 : 34,
                   width: 42, height: 42, borderRadius: 16,
-                  background: '#4d260f', color: '#fff4ec', border: 'none', cursor: 'pointer',
+                  background: '#128C7E', color: '#ffffff', border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 14px 28px rgba(77,38,15,0.22)',
                   animation: 'slideUp 0.2s ease',
@@ -2492,7 +2493,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                     width: 46, height: 46, borderRadius: 18,
                     background: (!replyText.trim() && !drafts.length) || sending
                       ? '#e8ddd4'
-                      : '#4d260f',
+                      : '#128C7E',
                     border: 'none', cursor: 'pointer',
                     color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, transition: 'all 0.15s',
@@ -2530,8 +2531,8 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '12px 18px', borderRadius: 16,
-                  background: '#4d260f',
-                  color: '#fff4ec', border: 'none', cursor: 'pointer',
+                  background: '#128C7E',
+                  color: '#ffffff', border: 'none', cursor: 'pointer',
                   fontSize: 13, fontWeight: 800, marginTop: 10,
                   boxShadow: '0 14px 26px rgba(77,38,15,0.18)',
                 }}

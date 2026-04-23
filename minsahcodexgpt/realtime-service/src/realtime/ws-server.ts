@@ -6,6 +6,7 @@ import {
   getRedisSubscriber,
   INBOX_EVENTS_CHANNEL,
   publishInboxEvent,
+  registerLocalInboxListener,
 } from './pubsub'
 import { verifyWsAccessToken } from './ws-auth'
 
@@ -30,9 +31,14 @@ export class InboxWsServer {
   private readonly wss: WebSocketServer
   private readonly clients = new Set<WebSocket>()
   private readonly clientState = new WeakMap<WebSocket, ClientState>()
+  private readonly unregisterLocalListener: () => void
   private subscribed = false
 
   constructor(server: http.Server) {
+    this.unregisterLocalListener = registerLocalInboxListener((event) => {
+      this.broadcast(event)
+    })
+
     this.wss = new WebSocketServer({
       server,
       path: '/ws',
@@ -175,6 +181,7 @@ export class InboxWsServer {
   }
 
   async close(): Promise<void> {
+    this.unregisterLocalListener()
     await new Promise<void>((resolve) => {
       for (const client of this.clients) {
         this.clientState.delete(client)

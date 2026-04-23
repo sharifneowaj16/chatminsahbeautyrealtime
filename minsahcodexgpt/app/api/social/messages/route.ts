@@ -274,7 +274,8 @@ async function getFacebookConversationThread(
   conversationId: string,
   unreadOnly: boolean,
   messageLimit: number,
-  cursor: MessageCursor | null
+  cursor: MessageCursor | null,
+  includeUnreadSummary: boolean
 ) {
   const pageId = getFacebookPageId()
 
@@ -315,19 +316,21 @@ async function getFacebookConversationThread(
     },
   })
 
-  const unreadCountResult = await prisma.fbConversation.aggregate({
-    where: {
-      ...(pageId ? { pageId } : {}),
-    },
-    _sum: {
-      unreadCount: true,
-    },
-  })
+  const unreadCountResult = includeUnreadSummary
+    ? await prisma.fbConversation.aggregate({
+        where: {
+          ...(pageId ? { pageId } : {}),
+        },
+        _sum: {
+          unreadCount: true,
+        },
+      })
+    : null
 
   if (!conversation) {
     return {
       messages: [],
-      unreadCount: unreadCountResult._sum.unreadCount ?? 0,
+      unreadCount: includeUnreadSummary ? (unreadCountResult?._sum.unreadCount ?? 0) : 0,
       conversation: null,
       pageInfo: {
         nextMessageCursor: null,
@@ -353,7 +356,7 @@ async function getFacebookConversationThread(
 
   return {
     messages,
-    unreadCount: unreadCountResult._sum.unreadCount ?? 0,
+    unreadCount: includeUnreadSummary ? (unreadCountResult?._sum.unreadCount ?? 0) : 0,
     conversation: mapFacebookConversationRecord({
       ...conversation,
       messages:
@@ -611,6 +614,7 @@ export async function GET(request: NextRequest) {
     const conversationLimit = clampLimit(searchParams.get('conversationLimit'), 40)
     const messageLimit = clampLimit(searchParams.get('messageLimit'), 250)
     const conversationId = searchParams.get('conversationId')
+    const includeUnreadSummary = searchParams.get('unreadSummary') === 'true'
     const conversationCursor = decodeConversationCursor(
       searchParams.get('conversationCursor')
     )
@@ -638,7 +642,8 @@ export async function GET(request: NextRequest) {
         conversationId,
         unreadOnly,
         messageLimit,
-        messageCursor
+        messageCursor,
+        includeUnreadSummary
       )
       return NextResponse.json({
         messages: data.messages,
@@ -654,7 +659,8 @@ export async function GET(request: NextRequest) {
             conversationId,
             unreadOnly,
             messageLimit,
-            messageCursor
+            messageCursor,
+            includeUnreadSummary
           )
         : await getFacebookConversations(
             conversationLimit,

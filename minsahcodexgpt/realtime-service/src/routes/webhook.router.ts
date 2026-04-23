@@ -56,37 +56,76 @@ webhookRouter.post('/facebook', async (req: Request, res: Response) => {
     signatureValid: true,
     eventCount: events.length,
   })
+
+  // Meta should get a fast ACK to avoid retries and duplicate pressure.
+  res.status(200).json({ ok: true, accepted: events.length })
+
+  void processWebhookBatch({
+    events,
+    auditId: audit.id,
+  })
+})
+
+async function processWebhookBatch(input: {
+  events: ParsedFbEvent[]
+  auditId: string
+}): Promise<void> {
   let processedEvents = 0
   let failedEvents = 0
   let lastError: string | undefined
 
-  for (const event of events) {
-    try {
+  const settledEvents = await Promise.allSettled(
+    input.events.map(async (event) => {
       await processEvent(event)
+      return event
+    })
+  )
+
+  for (const settled of settledEvents) {
+    if (settled.status === 'fulfilled') {
       processedEvents += 1
-    } catch (error) {
-      console.error('[webhook] event processing error', { event, error })
-      failedEvents += 1
-      lastError = error instanceof Error ? error.message : 'Webhook event processing failed'
-      await scheduleReplayForEvent(event)
+      continue
     }
+
+    failedEvents += 1
+    const reason = settled.reason
+    lastError =
+      reason instanceof Error ? reason.message : 'Webhook event processing failed'
+    console.error('[webhook] event processing error', {
+      error: reason,
+    })
   }
 
-  await finalizeWebhookAudit({
-    id: audit.id,
-    processingStatus:
-      failedEvents === 0
-        ? 'PROCESSED'
-        : processedEvents > 0
-          ? 'PARTIAL_ERROR'
-          : 'FAILED',
-    processedEvents,
-    failedEvents,
-    error: lastError,
-  })
+  if (failedEvents > 0) {
+    await Promise.allSettled(
+      input.events.map(async (event, index) => {
+        if (settledEvents[index]?.status === 'rejected') {
+          await scheduleReplayForEvent(event)
+        }
+      })
+    )
+  }
 
-  res.status(200).json({ ok: true, processed: events.length })
-})
+  try {
+    await finalizeWebhookAudit({
+      id: input.auditId,
+      processingStatus:
+        failedEvents === 0
+          ? 'PROCESSED'
+          : processedEvents > 0
+            ? 'PARTIAL_ERROR'
+            : 'FAILED',
+      processedEvents,
+      failedEvents,
+      error: lastError,
+    })
+  } catch (error) {
+    console.error('[webhook] audit finalize failed', {
+      auditId: input.auditId,
+      error,
+    })
+  }
+}
 
 async function processEvent(event: ParsedFbEvent): Promise<void> {
   if (event.type === 'incoming_message') {

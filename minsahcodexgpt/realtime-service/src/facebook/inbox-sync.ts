@@ -103,8 +103,12 @@ async function fetchGraphPage<T>(url: string, accessToken: string): Promise<Grap
   return (await response.json()) as GraphPage<T>
 }
 
-async function fetchAllConversations(accessToken: string): Promise<FacebookConversation[]> {
+async function fetchAllConversations(
+  accessToken: string,
+  mode: 'full' | 'incremental'
+): Promise<FacebookConversation[]> {
   const config = getConfig()
+  const incrementalLimit = Math.max(10, config.FB_SYNC_INCREMENTAL_CONVERSATION_LIMIT)
   const conversations: FacebookConversation[] = []
   let url =
     `${getGraphApiBase()}/${config.FB_PAGE_ID}/conversations` +
@@ -114,7 +118,14 @@ async function fetchAllConversations(accessToken: string): Promise<FacebookConve
   while (url) {
     const page = await fetchGraphPage<FacebookConversation>(url, accessToken)
     conversations.push(...(page.data ?? []))
+    if (mode === 'incremental' && conversations.length >= incrementalLimit) {
+      break
+    }
     url = page.paging?.next ?? ''
+  }
+
+  if (mode === 'incremental' && conversations.length > incrementalLimit) {
+    return conversations.slice(0, incrementalLimit)
   }
 
   return conversations
@@ -246,7 +257,7 @@ async function runFacebookInboxSync(
   const publishEvents = options.publishEvents ?? mode === 'incremental'
   const reason = options.reason ?? mode
 
-  const conversations = await fetchAllConversations(accessToken)
+  const conversations = await fetchAllConversations(accessToken, mode)
   const customerThreadIds = conversations
     .map((conversation) =>
       conversation.participants?.data?.find((participant) => participant.id !== config.FB_PAGE_ID)?.id

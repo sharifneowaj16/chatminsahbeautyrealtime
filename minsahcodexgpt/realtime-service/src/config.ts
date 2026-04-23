@@ -48,7 +48,7 @@ const envSchema = z.object({
     .transform((value) => value === 'true'),
   FB_MEDIA_RETRY_POLL_MS: z
     .string()
-    .default('15000')
+    .default('3000')
     .transform((value) => Number(value))
     .refine(
       (value) => Number.isFinite(value) && value >= 1000,
@@ -56,7 +56,7 @@ const envSchema = z.object({
     ),
   FB_MEDIA_RETRY_BASE_DELAY_MS: z
     .string()
-    .default('30000')
+    .default('5000')
     .transform((value) => Number(value))
     .refine(
       (value) => Number.isFinite(value) && value >= 1000,
@@ -92,7 +92,7 @@ const envSchema = z.object({
     .transform((value) => value === 'true'),
   FB_REPLAY_POLL_MS: z
     .string()
-    .default('15000')
+    .default('3000')
     .transform((value) => Number(value))
     .refine(
       (value) => Number.isFinite(value) && value >= 1000,
@@ -100,7 +100,7 @@ const envSchema = z.object({
     ),
   FB_REPLAY_BASE_DELAY_MS: z
     .string()
-    .default('30000')
+    .default('5000')
     .transform((value) => Number(value))
     .refine(
       (value) => Number.isFinite(value) && value >= 1000,
@@ -172,7 +172,7 @@ const envSchema = z.object({
     .transform((value) => value === 'true'),
   FB_OUTGOING_RETRY_POLL_MS: z
     .string()
-    .default('5000')
+    .default('1000')
     .transform((value) => Number(value))
     .refine(
       (value) => Number.isFinite(value) && value >= 1000,
@@ -180,7 +180,7 @@ const envSchema = z.object({
     ),
   FB_OUTGOING_RETRY_BASE_DELAY_MS: z
     .string()
-    .default('15000')
+    .default('3000')
     .transform((value) => Number(value))
     .refine(
       (value) => Number.isFinite(value) && value >= 1000,
@@ -221,6 +221,14 @@ const envSchema = z.object({
     .refine(
       (value) => Number.isFinite(value) && value >= 5000,
       'FB_SYNC_INTERVAL_MS must be at least 5000'
+    ),
+  FB_SYNC_INCREMENTAL_CONVERSATION_LIMIT: z
+    .string()
+    .default('50')
+    .transform((value) => Number(value))
+    .refine(
+      (value) => Number.isFinite(value) && value >= 10,
+      'FB_SYNC_INCREMENTAL_CONVERSATION_LIMIT must be at least 10'
     ),
   FB_SYNC_STARTUP_DELAY_MS: z
     .string()

@@ -268,6 +268,7 @@ export default function SocialMediaInbox({
   const messageEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const selectedRef = useRef<string | null>(null);
+  const wsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   selectedRef.current = selectedConversation;
 
   // ── notifications ──
@@ -343,7 +344,11 @@ export default function SocialMediaInbox({
   const handleWsEvent = useCallback((event: InboxWsEvent) => {
     if (filterPlatform !== 'all' && filterPlatform !== 'facebook') return;
     if (event.type === 'pong' || event.type === 'connected') return;
-    void fetchAndMergeMessages(false);
+    if (wsRefreshTimerRef.current) return;
+    wsRefreshTimerRef.current = setTimeout(() => {
+      wsRefreshTimerRef.current = null;
+      void fetchAndMergeMessages(false);
+    }, 120);
   }, [fetchAndMergeMessages, filterPlatform]);
 
   const { sendMarkRead } = useInboxSocket(handleWsEvent);
@@ -371,6 +376,10 @@ export default function SocialMediaInbox({
     connectStream();
     document.addEventListener('visibilitychange', handleVisibility);
     return () => {
+      if (wsRefreshTimerRef.current) {
+        clearTimeout(wsRefreshTimerRef.current);
+        wsRefreshTimerRef.current = null;
+      }
       document.removeEventListener('visibilitychange', handleVisibility);
       (eventSource as EventSource | null)?.close();
       if (fallbackTimer) clearInterval(fallbackTimer);

@@ -215,6 +215,26 @@ export async function markConversationRead(input: {
   }
 }
 
+export async function updateConversationCustomerName(input: {
+  threadId: string
+  customerName: string
+}): Promise<void> {
+  const trimmedName = input.customerName.trim()
+  if (!trimmedName) {
+    return
+  }
+
+  await prisma.fbConversation.updateMany({
+    where: {
+      threadId: input.threadId,
+      OR: [{ customerName: null }, { customerName: '' }],
+    },
+    data: {
+      customerName: trimmedName,
+    },
+  })
+}
+
 export async function updateMessageAttachmentUrlByFbMessageId(input: {
   fbMessageId: string
   attachmentUrl: string

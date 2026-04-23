@@ -1,10 +1,13 @@
 import { getConfig } from '../config'
-import { saveOutgoingMessage, upsertConversationAndSaveMessage } from '../db/repository'
+import {
+  saveOutgoingMessage,
+  updateConversationCustomerName,
+  upsertConversationAndSaveMessage,
+} from '../db/repository'
 import { publishInboxEvent } from '../realtime/pubsub'
 import type { MessengerAttachmentType } from './attachments'
 import { getMessengerProfile } from './graph.client'
 import { scheduleFacebookMediaRetry } from './media-retry'
-import { persistIncomingFacebookMedia } from './media-store'
 
 export interface ProcessIncomingInboxMessageInput {
   pageId: string
@@ -39,29 +42,12 @@ export async function processIncomingInboxMessage(
   customerName?: string
   attachmentUrl?: string
 }> {
-  let customerName = input.customerName
+  const customerName = input.customerName
+  const storedAttachmentUrl = input.attachmentUrl
 
-  if (!customerName) {
-    try {
-      const profile = await getMessengerProfile(input.senderId)
-      customerName = profile.name ?? undefined
-    } catch (error) {
-      console.warn('[inbox-processor] profile lookup failed', {
-        senderId: input.senderId,
-        error,
-      })
-    }
-  }
-
-  const mediaResult = await persistIncomingFacebookMedia({
-    sourceUrl: input.attachmentUrl,
-    messageId: input.messageId,
-    attachmentType: input.attachmentType,
-  })
-  const storedAttachmentUrl = mediaResult.url
-
-  if (input.attachmentUrl && input.attachmentType && !mediaResult.persisted) {
-    await scheduleFacebookMediaRetry({
+  // Keep webhook path hot: queue media persistence instead of blocking ingest.
+  if (input.attachmentUrl && input.attachmentType) {
+    void scheduleFacebookMediaRetry({
       fbMessageId: input.messageId,
       sourceUrl: input.attachmentUrl,
       attachmentType: input.attachmentType,
@@ -70,6 +56,11 @@ export async function processIncomingInboxMessage(
       text: input.text,
       senderName: customerName,
       isIncoming: true,
+    }).catch((error) => {
+      console.warn('[inbox-processor] media retry enqueue failed', {
+        messageId: input.messageId,
+        error,
+      })
     })
   }
 
@@ -82,6 +73,12 @@ export async function processIncomingInboxMessage(
     attachmentUrl: storedAttachmentUrl,
     timestamp: input.timestamp,
   })
+
+  if (!customerName) {
+    void hydrateCustomerName({
+      senderId: input.senderId,
+    })
+  }
 
   if (input.publishEvent && saved.isNewMessage) {
     await publishInboxEvent({
@@ -106,6 +103,25 @@ export async function processIncomingInboxMessage(
     isNewMessage: saved.isNewMessage,
     customerName,
     attachmentUrl: storedAttachmentUrl,
+  }
+}
+
+async function hydrateCustomerName(input: { senderId: string }): Promise<void> {
+  try {
+    const profile = await getMessengerProfile(input.senderId)
+    if (!profile.name) {
+      return
+    }
+
+    await updateConversationCustomerName({
+      threadId: input.senderId,
+      customerName: profile.name,
+    })
+  } catch (error) {
+    console.warn('[inbox-processor] async profile hydration failed', {
+      senderId: input.senderId,
+      error,
+    })
   }
 }
 
