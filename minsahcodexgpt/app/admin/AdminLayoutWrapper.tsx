@@ -247,6 +247,20 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
     };
   }, [isLoading, pathname, user]);
 
+  const filteredMenuItems = useMemo(
+    () => menuItems.filter(item => !item.permission || hasPermission(item.permission)),
+    [hasPermission]
+  );
+  const resolvedMenuItems = useMemo(
+    () =>
+      filteredMenuItems.map((item) =>
+        item.title === 'Inbox'
+          ? { ...item, badge: inboxUnreadCount || undefined }
+          : item
+      ),
+    [filteredMenuItems, inboxUnreadCount]
+  );
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -276,20 +290,6 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
         : [...prev, title]
     );
   };
-
-  const filteredMenuItems = useMemo(
-    () => menuItems.filter(item => !item.permission || hasPermission(item.permission)),
-    [hasPermission]
-  );
-  const resolvedMenuItems = useMemo(
-    () =>
-      filteredMenuItems.map((item) =>
-        item.title === 'Inbox'
-          ? { ...item, badge: inboxUnreadCount || undefined }
-          : item
-      ),
-    [filteredMenuItems, inboxUnreadCount]
-  );
 
   const isActive = (href: string) => {
     if (href === '/admin') {
