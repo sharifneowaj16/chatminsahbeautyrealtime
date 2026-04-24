@@ -966,6 +966,7 @@ model FbConversation {
   pageId        String
   customerPsid  String
   customerName  String?
+  customerAvatar String?
   lastMessage   String?     @db.Text
   lastMessageAt DateTime?
   unreadCount   Int         @default(0)
@@ -988,6 +989,10 @@ model FbMessage {
   senderType     FbSenderType
   text           String         @db.Text
   attachmentUrl  String?
+  attachmentType FbAttachmentType?
+  attachmentMimeType String?
+  attachmentName String?
+  rawPayload     Json?
   timestamp      DateTime
   createdAt      DateTime       @default(now())
 

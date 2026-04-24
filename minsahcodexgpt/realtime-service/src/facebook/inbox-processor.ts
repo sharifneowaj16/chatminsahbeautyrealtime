@@ -1,7 +1,7 @@
 import { getConfig } from '../config'
 import {
   saveOutgoingMessage,
-  updateConversationCustomerName,
+  updateConversationCustomerProfile,
   upsertConversationAndSaveMessage,
 } from '../db/repository'
 import { publishInboxEvent } from '../realtime/pubsub'
@@ -16,8 +16,12 @@ export interface ProcessIncomingInboxMessageInput {
   text: string
   attachmentUrl?: string
   attachmentType?: MessengerAttachmentType
+  attachmentMimeType?: string
+  attachmentName?: string
+  rawPayload?: unknown
   timestamp: Date
   customerName?: string
+  customerAvatar?: string
   publishEvent?: boolean
 }
 
@@ -28,6 +32,8 @@ export interface ProcessOutgoingInboxMessageInput {
   text: string
   attachmentUrl?: string
   attachmentType?: MessengerAttachmentType
+  attachmentMimeType?: string
+  attachmentName?: string
   timestamp: Date
   publishEvent?: boolean
 }
@@ -43,6 +49,7 @@ export async function processIncomingInboxMessage(
   attachmentUrl?: string
 }> {
   const customerName = input.customerName
+  const customerAvatar = input.customerAvatar
   const storedAttachmentUrl = input.attachmentUrl
 
   // Keep webhook path hot: queue media persistence instead of blocking ingest.
@@ -71,11 +78,16 @@ export async function processIncomingInboxMessage(
     customerName,
     text: input.text,
     attachmentUrl: storedAttachmentUrl,
+    attachmentType: input.attachmentType,
+    attachmentMimeType: input.attachmentMimeType,
+    attachmentName: input.attachmentName,
+    rawPayload: input.rawPayload,
+    customerAvatar,
     timestamp: input.timestamp,
   })
 
-  if (!customerName) {
-    void hydrateCustomerName({
+  if (!customerName || !customerAvatar) {
+    void hydrateCustomerProfile({
       senderId: input.senderId,
     })
   }
@@ -106,16 +118,17 @@ export async function processIncomingInboxMessage(
   }
 }
 
-async function hydrateCustomerName(input: { senderId: string }): Promise<void> {
+async function hydrateCustomerProfile(input: { senderId: string }): Promise<void> {
   try {
     const profile = await getMessengerProfile(input.senderId)
-    if (!profile.name) {
+    if (!profile.name && !profile.profilePic) {
       return
     }
 
-    await updateConversationCustomerName({
+    await updateConversationCustomerProfile({
       threadId: input.senderId,
-      customerName: profile.name,
+      customerName: profile.name ?? undefined,
+      customerAvatar: profile.profilePic ?? undefined,
     })
   } catch (error) {
     console.warn('[inbox-processor] async profile hydration failed', {
@@ -139,6 +152,7 @@ export async function processOutgoingInboxMessage(
       customerPsid: input.customerPsid,
       text: input.text,
       attachmentUrl: input.attachmentUrl,
+      attachmentType: input.attachmentType,
       timestamp: input.timestamp,
     },
     getConfig().FB_PAGE_ID

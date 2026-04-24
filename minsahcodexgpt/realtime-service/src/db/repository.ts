@@ -7,8 +7,13 @@ export interface SaveIncomingMessageInput {
   pageId: string
   customerPsid: string
   customerName?: string
+  customerAvatar?: string
   text: string
   attachmentUrl?: string
+  attachmentType?: MessengerAttachmentType
+  attachmentMimeType?: string
+  attachmentName?: string
+  rawPayload?: unknown
   timestamp: Date
 }
 
@@ -18,6 +23,7 @@ export interface SaveOutgoingMessageInput {
   customerPsid: string
   text: string
   attachmentUrl?: string
+  attachmentType?: MessengerAttachmentType
   timestamp: Date
 }
 
@@ -85,12 +91,14 @@ export async function upsertConversationAndSaveMessage(
         unreadCount: existingMessage ? undefined : { increment: 1 },
         isReplied: false,
         ...(input.customerName ? { customerName: input.customerName } : {}),
+        ...(input.customerAvatar ? { customerAvatar: input.customerAvatar } : {}),
       },
       create: {
         threadId: input.customerPsid,
         pageId: input.pageId,
         customerPsid: input.customerPsid,
         customerName: input.customerName ?? null,
+        customerAvatar: input.customerAvatar ?? null,
         lastMessage: input.text,
         lastMessageAt: input.timestamp,
         unreadCount: existingMessage ? 0 : 1,
@@ -115,6 +123,12 @@ export async function upsertConversationAndSaveMessage(
         senderType: 'CUSTOMER',
         text: input.text,
         attachmentUrl: input.attachmentUrl ?? null,
+        attachmentType: toDbAttachmentType(input.attachmentType) ?? null,
+        attachmentMimeType: input.attachmentMimeType ?? null,
+        attachmentName: input.attachmentName ?? null,
+        rawPayload: input.rawPayload
+          ? (input.rawPayload as Prisma.InputJsonValue)
+          : undefined,
         timestamp: input.timestamp,
       },
     })
@@ -172,6 +186,7 @@ export async function saveOutgoingMessage(
         senderType: 'PAGE',
         text: input.text,
         attachmentUrl: input.attachmentUrl ?? null,
+        attachmentType: toDbAttachmentType(input.attachmentType) ?? null,
         timestamp: input.timestamp,
       },
     })
@@ -215,22 +230,34 @@ export async function markConversationRead(input: {
   }
 }
 
-export async function updateConversationCustomerName(input: {
+export async function updateConversationCustomerProfile(input: {
   threadId: string
-  customerName: string
+  customerName?: string
+  customerAvatar?: string
 }): Promise<void> {
-  const trimmedName = input.customerName.trim()
-  if (!trimmedName) {
+  const trimmedName = input.customerName?.trim()
+  const trimmedAvatar = input.customerAvatar?.trim()
+
+  if (!trimmedName && !trimmedAvatar) {
     return
   }
 
   await prisma.fbConversation.updateMany({
     where: {
       threadId: input.threadId,
-      OR: [{ customerName: null }, { customerName: '' }],
+      ...(trimmedName
+        ? {
+            OR: [{ customerName: null }, { customerName: '' }],
+          }
+        : {}),
     },
     data: {
-      customerName: trimmedName,
+      ...(trimmedName ? { customerName: trimmedName } : {}),
+      ...(trimmedAvatar
+        ? {
+            customerAvatar: trimmedAvatar,
+          }
+        : {}),
     },
   })
 }

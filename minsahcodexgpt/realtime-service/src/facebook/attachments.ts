@@ -2,6 +2,8 @@ export type MessengerAttachmentType = 'image' | 'video' | 'audio' | 'file'
 
 interface AttachmentLike {
   type?: string
+  mime_type?: string
+  name?: string
   payload?: {
     url?: string
   }
@@ -20,6 +22,8 @@ interface AttachmentLike {
 export interface NormalizedAttachment {
   type: MessengerAttachmentType
   url?: string
+  mimeType?: string
+  name?: string
 }
 
 export interface IncomingMessagePart {
@@ -27,6 +31,8 @@ export interface IncomingMessagePart {
   text: string
   attachmentUrl?: string
   attachmentType?: MessengerAttachmentType
+  attachmentMimeType?: string
+  attachmentName?: string
 }
 
 const ATTACHMENT_HINT_PREFIX = 'minsah-fb-type='
@@ -100,6 +106,8 @@ export function normalizeAttachments(
     return {
       type,
       url: rawUrl ? addAttachmentTypeHint(rawUrl, type) : undefined,
+      mimeType: attachment.mime_type,
+      name: attachment.name,
     }
   })
 }
@@ -126,6 +134,8 @@ export function buildIncomingMessageParts(
       text: `[${attachment.type} attachment]`,
       attachmentUrl: attachment.url,
       attachmentType: attachment.type,
+      attachmentMimeType: attachment.mimeType,
+      attachmentName: attachment.name,
     })
   }
 

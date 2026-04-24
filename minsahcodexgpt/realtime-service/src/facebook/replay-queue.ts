@@ -26,6 +26,8 @@ interface IncomingReplayJob extends ReplayJobBase {
   text: string
   attachmentUrl?: string
   attachmentType?: MessengerAttachmentType
+  attachmentMimeType?: string
+  attachmentName?: string
   timestamp: string
 }
 
@@ -37,6 +39,8 @@ interface OutgoingReplayJob extends ReplayJobBase {
   text: string
   attachmentUrl?: string
   attachmentType?: MessengerAttachmentType
+  attachmentMimeType?: string
+  attachmentName?: string
   timestamp: string
 }
 
@@ -110,6 +114,8 @@ async function processReplayJob(job: ReplayJob): Promise<void> {
       text: job.text,
       attachmentUrl: job.attachmentUrl,
       attachmentType: job.attachmentType,
+      attachmentMimeType: job.attachmentMimeType,
+      attachmentName: job.attachmentName,
       timestamp: new Date(job.timestamp),
       customerName: job.customerName,
       publishEvent: true,
@@ -127,6 +133,8 @@ async function processReplayJob(job: ReplayJob): Promise<void> {
     text: job.text,
     attachmentUrl: job.attachmentUrl,
     attachmentType: job.attachmentType,
+    attachmentMimeType: job.attachmentMimeType,
+    attachmentName: job.attachmentName,
     timestamp: new Date(job.timestamp),
     publishEvent: true,
   })

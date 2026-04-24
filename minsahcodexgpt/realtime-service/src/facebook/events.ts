@@ -54,9 +54,36 @@ export function parseWebhookPayload(body: FbWebhookBody): ParsedFbEvent[] {
               text: part.text,
               attachmentUrl: part.attachmentUrl,
               attachmentType: part.attachmentType,
+              attachmentMimeType: part.attachmentMimeType,
+              attachmentName: part.attachmentName,
+              rawPayload: event.message as unknown,
               timestamp: new Date(event.timestamp),
             })
           }
+        }
+
+        if (event.postback?.mid) {
+          const title = event.postback.title?.trim()
+          const payload = event.postback.payload?.trim()
+          const text =
+            title && payload
+              ? `[postback] ${title} (${payload})`
+              : title
+                ? `[postback] ${title}`
+                : payload
+                  ? `[postback] ${payload}`
+                  : '[postback]'
+
+          events.push({
+            type: 'incoming_message',
+            pageId: entry.id,
+            senderId: event.sender.id,
+            recipientId: event.recipient.id,
+            messageId: `${event.postback.mid}::postback`,
+            text,
+            rawPayload: event.postback as unknown,
+            timestamp: new Date(event.timestamp),
+          })
         }
       }
     }

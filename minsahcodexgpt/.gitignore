@@ -59,3 +59,8 @@ CLAUDE_CODE_INSTALLATION_CHECKLIST.md
 USERROLES.md
 
 /generated/prisma
+
+# Realtime service build artifacts
+/realtime-service/node_modules
+/realtime-service/dist
+/realtime-service/prisma/generated

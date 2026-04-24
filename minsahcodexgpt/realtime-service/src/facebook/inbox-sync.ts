@@ -209,6 +209,8 @@ async function enqueueReplayJobForSync(input: {
   text: string
   attachmentUrl?: string
   attachmentType?: 'image' | 'video' | 'audio' | 'file'
+  attachmentMimeType?: string
+  attachmentName?: string
   timestamp: Date
   isOutgoing: boolean
 }): Promise<void> {
@@ -222,6 +224,8 @@ async function enqueueReplayJobForSync(input: {
         text: input.text,
         attachmentUrl: input.attachmentUrl,
         attachmentType: input.attachmentType,
+        attachmentMimeType: input.attachmentMimeType,
+        attachmentName: input.attachmentName,
         timestamp: input.timestamp.toISOString(),
       })
       return
@@ -236,6 +240,8 @@ async function enqueueReplayJobForSync(input: {
       text: input.text,
       attachmentUrl: input.attachmentUrl,
       attachmentType: input.attachmentType,
+      attachmentMimeType: input.attachmentMimeType,
+      attachmentName: input.attachmentName,
       timestamp: input.timestamp.toISOString(),
     })
   } catch (error) {
@@ -322,6 +328,8 @@ async function runFacebookInboxSync(
               text: part.text,
               attachmentUrl: part.attachmentUrl,
               attachmentType: part.attachmentType,
+              attachmentMimeType: part.attachmentMimeType,
+              attachmentName: part.attachmentName,
               timestamp,
               publishEvent: publishEvents,
             })
@@ -340,6 +348,8 @@ async function runFacebookInboxSync(
             text: part.text,
             attachmentUrl: part.attachmentUrl,
             attachmentType: part.attachmentType,
+            attachmentMimeType: part.attachmentMimeType,
+            attachmentName: part.attachmentName,
             timestamp,
             customerName,
             publishEvent: publishEvents,
@@ -368,6 +378,8 @@ async function runFacebookInboxSync(
             text: part.text,
             attachmentUrl: part.attachmentUrl,
             attachmentType: part.attachmentType,
+            attachmentMimeType: part.attachmentMimeType,
+            attachmentName: part.attachmentName,
             timestamp,
             isOutgoing: message.from.id === config.FB_PAGE_ID,
           })

@@ -27,6 +27,7 @@ export interface MessengerAttachmentInput {
 export interface MessengerProfile {
   id: string
   name: string | null
+  profilePic: string | null
 }
 
 function getGraphApiBase(): string {
@@ -157,14 +158,14 @@ export async function replyToComment(commentId: string, text: string): Promise<{
 
 export async function getMessengerProfile(psid: string): Promise<MessengerProfile> {
   const FB_PAGE_ACCESS_TOKEN = getCurrentPageToken()
-  const response = await fetch(`${getGraphApiBase()}/${psid}?fields=name`, {
+  const response = await fetch(`${getGraphApiBase()}/${psid}?fields=name,profile_pic`, {
     headers: {
       Authorization: `Bearer ${FB_PAGE_ACCESS_TOKEN}`,
     },
   })
 
   const body = (await response.json().catch(() => null)) as
-    | { id?: string; name?: string; error?: { message?: string } }
+    | { id?: string; name?: string; profile_pic?: string; error?: { message?: string } }
     | null
 
   if (!response.ok) {
@@ -177,5 +178,6 @@ export async function getMessengerProfile(psid: string): Promise<MessengerProfil
   return {
     id: body?.id ?? psid,
     name: body?.name ?? null,
+    profilePic: body?.profile_pic ?? null,
   }
 }

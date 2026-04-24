@@ -184,15 +184,22 @@ function mapFacebookMessageRecord(
     senderType: 'PAGE' | 'CUSTOMER'
     text: string
     attachmentUrl: string | null
+    attachmentType: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE' | null
+    attachmentMimeType: string | null
+    attachmentName: string | null
     timestamp: Date
   },
   conversation: {
     customerName: string | null
+    customerAvatar: string | null
     customerPsid: string
     unreadCount: number
   }
 ): InboxMessageRecord {
-  const attachmentType = inferFacebookAttachmentType(message.text, message.attachmentUrl)
+  const attachmentType =
+    message.attachmentType
+      ? message.attachmentType.toLowerCase()
+      : inferFacebookAttachmentType(message.text, message.attachmentUrl)
 
   return {
     id: message.id,
@@ -205,7 +212,7 @@ function mapFacebookMessageRecord(
       message.senderType === 'PAGE'
         ? 'Minsah Beauty'
         : conversation.customerName ?? conversation.customerPsid,
-    senderAvatar: null,
+    senderAvatar: message.senderType === 'PAGE' ? null : conversation.customerAvatar ?? null,
     content: message.text,
     isRead: message.senderType === 'PAGE' || conversation.unreadCount === 0,
     timestamp: message.timestamp.toISOString(),
@@ -215,6 +222,8 @@ function mapFacebookMessageRecord(
           {
             id: `${message.id}-attachment`,
             type: attachmentType,
+            mimeType: message.attachmentMimeType,
+            fileName: message.attachmentName,
             storageUrl: message.attachmentUrl,
             externalUrl: message.attachmentUrl,
             thumbnailUrl: attachmentType === 'image' ? message.attachmentUrl : null,
@@ -228,6 +237,7 @@ function mapFacebookConversationRecord(conversation: {
   id: string
   customerPsid: string
   customerName: string | null
+  customerAvatar: string | null
   unreadCount: number
   messages: Array<{
     id: string
@@ -237,6 +247,9 @@ function mapFacebookConversationRecord(conversation: {
     senderType: 'PAGE' | 'CUSTOMER'
     text: string
     attachmentUrl: string | null
+    attachmentType: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE' | null
+    attachmentMimeType: string | null
+    attachmentName: string | null
     timestamp: Date
   }>
 }): InboxConversationRecord | null {
@@ -253,7 +266,7 @@ function mapFacebookConversationRecord(conversation: {
     participant: {
       id: conversation.customerPsid,
       name: conversation.customerName ?? conversation.customerPsid,
-      avatar: null,
+      avatar: conversation.customerAvatar ?? null,
     },
     latestMessage,
     unreadCount: conversation.unreadCount,

@@ -136,6 +136,9 @@ async function processEvent(event: ParsedFbEvent): Promise<void> {
       text: event.text,
       attachmentUrl: event.attachmentUrl,
       attachmentType: event.attachmentType,
+      attachmentMimeType: event.attachmentMimeType,
+      attachmentName: event.attachmentName,
+      rawPayload: event.rawPayload,
       timestamp: event.timestamp,
       publishEvent: true,
     })

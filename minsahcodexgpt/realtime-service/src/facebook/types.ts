@@ -78,6 +78,9 @@ export interface ParsedIncomingMessage {
   text: string
   attachmentUrl?: string
   attachmentType?: 'image' | 'video' | 'audio' | 'file'
+  attachmentMimeType?: string
+  attachmentName?: string
+  rawPayload?: unknown
   timestamp: Date
 }
 
