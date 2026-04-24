@@ -561,6 +561,7 @@ model Order {
   payments Payment[]
   returns  Return[]
   notifications AdminNotification[]
+  steadfastWebhookEvents SteadfastWebhookEvent[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -570,6 +571,34 @@ model Order {
   @@index([steadfastTrackingCode])
   @@index([isGiftOrder])
   @@index([giftToken])
+}
+
+model SteadfastWebhookEvent {
+  id               String   @id @default(cuid())
+  eventKey         String   @unique
+  source           String   @default("steadfast")
+  eventType        String
+  invoice          String?
+  consignmentId    String?
+  trackingCode     String?
+  status           String?
+  trackingMessage  String?  @db.Text
+  payload          Json
+  orderId          String?
+  processingStatus String   @default("RECEIVED")
+  error            String?  @db.Text
+  receivedAt       DateTime @default(now())
+  processedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, receivedAt])
+  @@index([invoice])
+  @@index([consignmentId])
+  @@index([trackingCode])
+  @@index([processingStatus, receivedAt])
 }
 
 model OrderItem {
