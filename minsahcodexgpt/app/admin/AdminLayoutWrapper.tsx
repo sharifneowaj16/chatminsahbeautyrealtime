@@ -83,6 +83,11 @@ const menuItems: MenuItem[] = [
       { title: 'All Orders', href: '/admin/orders' },
       { title: 'Processing', href: '/admin/orders?status=processing', permission: PERMISSIONS.ORDERS_PROCESS },
       { title: 'Returns', href: '/admin/orders/returns', permission: PERMISSIONS.ORDERS_REFUND },
+      {
+        title: 'Courier webhooks',
+        href: '/admin/shipping/steadfast-webhooks',
+        permission: PERMISSIONS.ORDERS_VIEW,
+      },
     ],
   },
   {

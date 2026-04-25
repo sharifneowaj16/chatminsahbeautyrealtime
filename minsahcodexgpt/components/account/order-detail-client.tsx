@@ -37,6 +37,15 @@ function ProductImage({ src, name }: { src: string | null; name: string }) {
 export function OrderDetailClient({ order, printMode = false }: OrderDetailClientProps) {
   const router = useRouter();
 
+  const trackPhoneDigits = (order.shippingAddress?.phone ?? '')
+    .replace(/\D/g, '')
+    .replace(/^880/, '0')
+  const trackHref = order.steadfastTrackingCode
+    ? `/track?code=${encodeURIComponent(order.steadfastTrackingCode)}`
+    : trackPhoneDigits
+      ? `/track?order=${encodeURIComponent(order.orderNumber)}&phone=${encodeURIComponent(trackPhoneDigits)}`
+      : '/track'
+
   useEffect(() => {
     if (!printMode) {
       return;
@@ -142,6 +151,19 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     {order.status.replace('_', ' ')}
                   </span>
                 </div>
+                {(order.steadfastStatusLabel || order.steadfastStatus) && (
+                  <div className="mb-4 rounded-lg border border-violet-100 bg-violet-50/90 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
+                      Courier update
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {order.steadfastStatusLabel || order.steadfastStatus}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600">
+                      Refreshes when Steadfast sends a delivery or tracking webhook.
+                    </p>
+                  </div>
+                )}
                 {order.trackingNumber && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
@@ -294,15 +316,15 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     View Return {order.latestReturn.status.replace('_', ' ')}
                   </Link>
                 )}
-                {order.trackingNumber && (
+                {(order.steadfastTrackingCode || order.trackingNumber || order.steadfastStatus) && (
                   <a
-                    href={order.steadfastTrackingCode ? `/track?code=${order.steadfastTrackingCode}` : `/track?order=${order.orderNumber}`}
+                    href={trackHref}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
                   >
                     <Truck className="w-4 h-4 mr-2" />
-                    Track Package
+                    Track package
                   </a>
                 )}
                 <button

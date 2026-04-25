@@ -44,6 +44,7 @@ interface TrackingResult {
   orderStatus?: string;
   statusLabel?: string;
   statusColor?: string;
+  courierUpdate?: string | null;
   timeline?: TrackingTimeline[];
   estimatedDelivery?: string | null;
   orderDate?: string;
@@ -367,6 +368,15 @@ function TrackPageContent() {
                     month: 'long',
                   })}
                 </p>
+              )}
+
+              {result.courierUpdate && (
+                <div className="mt-4 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-left">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
+                    Latest courier message
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-white">{result.courierUpdate}</p>
+                </div>
               )}
             </div>
 

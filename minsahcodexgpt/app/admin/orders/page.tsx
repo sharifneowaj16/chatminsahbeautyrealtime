@@ -600,6 +600,16 @@ export default function OrdersPage() {
 
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const q = new URLSearchParams(window.location.search).get('search')?.trim();
+    if (q) {
+      setSearch(q);
+    }
+  }, []);
+
   // ── Fetch list ─────────────────────────────────────────────────────────────
 
   const fetchOrders = useCallback(async (page = 1, isRefresh = false) => {

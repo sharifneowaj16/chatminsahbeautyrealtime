@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth';
 import prisma from '@/lib/prisma';
 import { OrderDetailClient } from '@/components/account/order-detail-client';
+import { getSteadfastStatusLabel } from '@/lib/steadfast/client';
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
@@ -60,6 +61,17 @@ async function getOrderDetails(orderId: string, userId: string) {
     return null;
   }
 
+  const latestCourierEvent = await prisma.steadfastWebhookEvent.findFirst({
+    where: { orderId: order.id },
+    orderBy: { receivedAt: 'desc' },
+    select: {
+      eventType: true,
+      status: true,
+      trackingMessage: true,
+      receivedAt: true,
+    },
+  })
+
   const tracking = [
     {
       timestamp: order.createdAt,
@@ -102,6 +114,16 @@ async function getOrderDetails(orderId: string, userId: string) {
     },
   ].filter((event) => event.completed);
 
+  if (latestCourierEvent?.trackingMessage?.trim()) {
+    tracking.push({
+      timestamp: latestCourierEvent.receivedAt,
+      status: 'shipped',
+      description: latestCourierEvent.trackingMessage.trim(),
+      location: order.shippingMethod === 'steadfast' ? 'Steadfast Courier' : 'Courier',
+      completed: true,
+    })
+  }
+
   return {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -129,8 +151,15 @@ async function getOrderDetails(orderId: string, userId: string) {
       order.deliveredAt ?? new Date(order.createdAt.getTime() + 7 * 24 * 60 * 60 * 1000),
     deliveredAt: order.deliveredAt,
     trackingNumber: order.trackingNumber ?? undefined,
-    carrier: order.shippingMethod ?? 'Standard Delivery',
+    carrier:
+      order.shippingMethod === 'steadfast'
+        ? 'Steadfast Courier'
+        : order.shippingMethod ?? 'Standard Delivery',
     steadfastTrackingCode: order.steadfastTrackingCode ?? undefined,
+    steadfastStatus: order.steadfastStatus ?? undefined,
+    steadfastStatusLabel: order.steadfastStatus
+      ? getSteadfastStatusLabel(order.steadfastStatus)
+      : undefined,
     shippingAddress: order.shippingAddress
       ? {
           firstName: order.shippingAddress.firstName,

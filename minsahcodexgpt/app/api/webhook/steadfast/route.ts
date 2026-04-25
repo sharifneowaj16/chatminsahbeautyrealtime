@@ -16,31 +16,52 @@ type SteadfastWebhookPayload = {
   updated_at?: string
 }
 
-function getConfiguredWebhookSecret() {
-  return {
-    customerKey:
-      process.env.STEADFAST_WEBHOOK_CUSTOMER_KEY ??
-      process.env.STEADFAST_API_KEY ??
-      '',
-    authorization: process.env.STEADFAST_WEBHOOK_AUTHORIZATION ?? '',
-  }
-}
+type WebhookAuthResult = { ok: true } | { ok: false; reason?: 'not_configured' }
 
-function isWebhookAuthorized(request: NextRequest): boolean {
-  const configured = getConfiguredWebhookSecret()
-  const headerCustomerKey =
-    request.headers.get('customer-key') ?? request.headers.get('x-api-key') ?? ''
-  const headerAuthorization = request.headers.get('authorization') ?? ''
+/**
+ * Steadfast may send Customer Key + Authorization. We also support a single
+ * shared secret header for simpler rotation.
+ *
+ * Every *configured* credential must match (AND). If none are configured,
+ * the endpoint stays disabled (503) so it cannot be called anonymously.
+ */
+function isWebhookAuthorized(request: NextRequest): WebhookAuthResult {
+  const secret = process.env.STEADFAST_WEBHOOK_SECRET?.trim()
+  const customerKey = process.env.STEADFAST_WEBHOOK_CUSTOMER_KEY?.trim()
+  const authorization = process.env.STEADFAST_WEBHOOK_AUTHORIZATION?.trim()
 
-  if (configured.customerKey && headerCustomerKey !== configured.customerKey) {
-    return false
+  if (!secret && !customerKey && !authorization) {
+    return { ok: false, reason: 'not_configured' }
   }
 
-  if (configured.authorization && headerAuthorization !== configured.authorization) {
-    return false
+  const checks: boolean[] = []
+
+  if (secret) {
+    const headerSecret = request.headers.get('x-steadfast-webhook-secret')?.trim()
+    const bearer = request.headers.get('authorization')?.trim()
+    const secretOk =
+      headerSecret === secret ||
+      bearer === `Bearer ${secret}` ||
+      bearer === secret
+    checks.push(secretOk)
   }
 
-  return true
+  if (customerKey) {
+    const provided =
+      request.headers.get('customer-key')?.trim() ||
+      request.headers.get('x-api-key')?.trim()
+    checks.push(provided === customerKey)
+  }
+
+  if (authorization) {
+    checks.push(request.headers.get('authorization')?.trim() === authorization)
+  }
+
+  if (checks.length === 0) {
+    return { ok: false, reason: 'not_configured' }
+  }
+
+  return checks.every(Boolean) ? { ok: true } : { ok: false }
 }
 
 function normalizePayload(raw: unknown): SteadfastWebhookPayload {
@@ -75,7 +96,17 @@ function toJsonInput(value: unknown): Prisma.InputJsonValue {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isWebhookAuthorized(request)) {
+  const auth = isWebhookAuthorized(request)
+  if (!auth.ok) {
+    if (auth.reason === 'not_configured') {
+      return NextResponse.json(
+        {
+          error:
+            'Steadfast webhook is disabled until credentials are set. Configure one or more of: STEADFAST_WEBHOOK_SECRET, STEADFAST_WEBHOOK_CUSTOMER_KEY, STEADFAST_WEBHOOK_AUTHORIZATION.',
+        },
+        { status: 503 }
+      )
+    }
     return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
   }
 

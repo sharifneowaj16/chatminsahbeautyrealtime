@@ -20,6 +20,16 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+async function getLatestCourierUpdate(orderId: string): Promise<string | null> {
+  const row = await prisma.steadfastWebhookEvent.findFirst({
+    where: { orderId },
+    orderBy: { receivedAt: 'desc' },
+    select: { trackingMessage: true },
+  })
+  const msg = row?.trackingMessage?.trim()
+  return msg || null
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const trackingCode = searchParams.get('code');
@@ -80,6 +90,7 @@ export async function GET(request: NextRequest) {
       }
 
       const status = liveStatus ?? order?.steadfastStatus ?? 'unknown';
+      const courierUpdate = order ? await getLatestCourierUpdate(order.id) : null
 
       return NextResponse.json({
         found: !!order,
@@ -88,6 +99,7 @@ export async function GET(request: NextRequest) {
         steadfastStatus: status,
         statusLabel: getSteadfastStatusLabel(status),
         statusColor: getSteadfastStatusColor(status),
+        courierUpdate,
         timeline: buildTimeline(order, status),
         estimatedDelivery: getEstimatedDelivery(order?.shippedAt ?? null),
         orderDate: order?.createdAt,
@@ -146,6 +158,7 @@ export async function GET(request: NextRequest) {
       }
 
       const status = liveStatus ?? mapOrderStatusToDisplay(order.status);
+      const courierUpdate = await getLatestCourierUpdate(order.id)
 
       return NextResponse.json({
         found: true,
@@ -159,6 +172,7 @@ export async function GET(request: NextRequest) {
         statusColor: liveStatus
           ? getSteadfastStatusColor(liveStatus)
           : getOrderStatusColor(order.status),
+        courierUpdate,
         timeline: buildTimeline(order, liveStatus ?? ''),
         estimatedDelivery: getEstimatedDelivery(order.shippedAt),
         orderDate: order.createdAt,
