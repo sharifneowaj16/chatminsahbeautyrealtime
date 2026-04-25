@@ -1,3 +1,9 @@
+/**
+ * Steadfast webhook: POST JSON, Content-Type application/json,
+ * Authorization: Bearer {api_key} when auth is enabled.
+ * Payload shapes: delivery_status | tracking_update (notification_type).
+ * Success: HTTP 200 + { status: "success", message: "Webhook received successfully." }
+ */
 import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@/generated/prisma/client'
@@ -7,24 +13,51 @@ import { mapSteadfastStatusToOrderStatus } from '@/lib/steadfast/client'
 export const dynamic = 'force-dynamic'
 
 type SteadfastWebhookPayload = {
+  notification_type?: string
   status?: string
   invoice?: string
   consignment_id?: string | number
   tracking_code?: string
   tracking_message?: string
   cod_amount?: number | string
+  delivery_charge?: number | string
   updated_at?: string
 }
 
 type WebhookAuthResult = { ok: true } | { ok: false; reason?: 'not_configured' }
 
 /**
- * Steadfast may send Customer Key + Authorization. We also support a single
- * shared secret header for simpler rotation.
+ * Steadfast portal typically sends `Authorization: Bearer <webhook token>`.
+ * We also accept a shared secret via `x-steadfast-webhook-secret` or raw
+ * `Authorization: <token>`, plus optional Customer / Api-Key headers.
  *
- * Every *configured* credential must match (AND). If none are configured,
- * the endpoint stays disabled (503) so it cannot be called anonymously.
+ * If multiple env vars are set, **any one** matching request headers is enough
+ * (OR). Requiring all (AND) broke real callbacks when extra keys were left in .env.
  */
+function bearerTokenFromAuthorizationHeader(raw: string | null): string | undefined {
+  const v = raw?.trim()
+  if (!v) return undefined
+  const lower = v.toLowerCase()
+  if (lower.startsWith('bearer ')) {
+    return v.slice(7).trim() || undefined
+  }
+  return v
+}
+
+function authorizationHeaderMatchesExpected(
+  request: NextRequest,
+  expected: string
+): boolean {
+  const raw = request.headers.get('authorization')?.trim() ?? ''
+  const exp = expected.trim()
+  if (!raw || !exp) return false
+  if (raw === exp) return true
+  const rawToken = bearerTokenFromAuthorizationHeader(raw)
+  const expToken = bearerTokenFromAuthorizationHeader(exp)
+  if (rawToken && expToken && rawToken === expToken) return true
+  return false
+}
+
 function isWebhookAuthorized(request: NextRequest): WebhookAuthResult {
   const secret = process.env.STEADFAST_WEBHOOK_SECRET?.trim()
   const customerKey = process.env.STEADFAST_WEBHOOK_CUSTOMER_KEY?.trim()
@@ -38,30 +71,32 @@ function isWebhookAuthorized(request: NextRequest): WebhookAuthResult {
 
   if (secret) {
     const headerSecret = request.headers.get('x-steadfast-webhook-secret')?.trim()
-    const bearer = request.headers.get('authorization')?.trim()
+    const authHeader = request.headers.get('authorization')?.trim()
     const secretOk =
       headerSecret === secret ||
-      bearer === `Bearer ${secret}` ||
-      bearer === secret
+      authHeader === `Bearer ${secret}` ||
+      authHeader === secret ||
+      authorizationHeaderMatchesExpected(request, secret)
     checks.push(secretOk)
   }
 
   if (customerKey) {
     const provided =
       request.headers.get('customer-key')?.trim() ||
-      request.headers.get('x-api-key')?.trim()
+      request.headers.get('x-api-key')?.trim() ||
+      request.headers.get('api-key')?.trim()
     checks.push(provided === customerKey)
   }
 
   if (authorization) {
-    checks.push(request.headers.get('authorization')?.trim() === authorization)
+    checks.push(authorizationHeaderMatchesExpected(request, authorization))
   }
 
   if (checks.length === 0) {
     return { ok: false, reason: 'not_configured' }
   }
 
-  return checks.every(Boolean) ? { ok: true } : { ok: false }
+  return checks.some(Boolean) ? { ok: true } : { ok: false }
 }
 
 function normalizePayload(raw: unknown): SteadfastWebhookPayload {
@@ -73,22 +108,43 @@ function normalizePayload(raw: unknown): SteadfastWebhookPayload {
 }
 
 function detectEventType(payload: SteadfastWebhookPayload): 'delivery_status' | 'tracking_update' {
-  return payload.tracking_message ? 'tracking_update' : 'delivery_status'
+  const t = payload.notification_type?.trim().toLowerCase()
+  if (t === 'tracking_update') return 'tracking_update'
+  if (t === 'delivery_status') return 'delivery_status'
+  return payload.tracking_message && !payload.status ? 'tracking_update' : 'delivery_status'
 }
 
 function buildEventKey(payload: SteadfastWebhookPayload, rawBody: string): string {
   const digestInput = JSON.stringify({
+    notificationType: payload.notification_type ?? null,
     invoice: payload.invoice ?? null,
     consignmentId: payload.consignment_id ?? null,
     trackingCode: payload.tracking_code ?? null,
     status: payload.status ?? null,
     trackingMessage: payload.tracking_message ?? null,
     codAmount: payload.cod_amount ?? null,
+    deliveryCharge: payload.delivery_charge ?? null,
     updatedAt: payload.updated_at ?? null,
     rawBody,
   })
 
   return createHash('sha256').update(digestInput).digest('hex')
+}
+
+/** Steadfast expects HTTP 200 and a documented JSON shape on success. */
+function jsonSuccess(extra?: Record<string, unknown>) {
+  return NextResponse.json(
+    {
+      status: 'success',
+      message: 'Webhook received successfully.',
+      ...extra,
+    },
+    { status: 200 }
+  )
+}
+
+function jsonError(message: string, httpStatus: number) {
+  return NextResponse.json({ status: 'error', message }, { status: httpStatus })
 }
 
 function toJsonInput(value: unknown): Prisma.InputJsonValue {
@@ -99,15 +155,12 @@ export async function POST(request: NextRequest) {
   const auth = isWebhookAuthorized(request)
   if (!auth.ok) {
     if (auth.reason === 'not_configured') {
-      return NextResponse.json(
-        {
-          error:
-            'Steadfast webhook is disabled until credentials are set. Configure one or more of: STEADFAST_WEBHOOK_SECRET, STEADFAST_WEBHOOK_CUSTOMER_KEY, STEADFAST_WEBHOOK_AUTHORIZATION.',
-        },
-        { status: 503 }
+      return jsonError(
+        'Webhook is disabled until STEADFAST_WEBHOOK_SECRET, STEADFAST_WEBHOOK_CUSTOMER_KEY, or STEADFAST_WEBHOOK_AUTHORIZATION is set.',
+        503
       )
     }
-    return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
+    return jsonError('Unauthorized webhook request.', 401)
   }
 
   const rawBody = await request.text()
@@ -115,7 +168,7 @@ export async function POST(request: NextRequest) {
   try {
     body = rawBody ? JSON.parse(rawBody) : {}
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+    return jsonError('Invalid JSON payload.', 400)
   }
 
   const payload = normalizePayload(body)
@@ -137,8 +190,7 @@ export async function POST(request: NextRequest) {
   })
 
   if (existing) {
-    return NextResponse.json({
-      ok: true,
+    return jsonSuccess({
       duplicate: true,
       eventId: existing.id,
       processingStatus: existing.processingStatus,
@@ -161,13 +213,27 @@ export async function POST(request: NextRequest) {
     select: { id: true },
   })
 
+  const matchConditions = [
+    ...(consignmentId ? [{ steadfastConsignmentId: consignmentId }] : []),
+    ...(trackingCode ? [{ steadfastTrackingCode: trackingCode }] : []),
+    ...(invoice ? [{ orderNumber: invoice }] : []),
+  ]
+
+  if (matchConditions.length === 0) {
+    await prisma.steadfastWebhookEvent.update({
+      where: { id: event.id },
+      data: {
+        processingStatus: 'NO_ORDER_FOUND',
+        processedAt: new Date(),
+        error: 'Missing invoice and consignment_id.',
+      },
+    })
+    return jsonError('Invalid consignment ID.', 400)
+  }
+
   const order = await prisma.order.findFirst({
     where: {
-      OR: [
-        ...(consignmentId ? [{ steadfastConsignmentId: consignmentId }] : []),
-        ...(trackingCode ? [{ steadfastTrackingCode: trackingCode }] : []),
-        ...(invoice ? [{ orderNumber: invoice }] : []),
-      ],
+      OR: matchConditions,
     },
     select: {
       id: true,
@@ -186,8 +252,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({
-      ok: true,
+    return jsonSuccess({
       eventId: event.id,
       processingStatus: 'NO_ORDER_FOUND',
     })
@@ -217,23 +282,29 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  await prisma.$transaction([
-    prisma.order.update({
-      where: { id: order.id },
-      data: updateData,
-    }),
-    prisma.steadfastWebhookEvent.update({
-      where: { id: event.id },
-      data: {
-        orderId: order.id,
-        processingStatus: 'PROCESSED',
-        processedAt: now,
-      },
-    }),
-  ])
+  const eventUpdate = prisma.steadfastWebhookEvent.update({
+    where: { id: event.id },
+    data: {
+      orderId: order.id,
+      processingStatus: 'PROCESSED',
+      processedAt: now,
+    },
+  })
 
-  return NextResponse.json({
-    ok: true,
+  const ops =
+    Object.keys(updateData).length > 0
+      ? [
+          prisma.order.update({
+            where: { id: order.id },
+            data: updateData,
+          }),
+          eventUpdate,
+        ]
+      : [eventUpdate]
+
+  await prisma.$transaction(ops)
+
+  return jsonSuccess({
     eventId: event.id,
     processingStatus: 'PROCESSED',
     orderId: order.id,

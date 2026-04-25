@@ -207,11 +207,26 @@ export async function getSteadfastBalance(): Promise<SteadfastBalanceResult> {
 // ─── Status Mapping ────────────────────────────────────────────────────────
 
 /**
+ * Normalize webhook/API status strings (e.g. "Delivered", "partial delivered")
+ * to Steadfast canonical keys used in {@link mapSteadfastStatusToOrderStatus}.
+ */
+export function normalizeSteadfastDeliveryStatus(
+  status: string | undefined | null
+): string {
+  return String(status ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+}
+
+/**
  * Map Steadfast delivery status → our OrderStatus enum
+ * (accepts portal casing/spacing per webhook docs)
  */
 export function mapSteadfastStatusToOrderStatus(
   status: SteadfastDeliveryStatus
 ): 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | null {
+  const key = normalizeSteadfastDeliveryStatus(String(status))
   const map: Record<string, 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | null> = {
     pending: 'SHIPPED',
     hold: 'SHIPPED',
@@ -220,13 +235,14 @@ export function mapSteadfastStatusToOrderStatus(
     delivered: 'DELIVERED',
     cancelled: 'CANCELLED',
   };
-  return map[status] ?? null;
+  return map[key] ?? null;
 }
 
 /**
  * Human-readable label for Steadfast status
  */
 export function getSteadfastStatusLabel(status: SteadfastDeliveryStatus): string {
+  const key = normalizeSteadfastDeliveryStatus(String(status))
   const labels: Record<string, string> = {
     pending: 'Pending Pickup',
     hold: 'On Hold',
@@ -236,13 +252,14 @@ export function getSteadfastStatusLabel(status: SteadfastDeliveryStatus): string
     cancelled: 'Cancelled',
     unknown: 'Unknown',
   };
-  return labels[status] ?? status;
+  return labels[key] ?? (String(status).trim() || 'Unknown');
 }
 
 /**
  * Color class for Steadfast status badge
  */
 export function getSteadfastStatusColor(status: SteadfastDeliveryStatus): string {
+  const key = normalizeSteadfastDeliveryStatus(String(status))
   const colors: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-800',
     hold: 'bg-orange-100 text-orange-800',
@@ -252,5 +269,5 @@ export function getSteadfastStatusColor(status: SteadfastDeliveryStatus): string
     cancelled: 'bg-red-100 text-red-800',
     unknown: 'bg-gray-100 text-gray-600',
   };
-  return colors[status] ?? 'bg-gray-100 text-gray-600';
+  return colors[key] ?? 'bg-gray-100 text-gray-600';
 }
