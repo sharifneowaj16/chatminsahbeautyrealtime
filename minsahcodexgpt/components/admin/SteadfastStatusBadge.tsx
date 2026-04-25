@@ -8,6 +8,7 @@
  */
 
 import { Truck, Package, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { normalizeSteadfastDeliveryStatus } from '@/lib/steadfast/client';
 
 interface SteadfastStatusBadgeProps {
   status?: string | null;
@@ -55,6 +56,12 @@ const STATUS_MAP: Record<
     text: 'text-red-600',
     icon: <XCircle className="w-3 h-3" />,
   },
+  unknown: {
+    label: 'Unknown',
+    bg: 'bg-gray-50',
+    text: 'text-gray-600',
+    icon: <Package className="w-3 h-3" />,
+  },
 };
 
 export default function SteadfastStatusBadge({
@@ -77,7 +84,8 @@ export default function SteadfastStatusBadge({
     );
   }
 
-  const cfg = status ? STATUS_MAP[status] : null;
+  const key = status ? normalizeSteadfastDeliveryStatus(status) : '';
+  const cfg = key ? STATUS_MAP[key] : null;
 
   if (!cfg) {
     return (

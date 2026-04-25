@@ -14,7 +14,8 @@
  * - Wallet balance display
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import {
   X,
   Truck,
@@ -32,7 +33,9 @@ import {
   Phone,
   User,
   DollarSign,
+  Webhook,
 } from 'lucide-react';
+import { normalizeSteadfastDeliveryStatus } from '@/lib/steadfast/client';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -99,10 +102,16 @@ const STATUS_CONFIG: Record<
     color: 'bg-red-100 text-red-800 border-red-200',
     icon: <XCircle className="w-3.5 h-3.5" />,
   },
+  unknown: {
+    label: 'Unknown',
+    color: 'bg-gray-100 text-gray-600 border-gray-200',
+    icon: <Package className="w-3.5 h-3.5" />,
+  },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? {
+  const key = normalizeSteadfastDeliveryStatus(status);
+  const cfg = STATUS_CONFIG[key] ?? {
     label: status,
     color: 'bg-gray-100 text-gray-600 border-gray-200',
     icon: <Package className="w-3.5 h-3.5" />,
@@ -137,6 +146,13 @@ export default function SteadfastShipPanel({
   const [currentStatus, setCurrentStatus] = useState<string | null>(null);
   const [trackingCode, setTrackingCode] = useState<string | null>(null);
   const [consignmentId, setConsignmentId] = useState<string | null>(null);
+
+  const webhookBase = useMemo(() => {
+    const fromEnv = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
+    if (fromEnv) return fromEnv;
+    if (typeof window !== 'undefined') return window.location.origin;
+    return '';
+  }, []);
 
   // Init state when order changes
   useEffect(() => {
@@ -240,6 +256,7 @@ export default function SteadfastShipPanel({
   if (!isOpen || !order) return null;
 
   const alreadyDispatched = !!(consignmentId || order.steadfastConsignmentId);
+  const webhookCallbackUrl = webhookBase ? `${webhookBase}/api/webhook/steadfast` : '';
 
   return (
     <>
@@ -290,6 +307,46 @@ export default function SteadfastShipPanel({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Webhook callback — same flow as “add parcel” in Steadfast portal */}
+          {webhookCallbackUrl ? (
+            <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-violet-900 flex items-center gap-2">
+                <Webhook className="w-4 h-4 shrink-0" />
+                Webhook callback URL
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                In the Steadfast portal, set this callback URL and the same Bearer token as your server env (
+                <code className="rounded bg-white/90 px-1 py-0.5 text-[11px]">STEADFAST_WEBHOOK_SECRET</code> or{' '}
+                <code className="rounded bg-white/90 px-1 py-0.5 text-[11px]">STEADFAST_WEBHOOK_AUTHORIZATION</code>
+                ). Delivery updates will sync to this order automatically.
+              </p>
+              <div className="flex items-start gap-2 rounded-xl bg-white border border-violet-100 px-3 py-2">
+                <code className="text-[11px] font-mono text-gray-800 flex-1 break-all leading-snug">
+                  {webhookCallbackUrl}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(webhookCallbackUrl)}
+                  className="p-1.5 text-gray-400 hover:text-violet-600 rounded-lg hover:bg-violet-50 shrink-0"
+                  title="Copy URL"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+              <Link
+                href="/admin/shipping/steadfast-webhooks"
+                className="inline-flex text-xs font-medium text-violet-700 hover:text-violet-900"
+              >
+                View webhook log →
+              </Link>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Set <code className="font-mono">NEXT_PUBLIC_APP_URL</code> to your public site URL so the Steadfast
+              webhook callback can be copied here.
+            </div>
+          )}
+
           {/* Status card — if already dispatched */}
           {alreadyDispatched && (
             <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-4 space-y-3">
@@ -454,12 +511,12 @@ export default function SteadfastShipPanel({
               {loading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Sending to Steadfast...
+                  Adding parcel…
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  Dispatch to Steadfast
+                  Add parcel (Steadfast)
                 </>
               )}
             </button>

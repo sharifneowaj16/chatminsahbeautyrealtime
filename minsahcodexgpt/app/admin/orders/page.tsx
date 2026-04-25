@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { formatPrice } from '@/utils/currency';
@@ -373,6 +374,13 @@ function OrderDetailDrawer({
                     {order.steadfastSentAt && (
                       <p className="text-xs text-gray-400">Dispatched: {formatDateTime(order.steadfastSentAt)}</p>
                     )}
+                    <p className="text-xs text-violet-700 pt-2 border-t border-violet-100 mt-2">
+                      Live updates from Steadfast use the{' '}
+                      <Link href="/admin/shipping/steadfast-webhooks" className="font-medium underline hover:text-violet-900">
+                        webhook log
+                      </Link>
+                      . Callback: <code className="text-[10px] bg-white/80 rounded px-1">/api/webhook/steadfast</code>
+                    </p>
                   </div>
                 </div>
               )}
@@ -1137,7 +1145,7 @@ export default function OrdersPage() {
                             ) : (
                               <>
                                 <Send className="w-3.5 h-3.5" />
-                                Ship
+                                Parcel
                               </>
                             )}
                           </button>

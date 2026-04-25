@@ -93,6 +93,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'shipped': return <Truck className="w-5 h-5 text-blue-500" />;
       case 'processing': return <Clock className="w-5 h-5 text-yellow-500" />;
       case 'cancelled': return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'refunded': return <XCircle className="w-5 h-5 text-purple-500" />;
       default: return <Clock className="w-5 h-5 text-yellow-500" />;
     }
   };
@@ -104,27 +105,41 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'processing': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       case 'confirmed': return 'bg-indigo-100 text-indigo-800';
+      case 'refunded': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'paid':
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+      case 'processing':
+        return 'bg-yellow-100 text-yellow-800';
       case 'failed': return 'bg-red-100 text-red-800';
       case 'refunded': return 'bg-purple-100 text-purple-800';
+      case 'cancelled': return 'bg-gray-200 text-gray-700';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+  /** Prefers Steadfast / courier code; falls back to order+phone lookup on /track */
   const getTrackingUrl = (order: Order): string => {
-    if (order.steadfastTrackingCode) {
-      return `/track?code=${order.steadfastTrackingCode}`;
+    const code = order.steadfastTrackingCode || order.trackingNumber;
+    if (code) {
+      return `/track?code=${encodeURIComponent(code)}`;
     }
-    return `/track?order=${order.orderNumber}&phone=${order.userPhone || ''}`;
+    return `/track?order=${encodeURIComponent(order.orderNumber)}&phone=${encodeURIComponent(order.userPhone || '')}`;
+  };
+
+  const awaitingDispatch = (order: Order) => {
+    const hasCode = !!(order.steadfastTrackingCode || order.trackingNumber);
+    if (hasCode) return false;
+    return ['pending', 'confirmed', 'processing'].includes(order.status);
   };
 
   const getReturnLabel = (order: Order) => {
@@ -204,6 +219,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           <option value="shipped">Shipped</option>
           <option value="delivered">Delivered</option>
           <option value="cancelled">Cancelled</option>
+          <option value="refunded">Refunded</option>
         </select>
       </div>
 
@@ -264,6 +280,15 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                   </div>
                 </div>
               </div>
+
+              {awaitingDispatch(order) && (
+                <div className="px-6 pb-0 -mt-2">
+                  <p className="text-sm text-indigo-800 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+                    We&rsquo;re preparing your order. After the warehouse sends it to Steadfast, your{' '}
+                    <strong>tracking link</strong> and status updates will show here and on the order page.
+                  </p>
+                </div>
+              )}
 
               {/* Order Items */}
               <div className="p-6">

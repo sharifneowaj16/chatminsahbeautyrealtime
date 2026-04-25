@@ -40,8 +40,10 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
   const trackPhoneDigits = (order.shippingAddress?.phone ?? '')
     .replace(/\D/g, '')
     .replace(/^880/, '0')
-  const trackHref = order.steadfastTrackingCode
-    ? `/track?code=${encodeURIComponent(order.steadfastTrackingCode)}`
+  const trackingCode =
+    order.steadfastTrackingCode || order.trackingNumber
+  const trackHref = trackingCode
+    ? `/track?code=${encodeURIComponent(trackingCode)}`
     : trackPhoneDigits
       ? `/track?order=${encodeURIComponent(order.orderNumber)}&phone=${encodeURIComponent(trackPhoneDigits)}`
       : '/track'
@@ -164,6 +166,14 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     </p>
                   </div>
                 )}
+                {['pending', 'confirmed', 'processing'].includes(order.status) &&
+                  !order.steadfastTrackingCode &&
+                  !order.trackingNumber && (
+                    <div className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                      Your order is being reviewed and packed. When it is handed to Steadfast, a{' '}
+                      <strong>tracking number</strong> and link will appear here.
+                    </div>
+                  )}
                 {order.trackingNumber && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
@@ -316,7 +326,9 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     View Return {order.latestReturn.status.replace('_', ' ')}
                   </Link>
                 )}
-                {(order.steadfastTrackingCode || order.trackingNumber || order.steadfastStatus) && (
+                {(order.steadfastTrackingCode ||
+                  order.trackingNumber ||
+                  order.steadfastStatus) && (
                   <a
                     href={trackHref}
                     target="_blank"
