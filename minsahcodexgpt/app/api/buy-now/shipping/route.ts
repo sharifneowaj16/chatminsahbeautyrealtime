@@ -111,6 +111,12 @@ export async function POST(request: NextRequest) {
           parcelWeightKg,
         })) ??
         estimateDeliveryCharge({ city, area, parcelWeightKg });
+
+      // Guardrail: if a live quote looks obviously wrong, use slab pricing.
+      // (Most retail parcels should never have 1000+ BDT shipping.)
+      if (quote.source === 'steadfast' && quote.charge > 500) {
+        quote = estimateDeliveryCharge({ city, area, parcelWeightKg });
+      }
     } catch (error) {
       console.error('Buy now delivery quote failed, using fallback estimate:', error);
       quote = estimateDeliveryCharge({ city, area, parcelWeightKg });

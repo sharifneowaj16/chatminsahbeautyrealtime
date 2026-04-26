@@ -6,6 +6,11 @@ export interface DeliveryQuoteResult {
 
 export function parseWeightToKg(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    // Heuristic: many products store weight as grams/ml (e.g. 150, 200, 500)
+    // while shipping calculations need kilograms.
+    if (value >= 10) {
+      return value / 1000;
+    }
     return value;
   }
 
@@ -170,23 +175,74 @@ export function estimateDeliveryCharge(params: {
 }): DeliveryQuoteResult {
   const normalizedCity = params.city.trim().toLowerCase();
   const normalizedArea = params.area.trim().toLowerCase();
-  const isDhakaMetro =
-    normalizedCity.includes('dhaka') ||
-    normalizedArea.includes('dhaka') ||
-    normalizedArea.includes('gulshan') ||
-    normalizedArea.includes('uttara') ||
-    normalizedArea.includes('mirpur') ||
-    normalizedArea.includes('dhanmondi');
+  const weight = Math.max(0.01, params.parcelWeightKg);
 
-  const baseCharge = isDhakaMetro ? 80 : 120;
-  const extraWeightKg = Math.max(0, params.parcelWeightKg - 0.5);
-  const extraBlocks = Math.ceil(extraWeightKg / 0.5);
-  const charge = baseCharge + extraBlocks * 20;
+  const dhakaCityThanas = [
+    'dhanmondi',
+    'mirpur',
+    'uttara',
+    'mohammadpur',
+    'gulshan',
+    'banani',
+    'badda',
+    'rampura',
+  ];
+
+  const dhakaSubAreas = [
+    'savar',
+    'keraniganj',
+    'narayanganj',
+    'gazipur',
+    'tongi',
+  ];
+
+  const isDhaka = normalizedCity.includes('dhaka') || normalizedArea.includes('dhaka');
+  const isDhakaSub = dhakaSubAreas.some((key) => normalizedArea.includes(key));
+  const isDhakaCity = isDhaka && !isDhakaSub && dhakaCityThanas.some((key) => normalizedArea.includes(key));
+
+  type Slab = { maxKg: number; charge: number };
+  const slabsDhakaCity: Slab[] = [
+    { maxKg: 0.2, charge: 60 },
+    { maxKg: 0.5, charge: 70 },
+    { maxKg: 1, charge: 80 },
+    { maxKg: 2, charge: 100 },
+    { maxKg: 3, charge: 120 },
+  ];
+  const slabsDhakaSub: Slab[] = [
+    { maxKg: 0.5, charge: 90 },
+    { maxKg: 1, charge: 100 },
+    { maxKg: 2, charge: 120 },
+    { maxKg: 3, charge: 140 },
+  ];
+  const slabsOutsideDhaka: Slab[] = [
+    { maxKg: 0.2, charge: 120 },
+    { maxKg: 0.5, charge: 130 },
+    { maxKg: 1, charge: 140 },
+    { maxKg: 2, charge: 160 },
+    { maxKg: 3, charge: 200 },
+  ];
+
+  const pickFromSlabs = (slabs: Slab[]) => {
+    for (const slab of slabs) {
+      if (weight <= slab.maxKg) return slab.charge;
+    }
+    // beyond 3kg: keep it predictable (20৳ per extra 1kg block)
+    const last = slabs[slabs.length - 1];
+    const extraKg = Math.max(0, weight - last.maxKg);
+    const extraBlocks = Math.ceil(extraKg / 1);
+    return last.charge + extraBlocks * 20;
+  };
+
+  const charge = isDhakaCity
+    ? pickFromSlabs(slabsDhakaCity)
+    : isDhakaSub
+      ? pickFromSlabs(slabsDhakaSub)
+      : pickFromSlabs(slabsOutsideDhaka);
 
   return {
     charge,
     source: 'fallback',
-    note: 'Delivery charge was estimated locally because no live courier quote was available.',
+    note: 'Delivery charge was calculated locally using Steadfast weight slabs.',
   };
 }
 
