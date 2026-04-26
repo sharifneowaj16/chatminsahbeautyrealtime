@@ -2,7 +2,7 @@
 
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useRef, Suspense } from 'react';
+import { useState, useRef, Suspense, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, CreditCard, FileText, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
@@ -18,8 +18,6 @@ function CheckoutContent() {
     items,
     subtotal,
     shippingCost,
-    tax,
-    total,
     selectedAddress,
     selectedPaymentMethod,
     clearCart,
@@ -28,9 +26,69 @@ function CheckoutContent() {
   const [expandedSection, setExpandedSection] = useState<'address' | 'payment' | 'summary' | null>('address');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState<number>(shippingCost);
+  const [deliveryState, setDeliveryState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   // Ref to track that "Place Order" was clicked while logged out
   const pendingOrderRef = useRef(false);
+  const shippingQuoteItems = useMemo(
+    () =>
+      items.map((item) => ({
+        productId: item.productId ?? item.id,
+        variantId: item.variantId ?? null,
+        quantity: item.quantity,
+      })),
+    [items]
+  );
+  const finalTotal = subtotal + deliveryCharge;
+
+  useEffect(() => {
+    if (!items.length || !selectedAddress?.city || !selectedAddress.zone) {
+      setDeliveryCharge(shippingCost);
+      setDeliveryState('idle');
+      return;
+    }
+
+    let isCancelled = false;
+    const abortController = new AbortController();
+
+    const quoteDeliveryCharge = async () => {
+      setDeliveryState('loading');
+      try {
+        const response = await fetch('/api/buy-now/shipping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: shippingQuoteItems,
+            city: selectedAddress.city,
+            area: selectedAddress.zone,
+          }),
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to quote delivery');
+        }
+
+        const data = (await response.json()) as { deliveryCharge?: number };
+        if (!isCancelled && typeof data.deliveryCharge === 'number') {
+          setDeliveryCharge(data.deliveryCharge);
+          setDeliveryState('success');
+        }
+      } catch {
+        if (!isCancelled) {
+          setDeliveryCharge(shippingCost);
+          setDeliveryState('error');
+        }
+      }
+    };
+
+    void quoteDeliveryCharge();
+    return () => {
+      isCancelled = true;
+      abortController.abort();
+    };
+  }, [items.length, selectedAddress?.city, selectedAddress?.zone, shippingCost, shippingQuoteItems]);
 
   // ── Core order submission (called directly or after login) ───────────────
   const submitOrder = async (sessionUserId?: string) => {
@@ -73,7 +131,7 @@ function CheckoutContent() {
             landmark: selectedAddress.landmark,
           },
           paymentMethod: selectedPaymentMethod.type,
-          shippingCost,
+          shippingCost: deliveryCharge,
           customerNote: '',
         }),
       });
@@ -304,15 +362,17 @@ function CheckoutContent() {
                     </div>
                     <div className="flex justify-between text-sm text-minsah-secondary">
                       <span>Shipping</span>
-                      <span>{shippingCost === 0 ? 'Free' : formatPrice(shippingCost)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm text-minsah-secondary">
-                      <span>Tax (5%)</span>
-                      <span>{formatPrice(tax)}</span>
+                      <span>
+                        {deliveryState === 'loading'
+                          ? 'Calculating...'
+                          : deliveryState === 'error'
+                            ? 'Will be confirmed'
+                            : formatPrice(deliveryCharge)}
+                      </span>
                     </div>
                     <div className="flex justify-between font-bold text-minsah-dark">
                       <span>Total</span>
-                      <span>{formatPrice(total)}</span>
+                      <span>{formatPrice(finalTotal)}</span>
                     </div>
                   </div>
                 </div>
@@ -326,7 +386,7 @@ function CheckoutContent() {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-minsah-accent shadow-lg">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-minsah-secondary">Total</span>
-          <span className="text-xl font-bold text-minsah-primary">{formatPrice(total)}</span>
+          <span className="text-xl font-bold text-minsah-primary">{formatPrice(finalTotal)}</span>
         </div>
         <button
           onClick={handlePlaceOrder}

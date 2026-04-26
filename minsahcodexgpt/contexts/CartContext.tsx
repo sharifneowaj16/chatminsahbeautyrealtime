@@ -150,8 +150,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const subtotal     = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const shippingCost = 0;
-  const tax          = subtotal * 0.05;
-  const total        = subtotal + shippingCost + tax - discount;
+  const tax          = 0;
+  const total        = subtotal + shippingCost - discount;
 
   // ── DB helpers ─────────────────────────────────────────────────
 

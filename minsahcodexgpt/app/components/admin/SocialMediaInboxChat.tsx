@@ -35,12 +35,14 @@ import {
   ChevronDown,
   FileAudio,
   FileText,
+  MapPin,
   MessageSquare,
   Paperclip,
   RefreshCw,
   Search,
   Send,
   Sparkles,
+  ShoppingCart,
   Wifi,
   WifiOff,
   X,
@@ -151,6 +153,44 @@ interface UploadedDraftAttachment {
   mimeType?: string;
   thumbnail?: string;
 }
+
+type ToastState =
+  | { type: 'success' | 'error'; message: string }
+  | null;
+
+type ClientProfile = {
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'youtube';
+  participantId: string;
+  phoneNumber: string;
+  realName: string;
+  address: string;
+  district: string;
+  thana: string;
+};
+
+type ProductSearchItem = {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  image: string;
+  images: string[];
+  stock: number;
+  inStock: boolean;
+  variants?: Array<{
+    id: string;
+    price: number;
+    stock: number;
+    attributes: Record<string, unknown>;
+  }>;
+};
+
+type SelectedProductDraft = {
+  product: ProductSearchItem;
+  variantId: string | null;
+  quantity: number;
+  note: string;
+};
 
 function normalizeDraftUploadType(type: DraftAttachment['type']): UploadedDraftAttachment['type'] {
   return type === 'document' ? 'file' : type;
@@ -434,6 +474,25 @@ function getOutgoingStatusLabel(status: SocialMessage['status']) {
   }
 }
 
+function formatBdt(amount: number) {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  try {
+    return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(safe);
+  } catch {
+    return `৳${Math.round(safe)}`;
+  }
+}
+
+function safeJsonParse<T>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+const PRODUCT_CARD_PREFIX = '__MINSAH_PRODUCT_CARD__:' as const;
+
 // Play a soft notification sound using Web Audio API
 function playNotificationSound() {
   try {
@@ -571,6 +630,21 @@ export default function SocialMediaInboxChat() {
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const aiSuggestionsAvailable = false;
 
+  const [toast, setToast] = useState<ToastState>(null);
+  const [showClientDetails, setShowClientDetails] = useState(false);
+  const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null);
+  const [clientProfileDraft, setClientProfileDraft] = useState<ClientProfile | null>(null);
+  const [clientProfileLoading, setClientProfileLoading] = useState(false);
+  const [clientProfileSaving, setClientProfileSaving] = useState(false);
+
+  const [showProductDrawer, setShowProductDrawer] = useState(false);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [productSearchLoading, setProductSearchLoading] = useState(false);
+  const [productSearchResults, setProductSearchResults] = useState<ProductSearchItem[]>([]);
+  const [selectedProductDraft, setSelectedProductDraft] = useState<SelectedProductDraft | null>(null);
+  const [confirmSendProduct, setConfirmSendProduct] = useState(false);
+  const [sendingProduct, setSendingProduct] = useState(false);
+
   const fileRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
@@ -586,7 +660,15 @@ export default function SocialMediaInboxChat() {
   const pendingReadTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const prependingMessagesRef = useRef(false);
   const previousThreadScrollHeightRef = useRef(0);
+  const productSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const productSearchAbortRef = useRef<AbortController | null>(null);
   selectedRef.current = selected;
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -1139,6 +1221,233 @@ export default function SocialMediaInboxChat() {
       : [],
     [messages, selected]
   );
+
+  const loadClientProfile = useCallback(async () => {
+    if (!activeConversation) {
+      setClientProfile(null);
+      setClientProfileDraft(null);
+      return;
+    }
+    if (activeConversation.platform !== 'facebook') {
+      setClientProfile(null);
+      setClientProfileDraft(null);
+      return;
+    }
+
+    setClientProfileLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('platform', activeConversation.platform);
+      params.set('participantId', activeConversation.participant.id);
+      const res = await fetch(`/api/admin/inbox/client-profile?${params.toString()}`, {
+        cache: 'no-store',
+      });
+      const data = (await parseApiResponse<{ profile?: ClientProfile; error?: string }>(res)) as
+        | { profile?: ClientProfile; error?: string }
+        | null;
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to load client details');
+      }
+      const profile = data?.profile ?? null;
+      setClientProfile(profile);
+      setClientProfileDraft(profile ? { ...profile } : null);
+    } catch (e) {
+      setClientProfile(null);
+      setClientProfileDraft(null);
+      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Failed to load client details' });
+    } finally {
+      setClientProfileLoading(false);
+    }
+  }, [activeConversation]);
+
+  useEffect(() => {
+    void loadClientProfile();
+  }, [loadClientProfile]);
+
+  const saveClientProfile = useCallback(async () => {
+    if (!clientProfileDraft || !activeConversation) return;
+    setClientProfileSaving(true);
+    try {
+      const res = await fetch('/api/admin/inbox/client-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clientProfileDraft),
+      });
+      const data = (await parseApiResponse<{ profile?: ClientProfile; error?: string }>(res)) as
+        | { profile?: ClientProfile; error?: string }
+        | null;
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to save client details');
+      }
+      const profile = data?.profile ?? null;
+      setClientProfile(profile);
+      setClientProfileDraft(profile ? { ...profile } : clientProfileDraft);
+      setToast({ type: 'success', message: 'Client shipping details saved' });
+      setShowClientDetails(false);
+    } catch (e) {
+      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Failed to save client details' });
+    } finally {
+      setClientProfileSaving(false);
+    }
+  }, [activeConversation, clientProfileDraft]);
+
+  const runProductSearch = useCallback(async (term: string) => {
+    if (!showProductDrawer) return;
+    if (productSearchAbortRef.current) {
+      productSearchAbortRef.current.abort();
+    }
+    const ac = new AbortController();
+    productSearchAbortRef.current = ac;
+
+    setProductSearchLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('limit', '20');
+      params.set('activeOnly', 'true');
+      if (term.trim()) params.set('search', term.trim());
+      const res = await fetch(`/api/products?${params.toString()}`, {
+        cache: 'no-store',
+        signal: ac.signal,
+      });
+      const data = (await parseApiResponse<{ products?: ProductSearchItem[]; error?: string }>(res)) as
+        | { products?: ProductSearchItem[]; error?: string }
+        | null;
+      if (!res.ok) {
+        throw new Error(data?.error || 'Product search failed');
+      }
+      setProductSearchResults(Array.isArray(data?.products) ? data!.products! : []);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        return;
+      }
+      setProductSearchResults([]);
+      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Product search failed' });
+    } finally {
+      setProductSearchLoading(false);
+    }
+  }, [showProductDrawer]);
+
+  useEffect(() => {
+    if (!showProductDrawer) return;
+    if (productSearchDebounceRef.current) {
+      clearTimeout(productSearchDebounceRef.current);
+    }
+    productSearchDebounceRef.current = setTimeout(() => {
+      void runProductSearch(productSearchTerm);
+    }, 320);
+    return () => {
+      if (productSearchDebounceRef.current) {
+        clearTimeout(productSearchDebounceRef.current);
+        productSearchDebounceRef.current = null;
+      }
+    };
+  }, [productSearchTerm, runProductSearch, showProductDrawer]);
+
+  useEffect(() => {
+    if (!showProductDrawer) return;
+    void runProductSearch(productSearchTerm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showProductDrawer]);
+
+  const buildSelectedVariant = useCallback((draft: SelectedProductDraft) => {
+    if (!draft.variantId) return null;
+    return draft.product.variants?.find((v) => v.id === draft.variantId) ?? null;
+  }, []);
+
+  const sendProductCard = useCallback(async () => {
+    if (!selectedProductDraft || sendingProduct || !activeConversation || !selected) return;
+    if (activeConversation.platform !== 'facebook') {
+      setToast({ type: 'error', message: 'Product sending currently supports Facebook only.' });
+      return;
+    }
+
+    const variant = buildSelectedVariant(selectedProductDraft);
+    const unitPrice = variant?.price ?? selectedProductDraft.product.price;
+    const qty = Math.max(1, Math.min(99, selectedProductDraft.quantity || 1));
+    const stock = variant?.stock ?? selectedProductDraft.product.stock;
+    if (stock <= 0) {
+      setToast({ type: 'error', message: 'This product is out of stock.' });
+      return;
+    }
+
+    const payload = {
+      kind: 'product_card' as const,
+      productId: selectedProductDraft.product.id,
+      slug: selectedProductDraft.product.slug,
+      name: selectedProductDraft.product.name,
+      image: selectedProductDraft.product.image,
+      price: unitPrice,
+      quantity: qty,
+      variantId: variant?.id ?? null,
+      note: selectedProductDraft.note?.trim() || '',
+      viewUrl: `/product/${selectedProductDraft.product.slug}`,
+      orderUrl: `/buy-now?product=${selectedProductDraft.product.slug}&qty=${qty}${variant?.id ? `&variant=${variant.id}` : ''}`,
+    };
+
+    const messageText =
+      `${PRODUCT_CARD_PREFIX}${JSON.stringify(payload)}\n` +
+      `\n${selectedProductDraft.product.name}\nPrice: ${formatBdt(unitPrice)}\nQty: ${qty}\n` +
+      `View: https://minsahbeauty.cloud/product/${selectedProductDraft.product.slug}\n` +
+      `Order Now: https://minsahbeauty.cloud/buy-now?product=${selectedProductDraft.product.slug}&qty=${qty}${variant?.id ? `&variant=${variant.id}` : ''}`;
+
+    setSendingProduct(true);
+    setConfirmSendProduct(false);
+
+    const clientMessageBase = `client-product-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const optimistic: SocialMessage = {
+      id: `optimistic-${clientMessageBase}`,
+      clientMessageId: `${clientMessageBase}:0`,
+      platform: 'facebook',
+      type: 'message',
+      conversationId: selected,
+      sender: { id: 'page', name: 'Minsah Beauty' },
+      content: { text: messageText },
+      status: 'sending',
+      timestamp: new Date().toISOString(),
+      isIncoming: false,
+    };
+    setMessages((prev) => sortMessagesChronologically([...prev, optimistic]));
+    setConversationItems((previous) => upsertConversationFromMessage(previous, optimistic));
+
+    try {
+      const res = await fetch('/api/admin/inbox/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'messenger',
+          recipientPsid: activeConversation.participant.id,
+          text: messageText,
+          clientMessageId: clientMessageBase,
+        }),
+      });
+      const data = (await parseApiResponse<{ error?: string }>(res)) as { error?: string } | null;
+      if (!res.ok) {
+        throw new Error(
+          data?.error ||
+          (res.status === 401
+            ? 'Admin session expired. Please log in again.'
+            : 'Failed to send product')
+        );
+      }
+
+      setToast({ type: 'success', message: 'Product sent to client' });
+      setShowProductDrawer(false);
+      setSelectedProductDraft(null);
+    } catch (e) {
+      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Failed to send product' });
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      void fetchMessages(false);
+    } finally {
+      setSendingProduct(false);
+    }
+  }, [
+    activeConversation,
+    buildSelectedVariant,
+    fetchMessages,
+    selected,
+    selectedProductDraft,
+    sendingProduct,
+  ]);
 
   useEffect(() => {
     if (filterPlatform !== 'facebook') {
@@ -1820,6 +2129,41 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         .conv-item-active { background: linear-gradient(180deg, #ffffff 0%, #fbf4ec 100%) !important; border-color: rgba(100,50,13,0.28) !important; box-shadow: 0 12px 26px rgba(72,43,18,0.08); }
       `}</style>
 
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 18,
+          right: 18,
+          zIndex: 1000,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 14px',
+            borderRadius: 16,
+            border: `1px solid ${toast.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+            background: toast.type === 'success' ? '#f0fdf4' : '#fef2f2',
+            color: toast.type === 'success' ? '#166534' : '#991b1b',
+            boxShadow: '0 18px 30px rgba(0,0,0,0.10)',
+            maxWidth: 360,
+            fontSize: 13,
+            fontWeight: 800,
+          }}>
+            <span style={{
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              marginTop: 4,
+              background: toast.type === 'success' ? '#22c55e' : '#ef4444',
+              flexShrink: 0,
+            }} />
+            <span style={{ lineHeight: 1.35 }}>{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       {/* ═══════════════════════════ SIDEBAR ═══════════════════════════ */}
       <aside style={{
         display: isMobile && showChat ? 'none' : 'flex',
@@ -2160,6 +2504,38 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 </div>
               </div>
 
+              {/* Client details (shipping address) */}
+              <button
+                onClick={() => setShowClientDetails(true)}
+                title="Client shipping details"
+                style={{
+                  width: 42, height: 42, borderRadius: 16,
+                  background: '#fffaf5',
+                  border: '1px solid rgba(115,75,42,0.10)',
+                  cursor: 'pointer',
+                  color: '#64320D',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <MapPin size={18} />
+              </button>
+
+              {/* Product search */}
+              <button
+                onClick={() => { setShowProductDrawer(true); }}
+                title="Search products to send"
+                style={{
+                  width: 42, height: 42, borderRadius: 16,
+                  background: '#fffaf5',
+                  border: '1px solid rgba(115,75,42,0.10)',
+                  cursor: 'pointer',
+                  color: '#128C7E',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Search size={18} />
+              </button>
+
               {/* AI suggest */}
                 {aiSuggestionsAvailable && (
                   <button
@@ -2257,6 +2633,21 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   const sameSenderAsNext = next && next.isIncoming === msg.isIncoming && next.sender.id === msg.sender.id;
                   const showAvatar = msg.isIncoming && (!next || !next.isIncoming || next.sender.id !== msg.sender.id);
 
+                  const maybeProductCard =
+                    typeof msg.content.text === 'string' && msg.content.text.startsWith(PRODUCT_CARD_PREFIX)
+                      ? safeJsonParse<{
+                          kind: 'product_card';
+                          slug: string;
+                          name: string;
+                          image: string;
+                          price: number;
+                          quantity: number;
+                          note?: string;
+                          viewUrl: string;
+                          orderUrl: string;
+                        }>((msg.content.text.slice(PRODUCT_CARD_PREFIX.length).split('\n')[0] || '').trim())
+                      : null;
+
                   return (
                     <div key={msg.id} style={{ marginTop: sameSenderAsPrev ? 6 : 18, animation: 'fadeIn 0.2s ease' }}>
                       {showDivider && (
@@ -2313,7 +2704,95 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                               </span>
                             )}
 
-                            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{fixEncoding(msg.content.text)}</p>
+                            {maybeProductCard ? (
+                              <div style={{
+                                display: 'flex',
+                                gap: 12,
+                                alignItems: 'center',
+                                background: 'rgba(255,255,255,0.70)',
+                                border: '1px solid rgba(115,75,42,0.10)',
+                                borderRadius: 18,
+                                padding: 12,
+                              }}>
+                                <div style={{
+                                  width: 64,
+                                  height: 64,
+                                  borderRadius: 16,
+                                  overflow: 'hidden',
+                                  background: '#fff',
+                                  border: '1px solid rgba(115,75,42,0.10)',
+                                  flexShrink: 0,
+                                }}>
+                                  {maybeProductCard.image ? (
+                                    <img
+                                      src={maybeProductCard.image}
+                                      alt={maybeProductCard.name}
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
+                                  ) : (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8E6545', fontWeight: 800 }}>
+                                      MB
+                                    </div>
+                                  )}
+                                </div>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a', lineHeight: 1.25, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {maybeProductCard.name}
+                                  </div>
+                                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                                    <span>{formatBdt(maybeProductCard.price)}</span>
+                                    <span>Qty: {maybeProductCard.quantity}</span>
+                                  </div>
+                                  {maybeProductCard.note ? (
+                                    <div style={{ marginTop: 6, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>
+                                      Note: {maybeProductCard.note}
+                                    </div>
+                                  ) : null}
+                                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                                    <a
+                                      href={`https://minsahbeauty.cloud${maybeProductCard.viewUrl}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{
+                                        padding: '8px 10px',
+                                        borderRadius: 12,
+                                        background: '#fff',
+                                        border: '1px solid rgba(115,75,42,0.12)',
+                                        color: '#64320D',
+                                        fontSize: 12,
+                                        fontWeight: 900,
+                                        textDecoration: 'none',
+                                      }}
+                                    >
+                                      View Product
+                                    </a>
+                                    <a
+                                      href={`https://minsahbeauty.cloud${maybeProductCard.orderUrl}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{
+                                        padding: '8px 10px',
+                                        borderRadius: 12,
+                                        background: '#128C7E',
+                                        border: '1px solid rgba(18,140,126,0.18)',
+                                        color: '#ffffff',
+                                        fontSize: 12,
+                                        fontWeight: 900,
+                                        textDecoration: 'none',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                      }}
+                                    >
+                                      <ShoppingCart size={14} />
+                                      Add to Cart / Order Now
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{fixEncoding(msg.content.text)}</p>
+                            )}
 
                             {msg.content.media && msg.content.media.length > 0 && (
                               <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
@@ -2544,6 +3023,567 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
           </div>
         )}
       </main>
+
+      {/* Client Details Modal */}
+      {showClientDetails && activeConversation && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 900,
+          background: 'rgba(0,0,0,0.38)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 640,
+            borderRadius: 24,
+            background: '#ffffff',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.22)',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              padding: '16px 18px',
+              borderBottom: '1px solid #ede5de',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a' }}>Client Details (Shipping Address)</div>
+                <div style={{ fontSize: 12, color: '#8E6545', marginTop: 3 }}>
+                  Phone number, real name, Address, District, Thana
+                </div>
+              </div>
+              <button
+                onClick={() => setShowClientDetails(false)}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 14,
+                  background: '#fffaf5',
+                  border: '1px solid rgba(115,75,42,0.10)',
+                  cursor: 'pointer',
+                  color: '#64320D',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: 18 }}>
+              {clientProfileLoading ? (
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#8E6545' }}>Loading client details…</div>
+              ) : (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {(() => {
+                    const draft = clientProfileDraft ?? {
+                      platform: activeConversation.platform,
+                      participantId: activeConversation.participant.id,
+                      phoneNumber: '',
+                      realName: '',
+                      address: '',
+                      district: '',
+                      thana: '',
+                    };
+
+                    const set = (patch: Partial<ClientProfile>) =>
+                      setClientProfileDraft({ ...draft, ...patch });
+
+                    return (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <Field label="Phone Number" value={draft.phoneNumber} onChange={(v) => set({ phoneNumber: v })} />
+                          <Field label="Real Name" value={draft.realName} onChange={(v) => set({ realName: v })} />
+                        </div>
+                        <Field label="Address" value={draft.address} onChange={(v) => set({ address: v })} multiline />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <Field label="District" value={draft.district} onChange={(v) => set({ district: v })} />
+                          <Field label="Thana" value={draft.thana} onChange={(v) => set({ thana: v })} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 6 }}>
+                          <button
+                            onClick={() => setShowClientDetails(false)}
+                            style={{
+                              padding: '10px 14px',
+                              borderRadius: 14,
+                              background: '#fffaf5',
+                              border: '1px solid rgba(115,75,42,0.12)',
+                              cursor: 'pointer',
+                              fontWeight: 900,
+                              color: '#64320D',
+                            }}
+                          >
+                            Close
+                          </button>
+                          <button
+                            onClick={() => void saveClientProfile()}
+                            disabled={clientProfileSaving}
+                            style={{
+                              padding: '10px 14px',
+                              borderRadius: 14,
+                              background: clientProfileSaving ? '#d1fae5' : '#128C7E',
+                              border: '1px solid rgba(18,140,126,0.18)',
+                              cursor: clientProfileSaving ? 'not-allowed' : 'pointer',
+                              fontWeight: 900,
+                              color: clientProfileSaving ? '#065f46' : '#ffffff',
+                              opacity: clientProfileSaving ? 0.85 : 1,
+                            }}
+                          >
+                            {clientProfileSaving ? 'Saving…' : 'Save'}
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Search Drawer */}
+      {showProductDrawer && activeConversation && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 950,
+          background: 'rgba(0,0,0,0.38)',
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}>
+          <div style={{
+            width: isMobile ? '100%' : 560,
+            height: '100%',
+            background: '#fff',
+            boxShadow: '-20px 0 60px rgba(0,0,0,0.20)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <div style={{
+              padding: '16px 18px',
+              borderBottom: '1px solid #ede5de',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a' }}>Product Search</div>
+                <div style={{ fontSize: 12, color: '#8E6545', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Select a product → preview → send to {activeConversation.participant.name}
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowProductDrawer(false); setSelectedProductDraft(null); }}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 14,
+                  background: '#fffaf5',
+                  border: '1px solid rgba(115,75,42,0.10)',
+                  cursor: 'pointer',
+                  color: '#64320D',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: 14, borderBottom: '1px solid #f2ebe4' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#fbf7f3',
+                borderRadius: 18,
+                padding: '12px 12px',
+                border: '1px solid rgba(115,75,42,0.10)',
+              }}>
+                <Search size={16} color="#8d684e" />
+                <input
+                  value={productSearchTerm}
+                  onChange={(e) => setProductSearchTerm(e.target.value)}
+                  placeholder="Search products…"
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: 14,
+                    color: '#23120a',
+                  }}
+                />
+                {productSearchLoading && (
+                  <RefreshCw size={16} color="#8d684e" style={{ animation: 'spin 1s linear infinite' }} />
+                )}
+              </div>
+            </div>
+
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 14 }}>
+              <div style={{ display: 'grid', gap: 10 }}>
+                {(productSearchResults.length === 0 && !productSearchLoading) ? (
+                  <div style={{
+                    padding: 14,
+                    borderRadius: 18,
+                    background: '#fffaf4',
+                    border: '1px solid rgba(115,75,42,0.10)',
+                    color: '#8E6545',
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}>
+                    No products found. Try a different search.
+                  </div>
+                ) : (
+                  productSearchResults.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        const defaultVariantId = p.variants?.length ? p.variants[0].id : null;
+                        setSelectedProductDraft({
+                          product: p,
+                          variantId: defaultVariantId,
+                          quantity: 1,
+                          note: '',
+                        });
+                      }}
+                      style={{
+                        display: 'flex',
+                        gap: 12,
+                        alignItems: 'center',
+                        padding: 12,
+                        borderRadius: 18,
+                        border: '1px solid rgba(115,75,42,0.10)',
+                        background: '#ffffff',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 16,
+                        overflow: 'hidden',
+                        background: '#fffaf5',
+                        border: '1px solid rgba(115,75,42,0.10)',
+                        flexShrink: 0,
+                      }}>
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8E6545', fontWeight: 900 }}>
+                            MB
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.name}
+                        </div>
+                        <div style={{ marginTop: 4, display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, fontWeight: 800, color: '#6b7280' }}>
+                          <span>{formatBdt(p.price)}</span>
+                          <span style={{ color: p.inStock ? '#16a34a' : '#dc2626' }}>{p.inStock ? 'In stock' : 'Out of stock'}</span>
+                          <span>Stock: {p.stock}</span>
+                        </div>
+                      </div>
+                      <div style={{
+                        padding: '6px 10px',
+                        borderRadius: 999,
+                        background: 'rgba(18,140,126,0.10)',
+                        border: '1px solid rgba(18,140,126,0.18)',
+                        color: '#065f46',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        flexShrink: 0,
+                      }}>
+                        Select
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {/* Selected Product Preview */}
+              <div style={{ marginTop: 14 }}>
+                <div style={{
+                  padding: 14,
+                  borderRadius: 22,
+                  background: '#f8fafc',
+                  border: '1px solid rgba(15,23,42,0.08)',
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: '#475569', letterSpacing: '0.10em', textTransform: 'uppercase' }}>
+                    Selected Product Preview
+                  </div>
+
+                  {!selectedProductDraft ? (
+                    <div style={{
+                      marginTop: 10,
+                      padding: 12,
+                      borderRadius: 18,
+                      background: '#ffffff',
+                      border: '1px dashed rgba(100,50,13,0.20)',
+                      color: '#8E6545',
+                      fontSize: 13,
+                      fontWeight: 800,
+                    }}>
+                      No product selected yet. Select a product to send.
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 10, display: 'grid', gap: 12 }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <div style={{
+                          width: 72,
+                          height: 72,
+                          borderRadius: 18,
+                          overflow: 'hidden',
+                          background: '#fff',
+                          border: '1px solid rgba(15,23,42,0.10)',
+                          flexShrink: 0,
+                        }}>
+                          {selectedProductDraft.product.image ? (
+                            <img src={selectedProductDraft.product.image} alt={selectedProductDraft.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : null}
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: '#0f172a', lineHeight: 1.25 }}>
+                            {selectedProductDraft.product.name}
+                          </div>
+                          <div style={{ marginTop: 4, display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, fontWeight: 800, color: '#475569' }}>
+                            <span>{formatBdt(buildSelectedVariant(selectedProductDraft)?.price ?? selectedProductDraft.product.price)}</span>
+                            <span style={{ color: (buildSelectedVariant(selectedProductDraft)?.stock ?? selectedProductDraft.product.stock) > 0 ? '#16a34a' : '#dc2626' }}>
+                              {(buildSelectedVariant(selectedProductDraft)?.stock ?? selectedProductDraft.product.stock) > 0 ? 'In stock' : 'Out of stock'}
+                            </span>
+                            <span>Stock: {buildSelectedVariant(selectedProductDraft)?.stock ?? selectedProductDraft.product.stock}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {Array.isArray(selectedProductDraft.product.variants) && selectedProductDraft.product.variants.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: '#475569', marginBottom: 6 }}>Variant</div>
+                          <select
+                            value={selectedProductDraft.variantId ?? ''}
+                            onChange={(e) => setSelectedProductDraft((prev) => prev ? ({ ...prev, variantId: e.target.value || null }) : prev)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 12px',
+                              borderRadius: 14,
+                              border: '1px solid rgba(15,23,42,0.10)',
+                              background: '#ffffff',
+                              fontSize: 13,
+                              fontWeight: 800,
+                              color: '#0f172a',
+                              outline: 'none',
+                            }}
+                          >
+                            {selectedProductDraft.product.variants.map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {formatBdt(v.price)} • Stock {v.stock}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 900, color: '#475569' }}>Quantity</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <button
+                            onClick={() => setSelectedProductDraft((prev) => prev ? ({ ...prev, quantity: Math.max(1, (prev.quantity || 1) - 1) }) : prev)}
+                            style={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: 14,
+                              background: '#ffffff',
+                              border: '1px solid rgba(15,23,42,0.10)',
+                              cursor: 'pointer',
+                              fontWeight: 900,
+                              color: '#0f172a',
+                            }}
+                          >
+                            -
+                          </button>
+                          <div style={{ minWidth: 42, textAlign: 'center', fontSize: 14, fontWeight: 900, color: '#0f172a' }}>
+                            {selectedProductDraft.quantity}
+                          </div>
+                          <button
+                            onClick={() => setSelectedProductDraft((prev) => prev ? ({ ...prev, quantity: Math.min(99, (prev.quantity || 1) + 1) }) : prev)}
+                            style={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: 14,
+                              background: '#ffffff',
+                              border: '1px solid rgba(15,23,42,0.10)',
+                              cursor: 'pointer',
+                              fontWeight: 900,
+                              color: '#0f172a',
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 900, color: '#475569', marginBottom: 6 }}>Optional note/message</div>
+                        <textarea
+                          value={selectedProductDraft.note}
+                          onChange={(e) => setSelectedProductDraft((prev) => prev ? ({ ...prev, note: e.target.value }) : prev)}
+                          placeholder="Write a short note to the client (optional)"
+                          rows={3}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            borderRadius: 14,
+                            border: '1px solid rgba(15,23,42,0.10)',
+                            background: '#ffffff',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: '#0f172a',
+                            outline: 'none',
+                            resize: 'none',
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => setConfirmSendProduct(true)}
+                        disabled={!selectedProductDraft || sendingProduct}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          borderRadius: 16,
+                          background: (!selectedProductDraft || sendingProduct) ? '#e2e8f0' : '#128C7E',
+                          border: '1px solid rgba(18,140,126,0.18)',
+                          cursor: (!selectedProductDraft || sendingProduct) ? 'not-allowed' : 'pointer',
+                          fontWeight: 900,
+                          color: (!selectedProductDraft || sendingProduct) ? '#64748b' : '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        {sendingProduct ? 'Sending…' : 'Send Product to Client'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmSendProduct && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 980,
+          background: 'rgba(0,0,0,0.42)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 520,
+            borderRadius: 24,
+            background: '#ffffff',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.22)',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              padding: '16px 18px',
+              borderBottom: '1px solid #ede5de',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a' }}>Confirm Send</div>
+                <div style={{ fontSize: 12, color: '#8E6545', marginTop: 3 }}>
+                  Are you sure you want to send this product to this client?
+                </div>
+              </div>
+              <button
+                onClick={() => setConfirmSendProduct(false)}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 14,
+                  background: '#fffaf5',
+                  border: '1px solid rgba(115,75,42,0.10)',
+                  cursor: 'pointer',
+                  color: '#64320D',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ padding: 18, display: 'grid', gap: 12 }}>
+              <div style={{
+                padding: 12,
+                borderRadius: 18,
+                background: '#fffaf4',
+                border: '1px solid rgba(115,75,42,0.10)',
+                fontSize: 13,
+                fontWeight: 800,
+                color: '#64320D',
+              }}>
+                This will send a product card into the current conversation and save it in history.
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setConfirmSendProduct(false)}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    background: '#fffaf5',
+                    border: '1px solid rgba(115,75,42,0.12)',
+                    cursor: 'pointer',
+                    fontWeight: 900,
+                    color: '#64320D',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void sendProductCard()}
+                  disabled={sendingProduct || !selectedProductDraft}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    background: (sendingProduct || !selectedProductDraft) ? '#e2e8f0' : '#128C7E',
+                    border: '1px solid rgba(18,140,126,0.18)',
+                    cursor: (sendingProduct || !selectedProductDraft) ? 'not-allowed' : 'pointer',
+                    fontWeight: 900,
+                    color: (sendingProduct || !selectedProductDraft) ? '#64748b' : '#ffffff',
+                  }}
+                >
+                  {sendingProduct ? 'Sending…' : 'Confirm & Send'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2598,5 +3638,58 @@ function renderMedia(
       <FileText size={14} style={{ flexShrink: 0 }} />
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{media.fileName || media.mimeType || 'File'}</span>
     </a>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  multiline,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+}) {
+  return (
+    <label style={{ display: 'grid', gap: 6 }}>
+      <span style={{ fontSize: 12, fontWeight: 900, color: '#475569' }}>{label}</span>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            borderRadius: 14,
+            border: '1px solid rgba(15,23,42,0.10)',
+            background: '#ffffff',
+            fontSize: 13,
+            fontWeight: 700,
+            color: '#0f172a',
+            outline: 'none',
+            resize: 'none',
+          }}
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            borderRadius: 14,
+            border: '1px solid rgba(15,23,42,0.10)',
+            background: '#ffffff',
+            fontSize: 13,
+            fontWeight: 800,
+            color: '#0f172a',
+            outline: 'none',
+          }}
+        />
+      )}
+    </label>
   );
 }

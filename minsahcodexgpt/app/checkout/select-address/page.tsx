@@ -28,7 +28,7 @@ export default function SelectAddressPage() {
       </header>
 
       {/* Map Placeholder */}
-      <div className="relative h-64 bg-gradient-to-br from-minsah-accent to-minsah-secondary">
+      <div className="relative h-64 bg-gradient-to-br from-minsah-accent to-minsah-secondary hidden">
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <MapPin size={64} className="text-minsah-primary mb-4" />
           <p className="text-minsah-dark font-semibold">Map Integration</p>

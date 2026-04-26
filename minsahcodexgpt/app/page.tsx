@@ -411,7 +411,7 @@ export default function HomePage() {
       </section>
 
       {/* Promotion Section */}
-      <section className="px-4 py-6">
+      <section className="px-4 py-6 hidden">
         <h2 className="text-lg font-bold text-minsah-dark mb-4">Promotion Section</h2>
         <div className="relative">
           {/* Carousel */}

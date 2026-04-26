@@ -12,6 +12,10 @@ import {
   Filter,
   Calendar,
   Minus,
+  Facebook,
+  Target,
+  Eye,
+  MousePointer,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { formatPrice } from '@/utils/currency';
@@ -65,6 +69,12 @@ interface AnalyticsData {
     revenue: number;
     percentage: number;
   }>;
+  metaPerformance: {
+    pixelHealth: 'healthy' | 'warning' | 'error';
+    trackedEvents: Array<{ name: string; count: number }>;
+    retargetAudiences: Array<{ name: string; size: number; roas: number; ctr: number }>;
+    campaigns: Array<{ name: string; spend: number; revenue: number; roas: number }>;
+  };
 }
 
 const dateRanges = [
@@ -128,6 +138,25 @@ export default function AnalyticsPage() {
       { region: 'Florida', sales: 87, revenue: 15432, percentage: 11.9 },
       { region: 'Other', sales: 156, revenue: 27865, percentage: 32.9 },
     ],
+    metaPerformance: {
+      pixelHealth: 'healthy',
+      trackedEvents: [
+        { name: 'PageView', count: 18345 },
+        { name: 'ViewContent', count: 9456 },
+        { name: 'AddToCart', count: 3120 },
+        { name: 'InitiateCheckout', count: 1289 },
+        { name: 'Purchase', count: 456 },
+      ],
+      retargetAudiences: [
+        { name: 'Cart Abandoners (7D)', size: 3200, roas: 6.2, ctr: 4.1 },
+        { name: 'Product Viewers (14D)', size: 7600, roas: 4.8, ctr: 3.3 },
+        { name: 'Checkout Started (7D)', size: 2100, roas: 7.4, ctr: 5.2 },
+      ],
+      campaigns: [
+        { name: 'Meta Warm Retarget', spend: 1850, revenue: 10450, roas: 5.6 },
+        { name: 'Meta Cart Recovery', spend: 980, revenue: 6120, roas: 6.2 },
+      ],
+    },
   });
 
   if (!hasPermission(PERMISSIONS.ANALYTICS_VIEW)) {
@@ -446,6 +475,72 @@ export default function AnalyticsPage() {
               <div className="text-xs text-gray-600">{region.sales} orders</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Meta Pixel + Retarget Analytics */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Facebook className="w-5 h-5 text-blue-600" />
+            Meta Pixel & Retarget Performance
+          </h3>
+          <span className={clsx(
+            'px-3 py-1 rounded-full text-xs font-medium',
+            analyticsData.metaPerformance.pixelHealth === 'healthy'
+              ? 'bg-green-100 text-green-700'
+              : analyticsData.metaPerformance.pixelHealth === 'warning'
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-red-100 text-red-700'
+          )}>
+            Pixel {analyticsData.metaPerformance.pixelHealth}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-3">Tracked Events</p>
+            <div className="space-y-2">
+              {analyticsData.metaPerformance.trackedEvents.map((event) => (
+                <div key={event.name} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    {event.name}
+                  </span>
+                  <span className="font-semibold text-gray-900">{event.count.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-3">Retarget Audiences</p>
+            <div className="space-y-2">
+              {analyticsData.metaPerformance.retargetAudiences.map((aud) => (
+                <div key={aud.name} className="rounded-md border border-gray-100 p-2">
+                  <p className="text-sm font-medium text-gray-900">{aud.name}</p>
+                  <p className="text-xs text-gray-600">
+                    Size {aud.size.toLocaleString()} | CTR {aud.ctr}% | ROAS {aud.roas}x
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-3">Campaign Efficiency</p>
+            <div className="space-y-2">
+              {analyticsData.metaPerformance.campaigns.map((campaign) => (
+                <div key={campaign.name} className="rounded-md border border-gray-100 p-2">
+                  <p className="text-sm font-medium text-gray-900">{campaign.name}</p>
+                  <p className="text-xs text-gray-600 flex items-center gap-1">
+                    <MousePointer className="w-3 h-3" />
+                    Spend {formatPrice(campaign.spend)} | Revenue {formatPrice(campaign.revenue)} | ROAS {campaign.roas}x
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

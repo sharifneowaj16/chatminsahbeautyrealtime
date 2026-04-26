@@ -1,13 +1,12 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import { filterProducts, sortProducts, parseSearchParams } from '@/lib/shopUtils';
 import ProductCard from './ProductCard';
 import ActiveFilters from './ActiveFilters';
-import SortDropdown from './SortDropdown';
 import type { Product as ShopProduct, SortOption } from '@/types/product';
 
 function toSlug(str: string): string {
@@ -148,11 +147,50 @@ export default function ShopGrid() {
   const [spellSuggestion, setSpellSuggestion] = useState<string | null>(null);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [facets, setFacets] = useState<{ brands: { value: string; count: number }[] }>({ brands: [] });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSortFlags, setSelectedSortFlags] = useState<string[]>([]);
+  const [priceMinInput, setPriceMinInput] = useState('');
+  const [priceMaxInput, setPriceMaxInput] = useState('');
 
   const q = searchParams.get('q') || '';
   const filters = parseSearchParams(searchParams as unknown as URLSearchParams);
   const page = filters.page || 1;
   const pageSize = 20;
+
+  useEffect(() => {
+    const categories = (searchParams.get('mfCategory') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const brands = (searchParams.get('mfBrand') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const sortFlags = (searchParams.get('mfSort') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    setSelectedCategories(categories);
+    setSelectedBrands(brands);
+    setSelectedSortFlags(sortFlags);
+    setPriceMinInput(searchParams.get('mfMinPrice') || '');
+    setPriceMaxInput(searchParams.get('mfMaxPrice') || '');
+  }, [searchParams]);
+
+  const updateUrlFilters = useCallback((patch: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(patch).forEach(([key, value]) => {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+    params.delete('page');
+    router.push(`/shop${params.toString() ? `?${params.toString()}` : ''}`);
+  }, [router, searchParams]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -228,24 +266,118 @@ export default function ShopGrid() {
     fetchProducts();
   }, [searchParams, q, page]);
 
+  const categoryOptions = useMemo(() => {
+    const map = new Map<string, { slug: string; label: string; count: number }>();
+    allProducts.forEach((product) => {
+      if (!product.categorySlug) return;
+      const existing = map.get(product.categorySlug);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(product.categorySlug, {
+          slug: product.categorySlug,
+          label: product.category || product.categorySlug,
+          count: 1,
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 12);
+  }, [allProducts]);
+
+  const brandOptions = useMemo(() => {
+    const map = new Map<string, { slug: string; label: string; count: number }>();
+    allProducts.forEach((product) => {
+      if (!product.brandSlug) return;
+      const existing = map.get(product.brandSlug);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(product.brandSlug, {
+          slug: product.brandSlug,
+          label: product.brand || product.brandSlug,
+          count: 1,
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 12);
+  }, [allProducts]);
+
+  const applyMultiSort = useCallback((products: ShopProduct[]) => {
+    if (selectedSortFlags.length === 0) {
+      return products;
+    }
+    return [...products].sort((a, b) => {
+      const score = (product: ShopProduct) => {
+        let total = 0;
+        if (selectedSortFlags.includes('top-sale')) {
+          total += (product.salesCount || 0) * 2 + (product.discount || 0);
+        }
+        if (selectedSortFlags.includes('top-rating')) {
+          total += (product.rating || 0) * 40;
+        }
+        if (selectedSortFlags.includes('top-views')) {
+          total += product.views || 0;
+        }
+        return total;
+      };
+      return score(b) - score(a);
+    });
+  }, [selectedSortFlags]);
+
   // For ES results, server already paginated; for regular, do client-side
-  const displayProducts = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     if (q.trim()) {
       // ES already returned the right page
-      return allProducts;
+      let next = allProducts;
+      if (selectedCategories.length > 0) {
+        next = next.filter((product) => selectedCategories.includes(product.categorySlug));
+      }
+      if (selectedBrands.length > 0) {
+        next = next.filter((product) => selectedBrands.includes(product.brandSlug));
+      }
+      if (priceMinInput) {
+        next = next.filter((product) => product.price >= Number(priceMinInput));
+      }
+      if (priceMaxInput) {
+        next = next.filter((product) => product.price <= Number(priceMaxInput));
+      }
+      return applyMultiSort(next);
     }
-    const filtered = filterProducts(allProducts, filters);
-    const sorted = sortProducts(filtered, (filters.sort || 'featured') as SortOption);
-    const start = (page - 1) * pageSize;
-    return sorted.slice(start, start + pageSize);
-  }, [allProducts, filters, q, page]);
+    let next = filterProducts(allProducts, filters);
+    if (selectedCategories.length > 0) {
+      next = next.filter((product) => selectedCategories.includes(product.categorySlug));
+    }
+    if (selectedBrands.length > 0) {
+      next = next.filter((product) => selectedBrands.includes(product.brandSlug));
+    }
+    if (priceMinInput) {
+      next = next.filter((product) => product.price >= Number(priceMinInput));
+    }
+    if (priceMaxInput) {
+      next = next.filter((product) => product.price <= Number(priceMaxInput));
+    }
+    const sorted = sortProducts(next, (filters.sort || 'featured') as SortOption);
+    return applyMultiSort(sorted);
+  }, [
+    q,
+    allProducts,
+    filters,
+    selectedCategories,
+    selectedBrands,
+    priceMinInput,
+    priceMaxInput,
+    applyMultiSort,
+  ]);
 
-  const totalCount = q.trim()
-    ? (esTotal ?? 0)
-    : (() => {
-        const filtered = filterProducts(allProducts, filters);
-        return filtered.length;
-      })();
+  const displayProducts = useMemo(() => {
+    if (q.trim()) {
+      return filteredProducts;
+    }
+    const start = (page - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [q, filteredProducts, page]);
+
+  const totalCount = q.trim() ? (esTotal ?? filteredProducts.length) : filteredProducts.length;
 
   const totalPages = q.trim()
     ? (esTotalPages ?? 1)
@@ -276,18 +408,16 @@ export default function ShopGrid() {
     router.push(`/shop?${params.toString()}`);
   };
 
-  // Brand filter click
-  const applyBrandFilter = (brandValue: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (brandValue) {
-      params.set('brand', brandValue);
-    } else {
-      params.delete('brand');
-    }
-    router.push(`/shop?${params.toString()}`);
+  const toggleSelection = (
+    currentItems: string[],
+    value: string,
+    queryKey: string
+  ) => {
+    const nextItems = currentItems.includes(value)
+      ? currentItems.filter((item) => item !== value)
+      : [...currentItems, value];
+    updateUrlFilters({ [queryKey]: nextItems.length > 0 ? nextItems.join(',') : null });
   };
-
-  const currentBrand = searchParams.get('brand') || '';
 
   return (
     <>
@@ -316,27 +446,133 @@ export default function ShopGrid() {
         </div>
       )}
 
-      {/* Brand filter chips (from facets) */}
-      {facets.brands.length > 0 && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Filter by Brand</p>
+      {/* Multi Sort + Filter chips */}
+      <div className="mb-4 space-y-4 rounded-2xl border border-minsah-accent bg-white p-4">
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Sort By (Multi-select)</p>
           <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'top-sale', label: 'Top Sale' },
+              { id: 'top-rating', label: 'Top Rating' },
+              { id: 'top-views', label: 'Top Views' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                      onClick={() => toggleSelection(selectedSortFlags, item.id, 'mfSort')}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  selectedSortFlags.includes(item.id)
+                    ? 'bg-minsah-primary text-white border-minsah-primary'
+                    : 'border-gray-200 text-gray-600 hover:border-minsah-primary hover:text-minsah-primary'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {categoryOptions.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</p>
+            <div className="flex flex-wrap gap-2">
+              {categoryOptions.map((category) => (
+                <button
+                  key={category.slug}
+                  onClick={() => toggleSelection(selectedCategories, category.slug, 'mfCategory')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    selectedCategories.includes(category.slug)
+                      ? 'bg-minsah-primary text-white border-minsah-primary'
+                      : 'border-gray-200 text-gray-600 hover:border-minsah-primary hover:text-minsah-primary'
+                  }`}
+                >
+                  {category.label} <span className="opacity-70">({category.count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {brandOptions.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Brand</p>
+            <div className="flex flex-wrap gap-2">
+              {brandOptions.map((brand) => (
+                <button
+                  key={brand.slug}
+                  onClick={() => toggleSelection(selectedBrands, brand.slug, 'mfBrand')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    selectedBrands.includes(brand.slug)
+                      ? 'bg-minsah-primary text-white border-minsah-primary'
+                      : 'border-gray-200 text-gray-600 hover:border-minsah-primary hover:text-minsah-primary'
+                  }`}
+                >
+                  {brand.label} <span className="opacity-70">({brand.count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Price Range</p>
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              updateUrlFilters({
+                mfMinPrice: priceMinInput.trim() || null,
+                mfMaxPrice: priceMaxInput.trim() || null,
+              });
+            }}
+          >
+            <input
+              type="number"
+              min="0"
+              value={priceMinInput}
+              onChange={(event) => setPriceMinInput(event.target.value)}
+              placeholder="Min"
+              className="w-28 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-minsah-primary/30"
+            />
+            <input
+              type="number"
+              min="0"
+              value={priceMaxInput}
+              onChange={(event) => setPriceMaxInput(event.target.value)}
+              placeholder="Max"
+              className="w-28 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-minsah-primary/30"
+            />
             <button
-              onClick={() => applyBrandFilter('')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                !currentBrand
-                  ? 'bg-minsah-primary text-white border-minsah-primary'
-                  : 'border-gray-200 text-gray-600 hover:border-minsah-primary hover:text-minsah-primary'
-              }`}
+              type="submit"
+              className="rounded-lg bg-minsah-primary px-4 py-1.5 text-xs font-semibold text-white hover:bg-minsah-dark transition-colors"
             >
-              All
+              Apply
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPriceMinInput('');
+                setPriceMaxInput('');
+                updateUrlFilters({ mfMinPrice: null, mfMaxPrice: null });
+              }}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-minsah-primary hover:text-minsah-primary transition-colors"
+            >
+              Clear
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Brand facet chips from search API */}
+      {facets.brands.length > 0 && q.trim() && (
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Quick Brand Facets</p>
+          <div className="flex flex-wrap gap-2">
             {facets.brands.slice(0, 10).map(b => (
               <button
                 key={b.value}
-                onClick={() => applyBrandFilter(b.value)}
+                onClick={() => toggleSelection(selectedBrands, toSlug(b.value), 'mfBrand')}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  currentBrand === b.value
+                  selectedBrands.includes(toSlug(b.value))
                     ? 'bg-minsah-primary text-white border-minsah-primary'
                     : 'border-gray-200 text-gray-600 hover:border-minsah-primary hover:text-minsah-primary'
                 }`}
@@ -351,9 +587,6 @@ export default function ShopGrid() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex-1">
           <ActiveFilters totalProducts={totalCount} />
-        </div>
-        <div className="flex-shrink-0">
-          <SortDropdown />
         </div>
       </div>
 

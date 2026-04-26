@@ -340,12 +340,12 @@ export default function CartStepper({
             onClick={() => void handleAddToCart()}
             disabled={disabled || isBusy || isOutOfStock}
             aria-label={`Add ${productName} to cart`}
-            className={`group relative flex h-10 w-10 items-center justify-center rounded-full bg-[#E8466A] shadow-[0_4px_14px_rgba(232,70,106,0.40)] transition-all duration-200 hover:scale-110 hover:bg-[#D6365A] active:scale-95 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none ${className}`}
+            className={`group relative flex h-8 w-8 items-center justify-center rounded-full bg-[#FACC15] shadow-[0_4px_14px_rgba(250,204,21,0.40)] transition-all duration-200 hover:scale-110 hover:bg-[#EAB308] active:scale-95 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none ${className}`}
           >
             {isBusy
-              ? <Loader2 size={17} className="animate-spin text-white" />
-              : <Plus size={19} strokeWidth={2.8} className="text-white" />}
-            <span className="pointer-events-none absolute inset-0 rounded-full bg-[#E8466A] opacity-0 group-hover:animate-ping group-hover:opacity-25" />
+              ? <Loader2 size={14} className="animate-spin text-white" />
+              : <Plus size={16} strokeWidth={2.8} className="text-white" />}
+            <span className="pointer-events-none absolute inset-0 rounded-full bg-[#FACC15] opacity-0 group-hover:animate-ping group-hover:opacity-25" />
           </button>
         ) : (
           <div

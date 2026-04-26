@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import CartStepper from '@/components/cart/CartStepper';
 import CardBuyNowButton from '@/components/cart/CardBuyNowButton';
+import MobileBottomNav from '@/components/navigation/MobileBottomNav';
 import { formatPrice } from '@/utils/currency';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -437,6 +438,11 @@ function SearchPageContent() {
 
   // Filters panel
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSortFlags, setSelectedSortFlags] = useState<string[]>([]);
+  const [priceMinInput, setPriceMinInput] = useState('');
+  const [priceMaxInput, setPriceMaxInput] = useState('');
 
   // Voice
   const [isListening, setIsListening] = useState(false);
@@ -613,11 +619,125 @@ function SearchPageContent() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  useEffect(() => {
+    const nextCategories = (searchParams.get('mfCategory') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const nextBrands = (searchParams.get('mfBrand') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const nextSortFlags = (searchParams.get('mfSort') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    setSelectedCategories(nextCategories);
+    setSelectedBrands(nextBrands);
+    setSelectedSortFlags(nextSortFlags);
+    setPriceMinInput(searchParams.get('mfMinPrice') || '');
+    setPriceMaxInput(searchParams.get('mfMaxPrice') || '');
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const setOrDelete = (key: string, value: string) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    };
+
+    setOrDelete('mfCategory', selectedCategories.join(','));
+    setOrDelete('mfBrand', selectedBrands.join(','));
+    setOrDelete('mfSort', selectedSortFlags.join(','));
+    setOrDelete('mfMinPrice', priceMinInput.trim());
+    setOrDelete('mfMaxPrice', priceMaxInput.trim());
+
+    const next = params.toString();
+    const current = searchParams.toString();
+    if (next !== current) {
+      router.replace(`/search${next ? `?${next}` : ''}`, { scroll: false });
+    }
+  }, [
+    selectedCategories,
+    selectedBrands,
+    selectedSortFlags,
+    priceMinInput,
+    priceMaxInput,
+    router,
+    searchParams,
+  ]);
+
   const hasResults  = results && results.products.length > 0;
   const hasSearched = results !== null || loading;
 
   // Active filter count for badge
   const activeFilterCount = [category, brand, minPrice, maxPrice, inStockOnly].filter(Boolean).length;
+  const hasLocalMultiFilters =
+    selectedCategories.length > 0 ||
+    selectedBrands.length > 0 ||
+    selectedSortFlags.length > 0 ||
+    Boolean(priceMinInput) ||
+    Boolean(priceMaxInput);
+
+  const categoryOptions = useMemo(() => {
+    const map = new Map<string, number>();
+    (results?.products ?? []).forEach((product) => {
+      if (!product.category) return;
+      map.set(product.category, (map.get(product.category) ?? 0) + 1);
+    });
+    return Array.from(map.entries()).map(([value, count]) => ({ value, count }));
+  }, [results?.products]);
+
+  const brandOptions = useMemo(() => {
+    const map = new Map<string, number>();
+    (results?.products ?? []).forEach((product) => {
+      if (!product.brand) return;
+      map.set(product.brand, (map.get(product.brand) ?? 0) + 1);
+    });
+    return Array.from(map.entries()).map(([value, count]) => ({ value, count }));
+  }, [results?.products]);
+
+  const displayProducts = useMemo(() => {
+    let products = [...(results?.products ?? [])];
+
+    if (selectedCategories.length > 0) {
+      products = products.filter((product) => product.category && selectedCategories.includes(product.category));
+    }
+    if (selectedBrands.length > 0) {
+      products = products.filter((product) => product.brand && selectedBrands.includes(product.brand));
+    }
+    if (priceMinInput) {
+      products = products.filter((product) => product.price >= Number(priceMinInput));
+    }
+    if (priceMaxInput) {
+      products = products.filter((product) => product.price <= Number(priceMaxInput));
+    }
+
+    if (selectedSortFlags.length > 0) {
+      products = [...products].sort((a, b) => {
+        const score = (item: Product) => {
+          let total = 0;
+          if (selectedSortFlags.includes('top-sale')) {
+            total += (item.discount ?? calcDiscount(item.price, item.compareAtPrice)) * 2;
+          }
+          if (selectedSortFlags.includes('top-rating')) {
+            total += (item.rating ?? 0) * 40;
+          }
+          if (selectedSortFlags.includes('top-views')) {
+            total += (item.reviewCount ?? 0) * 8;
+          }
+          return total;
+        };
+        return score(b) - score(a);
+      });
+    }
+
+    return products;
+  }, [results?.products, selectedCategories, selectedBrands, selectedSortFlags, priceMinInput, priceMaxInput]);
 
   return (
     <div className="min-h-screen bg-minsah-light pb-20">
@@ -728,7 +848,14 @@ function SearchPageContent() {
                   <p className="text-sm text-minsah-secondary">
                     {loading
                       ? 'Searching...'
-                      : <><span className="font-bold text-minsah-dark">{results.total.toLocaleString()}</span> results for &ldquo;<span className="text-minsah-primary font-semibold">{results.query}</span>&rdquo;</>
+                      : <>
+                          <span className="font-bold text-minsah-dark">
+                            {(hasLocalMultiFilters ? displayProducts.length : results.total).toLocaleString()}
+                          </span> results for &ldquo;<span className="text-minsah-primary font-semibold">{results.query}</span>&rdquo;
+                          {hasLocalMultiFilters && (
+                            <span className="ml-1 text-xs text-gray-500">(locally filtered)</span>
+                          )}
+                        </>
                     }
                   </p>
                 )}
@@ -784,6 +911,108 @@ function SearchPageContent() {
                 )}
               </button>
             </div>
+
+            {results?.products && results.products.length > 0 && (
+              <div className="mt-3 rounded-2xl border border-gray-200 bg-white p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Quick Multi Sort & Filters</p>
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {[
+                    { id: 'top-sale', label: 'Top Sale' },
+                    { id: 'top-rating', label: 'Top Rating' },
+                    { id: 'top-views', label: 'Top Views' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() =>
+                        setSelectedSortFlags((prev) =>
+                          prev.includes(item.id) ? prev.filter((x) => x !== item.id) : [...prev, item.id]
+                        )
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        selectedSortFlags.includes(item.id)
+                          ? 'border-minsah-primary bg-minsah-primary text-white'
+                          : 'border-gray-200 text-gray-700 hover:border-minsah-primary hover:text-minsah-primary'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {categoryOptions.slice(0, 8).map((categoryItem) => (
+                    <button
+                      key={categoryItem.value}
+                      onClick={() =>
+                        setSelectedCategories((prev) =>
+                          prev.includes(categoryItem.value)
+                            ? prev.filter((x) => x !== categoryItem.value)
+                            : [...prev, categoryItem.value]
+                        )
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        selectedCategories.includes(categoryItem.value)
+                          ? 'border-minsah-primary bg-minsah-primary text-white'
+                          : 'border-gray-200 text-gray-700 hover:border-minsah-primary hover:text-minsah-primary'
+                      }`}
+                    >
+                      {categoryItem.value} ({categoryItem.count})
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {brandOptions.slice(0, 8).map((brandItem) => (
+                    <button
+                      key={brandItem.value}
+                      onClick={() =>
+                        setSelectedBrands((prev) =>
+                          prev.includes(brandItem.value)
+                            ? prev.filter((x) => x !== brandItem.value)
+                            : [...prev, brandItem.value]
+                        )
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        selectedBrands.includes(brandItem.value)
+                          ? 'border-minsah-primary bg-minsah-primary text-white'
+                          : 'border-gray-200 text-gray-700 hover:border-minsah-primary hover:text-minsah-primary'
+                      }`}
+                    >
+                      {brandItem.value} ({brandItem.count})
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="number"
+                    value={priceMinInput}
+                    onChange={(e) => setPriceMinInput(e.target.value)}
+                    placeholder="Min"
+                    className="w-24 rounded-lg border border-gray-200 px-2 py-1.5 text-xs"
+                  />
+                  <input
+                    type="number"
+                    value={priceMaxInput}
+                    onChange={(e) => setPriceMaxInput(e.target.value)}
+                    placeholder="Max"
+                    className="w-24 rounded-lg border border-gray-200 px-2 py-1.5 text-xs"
+                  />
+                  <button
+                    onClick={() => {
+                      setSelectedCategories([]);
+                      setSelectedBrands([]);
+                      setSelectedSortFlags([]);
+                      setPriceMinInput('');
+                      setPriceMaxInput('');
+                    }}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:border-minsah-primary hover:text-minsah-primary"
+                  >
+                    Clear Local Filters
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Active filter tags */}
             {activeFilterCount > 0 && (
@@ -987,10 +1216,10 @@ function SearchPageContent() {
           </div>
         )}
 
-        {!loading && hasResults && (
+        {!loading && displayProducts.length > 0 && (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {results!.products.map(product => (
+              {displayProducts.map(product => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -1025,7 +1254,7 @@ function SearchPageContent() {
         )}
 
         {/* ── No results ── */}
-        {!loading && results && results.products.length === 0 && (
+        {!loading && results && displayProducts.length === 0 && (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-xl font-bold text-minsah-dark mb-2">No products found</h3>
@@ -1121,6 +1350,7 @@ function SearchPageContent() {
         )}
 
       </div>
+      <MobileBottomNav active="search" />
     </div>
   );
 }

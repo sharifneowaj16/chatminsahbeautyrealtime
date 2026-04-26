@@ -5,6 +5,7 @@ import { ChevronRight, Loader2 } from 'lucide-react';
 import { parseSearchParams, generatePageTitle, generateMetaDescription } from '@/lib/shopUtils';
 import ShopGrid from '@/app/components/shop/ShopGrid';
 import ShopSearchBar from '@/app/components/shop/ShopSearchBar';
+import MobileBottomNav from '@/components/navigation/MobileBottomNav';
 
 // Generate dynamic metadata
 export async function generateMetadata({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
@@ -92,10 +93,7 @@ export default function ShopPage({ searchParams }: { searchParams: { [key: strin
         </Suspense>
       </div>
 
-      {/* Free Shipping Banner */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 text-center text-sm font-medium shadow-lg md:hidden z-30">
-        &#128666; Free Shipping on orders above ৳1,000
-      </div>
+      <MobileBottomNav active="shop" />
     </div>
   );
 }
