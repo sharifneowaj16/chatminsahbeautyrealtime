@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import {
   estimateDeliveryCharge,
   extractVariantWeightKg,
+  fetchPathaoDeliveryQuote,
   fetchSteadfastDeliveryQuote,
   parseWeightToKg,
   resolvePackagingWeightKg,
@@ -22,11 +23,13 @@ export async function POST(request: NextRequest) {
       items?: ShippingRequestItem[];
       city?: string;
       area?: string;
+      provider?: 'steadfast' | 'pathao';
     };
 
     const items = body.items ?? [];
     const city = body.city?.trim() ?? '';
     const area = body.area?.trim() ?? '';
+    const provider = body.provider === 'pathao' ? 'pathao' : 'steadfast';
 
     if (!items.length) {
       return NextResponse.json({ error: 'At least one item is required' }, { status: 400 });
@@ -104,17 +107,16 @@ export async function POST(request: NextRequest) {
 
     let quote;
     try {
-      quote =
-        (await fetchSteadfastDeliveryQuote({
-          city,
-          area,
-          parcelWeightKg,
-        })) ??
-        estimateDeliveryCharge({ city, area, parcelWeightKg });
+      const liveQuote =
+        provider === 'pathao'
+          ? await fetchPathaoDeliveryQuote({ city, area, parcelWeightKg })
+          : await fetchSteadfastDeliveryQuote({ city, area, parcelWeightKg });
+
+      quote = liveQuote ?? estimateDeliveryCharge({ city, area, parcelWeightKg });
 
       // Guardrail: if a live quote looks obviously wrong, use slab pricing.
       // (Most retail parcels should never have 1000+ BDT shipping.)
-      if (quote.source === 'steadfast' && quote.charge > 500) {
+      if ((quote.source === 'steadfast' || quote.source === 'pathao') && quote.charge > 500) {
         quote = estimateDeliveryCharge({ city, area, parcelWeightKg });
       }
     } catch (error) {
@@ -126,6 +128,7 @@ export async function POST(request: NextRequest) {
       deliveryCharge: quote.charge,
       quoteSource: quote.source,
       message: quote.note ?? null,
+      provider,
       weights: {
         itemsWeightKg: Number(itemsWeightKg.toFixed(3)),
         packagingWeightKg: Number(packagingWeightKg.toFixed(3)),

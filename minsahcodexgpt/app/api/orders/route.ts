@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       addressData,
       paymentMethod,
       shippingCost = 0,
+      shippingMethod,
       couponCode,
       couponDiscount,
       customerNote,
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       addressData?: AddressDataInput;
       paymentMethod?: string;
       shippingCost?: number;
+      shippingMethod?: string;
       couponCode?: string;
       couponDiscount?: number;
       customerNote?: string;
@@ -222,6 +224,7 @@ export async function POST(request: NextRequest) {
           paymentMethod,
           subtotal,
           shippingCost:   shippingCostNum,
+          shippingMethod: shippingMethod || null,
           taxAmount,
           discountAmount,
           total,

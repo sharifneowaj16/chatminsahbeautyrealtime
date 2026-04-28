@@ -28,6 +28,8 @@ function CheckoutContent() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [deliveryCharge, setDeliveryCharge] = useState<number>(shippingCost);
   const [deliveryState, setDeliveryState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [deliveryProvider, setDeliveryProvider] = useState<'steadfast' | 'pathao'>('steadfast');
+  const [deliveryMeta, setDeliveryMeta] = useState<{ quoteSource?: string; message?: string | null } | null>(null);
 
   // Ref to track that "Place Order" was clicked while logged out
   const pendingOrderRef = useRef(false);
@@ -46,6 +48,7 @@ function CheckoutContent() {
     if (!items.length || !selectedAddress?.city || !selectedAddress.zone) {
       setDeliveryCharge(shippingCost);
       setDeliveryState('idle');
+      setDeliveryMeta(null);
       return;
     }
 
@@ -62,6 +65,7 @@ function CheckoutContent() {
             items: shippingQuoteItems,
             city: selectedAddress.city,
             area: selectedAddress.zone,
+            provider: deliveryProvider,
           }),
           signal: abortController.signal,
         });
@@ -70,15 +74,17 @@ function CheckoutContent() {
           throw new Error('Failed to quote delivery');
         }
 
-        const data = (await response.json()) as { deliveryCharge?: number };
+        const data = (await response.json()) as { deliveryCharge?: number; quoteSource?: string; message?: string | null };
         if (!isCancelled && typeof data.deliveryCharge === 'number') {
           setDeliveryCharge(data.deliveryCharge);
           setDeliveryState('success');
+          setDeliveryMeta({ quoteSource: data.quoteSource, message: data.message ?? null });
         }
       } catch {
         if (!isCancelled) {
           setDeliveryCharge(shippingCost);
           setDeliveryState('error');
+          setDeliveryMeta(null);
         }
       }
     };
@@ -88,7 +94,7 @@ function CheckoutContent() {
       isCancelled = true;
       abortController.abort();
     };
-  }, [items.length, selectedAddress?.city, selectedAddress?.zone, shippingCost, shippingQuoteItems]);
+  }, [items.length, selectedAddress?.city, selectedAddress?.zone, shippingCost, shippingQuoteItems, deliveryProvider]);
 
   // ── Core order submission (called directly or after login) ───────────────
   const submitOrder = async (sessionUserId?: string) => {
@@ -132,6 +138,7 @@ function CheckoutContent() {
           },
           paymentMethod: selectedPaymentMethod.type,
           shippingCost: deliveryCharge,
+          shippingMethod: deliveryProvider,
           customerNote: '',
         }),
       });
@@ -356,6 +363,39 @@ function CheckoutContent() {
                   ))}
 
                   <div className="border-t border-minsah-accent pt-3 space-y-2">
+                    <div className="pb-2">
+                      <p className="text-sm font-semibold text-minsah-dark mb-2">Delivery Partner</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryProvider('steadfast')}
+                          className={`px-3 py-2 rounded-xl text-sm font-semibold border transition ${
+                            deliveryProvider === 'steadfast'
+                              ? 'bg-minsah-primary text-minsah-light border-minsah-primary'
+                              : 'bg-white text-minsah-dark border-minsah-accent hover:bg-minsah-accent/30'
+                          }`}
+                        >
+                          Steadfast
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryProvider('pathao')}
+                          className={`px-3 py-2 rounded-xl text-sm font-semibold border transition ${
+                            deliveryProvider === 'pathao'
+                              ? 'bg-minsah-primary text-minsah-light border-minsah-primary'
+                              : 'bg-white text-minsah-dark border-minsah-accent hover:bg-minsah-accent/30'
+                          }`}
+                        >
+                          Pathao
+                        </button>
+                      </div>
+                      {deliveryMeta?.quoteSource && (
+                        <p className="mt-2 text-xs text-minsah-secondary">
+                          Quote: {deliveryMeta.quoteSource === 'fallback' ? 'Estimated' : 'Live'} ({deliveryMeta.quoteSource})
+                          {deliveryMeta.message ? ` • ${deliveryMeta.message}` : ''}
+                        </p>
+                      )}
+                    </div>
                     <div className="flex justify-between text-sm text-minsah-secondary">
                       <span>Subtotal</span>
                       <span>{formatPrice(subtotal)}</span>
