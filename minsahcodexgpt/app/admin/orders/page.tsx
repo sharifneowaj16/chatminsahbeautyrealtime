@@ -96,6 +96,11 @@ interface Order {
   pathaoTrackingCode?: string | null;
   pathaoConsignmentId?: string | null;
   pathaoSentAt?: string | null;
+  courier?: 'pathao' | 'steadfast';
+  trackingId?: string | null;
+  consignmentId?: string | null;
+  currentStatus?: string | null;
+  lastUpdatedAt?: string | null;
 }
 
 interface Stats {
@@ -258,6 +263,33 @@ function OrderDetailDrawer({
   };
 
   const timeline = order.timeline?.length ? order.timeline : buildTimeline();
+  const courierName =
+    order.courier === 'pathao' || order.shippingMethod === 'pathao'
+      ? 'Pathao Courier'
+      : order.courier === 'steadfast' || order.shippingMethod === 'steadfast' || order.steadfastStatus
+        ? 'Steadfast Courier'
+        : null;
+  const currentTrackingId =
+    order.trackingId ||
+    order.pathaoTrackingCode ||
+    order.steadfastTrackingCode ||
+    order.tracking ||
+    null;
+  const currentConsignmentId =
+    order.consignmentId ||
+    order.pathaoConsignmentId ||
+    order.steadfastConsignmentId ||
+    null;
+  const currentCourierStatus =
+    order.currentStatus ||
+    order.pathaoStatus ||
+    order.steadfastStatus ||
+    null;
+  const courierLastUpdatedAt =
+    order.lastUpdatedAt ||
+    order.pathaoSentAt ||
+    order.steadfastSentAt ||
+    null;
 
   return (
     <div className="fixed inset-0 z-40 flex">
@@ -344,6 +376,45 @@ function OrderDetailDrawer({
                         </p>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Steadfast Status Block */}
+              {(courierName || currentTrackingId || currentConsignmentId || currentCourierStatus || timeline.length > 0) && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Tracking Timeline</h3>
+                  <div className="space-y-2 text-sm">
+                    {courierName && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Courier</span>
+                        <span className="font-medium text-gray-900">{courierName}</span>
+                      </div>
+                    )}
+                    {currentTrackingId && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Tracking ID</span>
+                        <span className="font-mono text-gray-900">{currentTrackingId}</span>
+                      </div>
+                    )}
+                    {currentConsignmentId && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Consignment ID</span>
+                        <span className="font-mono text-gray-900">{currentConsignmentId}</span>
+                      </div>
+                    )}
+                    {currentCourierStatus && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Current Status</span>
+                        <span className="font-medium text-gray-900">{currentCourierStatus}</span>
+                      </div>
+                    )}
+                    {courierLastUpdatedAt && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Last Updated</span>
+                        <span className="text-gray-900">{formatDateTime(courierLastUpdatedAt)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -575,6 +646,9 @@ function OrderDetailDrawer({
                   <div className="pb-4 pt-1">
                     <p className="text-sm font-medium text-gray-900">{event.status}</p>
                     {event.note && <p className="text-xs text-gray-500">{event.note}</p>}
+                    {event.actor && (
+                      <p className="text-[11px] uppercase tracking-wide text-violet-600 mt-1">{event.actor}</p>
+                    )}
                     <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(event.timestamp)}</p>
                   </div>
                 </div>
@@ -683,6 +757,22 @@ export default function OrdersPage() {
       if (res.ok) {
         const data = await res.json();
         const o = data.order;
+        let trackingData: {
+          courier?: 'pathao' | 'steadfast';
+          trackingId?: string | null;
+          consignmentId?: string | null;
+          currentStatus?: string;
+          lastUpdatedAt?: string | null;
+          deliveryCharge?: number;
+          timeline?: Array<{ status: string; message: string; timestamp: string; source: 'pathao' | 'steadfast' }>;
+        } | null = null;
+        const trackingRes = await fetch(`/api/orders/${o.id}/tracking`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (trackingRes.ok) {
+          trackingData = await trackingRes.json();
+        }
         setSelectedOrder({
           id: o.orderNumber,
           dbId: o.id,
@@ -703,7 +793,6 @@ export default function OrdersPage() {
           })),
           total: Number(o.total),
           subtotal: Number(o.subtotal),
-          shippingCost: Number(o.shippingCost),
           taxAmount: Number(o.taxAmount),
           discountAmount: Number(o.discountAmount),
           couponCode: o.couponCode,
@@ -733,6 +822,12 @@ export default function OrdersPage() {
           tracking: o.trackingNumber,
           customerNote: o.customerNote,
           adminNote: o.adminNote,
+          timeline: trackingData?.timeline?.map((event) => ({
+            timestamp: event.timestamp,
+            status: event.status,
+            note: event.message,
+            actor: event.source,
+          })),
           createdAt: o.createdAt,
           updatedAt: o.updatedAt,
           paidAt: o.paidAt,
@@ -746,6 +841,14 @@ export default function OrdersPage() {
           pathaoStatus: o.pathaoStatus,
           pathaoTrackingCode: o.pathaoTrackingCode,
           pathaoConsignmentId: o.pathaoConsignmentId,
+          courier: trackingData?.courier,
+          trackingId: trackingData?.trackingId,
+          consignmentId: trackingData?.consignmentId,
+          currentStatus: trackingData?.currentStatus,
+          lastUpdatedAt: trackingData?.lastUpdatedAt,
+          shippingCost: typeof trackingData?.deliveryCharge === 'number'
+            ? trackingData.deliveryCharge
+            : Number(o.shippingCost),
         });
       }
     } catch { /* keep list data */ } finally {

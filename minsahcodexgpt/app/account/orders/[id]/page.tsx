@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth';
 import prisma from '@/lib/prisma';
 import { OrderDetailClient } from '@/components/account/order-detail-client';
-import { getSteadfastStatusLabel } from '@/lib/steadfast/client';
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
@@ -61,69 +60,6 @@ async function getOrderDetails(orderId: string, userId: string) {
     return null;
   }
 
-  const latestCourierEvent = await prisma.steadfastWebhookEvent.findFirst({
-    where: { orderId: order.id },
-    orderBy: { receivedAt: 'desc' },
-    select: {
-      eventType: true,
-      status: true,
-      trackingMessage: true,
-      receivedAt: true,
-    },
-  })
-
-  const tracking = [
-    {
-      timestamp: order.createdAt,
-      status: 'ordered',
-      description: 'Order placed successfully',
-      location: 'Online',
-      completed: true,
-    },
-    {
-      timestamp: order.paidAt ?? order.createdAt,
-      status: 'confirmed',
-      description:
-        order.paymentStatus === 'COMPLETED'
-          ? 'Payment received and order confirmed'
-          : 'Order confirmed and queued for processing',
-      location: 'Processing Center',
-      completed: ['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status),
-    },
-    {
-      timestamp: order.updatedAt,
-      status: 'processing',
-      description: 'Order is being prepared for shipment',
-      location: 'Warehouse',
-      completed: ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status),
-    },
-    {
-      timestamp: order.shippedAt ?? order.updatedAt,
-      status: 'shipped',
-      description: 'Package shipped to courier',
-      location: order.shippingMethod ?? 'Courier Hub',
-      completed: ['SHIPPED', 'DELIVERED'].includes(order.status),
-    },
-    {
-      timestamp: order.deliveredAt ?? order.cancelledAt ?? order.updatedAt,
-      status: order.status === 'CANCELLED' ? 'cancelled' : 'delivered',
-      description:
-        order.status === 'CANCELLED' ? 'Order was cancelled' : 'Package delivered successfully',
-      location: order.shippingAddress?.city ?? 'Destination',
-      completed: ['DELIVERED', 'CANCELLED'].includes(order.status),
-    },
-  ].filter((event) => event.completed);
-
-  if (latestCourierEvent?.trackingMessage?.trim()) {
-    tracking.push({
-      timestamp: latestCourierEvent.receivedAt,
-      status: 'shipped',
-      description: latestCourierEvent.trackingMessage.trim(),
-      location: order.shippingMethod === 'steadfast' ? 'Steadfast Courier' : 'Courier',
-      completed: true,
-    })
-  }
-
   return {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -154,13 +90,12 @@ async function getOrderDetails(orderId: string, userId: string) {
     carrier:
       order.shippingMethod === 'steadfast'
         ? 'Steadfast Courier'
+        : order.shippingMethod === 'pathao'
+          ? 'Pathao Courier'
         : order.shippingMethod ?? 'Standard Delivery',
     shippingMethod: order.shippingMethod ?? undefined,
     steadfastTrackingCode: order.steadfastTrackingCode ?? undefined,
     steadfastStatus: order.steadfastStatus ?? undefined,
-    steadfastStatusLabel: order.steadfastStatus
-      ? getSteadfastStatusLabel(order.steadfastStatus)
-      : undefined,
     pathaoTrackingCode: order.pathaoTrackingCode ?? undefined,
     pathaoConsignmentId: order.pathaoConsignmentId ?? undefined,
     pathaoStatus: order.pathaoStatus ?? undefined,
@@ -199,7 +134,7 @@ async function getOrderDetails(orderId: string, userId: string) {
           refundAmount: Number(order.returns[0].refundAmount),
         }
       : null,
-    tracking,
+    tracking: [],
     notes: order.customerNote ?? order.adminNote ?? '',
   };
 }

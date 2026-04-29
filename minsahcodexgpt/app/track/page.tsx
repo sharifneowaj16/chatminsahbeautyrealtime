@@ -5,7 +5,7 @@
  *
  * Public order tracking page — no login required.
  * Customers can track by:
- *   1. Steadfast tracking code
+ *   1. Courier tracking/consignment code
  *   2. Order number + phone number
  */
 
@@ -21,7 +21,6 @@ import {
   MapPin,
   XCircle,
   AlertCircle,
-  ChevronRight,
   RefreshCw,
   Phone,
   ShoppingBag,
@@ -30,26 +29,23 @@ import {
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 interface TrackingTimeline {
-  key: string;
-  label: string;
-  done: boolean;
-  date?: string | null;
+  status: string;
+  message: string;
+  timestamp: string;
+  source: 'pathao' | 'steadfast';
 }
 
 interface TrackingResult {
   found: boolean;
-  trackingCode?: string;
+  orderId?: string;
+  courier?: 'pathao' | 'steadfast';
+  trackingId?: string | null;
+  consignmentId?: string | null;
   orderNumber?: string;
-  steadfastStatus?: string;
-  orderStatus?: string;
-  statusLabel?: string;
-  statusColor?: string;
-  courierUpdate?: string | null;
+  currentStatus?: string;
+  lastUpdatedAt?: string | null;
+  deliveryCharge?: number;
   timeline?: TrackingTimeline[];
-  estimatedDelivery?: string | null;
-  orderDate?: string;
-  shippedAt?: string | null;
-  deliveredAt?: string | null;
   deliveryCity?: string;
   itemCount?: number;
   items?: Array<{ name: string; quantity: number }>;
@@ -70,44 +66,37 @@ function TimelineStep({
       <div className="flex flex-col items-center">
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-            step.done
-              ? 'bg-violet-600 text-white shadow-lg shadow-violet-200'
-              : 'bg-gray-100 text-gray-400'
+            'bg-violet-600 text-white shadow-lg shadow-violet-200'
           }`}
         >
-          {step.key === 'ordered' && <ShoppingBag className="w-5 h-5" />}
-          {step.key === 'confirmed' && <CheckCircle className="w-5 h-5" />}
-          {step.key === 'dispatched' && <Package className="w-5 h-5" />}
-          {step.key === 'out_for_delivery' && <Truck className="w-5 h-5" />}
-          {step.key === 'delivered' && <MapPin className="w-5 h-5" />}
+          {step.status.toLowerCase().includes('deliver') ? (
+            <CheckCircle className="w-5 h-5" />
+          ) : step.status.toLowerCase().includes('transit') || step.status.toLowerCase().includes('pickup') ? (
+            <Truck className="w-5 h-5" />
+          ) : (
+            <Package className="w-5 h-5" />
+          )}
         </div>
         {!isLast && (
-          <div
-            className={`w-0.5 flex-1 mt-1 ${
-              step.done ? 'bg-violet-300' : 'bg-gray-200'
-            }`}
-            style={{ minHeight: '2rem' }}
-          />
+          <div className="w-0.5 flex-1 mt-1 bg-violet-300" style={{ minHeight: '2rem' }} />
         )}
       </div>
       <div className="pb-6 pt-2">
-        <p
-          className={`font-semibold text-sm ${
-            step.done ? 'text-gray-900' : 'text-gray-400'
-          }`}
-        >
-          {step.label}
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-sm text-gray-900 capitalize">{step.status.replace(/_/g, ' ')}</p>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600">
+            {step.source}
+          </span>
+        </div>
+        <p className="text-sm text-gray-600 mt-1">{step.message}</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {new Date(step.timestamp).toLocaleString('en-BD', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </p>
-        {step.date && (
-          <p className="text-xs text-gray-500 mt-0.5">
-            {new Date(step.date).toLocaleString('en-BD', {
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </p>
-        )}
       </div>
     </div>
   );
@@ -278,13 +267,13 @@ function TrackPageContent() {
           ) : (
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-                STEADFAST TRACKING CODE
+                COURIER TRACKING CODE
               </label>
               <input
                 value={trackingCode}
                 onChange={(e) => setTrackingCode(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g. SFB12345678"
+                placeholder="e.g. SFB12345678 or PTH123456"
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent font-mono"
               />
             </div>
@@ -328,11 +317,11 @@ function TrackPageContent() {
                     {result.orderNumber || '—'}
                   </p>
                 </div>
-                {result.trackingCode && (
+                {result.trackingId && (
                   <div className="text-right">
-                    <p className="text-white/70 text-xs font-medium">TRACKING CODE</p>
+                    <p className="text-white/70 text-xs font-medium">TRACKING ID</p>
                     <p className="text-white font-bold font-mono text-sm">
-                      {result.trackingCode}
+                      {result.trackingId}
                     </p>
                   </div>
                 )}
@@ -341,15 +330,20 @@ function TrackPageContent() {
               {/* Status badge */}
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white border border-white/30`}>
-                  {result.steadfastStatus === 'delivered' ? (
+                  {result.currentStatus?.toLowerCase().includes('deliver') ? (
                     <CheckCircle className="w-3.5 h-3.5" />
-                  ) : result.steadfastStatus === 'cancelled' ? (
+                  ) : result.currentStatus?.toLowerCase().includes('cancel') || result.currentStatus?.toLowerCase().includes('fail') ? (
                     <XCircle className="w-3.5 h-3.5" />
                   ) : (
                     <Clock className="w-3.5 h-3.5 animate-pulse" />
                   )}
-                  {result.statusLabel || result.orderStatus}
+                  {result.currentStatus || 'Unknown'}
                 </span>
+                {result.courier && (
+                  <span className="text-white/70 text-xs uppercase tracking-wide">
+                    {result.courier}
+                  </span>
+                )}
                 {result.deliveryCity && (
                   <span className="text-white/70 text-xs flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
@@ -358,26 +352,26 @@ function TrackPageContent() {
                 )}
               </div>
 
-              {/* Estimated delivery */}
-              {result.estimatedDelivery && result.steadfastStatus !== 'delivered' && (
-                <p className="text-white/80 text-xs mt-2">
-                  🗓 Estimated delivery:{' '}
-                  {new Date(result.estimatedDelivery).toLocaleDateString('en-BD', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })}
-                </p>
-              )}
-
-              {result.courierUpdate && (
-                <div className="mt-4 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                    Latest courier message
-                  </p>
-                  <p className="mt-1 text-sm leading-relaxed text-white">{result.courierUpdate}</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-left">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Consignment</p>
+                  <p className="mt-1 text-sm leading-relaxed text-white">{result.consignmentId || '—'}</p>
                 </div>
-              )}
+                <div className="rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-left">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Delivery Charge</p>
+                  <p className="mt-1 text-sm leading-relaxed text-white">
+                    {typeof result.deliveryCharge === 'number' ? `৳${result.deliveryCharge}` : '—'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-left">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Last Updated</p>
+                  <p className="mt-1 text-sm leading-relaxed text-white">
+                    {result.lastUpdatedAt
+                      ? new Date(result.lastUpdatedAt).toLocaleString('en-BD')
+                      : '—'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Timeline */}
@@ -389,7 +383,7 @@ function TrackPageContent() {
                 <div>
                   {result.timeline.map((step, idx) => (
                     <TimelineStep
-                      key={step.key}
+                      key={`${step.source}-${step.timestamp}-${idx}`}
                       step={step}
                       isLast={idx === result.timeline!.length - 1}
                     />
@@ -418,20 +412,6 @@ function TrackPageContent() {
               </div>
             )}
 
-            {/* Order date */}
-            {result.orderDate && (
-              <div className="border-t border-gray-100 px-6 py-4">
-                <p className="text-xs text-gray-500">
-                  Ordered on{' '}
-                  {new Date(result.orderDate).toLocaleDateString('en-BD', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </p>
-              </div>
-            )}
-
             {/* Help */}
             <div className="border-t border-gray-100 px-6 py-4 bg-gray-50">
               <p className="text-xs text-gray-500 text-center">
@@ -448,17 +428,8 @@ function TrackPageContent() {
           </div>
         )}
 
-        {/* Steadfast attribution */}
         <p className="text-center text-xs text-gray-400 mt-6">
-          Powered by{' '}
-          <a
-            href="https://steadfast.com.bd"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-gray-600"
-          >
-            Steadfast Courier
-          </a>
+          Tracking updates are built from courier webhook events stored by Minsah Beauty.
         </p>
       </div>
     </div>

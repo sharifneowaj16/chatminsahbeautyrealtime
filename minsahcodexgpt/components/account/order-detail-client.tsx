@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatPrice } from '@/utils/currency';
@@ -22,6 +22,23 @@ interface OrderDetailClientProps {
   printMode?: boolean;
 }
 
+interface UnifiedTrackingEvent {
+  status: string;
+  message: string;
+  timestamp: string;
+  source: 'pathao' | 'steadfast';
+}
+
+interface UnifiedTrackingResponse {
+  courier: 'pathao' | 'steadfast';
+  trackingId: string | null;
+  consignmentId: string | null;
+  currentStatus: string;
+  lastUpdatedAt: string | null;
+  deliveryCharge: number;
+  timeline: UnifiedTrackingEvent[];
+}
+
 function ProductImage({ src, name }: { src: string | null; name: string }) {
   if (src && (src.startsWith('/') || src.startsWith('http'))) {
     return <img src={src} alt={name} className="h-full w-full rounded-lg object-cover" />;
@@ -36,17 +53,51 @@ function ProductImage({ src, name }: { src: string | null; name: string }) {
 
 export function OrderDetailClient({ order, printMode = false }: OrderDetailClientProps) {
   const router = useRouter();
+  const [trackingDetails, setTrackingDetails] = useState<UnifiedTrackingResponse | null>(null);
 
   const trackPhoneDigits = (order.shippingAddress?.phone ?? '')
     .replace(/\D/g, '')
     .replace(/^880/, '0')
   const trackingCode =
-    order.steadfastTrackingCode || order.trackingNumber
+    trackingDetails?.trackingId ||
+    order.pathaoTrackingCode ||
+    order.steadfastTrackingCode ||
+    order.trackingNumber
   const trackHref = trackingCode
     ? `/track?code=${encodeURIComponent(trackingCode)}`
-    : trackPhoneDigits
+      : trackPhoneDigits
       ? `/track?order=${encodeURIComponent(order.orderNumber)}&phone=${encodeURIComponent(trackPhoneDigits)}`
       : '/track'
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadTracking = async () => {
+      try {
+        const res = await fetch(`/api/orders/${order.id}/tracking`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          return;
+        }
+        const data = (await res.json()) as UnifiedTrackingResponse;
+        if (!isCancelled) {
+          setTrackingDetails(data);
+        }
+      } catch {
+        // Keep base order details if tracking lookup fails.
+      }
+    };
+
+    if (order?.id) {
+      void loadTracking();
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [order?.id]);
 
   useEffect(() => {
     if (!printMode) {
@@ -116,6 +167,28 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
   };
 
   const formatDateTime = (value: string | Date) => new Date(value).toLocaleString();
+  const courierName =
+    trackingDetails?.courier === 'pathao'
+      ? 'Pathao Courier'
+      : trackingDetails?.courier === 'steadfast'
+        ? 'Steadfast Courier'
+        : order.carrier;
+  const currentCourierStatus =
+    trackingDetails?.currentStatus ||
+    (order.shippingMethod === 'pathao' ? order.pathaoStatus : order.steadfastStatus) ||
+    order.status;
+  const timeline =
+    trackingDetails?.timeline ??
+    (Array.isArray(order.tracking)
+      ? order.tracking.map((event: any) => ({
+          status: event.status,
+          message: event.description,
+          timestamp: String(event.timestamp),
+          source: (order.shippingMethod === 'pathao' ? 'pathao' : 'steadfast') as 'pathao' | 'steadfast',
+        }))
+      : []);
+  const deliveryCharge = trackingDetails?.deliveryCharge ?? order.shipping;
+  const lastUpdatedAt = trackingDetails?.lastUpdatedAt;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -153,17 +226,13 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     {order.status.replace('_', ' ')}
                   </span>
                 </div>
-                {(order.shippingMethod === 'pathao'
-                  ? order.pathaoStatus
-                  : (order.steadfastStatusLabel || order.steadfastStatus)) && (
+                {currentCourierStatus && (
                   <div className="mb-4 rounded-lg border border-violet-100 bg-violet-50/90 px-4 py-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
                       Courier update
                     </p>
                     <p className="mt-1 text-sm font-medium text-gray-900">
-                      {order.shippingMethod === 'pathao'
-                        ? order.pathaoStatus
-                        : (order.steadfastStatusLabel || order.steadfastStatus)}
+                      {currentCourierStatus}
                     </p>
                     <p className="mt-1 text-xs text-gray-600">
                       Refreshes when courier webhooks update delivery state.
@@ -171,39 +240,52 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                   </div>
                 )}
                 {['pending', 'confirmed', 'processing'].includes(order.status) &&
-                  !order.steadfastTrackingCode &&
+                  !trackingCode &&
                   !order.trackingNumber && (
                     <div className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
                       Your order is being reviewed and packed. When it is handed to the courier, a{' '}
                       <strong>tracking number</strong> and link will appear here.
                     </div>
                   )}
-                {order.trackingNumber && (
+                {(trackingCode || trackingDetails?.consignmentId || courierName) && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Tracking Number</span>
-                      <span className="text-sm text-gray-900">{order.trackingNumber}</span>
+                      <span className="text-sm font-medium text-gray-700">Courier</span>
+                      <span className="text-sm text-gray-900">{courierName}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Carrier</span>
-                      <span className="text-sm text-gray-900">{order.carrier}</span>
+                      <span className="text-sm font-medium text-gray-700">Tracking ID</span>
+                      <span className="text-sm text-gray-900">{trackingCode || '—'}</span>
                     </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Consignment ID</span>
+                      <span className="text-sm text-gray-900">{trackingDetails?.consignmentId || order.pathaoConsignmentId || '—'}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Delivery Charge</span>
+                      <span className="text-sm text-gray-900">{formatPrice(deliveryCharge || 0)}</span>
+                    </div>
+                    {lastUpdatedAt && (
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">Last Updated</span>
+                        <span className="text-sm text-gray-900">{formatDateTime(lastUpdatedAt)}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
               <div className="space-y-6">
-                {order.tracking.map((event: any, index: number) => (
+                {timeline.map((event: UnifiedTrackingEvent, index: number) => (
                   <div key={index} className="flex items-start space-x-4">
-                    {getTimelineIcon(event.status, event.completed)}
+                    {getTimelineIcon(event.status, true)}
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium text-gray-900">{event.description}</h4>
+                        <h4 className="font-medium text-gray-900">{event.message}</h4>
                         <span className="text-sm text-gray-600">{formatDateTime(event.timestamp)}</span>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        {event.location && <MapPin className="w-4 h-4 inline mr-1" />}
-                        {event.location}
+                      <p className="text-sm text-gray-600 capitalize">
+                        {event.status.replace(/_/g, ' ')} from {event.source}
                       </p>
                     </div>
                   </div>
@@ -258,7 +340,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">{formatPrice(order.shipping)}</span>
+                  <span className="font-medium">{formatPrice(deliveryCharge || 0)}</span>
                 </div>
                 {order.tax > 0 && (
                   <div className="flex justify-between">
@@ -330,9 +412,9 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     View Return {order.latestReturn.status.replace('_', ' ')}
                   </Link>
                 )}
-                {(order.steadfastTrackingCode ||
-                  order.trackingNumber ||
-                  order.steadfastStatus) && (
+                {(trackingCode ||
+                  trackingDetails?.consignmentId ||
+                  currentCourierStatus) && (
                   <a
                     href={trackHref}
                     target="_blank"
