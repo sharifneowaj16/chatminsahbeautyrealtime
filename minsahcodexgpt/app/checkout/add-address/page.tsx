@@ -1,12 +1,12 @@
 'use client';
 
 import { useCart } from '@/contexts/CartContext';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-export default function AddAddressPage() {
+function AddAddressContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addAddress } = useCart();
@@ -277,5 +277,19 @@ export default function AddAddressPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function AddAddressPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-minsah-light flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-minsah-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <AddAddressContent />
+    </Suspense>
   );
 }
