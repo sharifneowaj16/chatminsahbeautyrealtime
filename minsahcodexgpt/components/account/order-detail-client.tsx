@@ -153,16 +153,20 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     {order.status.replace('_', ' ')}
                   </span>
                 </div>
-                {(order.steadfastStatusLabel || order.steadfastStatus) && (
+                {(order.shippingMethod === 'pathao'
+                  ? order.pathaoStatus
+                  : (order.steadfastStatusLabel || order.steadfastStatus)) && (
                   <div className="mb-4 rounded-lg border border-violet-100 bg-violet-50/90 px-4 py-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
                       Courier update
                     </p>
                     <p className="mt-1 text-sm font-medium text-gray-900">
-                      {order.steadfastStatusLabel || order.steadfastStatus}
+                      {order.shippingMethod === 'pathao'
+                        ? order.pathaoStatus
+                        : (order.steadfastStatusLabel || order.steadfastStatus)}
                     </p>
                     <p className="mt-1 text-xs text-gray-600">
-                      Refreshes when Steadfast sends a delivery or tracking webhook.
+                      Refreshes when courier webhooks update delivery state.
                     </p>
                   </div>
                 )}
@@ -170,7 +174,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                   !order.steadfastTrackingCode &&
                   !order.trackingNumber && (
                     <div className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-                      Your order is being reviewed and packed. When it is handed to Steadfast, a{' '}
+                      Your order is being reviewed and packed. When it is handed to the courier, a{' '}
                       <strong>tracking number</strong> and link will appear here.
                     </div>
                   )}

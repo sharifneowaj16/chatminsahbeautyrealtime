@@ -28,6 +28,9 @@ interface AddressDataInput {
   state?: string;
   postalCode?: string;
   country?: string;
+  pathao_city_id?: number;
+  pathao_zone_id?: number;
+  pathao_area_id?: number;
 }
 
 // ─── POST /api/orders ─────────────────────────────────────────────────────────
@@ -155,10 +158,10 @@ export async function POST(request: NextRequest) {
 
     const subtotal        = parseFloat(orderItems.reduce((s, i) => s + i.total, 0).toFixed(2));
     const shippingCostNum = parseFloat(String(shippingCost)) || 0;
-    const taxAmount       = parseFloat((subtotal * 0.05).toFixed(2));
+    const taxAmount       = 0;
     const discountAmount  = parseFloat(String(couponDiscount ?? 0));
     const total           = parseFloat(
-      (subtotal + shippingCostNum + taxAmount - discountAmount).toFixed(2)
+      (subtotal + shippingCostNum - discountAmount).toFixed(2)
     );
 
     // 6. Single transaction: resolve address → create order → decrement stock → clear cart
@@ -196,6 +199,9 @@ export async function POST(request: NextRequest) {
             state:      addressData.provinceRegion || addressData.state || '',
             postalCode: addressData.postalCode || '',
             country:    addressData.country || 'Bangladesh',
+            pathaoCityId: addressData.pathao_city_id ?? null,
+            pathaoZoneId: addressData.pathao_zone_id ?? null,
+            pathaoAreaId: addressData.pathao_area_id ?? null,
             isDefault:  false,
             type:       'SHIPPING',
           },

@@ -32,6 +32,9 @@ export interface Address {
   type: 'home' | 'office';
   isDefault: boolean;
   coordinates?: { lat: number; lng: number };
+  pathao_city_id?: number | null;
+  pathao_zone_id?: number | null;
+  pathao_area_id?: number | null;
 }
 
 export interface PaymentMethod {
@@ -232,6 +235,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     company: string | null;
     city: string;
     isDefault: boolean;
+    pathaoCityId?: number | null;
+    pathaoZoneId?: number | null;
+    pathaoAreaId?: number | null;
   }): Address => ({
     id:             db.id,
     fullName:       db.firstName,
@@ -243,6 +249,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     city:           db.city,
     isDefault:      db.isDefault,
     type:           'home',
+    pathao_city_id: db.pathaoCityId ?? null,
+    pathao_zone_id: db.pathaoZoneId ?? null,
+    pathao_area_id: db.pathaoAreaId ?? null,
   });
 
   const fetchAddressesFromDB = useCallback(async () => {
@@ -438,6 +447,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
               city:      address.city,
               isDefault: address.isDefault,
               type:      'SHIPPING',
+              pathao_city_id: address.pathao_city_id ?? undefined,
+              pathao_zone_id: address.pathao_zone_id ?? undefined,
+              pathao_area_id: address.pathao_area_id ?? undefined,
             }),
           });
           if (res.ok) await fetchAddressesFromDB();
@@ -468,6 +480,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (updates.landmark       !== undefined) b.company   = updates.landmark;
           if (updates.city           !== undefined) b.city      = updates.city;
           if (updates.isDefault      !== undefined) b.isDefault = updates.isDefault;
+          if (updates.pathao_city_id !== undefined) b.pathao_city_id = updates.pathao_city_id;
+          if (updates.pathao_zone_id !== undefined) b.pathao_zone_id = updates.pathao_zone_id;
+          if (updates.pathao_area_id !== undefined) b.pathao_area_id = updates.pathao_area_id;
           await fetch(`/api/addresses/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },

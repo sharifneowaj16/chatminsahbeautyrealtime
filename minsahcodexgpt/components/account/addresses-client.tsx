@@ -48,6 +48,9 @@ function dbToUserAddress(db: Record<string, unknown>): UserAddress {
     postalCode: (db.postalCode as string) ?? '',
     country: (db.country as string) ?? 'Bangladesh',
     phone: (db.phone as string) ?? '',
+    pathao_city_id: (db.pathaoCityId as number) ?? undefined,
+    pathao_zone_id: (db.pathaoZoneId as number) ?? undefined,
+    pathao_area_id: (db.pathaoAreaId as number) ?? undefined,
   };
 }
 

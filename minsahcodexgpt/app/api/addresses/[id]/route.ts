@@ -33,7 +33,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { isDefault, type, ...rest } = body;
+    const { isDefault, type, pathao_city_id, pathao_zone_id, pathao_area_id, ...rest } = body;
 
     // If setting as default, unset previous default of same type
     if (isDefault === true) {
@@ -48,6 +48,9 @@ export async function PATCH(
       where: { id },
       data: {
         ...rest,
+        ...(pathao_city_id !== undefined && { pathaoCityId: pathao_city_id }),
+        ...(pathao_zone_id !== undefined && { pathaoZoneId: pathao_zone_id }),
+        ...(pathao_area_id !== undefined && { pathaoAreaId: pathao_area_id }),
         ...(isDefault !== undefined && { isDefault }),
         ...(type && { type: AddressType[type as 'SHIPPING' | 'BILLING'] }),
       },

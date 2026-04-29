@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 import {
   estimateDeliveryCharge,
   extractVariantWeightKg,
-  fetchPathaoDeliveryQuote,
   fetchSteadfastDeliveryQuote,
   parseWeightToKg,
   resolvePackagingWeightKg,
@@ -37,6 +36,9 @@ export async function POST(request: NextRequest) {
 
     if (!city || !area) {
       return NextResponse.json({ error: 'City and area are required' }, { status: 400 });
+    }
+    if (provider === 'pathao') {
+      return NextResponse.json({ error: 'Use /api/shipping/pathao/price for Pathao quotes' }, { status: 400 });
     }
 
     const productIds = [...new Set(items.map((item) => item.productId))];
@@ -107,20 +109,14 @@ export async function POST(request: NextRequest) {
 
     let quote;
     try {
-      const liveQuote =
-        provider === 'pathao'
-          ? await fetchPathaoDeliveryQuote({ city, area, parcelWeightKg })
-          : await fetchSteadfastDeliveryQuote({ city, area, parcelWeightKg });
-
-      quote = liveQuote ?? estimateDeliveryCharge({ city, area, parcelWeightKg });
-
-      // Guardrail: if a live quote looks obviously wrong, use slab pricing.
-      // (Most retail parcels should never have 1000+ BDT shipping.)
-      if ((quote.source === 'steadfast' || quote.source === 'pathao') && quote.charge > 500) {
+      const liveQuote = await fetchSteadfastDeliveryQuote({ city, area, parcelWeightKg });
+      if (!liveQuote) {
         quote = estimateDeliveryCharge({ city, area, parcelWeightKg });
+      } else {
+        quote = liveQuote;
       }
     } catch (error) {
-      console.error('Buy now delivery quote failed, using fallback estimate:', error);
+      console.error('Steadfast delivery quote failed, using fallback estimate:', error);
       quote = estimateDeliveryCharge({ city, area, parcelWeightKg });
     }
 

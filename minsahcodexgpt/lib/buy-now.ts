@@ -1,6 +1,6 @@
 export interface DeliveryQuoteResult {
   charge: number;
-  source: 'steadfast' | 'pathao' | 'fallback';
+  source: 'steadfast' | 'fallback';
   note?: string;
 }
 
@@ -168,50 +168,6 @@ export async function fetchSteadfastDeliveryQuote(params: {
   };
 }
 
-export async function fetchPathaoDeliveryQuote(params: {
-  city: string;
-  area: string;
-  parcelWeightKg: number;
-}): Promise<DeliveryQuoteResult | null> {
-  /**
-   * Pathao integration varies by merchant account and API version.
-   * To keep this codebase deployable without hard-coding credentials/endpoints,
-   * we support an optional "quote URL" that behaves like our Steadfast quote URL:
-   * POST JSON { city, area, weight } → returns a numeric charge somewhere in the response.
-   */
-  const quoteUrl = process.env.PATHAO_DELIVERY_QUOTE_URL;
-  if (!quoteUrl) {
-    return null;
-  }
-
-  const response = await fetch(quoteUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      city: params.city,
-      area: params.area,
-      weight: Number(params.parcelWeightKg.toFixed(3)),
-    }),
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Pathao quote request failed with status ${response.status}`);
-  }
-
-  const data = (await response.json()) as unknown;
-  const charge = extractNumericField(data);
-
-  if (charge === null) {
-    throw new Error('Pathao quote response did not include a numeric delivery charge');
-  }
-
-  return {
-    charge,
-    source: 'pathao',
-  };
-}
-
 export function estimateDeliveryCharge(params: {
   city: string;
   area: string;
@@ -286,7 +242,7 @@ export function estimateDeliveryCharge(params: {
   return {
     charge,
     source: 'fallback',
-    note: 'Delivery charge was calculated locally using Steadfast weight slabs.',
+    note: 'Steadfast estimated fallback using weight slabs.',
   };
 }
 

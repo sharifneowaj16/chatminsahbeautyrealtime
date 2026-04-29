@@ -189,6 +189,9 @@ model Address {
   postalCode String
   country    String      @default("Bangladesh")
   phone      String?
+  pathaoCityId Int?
+  pathaoZoneId Int?
+  pathaoAreaId Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -538,7 +541,11 @@ model Order {
   steadfastConsignmentId String?
   steadfastTrackingCode  String?
   steadfastStatus        String?
+  pathaoStatus           String?
   steadfastSentAt        DateTime?
+  pathaoConsignmentId    String?
+  pathaoTrackingCode     String?
+  pathaoSentAt           DateTime?
 
   couponCode     String?
   couponDiscount Decimal? @db.Decimal(10, 2)
@@ -562,6 +569,7 @@ model Order {
   returns  Return[]
   notifications AdminNotification[]
   steadfastWebhookEvents SteadfastWebhookEvent[]
+  pathaoWebhookEvents PathaoWebhookEvent[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -569,8 +577,35 @@ model Order {
   @@index([createdAt])
   @@index([steadfastConsignmentId])
   @@index([steadfastTrackingCode])
+  @@index([pathaoConsignmentId])
+  @@index([pathaoTrackingCode])
   @@index([isGiftOrder])
   @@index([giftToken])
+}
+
+model PathaoWebhookEvent {
+  id               String   @id @default(cuid())
+  eventKey         String   @unique
+  source           String   @default("pathao")
+  eventType        String
+  orderRef         String?
+  consignmentId    String?
+  signature        String?
+  payload          Json
+  orderId          String?
+  processingStatus String   @default("RECEIVED")
+  error            String?  @db.Text
+  receivedAt       DateTime @default(now())
+  processedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, receivedAt])
+  @@index([orderRef])
+  @@index([consignmentId])
+  @@index([processingStatus, receivedAt])
 }
 
 model SteadfastWebhookEvent {

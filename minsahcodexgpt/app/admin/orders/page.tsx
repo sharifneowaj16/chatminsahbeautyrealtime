@@ -92,6 +92,9 @@ interface Order {
   steadfastTrackingCode?: string | null;
   steadfastStatus?: string | null;
   steadfastSentAt?: string | null;
+  pathaoStatus?: string | null;
+  pathaoTrackingCode?: string | null;
+  pathaoConsignmentId?: string | null;
 }
 
 interface Stats {
@@ -721,6 +724,9 @@ export default function OrdersPage() {
           steadfastTrackingCode: o.steadfastTrackingCode,
           steadfastStatus: o.steadfastStatus,
           steadfastSentAt: o.steadfastSentAt,
+          pathaoStatus: o.pathaoStatus,
+          pathaoTrackingCode: o.pathaoTrackingCode,
+          pathaoConsignmentId: o.pathaoConsignmentId,
         });
       }
     } catch { /* keep list data */ } finally {
@@ -1095,12 +1101,28 @@ export default function OrdersPage() {
                         <StatusBadge status={order.status} />
                       </td>
 
-                      {/* Courier (Steadfast) */}
+                      {/* Courier */}
                       <td className="px-4 py-3.5">
-                        <SteadfastStatusBadge
-                          status={order.steadfastStatus}
-                          trackingCode={order.steadfastTrackingCode}
-                        />
+                        {order.shippingMethod === 'pathao' ? (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                              Pathao
+                            </span>
+                            {order.pathaoStatus && (
+                              <p className="text-[11px] text-gray-700">{order.pathaoStatus}</p>
+                            )}
+                            {(order.pathaoTrackingCode || order.tracking) && (
+                              <p className="text-[11px] font-mono text-gray-500">
+                                {(order.pathaoTrackingCode || order.tracking)?.slice(0, 12)}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <SteadfastStatusBadge
+                            status={order.steadfastStatus}
+                            trackingCode={order.steadfastTrackingCode}
+                          />
+                        )}
                       </td>
 
                       {/* Payment */}

@@ -61,7 +61,10 @@ function authorizationHeaderMatchesExpected(
 function isWebhookAuthorized(request: NextRequest): WebhookAuthResult {
   const secret = process.env.STEADFAST_WEBHOOK_SECRET?.trim()
   const customerKey = process.env.STEADFAST_WEBHOOK_CUSTOMER_KEY?.trim()
-  const authorization = process.env.STEADFAST_WEBHOOK_AUTHORIZATION?.trim()
+  const authorization =
+    process.env.STEADFAST_WEBHOOK_AUTH_TOKEN?.trim()
+      ? `Bearer ${process.env.STEADFAST_WEBHOOK_AUTH_TOKEN?.trim()}`
+      : process.env.STEADFAST_WEBHOOK_AUTHORIZATION?.trim()
 
   if (!secret && !customerKey && !authorization) {
     return { ok: false, reason: 'not_configured' }
@@ -156,7 +159,7 @@ export async function POST(request: NextRequest) {
   if (!auth.ok) {
     if (auth.reason === 'not_configured') {
       return jsonError(
-        'Webhook is disabled until STEADFAST_WEBHOOK_SECRET, STEADFAST_WEBHOOK_CUSTOMER_KEY, or STEADFAST_WEBHOOK_AUTHORIZATION is set.',
+        'Webhook is disabled until STEADFAST_WEBHOOK_SECRET, STEADFAST_WEBHOOK_CUSTOMER_KEY, STEADFAST_WEBHOOK_AUTH_TOKEN, or STEADFAST_WEBHOOK_AUTHORIZATION is set.',
         503
       )
     }
@@ -264,6 +267,13 @@ export async function POST(request: NextRequest) {
 
   if (status && status !== order.steadfastStatus) {
     updateData.steadfastStatus = status
+  }
+  const deliveryCharge = Number(payload.delivery_charge)
+  if (Number.isFinite(deliveryCharge) && deliveryCharge >= 0) {
+    updateData.shippingCost = deliveryCharge
+  }
+  if (trackingMessage) {
+    updateData.adminNote = trackingMessage
   }
   if (trackingCode && trackingCode !== order.trackingNumber) {
     updateData.trackingNumber = trackingCode

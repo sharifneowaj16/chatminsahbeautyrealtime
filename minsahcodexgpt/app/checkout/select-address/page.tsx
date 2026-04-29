@@ -98,6 +98,11 @@ export default function SelectAddressPage() {
                         Default
                       </span>
                     )}
+                    {(!address.pathao_city_id || !address.pathao_zone_id) && (
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+                        Pathao setup needed
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-sm font-semibold text-minsah-dark mb-1">
@@ -114,6 +119,20 @@ export default function SelectAddressPage() {
                       Landmark: {address.landmark}
                     </p>
                   )}
+                  {(!address.pathao_city_id || !address.pathao_zone_id) && (
+                    <p className="text-xs text-amber-700 mt-1">
+                      Edit this address to select Pathao city/zone.
+                    </p>
+                  )}
+                  <div className="mt-2">
+                    <Link
+                      href={`/checkout/add-address?fullName=${encodeURIComponent(address.fullName)}&phoneNumber=${encodeURIComponent(address.phoneNumber)}&address=${encodeURIComponent(address.address)}&city=${encodeURIComponent(address.city)}&zone=${encodeURIComponent(address.zone)}&landmark=${encodeURIComponent(address.landmark ?? '')}&provinceRegion=${encodeURIComponent(address.provinceRegion ?? 'Dhaka')}&type=${encodeURIComponent(address.type)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-block text-xs font-semibold text-minsah-primary underline"
+                    >
+                      Edit
+                    </Link>
+                  </div>
                 </div>
               </div>
             </button>

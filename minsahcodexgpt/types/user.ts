@@ -17,6 +17,9 @@ export interface UserAddress {
   postalCode: string;
   country: string;
   phone: string;
+  pathao_city_id?: number;
+  pathao_zone_id?: number;
+  pathao_area_id?: number;
 }
 
 export interface OrderItem {

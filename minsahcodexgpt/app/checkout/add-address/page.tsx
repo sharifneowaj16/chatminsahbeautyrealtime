@@ -1,13 +1,14 @@
 'use client';
 
-import { useCart, Address } from '@/contexts/CartContext';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCart } from '@/contexts/CartContext';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 export default function AddAddressPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addAddress } = useCart();
 
   const [formData, setFormData] = useState({
@@ -19,8 +20,40 @@ export default function AddAddressPage() {
     zone: '',
     address: '',
     type: 'home' as 'home' | 'office',
-    isDefault: false
+    isDefault: false,
+    pathao_city_id: null as number | null,
+    pathao_zone_id: null as number | null,
+    pathao_area_id: null as number | null,
   });
+  const [pathaoCities, setPathaoCities] = useState<Array<{ city_id: number; city_name: string }>>([]);
+  const [pathaoZones, setPathaoZones] = useState<Array<{ zone_id: number; zone_name: string }>>([]);
+
+  useEffect(() => {
+    const fullName = searchParams.get('fullName');
+    const phoneNumber = searchParams.get('phoneNumber');
+    const landmark = searchParams.get('landmark');
+    const provinceRegion = searchParams.get('provinceRegion');
+    const city = searchParams.get('city');
+    const zone = searchParams.get('zone');
+    const address = searchParams.get('address');
+    const type = searchParams.get('type');
+
+    if (!fullName && !phoneNumber && !city && !address) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      fullName: fullName ?? prev.fullName,
+      phoneNumber: phoneNumber ?? prev.phoneNumber,
+      landmark: landmark ?? prev.landmark,
+      provinceRegion: provinceRegion ?? prev.provinceRegion,
+      city: city ?? prev.city,
+      zone: zone ?? prev.zone,
+      address: address ?? prev.address,
+      type: type === 'office' ? 'office' : 'home',
+    }));
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -30,9 +63,48 @@ export default function AddAddressPage() {
     }));
   };
 
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const res = await fetch('/api/shipping/pathao/cities');
+        const data = (await res.json()) as { cities?: Array<{ city_id: number; city_name: string }> };
+        setPathaoCities(data.cities ?? []);
+      } catch {
+        setPathaoCities([]);
+      }
+    };
+    void loadCities();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.pathao_city_id) {
+      setPathaoZones([]);
+      setFormData((prev) => ({ ...prev, pathao_zone_id: null }));
+      return;
+    }
+    const loadZones = async () => {
+      try {
+        const res = await fetch(`/api/shipping/pathao/zones?city_id=${formData.pathao_city_id}`);
+        const data = (await res.json()) as { zones?: Array<{ zone_id: number; zone_name: string }> };
+        setPathaoZones(data.zones ?? []);
+      } catch {
+        setPathaoZones([]);
+      }
+    };
+    void loadZones();
+  }, [formData.pathao_city_id]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.phoneNumber || !formData.address || !formData.city || !formData.zone) {
+    if (
+      !formData.fullName ||
+      !formData.phoneNumber ||
+      !formData.address ||
+      !formData.city ||
+      !formData.zone ||
+      !formData.pathao_city_id ||
+      !formData.pathao_zone_id
+    ) {
       alert('Please fill in all required fields');
       return;
     }
@@ -134,6 +206,56 @@ export default function AddAddressPage() {
                 required
                 className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-minsah-dark mb-2">
+                Pathao City *
+              </label>
+              <select
+                value={formData.pathao_city_id ?? ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pathao_city_id: e.target.value ? Number(e.target.value) : null,
+                    pathao_zone_id: null,
+                  }))
+                }
+                className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
+                required
+              >
+                <option value="">Select Pathao city</option>
+                {pathaoCities.map((city) => (
+                  <option key={city.city_id} value={city.city_id}>
+                    {city.city_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-minsah-dark mb-2">
+                Pathao Zone *
+              </label>
+              <select
+                value={formData.pathao_zone_id ?? ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pathao_zone_id: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+                className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
+                required
+              >
+                <option value="">Select Pathao zone</option>
+                {pathaoZones.map((zone) => (
+                  <option key={zone.zone_id} value={zone.zone_id}>
+                    {zone.zone_name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

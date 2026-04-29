@@ -1,0 +1,4 @@
+ALTER TABLE "Address"
+ADD COLUMN "pathaoCityId" INTEGER,
+ADD COLUMN "pathaoZoneId" INTEGER,
+ADD COLUMN "pathaoAreaId" INTEGER;

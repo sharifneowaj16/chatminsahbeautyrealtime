@@ -155,11 +155,15 @@ async function getOrderDetails(orderId: string, userId: string) {
       order.shippingMethod === 'steadfast'
         ? 'Steadfast Courier'
         : order.shippingMethod ?? 'Standard Delivery',
+    shippingMethod: order.shippingMethod ?? undefined,
     steadfastTrackingCode: order.steadfastTrackingCode ?? undefined,
     steadfastStatus: order.steadfastStatus ?? undefined,
     steadfastStatusLabel: order.steadfastStatus
       ? getSteadfastStatusLabel(order.steadfastStatus)
       : undefined,
+    pathaoTrackingCode: order.pathaoTrackingCode ?? undefined,
+    pathaoConsignmentId: order.pathaoConsignmentId ?? undefined,
+    pathaoStatus: order.pathaoStatus ?? undefined,
     shippingAddress: order.shippingAddress
       ? {
           firstName: order.shippingAddress.firstName,

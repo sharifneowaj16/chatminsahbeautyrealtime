@@ -32,6 +32,9 @@ async function getUserAddresses(): Promise<UserAddress[]> {
       postalCode: db.postalCode,
       country: db.country,
       phone: db.phone ?? '',
+      pathao_city_id: db.pathaoCityId ?? undefined,
+      pathao_zone_id: db.pathaoZoneId ?? undefined,
+      pathao_area_id: db.pathaoAreaId ?? undefined,
     }));
   } catch {
     return [];

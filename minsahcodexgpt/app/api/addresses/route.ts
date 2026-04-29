@@ -55,6 +55,9 @@ export async function POST(request: NextRequest) {
       postalCode = '',
       country = 'Bangladesh',
       phone,
+      pathao_city_id,
+      pathao_zone_id,
+      pathao_area_id,
     } = body as {
       type?: 'SHIPPING' | 'BILLING';
       isDefault?: boolean;
@@ -68,6 +71,9 @@ export async function POST(request: NextRequest) {
       postalCode?: string;
       country?: string;
       phone?: string;
+      pathao_city_id?: number;
+      pathao_zone_id?: number;
+      pathao_area_id?: number;
     };
 
     if (!firstName || !street1 || !city || !state) {
@@ -100,6 +106,9 @@ export async function POST(request: NextRequest) {
         postalCode,
         country,
         phone,
+        pathaoCityId: pathao_city_id ?? null,
+        pathaoZoneId: pathao_zone_id ?? null,
+        pathaoAreaId: pathao_area_id ?? null,
       },
     });
 

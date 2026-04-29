@@ -2,7 +2,7 @@
 
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Minus, Plus, Trash2, ArrowLeft, ShoppingCart, Heart, Home, MapPin, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import { formatPrice, convertUSDtoBDT } from '@/utils/currency';
 
@@ -12,7 +12,6 @@ export default function CartPage() {
     updateQuantity,
     removeItem,
     subtotal,
-    shippingCost,
     promoCode,
     setPromoCode,
     applyPromoCode,
@@ -20,8 +19,7 @@ export default function CartPage() {
     selectedAddress,
   } = useCart();
   const [showShippingAddress, setShowShippingAddress] = useState(true);
-  const [deliveryCharge, setDeliveryCharge] = useState<number>(shippingCost);
-  const [deliveryState, setDeliveryState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [deliveryCharge] = useState<number>(0);
 
   const handleQuantityChange = (itemId: string, delta: number) => {
     const item = items.find(i => i.id === itemId);
@@ -31,64 +29,6 @@ export default function CartPage() {
   const bdtSubtotal = convertUSDtoBDT(subtotal);
   const bdtShipping = convertUSDtoBDT(deliveryCharge);
   const bdtTotal    = convertUSDtoBDT(subtotal + deliveryCharge - discount);
-  const shippingQuoteItems = useMemo(
-    () =>
-      items.map((item) => ({
-        productId: item.productId ?? item.id,
-        variantId: item.variantId ?? null,
-        quantity: item.quantity,
-      })),
-    [items]
-  );
-
-  useEffect(() => {
-    if (!items.length || !selectedAddress?.city || !selectedAddress.zone) {
-      setDeliveryCharge(shippingCost);
-      setDeliveryState('idle');
-      return;
-    }
-
-    let isCancelled = false;
-    const abortController = new AbortController();
-
-    const quoteDeliveryCharge = async () => {
-      setDeliveryState('loading');
-      try {
-        const response = await fetch('/api/buy-now/shipping', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: shippingQuoteItems,
-            city: selectedAddress.city,
-            area: selectedAddress.zone,
-          }),
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to quote delivery');
-        }
-
-        const data = (await response.json()) as { deliveryCharge?: number };
-        if (!isCancelled && typeof data.deliveryCharge === 'number') {
-          setDeliveryCharge(data.deliveryCharge);
-          setDeliveryState('success');
-        }
-      } catch {
-        if (!isCancelled) {
-          setDeliveryCharge(shippingCost);
-          setDeliveryState('error');
-        }
-      }
-    };
-
-    void quoteDeliveryCharge();
-    return () => {
-      isCancelled = true;
-      abortController.abort();
-    };
-  }, [items.length, selectedAddress?.city, selectedAddress?.zone, shippingCost, shippingQuoteItems]);
-
   return (
     <div className="min-h-screen bg-[#FDF8F3]">
       {/* Header */}
@@ -349,11 +289,7 @@ export default function CartPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-[#8B5E3C]">Shipping</span>
                   <span className="font-semibold text-[#1A0D06]">
-                    {deliveryState === 'loading'
-                      ? 'Calculating...'
-                      : deliveryState === 'error'
-                        ? 'Will be confirmed'
-                        : formatPrice(bdtShipping)}
+                    {selectedAddress ? 'Calculated at checkout' : formatPrice(0)}
                   </span>
                 </div>
                 {discount > 0 && (

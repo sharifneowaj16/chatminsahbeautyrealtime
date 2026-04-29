@@ -7,7 +7,7 @@
  * All methods throw SteadfastError on API errors.
  */
 
-const BASE_URL = 'https://portal.steadfast.com.bd/api/v1';
+const BASE_URL = 'https://portal.packzy.com/api/v1';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 

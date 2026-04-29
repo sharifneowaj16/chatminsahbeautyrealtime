@@ -17,7 +17,6 @@ function CheckoutContent() {
   const {
     items,
     subtotal,
-    shippingCost,
     selectedAddress,
     selectedPaymentMethod,
     clearCart,
@@ -26,10 +25,10 @@ function CheckoutContent() {
   const [expandedSection, setExpandedSection] = useState<'address' | 'payment' | 'summary' | null>('address');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [deliveryCharge, setDeliveryCharge] = useState<number>(shippingCost);
+  const [deliveryCharge, setDeliveryCharge] = useState<number>(0);
   const [deliveryState, setDeliveryState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [deliveryProvider, setDeliveryProvider] = useState<'steadfast' | 'pathao'>('steadfast');
-  const [deliveryMeta, setDeliveryMeta] = useState<{ quoteSource?: string; message?: string | null } | null>(null);
+  const [deliveryProvider, setDeliveryProvider] = useState<'steadfast' | 'pathao' | null>(null);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
   // Ref to track that "Place Order" was clicked while logged out
   const pendingOrderRef = useRef(false);
@@ -42,13 +41,38 @@ function CheckoutContent() {
       })),
     [items]
   );
+  const estimatedTotalWeightKg = useMemo(
+    () => Number((items.reduce((sum, item) => sum + Math.max(1, item.quantity), 0) * 0.1).toFixed(3)),
+    [items]
+  );
+  const hasPathaoAddressIds = Boolean(selectedAddress?.pathao_city_id && selectedAddress?.pathao_zone_id);
   const finalTotal = subtotal + deliveryCharge;
 
   useEffect(() => {
-    if (!items.length || !selectedAddress?.city || !selectedAddress.zone) {
-      setDeliveryCharge(shippingCost);
+    setDeliveryState('idle');
+    setDeliveryCharge(0);
+    setDeliveryError(null);
+  }, [selectedAddress?.id, deliveryProvider]);
+
+  useEffect(() => {
+    if (!items.length || !selectedAddress || !deliveryProvider) {
+      setDeliveryCharge(0);
       setDeliveryState('idle');
-      setDeliveryMeta(null);
+      setDeliveryError(null);
+      return;
+    }
+
+    if (deliveryProvider === 'pathao' && !hasPathaoAddressIds) {
+      setDeliveryCharge(0);
+      setDeliveryState('idle');
+      setDeliveryError('Please edit your address and select Pathao city/zone.');
+      return;
+    }
+
+    if (deliveryProvider === 'pathao' && estimatedTotalWeightKg <= 0) {
+      setDeliveryCharge(0);
+      setDeliveryState('idle');
+      setDeliveryError('Could not calculate Pathao shipping. Please check address.');
       return;
     }
 
@@ -57,34 +81,54 @@ function CheckoutContent() {
 
     const quoteDeliveryCharge = async () => {
       setDeliveryState('loading');
+      setDeliveryError(null);
       try {
-        const response = await fetch('/api/buy-now/shipping', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: shippingQuoteItems,
-            city: selectedAddress.city,
-            area: selectedAddress.zone,
-            provider: deliveryProvider,
-          }),
-          signal: abortController.signal,
-        });
+        const response =
+          deliveryProvider === 'pathao'
+            ? await fetch('/api/shipping/pathao/price', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  items: shippingQuoteItems,
+                  totalWeightKg: estimatedTotalWeightKg,
+                  address: {
+                    pathao_city_id: selectedAddress.pathao_city_id,
+                    pathao_zone_id: selectedAddress.pathao_zone_id,
+                  },
+                }),
+                signal: abortController.signal,
+              })
+            : await fetch('/api/buy-now/shipping', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  items: shippingQuoteItems,
+                  city: selectedAddress.city,
+                  area: selectedAddress.zone,
+                  provider: 'steadfast',
+                }),
+                signal: abortController.signal,
+              });
 
         if (!response.ok) {
           throw new Error('Failed to quote delivery');
         }
 
-        const data = (await response.json()) as { deliveryCharge?: number; quoteSource?: string; message?: string | null };
-        if (!isCancelled && typeof data.deliveryCharge === 'number') {
-          setDeliveryCharge(data.deliveryCharge);
+        const data = (await response.json()) as { deliveryCharge?: number; shippingCharge?: number };
+        const charge = deliveryProvider === 'pathao' ? data.shippingCharge : data.deliveryCharge;
+        if (!isCancelled && typeof charge === 'number') {
+          setDeliveryCharge(charge);
           setDeliveryState('success');
-          setDeliveryMeta({ quoteSource: data.quoteSource, message: data.message ?? null });
         }
       } catch {
         if (!isCancelled) {
-          setDeliveryCharge(shippingCost);
+          setDeliveryCharge(0);
           setDeliveryState('error');
-          setDeliveryMeta(null);
+          setDeliveryError(
+            deliveryProvider === 'pathao'
+              ? 'Could not calculate Pathao shipping. Please check address.'
+              : 'Could not calculate Steadfast shipping.'
+          );
         }
       }
     };
@@ -94,7 +138,7 @@ function CheckoutContent() {
       isCancelled = true;
       abortController.abort();
     };
-  }, [items.length, selectedAddress?.city, selectedAddress?.zone, shippingCost, shippingQuoteItems, deliveryProvider]);
+  }, [items.length, selectedAddress, shippingQuoteItems, deliveryProvider, hasPathaoAddressIds, estimatedTotalWeightKg]);
 
   // ── Core order submission (called directly or after login) ───────────────
   const submitOrder = async (sessionUserId?: string) => {
@@ -108,6 +152,14 @@ function CheckoutContent() {
     }
     if (items.length === 0) {
       alert('Cart is empty');
+      return;
+    }
+    if (deliveryProvider === 'pathao' && !hasPathaoAddressIds) {
+      alert('Please edit your address and select Pathao city/zone.');
+      return;
+    }
+    if (deliveryProvider === 'pathao' && deliveryState !== 'success') {
+      alert('Could not calculate Pathao shipping. Please check address.');
       return;
     }
 
@@ -135,10 +187,13 @@ function CheckoutContent() {
             city: selectedAddress.city,
             provinceRegion: selectedAddress.provinceRegion,
             landmark: selectedAddress.landmark,
+            pathao_city_id: selectedAddress.pathao_city_id,
+            pathao_zone_id: selectedAddress.pathao_zone_id,
+            pathao_area_id: selectedAddress.pathao_area_id,
           },
           paymentMethod: selectedPaymentMethod.type,
           shippingCost: deliveryCharge,
-          shippingMethod: deliveryProvider,
+          shippingMethod: deliveryProvider ?? undefined,
           customerNote: '',
         }),
       });
@@ -380,6 +435,7 @@ function CheckoutContent() {
                         <button
                           type="button"
                           onClick={() => setDeliveryProvider('pathao')}
+                          disabled={Boolean(selectedAddress && !hasPathaoAddressIds)}
                           className={`px-3 py-2 rounded-xl text-sm font-semibold border transition ${
                             deliveryProvider === 'pathao'
                               ? 'bg-minsah-primary text-minsah-light border-minsah-primary'
@@ -389,10 +445,9 @@ function CheckoutContent() {
                           Pathao
                         </button>
                       </div>
-                      {deliveryMeta?.quoteSource && (
-                        <p className="mt-2 text-xs text-minsah-secondary">
-                          Quote: {deliveryMeta.quoteSource === 'fallback' ? 'Estimated' : 'Live'} ({deliveryMeta.quoteSource})
-                          {deliveryMeta.message ? ` • ${deliveryMeta.message}` : ''}
+                      {selectedAddress && !hasPathaoAddressIds && (
+                        <p className="mt-2 text-xs text-amber-700">
+                          This address is missing Pathao city/zone IDs.
                         </p>
                       )}
                     </div>
@@ -404,12 +459,25 @@ function CheckoutContent() {
                       <span>Shipping</span>
                       <span>
                         {deliveryState === 'loading'
-                          ? 'Calculating...'
+                          ? 'Calculating shipping...'
                           : deliveryState === 'error'
-                            ? 'Will be confirmed'
+                            ? '0'
                             : formatPrice(deliveryCharge)}
                       </span>
                     </div>
+                    {deliveryError && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-red-600">{deliveryError}</p>
+                        {deliveryProvider === 'pathao' && !hasPathaoAddressIds && selectedAddress && (
+                          <Link
+                            href={`/checkout/add-address?fullName=${encodeURIComponent(selectedAddress.fullName)}&phoneNumber=${encodeURIComponent(selectedAddress.phoneNumber)}&address=${encodeURIComponent(selectedAddress.address)}&city=${encodeURIComponent(selectedAddress.city)}&zone=${encodeURIComponent(selectedAddress.zone)}&landmark=${encodeURIComponent(selectedAddress.landmark ?? '')}&provinceRegion=${encodeURIComponent(selectedAddress.provinceRegion ?? 'Dhaka')}&type=${encodeURIComponent(selectedAddress.type)}`}
+                            className="inline-block text-xs font-semibold text-minsah-primary underline"
+                          >
+                            Edit address
+                          </Link>
+                        )}
+                      </div>
+                    )}
                     <div className="flex justify-between font-bold text-minsah-dark">
                       <span>Total</span>
                       <span>{formatPrice(finalTotal)}</span>
@@ -430,7 +498,12 @@ function CheckoutContent() {
         </div>
         <button
           onClick={handlePlaceOrder}
-          disabled={isPlacingOrder || items.length === 0}
+          disabled={
+            isPlacingOrder ||
+            items.length === 0 ||
+            !deliveryProvider ||
+            (deliveryProvider === 'pathao' && (!hasPathaoAddressIds || deliveryState !== 'success'))
+          }
           className="w-full bg-minsah-primary text-minsah-light py-4 rounded-xl font-bold text-base shadow-lg hover:bg-minsah-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPlacingOrder ? (

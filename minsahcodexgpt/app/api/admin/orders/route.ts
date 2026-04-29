@@ -141,6 +141,12 @@ export async function GET(request: NextRequest) {
           }
         : { address: '', city: '', state: '', postalCode: '', country: '' },
       tracking: order.trackingNumber || undefined,
+      shippingMethod: order.shippingMethod || undefined,
+      steadfastStatus: order.steadfastStatus || undefined,
+      steadfastTrackingCode: order.steadfastTrackingCode || undefined,
+      pathaoStatus: order.pathaoStatus || undefined,
+      pathaoTrackingCode: order.pathaoTrackingCode || undefined,
+      pathaoConsignmentId: order.pathaoConsignmentId || undefined,
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
       notes: order.customerNote || undefined,
