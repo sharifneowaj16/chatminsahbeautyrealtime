@@ -95,6 +95,7 @@ interface Order {
   pathaoStatus?: string | null;
   pathaoTrackingCode?: string | null;
   pathaoConsignmentId?: string | null;
+  pathaoSentAt?: string | null;
 }
 
 interface Stats {
@@ -109,6 +110,11 @@ interface Pagination {
   limit: number;
   total: number;
   pages: number;
+}
+
+interface ToastState {
+  type: 'success' | 'error';
+  message: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -608,8 +614,17 @@ export default function OrdersPage() {
   // ── Steadfast state ────────────────────────────────────────────────────────
   const [shipPanelOrder, setShipPanelOrder] = useState<Order | null>(null);
   const [shipPanelOpen, setShipPanelOpen] = useState(false);
+  const [pathaoSendingOrderId, setPathaoSendingOrderId] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
 
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((type: ToastState['type'], message: string) => {
+    setToast({ type, message });
+    if (toastRef.current) clearTimeout(toastRef.current);
+    toastRef.current = setTimeout(() => setToast(null), 3000);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -653,6 +668,10 @@ export default function OrdersPage() {
     searchRef.current = setTimeout(() => fetchOrders(1), search ? 400 : 0);
     return () => { if (searchRef.current) clearTimeout(searchRef.current); };
   }, [fetchOrders, hasPermission, search]);
+
+  useEffect(() => () => {
+    if (toastRef.current) clearTimeout(toastRef.current);
+  }, []);
 
   // ── Fetch single order detail ──────────────────────────────────────────────
 
@@ -766,6 +785,52 @@ export default function OrdersPage() {
     }
   };
 
+  const handleSendToPathao = async (order: Order) => {
+    setPathaoSendingOrderId(order.id);
+    try {
+      const res = await fetch('/api/admin/shipping/pathao/send', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.dbId || order.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send order to Pathao');
+      }
+
+      setOrders((prev) => prev.map((current) =>
+        current.id === order.id
+          ? {
+              ...current,
+              shippingMethod: 'pathao',
+              pathaoStatus: data.pathaoStatus ?? current.pathaoStatus,
+              pathaoTrackingCode: data.trackingCode ?? current.pathaoTrackingCode,
+              pathaoConsignmentId: data.consignmentId ?? current.pathaoConsignmentId,
+              pathaoSentAt: new Date().toISOString(),
+              shippingCost: typeof data.shippingCost === 'number' ? data.shippingCost : current.shippingCost,
+            }
+          : current
+      ));
+      setSelectedOrder((prev) => prev?.id === order.id
+        ? {
+            ...prev,
+            shippingMethod: 'pathao',
+            pathaoStatus: data.pathaoStatus ?? prev.pathaoStatus,
+            pathaoTrackingCode: data.trackingCode ?? prev.pathaoTrackingCode,
+            pathaoConsignmentId: data.consignmentId ?? prev.pathaoConsignmentId,
+            pathaoSentAt: new Date().toISOString(),
+            shippingCost: typeof data.shippingCost === 'number' ? data.shippingCost : prev.shippingCost,
+          }
+        : prev);
+      showToast('success', data.alreadyDispatched ? 'Order was already sent to Pathao.' : 'Order sent to Pathao.');
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : 'Failed to send order to Pathao.');
+    } finally {
+      setPathaoSendingOrderId(null);
+    }
+  };
+
   // ── Bulk actions ───────────────────────────────────────────────────────────
 
   const toggleSelect = (id: string) => {
@@ -830,6 +895,19 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
+      {toast && (
+        <div className="fixed right-4 top-4 z-50">
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm shadow-lg ${
+              toast.type === 'success'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-red-200 bg-red-50 text-red-700'
+            }`}
+          >
+            {toast.message}
+          </div>
+        </div>
+      )}
 
       {/* ── Top Header ────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
@@ -1146,6 +1224,32 @@ export default function OrdersPage() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                             View
+                          </button>
+                          <button
+                            onClick={() => handleSendToPathao(order)}
+                            disabled={Boolean(order.pathaoConsignmentId) || pathaoSendingOrderId === order.id}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                              order.pathaoConsignmentId
+                                ? 'cursor-not-allowed border-blue-200 bg-blue-50 text-blue-700'
+                                : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            } disabled:opacity-70`}
+                          >
+                            {pathaoSendingOrderId === order.id ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                Sending...
+                              </>
+                            ) : order.pathaoConsignmentId ? (
+                              <>
+                                <Check className="w-3.5 h-3.5" />
+                                Pathao Sent
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-3.5 h-3.5" />
+                                Send to Pathao
+                              </>
+                            )}
                           </button>
                           {/* Steadfast Dispatch / Track button */}
                           <button

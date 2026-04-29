@@ -546,6 +546,7 @@ model Order {
   pathaoConsignmentId    String?
   pathaoTrackingCode     String?
   pathaoSentAt           DateTime?
+  pathaoResponse         Json?
 
   couponCode     String?
   couponDiscount Decimal? @db.Decimal(10, 2)

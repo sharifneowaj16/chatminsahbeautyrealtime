@@ -6,7 +6,7 @@ interface PathaoTokenResponse {
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
-function getPathaoBaseUrl(): string {
+export function getPathaoBaseUrl(): string {
   return (process.env.PATHAO_BASE_URL ?? 'https://courier-api-sandbox.pathao.com').replace(/\/+$/, '');
 }
 
