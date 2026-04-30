@@ -88,6 +88,11 @@ const menuItems: MenuItem[] = [
         href: '/admin/shipping/steadfast-webhooks',
         permission: PERMISSIONS.ORDERS_VIEW,
       },
+      {
+        title: 'Pathao webhooks',
+        href: '/admin/shipping/pathao-webhooks',
+        permission: PERMISSIONS.ORDERS_VIEW,
+      },
     ],
   },
   {
