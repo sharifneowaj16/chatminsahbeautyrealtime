@@ -105,8 +105,58 @@ export async function GET(request: NextRequest) {
         orderBy,
         skip: (page - 1) * limit,
         take: limit,
-        include: {
-          user: {
+        select: {
+          id: true,
+          orderNumber: true,
+          userId: true,
+          status: true,
+          paymentMethod: true,
+          paymentStatus: true,
+          shippingMethod: true,
+          trackingNumber: true,
+          steadfastStatus: true,
+          steadfastTrackingCode: true,
+          pathaoStatus: true,
+          pathaoTrackingCode: true,
+          pathaoConsignmentId: true,
+          customerNote: true,
+          createdAt: true,
+          updatedAt: true,
+          total: true,
+          items: {
+            select: {
+              id: true,
+              name: true,
+              quantity: true,
+              price: true,
+              productId: true,
+            },
+          },
+          shippingAddress: {
+            select: {
+              street1: true,
+              city: true,
+              state: true,
+              postalCode: true,
+              country: true,
+            },
+          },
+        },
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    const userIds = [...new Set(orders.map((order) => order.userId).filter(Boolean))];
+    const productIds = [
+      ...new Set(
+        orders.flatMap((order) => order.items.map((item) => item.productId).filter(Boolean))
+      ),
+    ];
+
+    const [users, products] = await Promise.all([
+      userIds.length
+        ? prisma.user.findMany({
+            where: { id: { in: userIds } },
             select: {
               id: true,
               firstName: true,
@@ -114,37 +164,29 @@ export async function GET(request: NextRequest) {
               email: true,
               phone: true,
             },
-          },
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  images: { take: 1, orderBy: { sortOrder: 'asc' } },
-                },
+          })
+        : Promise.resolve([]),
+      productIds.length
+        ? prisma.product.findMany({
+            where: { id: { in: productIds } },
+            select: {
+              id: true,
+              images: {
+                take: 1,
+                orderBy: { sortOrder: 'asc' },
+                select: { url: true },
               },
             },
-          },
-          shippingAddress: true,
-        },
-      }),
-      prisma.order.count({ where }),
+          })
+        : Promise.resolve([]),
     ]);
+
+    const userMap = new Map(users.map((user) => [user.id, user]));
+    const productMap = new Map(products.map((product) => [product.id, product]));
 
     // Format orders for admin UI
     const formatted = orders.map((order) => {
-      const user = (
-        order as typeof order & {
-          user?: {
-            id?: string | null;
-            firstName?: string | null;
-            lastName?: string | null;
-            email?: string | null;
-            phone?: string | null;
-          } | null;
-        }
-      ).user;
+      const user = userMap.get(order.userId);
 
       return {
         id: order.orderNumber,
@@ -162,7 +204,7 @@ export async function GET(request: NextRequest) {
           name: item.name,
           quantity: item.quantity,
           price: toNumber(item.price),
-          image: item.product?.images?.[0]?.url || '',
+          image: productMap.get(item.productId)?.images?.[0]?.url || '',
         })),
         total: toNumber(order.total),
         status: order.status.toLowerCase(),

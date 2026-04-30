@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { extractVariantWeightKg, parseWeightToKg } from '@/lib/buy-now';
-import { getPathaoBaseUrl, pathaoRequest } from '@/lib/pathao';
+import { extractPathaoObject, getPathaoBaseUrl, pathaoRequest } from '@/lib/pathao';
 import { Prisma } from '@/generated/prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -229,23 +229,18 @@ export async function POST(request: NextRequest) {
       response,
     });
 
-    const data = (response.data ?? response) as unknown;
+    const data = extractPathaoObject(response);
     const consignmentId =
-      extractField(data, ['consignment_id', 'order_id', 'id']) ??
+      extractField(data, ['consignment_id', 'consignmentId', 'order_id', 'id']) ??
       extractField(response, ['consignment_id', 'order_id', 'id']);
     const trackingCode =
-      extractField(data, ['tracking_number', 'tracking_no']) ??
+      extractField(data, ['tracking_number', 'tracking_no', 'trackingCode']) ??
       extractField(response, ['tracking_number', 'tracking_no']);
     const status =
       extractField(data, ['status', 'delivery_status']) ??
       extractField(response, ['status', 'delivery_status']) ??
       'Order Created';
-    const nestedData =
-      data && typeof data === 'object' && !Array.isArray(data)
-        ? ((data as Record<string, unknown>).data as Record<string, unknown> | undefined)
-        : undefined;
     const deliveryFee =
-      extractNumericField(nestedData, ['delivery_fee']) ??
       extractNumericField(data, ['delivery_fee']) ??
       extractNumericField(response, ['delivery_fee']);
 

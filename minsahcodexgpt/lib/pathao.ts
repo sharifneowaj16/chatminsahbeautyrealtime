@@ -136,3 +136,23 @@ export function extractPathaoArray<TItem>(value: unknown): TItem[] {
 
   return Array.isArray(current) ? (current as TItem[]) : [];
 }
+
+export function extractPathaoObject(value: unknown): Record<string, unknown> {
+  let current = value;
+
+  for (let depth = 0; depth < 4; depth += 1) {
+    if (isRecord(current)) {
+      const nested = current.data;
+      if (isRecord(nested)) {
+        current = nested;
+        continue;
+      }
+
+      return current;
+    }
+
+    break;
+  }
+
+  return isRecord(current) ? current : {};
+}

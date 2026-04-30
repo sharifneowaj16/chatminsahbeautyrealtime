@@ -9,11 +9,14 @@ import { ArrowLeft } from 'lucide-react';
 function AddAddressContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addAddress } = useCart();
+  const { addAddress, updateAddress } = useCart();
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [isLoadingZones, setIsLoadingZones] = useState(false);
+  const [isLoadingAreas, setIsLoadingAreas] = useState(false);
   const [citiesError, setCitiesError] = useState<string | null>(null);
   const [zonesError, setZonesError] = useState<string | null>(null);
+  const [areasError, setAreasError] = useState<string | null>(null);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -31,6 +34,9 @@ function AddAddressContent() {
   });
   const [pathaoCities, setPathaoCities] = useState<Array<{ id: number; name: string }>>([]);
   const [pathaoZones, setPathaoZones] = useState<Array<{ id: number; name: string }>>([]);
+  const [pathaoAreas, setPathaoAreas] = useState<
+    Array<{ id: number; name: string; homeDeliveryAvailable: boolean; pickupAvailable: boolean }>
+  >([]);
 
   const parsePathaoOptions = (value: unknown): Array<{ id: number; name: string }> => {
     if (Array.isArray(value)) {
@@ -54,6 +60,7 @@ function AddAddressContent() {
   };
 
   useEffect(() => {
+    const addressId = searchParams.get('id');
     const fullName = searchParams.get('fullName');
     const phoneNumber = searchParams.get('phoneNumber');
     const landmark = searchParams.get('landmark');
@@ -62,11 +69,15 @@ function AddAddressContent() {
     const zone = searchParams.get('zone');
     const address = searchParams.get('address');
     const type = searchParams.get('type');
+    const pathaoCityId = Number(searchParams.get('pathao_city_id'));
+    const pathaoZoneId = Number(searchParams.get('pathao_zone_id'));
+    const pathaoAreaId = Number(searchParams.get('pathao_area_id'));
 
     if (!fullName && !phoneNumber && !city && !address) {
       return;
     }
 
+    setEditingAddressId(addressId || null);
     setFormData((prev) => ({
       ...prev,
       fullName: fullName ?? prev.fullName,
@@ -77,6 +88,9 @@ function AddAddressContent() {
       zone: zone ?? prev.zone,
       address: address ?? prev.address,
       type: type === 'office' ? 'office' : 'home',
+      pathao_city_id: Number.isFinite(pathaoCityId) && pathaoCityId > 0 ? pathaoCityId : prev.pathao_city_id,
+      pathao_zone_id: Number.isFinite(pathaoZoneId) && pathaoZoneId > 0 ? pathaoZoneId : prev.pathao_zone_id,
+      pathao_area_id: Number.isFinite(pathaoAreaId) && pathaoAreaId > 0 ? pathaoAreaId : prev.pathao_area_id,
     }));
   }, [searchParams]);
 
@@ -134,7 +148,9 @@ function AddAddressContent() {
   useEffect(() => {
     if (!formData.pathao_city_id) {
       setPathaoZones([]);
+      setPathaoAreas([]);
       setZonesError(null);
+      setAreasError(null);
       setFormData((prev) => ({ ...prev, pathao_zone_id: null, pathao_area_id: null }));
       return;
     }
@@ -186,6 +202,64 @@ function AddAddressContent() {
     void loadZones();
   }, [formData.pathao_city_id]);
 
+  useEffect(() => {
+    if (!formData.pathao_zone_id) {
+      setPathaoAreas([]);
+      setAreasError(null);
+      setFormData((prev) => ({ ...prev, pathao_area_id: null }));
+      return;
+    }
+
+    const loadAreas = async () => {
+      setIsLoadingAreas(true);
+      setAreasError(null);
+      try {
+        const res = await fetch(`/api/shipping/pathao/areas?zone_id=${formData.pathao_zone_id}`);
+        const data = (await res.json()) as unknown;
+
+        if (!res.ok) {
+          const message =
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            typeof (data as { message?: unknown }).message === 'string'
+              ? (data as { message: string }).message
+              : 'Pathao areas could not be loaded. Please try again.';
+          throw new Error(message);
+        }
+
+        const areas = parsePathaoOptions(data).map((area) => {
+          const source = area as { id: number; name: string; homeDeliveryAvailable?: boolean; pickupAvailable?: boolean };
+          return {
+            id: source.id,
+            name: source.name,
+            homeDeliveryAvailable: Boolean(source.homeDeliveryAvailable),
+            pickupAvailable: Boolean(source.pickupAvailable),
+          };
+        });
+        setPathaoAreas(areas);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Checkout add-address] Pathao areas loaded', {
+            zone_id: formData.pathao_zone_id,
+            count: areas.length,
+          });
+        }
+      } catch (error) {
+        setPathaoAreas([]);
+        setAreasError(
+          error instanceof Error
+            ? error.message
+            : 'Pathao areas could not be loaded. Please try again.'
+        );
+      } finally {
+        setIsLoadingAreas(false);
+      }
+    };
+
+    void loadAreas();
+  }, [formData.pathao_zone_id]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -201,7 +275,11 @@ function AddAddressContent() {
       return;
     }
 
-    addAddress(formData);
+    if (editingAddressId) {
+      updateAddress(editingAddressId, formData);
+    } else {
+      addAddress(formData);
+    }
     router.back();
   };
 
@@ -350,6 +428,7 @@ function AddAddressContent() {
                   setFormData((prev) => ({
                     ...prev,
                     pathao_zone_id: e.target.value ? Number(e.target.value) : null,
+                    pathao_area_id: null,
                   }))
                 }
                 className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
@@ -373,6 +452,39 @@ function AddAddressContent() {
                 <p className="mt-2 text-sm text-red-600">{zonesError}</p>
               )}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-minsah-dark mb-2">
+              Pathao Area
+            </label>
+            <select
+              value={formData.pathao_area_id ?? ''}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  pathao_area_id: e.target.value ? Number(e.target.value) : null,
+                }))
+              }
+              className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
+              disabled={!formData.pathao_zone_id || isLoadingAreas}
+            >
+              <option value="">
+                {!formData.pathao_zone_id
+                  ? 'Select Pathao zone first'
+                  : isLoadingAreas
+                    ? 'Loading Pathao areas...'
+                    : 'Select Pathao area'}
+              </option>
+              {pathaoAreas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.name}
+                </option>
+              ))}
+            </select>
+            {areasError && (
+              <p className="mt-2 text-sm text-red-600">{areasError}</p>
+            )}
           </div>
         </div>
 

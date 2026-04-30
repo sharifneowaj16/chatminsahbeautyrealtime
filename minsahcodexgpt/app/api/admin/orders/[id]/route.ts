@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 
+function toNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    'toNumber' in value &&
+    typeof (value as { toNumber?: unknown }).toNumber === 'function'
+  ) {
+    const parsed = (value as { toNumber: () => number }).toNumber();
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 // GET /api/admin/orders/[id] — Full order detail (lookup by orderNumber or DB id)
 export async function GET(
   request: NextRequest,
@@ -21,37 +42,48 @@ export async function GET(
 
     const order = await prisma.order.findFirst({
       where: { OR: [{ id }, { orderNumber: id }] },
-      include: {
-        user: {
+      select: {
+        id: true,
+        orderNumber: true,
+        userId: true,
+        status: true,
+        paymentStatus: true,
+        paymentMethod: true,
+        subtotal: true,
+        shippingCost: true,
+        taxAmount: true,
+        discountAmount: true,
+        total: true,
+        shippingMethod: true,
+        trackingNumber: true,
+        steadfastConsignmentId: true,
+        steadfastTrackingCode: true,
+        steadfastStatus: true,
+        steadfastSentAt: true,
+        pathaoStatus: true,
+        pathaoTrackingCode: true,
+        pathaoConsignmentId: true,
+        pathaoSentAt: true,
+        couponCode: true,
+        couponDiscount: true,
+        customerNote: true,
+        adminNote: true,
+        createdAt: true,
+        updatedAt: true,
+        paidAt: true,
+        shippedAt: true,
+        deliveredAt: true,
+        cancelledAt: true,
+        items: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            loyaltyPoints: true,
-            createdAt: true,
-          },
-        },
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                images: { take: 1, orderBy: { sortOrder: 'asc' } },
-              },
-            },
-            variant: {
-              select: {
-                id: true,
-                name: true,
-                sku: true,
-                attributes: true,
-                image: true,
-              },
-            },
+            productId: true,
+            variantId: true,
+            name: true,
+            sku: true,
+            price: true,
+            quantity: true,
+            total: true,
           },
         },
         shippingAddress: true,
@@ -71,7 +103,85 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ order });
+    const productIds = [...new Set(order.items.map((item) => item.productId).filter(Boolean))];
+    const variantIds = [...new Set(order.items.map((item) => item.variantId).filter(Boolean))] as string[];
+
+    const [user, products, variants] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: order.userId },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          loyaltyPoints: true,
+          createdAt: true,
+        },
+      }),
+      productIds.length
+        ? prisma.product.findMany({
+            where: { id: { in: productIds } },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              images: {
+                take: 1,
+                orderBy: { sortOrder: 'asc' },
+                select: { url: true },
+              },
+            },
+          })
+        : Promise.resolve([]),
+      variantIds.length
+        ? prisma.productVariant.findMany({
+            where: { id: { in: variantIds } },
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              attributes: true,
+              image: true,
+            },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const productMap = new Map(products.map((product) => [product.id, product]));
+    const variantMap = new Map(variants.map((variant) => [variant.id, variant]));
+
+    return NextResponse.json({
+      order: {
+        ...order,
+        user,
+        subtotal: toNumber(order.subtotal),
+        shippingCost: toNumber(order.shippingCost),
+        taxAmount: toNumber(order.taxAmount),
+        discountAmount: toNumber(order.discountAmount),
+        total: toNumber(order.total),
+        couponDiscount: order.couponDiscount === null ? null : toNumber(order.couponDiscount),
+        items: order.items.map((item) => ({
+          ...item,
+          price: toNumber(item.price),
+          total: toNumber(item.total),
+          product: productMap.get(item.productId) ?? null,
+          variant: item.variantId ? variantMap.get(item.variantId) ?? null : null,
+        })),
+        payments: order.payments.map((payment) => ({
+          ...payment,
+          amount: toNumber(payment.amount),
+        })),
+        returns: order.returns.map((returnItem) => ({
+          ...returnItem,
+          refundAmount: toNumber(returnItem.refundAmount),
+          items: returnItem.items.map((item) => ({
+            ...item,
+            price: toNumber(item.price),
+          })),
+        })),
+      },
+    });
   } catch (error) {
     console.error('Admin order GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

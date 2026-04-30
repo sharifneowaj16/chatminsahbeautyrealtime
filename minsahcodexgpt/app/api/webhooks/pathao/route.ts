@@ -5,8 +5,6 @@ import { createHash } from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
 
-const INTEGRATION_SECRET = 'f3992ecc-59da-4cbe-a049-a13da2018d51';
-
 const PATHAO_STATUS_EVENTS = new Set([
   'Order Created',
   'Order Updated',
@@ -113,35 +111,47 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
     extractString(data, ['order_id', 'merchant_order_id', 'invoice']) ??
     extractString(payload, ['order_id', 'merchant_order_id', 'invoice']);
 
+  const consignmentId =
+    extractString(data, ['consignment_id', 'consignmentId']) ??
+    extractString(payload, ['consignment_id', 'consignmentId']);
   const trackingCode =
-    extractString(data, ['tracking_number', 'tracking_no', 'consignment_id']) ??
-    extractString(payload, ['tracking_number', 'tracking_no', 'consignment_id']);
+    extractString(data, ['tracking_number', 'tracking_no']) ??
+    extractString(payload, ['tracking_number', 'tracking_no']);
 
-  if (!orderNumber && !trackingCode) {
+  if (!orderNumber && !trackingCode && !consignmentId) {
     console.log('Pathao webhook missing order identifiers');
     await prisma.pathaoWebhookEvent.update({
       where: { id: eventId },
       data: {
         processingStatus: 'NO_ORDER_REF',
         processedAt: new Date(),
-        error: 'Missing order_id/merchant_order_id/invoice and tracking identifiers',
+        error: 'Missing order_id/merchant_order_id/invoice, tracking identifiers, and consignment_id',
       },
     });
     return;
   }
 
   const whereConditions = [
-    ...(orderNumber ? [{ orderNumber }] : []),
+    ...(orderNumber ? [{ orderNumber }, { id: orderNumber }] : []),
     ...(trackingCode ? [{ trackingNumber: trackingCode }] : []),
+    ...(consignmentId ? [{ pathaoConsignmentId: consignmentId }] : []),
+    ...(trackingCode ? [{ pathaoTrackingCode: trackingCode }] : []),
   ];
 
   const order = await prisma.order.findFirst({
     where: { OR: whereConditions },
-    select: { id: true, status: true, trackingNumber: true, pathaoStatus: true, pathaoTrackingCode: true },
+    select: {
+      id: true,
+      status: true,
+      trackingNumber: true,
+      pathaoStatus: true,
+      pathaoTrackingCode: true,
+      pathaoConsignmentId: true,
+    },
   });
 
   if (!order) {
-    console.log('Pathao webhook order not found', { orderNumber, trackingCode, eventName });
+    console.log('Pathao webhook order not found', { orderNumber, trackingCode, consignmentId, eventName });
     await prisma.pathaoWebhookEvent.update({
       where: { id: eventId },
       data: {
@@ -164,9 +174,11 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
   if (trackingCode && trackingCode !== order.trackingNumber) {
     updateData.trackingNumber = trackingCode;
   }
+  if (consignmentId && consignmentId !== order.pathaoConsignmentId) {
+    updateData.pathaoConsignmentId = consignmentId;
+  }
   if (trackingCode && trackingCode !== order.pathaoTrackingCode) {
     updateData.pathaoTrackingCode = trackingCode;
-    updateData.pathaoConsignmentId = trackingCode;
   }
   if (mappedStatus && mappedStatus !== order.status) {
     updateData.status = mappedStatus;
@@ -212,7 +224,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ accepted: true }, { status: 202 });
     response.headers.set(
       'X-Pathao-Merchant-Webhook-Integration-Secret',
-      process.env.PATHAO_WEBHOOK_INTEGRATION_SECRET || INTEGRATION_SECRET
+      process.env.PATHAO_WEBHOOK_INTEGRATION_SECRET || ''
     );
     return response;
   }
@@ -235,8 +247,8 @@ export async function POST(request: NextRequest) {
           extractString(data, ['order_id', 'merchant_order_id', 'invoice']) ??
           extractString(payload, ['order_id', 'merchant_order_id', 'invoice']),
         consignmentId:
-          extractString(data, ['tracking_number', 'tracking_no', 'consignment_id']) ??
-          extractString(payload, ['tracking_number', 'tracking_no', 'consignment_id']),
+          extractString(data, ['consignment_id', 'tracking_number', 'tracking_no']) ??
+          extractString(payload, ['consignment_id', 'tracking_number', 'tracking_no']),
         updatedAt:
           extractString(data, ['updated_at', 'updatedAt']) ??
           extractString(payload, ['updated_at', 'updatedAt']),
@@ -262,8 +274,8 @@ export async function POST(request: NextRequest) {
         extractString(data, ['order_id', 'merchant_order_id', 'invoice']) ??
         extractString(payload, ['order_id', 'merchant_order_id', 'invoice']),
       consignmentId:
-        extractString(data, ['tracking_number', 'tracking_no', 'consignment_id']) ??
-        extractString(payload, ['tracking_number', 'tracking_no', 'consignment_id']),
+        extractString(data, ['consignment_id', 'tracking_number', 'tracking_no']) ??
+        extractString(payload, ['consignment_id', 'tracking_number', 'tracking_no']),
       signature: incomingSignature,
       payload: toJsonInput(payload),
       processingStatus: 'RECEIVED',

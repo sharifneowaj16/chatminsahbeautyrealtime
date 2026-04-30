@@ -126,7 +126,7 @@ export default function SelectAddressPage() {
                   )}
                   <div className="mt-2">
                     <Link
-                      href={`/checkout/add-address?fullName=${encodeURIComponent(address.fullName)}&phoneNumber=${encodeURIComponent(address.phoneNumber)}&address=${encodeURIComponent(address.address)}&city=${encodeURIComponent(address.city)}&zone=${encodeURIComponent(address.zone)}&landmark=${encodeURIComponent(address.landmark ?? '')}&provinceRegion=${encodeURIComponent(address.provinceRegion ?? 'Dhaka')}&type=${encodeURIComponent(address.type)}`}
+                      href={`/checkout/add-address?id=${encodeURIComponent(address.id)}&fullName=${encodeURIComponent(address.fullName)}&phoneNumber=${encodeURIComponent(address.phoneNumber)}&address=${encodeURIComponent(address.address)}&city=${encodeURIComponent(address.city)}&zone=${encodeURIComponent(address.zone)}&landmark=${encodeURIComponent(address.landmark ?? '')}&provinceRegion=${encodeURIComponent(address.provinceRegion ?? 'Dhaka')}&type=${encodeURIComponent(address.type)}&pathao_city_id=${encodeURIComponent(String(address.pathao_city_id ?? ''))}&pathao_zone_id=${encodeURIComponent(String(address.pathao_zone_id ?? ''))}&pathao_area_id=${encodeURIComponent(String(address.pathao_area_id ?? ''))}`}
                       onClick={(e) => e.stopPropagation()}
                       className="inline-block text-xs font-semibold text-minsah-primary underline"
                     >
