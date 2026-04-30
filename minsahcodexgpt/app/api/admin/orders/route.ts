@@ -54,11 +54,14 @@ export async function GET(request: NextRequest) {
     if (dateRange === 'today') {
       const start = new Date(now); start.setHours(0, 0, 0, 0);
       dateFilter = { gte: start };
-    } else if (dateRange === 'week') {
+    } else if (dateRange === 'week' || dateRange === '7d') {
       const start = new Date(now); start.setDate(now.getDate() - 7);
       dateFilter = { gte: start };
-    } else if (dateRange === 'month') {
+    } else if (dateRange === 'month' || dateRange === '30d') {
       const start = new Date(now); start.setMonth(now.getMonth() - 1);
+      dateFilter = { gte: start };
+    } else if (dateRange === '90d') {
+      const start = new Date(now); start.setDate(now.getDate() - 90);
       dateFilter = { gte: start };
     } else if (dateRange === 'year') {
       const start = new Date(now); start.setFullYear(now.getFullYear() - 1);
@@ -69,13 +72,19 @@ export async function GET(request: NextRequest) {
     const where: Prisma.OrderWhereInput = {};
 
     if (status) {
-      const upperStatus = status.toUpperCase() as $Enums.OrderStatus;
+      const statusAliases: Record<string, $Enums.OrderStatus> = {
+        completed: $Enums.OrderStatus.DELIVERED,
+      };
+      const upperStatus = statusAliases[status.toLowerCase()] ?? (status.toUpperCase() as $Enums.OrderStatus);
       if (Object.values($Enums.OrderStatus).includes(upperStatus)) {
         where.status = upperStatus;
       }
     }
     if (paymentStatus) {
-      const upperPayment = paymentStatus.toUpperCase() as $Enums.PaymentStatus;
+      const paymentAliases: Record<string, $Enums.PaymentStatus> = {
+        paid: $Enums.PaymentStatus.COMPLETED,
+      };
+      const upperPayment = paymentAliases[paymentStatus.toLowerCase()] ?? (paymentStatus.toUpperCase() as $Enums.PaymentStatus);
       if (Object.values($Enums.PaymentStatus).includes(upperPayment)) {
         where.paymentStatus = upperPayment;
       }

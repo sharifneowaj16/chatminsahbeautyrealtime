@@ -59,6 +59,26 @@ interface TimelineEvent {
   actor?: string;
 }
 
+interface ApiOrderItem {
+  id: string;
+  name: string;
+  sku: string;
+  quantity: number;
+  price: number | string;
+  total: number | string;
+  product?: { images?: Array<{ url?: string | null }> } | null;
+  variant?: { name: string; attributes?: Record<string, string> } | null;
+}
+
+interface ApiPayment {
+  id: string;
+  method: string;
+  status?: string | null;
+  amount: number | string;
+  transactionId?: string | null;
+  createdAt: string;
+}
+
 interface Order {
   id: string;        // orderNumber
   dbId?: string;
@@ -704,10 +724,18 @@ export default function OrdersPage() {
     if (typeof window === 'undefined') {
       return;
     }
-    const q = new URLSearchParams(window.location.search).get('search')?.trim();
-    if (q) {
-      setSearch(q);
-    }
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('search')?.trim();
+    const status = params.get('status')?.trim();
+    const paymentStatus = params.get('paymentStatus')?.trim();
+    const range = params.get('dateRange')?.trim();
+    const sort = params.get('sortBy')?.trim();
+
+    if (q) setSearch(q);
+    if (status) setStatusFilter(status);
+    if (paymentStatus) setPaymentFilter(paymentStatus);
+    if (range) setDateRange(range);
+    if (sort) setSortBy(sort);
   }, []);
 
   // ── Fetch list ─────────────────────────────────────────────────────────────
@@ -781,7 +809,7 @@ export default function OrdersPage() {
             email: o.user?.email || '',
             phone: o.user?.phone || '',
           },
-          items: (o.items || []).map((i: any) => ({
+          items: ((o.items || []) as ApiOrderItem[]).map((i) => ({
             id: i.id,
             name: i.name,
             sku: i.sku,
@@ -800,7 +828,7 @@ export default function OrdersPage() {
           status: o.status?.toLowerCase() as Order['status'],
           paymentMethod: o.paymentMethod || 'cod',
           paymentStatus: o.paymentStatus?.toLowerCase() as Order['paymentStatus'],
-          payments: (o.payments || []).map((p: any) => ({
+          payments: ((o.payments || []) as ApiPayment[]).map((p) => ({
             id: p.id,
             method: p.method,
             status: p.status?.toLowerCase(),
@@ -939,7 +967,11 @@ export default function OrdersPage() {
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
