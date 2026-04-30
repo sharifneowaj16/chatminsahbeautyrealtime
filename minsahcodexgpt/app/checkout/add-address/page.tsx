@@ -265,9 +265,6 @@ function AddAddressContent() {
     if (
       !formData.fullName ||
       !formData.phoneNumber ||
-      !formData.address ||
-      !formData.city ||
-      !formData.zone ||
       !formData.pathao_city_id ||
       !formData.pathao_zone_id
     ) {
@@ -275,10 +272,21 @@ function AddAddressContent() {
       return;
     }
 
+    const selectedPathaoCity = pathaoCities.find((city) => city.id === formData.pathao_city_id)?.name ?? formData.city;
+    const selectedPathaoZone = pathaoZones.find((zone) => zone.id === formData.pathao_zone_id)?.name ?? formData.zone;
+    const selectedPathaoArea = pathaoAreas.find((area) => area.id === formData.pathao_area_id)?.name;
+    const addressPayload = {
+      ...formData,
+      city: selectedPathaoCity,
+      zone: selectedPathaoZone,
+      address: selectedPathaoArea ?? selectedPathaoZone ?? selectedPathaoCity,
+      provinceRegion: selectedPathaoCity || formData.provinceRegion,
+    };
+
     if (editingAddressId) {
-      updateAddress(editingAddressId, formData);
+      updateAddress(editingAddressId, addressPayload);
     } else {
-      addAddress(formData);
+      addAddress(addressPayload);
     }
     router.back();
   };
@@ -329,54 +337,6 @@ function AddAddressContent() {
               required
               className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
             />
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className="block text-sm font-semibold text-minsah-dark mb-2">
-              Address *
-            </label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              placeholder="House#123, Street ABC"
-              required
-              className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-            />
-          </div>
-
-          {/* City and Thana */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-minsah-dark mb-2">
-                City *
-              </label>
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                placeholder="Dhaka"
-                required
-                className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-minsah-dark mb-2">
-                Thana *
-              </label>
-              <input
-                type="text"
-                name="zone"
-                value={formData.zone}
-                onChange={handleInputChange}
-                placeholder="Gulshan"
-                required
-                className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-              />
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
