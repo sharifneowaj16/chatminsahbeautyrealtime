@@ -20,7 +20,12 @@ function debugPathaoLog(message: string, details: Record<string, unknown>) {
 }
 
 export function getPathaoBaseUrl(): string {
-  return (process.env.PATHAO_BASE_URL ?? 'https://courier-api-sandbox.pathao.com').replace(/\/+$/, '');
+  const defaultBaseUrl =
+    process.env.NODE_ENV === 'production'
+      ? 'https://api-hermes.pathao.com'
+      : 'https://courier-api-sandbox.pathao.com';
+
+  return (process.env.PATHAO_BASE_URL ?? defaultBaseUrl).replace(/\/+$/, '');
 }
 
 async function fetchPathaoToken(): Promise<string> {
