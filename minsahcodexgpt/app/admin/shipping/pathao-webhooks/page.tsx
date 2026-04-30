@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, CheckCircle2, Copy, Package, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, Loader2, Package, RefreshCw } from 'lucide-react';
 import { PERMISSIONS, useAdminAuth } from '@/contexts/AdminAuthContext';
 
 type PathaoWebhookEvent = {
@@ -17,6 +17,22 @@ type PathaoWebhookEvent = {
   orderId: string | null;
   orderNumber: string | null;
   error: string | null;
+};
+
+type PathaoConfigStatus = {
+  callbackUrl: string;
+  baseUrl: string;
+  credentialsConfigured: boolean;
+  storeConfigured: boolean;
+  webhookSecretConfigured: boolean;
+  integrationSecretConfigured: boolean;
+  requiredIntegrationSecret: string;
+  test?: {
+    ok: boolean;
+    status?: number;
+    headerMatched?: boolean;
+    error?: string;
+  };
 };
 
 const REQUIRED_INTEGRATION_SECRET = 'f3992ecc-59da-4cbe-a049-a13da2018d51';
@@ -55,6 +71,8 @@ export default function PathaoWebhooksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [configStatus, setConfigStatus] = useState<PathaoConfigStatus | null>(null);
+  const [testing, setTesting] = useState(false);
 
   const callbackUrl = useMemo(() => {
     if (typeof window === 'undefined') return '/api/webhooks/pathao';
@@ -95,10 +113,45 @@ export default function PathaoWebhooksPage() {
     [statusFilter]
   );
 
+  const loadConfigStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/shipping/pathao/webhook-test', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const data = (await res.json()) as PathaoConfigStatus;
+      if (res.ok) setConfigStatus(data);
+    } catch {
+      // The setup panel still shows static values if this fails.
+    }
+  }, []);
+
   useEffect(() => {
     if (isLoading || !hasPermission(PERMISSIONS.ORDERS_VIEW)) return;
     void loadPage({ append: false });
-  }, [hasPermission, isLoading, loadPage]);
+    void loadConfigStatus();
+  }, [hasPermission, isLoading, loadConfigStatus, loadPage]);
+
+  const runIntegrationTest = async () => {
+    setTesting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/shipping/pathao/webhook-test', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const data = (await res.json()) as PathaoConfigStatus;
+      setConfigStatus(data);
+      if (!res.ok || !data.test?.ok) {
+        setError(data.test?.error ?? 'Pathao integration test did not return the required 202/header response.');
+      }
+    } catch {
+      setError('Network error while testing Pathao webhook integration');
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const copyCallback = () => {
     navigator.clipboard.writeText(callbackUrl).then(() => {
@@ -152,7 +205,7 @@ export default function PathaoWebhooksPage() {
               <div>
                 <p className="font-medium text-gray-800">Callback URL</p>
                 <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <code className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-800">{callbackUrl}</code>
+                  <code className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-800">{configStatus?.callbackUrl ?? callbackUrl}</code>
                   <button
                     type="button"
                     onClick={copyCallback}
@@ -166,6 +219,15 @@ export default function PathaoWebhooksPage() {
               <p>Webhook secret in Pathao merchant panel must match server env <code className="rounded bg-gray-100 px-1">PATHAO_WEBHOOK_SECRET</code>.</p>
               <p>Integration test must receive <code className="rounded bg-gray-100 px-1">202</code> and header <code className="rounded bg-gray-100 px-1">X-Pathao-Merchant-Webhook-Integration-Secret</code>.</p>
               <p>Required integration header value: <code className="rounded bg-gray-100 px-1">{REQUIRED_INTEGRATION_SECRET}</code></p>
+              <button
+                type="button"
+                onClick={runIntegrationTest}
+                disabled={testing}
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+              >
+                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                Test Webhook Integration
+              </button>
             </div>
           </div>
 
@@ -174,8 +236,16 @@ export default function PathaoWebhooksPage() {
               <Package className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <div>
                 <p className="font-semibold">Production checklist</p>
-                <p className="mt-2">Use <code className="rounded bg-white/80 px-1">https://api-hermes.pathao.com</code> for production API calls.</p>
+                <p className="mt-2">API URL: <code className="rounded bg-white/80 px-1">{configStatus?.baseUrl ?? 'https://api-hermes.pathao.com'}</code></p>
                 <p className="mt-2">If logs fail to load, run pending Prisma migrations on the live database.</p>
+                <div className="mt-3 space-y-1 text-xs">
+                  <p>{configStatus?.credentialsConfigured ? 'OK' : 'Missing'}: Pathao credentials</p>
+                  <p>{configStatus?.storeConfigured ? 'OK' : 'Missing'}: PATHAO_STORE_ID</p>
+                  <p>{configStatus?.webhookSecretConfigured ? 'OK' : 'Missing'}: PATHAO_WEBHOOK_SECRET</p>
+                  {configStatus?.test && (
+                    <p>{configStatus.test.ok ? 'OK' : 'Failed'}: Integration test {configStatus.test.status ? `(${configStatus.test.status})` : ''}</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
