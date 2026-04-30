@@ -10,6 +10,10 @@ function AddAddressContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addAddress } = useCart();
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isLoadingZones, setIsLoadingZones] = useState(false);
+  const [citiesError, setCitiesError] = useState<string | null>(null);
+  const [zonesError, setZonesError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -25,8 +29,29 @@ function AddAddressContent() {
     pathao_zone_id: null as number | null,
     pathao_area_id: null as number | null,
   });
-  const [pathaoCities, setPathaoCities] = useState<Array<{ city_id: number; city_name: string }>>([]);
-  const [pathaoZones, setPathaoZones] = useState<Array<{ zone_id: number; zone_name: string }>>([]);
+  const [pathaoCities, setPathaoCities] = useState<Array<{ id: number; name: string }>>([]);
+  const [pathaoZones, setPathaoZones] = useState<Array<{ id: number; name: string }>>([]);
+
+  const parsePathaoOptions = (value: unknown): Array<{ id: number; name: string }> => {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is { id: number; name: string } => {
+        return !!item && typeof item === 'object' && !Array.isArray(item) &&
+          typeof (item as { id?: unknown }).id === 'number' &&
+          typeof (item as { name?: unknown }).name === 'string';
+      });
+    }
+
+    if (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Array.isArray((value as { data?: unknown }).data)
+    ) {
+      return parsePathaoOptions((value as { data: unknown }).data);
+    }
+
+    return [];
+  };
 
   useEffect(() => {
     const fullName = searchParams.get('fullName');
@@ -65,12 +90,42 @@ function AddAddressContent() {
 
   useEffect(() => {
     const loadCities = async () => {
+      setIsLoadingCities(true);
+      setCitiesError(null);
       try {
         const res = await fetch('/api/shipping/pathao/cities');
-        const data = (await res.json()) as { cities?: Array<{ city_id: number; city_name: string }> };
-        setPathaoCities(data.cities ?? []);
-      } catch {
+        const data = (await res.json()) as unknown;
+
+        if (!res.ok) {
+          const message =
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            typeof (data as { message?: unknown }).message === 'string'
+              ? (data as { message: string }).message
+              : 'Pathao cities could not be loaded. Please try again.';
+          throw new Error(message);
+        }
+
+        const cities = parsePathaoOptions(data);
+        setPathaoCities(cities);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Checkout add-address] Pathao cities loaded', { count: cities.length });
+        }
+
+        if (cities.length === 0) {
+          setCitiesError('Pathao cities could not be loaded. Please try again.');
+        }
+      } catch (error) {
         setPathaoCities([]);
+        setCitiesError(
+          error instanceof Error
+            ? error.message
+            : 'Pathao cities could not be loaded. Please try again.'
+        );
+      } finally {
+        setIsLoadingCities(false);
       }
     };
     void loadCities();
@@ -79,16 +134,53 @@ function AddAddressContent() {
   useEffect(() => {
     if (!formData.pathao_city_id) {
       setPathaoZones([]);
-      setFormData((prev) => ({ ...prev, pathao_zone_id: null }));
+      setZonesError(null);
+      setFormData((prev) => ({ ...prev, pathao_zone_id: null, pathao_area_id: null }));
       return;
     }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Checkout add-address] Pathao city selected', {
+        city_id: formData.pathao_city_id,
+      });
+    }
+
     const loadZones = async () => {
+      setIsLoadingZones(true);
+      setZonesError(null);
       try {
         const res = await fetch(`/api/shipping/pathao/zones?city_id=${formData.pathao_city_id}`);
-        const data = (await res.json()) as { zones?: Array<{ zone_id: number; zone_name: string }> };
-        setPathaoZones(data.zones ?? []);
-      } catch {
+        const data = (await res.json()) as unknown;
+
+        if (!res.ok) {
+          const message =
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            typeof (data as { message?: unknown }).message === 'string'
+              ? (data as { message: string }).message
+              : 'Pathao zones could not be loaded. Please try again.';
+          throw new Error(message);
+        }
+
+        const zones = parsePathaoOptions(data);
+        setPathaoZones(zones);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Checkout add-address] Pathao zones loaded', {
+            city_id: formData.pathao_city_id,
+            count: zones.length,
+          });
+        }
+      } catch (error) {
         setPathaoZones([]);
+        setZonesError(
+          error instanceof Error
+            ? error.message
+            : 'Pathao zones could not be loaded. Please try again.'
+        );
+      } finally {
+        setIsLoadingZones(false);
       }
     };
     void loadZones();
@@ -217,22 +309,36 @@ function AddAddressContent() {
               <select
                 value={formData.pathao_city_id ?? ''}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    pathao_city_id: e.target.value ? Number(e.target.value) : null,
-                    pathao_zone_id: null,
-                  }))
+                  setFormData((prev) => {
+                    const nextCityId = e.target.value ? Number(e.target.value) : null;
+                    return {
+                      ...prev,
+                      pathao_city_id: nextCityId,
+                      pathao_zone_id: null,
+                      pathao_area_id: null,
+                    };
+                  })
                 }
                 className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
                 required
               >
-                <option value="">Select Pathao city</option>
+                <option value="">
+                  {isLoadingCities ? 'Loading Pathao cities...' : 'Select Pathao city'}
+                </option>
                 {pathaoCities.map((city) => (
-                  <option key={city.city_id} value={city.city_id}>
-                    {city.city_name}
+                  <option key={city.id} value={city.id}>
+                    {city.name}
                   </option>
                 ))}
               </select>
+              {citiesError && (
+                <p className="mt-2 text-sm text-red-600">{citiesError}</p>
+              )}
+              {!isLoadingCities && !citiesError && pathaoCities.length === 0 && (
+                <p className="mt-2 text-sm text-red-600">
+                  Pathao cities could not be loaded. Please try again.
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-minsah-dark mb-2">
@@ -247,15 +353,25 @@ function AddAddressContent() {
                   }))
                 }
                 className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
+                disabled={!formData.pathao_city_id || isLoadingZones}
                 required
               >
-                <option value="">Select Pathao zone</option>
+                <option value="">
+                  {!formData.pathao_city_id
+                    ? 'Select Pathao city first'
+                    : isLoadingZones
+                      ? 'Loading Pathao zones...'
+                      : 'Select Pathao zone'}
+                </option>
                 {pathaoZones.map((zone) => (
-                  <option key={zone.zone_id} value={zone.zone_id}>
-                    {zone.zone_name}
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name}
                   </option>
                 ))}
               </select>
+              {zonesError && (
+                <p className="mt-2 text-sm text-red-600">{zonesError}</p>
+              )}
             </div>
           </div>
         </div>

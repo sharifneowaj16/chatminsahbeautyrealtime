@@ -5,6 +5,19 @@ interface PathaoTokenResponse {
 }
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
+type PathaoHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function debugPathaoLog(message: string, details: Record<string, unknown>) {
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+
+  console.log(message, details);
+}
 
 export function getPathaoBaseUrl(): string {
   return (process.env.PATHAO_BASE_URL ?? 'https://courier-api-sandbox.pathao.com').replace(/\/+$/, '');
@@ -25,7 +38,9 @@ async function fetchPathaoToken(): Promise<string> {
     throw new Error('Pathao credentials are not configured');
   }
 
-  const response = await fetch(`${getPathaoBaseUrl()}/aladdin/api/v1/issue-token`, {
+  const baseUrl = getPathaoBaseUrl();
+  const tokenPath = '/aladdin/api/v1/issue-token';
+  const response = await fetch(`${baseUrl}${tokenPath}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -36,6 +51,12 @@ async function fetchPathaoToken(): Promise<string> {
       grant_type: 'password',
     }),
     cache: 'no-store',
+  });
+
+  debugPathaoLog('[Pathao] token request completed', {
+    baseUrl,
+    path: tokenPath,
+    status: response.status,
   });
 
   if (!response.ok) {
@@ -58,10 +79,16 @@ async function fetchPathaoToken(): Promise<string> {
   return token;
 }
 
-export async function pathaoRequest<TResponse>(path: string, payload?: unknown): Promise<TResponse> {
+export async function pathaoRequest<TResponse>(
+  path: string,
+  payload?: unknown,
+  method?: PathaoHttpMethod
+): Promise<TResponse> {
   const token = await fetchPathaoToken();
-  const response = await fetch(`${getPathaoBaseUrl()}${path}`, {
-    method: payload === undefined ? 'GET' : 'POST',
+  const baseUrl = getPathaoBaseUrl();
+  const requestMethod = method ?? (payload === undefined ? 'GET' : 'POST');
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: requestMethod,
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -71,9 +98,41 @@ export async function pathaoRequest<TResponse>(path: string, payload?: unknown):
     cache: 'no-store',
   });
 
+  debugPathaoLog('[Pathao] api request completed', {
+    baseUrl,
+    path,
+    method: requestMethod,
+    status: response.status,
+  });
+
   if (!response.ok) {
     throw new Error(`Pathao API request failed (${response.status})`);
   }
 
-  return (await response.json()) as TResponse;
+  const data = (await response.json()) as TResponse;
+
+  debugPathaoLog('[Pathao] api response shape', {
+    path,
+    keys: isRecord(data) ? Object.keys(data) : [],
+  });
+
+  return data;
+}
+
+export function extractPathaoArray<TItem>(value: unknown): TItem[] {
+  let current = value;
+
+  for (let depth = 0; depth < 4; depth += 1) {
+    if (Array.isArray(current)) {
+      return current as TItem[];
+    }
+
+    if (!isRecord(current) || !('data' in current)) {
+      return [];
+    }
+
+    current = current.data;
+  }
+
+  return Array.isArray(current) ? (current as TItem[]) : [];
 }

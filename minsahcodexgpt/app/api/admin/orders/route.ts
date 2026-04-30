@@ -5,6 +5,27 @@ import { Prisma, $Enums } from '@/generated/prisma/client';
 
 export const dynamic = 'force-dynamic';
 
+function toNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    'toNumber' in value &&
+    typeof (value as { toNumber?: unknown }).toNumber === 'function'
+  ) {
+    const parsed = (value as { toNumber: () => number }).toNumber();
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 // GET /api/admin/orders - List all orders with filters
 export async function GET(request: NextRequest) {
   try {
@@ -112,45 +133,62 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Format orders for admin UI
-    const formatted = orders.map((order) => ({
-      id: order.orderNumber,
-      dbId: order.id,
-      customer: {
-        name: `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() || order.user.email,
-        email: order.user.email,
-        phone: order.user.phone || '',
-      },
-      items: order.items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price.toNumber(),
-        image: item.product?.images?.[0]?.url || '',
-      })),
-      total: order.total.toNumber(),
-      status: order.status.toLowerCase(),
-      paymentMethod: order.paymentMethod || 'cash_on_delivery',
-      paymentStatus: order.paymentStatus.toLowerCase(),
-      shipping: order.shippingAddress
-        ? {
-            address: order.shippingAddress.street1,
-            city: order.shippingAddress.city,
-            state: order.shippingAddress.state,
-            postalCode: order.shippingAddress.postalCode,
-            country: order.shippingAddress.country,
-          }
-        : { address: '', city: '', state: '', postalCode: '', country: '' },
-      tracking: order.trackingNumber || undefined,
-      shippingMethod: order.shippingMethod || undefined,
-      steadfastStatus: order.steadfastStatus || undefined,
-      steadfastTrackingCode: order.steadfastTrackingCode || undefined,
-      pathaoStatus: order.pathaoStatus || undefined,
-      pathaoTrackingCode: order.pathaoTrackingCode || undefined,
-      pathaoConsignmentId: order.pathaoConsignmentId || undefined,
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
-      notes: order.customerNote || undefined,
-    }));
+    const formatted = orders.map((order) => {
+      const user = (
+        order as typeof order & {
+          user?: {
+            id?: string | null;
+            firstName?: string | null;
+            lastName?: string | null;
+            email?: string | null;
+            phone?: string | null;
+          } | null;
+        }
+      ).user;
+
+      return {
+        id: order.orderNumber,
+        dbId: order.id,
+        customer: {
+          name:
+            `${user?.firstName || ''} ${user?.lastName || ''}`.trim() ||
+            user?.email ||
+            'Unknown customer',
+          email: user?.email || '',
+          phone: user?.phone || '',
+        },
+        items: order.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: toNumber(item.price),
+          image: item.product?.images?.[0]?.url || '',
+        })),
+        total: toNumber(order.total),
+        status: order.status.toLowerCase(),
+        paymentMethod: order.paymentMethod || 'cash_on_delivery',
+        paymentStatus: order.paymentStatus.toLowerCase(),
+        shipping: order.shippingAddress
+          ? {
+              address: order.shippingAddress.street1,
+              city: order.shippingAddress.city,
+              state: order.shippingAddress.state,
+              postalCode: order.shippingAddress.postalCode,
+              country: order.shippingAddress.country,
+            }
+          : { address: '', city: '', state: '', postalCode: '', country: '' },
+        tracking: order.trackingNumber || undefined,
+        shippingMethod: order.shippingMethod || undefined,
+        steadfastStatus: order.steadfastStatus || undefined,
+        steadfastTrackingCode: order.steadfastTrackingCode || undefined,
+        pathaoStatus: order.pathaoStatus || undefined,
+        pathaoTrackingCode: order.pathaoTrackingCode || undefined,
+        pathaoConsignmentId: order.pathaoConsignmentId || undefined,
+        createdAt: order.createdAt.toISOString(),
+        updatedAt: order.updatedAt.toISOString(),
+        notes: order.customerNote || undefined,
+      };
+    });
 
     // Stats
     const [pendingCount, processingCount, shippedCount, totalRevenue] = await Promise.all([
@@ -167,7 +205,7 @@ export async function GET(request: NextRequest) {
         pending: pendingCount,
         processing: processingCount,
         shipped: shippedCount,
-        totalRevenue: totalRevenue._sum.total?.toNumber() || 0,
+        totalRevenue: toNumber(totalRevenue._sum.total),
       },
     });
   } catch (error) {
