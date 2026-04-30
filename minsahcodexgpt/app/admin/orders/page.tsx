@@ -816,7 +816,7 @@ export default function OrdersPage() {
             quantity: i.quantity,
             price: Number(i.price),
             total: Number(i.total),
-            image: i.product?.images?.[0]?.url,
+            image: i.product?.images?.[0]?.url ?? undefined,
             variant: i.variant ? { name: i.variant.name, attributes: i.variant.attributes } : undefined,
           })),
           total: Number(o.total),
@@ -831,9 +831,9 @@ export default function OrdersPage() {
           payments: ((o.payments || []) as ApiPayment[]).map((p) => ({
             id: p.id,
             method: p.method,
-            status: p.status?.toLowerCase(),
+            status: p.status?.toLowerCase() ?? 'pending',
             amount: Number(p.amount),
-            transactionId: p.transactionId,
+            transactionId: p.transactionId ?? undefined,
             createdAt: p.createdAt,
           })),
           shipping: o.shippingAddress ? {
