@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminUnauthorizedResponse, getVerifiedAdmin } from '@/app/api/admin/_utils';
 import { getPathaoBaseUrl } from '@/lib/pathao';
+import {
+  DEFAULT_PATHAO_WEBHOOK_INTEGRATION_SECRET,
+  getPathaoWebhookCallbackUrl,
+  getPathaoWebhookIntegrationSecret,
+} from '@/lib/pathao-webhook';
 
 export const dynamic = 'force-dynamic';
 
-const REQUIRED_INTEGRATION_SECRET = 'f3992ecc-59da-4cbe-a049-a13da2018d51';
-
 function configStatus(request: NextRequest) {
+  const integrationSecret = getPathaoWebhookIntegrationSecret();
+
   return {
-    callbackUrl: `${request.nextUrl.origin}/api/webhooks/pathao`,
+    callbackUrl: getPathaoWebhookCallbackUrl(request.nextUrl.origin),
     baseUrl: getPathaoBaseUrl(),
     credentialsConfigured: Boolean(
       process.env.PATHAO_CLIENT_ID &&
@@ -19,7 +24,8 @@ function configStatus(request: NextRequest) {
     storeConfigured: Boolean(process.env.PATHAO_STORE_ID),
     webhookSecretConfigured: Boolean(process.env.PATHAO_WEBHOOK_SECRET?.trim()),
     integrationSecretConfigured: Boolean(process.env.PATHAO_WEBHOOK_INTEGRATION_SECRET?.trim()),
-    requiredIntegrationSecret: REQUIRED_INTEGRATION_SECRET,
+    requiredIntegrationSecret: integrationSecret,
+    usingDefaultIntegrationSecret: integrationSecret === DEFAULT_PATHAO_WEBHOOK_INTEGRATION_SECRET,
   };
 }
 
@@ -47,9 +53,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...status,
       test: {
-        ok: response.status === 202 && headerValue === REQUIRED_INTEGRATION_SECRET,
+        ok: response.status === 202 && headerValue === status.requiredIntegrationSecret,
         status: response.status,
-        headerMatched: headerValue === REQUIRED_INTEGRATION_SECRET,
+        headerMatched: headerValue === status.requiredIntegrationSecret,
       },
     });
   } catch (error) {

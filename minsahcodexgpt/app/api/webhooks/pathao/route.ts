@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { createHash } from 'node:crypto';
+import { getPathaoWebhookIntegrationSecret } from '@/lib/pathao-webhook';
 
 export const dynamic = 'force-dynamic';
-
-const PATHAO_WEBHOOK_INTEGRATION_SECRET = 'f3992ecc-59da-4cbe-a049-a13da2018d51';
 
 const PATHAO_STATUS_EVENTS = new Set([
   'Order Created',
@@ -226,7 +225,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ accepted: true }, { status: 202 });
     response.headers.set(
       'X-Pathao-Merchant-Webhook-Integration-Secret',
-      process.env.PATHAO_WEBHOOK_INTEGRATION_SECRET || PATHAO_WEBHOOK_INTEGRATION_SECRET
+      getPathaoWebhookIntegrationSecret()
     );
     return response;
   }
