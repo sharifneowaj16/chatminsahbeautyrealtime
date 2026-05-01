@@ -51,35 +51,20 @@ export function createApp() {
     })
   )
 
-  app.get('/health', async (_req, res) => {
-    try {
-      const operational = await buildOperationalMetrics()
-
-      res.json({
-        ok: true,
-        service: 'minsah-realtime',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
-        queues: operational.queues,
-        deadLetter: operational.deadLetter.byStatus,
-        sync: {
-          active: operational.sync.active,
-          lastSuccessfulAt: operational.sync.lastSuccessfulAt,
-          lastError: operational.sync.lastError,
-        },
-      })
-    } catch (error) {
-      console.error('[health] summary failed', error)
-      res.status(500).json({
-        ok: false,
-        service: 'minsah-realtime',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
-        error: 'Health summary failed',
-      })
-    }
+  // ✅ SIMPLE /health — শুধু process alive কিনা check করে
+  // DB/Redis call করে না → fail হলেও restart হবে না
+  // Dokploy/Docker health check এর জন্য এটাই যথেষ্ট
+  app.get('/health', (_req, res) => {
+    res.status(200).json({
+      ok: true,
+      service: 'minsah-realtime',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    })
   })
 
+  // ✅ /health/metrics — full operational data, আলাদা endpoint এ রাখা হয়েছে
+  // এটা fail হলেও /health এ কোনো effect নেই
   app.get('/health/metrics', async (_req, res) => {
     try {
       const operational = await buildOperationalMetrics()
@@ -108,7 +93,7 @@ export function createApp() {
 
   app.use('/webhook', webhookRouter)
   app.use('/reply', replyRouter)
-  app.use('/sync', syncRouter) // ✅ THIS LINE IS MUST
+  app.use('/sync', syncRouter)
 
   app.use((_req, res) => {
     res.sendStatus(404)
