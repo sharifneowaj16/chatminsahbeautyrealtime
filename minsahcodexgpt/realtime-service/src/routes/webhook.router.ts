@@ -7,12 +7,12 @@ import {
   findLatestOutgoingMessageForReceipt,
   recordOutboxReceipt,
 } from '../db/repository'
-import { getAttachmentTypeHint } from '../meta/attachments'
-import { parseWebhookPayload } from '../meta/events'
-import { processIncomingInboxMessage } from '../meta/inbox-processor'
-import { scheduleInboxReplayJob } from '../meta/replay-queue'
-import { verifyFacebookSignature } from '../meta/signature'
-import type { FbWebhookBody, ParsedFbEvent } from '../meta/types'
+import { getAttachmentTypeHint } from '../facebook/attachments'
+import { parseWebhookPayload } from '../facebook/events'
+import { processIncomingInboxMessage } from '../facebook/inbox-processor'
+import { scheduleInboxReplayJob } from '../facebook/replay-queue'
+import { verifyFacebookSignature } from '../facebook/signature'
+import type { FbWebhookBody, ParsedFbEvent } from '../facebook/types'
 import { publishInboxEvent } from '../realtime/pubsub'
 
 export const webhookRouter = Router()
