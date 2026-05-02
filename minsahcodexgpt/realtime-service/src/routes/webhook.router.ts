@@ -7,17 +7,17 @@ import {
   findLatestOutgoingMessageForReceipt,
   recordOutboxReceipt,
 } from '../db/repository'
-import { getAttachmentTypeHint } from '../facebook/attachments'
-import { parseWebhookPayload } from '../facebook/events'
-import { processIncomingInboxMessage } from '../facebook/inbox-processor'
-import { scheduleInboxReplayJob } from '../facebook/replay-queue'
-import { verifyFacebookSignature } from '../facebook/signature'
-import type { FbWebhookBody, ParsedFbEvent } from '../facebook/types'
+import { getAttachmentTypeHint } from '../meta/attachments'
+import { parseWebhookPayload } from '../meta/events'
+import { processIncomingInboxMessage } from '../meta/inbox-processor'
+import { scheduleInboxReplayJob } from '../meta/replay-queue'
+import { verifyFacebookSignature } from '../meta/signature'
+import type { FbWebhookBody, ParsedFbEvent } from '../meta/types'
 import { publishInboxEvent } from '../realtime/pubsub'
 
 export const webhookRouter = Router()
 
-webhookRouter.get('/facebook', (req: Request, res: Response) => {
+webhookRouter.get('/meta', (req: Request, res: Response) => {
   const mode = req.query['hub.mode']
   const token = req.query['hub.verify_token']
   const challenge = req.query['hub.challenge']
@@ -31,7 +31,7 @@ webhookRouter.get('/facebook', (req: Request, res: Response) => {
   res.sendStatus(403)
 })
 
-webhookRouter.post('/facebook', async (req: Request, res: Response) => {
+webhookRouter.post('/meta', async (req: Request, res: Response) => {
   const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from([])
   const signatureHeader = req.headers['x-hub-signature-256']
 
