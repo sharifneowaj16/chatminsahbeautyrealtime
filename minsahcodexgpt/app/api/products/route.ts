@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma/client';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +14,28 @@ function toOptionalNumber(value: unknown): number | null {
   if (value == null || value === '') return null;
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function validateOptionalNumber(value: unknown, label: string): string | null {
+  if ((value == null || value === '') || toOptionalNumber(value) != null) {
+    return null;
+  }
+
+  return `${label} must be a valid number`;
+}
+
+function buildStoredSubcategory(subcategory: unknown, item: unknown): string | null {
+  const normalizedSubcategory =
+    typeof subcategory === 'string' ? subcategory.trim() : '';
+  const normalizedItem = typeof item === 'string' ? item.trim() : '';
+
+  if (!normalizedSubcategory) {
+    return null;
+  }
+
+  return normalizedItem
+    ? `${normalizedSubcategory} > ${normalizedItem}`
+    : normalizedSubcategory;
 }
 
 export async function GET(request: NextRequest) {
@@ -134,9 +158,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const admin = await getVerifiedAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCTS_CREATE)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+    }
+
     const body = await request.json();
 
     if (!body.name) return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
+
+    const numericValidationError =
+      validateOptionalNumber(body.weight, 'Weight') ||
+      validateOptionalNumber(body.dimensions?.length, 'Length') ||
+      validateOptionalNumber(body.dimensions?.width, 'Width') ||
+      validateOptionalNumber(body.dimensions?.height, 'Height');
+    if (numericValidationError) {
+      return NextResponse.json({ error: numericValidationError }, { status: 400 });
+    }
 
     // Resolve category
     let categoryId: string | null = null;
@@ -177,13 +219,18 @@ export async function POST(request: NextRequest) {
     const existingSku = await prisma.product.findUnique({ where: { sku } });
     const finalSku = existingSku ? `${sku}-${Date.now()}` : sku;
 
+    const requestedStatus = typeof body.status === 'string' ? body.status : null;
+    const forceOutOfStock = requestedStatus === 'out_of_stock';
+    const storedSubcategory = buildStoredSubcategory(body.subcategory, body.item);
+
     const basePrice = body.price != null
       ? Number(body.price)
       : (body.variants?.[0]?.price ? Number(body.variants[0].price) : 0);
 
-    const totalStock = Array.isArray(body.variants)
+    const calculatedStock = Array.isArray(body.variants)
       ? body.variants.reduce((sum: number, v: { stock?: string | number }) => sum + (Number(v.stock) || 0), 0)
       : (body.stock ?? 0);
+    const totalStock = forceOutOfStock ? 0 : calculatedStock;
 
     const product = await prisma.product.create({
       data: {
@@ -200,7 +247,7 @@ export async function POST(request: NextRequest) {
         length:           toOptionalNumber(body.dimensions?.length),
         width:            toOptionalNumber(body.dimensions?.width),
         height:           toOptionalNumber(body.dimensions?.height),
-        isActive:         body.status === 'active' || body.status == null,
+        isActive:         requestedStatus !== 'inactive',
         isFeatured:       body.featured           || false,
         categoryId,
         brandId,
@@ -213,7 +260,7 @@ export async function POST(request: NextRequest) {
         ogTitle:            body.ogTitle            || null,
         ogImageUrl:         body.ogImageUrl         || null,
         canonicalUrl:       body.canonicalUrl       || null,
-        subcategory:        body.subcategory        || null,
+        subcategory:        storedSubcategory,
         skinType:           body.skinType           || [],
         ingredients:        body.ingredients        || null,
         shelfLife:          body.shelfLife          || null,
@@ -264,7 +311,7 @@ export async function POST(request: NextRequest) {
             sku:        vSku,
             name:       v.size || v.color || body.name,
             price:      v.price ? Number(v.price) : basePrice,
-            quantity:   v.stock ? Number(v.stock) : 0,
+            quantity:   forceOutOfStock ? 0 : (v.stock ? Number(v.stock) : 0),
             attributes: { size: v.size || '', color: v.color || '' },
           });
         }

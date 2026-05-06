@@ -1,6 +1,10 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import {
+  ADMIN_PERMISSIONS,
+  ROLE_PERMISSIONS,
+} from '@/lib/auth/admin-permissions';
 
 export interface AdminUser {
   id: string;
@@ -23,60 +27,7 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
-// Permission constants
-export const PERMISSIONS = {
-  DASHBOARD: 'dashboard',
-  PRODUCTS_VIEW: 'products_view',
-  PRODUCTS_CREATE: 'products_create',
-  PRODUCTS_EDIT: 'products_edit',
-  PRODUCTS_DELETE: 'products_delete',
-  ORDERS_VIEW: 'orders_view',
-  ORDERS_PROCESS: 'orders_process',
-  ORDERS_REFUND: 'orders_refund',
-  CUSTOMERS_VIEW: 'customers_view',
-  CUSTOMERS_EDIT: 'customers_edit',
-  CUSTOMERS_DELETE: 'customers_delete',
-  ANALYTICS_VIEW: 'analytics_view',
-  SETTINGS_VIEW: 'settings_view',
-  SETTINGS_EDIT: 'settings_edit',
-  USERS_MANAGE: 'users_manage',
-  CONTENT_MANAGE: 'content_manage',
-} as const;
-
-// Role-based permission mapping (fallback for client-side checks)
-export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  SUPER_ADMIN: Object.values(PERMISSIONS),
-  ADMIN: [
-    PERMISSIONS.DASHBOARD,
-    PERMISSIONS.PRODUCTS_VIEW,
-    PERMISSIONS.PRODUCTS_CREATE,
-    PERMISSIONS.PRODUCTS_EDIT,
-    PERMISSIONS.ORDERS_VIEW,
-    PERMISSIONS.ORDERS_PROCESS,
-    PERMISSIONS.ORDERS_REFUND,
-    PERMISSIONS.CUSTOMERS_VIEW,
-    PERMISSIONS.CUSTOMERS_EDIT,
-    PERMISSIONS.ANALYTICS_VIEW,
-    PERMISSIONS.SETTINGS_VIEW,
-    PERMISSIONS.CONTENT_MANAGE,
-  ],
-  MANAGER: [
-    PERMISSIONS.DASHBOARD,
-    PERMISSIONS.PRODUCTS_VIEW,
-    PERMISSIONS.PRODUCTS_EDIT,
-    PERMISSIONS.ORDERS_VIEW,
-    PERMISSIONS.ORDERS_PROCESS,
-    PERMISSIONS.CUSTOMERS_VIEW,
-    PERMISSIONS.ANALYTICS_VIEW,
-    PERMISSIONS.CONTENT_MANAGE,
-  ],
-  STAFF: [
-    PERMISSIONS.DASHBOARD,
-    PERMISSIONS.PRODUCTS_VIEW,
-    PERMISSIONS.ORDERS_VIEW,
-    PERMISSIONS.CUSTOMERS_VIEW,
-  ],
-};
+export const PERMISSIONS = ADMIN_PERMISSIONS;
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);

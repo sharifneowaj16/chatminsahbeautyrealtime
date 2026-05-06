@@ -6,12 +6,26 @@ import {
   validateImageUpload,
   ensureBucketInitialized,
 } from '@/lib/storage/minio';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { adminHasAnyPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const admin = await getVerifiedAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!adminHasAnyPermission(admin, [
+      ADMIN_PERMISSIONS.PRODUCTS_CREATE,
+      ADMIN_PERMISSIONS.PRODUCTS_EDIT,
+    ])) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+    }
+
     await ensureBucketInitialized();
     const formData = await request.formData();
     const file     = formData.get('file') as File | null;

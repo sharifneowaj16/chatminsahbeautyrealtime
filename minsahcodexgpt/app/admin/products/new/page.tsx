@@ -89,7 +89,6 @@ interface ProductFormData {
     height: string;
   };
   isFragile: boolean;
-  freeShippingEligible: boolean;
 
   // Discount & Offers
   discountPercentage: string;
@@ -107,11 +106,6 @@ interface ProductFormData {
   codAvailable: boolean;
   preOrderOption: boolean;
   relatedProducts: string;
-}
-
-interface Subcategory {
-  name: string;
-  items: string[];
 }
 
 const brands = [
@@ -211,7 +205,6 @@ export default function NewProductPage() {
       height: '',
     },
     isFragile: false,
-    freeShippingEligible: false,
     discountPercentage: '',
     salePrice: '',
     offerStartDate: '',
@@ -231,7 +224,7 @@ export default function NewProductPage() {
   if (!hasPermission(PERMISSIONS.PRODUCTS_CREATE)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to create products.</p>
+        <p className="text-gray-500">You don&apos;t have permission to create products.</p>
       </div>
     );
   }
@@ -438,6 +431,11 @@ export default function NewProductPage() {
     });
   };
 
+  const isValidOptionalNumber = (value: string) => {
+    if (!value.trim()) return true;
+    return Number.isFinite(Number(value));
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -475,6 +473,22 @@ export default function NewProductPage() {
     // Specifications Validation
     if (formData.skinType.length === 0) {
       newErrors.skinType = 'Please select at least one skin type';
+    }
+
+    if (!isValidOptionalNumber(formData.weight)) {
+      newErrors.weight = 'Weight must be a valid number';
+    }
+
+    if (!isValidOptionalNumber(formData.dimensions.length)) {
+      newErrors.dimensions_length = 'Length must be a valid number';
+    }
+
+    if (!isValidOptionalNumber(formData.dimensions.width)) {
+      newErrors.dimensions_width = 'Width must be a valid number';
+    }
+
+    if (!isValidOptionalNumber(formData.dimensions.height)) {
+      newErrors.dimensions_height = 'Height must be a valid number';
     }
 
     // SEO Validation
@@ -574,6 +588,7 @@ export default function NewProductPage() {
         name: formData.name,
         category: formData.category,
         subcategory: formData.subcategory || undefined,
+        item: formData.item || undefined,
         brand: formData.brand,
         originCountry: formData.originCountry,
         status: formData.status,
@@ -611,7 +626,6 @@ export default function NewProductPage() {
           ? formData.dimensions
           : undefined,
         isFragile: formData.isFragile || undefined,
-        freeShippingEligible: formData.freeShippingEligible || undefined,
         discountPercentage: formData.discountPercentage || undefined,
         salePrice: formData.salePrice || undefined,
         originalPrice,
@@ -1168,7 +1182,7 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-                  Net Weight/Volume
+                  Net Weight/Volume (numeric)
                 </label>
                 <input
                   type="text"
@@ -1177,8 +1191,10 @@ export default function NewProductPage() {
                   value={formData.weight}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., 50ml, 100g"
+                  placeholder="e.g., 50 or 100"
                 />
+                <p className="mt-1 text-xs text-gray-500">Store the numeric value only. Use shipping weight for unit text.</p>
+                {errors.weight && <p className="mt-1 text-sm text-red-600">{errors.weight}</p>}
               </div>
 
               <div>
@@ -1596,17 +1612,6 @@ export default function NewProductPage() {
                   className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                 />
                 <span className="ml-2 text-sm text-gray-700">Fragile Item (Handle with care)</span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="freeShippingEligible"
-                  checked={formData.freeShippingEligible}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Eligible for Free Shipping</span>
               </label>
             </div>
           </div>

@@ -1,43 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
-
-// Permission mappings by role
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  SUPER_ADMIN: [
-    'dashboard',
-    'products_view', 'products_create', 'products_edit', 'products_delete',
-    'orders_view', 'orders_process', 'orders_refund',
-    'customers_view', 'customers_edit', 'customers_delete',
-    'analytics_view',
-    'settings_view', 'settings_edit',
-    'users_manage',
-    'content_manage',
-  ],
-  ADMIN: [
-    'dashboard',
-    'products_view', 'products_create', 'products_edit',
-    'orders_view', 'orders_process',
-    'customers_view', 'customers_edit',
-    'analytics_view',
-    'settings_view',
-    'content_manage',
-  ],
-  MANAGER: [
-    'dashboard',
-    'products_view', 'products_edit',
-    'orders_view', 'orders_process',
-    'customers_view',
-    'analytics_view',
-    'content_manage',
-  ],
-  STAFF: [
-    'dashboard',
-    'products_view',
-    'orders_view',
-    'customers_view',
-  ],
-};
+import { getAdminPermissions } from '@/lib/auth/admin-permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -80,7 +44,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get permissions for role
-    const permissions = ROLE_PERMISSIONS[admin.role] || [];
+    const permissions = getAdminPermissions(admin.role);
 
     return NextResponse.json({
       user: {

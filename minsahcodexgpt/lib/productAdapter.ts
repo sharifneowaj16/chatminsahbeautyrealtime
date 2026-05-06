@@ -52,7 +52,7 @@ export function adminProductToShopProduct(p: AdminProduct): ShopProduct {
     hasVariants: !!(p.variants && p.variants.length > 1),
     isCODAvailable: p.codAvailable ?? true,
     isSameDayDelivery: false,
-    freeShippingEligible: p.freeShippingEligible ?? false,
+    freeShippingEligible: p.freeShippingEligible ?? !p.isFragile,
     deliveryDays: 3,
     isEMIAvailable: false,
     views: 0,

@@ -68,7 +68,6 @@ interface ProductFormData {
   shippingWeight: string;
   dimensions: { length: string; width: string; height: string };
   isFragile: boolean;
-  freeShippingEligible: boolean;
   discountPercentage: string;
   salePrice: string;
   offerStartDate: string;
@@ -100,7 +99,7 @@ const defaultFormData: ProductFormData = {
   ogTitle: '', ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
   shippingWeight: '',
   dimensions: { length: '', width: '', height: '' },
-  isFragile: false, freeShippingEligible: true,
+  isFragile: false,
   discountPercentage: '', salePrice: '', offerStartDate: '', offerEndDate: '',
   flashSaleEligible: false, lowStockThreshold: '10', barcode: '',
   returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '',
@@ -215,7 +214,6 @@ export default function EditProductPage() {
             height: dims.height || '',
           },
           isFragile:            p.isFragile            || false,
-          freeShippingEligible: p.freeShippingEligible !== false,
           discountPercentage: p.discountPercentage != null ? String(p.discountPercentage) : '',
           salePrice:          p.salePrice          != null ? String(p.salePrice)          : '',
           offerStartDate:     p.offerStartDate     || '',
@@ -374,9 +372,30 @@ export default function EditProductPage() {
     });
   };
 
+  const isValidOptionalNumber = (value: string) => {
+    if (!value.trim()) return true;
+    return Number.isFinite(Number(value));
+  };
+
   // ── Submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValidOptionalNumber(formData.weight)) {
+      alert('Weight must be a valid number');
+      return;
+    }
+    if (!isValidOptionalNumber(formData.dimensions.length)) {
+      alert('Length must be a valid number');
+      return;
+    }
+    if (!isValidOptionalNumber(formData.dimensions.width)) {
+      alert('Width must be a valid number');
+      return;
+    }
+    if (!isValidOptionalNumber(formData.dimensions.height)) {
+      alert('Height must be a valid number');
+      return;
+    }
     setIsSubmitting(true);
     try {
       // Upload product images
@@ -439,8 +458,8 @@ export default function EditProductPage() {
         price:         basePrice,
         originalPrice,
         category:      formData.category,
-        // FIXED: subcategory sent in payload
         subcategory:   formData.subcategory || undefined,
+        item:          formData.item || undefined,
         brand:         formData.brand,
         originCountry: formData.originCountry,
         status:        formData.status,
@@ -467,7 +486,7 @@ export default function EditProductPage() {
           attributes: { size: v.size || '', color: v.color || '' },
         })),
 
-        weight:        formData.weight     ? parseFloat(formData.weight)     : undefined,
+        weight:        formData.weight || undefined,
         ingredients:   formData.ingredients  || undefined,
         skinType:      formData.skinType.length > 0 ? formData.skinType : undefined,
         expiryDate:    formData.expiryDate   || undefined,
@@ -840,9 +859,10 @@ export default function EditProductPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume (numeric)</label>
                 <input type="text" name="weight" value={formData.weight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 50ml, 100g" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 50 or 100" />
+                <p className="mt-1 text-xs text-gray-500">Store the numeric value only. Use shipping weight for unit text.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
@@ -1017,18 +1037,16 @@ export default function EditProductPage() {
               </div>
             </div>
             <div className="flex flex-wrap gap-4">
-              {[
-                { name: 'isFragile',            label: 'Fragile Item' },
-                { name: 'freeShippingEligible', label: 'Free Shipping Eligible' },
-              ].map(({ name, label }) => (
-                <label key={name} className="flex items-center">
-                  <input type="checkbox" name={name}
-                    checked={formData[name as keyof ProductFormData] as boolean}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
-                  <span className="ml-2 text-sm text-gray-700">{label}</span>
-                </label>
-              ))}
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isFragile"
+                  checked={formData.isFragile}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Fragile Item</span>
+              </label>
             </div>
           </div>
         </div>

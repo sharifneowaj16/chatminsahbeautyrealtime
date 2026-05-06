@@ -1,6 +1,8 @@
 // app/api/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +10,29 @@ function toOptionalNumber(value: unknown, fallback: unknown): unknown {
   if (value == null || value === '') return fallback;
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+function validateOptionalNumber(value: unknown, label: string): string | null {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? null : `${label} must be a valid number`;
+}
+
+function buildStoredSubcategory(subcategory: unknown, item: unknown): string | null {
+  const normalizedSubcategory =
+    typeof subcategory === 'string' ? subcategory.trim() : '';
+  const normalizedItem = typeof item === 'string' ? item.trim() : '';
+
+  if (!normalizedSubcategory) {
+    return null;
+  }
+
+  return normalizedItem
+    ? `${normalizedSubcategory} > ${normalizedItem}`
+    : normalizedSubcategory;
 }
 
 // ── GET /api/products/[id] ─────────────────────────────────────────────────
@@ -214,8 +239,25 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await getVerifiedAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCTS_EDIT)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await request.json();
+    const numericValidationError =
+      validateOptionalNumber(body.weight, 'Weight') ||
+      validateOptionalNumber(body.dimensions?.length, 'Length') ||
+      validateOptionalNumber(body.dimensions?.width, 'Width') ||
+      validateOptionalNumber(body.dimensions?.height, 'Height');
+    if (numericValidationError) {
+      return NextResponse.json({ error: numericValidationError }, { status: 400 });
+    }
 
     const existing = await prisma.product.findFirst({
       where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },
@@ -224,6 +266,13 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
+
+    const requestedStatus = typeof body.status === 'string' ? body.status : null;
+    const forceOutOfStock = requestedStatus === 'out_of_stock';
+    const storedSubcategory =
+      body.subcategory !== undefined || body.item !== undefined
+        ? buildStoredSubcategory(body.subcategory, body.item)
+        : existing.subcategory;
 
     // Resolve category
     let categoryId: string | null = existing.categoryId;
@@ -277,7 +326,8 @@ export async function PUT(
       length: body.dimensions?.length && body.dimensions.length !== '' ? Number(body.dimensions.length) : existing.length,
       width:  body.dimensions?.width  && body.dimensions.width  !== '' ? Number(body.dimensions.width)  : existing.width,
       height: body.dimensions?.height && body.dimensions.height !== '' ? Number(body.dimensions.height) : existing.height,
-      isActive:   body.status   !== undefined ? body.status === 'active' : existing.isActive,
+      quantity: forceOutOfStock ? 0 : existing.quantity,
+      isActive:   body.status   !== undefined ? body.status !== 'inactive' : existing.isActive,
       isFeatured: body.featured != null       ? body.featured            : existing.isFeatured,
       metaTitle:          body.metaTitle          ?? existing.metaTitle,
       metaDescription:    body.metaDescription    ?? existing.metaDescription,
@@ -288,8 +338,7 @@ export async function PUT(
       ogTitle:            body.ogTitle            ?? existing.ogTitle,
       ogImageUrl:         body.ogImageUrl         ?? existing.ogImageUrl,
       canonicalUrl:       body.canonicalUrl       ?? existing.canonicalUrl,
-      // FIXED: subcategory saved
-      subcategory:   body.subcategory   ?? existing.subcategory,
+      subcategory:   storedSubcategory,
       skinType:      body.skinType      ?? existing.skinType,
       ingredients:   body.ingredients   ?? existing.ingredients,
       shelfLife:     body.shelfLife     ?? existing.shelfLife,
@@ -376,7 +425,7 @@ export async function PUT(
           name:       v.size || v.color || v.name || updated.name,
           sku:        variantSku,
           price:      v.price != null ? Number(v.price) : updated.price,
-          quantity:   v.stock != null ? Number(v.stock) : 0,
+          quantity:   forceOutOfStock ? 0 : (v.stock != null ? Number(v.stock) : 0),
           attributes: { size: v.size || '', color: v.color || '' },
           image:      v.image || null, // FIXED: variant image saved
         };
@@ -391,7 +440,7 @@ export async function PUT(
           if (!skuConflict) await prisma.productVariant.create({ data: variantData });
         }
       }
-      const totalStock = body.variants.reduce(
+      const totalStock = forceOutOfStock ? 0 : body.variants.reduce(
         (sum: number, v: { stock?: string | number }) => sum + (Number(v.stock) || 0), 0
       );
       await prisma.product.update({ where: { id: existing.id }, data: { quantity: totalStock } });
@@ -406,10 +455,19 @@ export async function PUT(
 
 // ── DELETE /api/products/[id] ──────────────────────────────────────────────
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await getVerifiedAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCTS_DELETE)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+    }
+
     const { id } = await params;
     const existing = await prisma.product.findFirst({
       where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },

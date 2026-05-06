@@ -2,15 +2,38 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+function splitStoredSubcategory(value: string | null): { subcategory: string; item: string } {
+  if (!value) {
+    return { subcategory: '', item: '' };
+  }
+
+  const [subcategory, ...itemParts] = value.split(' > ');
+  return {
+    subcategory: subcategory?.trim() || '',
+    item: itemParts.join(' > ').trim(),
+  };
+}
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await getVerifiedAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCTS_VIEW)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+    }
+
     const { id } = await params;
 
     const product = await prisma.product.findFirst({
@@ -26,6 +49,8 @@ export async function GET(
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
+
+    const { subcategory, item } = splitStoredSubcategory(product.subcategory);
 
     return NextResponse.json({
       product: {
@@ -71,9 +96,8 @@ export async function GET(
         brandId:      product.brandId        || '',
         brandSlug:    product.brand?.slug    || '',
 
-        // FIXED: subcategory / item field
-        subcategory: product.subcategory || '',
-        item:        '', // stored in subcategory field as "Subcategory > Item" or separate
+        subcategory,
+        item,
 
         // Images — FIXED: alt text properly returned
         images: product.images.map((img) => ({
@@ -124,9 +148,8 @@ export async function GET(
         originCountry: product.originCountry || 'Bangladesh (Local)',
 
         // Shipping — ALL INCLUDED
-        shippingWeight:       product.shippingWeight || '',
-        isFragile:            product.isFragile       || false,
-        freeShippingEligible: !product.isFragile,
+        shippingWeight: product.shippingWeight || '',
+        isFragile:      product.isFragile || false,
 
         // Discount & Offers
         discountPercentage: product.discountPercentage ? product.discountPercentage.toNumber().toString() : '',
