@@ -8,6 +8,12 @@ import { Prisma } from '@/generated/prisma/client';
 
 export const dynamic = 'force-dynamic';
 
+function toOptionalNumber(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -190,6 +196,10 @@ export async function POST(request: NextRequest) {
         compareAtPrice:   body.originalPrice    ? Number(body.originalPrice) : null,
         quantity:         totalStock,
         lowStockThreshold:body.lowStockThreshold ? Number(body.lowStockThreshold) : 5,
+        weight:           toOptionalNumber(body.weight),
+        length:           toOptionalNumber(body.dimensions?.length),
+        width:            toOptionalNumber(body.dimensions?.width),
+        height:           toOptionalNumber(body.dimensions?.height),
         isActive:         body.status === 'active' || body.status == null,
         isFeatured:       body.featured           || false,
         categoryId,
