@@ -14,7 +14,7 @@ export async function GET(
     const { id } = await params;
 
     const product = await prisma.product.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
+      where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },
       include: {
         images:   { orderBy: { sortOrder: 'asc' } },
         category: true,

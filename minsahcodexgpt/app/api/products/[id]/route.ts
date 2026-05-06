@@ -4,6 +4,12 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+function toOptionalNumber(value: unknown, fallback: unknown): unknown {
+  if (value == null || value === '') return fallback;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
 // ── GET /api/products/[id] ─────────────────────────────────────────────────
 export async function GET(
   _req: NextRequest,
@@ -266,7 +272,7 @@ export async function PUT(
       compareAtPrice: body.originalPrice != null ? body.originalPrice : existing.compareAtPrice,
       costPrice:      body.costPrice     != null ? body.costPrice     : existing.costPrice,
       lowStockThreshold: body.lowStockThreshold != null ? Number(body.lowStockThreshold) : existing.lowStockThreshold,
-      weight: body.weight != null ? body.weight : existing.weight,
+      weight: toOptionalNumber(body.weight, existing.weight),
       // FIXED: dimensions saved correctly
       length: body.dimensions?.length && body.dimensions.length !== '' ? Number(body.dimensions.length) : existing.length,
       width:  body.dimensions?.width  && body.dimensions.width  !== '' ? Number(body.dimensions.width)  : existing.width,
@@ -331,6 +337,37 @@ export async function PUT(
 
     // FIXED: Variants with image field
     if (Array.isArray(body.variants) && body.variants.length > 0) {
+      const existingVariantIds = new Set(existing.variants.map((variant) => variant.id));
+      const submittedExistingVariantIds = new Set(
+        body.variants
+          .map((variant: { id?: string }) => variant.id)
+          .filter((variantId: unknown): variantId is string =>
+            typeof variantId === 'string' && existingVariantIds.has(variantId)
+          )
+      );
+      const removedVariantIds = existing.variants
+        .map((variant) => variant.id)
+        .filter((variantId) => !submittedExistingVariantIds.has(variantId));
+
+      if (removedVariantIds.length > 0) {
+        const orderedVariant = await prisma.orderItem.findFirst({
+          where: { variantId: { in: removedVariantIds } },
+          select: { variantId: true },
+        });
+
+        if (orderedVariant) {
+          return NextResponse.json(
+            { error: 'Cannot remove a variant that exists in order history. Set its stock to 0 instead.' },
+            { status: 400 }
+          );
+        }
+
+        await prisma.$transaction([
+          prisma.cartItem.deleteMany({ where: { variantId: { in: removedVariantIds } } }),
+          prisma.productVariant.deleteMany({ where: { id: { in: removedVariantIds } } }),
+        ]);
+      }
+
       for (const v of body.variants) {
         const variantSku  = v.sku || `${updated.sku}-V${Date.now()}`;
         const isRealId    = v.id && v.id.length > 10 && !['1','2','3','4','5'].includes(v.id);
