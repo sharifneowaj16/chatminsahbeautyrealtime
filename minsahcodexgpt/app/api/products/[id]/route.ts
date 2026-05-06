@@ -18,7 +18,7 @@ export async function GET(
     };
 
     const product = await prisma.product.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
+      where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },
       include: {
         images:   { orderBy: { sortOrder: 'asc' } },
         variants: { orderBy: { id: 'asc' } },
@@ -212,7 +212,7 @@ export async function PUT(
     const body = await request.json();
 
     const existing = await prisma.product.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
+      where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },
       include: { variants: true, images: true },
     });
     if (!existing) {
@@ -374,8 +374,26 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const existing = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    const existing = await prisma.product.findFirst({
+      where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },
+    });
     if (!existing) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+
+    const orderItemCount = await prisma.orderItem.count({ where: { productId: existing.id } });
+
+    if (orderItemCount > 0) {
+      await prisma.$transaction([
+        prisma.cartItem.deleteMany({ where: { productId: existing.id } }),
+        prisma.wishlistItem.deleteMany({ where: { productId: existing.id } }),
+        prisma.product.update({
+          where: { id: existing.id },
+          data: { deletedAt: new Date(), isActive: false, quantity: 0, isFeatured: false },
+        }),
+      ]);
+
+      return NextResponse.json({ success: true, archived: true });
+    }
+
     await prisma.product.delete({ where: { id: existing.id } });
     return NextResponse.json({ success: true });
   } catch (error) {

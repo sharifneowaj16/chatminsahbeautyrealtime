@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const sortOrder   = (searchParams.get('sortOrder')  || 'desc') as 'asc' | 'desc';
     const slugParam   = searchParams.get('slug')        || '';
 
-    const where: Prisma.ProductWhereInput = {};
+    const where: Prisma.ProductWhereInput = { deletedAt: null };
 
     if (activeOnly) where.isActive = true;
     if (featured === 'true') where.isFeatured = true;

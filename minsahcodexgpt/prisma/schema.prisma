@@ -345,6 +345,7 @@ model Product {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   images        ProductImage[]
   variants      ProductVariant[]
@@ -363,6 +364,7 @@ model Product {
   @@index([sku])
   @@index([categoryId])
   @@index([brandId])
+  @@index([deletedAt])
   @@index([isActive, isFeatured])
 }
 

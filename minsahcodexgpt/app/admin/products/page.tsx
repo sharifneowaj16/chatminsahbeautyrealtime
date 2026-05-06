@@ -103,11 +103,12 @@ export default function ProductsPage() {
   const handleDeleteProduct = async (productId: string) => {
     try {
       const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
       setProducts((prev) => prev.filter((p) => p.id !== productId));
     } catch (err) {
       console.error('Error deleting product:', err);
-      alert('Failed to delete product');
+      alert(err instanceof Error ? err.message : 'Failed to delete product');
     }
   };
 
