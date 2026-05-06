@@ -492,6 +492,44 @@ function safeJsonParse<T>(text: string): T | null {
 }
 
 const PRODUCT_CARD_PREFIX = '__MINSAH_PRODUCT_CARD__:' as const;
+const STOREFRONT_BASE_URL = 'https://minsahbeauty.cloud' as const;
+
+function buildProductViewPath(slug: string) {
+  return `/products/${slug}`;
+}
+
+function buildProductOrderPath(slug: string, qty: number, variantId?: string | null) {
+  return `/buy-now?product=${slug}&qty=${qty}${variantId ? `&variant=${variantId}` : ''}`;
+}
+
+function toAbsoluteStorefrontUrl(path: string) {
+  return `${STOREFRONT_BASE_URL}${path}`;
+}
+
+function getVariantLabel(
+  variant: NonNullable<ProductSearchItem['variants']>[number]
+) {
+  const attributeLabel = Object.entries(variant.attributes || {})
+    .map(([key, value]) => {
+      const normalized =
+        typeof value === 'string' || typeof value === 'number'
+          ? String(value).trim()
+          : '';
+      return normalized ? `${key}: ${normalized}` : '';
+    })
+    .filter(Boolean)
+    .join(' • ');
+
+  return attributeLabel || `Variant ${variant.id.slice(-6)}`;
+}
+
+function getPreferredVariantId(product: ProductSearchItem) {
+  if (!Array.isArray(product.variants) || product.variants.length === 0) {
+    return null;
+  }
+
+  return product.variants.find((variant) => variant.stock > 0)?.id ?? product.variants[0].id;
+}
 
 // Play a soft notification sound using Web Audio API
 function playNotificationSound() {
@@ -1379,16 +1417,18 @@ export default function SocialMediaInboxChat() {
       price: unitPrice,
       quantity: qty,
       variantId: variant?.id ?? null,
+      variantLabel: variant ? getVariantLabel(variant) : null,
       note: selectedProductDraft.note?.trim() || '',
-      viewUrl: `/product/${selectedProductDraft.product.slug}`,
-      orderUrl: `/buy-now?product=${selectedProductDraft.product.slug}&qty=${qty}${variant?.id ? `&variant=${variant.id}` : ''}`,
+      viewUrl: buildProductViewPath(selectedProductDraft.product.slug),
+      orderUrl: buildProductOrderPath(selectedProductDraft.product.slug, qty, variant?.id ?? null),
     };
 
     const messageText =
       `${PRODUCT_CARD_PREFIX}${JSON.stringify(payload)}\n` +
       `\n${selectedProductDraft.product.name}\nPrice: ${formatBdt(unitPrice)}\nQty: ${qty}\n` +
-      `View: https://minsahbeauty.cloud/product/${selectedProductDraft.product.slug}\n` +
-      `Order Now: https://minsahbeauty.cloud/buy-now?product=${selectedProductDraft.product.slug}&qty=${qty}${variant?.id ? `&variant=${variant.id}` : ''}`;
+      `${payload.variantLabel ? `Variant: ${payload.variantLabel}\n` : ''}` +
+      `View: ${toAbsoluteStorefrontUrl(payload.viewUrl)}\n` +
+      `Order Now: ${toAbsoluteStorefrontUrl(payload.orderUrl)}`;
 
     setSendingProduct(true);
     setConfirmSendProduct(false);
@@ -2642,6 +2682,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                           image: string;
                           price: number;
                           quantity: number;
+                          variantLabel?: string | null;
                           note?: string;
                           viewUrl: string;
                           orderUrl: string;
@@ -2743,6 +2784,11 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                                     <span>{formatBdt(maybeProductCard.price)}</span>
                                     <span>Qty: {maybeProductCard.quantity}</span>
                                   </div>
+                                  {maybeProductCard.variantLabel ? (
+                                    <div style={{ marginTop: 6, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>
+                                      Variant: {maybeProductCard.variantLabel}
+                                    </div>
+                                  ) : null}
                                   {maybeProductCard.note ? (
                                     <div style={{ marginTop: 6, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>
                                       Note: {maybeProductCard.note}
@@ -2750,7 +2796,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                                   ) : null}
                                   <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                                     <a
-                                      href={`https://minsahbeauty.cloud${maybeProductCard.viewUrl}`}
+                                      href={toAbsoluteStorefrontUrl(maybeProductCard.viewUrl)}
                                       target="_blank"
                                       rel="noreferrer"
                                       style={{
@@ -2767,7 +2813,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                                       View Product
                                     </a>
                                     <a
-                                      href={`https://minsahbeauty.cloud${maybeProductCard.orderUrl}`}
+                                      href={toAbsoluteStorefrontUrl(maybeProductCard.orderUrl)}
                                       target="_blank"
                                       rel="noreferrer"
                                       style={{
@@ -3248,8 +3294,9 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   productSearchResults.map((p) => (
                     <button
                       key={p.id}
+                      disabled={!p.inStock}
                       onClick={() => {
-                        const defaultVariantId = p.variants?.length ? p.variants[0].id : null;
+                        const defaultVariantId = getPreferredVariantId(p);
                         setSelectedProductDraft({
                           product: p,
                           variantId: defaultVariantId,
@@ -3265,7 +3312,8 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                         borderRadius: 18,
                         border: '1px solid rgba(115,75,42,0.10)',
                         background: '#ffffff',
-                        cursor: 'pointer',
+                        cursor: p.inStock ? 'pointer' : 'not-allowed',
+                        opacity: p.inStock ? 1 : 0.56,
                         textAlign: 'left',
                       }}
                     >
@@ -3299,14 +3347,14 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                       <div style={{
                         padding: '6px 10px',
                         borderRadius: 999,
-                        background: 'rgba(18,140,126,0.10)',
-                        border: '1px solid rgba(18,140,126,0.18)',
-                        color: '#065f46',
+                        background: p.inStock ? 'rgba(18,140,126,0.10)' : 'rgba(220,38,38,0.08)',
+                        border: p.inStock ? '1px solid rgba(18,140,126,0.18)' : '1px solid rgba(220,38,38,0.14)',
+                        color: p.inStock ? '#065f46' : '#b91c1c',
                         fontSize: 12,
                         fontWeight: 900,
                         flexShrink: 0,
                       }}>
-                        Select
+                        {p.inStock ? 'Select' : 'Sold Out'}
                       </div>
                     </button>
                   ))
@@ -3386,9 +3434,12 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                               outline: 'none',
                             }}
                           >
+                            <option value="" disabled>
+                              Select variant
+                            </option>
                             {selectedProductDraft.product.variants.map((v) => (
                               <option key={v.id} value={v.id}>
-                                {formatBdt(v.price)} • Stock {v.stock}
+                                {getVariantLabel(v)} • {formatBdt(v.price)} • Stock {v.stock}
                               </option>
                             ))}
                           </select>
@@ -3548,6 +3599,13 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 color: '#64320D',
               }}>
                 This will send a product card into the current conversation and save it in history.
+                {selectedProductDraft ? (
+                  <span style={{ display: 'block', marginTop: 8, color: '#8E6545' }}>
+                    {selectedProductDraft.product.name}
+                    {buildSelectedVariant(selectedProductDraft) ? ` • ${getVariantLabel(buildSelectedVariant(selectedProductDraft)!)}` : ''}
+                    {` • Qty ${Math.max(1, Math.min(99, selectedProductDraft.quantity || 1))}`}
+                  </span>
+                ) : null}
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                 <button
