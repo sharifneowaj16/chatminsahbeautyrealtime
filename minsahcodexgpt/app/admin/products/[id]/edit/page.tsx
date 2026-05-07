@@ -4,8 +4,8 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
-import { useProducts } from '@/contexts/ProductsContext';
 import { useCategories } from '@/contexts/CategoriesContext';
+import { adminFetchJson } from '@/lib/adminFetch';
 import {
   ArrowLeft, Save, X, Upload, Plus, Trash2,
   Image as ImageIcon, Package, Tag, Search,
@@ -81,6 +81,74 @@ interface ProductFormData {
   relatedProducts: string;
 }
 
+interface LoadedProductImage {
+  id: string;
+  url: string;
+  alt?: string;
+  isDefault?: boolean;
+}
+
+interface LoadedProductVariant {
+  id: string;
+  sku?: string;
+  price?: number | string | null;
+  quantity?: number;
+  stock?: number;
+  attributes?: { size?: string; color?: string } | null;
+  image?: string;
+}
+
+interface LoadedAdminProduct {
+  id: string;
+  name?: string;
+  price?: number | string;
+  stock?: number;
+  images?: LoadedProductImage[];
+  variants?: LoadedProductVariant[];
+  dimensions?: { length?: string; width?: string; height?: string };
+  category?: string;
+  subcategory?: string;
+  brand?: string;
+  originCountry?: string;
+  status?: 'active' | 'inactive' | 'out_of_stock';
+  isActive?: boolean;
+  featured?: boolean;
+  isFeatured?: boolean;
+  description?: string;
+  weight?: number | string | null;
+  ingredients?: string;
+  skinType?: string[];
+  expiryDate?: string;
+  shelfLife?: string;
+  condition?: string;
+  gtin?: string;
+  averageRating?: number | string;
+  reviewCount?: number;
+  metaTitle?: string;
+  metaDescription?: string;
+  slug?: string;
+  tags?: string;
+  metaKeywords?: string;
+  bengaliName?: string;
+  bengaliDescription?: string;
+  focusKeyword?: string;
+  ogTitle?: string;
+  ogImageUrl?: string;
+  shippingWeight?: string;
+  isFragile?: boolean;
+  discountPercentage?: number | string | null;
+  salePrice?: number | string | null;
+  offerStartDate?: string;
+  offerEndDate?: string;
+  flashSaleEligible?: boolean;
+  lowStockThreshold?: number | string | null;
+  barcode?: string;
+  returnEligible?: boolean;
+  codAvailable?: boolean;
+  preOrderOption?: boolean;
+  relatedProducts?: string;
+}
+
 const countries = [
   'Bangladesh (Local)', 'USA', 'France', 'UK', 'Japan',
   'South Korea', 'Germany', 'Italy', 'Thailand', 'India', 'China',
@@ -111,7 +179,6 @@ export default function EditProductPage() {
   const productId = params.id as string;
 
   const { hasPermission }    = useAdminAuth();
-  const { refreshProducts }  = useProducts();
   const { getActiveCategories } = useCategories();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,9 +201,7 @@ export default function EditProductPage() {
     async function fetchProduct() {
       try {
         setIsLoading(true);
-        const res = await fetch(`/api/admin/products/${productId}`);
-        if (!res.ok) throw new Error('Product not found');
-        const data = await res.json();
+        const data = await adminFetchJson<{ product: LoadedAdminProduct }>(`/api/admin/products/${productId}`);
         const p = data.product;
         setDbProductId(p.id);
 
@@ -153,12 +218,7 @@ export default function EditProductPage() {
         // FIXED: variants with image field
         const existingVariants: ProductVariant[] =
           p.variants && p.variants.length > 0
-            ? p.variants.map((v: {
-                id: string; sku?: string;
-                price?: number | null; quantity?: number; stock?: number;
-                attributes?: { size?: string; color?: string } | null;
-                image?: string;
-              }) => ({
+            ? p.variants.map((v) => ({
                 id:           v.id,
                 size:         v.attributes?.size  || '',
                 color:        v.attributes?.color || '',
@@ -406,9 +466,10 @@ export default function EditProductPage() {
           const uploadForm = new FormData();
           uploadForm.append('file', img.file);
           uploadForm.append('folder', `products/${dbProductId || productId}`);
-          const uploadRes = await fetch('/api/upload', { method: 'POST', body: uploadForm });
-          if (!uploadRes.ok) throw new Error('Image upload failed');
-          const uploadData = await uploadRes.json();
+          const uploadData = await adminFetchJson<{ url: string }>('/api/upload', {
+            method: 'POST',
+            body: uploadForm,
+          });
           uploadedImages.push({ url: uploadData.url, altText: formData.imageAltTexts[i] || '' });
         } else if (img.existingUrl) {
           uploadedImages.push({ url: img.existingUrl, altText: formData.imageAltTexts[i] || '' });
@@ -428,8 +489,11 @@ export default function EditProductPage() {
         const ogForm = new FormData();
         ogForm.append('file', formData.ogImageFile);
         ogForm.append('folder', 'products/og-images');
-        const ogRes = await fetch('/api/upload', { method: 'POST', body: ogForm });
-        if (ogRes.ok) uploadedOgImageUrl = (await ogRes.json()).url;
+        const ogData = await adminFetchJson<{ url: string }>('/api/upload', {
+          method: 'POST',
+          body: ogForm,
+        });
+        uploadedOgImageUrl = ogData.url;
       }
 
       // Upload variant images
@@ -440,8 +504,11 @@ export default function EditProductPage() {
             const vForm = new FormData();
             vForm.append('file', v.imageFile);
             vForm.append('folder', `products/${dbProductId || productId}/variants`);
-            const vRes = await fetch('/api/upload', { method: 'POST', body: vForm });
-            if (vRes.ok) imageUrl = (await vRes.json()).url;
+            const vData = await adminFetchJson<{ url: string }>('/api/upload', {
+              method: 'POST',
+              body: vForm,
+            });
+            imageUrl = vData.url;
           }
           return { ...v, image: imageUrl };
         })
@@ -527,18 +594,11 @@ export default function EditProductPage() {
       };
 
       const targetId = dbProductId || productId;
-      const res = await fetch(`/api/products/${targetId}`, {
+      await adminFetchJson<{ success: boolean; product: { id: string; slug: string; name: string } }>(`/api/admin/products/${targetId}`, {
         method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
+        json: payload,
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to update product');
-      }
-
-      await refreshProducts();
       router.push('/admin/products');
     } catch (error) {
       console.error('Error updating product:', error);

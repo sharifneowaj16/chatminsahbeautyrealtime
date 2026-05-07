@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 
 // Get allowed origins from environment or use defaults
 function getAllowedOrigins(): string[] {
@@ -85,7 +86,7 @@ function handleCors(request: NextRequest, response: NextResponse): NextResponse 
   return response;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Handle CORS preflight requests
@@ -129,9 +130,22 @@ export function middleware(request: NextRequest) {
       return createSecureResponse(NextResponse.next());
     }
 
-    // Access token exists - allow access
-    // Actual token verification happens in the API routes
-    return createSecureResponse(NextResponse.next());
+    // Access token exists - verify the JWT before rendering admin pages.
+    // If it is expired but a refresh token exists, let the client refresh flow run.
+    if (accessToken) {
+      const payload = await verifyAdminAccessToken(accessToken.value);
+      if (payload) {
+        return createSecureResponse(NextResponse.next());
+      }
+    }
+
+    if (refreshToken) {
+      return createSecureResponse(NextResponse.next());
+    }
+
+    const loginUrl = new URL('/admin/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return createSecureResponse(NextResponse.redirect(loginUrl));
   }
 
   // Protect user account routes

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
+import { adminFetchJson } from '@/lib/adminFetch';
 import {
   Search,
   Plus,
@@ -12,6 +13,8 @@ import {
   Eye,
   Star,
   Layers,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { formatPrice } from '@/utils/currency';
@@ -39,6 +42,18 @@ interface ProductFilters {
   category: string;
   status: string;
   sortBy: string;
+}
+
+interface ProductPagination {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+interface AdminProductsResponse {
+  products: ApiProduct[];
+  pagination: ProductPagination;
 }
 
 const categories = [
@@ -72,29 +87,48 @@ export default function ProductsPage() {
     status:   '',
     sortBy:   'created',
   });
+  const [pagination, setPagination] = useState<ProductPagination>({
+    page: 1,
+    limit: 25,
+    totalCount: 0,
+    totalPages: 1,
+  });
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ activeOnly: 'false', limit: '100' });
+      const params = new URLSearchParams({
+        page: String(pagination.page),
+        limit: String(pagination.limit),
+        sortBy: filters.sortBy,
+      });
       if (filters.category && filters.category !== 'All Categories') {
         params.set('category', filters.category);
       }
       if (filters.search) {
         params.set('search', filters.search);
       }
-      const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch products');
-      const data = await res.json();
+      if (filters.status) {
+        params.set('status', filters.status);
+      }
+
+      const data = await adminFetchJson<AdminProductsResponse>(`/api/admin/products?${params.toString()}`);
       setProducts(data.products || []);
+      setPagination((prev) => ({
+        ...prev,
+        page: data.pagination?.page || prev.page,
+        limit: data.pagination?.limit || prev.limit,
+        totalCount: data.pagination?.totalCount || 0,
+        totalPages: data.pagination?.totalPages || 1,
+      }));
     } catch (err) {
       console.error('Error fetching products:', err);
     } finally {
       setLoading(false);
     }
-  }, [filters.category, filters.search]);
+  }, [filters.category, filters.search, filters.sortBy, filters.status, pagination.limit, pagination.page]);
 
   useEffect(() => {
     fetchProducts();
@@ -102,10 +136,15 @@ export default function ProductsPage() {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
-      const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      await adminFetchJson<{ success: boolean; archived?: boolean }>(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+      });
       setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setPagination((prev) => ({
+        ...prev,
+        totalCount: Math.max(0, prev.totalCount - 1),
+        totalPages: Math.max(1, Math.ceil(Math.max(0, prev.totalCount - 1) / prev.limit)),
+      }));
     } catch (err) {
       console.error('Error deleting product:', err);
       alert(err instanceof Error ? err.message : 'Failed to delete product');
@@ -120,30 +159,8 @@ export default function ProductsPage() {
     );
   }
 
-  const filteredProducts = products
-    .filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        product.category.toLowerCase().includes(filters.search.toLowerCase());
-      const matchesCategory =
-        filters.category === 'All Categories' || product.category === filters.category;
-      const matchesStatus = !filters.status || product.status === filters.status;
-      return matchesSearch && matchesCategory && matchesStatus;
-    })
-    .sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'name':       return a.name.localeCompare(b.name);
-        case 'price_low':  return a.price - b.price;
-        case 'price_high': return b.price - a.price;
-        case 'stock':      return b.stock - a.stock;
-        case 'rating':     return b.rating - a.rating;
-        case 'created':
-        default:           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-    });
-
   const handleSelectAll = (checked: boolean) => {
-    setSelectedProducts(checked ? filteredProducts.map((p) => p.id) : []);
+    setSelectedProducts(checked ? products.map((p) => p.id) : []);
   };
 
   const handleSelectProduct = (productId: string, checked: boolean) => {
@@ -161,6 +178,17 @@ export default function ProductsPage() {
     }
     setSelectedProducts([]);
   };
+
+  const updateFilter = (key: keyof ProductFilters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    setSelectedProducts([]);
+  };
+
+  const firstVisibleProduct = pagination.totalCount === 0
+    ? 0
+    : (pagination.page - 1) * pagination.limit + 1;
+  const lastVisibleProduct = Math.min(pagination.page * pagination.limit, pagination.totalCount);
 
   const getStatusColor = (status: ApiProduct['status']) => {
     switch (status) {
@@ -209,7 +237,7 @@ export default function ProductsPage() {
                 type="text"
                 placeholder="Search products..."
                 value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                onChange={(e) => updateFilter('search', e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
@@ -226,7 +254,7 @@ export default function ProductsPage() {
 
           <select
             value={filters.sortBy}
-            onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
+            onChange={(e) => updateFilter('sortBy', e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             {sortOptions.map((option) => (
@@ -241,7 +269,7 @@ export default function ProductsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select
                 value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                onChange={(e) => updateFilter('category', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
               >
                 {categories.map((category) => (
@@ -253,7 +281,7 @@ export default function ProductsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select
                 value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                onChange={(e) => updateFilter('status', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
               >
                 <option value="">All Statuses</option>
@@ -305,7 +333,7 @@ export default function ProductsPage() {
                   <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                      checked={selectedProducts.length === products.length && products.length > 0}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
@@ -320,7 +348,7 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <input
@@ -430,9 +458,58 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {!loading && filteredProducts.length === 0 && (
+        {!loading && products.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500">No products found matching your criteria.</p>
+          </div>
+        )}
+
+        {!loading && products.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-gray-600">
+              Showing {firstVisibleProduct}-{lastVisibleProduct} of {pagination.totalCount} products
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={pagination.limit}
+                onChange={(event) => {
+                  setPagination((prev) => ({
+                    ...prev,
+                    page: 1,
+                    limit: Number(event.target.value),
+                  }));
+                  setSelectedProducts([]);
+                }}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500"
+              >
+                <option value={25}>25 / page</option>
+                <option value={50}>50 / page</option>
+                <option value={100}>100 / page</option>
+              </select>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={pagination.page <= 1}
+                  onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Previous
+                </button>
+                <span className="text-sm text-gray-600">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={pagination.page >= pagination.totalPages}
+                  onClick={() => setPagination((prev) => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+                  className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
+                >
+                  Next
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

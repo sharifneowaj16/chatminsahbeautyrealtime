@@ -77,7 +77,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/products?activeOnly=false&limit=500');
+      const res = await fetch('/api/products?limit=100');
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
 

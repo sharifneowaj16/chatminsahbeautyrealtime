@@ -4,8 +4,8 @@ import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
-import { useProducts } from '@/contexts/ProductsContext';
 import { useCategories } from '@/contexts/CategoriesContext';
+import { adminFetchJson } from '@/lib/adminFetch';
 import {
   ArrowLeft,
   Save,
@@ -145,7 +145,6 @@ const skinTypes = ['Oily', 'Dry', 'Combination', 'Sensitive', 'Normal', 'All Ski
 export default function NewProductPage() {
   const router = useRouter();
   const { hasPermission } = useAdminAuth();
-  const { refreshProducts } = useProducts();
   const { getActiveCategories } = useCategories();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -528,18 +527,11 @@ export default function NewProductPage() {
         uploadForm.append('file', image.file);
         uploadForm.append('folder', 'products/new');
 
-        const uploadRes = await fetch('/api/upload', {
+        const uploadData = await adminFetchJson<{ url: string }>('/api/upload', {
           method: 'POST',
           body: uploadForm,
         });
 
-        if (!uploadRes.ok) {
-          const err = await uploadRes.json();
-          const detail = err.detail ? ` (${err.detail})` : '';
-          throw new Error(`Image upload failed: ${err.error || 'Unknown error'}${detail}`);
-        }
-
-        const uploadData = await uploadRes.json();
         uploadedImageUrls.push(uploadData.url);
       }
 
@@ -561,15 +553,12 @@ export default function NewProductPage() {
         ogForm.append('file', formData.ogImageFile);
         ogForm.append('folder', 'products/og-images');
 
-        const ogRes = await fetch('/api/upload', {
+        const ogData = await adminFetchJson<{ url: string }>('/api/upload', {
           method: 'POST',
           body: ogForm,
         });
 
-        if (ogRes.ok) {
-          const ogData = await ogRes.json();
-          uploadedOgImageUrl = ogData.url;
-        }
+        uploadedOgImageUrl = ogData.url;
       }
 
       // Step 2: Build original price
@@ -583,7 +572,7 @@ export default function NewProductPage() {
         ? parseFloat(formData.salePrice)
         : undefined;
 
-      // Step 3: POST product data to /api/products
+      // Step 3: POST product data to the admin product API
       const productPayload = {
         name: formData.name,
         category: formData.category,
@@ -640,18 +629,11 @@ export default function NewProductPage() {
         relatedProducts: formData.relatedProducts || undefined,
       };
 
-      const res = await fetch('/api/products', {
+      await adminFetchJson<{ success: boolean; product: { id: string; slug: string; name: string } }>('/api/admin/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(productPayload),
+        json: productPayload,
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to create product');
-      }
-
-      await refreshProducts();
       alert('Product created successfully!');
       router.push('/admin/products');
       
