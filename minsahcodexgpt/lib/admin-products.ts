@@ -288,6 +288,25 @@ function validateProductPayload(payload: ProductPayload, fallbackPrice = 0): voi
     throw new AdminProductError('Price must be 0 or greater');
   }
 
+  const stock = toOptionalNumber(payload.stock ?? payload.quantity);
+  if (stock != null && stock < 0) {
+    throw new AdminProductError('Stock cannot be negative');
+  }
+
+  const dimensionValues = [
+    ['Length', payload.dimensions?.length],
+    ['Width', payload.dimensions?.width],
+    ['Height', payload.dimensions?.height],
+    ['Weight', payload.weight],
+  ] as const;
+  const negativeDimension = dimensionValues.find(([, value]) => {
+    const parsed = toOptionalNumber(value);
+    return parsed != null && parsed < 0;
+  });
+  if (negativeDimension) {
+    throw new AdminProductError(`${negativeDimension[0]} cannot be negative`);
+  }
+
   const compareAtPrice = resolveCompareAtPrice(payload);
   if (compareAtPrice != null && compareAtPrice < basePrice) {
     throw new AdminProductError('Compare at/original price must be greater than or equal to price');
@@ -325,12 +344,12 @@ function getTotalStock(payload: ProductPayload, fallback = 0): number {
   if (variants.length > 0) {
     return variants.reduce((sum, variant) => {
       const stock = toOptionalNumber(variant.stock ?? variant.quantity) ?? 0;
-      return sum + Math.max(0, Math.trunc(stock));
+      return sum + Math.trunc(stock);
     }, 0);
   }
 
   const stock = toOptionalNumber(payload.stock ?? payload.quantity);
-  return stock != null ? Math.max(0, Math.trunc(stock)) : fallback;
+  return stock != null ? Math.trunc(stock) : fallback;
 }
 
 function validateVariantValues(variants: ProductVariantPayload[]): void {
@@ -339,16 +358,12 @@ function validateVariantValues(variants: ProductVariantPayload[]): void {
     const price = toOptionalNumber(variant.price);
     const stock = toOptionalNumber(variant.stock ?? variant.quantity);
 
-    if (!sku) {
-      throw new AdminProductError('Each variant must have a SKU');
-    }
-
     if (price == null || price < 0) {
-      throw new AdminProductError(`Variant ${sku} must have a valid price`);
+      throw new AdminProductError(`Variant ${sku || 'unnamed'} must have a valid price`);
     }
 
     if (stock == null || stock < 0) {
-      throw new AdminProductError(`Variant ${sku} must have a valid stock value`);
+      throw new AdminProductError(`Variant ${sku || 'unnamed'} must have a valid stock value`);
     }
   }
 }
@@ -583,16 +598,33 @@ export function formatAdminProductListItem(product: AdminProductListProduct) {
     price: product.price.toNumber(),
     originalPrice: product.compareAtPrice ? product.compareAtPrice.toNumber() : null,
     compareAtPrice: product.compareAtPrice ? product.compareAtPrice.toNumber() : null,
+    salePrice: product.salePrice ? product.salePrice.toNumber() : null,
+    costPrice: product.costPrice ? product.costPrice.toNumber() : null,
+    discountPercentage: product.discountPercentage ? product.discountPercentage.toNumber() : null,
     image: mainImage?.url || '',
-    images: product.images.map((image) => image.url),
+    images: product.images.map((image) => ({
+      url: image.url,
+      alt: image.alt || product.name,
+      title: image.title || product.name,
+      sortOrder: image.sortOrder,
+      isDefault: image.isDefault,
+    })),
     stock: product.quantity,
     quantity: product.quantity,
+    lowStockThreshold: product.lowStockThreshold,
+    trackInventory: product.trackInventory,
+    allowBackorder: product.allowBackorder,
     category: product.category?.name || '',
+    categoryId: product.categoryId || '',
     categorySlug: product.category?.slug || '',
     brand: product.brand?.name || '',
+    brandId: product.brandId || '',
     brandSlug: product.brand?.slug || '',
+    subcategory: product.subcategory || '',
     rating: product.averageRating?.toNumber() || 0,
     reviews: product.reviewCount || 0,
+    reviewCount: product.reviewCount || 0,
+    averageRating: product.averageRating?.toNumber() || 0,
     inStock: product.quantity > 0,
     isNew: product.isNew,
     isFeatured: product.isFeatured,
@@ -600,6 +632,17 @@ export function formatAdminProductListItem(product: AdminProductListProduct) {
     status: !product.isActive ? 'inactive' : product.quantity === 0 ? 'out_of_stock' : 'active',
     codAvailable: product.codAvailable,
     returnEligible: product.returnEligible,
+    preOrderOption: product.preOrderOption,
+    barcode: product.barcode || '',
+    condition: product.condition || 'NEW',
+    gtin: product.gtin || '',
+    flashSaleEligible: product.flashSaleEligible,
+    offerStartDate: product.offerStartDate ? product.offerStartDate.toISOString() : null,
+    offerEndDate: product.offerEndDate ? product.offerEndDate.toISOString() : null,
+    originCountry: product.originCountry || 'Bangladesh (Local)',
+    shippingWeight: product.shippingWeight || '',
+    isFragile: product.isFragile,
+    relatedProducts: product.relatedProducts || '',
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
     variants: product.variants.map((variant) => ({
@@ -749,8 +792,11 @@ export async function createAdminProduct(input: unknown) {
       shortDescription: getPayloadString(payload, 'shortDescription') || null,
       price: basePrice,
       compareAtPrice,
+      costPrice: toOptionalNumber(payload.costPrice),
       quantity: totalStock,
       lowStockThreshold: toOptionalNumber(payload.lowStockThreshold) ?? 5,
+      trackInventory: getBoolean(payload.trackInventory, true),
+      allowBackorder: getBoolean(payload.allowBackorder, false),
       weight: toOptionalNumber(payload.weight),
       length: toOptionalNumber(payload.dimensions?.length),
       width: toOptionalNumber(payload.dimensions?.width),
@@ -887,6 +933,12 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
       price: basePrice,
       compareAtPrice,
       costPrice: hasOwn(payload, 'costPrice') ? toOptionalNumber(payload.costPrice) : existing.costPrice,
+      trackInventory: hasOwn(payload, 'trackInventory')
+        ? getBoolean(payload.trackInventory, existing.trackInventory)
+        : existing.trackInventory,
+      allowBackorder: hasOwn(payload, 'allowBackorder')
+        ? getBoolean(payload.allowBackorder, existing.allowBackorder)
+        : existing.allowBackorder,
       lowStockThreshold: hasOwn(payload, 'lowStockThreshold')
         ? Math.max(0, Math.trunc(toOptionalNumber(payload.lowStockThreshold) ?? existing.lowStockThreshold))
         : existing.lowStockThreshold,

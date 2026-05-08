@@ -36,6 +36,20 @@ interface ApiProduct {
   tags: string;
   createdAt: string;
   updatedAt: string;
+  hasVariants?: boolean;
+  variants?: Array<{
+    id: string;
+    sku: string;
+    name?: string;
+    price: number;
+    stock?: number;
+    quantity?: number;
+    image?: string | null;
+    attributes?: {
+      size?: string;
+      color?: string;
+    };
+  }>;
 }
 
 // Maps an Elasticsearch product source to ApiProduct shape
@@ -124,7 +138,23 @@ function apiProductToShopProduct(p: ApiProduct): ShopProduct {
     isHalalCertified: false,
     isBSTIApproved: false,
     isImported: false,
-    hasVariants: false,
+    hasVariants: p.hasVariants ?? !!(p.variants && p.variants.length > 0),
+    variants: p.variants?.map((variant) => {
+      const size = variant.attributes?.size || '';
+      const color = variant.attributes?.color || '';
+      const value = size || color || variant.name || variant.sku;
+
+      return {
+        id: variant.id,
+        name: variant.name || value,
+        option: size ? 'Size' : color ? 'Color' : 'Variant',
+        value,
+        price: Number(variant.price ?? p.price),
+        stock: Number(variant.stock ?? variant.quantity ?? 0),
+        sku: variant.sku,
+        image: variant.image || undefined,
+      };
+    }),
     isCODAvailable: true,
     isSameDayDelivery: false,
     freeShippingEligible: false,

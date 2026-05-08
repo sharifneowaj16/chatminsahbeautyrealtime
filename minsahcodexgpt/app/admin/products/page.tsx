@@ -22,19 +22,68 @@ import { formatPrice } from '@/utils/currency';
 interface ApiProduct {
   id: string;
   slug: string;
+  sku: string;
   name: string;
+  description: string;
+  shortDescription: string;
   category: string;
+  categoryId: string;
+  categorySlug: string;
   brand: string;
+  brandId: string;
+  brandSlug: string;
+  subcategory: string;
   price: number;
   originalPrice: number | null;
+  compareAtPrice: number | null;
+  salePrice: number | null;
+  costPrice: number | null;
+  discountPercentage: number | null;
   stock: number;
+  quantity: number;
+  lowStockThreshold: number;
+  trackInventory: boolean;
+  allowBackorder: boolean;
   status: 'active' | 'inactive' | 'out_of_stock';
   image: string;
-  images: string[];
+  images: Array<{
+    url: string;
+    alt: string;
+    title: string;
+    sortOrder: number;
+    isDefault: boolean;
+  }>;
   rating: number;
   reviews: number;
+  reviewCount: number;
+  averageRating: number;
   createdAt: string;
+  updatedAt: string;
   featured: boolean;
+  isFeatured: boolean;
+  isNew: boolean;
+  codAvailable: boolean;
+  returnEligible: boolean;
+  preOrderOption: boolean;
+  barcode: string;
+  condition: string;
+  gtin: string;
+  flashSaleEligible: boolean;
+  offerStartDate: string | null;
+  offerEndDate: string | null;
+  originCountry: string;
+  shippingWeight: string;
+  isFragile: boolean;
+  relatedProducts: string;
+  variants: Array<{
+    id: string;
+    sku: string;
+    price: number;
+    stock: number;
+    quantity: number;
+    attributes: unknown;
+    image: string;
+  }>;
 }
 
 interface ProductFilters {
@@ -134,17 +183,17 @@ export default function ProductsPage() {
     fetchProducts();
   }, [fetchProducts]);
 
+  const deleteProductById = async (productId: string) => {
+    await adminFetchJson<{ success: boolean; archived?: boolean }>(`/api/admin/products/${productId}`, {
+      method: 'DELETE',
+    });
+  };
+
   const handleDeleteProduct = async (productId: string) => {
     try {
-      await adminFetchJson<{ success: boolean; archived?: boolean }>(`/api/admin/products/${productId}`, {
-        method: 'DELETE',
-      });
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
-      setPagination((prev) => ({
-        ...prev,
-        totalCount: Math.max(0, prev.totalCount - 1),
-        totalPages: Math.max(1, Math.ceil(Math.max(0, prev.totalCount - 1) / prev.limit)),
-      }));
+      await deleteProductById(productId);
+      await fetchProducts();
+      setSelectedProducts((prev) => prev.filter((id) => id !== productId));
     } catch (err) {
       console.error('Error deleting product:', err);
       alert(err instanceof Error ? err.message : 'Failed to delete product');
@@ -173,10 +222,16 @@ export default function ProductsPage() {
   const handleBulkDelete = async () => {
     if (selectedProducts.length === 0) return;
     if (!confirm(`Are you sure you want to delete ${selectedProducts.length} product(s)?`)) return;
-    for (const productId of selectedProducts) {
-      await handleDeleteProduct(productId);
+    try {
+      for (const productId of selectedProducts) {
+        await deleteProductById(productId);
+      }
+      setSelectedProducts([]);
+      await fetchProducts();
+    } catch (err) {
+      console.error('Error deleting products:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete selected products');
     }
-    setSelectedProducts([]);
   };
 
   const updateFilter = (key: keyof ProductFilters, value: string) => {
@@ -379,7 +434,13 @@ export default function ProductsPage() {
                                 Featured
                               </span>
                             )}
+                            {product.isNew && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                New
+                              </span>
+                            )}
                           </div>
+                          <div className="text-xs text-gray-500 font-mono">SKU: {product.sku}</div>
                           <div className="text-xs text-gray-400 font-mono">{product.slug || product.id}</div>
                         </div>
                       </div>
@@ -402,6 +463,9 @@ export default function ProductsPage() {
                       <div className={clsx('text-sm font-medium', getStockColor(product.stock))}>
                         {product.stock} units
                       </div>
+                      {product.variants.length > 0 && (
+                        <div className="text-xs text-gray-500">{product.variants.length} variant{product.variants.length === 1 ? '' : 's'}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={clsx('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusColor(product.status))}>

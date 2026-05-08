@@ -8,7 +8,7 @@ function toSlug(str: string): string {
 export function adminProductToShopProduct(p: AdminProduct): ShopProduct {
   const slug = p.urlSlug || toSlug(p.name);
   const createdAt = p.createdAt ? new Date(p.createdAt) : new Date();
-  const isNew = Date.now() - createdAt.getTime() < 30 * 24 * 60 * 60 * 1000;
+  const isNew = p.isNew ?? Date.now() - createdAt.getTime() < 30 * 24 * 60 * 60 * 1000;
 
   const discount =
     p.originalPrice != null && p.originalPrice > p.price
@@ -50,6 +50,16 @@ export function adminProductToShopProduct(p: AdminProduct): ShopProduct {
     isBSTIApproved: false,
     isImported: p.originCountry !== 'Bangladesh (Local)',
     hasVariants: !!(p.variants && p.variants.length > 1),
+    variants: p.variants?.map((variant) => ({
+      id: variant.id,
+      name: variant.size || variant.color || variant.sku,
+      option: variant.size ? 'Size' : variant.color ? 'Color' : 'Variant',
+      value: variant.size || variant.color || variant.sku,
+      price: Number(variant.price || p.price),
+      stock: Number(variant.stock || 0),
+      sku: variant.sku,
+      image: variant.image,
+    })),
     isCODAvailable: p.codAvailable ?? true,
     isSameDayDelivery: false,
     freeShippingEligible: p.freeShippingEligible ?? !p.isFragile,

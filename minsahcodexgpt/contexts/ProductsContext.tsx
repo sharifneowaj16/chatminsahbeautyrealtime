@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 export interface Product {
   id: string;
+  sku?: string;
   name: string;
   category: string;
   subcategory?: string;
@@ -20,6 +21,7 @@ export interface Product {
   reviews: number;
   createdAt: string;
   featured: boolean;
+  isNew?: boolean;
   description?: string;
   weight?: string;
   ingredients?: string;
@@ -33,6 +35,7 @@ export interface Product {
     price: string;
     stock: string;
     sku: string;
+    image?: string;
   }>;
   metaTitle?: string;
   metaDescription?: string;
@@ -69,78 +72,197 @@ interface ProductsContextType {
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
 
+type ApiImage = string | {
+  url?: string;
+};
+
+type ApiVariant = {
+  id?: string;
+  sku?: string;
+  size?: string;
+  color?: string;
+  price?: string | number | null;
+  stock?: string | number | null;
+  quantity?: string | number | null;
+  image?: string | null;
+  attributes?: {
+    size?: string;
+    color?: string;
+  } | null;
+};
+
+type ApiProduct = {
+  id: string;
+  sku?: string;
+  name?: string;
+  category?: string;
+  subcategory?: string;
+  item?: string;
+  brand?: string;
+  originCountry?: string | null;
+  price?: string | number | null;
+  originalPrice?: string | number | null;
+  compareAtPrice?: string | number | null;
+  stock?: string | number | null;
+  quantity?: string | number | null;
+  status?: string;
+  featured?: boolean;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  image?: string | null;
+  images?: ApiImage[];
+  rating?: string | number | null;
+  averageRating?: string | number | null;
+  reviews?: string | number | null;
+  reviewCount?: string | number | null;
+  createdAt?: string;
+  description?: string | null;
+  tags?: string | null;
+  metaKeywords?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  slug?: string;
+  urlSlug?: string;
+  skinType?: string[];
+  ingredients?: string | null;
+  shelfLife?: string | null;
+  expiryDate?: string | null;
+  weight?: string | number | null;
+  shippingWeight?: string | null;
+  dimensions?: {
+    length?: string | number | null;
+    width?: string | number | null;
+    height?: string | number | null;
+  } | null;
+  length?: string | number | null;
+  width?: string | number | null;
+  height?: string | number | null;
+  isFragile?: boolean;
+  freeShippingEligible?: boolean;
+  discountPercentage?: string | number | null;
+  salePrice?: string | number | null;
+  offerStartDate?: string | null;
+  offerEndDate?: string | null;
+  flashSaleEligible?: boolean;
+  lowStockThreshold?: string | number | null;
+  barcode?: string | null;
+  returnEligible?: boolean;
+  codAvailable?: boolean;
+  preOrderOption?: boolean;
+  relatedProducts?: unknown;
+  variants?: ApiVariant[];
+};
+
+function stringifyOptional(value: unknown): string {
+  if (value == null) {
+    return '';
+  }
+
+  return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
+function imageToUrl(image: unknown): string {
+  if (typeof image === 'string') {
+    return image;
+  }
+
+  if (image && typeof image === 'object' && 'url' in image && typeof image.url === 'string') {
+    return image.url;
+  }
+
+  return '';
+}
+
+function mapApiProduct(product: ApiProduct): Product {
+  const images = Array.isArray(product.images)
+    ? product.images.map(imageToUrl).filter(Boolean)
+    : [];
+  const image = product.image || images[0] || '';
+
+  return {
+    id: product.id,
+    sku: product.sku || '',
+    name: product.name || '',
+    category: product.category || '',
+    subcategory: product.subcategory || '',
+    item: product.item || '',
+    brand: product.brand || '',
+    originCountry: product.originCountry || 'Bangladesh (Local)',
+    price: Number(product.price ?? 0),
+    originalPrice:
+      product.originalPrice != null || product.compareAtPrice != null
+        ? Number(product.originalPrice ?? product.compareAtPrice)
+        : undefined,
+    stock: Number(product.stock ?? product.quantity ?? 0),
+    status: (product.status || 'active') as Product['status'],
+    featured: product.featured ?? product.isFeatured ?? false,
+    isNew: product.isNew ?? false,
+    image,
+    images: images.length ? images : image ? [image] : [],
+    rating: Number(product.rating ?? product.averageRating ?? 0),
+    reviews: Number(product.reviews ?? product.reviewCount ?? 0),
+    createdAt: product.createdAt || new Date().toISOString(),
+    description: product.description || '',
+    tags: product.tags ?? product.metaKeywords ?? '',
+    metaTitle: product.metaTitle || '',
+    metaDescription: product.metaDescription || '',
+    urlSlug: product.slug ?? product.urlSlug ?? '',
+    skinType: Array.isArray(product.skinType) ? product.skinType : [],
+    ingredients: product.ingredients || '',
+    shelfLife: product.shelfLife || '',
+    expiryDate: product.expiryDate || '',
+    weight: product.weight != null ? String(product.weight) : '',
+    shippingWeight: product.shippingWeight || '',
+    dimensions: product.dimensions
+      ? {
+          length: product.dimensions.length?.toString() || '',
+          width: product.dimensions.width?.toString() || '',
+          height: product.dimensions.height?.toString() || '',
+        }
+      : {
+          length: product.length?.toString() || '',
+          width: product.width?.toString() || '',
+          height: product.height?.toString() || '',
+        },
+    isFragile: product.isFragile ?? false,
+    freeShippingEligible: product.freeShippingEligible ?? true,
+    discountPercentage: product.discountPercentage?.toString() || '',
+    salePrice: product.salePrice?.toString() || '',
+    offerStartDate: product.offerStartDate || '',
+    offerEndDate: product.offerEndDate || '',
+    flashSaleEligible: product.flashSaleEligible ?? false,
+    lowStockThreshold: product.lowStockThreshold?.toString() || '5',
+    barcode: product.barcode || '',
+    returnEligible: product.returnEligible ?? true,
+    codAvailable: product.codAvailable ?? true,
+    preOrderOption: product.preOrderOption ?? false,
+    relatedProducts: stringifyOptional(product.relatedProducts),
+    variants: Array.isArray(product.variants)
+      ? product.variants.map((variant) => ({
+          id: variant.id || '',
+          sku: variant.sku || '',
+          size: variant.attributes?.size || variant.size || '',
+          color: variant.attributes?.color || variant.color || '',
+          price: String(variant.price ?? product.price ?? 0),
+          stock: String(variant.stock ?? variant.quantity ?? 0),
+          image: variant.image || '',
+        }))
+      : [],
+  };
+}
+
 export function ProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // API থেকে products fetch করো
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/products?limit=100');
-      if (!res.ok) throw new Error('Failed to fetch');
+      const res = await fetch('/api/products?activeOnly=false&limit=500');
+      if (!res.ok) throw new Error('Failed to fetch products');
+
       const data = await res.json();
-
-      // API response কে Product format-এ convert করো
-      const mapped: Product[] = (data.products || []).map((p: {
-        id: string;
-        name: string;
-        category: string;
-        brand: string;
-        price: number;
-        originalPrice?: number;
-        stock: number;
-        status: string;
-        image: string;
-        images?: string[];
-        rating: number;
-        reviews: number;
-        createdAt: string;
-        featured: boolean;
-        description?: string;
-        tags?: string;
-        metaTitle?: string;
-        metaDescription?: string;
-        slug?: string;
-        variants?: Array<{
-          id: string;
-          sku: string;
-          name: string;
-          price: number;
-          stock: number;
-        }>;
-      }) => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        brand: p.brand,
-        originCountry: 'Bangladesh (Local)',
-        price: p.price,
-        originalPrice: p.originalPrice ?? undefined,
-        stock: p.stock,
-        status: p.status as 'active' | 'inactive' | 'out_of_stock',
-        image: p.image || '✨',
-        images: p.images,
-        rating: p.rating,
-        reviews: p.reviews,
-        createdAt: p.createdAt,
-        featured: p.featured,
-        description: p.description,
-        tags: p.tags,
-        metaTitle: p.metaTitle,
-        metaDescription: p.metaDescription,
-        urlSlug: p.slug,
-        variants: p.variants?.map(v => ({
-          id: v.id,
-          sku: v.sku,
-          size: '',
-          color: '',
-          price: String(v.price),
-          stock: String(v.stock),
-        })),
-      }));
-
-      setProducts(mapped);
+      setProducts((data.products || []).map(mapApiProduct));
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
@@ -158,19 +280,19 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   };
 
   const addProduct = (product: Product) => {
-    setProducts(prev => [product, ...prev]);
+    setProducts((prev) => [product, ...prev]);
   };
 
   const updateProduct = (id: string, updatedProduct: Product) => {
-    setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+    setProducts((prev) => prev.map((product) => (product.id === id ? updatedProduct : product)));
   };
 
   const deleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setProducts((prev) => prev.filter((product) => product.id !== id));
   };
 
   const getProductById = (id: string) => {
-    return products.find(p => p.id === id);
+    return products.find((product) => product.id === id || product.urlSlug === id);
   };
 
   return (

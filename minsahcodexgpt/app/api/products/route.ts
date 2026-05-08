@@ -1,67 +1,67 @@
-// app/api/products/route.ts
-// IMPORTANT: তোমার existing route.ts এ map() function এ শুধু slug যোগ করতে হবে।
-// নিচে complete file দেওয়া আছে যেটায় slug যোগ করা।
-
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
 import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
+import { AdminProductError, createAdminProduct } from '@/lib/admin-products';
 
 export const dynamic = 'force-dynamic';
 
-function toOptionalNumber(value: unknown): number | null {
-  if (value == null || value === '') return null;
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : null;
-}
-
-function validateOptionalNumber(value: unknown, label: string): string | null {
-  if ((value == null || value === '') || toOptionalNumber(value) != null) {
+function parseRelatedProducts(value: string | null): unknown {
+  if (!value) {
     return null;
   }
 
-  return `${label} must be a valid number`;
-}
-
-function buildStoredSubcategory(subcategory: unknown, item: unknown): string | null {
-  const normalizedSubcategory =
-    typeof subcategory === 'string' ? subcategory.trim() : '';
-  const normalizedItem = typeof item === 'string' ? item.trim() : '';
-
-  if (!normalizedSubcategory) {
+  const trimmed = value.trim();
+  if (!trimmed) {
     return null;
   }
 
-  return normalizedItem
-    ? `${normalizedSubcategory} > ${normalizedItem}`
-    : normalizedSubcategory;
+  if (!trimmed.startsWith('[') && !trimmed.startsWith('{')) {
+    return trimmed;
+  }
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
+function getNumericFilter(value: string | null): number | null {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search      = searchParams.get('search')     || '';
-    const category    = searchParams.get('category')   || '';
-    const featured    = searchParams.get('featured')   || '';
-    const isNew       = searchParams.get('new')        || '';
-    const activeOnly  = searchParams.get('activeOnly') !== 'false';
-    const page        = Math.max(1, parseInt(searchParams.get('page')  || '1'));
-    const limit       = Math.min(100, parseInt(searchParams.get('limit') || '20'));
-    const skip        = (page - 1) * limit;
-    const sortBy      = searchParams.get('sortBy')      || 'createdAt';
-    const sortOrder   = (searchParams.get('sortOrder')  || 'desc') as 'asc' | 'desc';
-    const slugParam   = searchParams.get('slug')        || '';
+    const search = searchParams.get('search')?.trim() || '';
+    const category = searchParams.get('category')?.trim() || '';
+    const brand = searchParams.get('brand')?.trim() || '';
+    const featured = searchParams.get('featured') || '';
+    const isNew = searchParams.get('new') || '';
+    const activeOnly = searchParams.get('activeOnly') !== 'false';
+    const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10));
+    const requestedLimit = Number.parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(200, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 20));
+    const skip = (page - 1) * limit;
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
+    const slugParam = searchParams.get('slug')?.trim() || '';
+    const minPrice = getNumericFilter(searchParams.get('minPrice'));
+    const maxPrice = getNumericFilter(searchParams.get('maxPrice'));
 
     const where: Prisma.ProductWhereInput = { deletedAt: null };
 
     if (activeOnly) where.isActive = true;
     if (featured === 'true') where.isFeatured = true;
-    if (isNew    === 'true') where.isNew      = true;
-
-    if (slugParam) {
-      where.slug = slugParam;
-    }
+    if (isNew === 'true') where.isNew = true;
+    if (slugParam) where.slug = slugParam;
 
     if (category) {
       where.category = {
@@ -69,22 +69,35 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    if (brand) {
+      where.brand = {
+        OR: [{ name: { contains: brand, mode: 'insensitive' } }, { slug: brand }],
+      };
+    }
+
+    if (minPrice != null || maxPrice != null) {
+      where.price = {
+        ...(minPrice != null ? { gte: minPrice } : {}),
+        ...(maxPrice != null ? { lte: maxPrice } : {}),
+      };
+    }
+
     if (search) {
       where.OR = [
-        { name:             { contains: search, mode: 'insensitive' } },
-        { description:      { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
         { shortDescription: { contains: search, mode: 'insensitive' } },
-        { sku:              { contains: search, mode: 'insensitive' } },
-        { brand: { name:    { contains: search, mode: 'insensitive' } } },
+        { sku: { contains: search, mode: 'insensitive' } },
+        { brand: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
     const allowedSortFields: Record<string, Prisma.ProductOrderByWithRelationInput> = {
-      createdAt:  { createdAt: sortOrder },
-      price:      { price: sortOrder },
-      name:       { name: sortOrder },
-      rating:     { averageRating: sortOrder },
-      reviewCount:{ reviewCount: sortOrder },
+      createdAt: { createdAt: sortOrder },
+      price: { price: sortOrder },
+      name: { name: sortOrder },
+      rating: { averageRating: sortOrder },
+      reviewCount: { reviewCount: sortOrder },
     };
     const orderBy = allowedSortFields[sortBy] || { createdAt: 'desc' };
 
@@ -95,49 +108,124 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         include: {
-          images:   { orderBy: { sortOrder: 'asc' }, take: 3 },
+          images: { orderBy: { sortOrder: 'asc' }, take: 10 },
           category: { select: { id: true, name: true, slug: true } },
-          brand:    { select: { id: true, name: true, slug: true } },
-          variants: { select: { id: true, price: true, quantity: true, attributes: true }, take: 10 },
+          brand: { select: { id: true, name: true, slug: true } },
+          variants: {
+            select: {
+              id: true,
+              sku: true,
+              name: true,
+              price: true,
+              quantity: true,
+              attributes: true,
+              image: true,
+            },
+            take: 20,
+          },
         },
       }),
       prisma.product.count({ where }),
     ]);
 
-    const formatted = products.map((p) => {
-      const mainImage = p.images.find((i) => i.isDefault) || p.images[0];
+    const formatted = products.map((product) => {
+      const mainImage = product.images.find((image) => image.isDefault) || product.images[0];
+      const price = product.price.toNumber();
+      const compareAtPrice = product.compareAtPrice ? product.compareAtPrice.toNumber() : null;
+
       return {
-        id:            p.id,
-        slug:          p.slug,              // ← slug এখানে
-        sku:           p.sku,
-        name:          p.name,
-        description:   p.description   || '',
-        shortDescription: p.shortDescription || '',
-        price:         p.price.toNumber(),
-        originalPrice: p.compareAtPrice ? p.compareAtPrice.toNumber() : null,
-        image:         mainImage?.url   || '',
-        images:        p.images.map((i) => i.url),
-        stock:         p.quantity,
-        category:      p.category?.name || '',
-        categorySlug:  p.category?.slug || '',
-        brand:         p.brand?.name    || '',
-        brandSlug:     p.brand?.slug    || '',
-        rating:        p.averageRating?.toNumber() || 0,
-        reviews:       p.reviewCount    || 0,
-        inStock:       p.quantity > 0,
-        isNew:         p.isNew,
-        isFeatured:    p.isFeatured,
-        status:        !p.isActive ? 'inactive' : p.quantity === 0 ? 'out_of_stock' : 'active',
-        featured:      p.isFeatured,
-        codAvailable:  p.codAvailable,
-        returnEligible:p.returnEligible,
-        createdAt:     p.createdAt.toISOString(),
-        variants: p.variants.map((v) => ({
-          id:         v.id,
-          price:      v.price?.toNumber() ?? p.price.toNumber(),
-          stock:      v.quantity,
-          attributes: v.attributes || {},
+        id: product.id,
+        slug: product.slug,
+        sku: product.sku,
+        name: product.name,
+        description: product.description || '',
+        shortDescription: product.shortDescription || '',
+        price,
+        originalPrice: compareAtPrice,
+        compareAtPrice,
+        salePrice: product.salePrice ? product.salePrice.toNumber() : null,
+        costPrice: product.costPrice ? product.costPrice.toNumber() : null,
+        discountPercentage: product.discountPercentage?.toNumber() || 0,
+        image: mainImage?.url || '',
+        images: product.images.map((image) => ({
+          url: image.url,
+          alt: image.alt || product.name,
+          title: image.title || product.name,
+          sortOrder: image.sortOrder,
+          isDefault: image.isDefault,
         })),
+        stock: product.quantity,
+        quantity: product.quantity,
+        inStock: product.quantity > 0,
+        lowStockThreshold: product.lowStockThreshold,
+        trackInventory: product.trackInventory,
+        allowBackorder: product.allowBackorder,
+        category: product.category?.name || '',
+        categoryId: product.categoryId || '',
+        categorySlug: product.category?.slug || '',
+        brand: product.brand?.name || '',
+        brandId: product.brandId || '',
+        brandSlug: product.brand?.slug || '',
+        subcategory: product.subcategory || '',
+        isActive: product.isActive,
+        isFeatured: product.isFeatured,
+        isNew: product.isNew,
+        status: !product.isActive ? 'inactive' : product.quantity === 0 ? 'out_of_stock' : 'active',
+        featured: product.isFeatured,
+        rating: product.averageRating?.toNumber() || 0,
+        reviews: product.reviewCount || 0,
+        reviewCount: product.reviewCount || 0,
+        averageRating: product.averageRating?.toNumber() || 0,
+        codAvailable: product.codAvailable,
+        returnEligible: product.returnEligible,
+        preOrderOption: product.preOrderOption,
+        freeShippingEligible: !product.isFragile,
+        metaTitle: product.metaTitle || '',
+        metaDescription: product.metaDescription || '',
+        metaKeywords: product.metaKeywords || '',
+        tags: product.metaKeywords || '',
+        bengaliName: product.bengaliName || '',
+        bengaliDescription: product.bengaliDescription || '',
+        focusKeyword: product.focusKeyword || '',
+        ogTitle: product.ogTitle || '',
+        ogImageUrl: product.ogImageUrl || '',
+        canonicalUrl: product.canonicalUrl || '',
+        skinType: product.skinType || [],
+        ingredients: product.ingredients || '',
+        shelfLife: product.shelfLife || '',
+        expiryDate: product.expiryDate?.toISOString() || null,
+        originCountry: product.originCountry || 'Bangladesh (Local)',
+        weight: product.weight ? product.weight.toNumber() : null,
+        length: product.length ? product.length.toNumber() : null,
+        width: product.width ? product.width.toNumber() : null,
+        height: product.height ? product.height.toNumber() : null,
+        dimensions: {
+          length: product.length ? product.length.toNumber().toString() : '',
+          width: product.width ? product.width.toNumber().toString() : '',
+          height: product.height ? product.height.toNumber().toString() : '',
+        },
+        shippingWeight: product.shippingWeight || '',
+        isFragile: product.isFragile || false,
+        flashSaleEligible: product.flashSaleEligible || false,
+        offerStartDate: product.offerStartDate?.toISOString() || null,
+        offerEndDate: product.offerEndDate?.toISOString() || null,
+        barcode: product.barcode || '',
+        condition: product.condition || 'NEW',
+        gtin: product.gtin || '',
+        relatedProducts: parseRelatedProducts(product.relatedProducts),
+        hasVariants: product.variants.length > 0,
+        variants: product.variants.map((variant) => ({
+          id: variant.id,
+          sku: variant.sku,
+          name: variant.name,
+          price: variant.price?.toNumber() ?? price,
+          stock: variant.quantity,
+          quantity: variant.quantity,
+          attributes: variant.attributes || {},
+          image: variant.image || null,
+        })),
+        createdAt: product.createdAt.toISOString(),
+        updatedAt: product.updatedAt.toISOString(),
       };
     });
 
@@ -167,162 +255,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
     }
 
-    const body = await request.json();
+    const product = await createAdminProduct(await request.json());
 
-    if (!body.name) return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
-
-    const numericValidationError =
-      validateOptionalNumber(body.weight, 'Weight') ||
-      validateOptionalNumber(body.dimensions?.length, 'Length') ||
-      validateOptionalNumber(body.dimensions?.width, 'Width') ||
-      validateOptionalNumber(body.dimensions?.height, 'Height');
-    if (numericValidationError) {
-      return NextResponse.json({ error: numericValidationError }, { status: 400 });
-    }
-
-    // Resolve category
-    let categoryId: string | null = null;
-    if (body.category) {
-      const cat = await prisma.category.findFirst({
-        where: { OR: [{ name: body.category }, { slug: body.category }] },
-      });
-      categoryId = cat?.id ?? null;
-    }
-
-    // Resolve / create brand
-    let brandId: string | null = null;
-    if (body.brand) {
-      let brand = await prisma.brand.findFirst({
-        where: { OR: [{ name: body.brand }, { slug: body.brand }] },
-      });
-      if (!brand) {
-        brand = await prisma.brand.create({
-          data: {
-            name:     body.brand,
-            slug:     body.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-            isActive: true,
-          },
-        });
-      }
-      brandId = brand.id;
-    }
-
-    // Generate unique slug
-    const baseName = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    let slug = body.urlSlug || baseName;
-    const existingSlug = await prisma.product.findUnique({ where: { slug } });
-    if (existingSlug) slug = `${slug}-${Date.now()}`;
-
-    // Generate unique SKU
-    const baseSku = `MB-${Date.now()}`;
-    const sku = body.variants?.[0]?.sku || baseSku;
-    const existingSku = await prisma.product.findUnique({ where: { sku } });
-    const finalSku = existingSku ? `${sku}-${Date.now()}` : sku;
-
-    const requestedStatus = typeof body.status === 'string' ? body.status : null;
-    const forceOutOfStock = requestedStatus === 'out_of_stock';
-    const storedSubcategory = buildStoredSubcategory(body.subcategory, body.item);
-
-    const basePrice = body.price != null
-      ? Number(body.price)
-      : (body.variants?.[0]?.price ? Number(body.variants[0].price) : 0);
-
-    const calculatedStock = Array.isArray(body.variants)
-      ? body.variants.reduce((sum: number, v: { stock?: string | number }) => sum + (Number(v.stock) || 0), 0)
-      : (body.stock ?? 0);
-    const totalStock = forceOutOfStock ? 0 : calculatedStock;
-
-    const product = await prisma.product.create({
-      data: {
-        sku:              finalSku,
-        name:             body.name,
-        slug,
-        description:      body.description      || null,
-        shortDescription: body.shortDescription || null,
-        price:            basePrice,
-        compareAtPrice:   body.originalPrice    ? Number(body.originalPrice) : null,
-        quantity:         totalStock,
-        lowStockThreshold:body.lowStockThreshold ? Number(body.lowStockThreshold) : 5,
-        weight:           toOptionalNumber(body.weight),
-        length:           toOptionalNumber(body.dimensions?.length),
-        width:            toOptionalNumber(body.dimensions?.width),
-        height:           toOptionalNumber(body.dimensions?.height),
-        isActive:         requestedStatus !== 'inactive',
-        isFeatured:       body.featured           || false,
-        categoryId,
-        brandId,
-        metaTitle:          body.metaTitle          || null,
-        metaDescription:    body.metaDescription    || null,
-        metaKeywords:       body.tags               || null,
-        bengaliName:        body.bengaliName        || null,
-        bengaliDescription: body.bengaliDescription || null,
-        focusKeyword:       body.focusKeyword       || null,
-        ogTitle:            body.ogTitle            || null,
-        ogImageUrl:         body.ogImageUrl         || null,
-        canonicalUrl:       body.canonicalUrl       || null,
-        subcategory:        storedSubcategory,
-        skinType:           body.skinType           || [],
-        ingredients:        body.ingredients        || null,
-        shelfLife:          body.shelfLife          || null,
-        expiryDate:         body.expiryDate ? new Date(body.expiryDate) : null,
-        originCountry:      body.originCountry      || 'Bangladesh (Local)',
-        shippingWeight:     body.shippingWeight     || null,
-        isFragile:          body.isFragile          || false,
-        discountPercentage: body.discountPercentage ? Number(body.discountPercentage) : null,
-        salePrice:          body.salePrice          ? Number(body.salePrice) : null,
-        offerStartDate:     body.offerStartDate ? new Date(body.offerStartDate) : null,
-        offerEndDate:       body.offerEndDate   ? new Date(body.offerEndDate)   : null,
-        flashSaleEligible:  body.flashSaleEligible  || false,
-        returnEligible:     body.returnEligible  !== false,
-        codAvailable:       body.codAvailable    !== false,
-        preOrderOption:     body.preOrderOption     || false,
-        barcode:            body.barcode            || null,
-        relatedProducts:    body.relatedProducts    || null,
-        condition:          body.condition          || 'NEW',
-        gtin:               body.gtin               || null,
-        averageRating:      body.averageRating ? Number(body.averageRating) : null,
-        reviewCount:        body.reviewCount   ? Number(body.reviewCount)   : 0,
-      },
-    });
-
-    // Create images
-    if (Array.isArray(body.images) && body.images.length > 0) {
-      await prisma.productImage.createMany({
-        data: body.images.map((img: { url: string; alt?: string; title?: string; sortOrder?: number }, idx: number) => ({
-          productId: product.id,
-          url:       img.url,
-          alt:       img.alt   || body.name,
-          title:     img.title || body.name,
-          sortOrder: img.sortOrder ?? idx,
-          isDefault: idx === 0,
-        })),
-      });
-    }
-
-    // Create variants
-    if (Array.isArray(body.variants) && body.variants.length > 0) {
-      const variantData = [];
-      for (const v of body.variants) {
-        const vSku = v.sku || `${finalSku}-V${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-        const conflict = await prisma.productVariant.findUnique({ where: { sku: vSku } });
-        if (!conflict) {
-          variantData.push({
-            productId:  product.id,
-            sku:        vSku,
-            name:       v.size || v.color || body.name,
-            price:      v.price ? Number(v.price) : basePrice,
-            quantity:   forceOutOfStock ? 0 : (v.stock ? Number(v.stock) : 0),
-            attributes: { size: v.size || '', color: v.color || '' },
-          });
-        }
-      }
-      if (variantData.length > 0) {
-        await prisma.productVariant.createMany({ data: variantData });
-      }
-    }
-
-    return NextResponse.json({ success: true, product: { id: product.id, slug: product.slug, name: product.name } }, { status: 201 });
+    return NextResponse.json(
+      { success: true, product: { id: product.id, slug: product.slug, name: product.name } },
+      { status: 201 }
+    );
   } catch (error) {
+    if (error instanceof AdminProductError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     console.error('POST /api/products error:', error);
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
   }

@@ -135,7 +135,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
     <>
       <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden group">
         {/* ── Image ─────────────────────────────────────────────────────── */}
-        <Link href={`/products/${product.id}`} className="block relative">
+        <Link href={`/products/${product.slug || product.id}`} className="block relative">
           <div className="relative w-full aspect-square bg-minsah-accent/30 flex items-center justify-center overflow-hidden">
             <ProductImage src={product.image} alt={product.name} />
 
@@ -194,7 +194,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
             </p>
           </Link>
 
-          <Link href={`/products/${product.id}`}>
+          <Link href={`/products/${product.slug || product.id}`}>
             <h3 className="font-semibold text-sm md:text-base text-minsah-dark mb-1 line-clamp-2 hover:text-minsah-primary transition-colors min-h-[2.5rem]">
               {product.name}
             </h3>
