@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get('activeOnly') !== 'false';
     const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10));
     const requestedLimit = Number.parseInt(searchParams.get('limit') || '20', 10);
-    const limit = Math.min(200, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 20));
+    const limit = Math.min(500, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 20));
     const skip = (page - 1) * limit;
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
@@ -240,7 +240,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('GET /api/products error:', error);
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: 'Failed to fetch products', details: message },
+      { status: 500 }
+    );
   }
 }
 

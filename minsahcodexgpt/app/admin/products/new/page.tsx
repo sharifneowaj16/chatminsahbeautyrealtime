@@ -614,18 +614,18 @@ export default function NewProductPage() {
         dimensions: (formData.dimensions.length || formData.dimensions.width || formData.dimensions.height)
           ? formData.dimensions
           : undefined,
-        isFragile: formData.isFragile || undefined,
+        isFragile: formData.isFragile,
         discountPercentage: formData.discountPercentage || undefined,
         salePrice: formData.salePrice || undefined,
         originalPrice,
         offerStartDate: formData.offerStartDate || undefined,
         offerEndDate: formData.offerEndDate || undefined,
-        flashSaleEligible: formData.flashSaleEligible || undefined,
+        flashSaleEligible: formData.flashSaleEligible,
         lowStockThreshold: formData.lowStockThreshold || undefined,
         barcode: formData.barcode || undefined,
-        returnEligible: formData.returnEligible || undefined,
-        codAvailable: formData.codAvailable || undefined,
-        preOrderOption: formData.preOrderOption || undefined,
+        returnEligible: formData.returnEligible,
+        codAvailable: formData.codAvailable,
+        preOrderOption: formData.preOrderOption,
         relatedProducts: formData.relatedProducts || undefined,
       };
 

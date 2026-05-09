@@ -64,7 +64,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('GET /api/admin/products error:', error);
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: 'Failed to fetch products', details: message },
+      { status: 500 }
+    );
   }
 }
 

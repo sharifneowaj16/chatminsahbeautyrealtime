@@ -81,7 +81,7 @@ interface HomeProductCardItem {
 export default function HomePage() {
   const router = useRouter();
   const { items } = useCart();
-  const { products } = useProducts();
+  const { products, loading: productsLoading, error: productsError, refreshProducts } = useProducts();
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -387,6 +387,44 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* Loading State */}
+      {productsLoading && (
+        <div className="px-4 py-8 bg-white text-center">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+            <div className="grid grid-cols-2 gap-3">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="bg-gray-100 rounded-xl p-3">
+                  <div className="w-full aspect-square bg-gray-200 rounded-lg mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {productsError && !productsLoading && (
+        <div className="px-4 py-6 bg-red-50">
+          <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-red-200">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-red-700">Could not load products</p>
+            </div>
+            <button
+              onClick={() => refreshProducts()}
+              className="px-3 py-1.5 bg-minsah-primary text-white text-sm rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Browse by Categories */}
       <section className="px-4 py-6 bg-white">

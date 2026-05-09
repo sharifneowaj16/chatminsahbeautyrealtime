@@ -144,9 +144,11 @@ export default function ProductsPage() {
   });
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams({
         page: String(pagination.page),
@@ -173,7 +175,9 @@ export default function ProductsPage() {
         totalPages: data.pagination?.totalPages || 1,
       }));
     } catch (err) {
-      console.error('Error fetching products:', err);
+      const message = err instanceof Error ? err.message : 'Failed to fetch products';
+      console.error('Error fetching products:', message);
+      setFetchError(message);
     } finally {
       setLoading(false);
     }
@@ -370,6 +374,28 @@ export default function ProductsPage() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Banner */}
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-red-800">
+                <span className="font-medium">Failed to load products:</span> {fetchError}
+              </p>
+            </div>
+            <button
+              onClick={() => fetchProducts()}
+              className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors duration-200"
+            >
+              Retry
+            </button>
           </div>
         </div>
       )}

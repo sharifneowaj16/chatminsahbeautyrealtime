@@ -61,6 +61,7 @@ export interface Product {
 interface ProductsContextType {
   products: Product[];
   loading: boolean;
+  error: string | null;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   saveProducts: (newProducts: Product[]) => void;
   addProduct: (product: Product) => void;
@@ -254,17 +255,52 @@ function mapApiProduct(product: ApiProduct): Product {
 export function ProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (retryCount = 0) => {
+    const MAX_RETRIES = 3;
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/products?activeOnly=false&limit=500');
-      if (!res.ok) throw new Error('Failed to fetch products');
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => '');
+        let errorMessage = `HTTP ${res.status}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.details || errorJson.error || errorMessage;
+        } catch {
+          if (errorText) errorMessage += `: ${errorText}`;
+        }
+        throw new Error(`Failed to fetch products (${errorMessage})`);
+      }
 
       const data = await res.json();
-      setProducts((data.products || []).map(mapApiProduct));
-    } catch (error) {
-      console.error('Error fetching products:', error);
+      const mapped = (data.products || []).map(mapApiProduct);
+      setProducts(mapped);
+      setError(null);
+
+      if (data.pagination) {
+        const { totalCount, limit } = data.pagination;
+        if (totalCount > limit) {
+          console.warn(
+            `[ProductsContext] Only ${limit} of ${totalCount} total products were returned. ` +
+            `Consider pagination or increasing the limit.`
+          );
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error fetching products';
+      console.error(`[ProductsContext] Fetch failed (attempt ${retryCount + 1}/${MAX_RETRIES + 1}):`, message);
+
+      if (retryCount < MAX_RETRIES) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
+        console.log(`[ProductsContext] Retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return fetchProducts(retryCount + 1);
+      }
+
+      setError(message);
       setProducts([]);
     } finally {
       setLoading(false);
@@ -273,6 +309,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchProducts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const saveProducts = (newProducts: Product[]) => {
@@ -300,6 +337,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       value={{
         products,
         loading,
+        error,
         setProducts,
         saveProducts,
         addProduct,
