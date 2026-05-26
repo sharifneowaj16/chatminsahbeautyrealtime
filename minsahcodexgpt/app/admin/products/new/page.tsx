@@ -21,6 +21,11 @@ import {
   Percent,
   AlertCircle,
   Settings,
+  Sparkles,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Megaphone,
 } from 'lucide-react';
 
 interface ProductVariant {
@@ -40,7 +45,6 @@ interface ProductImage {
 }
 
 interface ProductFormData {
-  // Basic Info
   name: string;
   category: string;
   subcategory: string;
@@ -50,8 +54,6 @@ interface ProductFormData {
   status: 'active' | 'inactive' | 'out_of_stock';
   featured: boolean;
   description: string;
-
-  // Product Specifications
   weight: string;
   ingredients: string;
   skinType: string[];
@@ -61,14 +63,8 @@ interface ProductFormData {
   gtin: string;
   averageRating: number;
   reviewCount: number;
-
-  // Images
   images: ProductImage[];
-
-  // Variants
   variants: ProductVariant[];
-
-  // SEO Fields
   metaTitle: string;
   metaDescription: string;
   urlSlug: string;
@@ -80,67 +76,57 @@ interface ProductFormData {
   ogImageFile: File | null;
   ogImagePreview: string;
   imageAltTexts: string[];
-
-  // Shipping & Delivery
   shippingWeight: string;
-  dimensions: {
-    length: string;
-    width: string;
-    height: string;
-  };
+  dimensions: { length: string; width: string; height: string };
   isFragile: boolean;
-
-  // Discount & Offers
   discountPercentage: string;
   salePrice: string;
   offerStartDate: string;
   offerEndDate: string;
   flashSaleEligible: boolean;
-
-  // Stock Management
   lowStockThreshold: string;
   barcode: string;
-
-  // Additional Options
   returnEligible: boolean;
   codAvailable: boolean;
   preOrderOption: boolean;
   relatedProducts: string;
 }
 
+interface AiFacebookAdAngle {
+  headline: string;
+  primaryText: string;
+  targetAudience: string;
+}
+
 const brands = [
-  'Maybelline',
-  'L\'Oréal Paris',
-  'MAC',
-  'Estée Lauder',
-  'Clinique',
-  'Lancôme',
-  'NARS',
-  'Urban Decay',
-  'Chanel',
-  'Dior',
-  'Fresh',
-  'Neutrogena',
-  'CeraVe',
-  'The Ordinary',
-  'Other',
+  'Maybelline', "L'Oréal Paris", 'MAC', 'Estée Lauder', 'Clinique',
+  'Lancôme', 'NARS', 'Urban Decay', 'Chanel', 'Dior', 'Fresh',
+  'Neutrogena', 'CeraVe', 'The Ordinary', 'Other',
 ];
 
 const countries = [
-  'Bangladesh (Local)',
-  'USA',
-  'France',
-  'UK',
-  'Japan',
-  'South Korea',
-  'Germany',
-  'Italy',
-  'Thailand',
-  'India',
-  'China',
+  'Bangladesh (Local)', 'USA', 'France', 'UK', 'Japan',
+  'South Korea', 'Germany', 'Italy', 'Thailand', 'India', 'China',
 ];
 
 const skinTypes = ['Oily', 'Dry', 'Combination', 'Sensitive', 'Normal', 'All Skin Types'];
+
+const defaultForm: ProductFormData = {
+  name: '', category: 'Make Up', subcategory: '', item: '', brand: '',
+  originCountry: 'Bangladesh (Local)', status: 'active', featured: false,
+  description: '', weight: '', ingredients: '', skinType: [], expiryDate: '',
+  shelfLife: '', images: [],
+  variants: [{ id: '1', size: '', color: '', price: '', stock: '', sku: '' }],
+  metaTitle: '', metaDescription: '', urlSlug: '', tags: '',
+  bengaliProductName: '', bengaliMetaDescription: '', focusKeyword: '',
+  ogTitle: '', ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
+  productCondition: 'NEW', gtin: '', averageRating: 0, reviewCount: 0,
+  shippingWeight: '', dimensions: { length: '', width: '', height: '' },
+  isFragile: false, discountPercentage: '', salePrice: '',
+  offerStartDate: '', offerEndDate: '', flashSaleEligible: false,
+  lowStockThreshold: '10', barcode: '',
+  returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '',
+};
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -148,77 +134,55 @@ export default function NewProductPage() {
   const { getActiveCategories } = useCategories();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Transform categories from context to the format needed by the form
   const categoriesData = useMemo(() => {
-    return getActiveCategories().map(cat => ({
+    return getActiveCategories().map((cat) => ({
       name: cat.name,
       subcategories: cat.subcategories,
     }));
   }, [getActiveCategories]);
 
-  const [formData, setFormData] = useState<ProductFormData>({
-    name: '',
-    category: 'Make Up',
-    subcategory: '',
-    item: '',
-    brand: '',
-    originCountry: 'Bangladesh (Local)',
-    status: 'active',
-    featured: false,
-    description: '',
-    weight: '',
-    ingredients: '',
-    skinType: [],
-    expiryDate: '',
-    shelfLife: '',
-    images: [],
-    variants: [
-      {
-        id: '1',
-        size: '',
-        color: '',
-        price: '',
-        stock: '',
-        sku: '',
-      },
-    ],
-    metaTitle: '',
-    metaDescription: '',
-    urlSlug: '',
-    tags: '',
-    bengaliProductName: '',
-    bengaliMetaDescription: '',
-    focusKeyword: '',
-    ogTitle: '',
-    ogImageFile: null,
-    ogImagePreview: '',
-    imageAltTexts: [],
-    productCondition: 'NEW',
-    gtin: '',
-    averageRating: 0,
-    reviewCount: 0,
-    shippingWeight: '',
-    dimensions: {
-      length: '',
-      width: '',
-      height: '',
-    },
-    isFragile: false,
-    discountPercentage: '',
-    salePrice: '',
-    offerStartDate: '',
-    offerEndDate: '',
-    flashSaleEligible: false,
-    lowStockThreshold: '10',
-    barcode: '',
-    returnEligible: true,
-    codAvailable: true,
-    preOrderOption: false,
-    relatedProducts: '',
-  });
-
+  const [formData, setFormData] = useState<ProductFormData>(defaultForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ── AI Generate state ──
+  const [aiInput, setAiInput] = useState('');
+  const [aiModel, setAiModel] = useState('claude-sonnet-4-20250514');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [facebookAdAngle, setFacebookAdAngle] = useState<AiFacebookAdAngle | null>(null);
+  const [showAdAngle, setShowAdAngle] = useState(false);
+  const [aiApplied, setAiApplied] = useState(false);
+  const [aiAppliedModel, setAiAppliedModel] = useState('');
+  const [marketNote, setMarketNote] = useState('');
+  const [competitionNote, setCompetitionNote] = useState('');
+
+  const AI_MODELS = [
+    {
+      id: 'claude-haiku-4-5-20251001',
+      label: 'Haiku — দ্রুত (~5s)',
+      badge: 'সাশ্রয়ী',
+      badgeColor: 'bg-green-100 text-green-700',
+      cost: '~$0.02/product',
+      note: 'Simple products এর জন্য ভালো',
+    },
+    {
+      id: 'claude-sonnet-4-20250514',
+      label: 'Sonnet — balanced (~12s)',
+      badge: 'Recommended',
+      badgeColor: 'bg-purple-100 text-purple-700',
+      cost: '~$0.09/product',
+      note: 'Best quality-cost balance',
+    },
+    {
+      id: 'claude-opus-4-20250514',
+      label: 'Opus — সেরা (~25s)',
+      badge: 'Premium',
+      badgeColor: 'bg-amber-100 text-amber-700',
+      cost: '~$0.40/product',
+      note: 'Complex/premium products এর জন্য',
+    },
+  ];
 
   if (!hasPermission(PERMISSIONS.PRODUCTS_CREATE)) {
     return (
@@ -228,181 +192,190 @@ export default function NewProductPage() {
     );
   }
 
-  // Handle Image Upload - Fixed version
+  // ── AI Generate handler ────────────────────────────────────────────────
+  const handleAiGenerate = async () => {
+    if (!aiInput.trim()) return;
+    setIsGenerating(true);
+    setAiError('');
+    setFacebookAdAngle(null);
+    setAiApplied(false);
+
+    try {
+      const data = await adminFetchJson<{ success: boolean; product: Record<string, unknown> }>(
+        '/api/admin/products/ai-generate',
+        { method: 'POST', json: { productName: aiInput.trim(), model: aiModel } }
+      );
+
+      if (!data.success || !data.product) throw new Error('No product data returned');
+
+      const p = data.product as Record<string, unknown>;
+
+      // Save Facebook ad angle separately (not part of form)
+      if (p.facebookAdAngle) {
+        setFacebookAdAngle(p.facebookAdAngle as AiFacebookAdAngle);
+        setShowAdAngle(true);
+      }
+      if (p.marketPriceNote) setMarketNote(String(p.marketPriceNote));
+      if (p.competitionNote) setCompetitionNote(String(p.competitionNote));
+
+      // Map AI response → form fields
+      const variants: ProductVariant[] = Array.isArray(p.variants) && (p.variants as unknown[]).length > 0
+        ? (p.variants as Array<Record<string, unknown>>).map((v, i) => ({
+            id: String(v.id || Date.now() + i),
+            size: String(v.size || ''),
+            color: String(v.color || ''),
+            price: '',            // always blank — user sets price
+            stock: String(v.stock || '10'),
+            sku: String(v.sku || ''),
+          }))
+        : defaultForm.variants;
+
+      const dims = (p.dimensions as Record<string, string> | undefined) || { length: '', width: '', height: '' };
+
+      setFormData((prev) => ({
+        ...prev,
+        name:           String(p.name || prev.name),
+        category:       String(p.category || prev.category),
+        subcategory:    String(p.subcategory || ''),
+        item:           String(p.item || ''),
+        brand:          String(p.brand || prev.brand),
+        originCountry:  String(p.originCountry || 'Bangladesh (Local)'),
+        status:         'active',
+        featured:       Boolean(p.featured),
+        description:    String(p.description || ''),
+        weight:         String(p.weight || ''),
+        ingredients:    String(p.ingredients || ''),
+        skinType:       Array.isArray(p.skinType) ? (p.skinType as string[]) : [],
+        shelfLife:      String(p.shelfLife || ''),
+        productCondition: 'NEW',
+        averageRating:  0,
+        reviewCount:    0,
+        variants,
+        metaTitle:              String(p.metaTitle || ''),
+        metaDescription:        String(p.metaDescription || ''),
+        urlSlug:                String(p.urlSlug || ''),
+        tags:                   String(p.tags || ''),
+        bengaliProductName:     String(p.bengaliProductName || ''),
+        bengaliMetaDescription: String(p.bengaliMetaDescription || ''),
+        focusKeyword:           String(p.focusKeyword || ''),
+        ogTitle:                String(p.ogTitle || ''),
+        shippingWeight:         String(p.shippingWeight || ''),
+        dimensions: {
+          length: String(dims.length || ''),
+          width:  String(dims.width  || ''),
+          height: String(dims.height || ''),
+        },
+        isFragile:          Boolean(p.isFragile),
+        flashSaleEligible:  Boolean(p.flashSaleEligible),
+        lowStockThreshold:  String(p.lowStockThreshold || '10'),
+        returnEligible:     p.returnEligible !== false,
+        codAvailable:       p.codAvailable   !== false,
+        preOrderOption:     Boolean(p.preOrderOption),
+      }));
+
+      setAiApplied(true);
+      setAiAppliedModel(aiModel);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'AI generation failed');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // ── Image handlers ────────────────────────────────────────────────────
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     const newImages: ProductImage[] = [];
-    const filesArray = Array.from(files);
-
-    filesArray.forEach((file, index) => {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert(`File ${file.name} is not an image`);
-        return;
-      }
-
-      // Validate file size (max 10MB — matches server-side limit)
-      if (file.size > 10 * 1024 * 1024) {
-        alert(`File ${file.name} is too large. Maximum size is 10MB`);
-        return;
-      }
-
-      const imageId = `${Date.now()}_${index}`;
-      const preview = URL.createObjectURL(file);
-
+    Array.from(files).forEach((file, index) => {
+      if (!file.type.startsWith('image/')) { alert(`File ${file.name} is not an image`); return; }
+      if (file.size > 10 * 1024 * 1024) { alert(`File ${file.name} exceeds 10MB`); return; }
       newImages.push({
-        id: imageId,
-        file: file,
-        preview: preview,
+        id: `${Date.now()}_${index}`,
+        file,
+        preview: URL.createObjectURL(file),
         isMain: formData.images.length === 0 && index === 0,
       });
     });
-
     if (newImages.length > 0) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         images: [...prev.images, ...newImages],
         imageAltTexts: [...prev.imageAltTexts, ...Array(newImages.length).fill('')],
       }));
-
-      // Clear error if exists
-      if (errors.images) {
-        setErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors.images;
-          return newErrors;
-        });
-      }
     }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleRemoveImage = (imageId: string) => {
-    setFormData(prev => {
-      const imageIndex = prev.images.findIndex(img => img.id === imageId);
-      const imageToRemove = prev.images[imageIndex];
-
-      if (imageToRemove) {
-        URL.revokeObjectURL(imageToRemove.preview);
-      }
-
-      const updatedImages = prev.images.filter(img => img.id !== imageId);
-      const updatedAltTexts = prev.imageAltTexts.filter((_, idx) => idx !== imageIndex);
-
-      // If removed image was main, set first image as main
-      if (updatedImages.length > 0 && !updatedImages.some(img => img.isMain)) {
-        updatedImages[0].isMain = true;
-      }
-
-      return { ...prev, images: updatedImages, imageAltTexts: updatedAltTexts };
+    setFormData((prev) => {
+      const idx = prev.images.findIndex((img) => img.id === imageId);
+      URL.revokeObjectURL(prev.images[idx]?.preview || '');
+      const newImages = prev.images.filter((img) => img.id !== imageId);
+      const newAlts = prev.imageAltTexts.filter((_, i) => i !== idx);
+      if (newImages.length > 0 && !newImages.some((img) => img.isMain)) newImages[0].isMain = true;
+      return { ...prev, images: newImages, imageAltTexts: newAlts };
     });
   };
 
   const handleSetMainImage = (imageId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      images: prev.images.map(img => ({
-        ...img,
-        isMain: img.id === imageId,
-      })),
+      images: prev.images.map((img) => ({ ...img, isMain: img.id === imageId })),
     }));
   };
 
-  // Handle OG Image Upload
   const handleOgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('OG Image must be under 5MB');
-      return;
-    }
-
-    const preview = URL.createObjectURL(file);
-    setFormData(prev => ({
-      ...prev,
-      ogImageFile: file,
-      ogImagePreview: preview,
-    }));
+    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('OG Image must be under 5MB'); return; }
+    setFormData((prev) => ({ ...prev, ogImageFile: file, ogImagePreview: URL.createObjectURL(file) }));
   };
 
-  // Handle Image Alt Text Change
   const handleImageAltTextChange = (index: number, value: string) => {
-    setFormData(prev => {
-      const newAltTexts = [...prev.imageAltTexts];
-      newAltTexts[index] = value;
-      return { ...prev, imageAltTexts: newAltTexts };
+    setFormData((prev) => {
+      const newAlts = [...prev.imageAltTexts];
+      newAlts[index] = value;
+      return { ...prev, imageAltTexts: newAlts };
     });
   };
 
-  // Handle Variants
+  // ── Variant handlers ──────────────────────────────────────────────────
   const handleAddVariant = () => {
-    const newVariant: ProductVariant = {
-      id: Date.now().toString(),
-      size: '',
-      color: '',
-      price: '',
-      stock: '',
-      sku: `SKU-${Date.now()}`,
-    };
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      variants: [...prev.variants, newVariant],
+      variants: [...prev.variants, { id: Date.now().toString(), size: '', color: '', price: '', stock: '', sku: `SKU-${Date.now()}` }],
     }));
   };
 
   const handleRemoveVariant = (variantId: string) => {
-    if (formData.variants.length <= 1) {
-      alert('At least one variant is required');
-      return;
-    }
-    setFormData(prev => ({
-      ...prev,
-      variants: prev.variants.filter(v => v.id !== variantId),
-    }));
+    if (formData.variants.length <= 1) { alert('At least one variant is required'); return; }
+    setFormData((prev) => ({ ...prev, variants: prev.variants.filter((v) => v.id !== variantId) }));
   };
 
   const handleVariantChange = (variantId: string, field: keyof ProductVariant, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      variants: prev.variants.map(v =>
-        v.id === variantId ? { ...v, [field]: value } : v
-      ),
+      variants: prev.variants.map((v) => (v.id === variantId ? { ...v, [field]: value } : v)),
     }));
   };
 
-  // Handle Skin Type Selection
   const handleSkinTypeToggle = (type: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       skinType: prev.skinType.includes(type)
-        ? prev.skinType.filter(t => t !== type)
+        ? prev.skinType.filter((t) => t !== type)
         : [...prev.skinType, type],
     }));
   };
 
-  // Auto-generate URL slug from product name
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
+  const generateSlug = (name: string) =>
+    name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       name,
       urlSlug: prev.urlSlug === '' ? generateSlug(name) : prev.urlSlug,
@@ -410,290 +383,297 @@ export default function NewProductPage() {
     }));
   };
 
-  // Calculate sale price based on discount
-  const calculateSalePrice = (price: string, discount: string) => {
-    if (!price || !discount) return '';
-    const priceNum = parseFloat(price);
-    const discountNum = parseFloat(discount);
-    if (isNaN(priceNum) || isNaN(discountNum)) return '';
-    return (priceNum - (priceNum * discountNum / 100)).toFixed(2);
-  };
-
   const handleDiscountChange = (discount: string) => {
-    setFormData(prev => {
-      const firstVariantPrice = prev.variants[0]?.price || '';
-      return {
-        ...prev,
-        discountPercentage: discount,
-        salePrice: calculateSalePrice(firstVariantPrice, discount),
-      };
+    setFormData((prev) => {
+      const p = parseFloat(prev.variants[0]?.price || '0');
+      const d = parseFloat(discount);
+      const sale = !isNaN(p) && !isNaN(d) ? (p - (p * d) / 100).toFixed(2) : '';
+      return { ...prev, discountPercentage: discount, salePrice: sale };
     });
   };
 
-  const isValidOptionalNumber = (value: string) => {
-    if (!value.trim()) return true;
-    return Number.isFinite(Number(value));
+  const isValidOptionalNumber = (value: string) => !value.trim() || Number.isFinite(Number(value));
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) setErrors((prev) => { const n = { ...prev }; delete n[name]; return n; });
   };
 
+  const handleDimensionChange = (field: 'length' | 'width' | 'height', value: string) => {
+    setFormData((prev) => ({ ...prev, dimensions: { ...prev.dimensions, [field]: value } }));
+  };
+
+  // ── Validate ──────────────────────────────────────────────────────────
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    // Basic Info Validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Product name is required';
-    }
-
-    if (!formData.brand.trim()) {
-      newErrors.brand = 'Brand is required';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
-    // Images Validation
-    if (formData.images.length === 0) {
-      newErrors.images = 'At least one product image is required';
-    }
-
-    // Variants Validation
-    formData.variants.forEach((variant) => {
-      if (!variant.price || parseFloat(variant.price) <= 0) {
-        newErrors[`variant_${variant.id}_price`] = 'Valid price is required';
-      }
-      if (!variant.stock || parseInt(variant.stock) < 0) {
-        newErrors[`variant_${variant.id}_stock`] = 'Valid stock is required';
-      }
-      if (!variant.sku.trim()) {
-        newErrors[`variant_${variant.id}_sku`] = 'SKU is required';
-      }
+    if (!formData.name.trim()) newErrors.name = 'Product name is required';
+    if (!formData.brand.trim()) newErrors.brand = 'Brand is required';
+    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    if (formData.images.length === 0) newErrors.images = 'At least one product image is required';
+    formData.variants.forEach((v) => {
+      if (!v.price || parseFloat(v.price) <= 0) newErrors[`variant_${v.id}_price`] = 'Valid price required';
+      if (v.stock === '' || parseInt(v.stock) < 0) newErrors[`variant_${v.id}_stock`] = 'Valid stock required';
+      if (!v.sku.trim()) newErrors[`variant_${v.id}_sku`] = 'SKU required';
     });
-
-    // Specifications Validation
-    if (formData.skinType.length === 0) {
-      newErrors.skinType = 'Please select at least one skin type';
-    }
-
-    if (!isValidOptionalNumber(formData.weight)) {
-      newErrors.weight = 'Weight must be a valid number';
-    }
-
-    if (!isValidOptionalNumber(formData.dimensions.length)) {
-      newErrors.dimensions_length = 'Length must be a valid number';
-    }
-
-    if (!isValidOptionalNumber(formData.dimensions.width)) {
-      newErrors.dimensions_width = 'Width must be a valid number';
-    }
-
-    if (!isValidOptionalNumber(formData.dimensions.height)) {
-      newErrors.dimensions_height = 'Height must be a valid number';
-    }
-
-    // SEO Validation
-    if (formData.metaTitle && formData.metaTitle.length > 60) {
-      newErrors.metaTitle = 'Meta title should be less than 60 characters';
-    }
-
-    if (formData.metaDescription && formData.metaDescription.length > 160) {
-      newErrors.metaDescription = 'Meta description should be less than 160 characters';
-    }
-
-    // Stock Management Validation
-    if (formData.lowStockThreshold && parseInt(formData.lowStockThreshold) < 0) {
-      newErrors.lowStockThreshold = 'Low stock threshold must be 0 or greater';
-    }
-
+    if (!isValidOptionalNumber(formData.weight)) newErrors.weight = 'Weight must be a valid number';
+    if (!isValidOptionalNumber(formData.dimensions.length)) newErrors.dimensions_length = 'Length must be a number';
+    if (!isValidOptionalNumber(formData.dimensions.width)) newErrors.dimensions_width = 'Width must be a number';
+    if (!isValidOptionalNumber(formData.dimensions.height)) newErrors.dimensions_height = 'Height must be a number';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // ── Submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) {
       alert('Please fix all errors before submitting');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-      // Step 1: Upload images to MinIO via /api/upload
       const uploadedImageUrls: string[] = [];
       for (const image of formData.images) {
         const uploadForm = new FormData();
         uploadForm.append('file', image.file);
         uploadForm.append('folder', 'products/new');
-
-        const uploadData = await adminFetchJson<{ url: string }>('/api/upload', {
-          method: 'POST',
-          body: uploadForm,
-        });
-
+        const uploadData = await adminFetchJson<{ url: string }>('/api/upload', { method: 'POST', body: uploadForm });
         uploadedImageUrls.push(uploadData.url);
       }
 
-      // Reorder so the main image is first
-      const mainIndex = formData.images.findIndex(img => img.isMain);
+      const mainIndex = formData.images.findIndex((img) => img.isMain);
       if (mainIndex > 0) {
         const [mainUrl] = uploadedImageUrls.splice(mainIndex, 1);
         uploadedImageUrls.unshift(mainUrl);
-
-        // Also reorder alt texts
         const [mainAlt] = formData.imageAltTexts.splice(mainIndex, 1);
         formData.imageAltTexts.unshift(mainAlt);
       }
 
-      // Step 1.5: Upload OG Image if exists
       let uploadedOgImageUrl: string | undefined;
       if (formData.ogImageFile) {
         const ogForm = new FormData();
         ogForm.append('file', formData.ogImageFile);
         ogForm.append('folder', 'products/og-images');
-
-        const ogData = await adminFetchJson<{ url: string }>('/api/upload', {
-          method: 'POST',
-          body: ogForm,
-        });
-
+        const ogData = await adminFetchJson<{ url: string }>('/api/upload', { method: 'POST', body: ogForm });
         uploadedOgImageUrl = ogData.url;
       }
 
-      // Step 2: Build original price
-      const basePrice = formData.variants.length > 0
-        ? parseFloat(formData.variants[0].price) || 0
-        : 0;
-
+      const basePrice = parseFloat(formData.variants[0]?.price || '0') || 0;
       const originalPrice = formData.discountPercentage
         ? basePrice / (1 - parseFloat(formData.discountPercentage) / 100)
-        : formData.salePrice
-        ? parseFloat(formData.salePrice)
-        : undefined;
+        : formData.salePrice ? parseFloat(formData.salePrice) : undefined;
 
-      // Step 3: POST product data to the admin product API
-      const productPayload = {
-        name: formData.name,
-        category: formData.category,
-        subcategory: formData.subcategory || undefined,
-        item: formData.item || undefined,
-        brand: formData.brand,
-        originCountry: formData.originCountry,
-        status: formData.status,
-        featured: formData.featured,
-        description: formData.description,
-        weight: formData.weight || undefined,
-        ingredients: formData.ingredients || undefined,
-        skinType: formData.skinType.length > 0 ? formData.skinType : undefined,
-        expiryDate: formData.expiryDate || undefined,
-        shelfLife: formData.shelfLife || undefined,
-        images: uploadedImageUrls.map((url, index) => ({
-          url,
-          alt: formData.imageAltTexts[index] || formData.name,
-          title: formData.imageAltTexts[index] || formData.name,
-        })),
-        variants: formData.variants,
-        metaTitle: formData.metaTitle || undefined,
-        metaDescription: formData.metaDescription || undefined,
-        urlSlug: formData.urlSlug || undefined,
-        tags: formData.tags || undefined,
-        bengaliName: formData.bengaliProductName || undefined,
-        bengaliDescription: formData.bengaliMetaDescription || undefined,
-        focusKeyword: formData.focusKeyword || undefined,
-        ogTitle: formData.ogTitle || formData.metaTitle || undefined,
-        ogImageUrl: uploadedOgImageUrl || undefined,
-        canonicalUrl: formData.urlSlug
-          ? `https://minsahbeauty.cloud/products/${formData.urlSlug}`
-          : undefined,
-        condition: formData.productCondition || 'NEW',
-        gtin: formData.gtin || undefined,
-        averageRating: formData.averageRating || 0,
-        reviewCount: formData.reviewCount || 0,
-        shippingWeight: formData.shippingWeight || undefined,
-        dimensions: (formData.dimensions.length || formData.dimensions.width || formData.dimensions.height)
-          ? formData.dimensions
-          : undefined,
-        isFragile: formData.isFragile,
-        discountPercentage: formData.discountPercentage || undefined,
-        salePrice: formData.salePrice || undefined,
-        originalPrice,
-        offerStartDate: formData.offerStartDate || undefined,
-        offerEndDate: formData.offerEndDate || undefined,
-        flashSaleEligible: formData.flashSaleEligible,
-        lowStockThreshold: formData.lowStockThreshold || undefined,
-        barcode: formData.barcode || undefined,
-        returnEligible: formData.returnEligible,
-        codAvailable: formData.codAvailable,
-        preOrderOption: formData.preOrderOption,
-        relatedProducts: formData.relatedProducts || undefined,
-      };
-
-      await adminFetchJson<{ success: boolean; product: { id: string; slug: string; name: string } }>('/api/admin/products', {
+      await adminFetchJson<{ success: boolean }>('/api/admin/products', {
         method: 'POST',
-        json: productPayload,
+        json: {
+          name: formData.name, category: formData.category, subcategory: formData.subcategory || undefined,
+          item: formData.item || undefined, brand: formData.brand, originCountry: formData.originCountry,
+          status: formData.status, featured: formData.featured, description: formData.description,
+          weight: formData.weight || undefined, ingredients: formData.ingredients || undefined,
+          skinType: formData.skinType.length > 0 ? formData.skinType : undefined,
+          expiryDate: formData.expiryDate || undefined, shelfLife: formData.shelfLife || undefined,
+          images: uploadedImageUrls.map((url, i) => ({
+            url, alt: formData.imageAltTexts[i] || formData.name,
+            title: formData.imageAltTexts[i] || formData.name,
+          })),
+          variants: formData.variants,
+          metaTitle: formData.metaTitle || undefined, metaDescription: formData.metaDescription || undefined,
+          urlSlug: formData.urlSlug || undefined, tags: formData.tags || undefined,
+          bengaliName: formData.bengaliProductName || undefined,
+          bengaliDescription: formData.bengaliMetaDescription || undefined,
+          focusKeyword: formData.focusKeyword || undefined,
+          ogTitle: formData.ogTitle || formData.metaTitle || undefined,
+          ogImageUrl: uploadedOgImageUrl || undefined,
+          canonicalUrl: formData.urlSlug ? `https://minsahbeauty.cloud/products/${formData.urlSlug}` : undefined,
+          condition: formData.productCondition || 'NEW', gtin: formData.gtin || undefined,
+          averageRating: formData.averageRating || 0, reviewCount: formData.reviewCount || 0,
+          shippingWeight: formData.shippingWeight || undefined,
+          dimensions: (formData.dimensions.length || formData.dimensions.width || formData.dimensions.height)
+            ? formData.dimensions : undefined,
+          isFragile: formData.isFragile,
+          discountPercentage: formData.discountPercentage || undefined,
+          salePrice: formData.salePrice || undefined, originalPrice,
+          offerStartDate: formData.offerStartDate || undefined, offerEndDate: formData.offerEndDate || undefined,
+          flashSaleEligible: formData.flashSaleEligible,
+          lowStockThreshold: formData.lowStockThreshold || undefined,
+          barcode: formData.barcode || undefined,
+          returnEligible: formData.returnEligible, codAvailable: formData.codAvailable,
+          preOrderOption: formData.preOrderOption, relatedProducts: formData.relatedProducts || undefined,
+        },
       });
 
       alert('Product created successfully!');
       router.push('/admin/products');
-      
     } catch (error) {
-      console.error('Error creating product:', error);
       alert(error instanceof Error ? error.message : 'Failed to create product. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value, type } = e.target;
-
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  const handleDimensionChange = (field: 'length' | 'width' | 'height', value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      dimensions: {
-        ...prev.dimensions,
-        [field]: value,
-      },
-    }));
-  };
+  const selectedCategoryData = categoriesData.find((c) => c.name === formData.category);
+  const subcategories = selectedCategoryData?.subcategories || [];
+  const selectedSubcategoryData = subcategories.find((s: { name: string }) => s.name === formData.subcategory);
+  const items = (selectedSubcategoryData as { name: string; items?: string[] } | undefined)?.items || [];
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Link
-          href="/admin/products"
-          className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Products
+        <Link href="/admin/products" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-4">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
         <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
         <p className="text-gray-600">Create a comprehensive beauty product listing</p>
       </div>
 
-      {/* Form */}
+      {/* ─── AI GENERATE PANEL ───────────────────────────────────────────── */}
+      <div className={`mb-6 rounded-xl border-2 p-5 shadow-sm transition-all ${aiApplied ? 'border-green-400 bg-green-50' : 'border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50'}`}>
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className={`w-5 h-5 ${aiApplied ? 'text-green-600' : 'text-purple-600'}`} />
+          <span className={`text-base font-semibold ${aiApplied ? 'text-green-800' : 'text-purple-900'}`}>
+            {aiApplied
+              ? `✅ ${AI_MODELS.find(m => m.id === aiAppliedModel)?.badge || 'AI'} দিয়ে Generate হয়েছে — Review & adjust করো`
+              : 'AI Product Generator'}
+          </span>
+          {aiApplied && (
+            <button
+              type="button"
+              onClick={() => { setAiApplied(false); setAiAppliedModel(''); setFormData(defaultForm); setFacebookAdAngle(null); setMarketNote(''); setCompetitionNote(''); setAiInput(''); }}
+              className="ml-auto text-xs text-gray-500 hover:text-red-600 underline"
+            >
+              Reset & start fresh
+            </button>
+          )}
+        </div>
+
+        {!aiApplied && (
+          <>
+            <p className="text-sm text-purple-700 mb-3">
+              Product name বা keyword দাও — AI সব fields automatically fill করে দেবে। শুধু price আর images তোমাকে দিতে হবে।
+            </p>
+
+            {/* Model selector */}
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-purple-800 mb-2">AI Model বেছে নাও:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                {AI_MODELS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setAiModel(m.id)}
+                    className={`text-left px-3 py-2.5 rounded-lg border-2 transition-all ${
+                      aiModel === m.id
+                        ? 'border-purple-500 bg-white shadow-md'
+                        : 'border-purple-200 bg-white/60 hover:border-purple-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-gray-800">{m.label}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.badgeColor}`}>{m.badge}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-gray-500">{m.note}</span>
+                      <span className="text-[11px] font-mono text-gray-400">{m.cost}</span>
+                    </div>
+                    {aiModel === m.id && (
+                      <div className="mt-1.5 h-0.5 bg-purple-500 rounded" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleAiGenerate()}
+                placeholder="e.g., Vitamin C Serum, Korean Sheet Mask, Matte Lipstick..."
+                className="flex-1 px-4 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white"
+                disabled={isGenerating}
+              />
+              <button
+                type="button"
+                onClick={handleAiGenerate}
+                disabled={isGenerating || !aiInput.trim()}
+                className="inline-flex items-center px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium text-sm shadow"
+              >
+                {isGenerating
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {AI_MODELS.find(m => m.id === aiModel)?.badge} দিয়ে generate হচ্ছে...</>
+                  : <><Sparkles className="w-4 h-4 mr-2" /> Generate</>}
+              </button>
+            </div>
+          </>
+        )}
+
+        {aiError && (
+          <div className="mt-3 flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {aiError}
+          </div>
+        )}
+
+        {/* Market insights — shown after generation */}
+        {aiApplied && (marketNote || competitionNote) && (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {marketNote && (
+              <div className="bg-white border border-green-200 rounded-lg px-4 py-3">
+                <p className="text-xs font-semibold text-green-700 mb-1">💰 Market Price Research</p>
+                <p className="text-sm text-gray-700">{marketNote}</p>
+              </div>
+            )}
+            {competitionNote && (
+              <div className="bg-white border border-amber-200 rounded-lg px-4 py-3">
+                <p className="text-xs font-semibold text-amber-700 mb-1">📊 Competition Insight</p>
+                <p className="text-sm text-gray-700">{competitionNote}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Facebook Ad Angle panel */}
+        {facebookAdAngle && (
+          <div className="mt-4 border border-purple-200 rounded-lg bg-white overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAdAngle((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-purple-800 hover:bg-purple-50"
+            >
+              <span className="flex items-center gap-2"><Megaphone className="w-4 h-4" /> Facebook Ad Copy (AI Generated)</span>
+              {showAdAngle ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {showAdAngle && (
+              <div className="px-4 pb-4 space-y-3 border-t border-purple-100">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Headline</p>
+                  <p className="text-sm bg-purple-50 rounded px-3 py-2 font-medium">{facebookAdAngle.headline}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Primary Text</p>
+                  <p className="text-sm bg-purple-50 rounded px-3 py-2 whitespace-pre-line">{facebookAdAngle.primaryText}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Target Audience</p>
+                  <p className="text-sm bg-purple-50 rounded px-3 py-2">{facebookAdAngle.targetAudience}</p>
+                </div>
+                <p className="text-xs text-gray-400">Copy these before creating your Meta ad campaign.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ─── FORM ────────────────────────────────────────────────────────── */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Information */}
+
+        {/* 1. Basic Information */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Package className="w-5 h-5 text-purple-600 mr-2" />
@@ -701,352 +681,172 @@ export default function NewProductPage() {
           </div>
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleNameChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="e.g., Hydrating Face Serum with Hyaluronic Acid"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+              <input type="text" name="name" value={formData.name} onChange={handleNameChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder="e.g., Hydrating Face Serum with Hyaluronic Acid" />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Category *
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={(e) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      category: e.target.value,
-                      subcategory: '',
-                      item: '',
-                    }));
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {categoriesData.map(category => (
-                    <option key={category.name} value={category.name}>
-                      {category.name}
-                    </option>
-                  ))}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <select name="category" value={formData.category}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value, subcategory: '', item: '' }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  {categoriesData.map((cat) => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
                 </select>
               </div>
-
               <div>
-                <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subcategory
-                </label>
-                <select
-                  id="subcategory"
-                  name="subcategory"
-                  value={formData.subcategory}
-                  onChange={(e) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      subcategory: e.target.value,
-                      item: '',
-                    }));
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                <select name="subcategory" value={formData.subcategory}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, subcategory: e.target.value, item: '' }))}
                   disabled={!formData.category}
-                >
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
                   <option value="">Select subcategory</option>
-                  {categoriesData
-                    .find(cat => cat.name === formData.category)
-                    ?.subcategories.map(subcat => (
-                      <option key={subcat.name} value={subcat.name}>
-                        {subcat.name}
-                      </option>
-                    ))}
+                  {subcategories.map((s: { name: string }) => <option key={s.name} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="item" className="block text-sm font-medium text-gray-700 mb-1">
-                  Product Type/Item
-                </label>
-                <select
-                  id="item"
-                  name="item"
-                  value={formData.item}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  disabled={!formData.subcategory}
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-1">Product Type/Item</label>
+                <select name="item" value={formData.item} onChange={handleChange}
+                  disabled={!formData.subcategory || items.length === 0}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
                   <option value="">Select item</option>
-                  {categoriesData
-                    .find(cat => cat.name === formData.category)
-                    ?.subcategories.find(sub => sub.name === formData.subcategory)
-                    ?.items.map(item => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
+                  {items.map((item: string) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>
-
               <div>
-                <label htmlFor="brand" className="block text-sm font-medium text-gray-700 mb-1">
-                  Brand *
-                </label>
-                <input
-                  type="text"
-                  id="brand"
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleChange}
-                  list="brands"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                    errors.brand ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Select or type brand"
-                />
-                <datalist id="brands">
-                  {brands.map(brand => (
-                    <option key={brand} value={brand} />
-                  ))}
-                </datalist>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Brand *</label>
+                <input type="text" name="brand" value={formData.brand} onChange={handleChange} list="brands"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.brand ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Select or type brand" />
+                <datalist id="brands">{brands.map((b) => <option key={b} value={b} />)}</datalist>
                 {errors.brand && <p className="mt-1 text-sm text-red-600">{errors.brand}</p>}
               </div>
-
               <div>
-                <label htmlFor="originCountry" className="block text-sm font-medium text-gray-700 mb-1">
-                  Origin Country *
-                </label>
-                <select
-                  id="originCountry"
-                  name="originCountry"
-                  value={formData.originCountry}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {countries.map(country => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Origin Country</label>
+                <select name="originCountry" value={formData.originCountry} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  {countries.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                  Status *
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                <select name="status" value={formData.status} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="out_of_stock">Out of Stock</option>
                 </select>
               </div>
-
-              <div className="flex items-center space-x-6 pt-6">
+              <div className="flex items-center pt-6">
                 <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="featured"
-                    checked={formData.featured}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
+                  <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Featured Product</span>
                 </label>
               </div>
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Description *
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={5}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                  errors.description ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Provide a detailed description of the product, its benefits, how to use it, etc."
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Description *</label>
+              <textarea name="description" value={formData.description} onChange={handleChange} rows={6}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder="Detailed product description..." />
               {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
             </div>
           </div>
         </div>
 
-        {/* Product Images */}
+        {/* 2. Product Images */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <div className="flex items-center mb-4">
+          <div className="flex items-center mb-2">
             <ImageIcon className="w-5 h-5 text-purple-600 mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Product Images</h2>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
-            Upload product images. Maximum file size: 10MB per image. First image will be the main display.
-          </p>
+          <p className="text-sm text-gray-500 mb-4">Max 10MB per image. First/main image is the display image.</p>
+          <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
 
-          <div className="space-y-4">
-            <div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                accept="image/jpeg,image/png,image/jpg,image/webp"
-                multiple
-                className="hidden"
-                id="image-upload"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium"
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Images
-              </button>
-              <p className="mt-2 text-xs text-gray-500">
-                Supported formats: JPEG, PNG, WebP (Max 10MB each)
-              </p>
-              {errors.images && (
-                <div className="mt-2 flex items-center text-sm text-red-600">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.images}
-                </div>
-              )}
-            </div>
+          <button type="button" onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
+            <Upload className="w-5 h-5 mr-2" /> Upload Images
+          </button>
+          {errors.images && <p className="mt-2 text-sm text-red-600 flex items-center gap-1"><AlertCircle className="w-4 h-4" />{errors.images}</p>}
 
-            {formData.images.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">
-                  Uploaded Images ({formData.images.length})
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {formData.images.map((image, index) => (
-                    <div
-                      key={image.id}
-                      className={`relative group rounded-lg overflow-hidden border-2 transition-all ${
-                        image.isMain ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="aspect-square">
-                        <img
-                          src={image.preview}
-                          alt={`Product ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      {image.isMain && (
-                        <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs font-semibold px-2 py-1 rounded shadow">
-                          Main
-                        </div>
+          {formData.images.length > 0 && (
+            <div className="mt-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+                {formData.images.map((image, index) => (
+                  <div key={image.id}
+                    className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200'}`}>
+                    <div className="aspect-square">
+                      <img src={image.preview} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    {image.isMain && <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs font-semibold px-2 py-1 rounded">Main</div>}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                      {!image.isMain && (
+                        <button type="button" onClick={() => handleSetMainImage(image.id)} className="p-2 bg-white rounded-full hover:bg-gray-100">
+                          <ImageIcon className="w-4 h-4 text-gray-700" />
+                        </button>
                       )}
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <div className="flex space-x-2">
-                          {!image.isMain && (
-                            <button
-                              type="button"
-                              onClick={() => handleSetMainImage(image.id)}
-                              className="p-2 bg-white rounded-full hover:bg-gray-100 shadow-lg"
-                              title="Set as main image"
-                            >
-                              <ImageIcon className="w-4 h-4 text-gray-700" />
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(image.id)}
-                            className="p-2 bg-red-500 rounded-full hover:bg-red-600 shadow-lg"
-                            title="Remove image"
-                          >
-                            <Trash2 className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
+                      <button type="button" onClick={() => handleRemoveImage(image.id)} className="p-2 bg-red-500 rounded-full hover:bg-red-600">
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                    <div className="sr-only">{index + 1}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Image Alt Texts (SEO)</h3>
+                <div className="space-y-3">
+                  {formData.images.map((image, index) => (
+                    <div key={image.id} className="flex gap-3">
+                      <img src={image.preview} alt="" className="w-16 h-16 object-cover rounded border flex-shrink-0" />
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Image {index + 1} {image.isMain && '(Main)'}</label>
+                        <input type="text" value={formData.imageAltTexts[index] || ''}
+                          onChange={(e) => handleImageAltTextChange(index, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                          placeholder="Rhode Peptide Lip Tint Ribbon Bangladesh" />
                       </div>
                     </div>
                   ))}
                 </div>
-
-              {/* Image Alt Texts Section */}
-              <div className="mt-6 space-y-4">
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                    Image Alt Texts (for SEO)
-                  </h3>
-                  <p className="text-xs text-gray-600 mb-4">
-                    Add descriptive alt text for each image to improve search engine visibility
-                  </p>
-                  <div className="space-y-3">
-                    {formData.images.map((image, index) => (
-                      <div key={image.id} className="flex gap-3">
-                        <div className="flex-shrink-0">
-                          <img
-                            src={image.preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-16 h-16 object-cover rounded border border-gray-200"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Image {index + 1} - Alt Text {image.isMain && '(Main)'}
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.imageAltTexts[index] || ''}
-                            onChange={(e) => handleImageAltTextChange(index, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                            placeholder="Rhode Peptide Lip Tint Ribbon Shade Bangladesh"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Product Variants */}
+        {/* 3. Variants */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <Tag className="w-5 h-5 text-purple-600 mr-2" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Product Variants</h2>
-                <p className="text-sm text-gray-600">Add different sizes, colors, or variations with individual pricing</p>
+                <p className="text-sm text-gray-500">Size, color, price, stock per variant</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleAddVariant}
-              className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Variant
+            <button type="button" onClick={handleAddVariant}
+              className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+              <Plus className="w-4 h-4 mr-1" /> Add Variant
             </button>
           </div>
+
+          {aiApplied && (
+            <div className="mb-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              Price fields are intentionally blank — enter your selling prices below.
+            </div>
+          )}
 
           <div className="space-y-4">
             {formData.variants.map((variant, index) => (
@@ -1054,107 +854,38 @@ export default function NewProductPage() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-900">Variant #{index + 1}</h3>
                   {formData.variants.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveVariant(variant.id)}
-                      className="text-red-600 hover:text-red-800 p-1"
-                      title="Remove variant"
-                    >
+                    <button type="button" onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Size/Volume
-                    </label>
-                    <input
-                      type="text"
-                      value={variant.size}
-                      onChange={e => handleVariantChange(variant.id, 'size', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      placeholder="e.g., 30ml, 50g"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Color/Shade
-                    </label>
-                    <input
-                      type="text"
-                      value={variant.color}
-                      onChange={e => handleVariantChange(variant.id, 'color', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      placeholder="e.g., Beige, Rose"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Price (BDT ৳) *
-                    </label>
-                    <input
-                      type="number"
-                      value={variant.price}
-                      onChange={e => handleVariantChange(variant.id, 'price', e.target.value)}
-                      step="1"
-                      min="0"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm ${
-                        errors[`variant_${variant.id}_price`] ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="0"
-                    />
-                    {errors[`variant_${variant.id}_price`] && (
-                      <p className="mt-1 text-xs text-red-600">{errors[`variant_${variant.id}_price`]}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Stock Quantity *
-                    </label>
-                    <input
-                      type="number"
-                      value={variant.stock}
-                      onChange={e => handleVariantChange(variant.id, 'stock', e.target.value)}
-                      min="0"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm ${
-                        errors[`variant_${variant.id}_stock`] ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="0"
-                    />
-                    {errors[`variant_${variant.id}_stock`] && (
-                      <p className="mt-1 text-xs text-red-600">{errors[`variant_${variant.id}_stock`]}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      SKU *
-                    </label>
-                    <input
-                      type="text"
-                      value={variant.sku}
-                      onChange={e => handleVariantChange(variant.id, 'sku', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm ${
-                        errors[`variant_${variant.id}_sku`] ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="SKU-001"
-                    />
-                    {errors[`variant_${variant.id}_sku`] && (
-                      <p className="mt-1 text-xs text-red-600">{errors[`variant_${variant.id}_sku`]}</p>
-                    )}
-                  </div>
+                  {(['size', 'color', 'price', 'stock', 'sku'] as const).map((field) => (
+                    <div key={field}>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {field === 'size' ? 'Size/Volume' : field === 'color' ? 'Color/Shade' : field === 'price' ? 'Price (BDT ৳) *' : field === 'stock' ? 'Stock *' : 'SKU *'}
+                      </label>
+                      <input
+                        type={field === 'price' || field === 'stock' ? 'number' : 'text'}
+                        value={variant[field] || ''}
+                        onChange={(e) => handleVariantChange(variant.id, field, e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-sm ${errors[`variant_${variant.id}_${field}`] ? 'border-red-500' : 'border-gray-300'} ${field === 'price' && aiApplied ? 'bg-amber-50 border-amber-300' : ''}`}
+                        placeholder={field === 'price' ? '0.00' : field === 'stock' ? '0' : ''}
+                        step={field === 'price' ? '0.01' : undefined}
+                        min={field === 'price' || field === 'stock' ? '0' : undefined}
+                      />
+                      {errors[`variant_${variant.id}_${field}`] && (
+                        <p className="mt-1 text-xs text-red-600">{errors[`variant_${variant.id}_${field}`]}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Product Specifications */}
+        {/* 4. Specifications */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-purple-600 mr-2" />
@@ -1163,175 +894,83 @@ export default function NewProductPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-                  Net Weight/Volume (numeric)
-                </label>
-                <input
-                  type="text"
-                  id="weight"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., 50 or 100"
-                />
-                <p className="mt-1 text-xs text-gray-500">Store the numeric value only. Use shipping weight for unit text.</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume (numeric)</label>
+                <input type="text" name="weight" value={formData.weight} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 30" />
                 {errors.weight && <p className="mt-1 text-sm text-red-600">{errors.weight}</p>}
               </div>
-
               <div>
-                <label htmlFor="shelfLife" className="block text-sm font-medium text-gray-700 mb-1">
-                  Shelf Life
-                </label>
-                <input
-                  type="text"
-                  id="shelfLife"
-                  name="shelfLife"
-                  value={formData.shelfLife}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., 24 months, 2 years"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
+                <input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 24 months" />
               </div>
-
               <div>
-                <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Expiry Date (if applicable)
-                </label>
-                <input
-                  type="date"
-                  id="expiryDate"
-                  name="expiryDate"
-                  value={formData.expiryDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Suitable for Skin Type *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Suitable Skin Type</label>
               <div className="flex flex-wrap gap-2">
-                {skinTypes.map(type => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => handleSkinTypeToggle(type)}
-                    className={`px-4 py-2 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${
+                {skinTypes.map((type) => (
+                  <button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
+                    className={`px-4 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
                       formData.skinType.includes(type)
-                        ? 'bg-purple-600 border-purple-600 text-white shadow-md'
+                        ? 'bg-purple-600 border-purple-600 text-white'
                         : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400'
-                    }`}
-                  >
+                    }`}>
                     {type}
                   </button>
                 ))}
               </div>
-              {errors.skinType && (
-                <p className="mt-2 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.skinType}
-                </p>
-              )}
             </div>
 
-            <div>
-              <label htmlFor="productCondition" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Condition
-              </label>
-              <select
-                id="productCondition"
-                name="productCondition"
-                value={formData.productCondition}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="NEW">New</option>
-                <option value="USED">Used</option>
-                <option value="REFURBISHED">Refurbished</option>
-              </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Select product condition for structured data
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="gtin" className="block text-sm font-medium text-gray-700 mb-1">
-                GTIN/EAN/UPC Barcode (Optional)
-              </label>
-              <input
-                type="text"
-                id="gtin"
-                name="gtin"
-                value={formData.gtin}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="1234567890123"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Helps with Google Shopping and product verification
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Product Condition</label>
+                <select name="productCondition" value={formData.productCondition} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  <option value="NEW">New</option>
+                  <option value="USED">Used</option>
+                  <option value="REFURBISHED">Refurbished</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">GTIN/EAN/UPC</label>
+                <input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="1234567890123" />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="averageRating" className="block text-sm font-medium text-gray-700 mb-1">
-                  Average Rating (0-5)
-                </label>
-                <input
-                  type="number"
-                  id="averageRating"
-                  name="averageRating"
-                  value={formData.averageRating}
-                  onChange={handleChange}
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  For structured data (if product already has reviews)
-                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Average Rating (0–5)</label>
+                <input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
+                  min="0" max="5" step="0.1"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
-                <label htmlFor="reviewCount" className="block text-sm font-medium text-gray-700 mb-1">
-                  Review Count
-                </label>
-                <input
-                  type="number"
-                  id="reviewCount"
-                  name="reviewCount"
-                  value={formData.reviewCount}
-                  onChange={handleChange}
-                  min="0"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Review Count</label>
+                <input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
+                  min="0" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="ingredients" className="block text-sm font-medium text-gray-700 mb-1">
-                Ingredients List
-              </label>
-              <textarea
-                id="ingredients"
-                name="ingredients"
-                value={formData.ingredients}
-                onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="List all active and inactive ingredients (comma-separated or line by line)"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Example: Aqua, Glycerin, Hyaluronic Acid, Niacinamide, etc.
-              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients List</label>
+              <textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Aqua, Glycerin, Hyaluronic Acid..." />
             </div>
           </div>
         </div>
 
-        {/* SEO Fields */}
+        {/* 5. SEO Settings */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Search className="w-5 h-5 text-purple-600 mr-2" />
@@ -1339,196 +978,71 @@ export default function NewProductPage() {
           </div>
           <div className="space-y-4">
             <div>
-              <label htmlFor="metaTitle" className="block text-sm font-medium text-gray-700 mb-1">
-                Meta Title
-              </label>
-              <input
-                type="text"
-                id="metaTitle"
-                name="metaTitle"
-                value={formData.metaTitle}
-                onChange={handleChange}
-                maxLength={60}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                  errors.metaTitle ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="SEO-optimized title for search engines"
-              />
-              <div className="flex justify-between mt-1">
-                <p className="text-xs text-gray-500">
-                  Recommended: 50-60 characters
-                </p>
-                <p className="text-xs text-gray-500">
-                  {formData.metaTitle.length}/60
-                </p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
+              <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="SEO title" />
+              <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaTitle.length}/60</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+              <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Brief SEO description..." />
+              <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaDescription.length}/160</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Product Name</label>
+                <input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="বাংলা নাম" />
               </div>
-              {errors.metaTitle && <p className="mt-1 text-sm text-red-600">{errors.metaTitle}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                Meta Description
-              </label>
-              <textarea
-                id="metaDescription"
-                name="metaDescription"
-                value={formData.metaDescription}
-                onChange={handleChange}
-                maxLength={160}
-                rows={3}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                  errors.metaDescription ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Brief description for search engine results"
-              />
-              <div className="flex justify-between mt-1">
-                <p className="text-xs text-gray-500">
-                  Recommended: 150-160 characters
-                </p>
-                <p className="text-xs text-gray-500">
-                  {formData.metaDescription.length}/160
-                </p>
-              </div>
-              {errors.metaDescription && <p className="mt-1 text-sm text-red-600">{errors.metaDescription}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="bengaliProductName" className="block text-sm font-medium text-gray-700 mb-1">
-                বাংলা Product Name
-              </label>
-              <input
-                type="text"
-                id="bengaliProductName"
-                name="bengaliProductName"
-                value={formData.bengaliProductName}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="রোড পেপটাইড লিপ টিন্ট"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Bengali version of product name for local SEO
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="bengaliMetaDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                বাংলা Meta Description
-              </label>
-              <textarea
-                id="bengaliMetaDescription"
-                name="bengaliMetaDescription"
-                value={formData.bengaliMetaDescription}
-                onChange={handleChange}
-                maxLength={160}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="রোড পেপটাইড লিপ টিন্ট কিনুন সেরা দামে..."
-              />
-              <div className="flex justify-between mt-1">
-                <p className="text-xs text-gray-500">০-১৬০ অক্ষর</p>
-                <p className="text-xs text-gray-500">
-                  {formData.bengaliMetaDescription.length}/160
-                </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
+                <input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="vitamin c serum bangladesh" />
               </div>
             </div>
-
             <div>
-              <label htmlFor="focusKeyword" className="block text-sm font-medium text-gray-700 mb-1">
-                Focus Keyword (Main SEO Keyword)
-              </label>
-              <input
-                type="text"
-                id="focusKeyword"
-                name="focusKeyword"
-                value={formData.focusKeyword}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="rhode lip tint bangladesh"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Main keyword you want to rank for in search engines
-              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Meta Description</label>
+              <textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} maxLength={160} rows={2}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
             </div>
-
-            <div>
-              <label htmlFor="ogTitle" className="block text-sm font-medium text-gray-700 mb-1">
-                Facebook/WhatsApp Title (Open Graph)
-              </label>
-              <input
-                type="text"
-                id="ogTitle"
-                name="ogTitle"
-                value={formData.ogTitle}
-                onChange={handleChange}
-                maxLength={60}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Auto-filled from Meta Title"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Leave blank to use Meta Title
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
+                <input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Leave blank to use Meta Title" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
+                <input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="product-url-slug" />
+                <p className="text-xs text-gray-400 mt-1">/products/<strong>{formData.urlSlug || 'product-url-slug'}</strong></p>
+              </div>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Social Sharing Image (1200x630px recommended)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleOgImageUpload}
-                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Social Sharing Image (1200×630px)</label>
               {formData.ogImagePreview && (
-                <div className="mt-3">
-                  <img
-                    src={formData.ogImagePreview}
-                    alt="OG Preview"
-                    className="w-full max-w-md rounded-lg border border-gray-200"
-                  />
-                </div>
+                <img src={formData.ogImagePreview} alt="OG" className="w-full max-w-md rounded-lg border mb-2" />
               )}
-              <p className="mt-1 text-xs text-gray-500">
-                This image appears when sharing on Facebook, WhatsApp, etc.
-              </p>
+              <input type="file" accept="image/*" onChange={handleOgImageUpload}
+                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700" />
             </div>
-
             <div>
-              <label htmlFor="urlSlug" className="block text-sm font-medium text-gray-700 mb-1">
-                URL Slug
-              </label>
-              <input
-                type="text"
-                id="urlSlug"
-                name="urlSlug"
-                value={formData.urlSlug}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="product-url-slug"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                URL: /products/{formData.urlSlug || 'product-url-slug'}
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
-                Tags/Keywords
-              </label>
-              <input
-                type="text"
-                id="tags"
-                name="tags"
-                value={formData.tags}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="serum, hydrating, anti-aging (comma-separated)"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags/Keywords</label>
+              <input type="text" name="tags" value={formData.tags} onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="serum, hydrating, anti-aging (comma-separated)" />
             </div>
           </div>
         </div>
 
-        {/* Shipping & Delivery */}
+        {/* 6. Shipping */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <TruckIcon className="w-5 h-5 text-purple-600 mr-2" />
@@ -1537,69 +1051,35 @@ export default function NewProductPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="shippingWeight" className="block text-sm font-medium text-gray-700 mb-1">
-                  Shipping Weight
-                </label>
-                <input
-                  type="text"
-                  id="shippingWeight"
-                  name="shippingWeight"
-                  value={formData.shippingWeight}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., 150g"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Weight with packaging
-                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Weight</label>
+                <input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 150g" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Product Dimensions (L × W × H)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions (L × W × H cm)</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <input
-                    type="text"
-                    value={formData.dimensions.length}
-                    onChange={e => handleDimensionChange('length', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                    placeholder="L (cm)"
-                  />
-                  <input
-                    type="text"
-                    value={formData.dimensions.width}
-                    onChange={e => handleDimensionChange('width', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                    placeholder="W (cm)"
-                  />
-                  <input
-                    type="text"
-                    value={formData.dimensions.height}
-                    onChange={e => handleDimensionChange('height', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                    placeholder="H (cm)"
-                  />
+                  {(['length', 'width', 'height'] as const).map((dim) => (
+                    <div key={dim}>
+                      <input type="text" value={formData.dimensions[dim]}
+                        onChange={(e) => handleDimensionChange(dim, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                        placeholder={dim.charAt(0).toUpperCase()} />
+                      <p className="text-[10px] text-gray-400 mt-0.5 text-center">{dim.charAt(0).toUpperCase()} (cm)</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="isFragile"
-                  checked={formData.isFragile}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Fragile Item (Handle with care)</span>
-              </label>
-            </div>
+            <label className="flex items-center">
+              <input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
+                className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+              <span className="ml-2 text-sm text-gray-700">Fragile Item</span>
+            </label>
           </div>
         </div>
 
-        {/* Discount & Offers */}
+        {/* 7. Discount */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Percent className="w-5 h-5 text-purple-600 mr-2" />
@@ -1608,217 +1088,110 @@ export default function NewProductPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-1">
-                  Discount Percentage
-                </label>
-                <input
-                  type="number"
-                  id="discountPercentage"
-                  name="discountPercentage"
-                  value={formData.discountPercentage}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Discount %</label>
+                <input type="number" value={formData.discountPercentage}
                   onChange={(e) => handleDiscountChange(e.target.value)}
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="0"
-                />
+                  min="0" max="100" step="0.01"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="0" />
               </div>
-
               <div>
-                <label htmlFor="salePrice" className="block text-sm font-medium text-gray-700 mb-1">
-                  Sale Price (BDT ৳)
-                </label>
-                <input
-                  type="number"
-                  id="salePrice"
-                  name="salePrice"
-                  value={formData.salePrice}
-                  onChange={handleChange}
-                  step="1"
-                  min="0"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="0"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Automatically calculated from discount
-                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sale Price (৳)</label>
+                <input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
+                  step="1" min="0"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Auto-calculated" />
               </div>
-
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="flashSaleEligible"
-                    checked={formData.flashSaleEligible}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
+                  <input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Flash Sale Eligible</span>
                 </label>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="offerStartDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Offer Start Date
-                </label>
-                <input
-                  type="datetime-local"
-                  id="offerStartDate"
-                  name="offerStartDate"
-                  value={formData.offerStartDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Offer Start</label>
+                <input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
-
               <div>
-                <label htmlFor="offerEndDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Offer End Date
-                </label>
-                <input
-                  type="datetime-local"
-                  id="offerEndDate"
-                  name="offerEndDate"
-                  value={formData.offerEndDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Offer End</label>
+                <input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Stock Management */}
+        {/* 8. Stock */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <AlertCircle className="w-5 h-5 text-purple-600 mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Stock Management</h2>
           </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700 mb-1">
-                  Low Stock Alert Threshold
-                </label>
-                <input
-                  type="number"
-                  id="lowStockThreshold"
-                  name="lowStockThreshold"
-                  value={formData.lowStockThreshold}
-                  onChange={handleChange}
-                  min="0"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                    errors.lowStockThreshold ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="10"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Alert when stock falls below this number
-                </p>
-                {errors.lowStockThreshold && <p className="mt-1 text-sm text-red-600">{errors.lowStockThreshold}</p>}
-              </div>
-
-              <div>
-                <label htmlFor="barcode" className="block text-sm font-medium text-gray-700 mb-1">
-                  Barcode/UPC
-                </label>
-                <input
-                  type="text"
-                  id="barcode"
-                  name="barcode"
-                  value={formData.barcode}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter barcode number"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Low Stock Alert Threshold</label>
+              <input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="10" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Barcode/UPC</label>
+              <input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter barcode" />
             </div>
           </div>
         </div>
 
-        {/* Additional Options */}
+        {/* 9. Additional Options */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-purple-600 mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Additional Options</h2>
           </div>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="returnEligible"
-                  checked={formData.returnEligible}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Return Eligible</span>
-              </label>
-
-              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="codAvailable"
-                  checked={formData.codAvailable}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Cash on Delivery</span>
-              </label>
-
-              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="preOrderOption"
-                  checked={formData.preOrderOption}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Pre-order Option</span>
-              </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { name: 'returnEligible', label: 'Return Eligible' },
+                { name: 'codAvailable',   label: 'Cash on Delivery' },
+                { name: 'preOrderOption', label: 'Pre-order Option' },
+              ].map((opt) => (
+                <label key={opt.name} className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" name={opt.name}
+                    checked={formData[opt.name as keyof ProductFormData] as boolean}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+                  <span className="ml-2 text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
             </div>
-
             <div>
-              <label htmlFor="relatedProducts" className="block text-sm font-medium text-gray-700 mb-1">
-                Related Products
-              </label>
-              <input
-                type="text"
-                id="relatedProducts"
-                name="relatedProducts"
-                value={formData.relatedProducts}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Enter product IDs separated by commas (e.g., 101, 102, 103)"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                IDs of related products to show on product page
-              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Related Products</label>
+              <input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Product IDs separated by commas" />
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-6 shadow-sm sticky bottom-0">
-          <Link
-            href="/admin/products"
-            className="inline-flex items-center px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
-          >
-            <X className="w-5 h-5 mr-2" />
-            Cancel
+          <Link href="/admin/products"
+            className="inline-flex items-center px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+            <X className="w-5 h-5 mr-2" /> Cancel
           </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
-          >
-            <Save className="w-5 h-5 mr-2" />
-            {isSubmitting ? 'Creating Product...' : 'Create Product'}
+          <button type="submit" disabled={isSubmitting}
+            className="inline-flex items-center px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium shadow-lg">
+            {isSubmitting
+              ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creating...</>
+              : <><Save className="w-5 h-5 mr-2" /> Create Product</>}
           </button>
         </div>
+
       </form>
     </div>
   );
