@@ -15,6 +15,7 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
+  ClipboardPaste,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { formatPrice } from '@/utils/currency';
@@ -276,15 +277,23 @@ export default function ProductsPage() {
           <p className="text-gray-600">Manage your product inventory</p>
         </div>
         {hasPermission(PERMISSIONS.PRODUCTS_CREATE) && (
-          <Link
-            href="/admin/products/new"
-            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+      <div className="mt-4 sm:mt-0 flex gap-3">
+        <Link
+          href="/admin/products/import"
+          className="inline-flex items-center px-4 py-2 bg-white border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors duration-200"
           >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Product
-          </Link>
-        )}
+          <ClipboardPaste className="w-5 h-5 mr-2" />
+          Claude Import
+        </Link>
+        <Link
+          href="/admin/products/new"
+          className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+          >
+          <Plus className="w-5 h-5 mr-2" />
+          Add Product
+        </Link>
       </div>
+    )}
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
