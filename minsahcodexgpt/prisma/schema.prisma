@@ -336,6 +336,7 @@ model Product {
   gtin          String?
   averageRating Decimal? @db.Decimal(3, 2)
   reviewCount   Int      @default(0)
+  faqs          Json?
 
   // Relations
   categoryId String?
