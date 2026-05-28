@@ -993,7 +993,7 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
         : existing.reviewCount,
       faqs: hasOwn(payload, 'faqs')
         ? (Array.isArray(payload.faqs) && payload.faqs.length > 0 ? payload.faqs : Prisma.JsonNull)
-        : existing.faqs,
+        : (existing.faqs ?? Prisma.JsonNull),
     } satisfies Prisma.ProductUncheckedUpdateInput,
   });
 
