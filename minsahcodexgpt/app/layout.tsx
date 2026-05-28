@@ -1,12 +1,8 @@
-﻿// ============================================
-// 📁 app/layout.tsx - UPDATED
-// ============================================
-
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Tenor_Sans, Lato, Inter } from "next/font/google";
 import "./globals.css";
 import SocialFloatingButtons from "./components/SocialFloatingButtons";
-import { EncodingProvider } from "./encoding-provider";
 import { FacebookPixel } from "@/lib/facebook/pixel";
 import AllPixels from "@/lib/tracking/pixels/AllPixels";
 import { TrackingProvider } from "@/contexts/TrackingContext";
@@ -35,22 +31,150 @@ const circularStd = Inter({
   variable: "--font-circular-std",
 });
 
+const BASE_URL = "https://minsahbeauty.cloud";
+
+// ── Global metadata ──────────────────────────────────────────────────────────
 export const metadata: Metadata = {
-  title: "Minsah Beauty - Beauty & Care Products",
-  description: "Nourish your skin with toxin-free cosmetic products. Premium beauty and care products for your skincare routine.",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "Minsah Beauty — অথেনটিক বিউটি প্রোডাক্ট বাংলাদেশ",
+    template: "%s | Minsah Beauty",
+  },
+  description:
+    "Minsah Beauty — বাংলাদেশের বিশ্বস্ত বিউটি শপ। Korean skincare, lip tint, serum, sunscreen, makeup সহ সব ধরনের অথেনটিক বিউটি প্রোডাক্ট পাবেন। Cash on Delivery সারা বাংলাদেশে।",
+  keywords: [
+    "beauty products bangladesh",
+    "korean skincare bangladesh",
+    "lip tint bd",
+    "serum bangladesh",
+    "sunscreen bd",
+    "মিনসা বিউটি",
+    "বিউটি প্রোডাক্ট বাংলাদেশ",
+    "অথেনটিক কোরিয়ান স্কিনকেয়ার",
+    "minsah beauty",
+    "beauty shop dhaka",
+  ],
+  authors: [{ name: "Minsah Beauty", url: BASE_URL }],
+  creator: "Minsah Beauty",
+  publisher: "Minsah Beauty",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "bn_BD",
+    alternateLocale: ["en_US"],
+    url: BASE_URL,
+    siteName: "Minsah Beauty",
+    title: "Minsah Beauty — অথেনটিক বিউটি প্রোডাক্ট বাংলাদেশ",
+    description:
+      "বাংলাদেশে অথেনটিক Korean skincare, lip tint, serum, sunscreen কিনুন। Cash on Delivery সারা বাংলাদেশে।",
+    images: [
+      {
+        url: `${BASE_URL}/images/og-default.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "Minsah Beauty — Beauty Products Bangladesh",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Minsah Beauty — অথেনটিক বিউটি প্রোডাক্ট বাংলাদেশ",
+    description: "বাংলাদেশে অথেনটিক বিউটি প্রোডাক্ট। Cash on Delivery সারা বাংলাদেশে।",
+    images: [`${BASE_URL}/images/og-default.jpg`],
+  },
+  alternates: {
+    canonical: BASE_URL,
+  },
+  verification: {
+    // google: 'your-google-site-verification-code', // add when you have it
+  },
 };
 
+// ── Organization + WebSite JSON-LD ───────────────────────────────────────────
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${BASE_URL}/#organization`,
+  name: "Minsah Beauty",
+  url: BASE_URL,
+  logo: {
+    "@type": "ImageObject",
+    url: `${BASE_URL}/images/logo.png`,
+    width: 300,
+    height: 100,
+  },
+  description:
+    "Minsah Beauty is Bangladesh's trusted beauty e-commerce store offering authentic Korean skincare, makeup, lip tints, serums, sunscreens and more. Cash on delivery available nationwide.",
+  sameAs: [
+    "https://www.facebook.com/minsahbeauty",
+    "https://www.instagram.com/minsahbeauty",
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    availableLanguage: ["Bengali", "English"],
+    areaServed: "BD",
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressCountry: "BD",
+    addressRegion: "Dhaka",
+  },
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${BASE_URL}/#website`,
+  name: "Minsah Beauty",
+  url: BASE_URL,
+  publisher: { "@id": `${BASE_URL}/#organization` },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${BASE_URL}/search?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+  inLanguage: ["bn-BD", "en-US"],
+};
+
+// ── Root Layout ───────────────────────────────────────────────────────────────
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${tenorSans.variable} ${lato.variable} ${circularStd.variable}`}>
+    <html
+      lang="bn"
+      className={`${tenorSans.variable} ${lato.variable} ${circularStd.variable}`}
+    >
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&display=swap"
           rel="stylesheet"
+        />
+        {/* Organization schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        {/* WebSite schema with SearchAction */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
       </head>
       <body className={`${lato.variable} antialiased`}>
@@ -60,10 +184,8 @@ export default function RootLayout({
           <AuthProvider>
             <ProductsProvider>
               <CartProvider>
-                {/* <EncodingProvider> */}
-                  {children}
-                  <SocialFloatingButtons />
-                {/* </EncodingProvider> */}
+                {children}
+                <SocialFloatingButtons />
               </CartProvider>
             </ProductsProvider>
           </AuthProvider>
