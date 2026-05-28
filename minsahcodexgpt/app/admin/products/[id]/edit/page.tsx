@@ -288,7 +288,7 @@ export default function EditProductPage() {
           codAvailable:    p.codAvailable    !== false,
           preOrderOption:  p.preOrderOption  || false,
           relatedProducts: p.relatedProducts || '',
-          faqs: Array.isArray(p.faqs) ? p.faqs : [],
+          faqs: Array.isArray(p.faqs) ? p.faqs as FaqItem[] : [],
         });
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : 'Failed to load product');
