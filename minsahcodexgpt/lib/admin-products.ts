@@ -730,6 +730,7 @@ export function formatAdminProductDetail(product: AdminProductDetailProduct) {
     gtin: product.gtin || '',
     averageRating: product.averageRating ? product.averageRating.toNumber() : 0,
     reviewCount: product.reviewCount || 0,
+    faqs: Array.isArray(product.faqs) ? product.faqs : [],
     skinType: product.skinType || [],
     ingredients: product.ingredients || '',
     shelfLife: product.shelfLife || '',
@@ -837,6 +838,7 @@ export async function createAdminProduct(input: unknown) {
       gtin: getPayloadString(payload, 'gtin') || null,
       averageRating: toOptionalNumber(payload.averageRating),
       reviewCount: Math.max(0, Math.trunc(toOptionalNumber(payload.reviewCount) ?? 0)),
+      faqs: Array.isArray(payload.faqs) && payload.faqs.length > 0 ? payload.faqs : null,
     } satisfies Prisma.ProductUncheckedCreateInput,
   });
 
@@ -989,6 +991,9 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
       reviewCount: hasOwn(payload, 'reviewCount')
         ? Math.max(0, Math.trunc(toOptionalNumber(payload.reviewCount) ?? 0))
         : existing.reviewCount,
+      faqs: hasOwn(payload, 'faqs')   // ← add
+        ? (Array.isArray(payload.faqs) && payload.faqs.length > 0 ? payload.faqs : null)
+        : existing.faqs,
     } satisfies Prisma.ProductUncheckedUpdateInput,
   });
 
