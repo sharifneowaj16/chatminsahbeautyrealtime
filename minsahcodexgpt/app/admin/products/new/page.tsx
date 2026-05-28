@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
+import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
 import { adminFetchJson } from '@/lib/adminFetch';
 import {
   ArrowLeft,
@@ -90,6 +91,7 @@ interface ProductFormData {
   codAvailable: boolean;
   preOrderOption: boolean;
   relatedProducts: string;
+  faqs: FaqItem[];
 }
 
 interface AiFacebookAdAngle {
@@ -125,7 +127,7 @@ const defaultForm: ProductFormData = {
   isFragile: false, discountPercentage: '', salePrice: '',
   offerStartDate: '', offerEndDate: '', flashSaleEligible: false,
   lowStockThreshold: '10', barcode: '',
-  returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '',
+  returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '', faqs: [],
 };
 
 export default function NewProductPage() {
@@ -505,6 +507,7 @@ export default function NewProductPage() {
           barcode: formData.barcode || undefined,
           returnEligible: formData.returnEligible, codAvailable: formData.codAvailable,
           preOrderOption: formData.preOrderOption, relatedProducts: formData.relatedProducts || undefined,
+          faqs: formData.faqs.length > 0 ? formData.faqs : undefined,
         },
       });
 
@@ -1041,6 +1044,12 @@ export default function NewProductPage() {
             </div>
           </div>
         </div>
+
+        {/* FAQ Section */}           {/* ← add এখানে */}
+        <ProductFaqSection
+          faqs={formData.faqs}
+          onChange={(faqs) => setFormData((prev) => ({ ...prev, faqs }))}
+        />
 
         {/* 6. Shipping */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
