@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
+import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
 import { adminFetchJson } from '@/lib/adminFetch';
 import {
   ArrowLeft, Save, X, Upload, Plus, Trash2,
@@ -79,6 +80,7 @@ interface ProductFormData {
   codAvailable: boolean;
   preOrderOption: boolean;
   relatedProducts: string;
+  faqs: FaqItem[];
 }
 
 interface LoadedProductImage {
@@ -170,7 +172,7 @@ const defaultFormData: ProductFormData = {
   isFragile: false,
   discountPercentage: '', salePrice: '', offerStartDate: '', offerEndDate: '',
   flashSaleEligible: false, lowStockThreshold: '10', barcode: '',
-  returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '',
+  returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '', faqs: [],
 };
 
 export default function EditProductPage() {
@@ -285,6 +287,7 @@ export default function EditProductPage() {
           codAvailable:    p.codAvailable    !== false,
           preOrderOption:  p.preOrderOption  || false,
           relatedProducts: p.relatedProducts || '',
+          faqs: Array.isArray(p.faqs) ? p.faqs : [],
         });
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : 'Failed to load product');
@@ -591,6 +594,7 @@ export default function EditProductPage() {
         codAvailable:      formData.codAvailable,
         preOrderOption:    formData.preOrderOption || undefined,
         relatedProducts:   formData.relatedProducts || undefined,
+        faqs: formData.faqs && formData.faqs.length > 0 ? formData.faqs : undefined,
       };
 
       const targetId = dbProductId || productId;
@@ -1054,6 +1058,12 @@ export default function EditProductPage() {
             </div>
           </div>
         </div>
+
+        {/* FAQ Section */}           {/* ← add এখানে */}
+        <ProductFaqSection
+          faqs={formData.faqs}
+          onChange={(faqs) => setFormData((prev) => ({ ...prev, faqs }))}
+        />
 
         {/* 6. Shipping & Delivery */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
