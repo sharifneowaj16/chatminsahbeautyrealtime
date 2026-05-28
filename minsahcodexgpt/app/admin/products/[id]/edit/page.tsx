@@ -149,6 +149,7 @@ interface LoadedAdminProduct {
   codAvailable?: boolean;
   preOrderOption?: boolean;
   relatedProducts?: string;
+  faqs?: unknown[] | null;
 }
 
 const countries = [
