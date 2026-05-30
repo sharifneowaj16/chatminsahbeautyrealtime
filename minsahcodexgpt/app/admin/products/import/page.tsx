@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
+import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
 import { adminFetchJson } from '@/lib/adminFetch';
 import {
   ArrowLeft, ClipboardPaste, CheckCircle, AlertCircle,
   Upload, Save, X, Loader2, Tag, Package, Search,
-  TruckIcon, ChevronDown, ChevronUp, Sparkles, Info,
+  TruckIcon, ChevronDown, ChevronUp, Sparkles, Info, HelpCircle,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ interface ImportData {
   codAvailable: boolean;
   preOrderOption: boolean;
   marketPriceNote: string;
+  faqs: FaqItem[];
 }
 
 interface ParseResult {
@@ -138,6 +140,13 @@ function normalizeImportData(p: Record<string, unknown>): ImportData {
     codAvailable:       p.codAvailable   !== false,
     preOrderOption:     Boolean(p.preOrderOption),
     marketPriceNote:    String(p.marketPriceNote || ''),
+    faqs: Array.isArray(p.faqs)
+      ? (p.faqs as Array<Record<string, unknown>>).map((faq, i) => ({
+          id:       String(faq.id       || `faq-import-${Date.now()}-${i}`),
+          question: String(faq.question || ''),
+          answer:   String(faq.answer   || ''),
+        }))
+      : [],
   };
 }
 
@@ -159,7 +168,7 @@ export default function ImportProductPage() {
   const [step, setStep]               = useState<'paste' | 'review'>('paste');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    basic: true, variants: true, seo: false, shipping: false, options: false,
+    basic: true, variants: true, seo: false, shipping: false, options: false, faqs: false,
   });
 
   if (!hasPermission(PERMISSIONS.PRODUCTS_CREATE)) {
@@ -292,6 +301,7 @@ export default function ImportProductPage() {
           returnEligible:    importData.returnEligible,
           codAvailable:      importData.codAvailable,
           preOrderOption:    importData.preOrderOption,
+          faqs:              importData.faqs && importData.faqs.length > 0 ? importData.faqs : undefined,
         },
       });
 
@@ -710,6 +720,24 @@ export default function ImportProductPage() {
                 onChange={(e) => updateField('lowStockThreshold', e.target.value)}
                 className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" min="0" />
             </div>
+          </Section>
+
+          {/* ── FAQs ── */}
+          <Section
+            icon={<HelpCircle className="w-5 h-5 text-purple-600" />}
+            title="Product FAQs (Q&A)"
+            sectionKey="faqs"
+            expanded={expandedSections.faqs}
+            onToggle={() => toggleSection('faqs')}
+          >
+            <p className="text-xs text-gray-500 mb-3">
+              Claude import থেকে {importData.faqs.length} টি FAQ import হয়েছে।
+              Edit করতে পারো অথবা নতুন add করতে পারো।
+            </p>
+            <ProductFaqSection
+              faqs={importData.faqs}
+              onChange={(faqs) => updateField('faqs', faqs)}
+            />
           </Section>
 
           {/* Image reminder */}
