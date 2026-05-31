@@ -301,6 +301,9 @@ model Product {
   bengaliName        String?
   bengaliDescription String? @db.Text
   focusKeyword       String?
+  secondaryKeywords  String[]
+  bengaliFocusKeyword String?
+  ogDescription       String?
   ogTitle            String?
   ogImageUrl         String?
   canonicalUrl       String?
