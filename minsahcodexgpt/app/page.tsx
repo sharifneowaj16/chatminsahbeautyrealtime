@@ -2,6 +2,8 @@
 
 import { useCart } from '@/contexts/CartContext';
 import { useProducts } from '@/contexts/ProductsContext';
+// ✅ Fix D: ProductsProvider import
+import { ProductsProvider } from '@/contexts/ProductsContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -11,8 +13,12 @@ import { formatPrice } from '@/utils/currency';
 import CartStepper from '@/components/cart/CartStepper';
 import CardBuyNowButton from '@/components/cart/CardBuyNowButton';
 
-// ✅ FIX: next/image ব্যবহার করছি — LCP উন্নতি হবে
-function ProductImage({ src, alt }: { src: string; alt: string }) {
+// ✅ Fix E: priority prop যোগ করা হয়েছে
+function ProductImage({ src, alt, priority = false }: {
+  src: string;
+  alt: string;
+  priority?: boolean;
+}) {
   const isUrl = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:');
   if (isUrl) {
     return (
@@ -22,7 +28,8 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
         fill
         className="object-cover rounded-inherit"
         sizes="(max-width: 640px) 50vw, 33vw"
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        priority={priority}
       />
     );
   }
@@ -54,19 +61,19 @@ const comboSlides = [
     title: 'Best Value Combos',
     description: 'Save More with Our Curated Sets',
     gradient: 'from-minsah-primary via-minsah-secondary to-minsah-dark',
-    image: '🎁'
+    image: '🎁',
   },
   {
     title: 'Premium Combo Deals',
     description: 'Luxury Beauty at Great Prices',
     gradient: 'from-purple-600 via-pink-500 to-orange-400',
-    image: '💎'
+    image: '💎',
   },
   {
     title: 'Complete Care Sets',
     description: 'Everything You Need in One Box',
     gradient: 'from-blue-500 via-teal-400 to-green-400',
-    image: '✨'
+    image: '✨',
   },
 ];
 
@@ -87,7 +94,8 @@ interface HomeProductCardItem {
   hasVariants: boolean;
 }
 
-export default function HomePage() {
+// ✅ Fix D: Inner component যেখানে useProducts ও useCart call হয়
+function HomePageInner() {
   const router = useRouter();
   const { items } = useCart();
   const { products, loading: productsLoading, error: productsError, refreshProducts } = useProducts();
@@ -135,7 +143,6 @@ export default function HomePage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [currentComboSlide, setCurrentComboSlide] = useState(0);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 7, minutes: 33, seconds: 28 });
   const [categories, setCategories] = useState<{ id: string; name: string; slug: string; icon: string; color: string }[]>([]);
@@ -297,13 +304,6 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const slideTimer = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % 2);
-    }, 5000);
-    return () => clearInterval(slideTimer);
-  }, []);
-
-  useEffect(() => {
     const comboSlideTimer = setInterval(() => {
       setCurrentComboSlide(prev => (prev + 1) % 3);
     }, 5000);
@@ -382,7 +382,7 @@ export default function HomePage() {
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
             <div className="grid grid-cols-2 gap-3">
-              {[1,2,3,4].map(i => (
+              {[1, 2, 3, 4].map(i => (
                 <div key={i} className="bg-gray-100 rounded-xl p-3">
                   <div className="w-full aspect-square bg-gray-200 rounded-lg mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
@@ -437,7 +437,6 @@ export default function HomePage() {
       </section>
 
       {/* Browse by Combos */}
-      {/* ✅ FIX CLS: পুরো section এ fixed height দিলাম যাতে layout shift না হয় */}
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">Browse by Combos</h2>
@@ -446,12 +445,11 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* ✅ FIX CLS: min-h দিয়ে reserved space রাখলাম — shift হবে না */}
         <div className="relative" style={{ minHeight: '248px' }}>
           {/* Combo Carousel */}
           <Link href="/combos" className="block">
-            {/* ✅ FIX CLS: h-[200px] fixed করলাম, min-h ছিল বলে shift হচ্ছিল */}
-            <div className={`bg-gradient-to-br ${comboSlides[currentComboSlide].gradient} rounded-3xl p-6 h-[200px] flex items-center justify-between overflow-hidden`}
+            <div
+              className={`bg-gradient-to-br ${comboSlides[currentComboSlide].gradient} rounded-3xl p-6 h-[200px] flex items-center justify-between overflow-hidden`}
               style={{ transition: 'background 0.5s ease' }}
             >
               <div className="text-white z-10 flex-1">
@@ -464,15 +462,13 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* ✅ FIX CLS: Slide Indicators — width/bg-color transition সরিয়ে transform ব্যবহার করলাম */}
-          {/* width আর background-color animate করা CLS cause করে! */}
+          {/* Slide Indicators */}
           <div className="flex justify-center gap-1.5 mt-3">
             {comboSlides.map((_, index) => (
               <div
                 key={index}
                 className="h-1.5 rounded-full bg-minsah-primary"
                 style={{
-                  // ✅ width transition এর বদলে scaleX — compositor thread এ চলে, CLS নেই
                   width: currentComboSlide === index ? '24px' : '6px',
                   opacity: currentComboSlide === index ? 1 : 0.4,
                   transition: 'width 0.3s ease, opacity 0.3s ease',
@@ -514,13 +510,12 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* ✅ FIX CLS: Countdown timer এ fixed width দিলাম */}
+        {/* Countdown Timer */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-minsah-secondary">Ends in:</span>
           <div className="flex gap-1">
             {[timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds].map((val, i) => (
               <span key={i} className="flex items-center gap-1">
-                {/* ✅ w-8 fixed width — content বদলালে layout shift হবে না */}
                 <div className="bg-minsah-primary text-white px-2 py-1 rounded text-xs font-bold w-8 text-center tabular-nums">
                   {String(val).padStart(2, '0')}
                 </div>
@@ -530,14 +525,18 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Flash Sale Products */}
+        {/* Flash Sale Products — ✅ Fix E: index added, priority on first 2 */}
         <div className="grid grid-cols-2 gap-3">
-          {flashSaleProducts.map((product) => (
+          {flashSaleProducts.map((product, index) => (
             <div key={product.id} className="bg-white rounded-xl p-3 shadow-sm relative">
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
                   <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} />
+                    <ProductImage
+                      src={product.image}
+                      alt={product.name}
+                      priority={index < 2}
+                    />
                   </div>
                   <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                     {product.discount}%
@@ -560,7 +559,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* New Arrival */}
+      {/* New Arrival — ✅ Fix E: index added, priority on first 2 */}
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">New Arrival</h2>
@@ -570,12 +569,16 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {newArrivals.slice(0, 4).map((product) => (
+          {newArrivals.slice(0, 4).map((product, index) => (
             <div key={product.id} className="bg-minsah-accent rounded-2xl p-3">
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
                   <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} />
+                    <ProductImage
+                      src={product.image}
+                      alt={product.name}
+                      priority={index < 2}
+                    />
                   </div>
                   <div className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
                     <Heart size={16} className="text-minsah-secondary" />
@@ -756,5 +759,14 @@ export default function HomePage() {
         </div>
       </nav>
     </div>
+  );
+}
+
+// ✅ Fix D: Outer export wraps everything in ProductsProvider
+export default function HomePage() {
+  return (
+    <ProductsProvider>
+      <HomePageInner />
+    </ProductsProvider>
   );
 }
