@@ -723,6 +723,11 @@ export function formatAdminProductDetail(product: AdminProductDetailProduct) {
     bengaliName: product.bengaliName || '',
     bengaliDescription: product.bengaliDescription || '',
     focusKeyword: product.focusKeyword || '',
+    // ── NEW SEO fields ──
+    secondaryKeywords: product.secondaryKeywords || [],
+    bengaliFocusKeyword: product.bengaliFocusKeyword || '',
+    ogDescription: product.ogDescription || '',
+    // ───────────────────
     ogTitle: product.ogTitle || '',
     ogImageUrl: product.ogImageUrl || '',
     canonicalUrl: product.canonicalUrl || '',
@@ -813,6 +818,11 @@ export async function createAdminProduct(input: unknown) {
       bengaliName: getPayloadString(payload, 'bengaliName') || null,
       bengaliDescription: getPayloadString(payload, 'bengaliDescription') || null,
       focusKeyword: getPayloadString(payload, 'focusKeyword') || null,
+      // ── NEW SEO fields ──
+      secondaryKeywords: Array.isArray(payload.secondaryKeywords) ? (payload.secondaryKeywords as string[]) : [],
+      bengaliFocusKeyword: getPayloadString(payload, 'bengaliFocusKeyword') || null,
+      ogDescription: getPayloadString(payload, 'ogDescription') || null,
+      // ───────────────────
       ogTitle: getPayloadString(payload, 'ogTitle') || null,
       ogImageUrl: getPayloadString(payload, 'ogImageUrl') || null,
       canonicalUrl: getPayloadString(payload, 'canonicalUrl') || null,
@@ -962,6 +972,17 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
       bengaliName: hasOwn(payload, 'bengaliName') ? getPayloadString(payload, 'bengaliName') || null : existing.bengaliName,
       bengaliDescription: hasOwn(payload, 'bengaliDescription') ? getPayloadString(payload, 'bengaliDescription') || null : existing.bengaliDescription,
       focusKeyword: hasOwn(payload, 'focusKeyword') ? getPayloadString(payload, 'focusKeyword') || null : existing.focusKeyword,
+      // ── NEW SEO fields ──
+      secondaryKeywords: hasOwn(payload, 'secondaryKeywords')
+        ? (Array.isArray(payload.secondaryKeywords) ? (payload.secondaryKeywords as string[]) : existing.secondaryKeywords)
+        : existing.secondaryKeywords,
+      bengaliFocusKeyword: hasOwn(payload, 'bengaliFocusKeyword')
+        ? getPayloadString(payload, 'bengaliFocusKeyword') || null
+        : existing.bengaliFocusKeyword,
+      ogDescription: hasOwn(payload, 'ogDescription')
+        ? getPayloadString(payload, 'ogDescription') || null
+        : existing.ogDescription,
+      // ───────────────────
       ogTitle: hasOwn(payload, 'ogTitle') ? getPayloadString(payload, 'ogTitle') || null : existing.ogTitle,
       ogImageUrl: hasOwn(payload, 'ogImageUrl') ? getPayloadString(payload, 'ogImageUrl') || null : existing.ogImageUrl,
       canonicalUrl: hasOwn(payload, 'canonicalUrl') ? getPayloadString(payload, 'canonicalUrl') || null : existing.canonicalUrl,
@@ -1100,6 +1121,6 @@ export async function deleteAdminProduct(idOrSlug: string): Promise<{ archived: 
     return { archived: true };
   }
 
-  await prisma.product.delete({ where: { id: existing.id } });
+  await prisma.product.delete({ where: { id: existing.id });
   return { archived: false };
 }
