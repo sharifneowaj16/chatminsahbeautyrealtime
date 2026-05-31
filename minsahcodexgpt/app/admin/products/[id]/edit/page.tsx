@@ -20,8 +20,8 @@ interface ProductVariant {
   price: string;
   stock: string;
   sku: string;
-  image?: string;       // existing URL
-  imageFile?: File;     // new upload
+  image?: string;
+  imageFile?: File;
   imagePreview?: string;
 }
 
@@ -55,6 +55,7 @@ interface ProductFormData {
   reviewCount: number;
   images: ProductImage[];
   variants: ProductVariant[];
+  // SEO
   metaTitle: string;
   metaDescription: string;
   urlSlug: string;
@@ -62,18 +63,24 @@ interface ProductFormData {
   bengaliProductName: string;
   bengaliMetaDescription: string;
   focusKeyword: string;
+  secondaryKeywords: string[];       // ← NEW
+  bengaliFocusKeyword: string;       // ← NEW
   ogTitle: string;
+  ogDescription: string;             // ← NEW
   ogImageFile: File | null;
   ogImagePreview: string;
   imageAltTexts: string[];
+  // Shipping
   shippingWeight: string;
   dimensions: { length: string; width: string; height: string };
   isFragile: boolean;
+  // Offers
   discountPercentage: string;
   salePrice: string;
   offerStartDate: string;
   offerEndDate: string;
   flashSaleEligible: boolean;
+  // Stock / Options
   lowStockThreshold: string;
   barcode: string;
   returnEligible: boolean;
@@ -134,7 +141,10 @@ interface LoadedAdminProduct {
   bengaliName?: string;
   bengaliDescription?: string;
   focusKeyword?: string;
+  secondaryKeywords?: string[];      // ← NEW
+  bengaliFocusKeyword?: string;      // ← NEW
   ogTitle?: string;
+  ogDescription?: string;            // ← NEW
   ogImageUrl?: string;
   shippingWeight?: string;
   isFragile?: boolean;
@@ -167,7 +177,10 @@ const defaultFormData: ProductFormData = {
   variants: [{ id: '1', size: '', color: '', price: '', stock: '', sku: '' }],
   metaTitle: '', metaDescription: '', urlSlug: '', tags: '',
   bengaliProductName: '', bengaliMetaDescription: '', focusKeyword: '',
-  ogTitle: '', ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
+  secondaryKeywords: [],             // ← NEW
+  bengaliFocusKeyword: '',           // ← NEW
+  ogTitle: '', ogDescription: '',    // ← NEW ogDescription
+  ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
   shippingWeight: '',
   dimensions: { length: '', width: '', height: '' },
   isFragile: false,
@@ -177,13 +190,13 @@ const defaultFormData: ProductFormData = {
 };
 
 export default function EditProductPage() {
-  const router   = useRouter();
-  const params   = useParams();
+  const router    = useRouter();
+  const params    = useParams();
   const productId = params.id as string;
 
-  const { hasPermission }    = useAdminAuth();
+  const { hasPermission }       = useAdminAuth();
   const { getActiveCategories } = useCategories();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef            = useRef<HTMLInputElement>(null);
 
   const categoriesData = useMemo(() => {
     return getActiveCategories().map((cat) => ({
@@ -192,12 +205,12 @@ export default function EditProductPage() {
     }));
   }, [getActiveCategories]);
 
-  const [formData, setFormData]     = useState<ProductFormData>(defaultFormData);
-  const [dbProductId, setDbProductId] = useState<string>('');
-  const [errors, setErrors]         = useState<Record<string, string>>({});
+  const [formData, setFormData]         = useState<ProductFormData>(defaultFormData);
+  const [dbProductId, setDbProductId]   = useState<string>('');
+  const [errors, setErrors]             = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading]   = useState(true);
-  const [loadError, setLoadError]   = useState<string | null>(null);
+  const [isLoading, setIsLoading]       = useState(true);
+  const [loadError, setLoadError]       = useState<string | null>(null);
 
   // ── Fetch product ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -218,7 +231,6 @@ export default function EditProductPage() {
           })
         );
 
-        // FIXED: variants with image field
         const existingVariants: ProductVariant[] =
           p.variants && p.variants.length > 0
             ? p.variants.map((v) => ({
@@ -233,14 +245,12 @@ export default function EditProductPage() {
               }))
             : [{ id: '1', size: '', color: '', price: String(p.price || ''), stock: String(p.stock ?? 0), sku: '' }];
 
-        // FIXED: dimensions fetched from individual length/width/height fields
         const dims = p.dimensions || { length: '', width: '', height: '' };
 
         setFormData({
           ...defaultFormData,
           name:          p.name          || '',
           category:      p.category      || '',
-          // FIXED: subcategory loaded properly
           subcategory:   p.subcategory   || '',
           brand:         p.brand         || '',
           originCountry: p.originCountry || 'Bangladesh (Local)',
@@ -248,7 +258,6 @@ export default function EditProductPage() {
           featured:      p.featured      || p.isFeatured || false,
           description:   p.description   || '',
           images:        existingImages,
-          // FIXED: alt texts loaded from image objects
           imageAltTexts: existingImages.map((img) => img._alt || ''),
           variants:      existingVariants,
           weight:           p.weight     != null ? String(p.weight) : '',
@@ -267,10 +276,14 @@ export default function EditProductPage() {
           bengaliProductName:     p.bengaliName        || '',
           bengaliMetaDescription: p.bengaliDescription || '',
           focusKeyword:           p.focusKeyword       || '',
-          ogTitle:                p.ogTitle            || '',
+          // ── NEW fields ──────────────────────────────────────────────────
+          secondaryKeywords:    Array.isArray(p.secondaryKeywords) ? p.secondaryKeywords : [],
+          bengaliFocusKeyword:  p.bengaliFocusKeyword  || '',
+          ogTitle:              p.ogTitle              || '',
+          ogDescription:        p.ogDescription        || '',
+          // ────────────────────────────────────────────────────────────────
           ogImagePreview:         p.ogImageUrl         || '',
           shippingWeight:       p.shippingWeight      || '',
-          // FIXED: dimensions object with individual fields
           dimensions: {
             length: dims.length || '',
             width:  dims.width  || '',
@@ -310,6 +323,13 @@ export default function EditProductPage() {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
     if (errors[name]) setErrors((prev) => { const n = { ...prev }; delete n[name]; return n; });
+  };
+
+  const handleSecondaryKeywordsChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      secondaryKeywords: value.split(',').map((s) => s.trim()).filter(Boolean),
+    }));
   };
 
   const handleDimensionChange = (field: 'length' | 'width' | 'height', value: string) => {
@@ -391,7 +411,6 @@ export default function EditProductPage() {
     }));
   };
 
-  // FIXED: variant image upload
   const handleVariantImageUpload = (variantId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -444,22 +463,11 @@ export default function EditProductPage() {
   // ── Submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidOptionalNumber(formData.weight)) {
-      alert('Weight must be a valid number');
-      return;
-    }
-    if (!isValidOptionalNumber(formData.dimensions.length)) {
-      alert('Length must be a valid number');
-      return;
-    }
-    if (!isValidOptionalNumber(formData.dimensions.width)) {
-      alert('Width must be a valid number');
-      return;
-    }
-    if (!isValidOptionalNumber(formData.dimensions.height)) {
-      alert('Height must be a valid number');
-      return;
-    }
+    if (!isValidOptionalNumber(formData.weight)) { alert('Weight must be a valid number'); return; }
+    if (!isValidOptionalNumber(formData.dimensions.length)) { alert('Length must be a valid number'); return; }
+    if (!isValidOptionalNumber(formData.dimensions.width))  { alert('Width must be a valid number'); return; }
+    if (!isValidOptionalNumber(formData.dimensions.height)) { alert('Height must be a valid number'); return; }
+
     setIsSubmitting(true);
     try {
       // Upload product images
@@ -537,7 +545,6 @@ export default function EditProductPage() {
         featured:      formData.featured,
         slug:          formData.urlSlug || undefined,
 
-        // FIXED: images with alt text
         images: uploadedImages.map((img, idx) => ({
           url:       img.url,
           alt:       img.altText || formData.name,
@@ -545,7 +552,6 @@ export default function EditProductPage() {
           sortOrder: idx,
         })),
 
-        // FIXED: variants with image URL
         variants: variantsWithImages.map((v) => ({
           id:         v.id,
           size:       v.size,
@@ -573,11 +579,15 @@ export default function EditProductPage() {
         bengaliName:        formData.bengaliProductName || undefined,
         bengaliDescription: formData.bengaliMetaDescription || undefined,
         focusKeyword:       formData.focusKeyword       || undefined,
-        ogTitle:            formData.ogTitle || formData.metaTitle || undefined,
-        ogImageUrl:         uploadedOgImageUrl           || undefined,
+        // ── NEW SEO fields ────────────────────────────────────────────────
+        secondaryKeywords:    formData.secondaryKeywords.length > 0 ? formData.secondaryKeywords : undefined,
+        bengaliFocusKeyword:  formData.bengaliFocusKeyword || undefined,
+        ogTitle:              formData.ogTitle || formData.metaTitle || undefined,
+        ogDescription:        formData.ogDescription || undefined,
+        // ─────────────────────────────────────────────────────────────────
+        ogImageUrl:           uploadedOgImageUrl || undefined,
 
         shippingWeight: formData.shippingWeight || undefined,
-        // FIXED: dimensions passed as object with length/width/height
         dimensions: (formData.dimensions.length || formData.dimensions.width || formData.dimensions.height)
           ? { length: formData.dimensions.length, width: formData.dimensions.width, height: formData.dimensions.height }
           : undefined,
@@ -600,7 +610,7 @@ export default function EditProductPage() {
 
       const targetId = dbProductId || productId;
       await adminFetchJson<{ success: boolean; product: { id: string; slug: string; name: string } }>(`/api/admin/products/${targetId}`, {
-        method:  'PUT',
+        method: 'PUT',
         json: payload,
       });
 
@@ -643,11 +653,10 @@ export default function EditProductPage() {
     );
   }
 
-  // FIXED: subcategory & item derived from categoriesData
-  const selectedCategoryData     = categoriesData.find((c) => c.name === formData.category);
-  const subcategories             = selectedCategoryData?.subcategories || [];
-  const selectedSubcategoryData  = subcategories.find((s: { name: string }) => s.name === formData.subcategory);
-  const items                    = (selectedSubcategoryData as { name: string; items?: string[] } | undefined)?.items || [];
+  const selectedCategoryData    = categoriesData.find((c) => c.name === formData.category);
+  const subcategories            = selectedCategoryData?.subcategories || [];
+  const selectedSubcategoryData = subcategories.find((s: { name: string }) => s.name === formData.subcategory);
+  const items                   = (selectedSubcategoryData as { name: string; items?: string[] } | undefined)?.items || [];
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -664,7 +673,7 @@ export default function EditProductPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* 1. Basic Information */}
+        {/* ── 1. Basic Information ─────────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Package className="w-5 h-5 text-purple-600 mr-2" />
@@ -701,7 +710,6 @@ export default function EditProductPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* FIXED: Product Type/Item loads items from subcategory */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Type/Item</label>
                 <select name="item" value={formData.item} onChange={handleChange}
@@ -757,7 +765,7 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* 2. Product Images */}
+        {/* ── 2. Product Images ────────────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-2">
             <ImageIcon className="w-5 h-5 text-purple-600 mr-2" />
@@ -803,7 +811,6 @@ export default function EditProductPage() {
                   ))}
                 </div>
 
-                {/* FIXED: Alt text inputs properly connected */}
                 <div className="border-t pt-4">
                   <h3 className="text-sm font-semibold text-gray-900 mb-1">Image Alt Texts (for SEO)</h3>
                   <p className="text-xs text-gray-500 mb-3">Alt text is saved with each image</p>
@@ -829,7 +836,7 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* 3. Product Variants — FIXED: with image upload per variant */}
+        {/* ── 3. Product Variants ──────────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
@@ -885,7 +892,6 @@ export default function EditProductPage() {
                   </div>
                 </div>
 
-                {/* FIXED: Variant Image Upload */}
                 <div className="border-t border-gray-200 pt-3">
                   <label className="block text-xs font-medium text-gray-700 mb-2">
                     Variant Image <span className="text-gray-400 font-normal">(optional — shown when this variant is selected)</span>
@@ -907,7 +913,7 @@ export default function EditProductPage() {
                       <input type="file" accept="image/*" className="hidden"
                         onChange={(e) => handleVariantImageUpload(variant.id, e)} />
                     </label>
-                    <p className="text-xs text-gray-400">Max 5MB. When selected, this image shows in the gallery.</p>
+                    <p className="text-xs text-gray-400">Max 5MB.</p>
                   </div>
                 </div>
               </div>
@@ -915,7 +921,7 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* 4. Product Specifications */}
+        {/* ── 4. Product Specifications ────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-purple-600 mr-2" />
@@ -926,13 +932,13 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume (numeric)</label>
                 <input type="text" name="weight" value={formData.weight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 50 or 100" />
-                <p className="mt-1 text-xs text-gray-500">Store the numeric value only. Use shipping weight for unit text.</p>
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 50" />
+                <p className="mt-1 text-xs text-gray-500">Numeric only — no unit.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
                 <input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 24 months" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 24 months / 12 months after opening" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
@@ -997,45 +1003,137 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* 5. SEO Settings */}
+        {/* ── 5. SEO Settings ──────────────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Search className="w-5 h-5 text-purple-600 mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">SEO Settings</h2>
           </div>
           <div className="space-y-4">
+
+            {/* Meta Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
               <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="SEO title" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="SEO title — include focus keyword" />
               <p className="text-xs text-gray-500 mt-1 text-right">{formData.metaTitle.length}/60</p>
             </div>
+
+            {/* Meta Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
               <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Brief description" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder='150–160 chars. Include "Cash on Delivery" or price signal.' />
               <p className="text-xs text-gray-500 mt-1 text-right">{formData.metaDescription.length}/160</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Product Name</label>
-              <input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="বাংলা নাম" />
+
+            {/* Bengali Product Name + Focus Keyword */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Product Name</label>
+                <input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="বাংলা নাম" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
+                <input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., beauty glazed lip oil bangladesh" />
+                <p className="text-xs text-gray-400 mt-1">Must appear in Meta Title, description first 100 words, and URL Slug</p>
+              </div>
             </div>
+
+            {/* ── NEW: Secondary Keywords ─────────────────────────────── */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Secondary Keywords
+                <span className="ml-2 text-xs font-normal text-gray-400">comma-separated, 3–5 long-tail terms</span>
+              </label>
+              <input
+                type="text"
+                value={formData.secondaryKeywords.join(', ')}
+                onChange={(e) => handleSecondaryKeywordsChange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="lip oil for dry lips bangladesh, non sticky lip gloss bd price, tinted lip oil buy online bd"
+              />
+              {formData.secondaryKeywords.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {formData.secondaryKeywords.map((kw, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs text-purple-700">
+                      {kw}
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({
+                          ...prev,
+                          secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
+                        }))}
+                        className="text-purple-400 hover:text-purple-700"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── NEW: Bengali Focus Keyword ──────────────────────────── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  বাংলা Focus Keyword
+                  <span className="ml-2 text-xs font-normal text-gray-400">Bengali script only</span>
+                </label>
+                <input
+                  type="text"
+                  name="bengaliFocusKeyword"
+                  value={formData.bengaliFocusKeyword}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="লিপ অয়েল দাম বাংলাদেশ"
+                />
+              </div>
+
+              {/* ── NEW: OG Description ─────────────────────────────── */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  OG Description
+                  <span className="ml-2 text-xs font-normal text-gray-400">Facebook/WhatsApp share — 100–130 chars</span>
+                </label>
+                <input
+                  type="text"
+                  name="ogDescription"
+                  value={formData.ogDescription}
+                  onChange={handleChange}
+                  maxLength={130}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Glass lips in one swipe. Non-sticky & deeply nourishing."
+                />
+                <p className={`text-xs mt-1 text-right ${formData.ogDescription.length > 130 ? 'text-red-500' : 'text-gray-400'}`}>
+                  {formData.ogDescription.length}/130
+                </p>
+              </div>
+            </div>
+
+            {/* বাংলা Meta Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Meta Description</label>
-              <textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} maxLength={160} rows={2}
+              <textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} rows={2}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
-              <input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="rhode lip tint bangladesh" />
-            </div>
+
+            {/* OG Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
               <input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Leave blank to use Meta Title" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Leave blank to use Meta Title" />
             </div>
+
+            {/* OG Image */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Social Sharing Image (1200×630px)</label>
               {formData.ogImagePreview && (
@@ -1046,27 +1144,37 @@ export default function EditProductPage() {
               <input type="file" accept="image/*" onChange={handleOgImageUpload}
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700" />
             </div>
+
+            {/* URL Slug */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
               <input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="product-url-slug" />
-              <p className="mt-1 text-xs text-gray-500">URL: /products/<strong>{formData.urlSlug || 'product-url-slug'}</strong></p>
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="product-url-slug" />
+              <p className="mt-1 text-xs text-gray-500">URL: /products/<strong>{formData.urlSlug || 'product-url-slug'}</strong> — max 50 chars, include focus keyword</p>
             </div>
+
+            {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags/Keywords</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tags/Keywords
+                <span className="ml-2 text-xs font-normal text-gray-400">15–20 tags, priority order: focusKeyword first</span>
+              </label>
               <input type="text" name="tags" value={formData.tags} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="serum, hydrating (comma-separated)" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="beauty glazed lip oil bangladesh, lip oil bd, লিপ অয়েল, ..." />
             </div>
+
           </div>
         </div>
 
-        {/* FAQ Section */}           {/* ← add এখানে */}
+        {/* ── FAQ Section ──────────────────────────────────────────────── */}
         <ProductFaqSection
           faqs={formData.faqs}
           onChange={(faqs) => setFormData((prev) => ({ ...prev, faqs }))}
         />
 
-        {/* 6. Shipping & Delivery */}
+        {/* ── 6. Shipping & Delivery ───────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <TruckIcon className="w-5 h-5 text-purple-600 mr-2" />
@@ -1075,33 +1183,29 @@ export default function EditProductPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Weight</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Weight (grams, numeric)</label>
                 <input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 150g" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 50" />
               </div>
-              {/* FIXED: dimensions with individual inputs */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Dimensions (L × W × H cm)</label>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <input type="text" value={formData.dimensions.length}
                       onChange={(e) => handleDimensionChange('length', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-                      placeholder="Length" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="Length" />
                     <p className="text-[10px] text-gray-400 mt-0.5 text-center">L (cm)</p>
                   </div>
                   <div>
                     <input type="text" value={formData.dimensions.width}
                       onChange={(e) => handleDimensionChange('width', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-                      placeholder="Width" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="Width" />
                     <p className="text-[10px] text-gray-400 mt-0.5 text-center">W (cm)</p>
                   </div>
                   <div>
                     <input type="text" value={formData.dimensions.height}
                       onChange={(e) => handleDimensionChange('height', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-                      placeholder="Height" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="Height" />
                     <p className="text-[10px] text-gray-400 mt-0.5 text-center">H (cm)</p>
                   </div>
                 </div>
@@ -1109,20 +1213,15 @@ export default function EditProductPage() {
             </div>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="isFragile"
-                  checked={formData.isFragile}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded"
-                />
+                <input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                 <span className="ml-2 text-sm text-gray-700">Fragile Item</span>
               </label>
             </div>
           </div>
         </div>
 
-        {/* 7. Discount & Offers */}
+        {/* ── 7. Discount & Offers ─────────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Percent className="w-5 h-5 text-purple-600 mr-2" />
@@ -1166,7 +1265,7 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* 8. Stock Management */}
+        {/* ── 8. Stock Management ──────────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <AlertCircle className="w-5 h-5 text-purple-600 mr-2" />
@@ -1186,7 +1285,7 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* 9. Additional Options */}
+        {/* ── 9. Additional Options ────────────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-purple-600 mr-2" />
@@ -1217,7 +1316,7 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* ── Action Buttons ───────────────────────────────────────────── */}
         <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-6 shadow-sm sticky bottom-0">
           <Link href="/admin/products"
             className="inline-flex items-center px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
