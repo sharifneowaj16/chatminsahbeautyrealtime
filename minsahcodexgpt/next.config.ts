@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
     optimizePackageImports: ["lucide-react"],
+    // ✅ FIX 3: CSS optimize করবে — render-blocking CSS chunk কমাবে
+    optimizeCss: true,
   },
 
   async headers() {
