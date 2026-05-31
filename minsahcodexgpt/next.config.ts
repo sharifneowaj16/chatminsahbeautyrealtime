@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
 
+  // ✅ compress: true — gzip/brotli compression চালু (bandwidth কমাবে)
+  compress: true,
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "minsahbeauty.cloud" },
@@ -14,9 +17,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "platform-lookaside.fbsbx.com" },
       { protocol: "https", hostname: "placehold.co" },
     ],
+    // ✅ avif + webp — modern formats, file size ছোট হবে
     formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 60 * 60 * 24 * 31,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 3840],
+    // ✅ 30 days cache (2592000s) — আগে ছিল 31 days, request অনুযায়ী 30 days
+    minimumCacheTTL: 2592000,
+    // ✅ Mobile-first deviceSizes — 390 (iPhone) যোগ হয়েছে, unnecessary বড় sizes কমেছে
+    deviceSizes: [390, 640, 750, 828, 1080, 1200, 1920, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
@@ -29,7 +35,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
     optimizePackageImports: ["lucide-react"],
-    // ✅ FIX 3: CSS optimize করবে — render-blocking CSS chunk কমাবে
+    // ✅ optimizeCss: true — render-blocking CSS chunk কমাবে, CLS ও FCP উন্নতি
     optimizeCss: true,
   },
 
