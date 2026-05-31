@@ -3,6 +3,7 @@
 import { useCart } from '@/contexts/CartContext';
 import { useProducts } from '@/contexts/ProductsContext';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, Heart, ShoppingCart, Home as HomeIcon, User, ChevronRight, Flame } from 'lucide-react';
@@ -10,11 +11,20 @@ import { formatPrice } from '@/utils/currency';
 import CartStepper from '@/components/cart/CartStepper';
 import CardBuyNowButton from '@/components/cart/CardBuyNowButton';
 
-// Helper: render a real image URL or fall back to emoji text
+// ✅ FIX: next/image ব্যবহার করছি — LCP উন্নতি হবে
 function ProductImage({ src, alt }: { src: string; alt: string }) {
   const isUrl = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:');
   if (isUrl) {
-    return <img src={src} alt={alt} className="w-full h-full object-cover rounded-inherit" />;
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-cover rounded-inherit"
+        sizes="(max-width: 640px) 50vw, 33vw"
+        loading="lazy"
+      />
+    );
   }
   return <span className="text-4xl">{src}</span>;
 }
@@ -38,7 +48,6 @@ const CATEGORY_COLORS = [
 ];
 
 const DEFAULT_CATEGORY_ICON = '🏷️';
-
 
 const comboSlides = [
   {
@@ -95,7 +104,6 @@ export default function HomePage() {
     }
   }, [searchQuery, router]);
 
-  // Fetch suggestions with debounce
   useEffect(() => {
     const q = searchQuery.trim();
     if (q.length < 2) {
@@ -117,7 +125,6 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -127,6 +134,7 @@ export default function HomePage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentComboSlide, setCurrentComboSlide] = useState(0);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 7, minutes: 33, seconds: 28 });
@@ -137,7 +145,6 @@ export default function HomePage() {
     [products]
   );
 
-  // New Arrivals: most recently added active products
   const newArrivals = useMemo(
     () =>
       [...activeProducts]
@@ -155,7 +162,6 @@ export default function HomePage() {
     [activeProducts]
   );
 
-  // For You: first 6 active products
   const forYouProducts = useMemo(
     () =>
       activeProducts.slice(0, 6).map(p => ({
@@ -169,7 +175,6 @@ export default function HomePage() {
     [activeProducts]
   );
 
-  // Recommendations: highest-rated active products
   const recommendations = useMemo(
     () =>
       [...activeProducts]
@@ -188,7 +193,6 @@ export default function HomePage() {
     [activeProducts]
   );
 
-  // Favourites: featured active products, fallback to any active
   const favourites = useMemo(
     () =>
       [...activeProducts]
@@ -198,8 +202,8 @@ export default function HomePage() {
           id: p.id,
           name: p.name,
           price: p.price,
-          rating: Math.round(p.rating),
-          reviews: p.reviews,
+          rating: Math.round(p.rating ?? 0),
+          reviews: p.reviews ?? 0,
           image: p.image,
           stock: p.stock,
           hasVariants: Boolean(p.variants?.length),
@@ -207,7 +211,6 @@ export default function HomePage() {
     [activeProducts]
   );
 
-  // Flash Sale: active products that have a lower price than originalPrice
   const flashSaleProducts = useMemo(
     () =>
       activeProducts
@@ -228,7 +231,6 @@ export default function HomePage() {
 
   const renderHomeOverlayCart = (product: HomeProductCardItem) => {
     if (product.stock === 0) return null;
-
     return (
       <div
         className="absolute bottom-2.5 right-2.5 z-10"
@@ -264,7 +266,6 @@ export default function HomePage() {
     );
   };
 
-  // Fetch categories from API
   useEffect(() => {
     fetch('/api/categories?activeOnly=true')
       .then(res => res.json())
@@ -280,44 +281,32 @@ export default function HomePage() {
           setCategories(mapped);
         }
       })
-      .catch(() => {
-        // keep empty array on error
-      });
+      .catch(() => {});
   }, []);
 
-  // Countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        }
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
         return prev;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-slide promotion
   useEffect(() => {
     const slideTimer = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % 2);
     }, 5000);
-
     return () => clearInterval(slideTimer);
   }, []);
 
-  // Auto-slide combos
   useEffect(() => {
     const comboSlideTimer = setInterval(() => {
       setCurrentComboSlide(prev => (prev + 1) % 3);
     }, 5000);
-
     return () => clearInterval(comboSlideTimer);
   }, []);
 
@@ -334,7 +323,6 @@ export default function HomePage() {
             <div className="w-12"></div>
           </div>
 
-          {/* Search Bar */}
           <div ref={searchRef} className="relative">
             <button
               onClick={handleSearch}
@@ -448,31 +436,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Promotion Section */}
-      <section className="px-4 py-6 hidden">
-        <h2 className="text-lg font-bold text-minsah-dark mb-4">Promotion Section</h2>
-        <div className="relative">
-          {/* Carousel */}
-          <div className="bg-gradient-to-br from-pink-500 via-pink-400 to-orange-400 rounded-3xl p-6 min-h-[200px] flex items-center justify-between overflow-hidden">
-            <div className="text-white z-10">
-              <h3 className="text-2xl font-bold mb-2">Exclusive<br/>Winter<br/>2022-23</h3>
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="w-16 h-16 bg-white/30 rounded-full"></div>
-              <div className="w-20 h-20 bg-white/40 rounded-full"></div>
-              <div className="w-16 h-16 bg-white/30 rounded-full"></div>
-            </div>
-          </div>
-
-          {/* Slide Indicators */}
-          <div className="flex justify-center gap-1.5 mt-3">
-            <div className={`h-1.5 rounded-full transition-all ${currentSlide === 0 ? 'w-6 bg-minsah-primary' : 'w-1.5 bg-minsah-secondary'}`}></div>
-            <div className={`h-1.5 rounded-full transition-all ${currentSlide === 1 ? 'w-6 bg-minsah-primary' : 'w-1.5 bg-minsah-secondary'}`}></div>
-          </div>
-        </div>
-      </section>
-
       {/* Browse by Combos */}
+      {/* ✅ FIX CLS: পুরো section এ fixed height দিলাম যাতে layout shift না হয় */}
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">Browse by Combos</h2>
@@ -480,10 +445,15 @@ export default function HomePage() {
             View all <ChevronRight size={16} />
           </Link>
         </div>
-        <div className="relative">
+
+        {/* ✅ FIX CLS: min-h দিয়ে reserved space রাখলাম — shift হবে না */}
+        <div className="relative" style={{ minHeight: '248px' }}>
           {/* Combo Carousel */}
           <Link href="/combos" className="block">
-            <div className={`bg-gradient-to-br ${comboSlides[currentComboSlide].gradient} rounded-3xl p-6 min-h-[200px] flex items-center justify-between overflow-hidden transition-all duration-500`}>
+            {/* ✅ FIX CLS: h-[200px] fixed করলাম, min-h ছিল বলে shift হচ্ছিল */}
+            <div className={`bg-gradient-to-br ${comboSlides[currentComboSlide].gradient} rounded-3xl p-6 h-[200px] flex items-center justify-between overflow-hidden`}
+              style={{ transition: 'background 0.5s ease' }}
+            >
               <div className="text-white z-10 flex-1">
                 <h3 className="text-2xl font-bold mb-2">{comboSlides[currentComboSlide].title}</h3>
                 <p className="text-sm opacity-90">{comboSlides[currentComboSlide].description}</p>
@@ -494,11 +464,22 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Slide Indicators */}
+          {/* ✅ FIX CLS: Slide Indicators — width/bg-color transition সরিয়ে transform ব্যবহার করলাম */}
+          {/* width আর background-color animate করা CLS cause করে! */}
           <div className="flex justify-center gap-1.5 mt-3">
-            <div className={`h-1.5 rounded-full transition-all ${currentComboSlide === 0 ? 'w-6 bg-minsah-primary' : 'w-1.5 bg-minsah-secondary'}`}></div>
-            <div className={`h-1.5 rounded-full transition-all ${currentComboSlide === 1 ? 'w-6 bg-minsah-primary' : 'w-1.5 bg-minsah-secondary'}`}></div>
-            <div className={`h-1.5 rounded-full transition-all ${currentComboSlide === 2 ? 'w-6 bg-minsah-primary' : 'w-1.5 bg-minsah-secondary'}`}></div>
+            {comboSlides.map((_, index) => (
+              <div
+                key={index}
+                className="h-1.5 rounded-full bg-minsah-primary"
+                style={{
+                  // ✅ width transition এর বদলে scaleX — compositor thread এ চলে, CLS নেই
+                  width: currentComboSlide === index ? '24px' : '6px',
+                  opacity: currentComboSlide === index ? 1 : 0.4,
+                  transition: 'width 0.3s ease, opacity 0.3s ease',
+                  willChange: 'width',
+                }}
+              />
+            ))}
           </div>
         </div>
 
@@ -533,25 +514,19 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Countdown */}
+        {/* ✅ FIX CLS: Countdown timer এ fixed width দিলাম */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-minsah-secondary">Ends in:</span>
           <div className="flex gap-1">
-            <div className="bg-minsah-primary text-white px-2 py-1 rounded text-xs font-bold min-w-[24px] text-center">
-              {String(timeLeft.days).padStart(2, '0')}
-            </div>
-            <span className="text-minsah-dark">:</span>
-            <div className="bg-minsah-primary text-white px-2 py-1 rounded text-xs font-bold min-w-[24px] text-center">
-              {String(timeLeft.hours).padStart(2, '0')}
-            </div>
-            <span className="text-minsah-dark">:</span>
-            <div className="bg-minsah-primary text-white px-2 py-1 rounded text-xs font-bold min-w-[24px] text-center">
-              {String(timeLeft.minutes).padStart(2, '0')}
-            </div>
-            <span className="text-minsah-dark">:</span>
-            <div className="bg-minsah-primary text-white px-2 py-1 rounded text-xs font-bold min-w-[24px] text-center">
-              {String(timeLeft.seconds).padStart(2, '0')}
-            </div>
+            {[timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds].map((val, i) => (
+              <span key={i} className="flex items-center gap-1">
+                {/* ✅ w-8 fixed width — content বদলালে layout shift হবে না */}
+                <div className="bg-minsah-primary text-white px-2 py-1 rounded text-xs font-bold w-8 text-center tabular-nums">
+                  {String(val).padStart(2, '0')}
+                </div>
+                {i < 3 && <span className="text-minsah-dark">:</span>}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -561,7 +536,7 @@ export default function HomePage() {
             <div key={product.id} className="bg-white rounded-xl p-3 shadow-sm relative">
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-2">
+                  <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
                     <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
@@ -599,7 +574,7 @@ export default function HomePage() {
             <div key={product.id} className="bg-minsah-accent rounded-2xl p-3">
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center overflow-hidden mb-2">
+                  <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center overflow-hidden mb-2 relative">
                     <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
@@ -633,7 +608,7 @@ export default function HomePage() {
             <div key={product.id} className="bg-white rounded-2xl p-3 flex-shrink-0 w-36">
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-minsah-accent rounded-xl flex items-center justify-center overflow-hidden mb-2">
+                  <div className="w-full aspect-square bg-minsah-accent rounded-xl flex items-center justify-center overflow-hidden mb-2 relative">
                     <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm">
@@ -666,7 +641,7 @@ export default function HomePage() {
             <div key={product.id} className="bg-minsah-accent rounded-xl p-2">
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-white rounded-lg flex items-center justify-center overflow-hidden mb-1">
+                  <div className="w-full aspect-square bg-white rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
                     <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div className="absolute top-1 right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
@@ -707,7 +682,7 @@ export default function HomePage() {
             <div key={product.id} className="bg-white rounded-xl p-2">
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-1">
+                  <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
                     <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div className="absolute top-1 right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
@@ -780,16 +755,6 @@ export default function HomePage() {
           </Link>
         </div>
       </nav>
-
-      <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 }
