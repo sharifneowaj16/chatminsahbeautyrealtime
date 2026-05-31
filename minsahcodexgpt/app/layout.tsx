@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Tenor_Sans, Lato, Inter } from "next/font/google";
+import { Tenor_Sans, Lato, Inter, Mrs_Saint_Delafield } from "next/font/google";
 import "./globals.css";
 import SocialFloatingButtons from "./components/SocialFloatingButtons";
 import { FacebookPixel } from "@/lib/facebook/pixel";
@@ -31,9 +31,17 @@ const circularStd = Inter({
   variable: "--font-circular-std",
 });
 
+// ✅ FIX 1: Google Fonts manual <link> সরিয়ে Next.js font system এ নিলাম
+// এটা render-blocking 750ms বাঁচাবে
+const mrsSaintDelafield = Mrs_Saint_Delafield({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mrs-saint-delafield",
+});
+
 const BASE_URL = "https://minsahbeauty.cloud";
 
-// ── Global metadata ──────────────────────────────────────────────────────────
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
@@ -95,12 +103,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: BASE_URL,
   },
-  verification: {
-    // google: 'your-google-site-verification-code', // add when you have it
-  },
 };
 
-// ── Organization + WebSite JSON-LD ───────────────────────────────────────────
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -150,7 +154,6 @@ const websiteSchema = {
   inLanguage: ["bn-BD", "en-US"],
 };
 
-// ── Root Layout ───────────────────────────────────────────────────────────────
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -159,27 +162,25 @@ export default function RootLayout({
   return (
     <html
       lang="bn"
-      className={`${tenorSans.variable} ${lato.variable} ${circularStd.variable}`}
+      // ✅ FIX 1 continued: mrsSaintDelafield variable add করলাম
+      className={`${tenorSans.variable} ${lato.variable} ${circularStd.variable} ${mrsSaintDelafield.variable}`}
     >
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&display=swap"
-          rel="stylesheet"
-        />
-        {/* Organization schema */}
+        {/* ✅ FIX 1: manual <link> Google Fonts সরিয়ে দিলাম — এটাই 750ms block করছিল */}
+        {/* <link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&display=swap" rel="stylesheet" /> */}
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
-        {/* WebSite schema with SearchAction */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
       </head>
       <body className={`${lato.variable} antialiased`}>
-        <FacebookPixel />
-        <AllPixels />
+        {/* ✅ FIX 2: FacebookPixel এবং AllPixels body এর শেষে নিলাম */}
+        {/* Main content আগে render হবে, pixel পরে load হবে */}
         <TrackingProvider>
           <AuthProvider>
             <ProductsProvider>
@@ -190,6 +191,10 @@ export default function RootLayout({
             </ProductsProvider>
           </AuthProvider>
         </TrackingProvider>
+
+        {/* ✅ FIX 2: Pixel scripts body এর একদম শেষে */}
+        <FacebookPixel />
+        <AllPixels />
       </body>
     </html>
   );
