@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Tenor_Sans, Lato, Inter, Mrs_Saint_Delafield } from "next/font/google";
+import { Tenor_Sans, Lato, Inter } from "next/font/google";
 import "./globals.css";
 import SocialFloatingButtons from "./components/SocialFloatingButtons";
 import { FacebookPixel } from "@/lib/facebook/pixel";
@@ -8,7 +8,6 @@ import AllPixels from "@/lib/tracking/pixels/AllPixels";
 import { TrackingProvider } from "@/contexts/TrackingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-import { ProductsProvider } from "@/contexts/ProductsContext";
 
 const tenorSans = Tenor_Sans({
   weight: "400",
@@ -33,12 +32,7 @@ const circularStd = Inter({
 
 // ✅ FIX 1: Google Fonts manual <link> সরিয়ে Next.js font system এ নিলাম
 // এটা render-blocking 750ms বাঁচাবে
-const mrsSaintDelafield = Mrs_Saint_Delafield({
-  weight: "400",
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-mrs-saint-delafield",
-});
+
 
 const BASE_URL = "https://minsahbeauty.cloud";
 
@@ -163,11 +157,13 @@ export default function RootLayout({
     <html
       lang="bn"
       // ✅ FIX 1 continued: mrsSaintDelafield variable add করলাম
-      className={`${tenorSans.variable} ${lato.variable} ${circularStd.variable} ${mrsSaintDelafield.variable}`}
+      className={`${tenorSans.variable} ${lato.variable} ${circularStd.variable}`}
     >
       <head>
         {/* ✅ FIX 1: manual <link> Google Fonts সরিয়ে দিলাম — এটাই 750ms block করছিল */}
         {/* <link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&display=swap" rel="stylesheet" /> */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
 
         <script
           type="application/ld+json"
@@ -183,12 +179,10 @@ export default function RootLayout({
         {/* Main content আগে render হবে, pixel পরে load হবে */}
         <TrackingProvider>
           <AuthProvider>
-            <ProductsProvider>
               <CartProvider>
                 {children}
                 <SocialFloatingButtons />
               </CartProvider>
-            </ProductsProvider>
           </AuthProvider>
         </TrackingProvider>
 
