@@ -1121,6 +1121,6 @@ export async function deleteAdminProduct(idOrSlug: string): Promise<{ archived: 
     return { archived: true };
   }
 
-  await prisma.product.delete({ where: { id: existing.id });
+  await prisma.product.delete({ where: { id: existing.id } });
   return { archived: false };
 }
