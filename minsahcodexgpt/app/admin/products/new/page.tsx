@@ -45,6 +45,7 @@ interface ProductImage {
   isMain: boolean;
 }
 
+// ── PLACE 1: ProductFormData interface ────────────────────────────────────────
 interface ProductFormData {
   name: string;
   category: string;
@@ -73,7 +74,10 @@ interface ProductFormData {
   bengaliProductName: string;
   bengaliMetaDescription: string;
   focusKeyword: string;
+  secondaryKeywords: string[];        // ← NEW
+  bengaliFocusKeyword: string;        // ← NEW
   ogTitle: string;
+  ogDescription: string;              // ← NEW
   ogImageFile: File | null;
   ogImagePreview: string;
   imageAltTexts: string[];
@@ -113,6 +117,7 @@ const countries = [
 
 const skinTypes = ['Oily', 'Dry', 'Combination', 'Sensitive', 'Normal', 'All Skin Types'];
 
+// ── PLACE 1 (cont.): defaultForm ──────────────────────────────────────────────
 const defaultForm: ProductFormData = {
   name: '', category: 'Make Up', subcategory: '', item: '', brand: '',
   originCountry: 'Bangladesh (Local)', status: 'active', featured: false,
@@ -121,7 +126,10 @@ const defaultForm: ProductFormData = {
   variants: [{ id: '1', size: '', color: '', price: '', stock: '', sku: '' }],
   metaTitle: '', metaDescription: '', urlSlug: '', tags: '',
   bengaliProductName: '', bengaliMetaDescription: '', focusKeyword: '',
-  ogTitle: '', ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
+  secondaryKeywords: [],              // ← NEW
+  bengaliFocusKeyword: '',            // ← NEW
+  ogTitle: '', ogDescription: '',     // ← NEW ogDescription
+  ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
   productCondition: 'NEW', gtin: '', averageRating: 0, reviewCount: 0,
   shippingWeight: '', dimensions: { length: '', width: '', height: '' },
   isFragile: false, discountPercentage: '', salePrice: '',
@@ -194,7 +202,7 @@ export default function NewProductPage() {
     );
   }
 
-  // ── AI Generate handler ────────────────────────────────────────────────
+  // ── PLACE 2a: AI Generate handler — mapping ────────────────────────────────
   const handleAiGenerate = async () => {
     if (!aiInput.trim()) return;
     setIsGenerating(true);
@@ -212,7 +220,6 @@ export default function NewProductPage() {
 
       const p = data.product as Record<string, unknown>;
 
-      // Save Facebook ad angle separately (not part of form)
       if (p.facebookAdAngle) {
         setFacebookAdAngle(p.facebookAdAngle as AiFacebookAdAngle);
         setShowAdAngle(true);
@@ -220,13 +227,12 @@ export default function NewProductPage() {
       if (p.marketPriceNote) setMarketNote(String(p.marketPriceNote));
       if (p.competitionNote) setCompetitionNote(String(p.competitionNote));
 
-      // Map AI response → form fields
       const variants: ProductVariant[] = Array.isArray(p.variants) && (p.variants as unknown[]).length > 0
         ? (p.variants as Array<Record<string, unknown>>).map((v, i) => ({
             id: String(v.id || Date.now() + i),
             size: String(v.size || ''),
             color: String(v.color || ''),
-            price: '',            // always blank — user sets price
+            price: '',
             stock: String(v.stock || '10'),
             sku: String(v.sku || ''),
           }))
@@ -260,6 +266,13 @@ export default function NewProductPage() {
         bengaliProductName:     String(p.bengaliProductName || ''),
         bengaliMetaDescription: String(p.bengaliMetaDescription || ''),
         focusKeyword:           String(p.focusKeyword || ''),
+        // ── NEW AI mapping ───────────────────────────────────────────────
+        secondaryKeywords:   Array.isArray(p.secondaryKeywords)
+          ? (p.secondaryKeywords as string[]).map(String)
+          : [],
+        bengaliFocusKeyword: String(p.bengaliFocusKeyword || ''),
+        ogDescription:       String(p.ogDescription || ''),
+        // ────────────────────────────────────────────────────────────────
         ogTitle:                String(p.ogTitle || ''),
         shippingWeight:         String(p.shippingWeight || ''),
         dimensions: {
@@ -372,6 +385,14 @@ export default function NewProductPage() {
     }));
   };
 
+  // ── Secondary keywords helper ──────────────────────────────────────────
+  const handleSecondaryKeywordsChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      secondaryKeywords: value.split(',').map((s) => s.trim()).filter(Boolean),
+    }));
+  };
+
   const generateSlug = (name: string) =>
     name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
@@ -430,7 +451,7 @@ export default function NewProductPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ── Submit ─────────────────────────────────────────────────────────────
+  // ── PLACE 2b: Submit — payload ─────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -490,6 +511,11 @@ export default function NewProductPage() {
           bengaliName: formData.bengaliProductName || undefined,
           bengaliDescription: formData.bengaliMetaDescription || undefined,
           focusKeyword: formData.focusKeyword || undefined,
+          // ── NEW submit payload ────────────────────────────────────────
+          secondaryKeywords:   formData.secondaryKeywords.length > 0 ? formData.secondaryKeywords : undefined,
+          bengaliFocusKeyword: formData.bengaliFocusKeyword || undefined,
+          ogDescription:       formData.ogDescription || undefined,
+          // ─────────────────────────────────────────────────────────────
           ogTitle: formData.ogTitle || formData.metaTitle || undefined,
           ogImageUrl: uploadedOgImageUrl || undefined,
           canonicalUrl: formData.urlSlug ? `https://minsahbeauty.cloud/products/${formData.urlSlug}` : undefined,
@@ -623,7 +649,7 @@ export default function NewProductPage() {
           </div>
         )}
 
-        {/* Market insights — shown after generation */}
+        {/* Market insights */}
         {aiApplied && (marketNote || competitionNote) && (
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             {marketNote && (
@@ -973,27 +999,33 @@ export default function NewProductPage() {
           </div>
         </div>
 
-        {/* 5. SEO Settings */}
+        {/* ── PLACE 3: 5. SEO Settings — updated UI ─────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Search className="w-5 h-5 text-purple-600 mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">SEO Settings</h2>
           </div>
           <div className="space-y-4">
+
+            {/* Meta Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
               <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                placeholder="SEO title" />
+                placeholder="SEO title — include focus keyword" />
               <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaTitle.length}/60</p>
             </div>
+
+            {/* Meta Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
               <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                placeholder="Brief SEO description..." />
+                placeholder='150–160 chars. Include "Cash on Delivery" or price signal.' />
               <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaDescription.length}/160</p>
             </div>
+
+            {/* বাংলা Product Name + Focus Keyword */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Product Name</label>
@@ -1005,14 +1037,89 @@ export default function NewProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
                 <input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="vitamin c serum bangladesh" />
+                  placeholder="e.g., vitamin c serum bangladesh" />
+                <p className="text-xs text-gray-400 mt-1">Must appear in Meta Title, description first 100 words, and URL Slug</p>
               </div>
             </div>
+
+            {/* Secondary Keywords — NEW */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Secondary Keywords
+                <span className="ml-2 text-xs font-normal text-gray-400">comma-separated, 3–5 long-tail terms</span>
+              </label>
+              <input
+                type="text"
+                value={formData.secondaryKeywords.join(', ')}
+                onChange={(e) => handleSecondaryKeywordsChange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="lip oil for dry lips bangladesh, non sticky lip gloss bd price, tinted lip oil buy online bd"
+              />
+              {formData.secondaryKeywords.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {formData.secondaryKeywords.map((kw, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs text-purple-700">
+                      {kw}
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({
+                          ...prev,
+                          secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
+                        }))}
+                        className="text-purple-400 hover:text-purple-700"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* বাংলা Focus Keyword + OG Description — NEW */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  বাংলা Focus Keyword
+                  <span className="ml-2 text-xs font-normal text-gray-400">Bengali script only</span>
+                </label>
+                <input
+                  type="text"
+                  name="bengaliFocusKeyword"
+                  value={formData.bengaliFocusKeyword}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="লিপ অয়েল দাম বাংলাদেশ"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  OG Description
+                  <span className="ml-2 text-xs font-normal text-gray-400">Facebook/WhatsApp share — 100–130 chars</span>
+                </label>
+                <input
+                  type="text"
+                  name="ogDescription"
+                  value={formData.ogDescription}
+                  onChange={handleChange}
+                  maxLength={130}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Glass lips in one swipe. Non-sticky & deeply nourishing."
+                />
+                <p className={`text-xs mt-1 text-right ${formData.ogDescription.length > 130 ? 'text-red-500' : 'text-gray-400'}`}>
+                  {formData.ogDescription.length}/130
+                </p>
+              </div>
+            </div>
+
+            {/* বাংলা Meta Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Meta Description</label>
               <textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} maxLength={160} rows={2}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
             </div>
+
+            {/* OG Title + URL Slug */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
@@ -1028,6 +1135,8 @@ export default function NewProductPage() {
                 <p className="text-xs text-gray-400 mt-1">/products/<strong>{formData.urlSlug || 'product-url-slug'}</strong></p>
               </div>
             </div>
+
+            {/* Social Sharing Image */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Social Sharing Image (1200×630px)</label>
               {formData.ogImagePreview && (
@@ -1036,16 +1145,22 @@ export default function NewProductPage() {
               <input type="file" accept="image/*" onChange={handleOgImageUpload}
                 className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700" />
             </div>
+
+            {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags/Keywords</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tags/Keywords
+                <span className="ml-2 text-xs font-normal text-gray-400">15–20 tags, priority order: focusKeyword first</span>
+              </label>
               <input type="text" name="tags" value={formData.tags} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                placeholder="serum, hydrating, anti-aging (comma-separated)" />
+                placeholder="beauty glazed lip oil bangladesh, lip oil bd, লিপ অয়েল, ..." />
             </div>
+
           </div>
         </div>
 
-        {/* FAQ Section */}           {/* ← add এখানে */}
+        {/* FAQ Section */}
         <ProductFaqSection
           faqs={formData.faqs}
           onChange={(faqs) => setFormData((prev) => ({ ...prev, faqs }))}
