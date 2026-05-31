@@ -77,7 +77,6 @@ html {
 .main-block {
   height: 100vh;
   width: 100vw;
-  background-image: url('/images/hero-image.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
