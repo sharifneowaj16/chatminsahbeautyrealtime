@@ -1,0 +1,85 @@
+{
+  "name": "Minsah Beauty - Purchase Shortlist",
+  "short_name": "Purchase Shortlist",
+  "description": "Fast supplier purchase checklist for inventory management. Track products to buy from suppliers.",
+  "start_url": "/admin/shortlist",
+  "scope": "/admin/shortlist",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#3b82f6",
+  "background_color": "#ffffff",
+  
+  "screenshots": [
+    {
+      "src": "/shortlist-screenshot-small.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "purpose": "any"
+    },
+    {
+      "src": "/shortlist-screenshot-large.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "purpose": "any"
+    }
+  ],
+  
+  "icons": [
+    {
+      "src": "/shortlist-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/shortlist-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/shortlist-icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  
+  "shortcuts": [
+    {
+      "name": "Pending Orders",
+      "short_name": "Pending",
+      "description": "View pending orders with unpurchased products",
+      "url": "/admin/shortlist?status=pending",
+      "icons": [
+        {
+          "src": "/shortlist-pending-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Completed Orders",
+      "short_name": "Completed",
+      "description": "View completed orders with all products sourced",
+      "url": "/admin/shortlist?status=completed",
+      "icons": [
+        {
+          "src": "/shortlist-completed-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  
+  "categories": ["productivity", "business"],
+  "screenshots_for_splash": [
+    {
+      "src": "/shortlist-splash.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
