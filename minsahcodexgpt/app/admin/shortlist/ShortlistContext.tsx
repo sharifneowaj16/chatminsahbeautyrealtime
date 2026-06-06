@@ -76,12 +76,12 @@ export function ShortlistProvider({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<ShortlistStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFiltersState] = useState({
-    status: 'pending' as const,
+  const [filters, setFiltersState] = useState<ShortlistContextType['filters']>({
+    status: 'pending',
     priority: 'ALL',
-    dateRange: 'all' as const,
+    dateRange: 'all',
     searchQuery: '',
-    sortBy: 'recent' as const,
+    sortBy: 'recent',
   });
 
   // ===== FETCH ORDERS =====
