@@ -284,3 +284,47 @@ export async function PATCH(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// DELETE /api/admin/orders/[id] — Permanently delete an order and all related data
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const accessToken = request.cookies.get('admin_access_token')?.value;
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+    const payload = await verifyAdminAccessToken(accessToken);
+    if (!payload) {
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const existing = await prisma.order.findFirst({
+      where: { OR: [{ id }, { orderNumber: id }] },
+      select: { id: true, orderNumber: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    // Return model has no onDelete cascade from Order, so delete manually.
+    // ReturnItem has onDelete: Cascade from Return, so deleting Returns is enough.
+    await prisma.return.deleteMany({ where: { orderId: existing.id } });
+
+    // Delete the order — cascades to: OrderItem, Payment, PurchaseShortlist.
+    // AdminNotification and webhook events use SetNull so they stay intact.
+    await prisma.order.delete({ where: { id: existing.id } });
+
+    return NextResponse.json({
+      success: true,
+      orderNumber: existing.orderNumber,
+    });
+  } catch (error) {
+    console.error('Admin order DELETE error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
