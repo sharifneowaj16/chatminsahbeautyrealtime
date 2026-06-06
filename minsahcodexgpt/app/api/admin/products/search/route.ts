@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         price: true,
         quantity: true,
         isActive: true,
-        image: {
+        images: {
           where: { isDefault: true },
           take: 1,
           select: { url: true },
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       price: parseFloat(p.price.toString()),
       quantity: p.quantity,
       isActive: p.isActive,
-      image: p.image[0]?.url ?? null,
+     image: p.images[0]?.url ?? null,
     }));
 
     return NextResponse.json({ products: result });
