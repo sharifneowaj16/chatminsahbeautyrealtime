@@ -61,7 +61,7 @@ interface ShortlistContextType {
     searchQuery: string;
     sortBy: 'recent' | 'urgent' | 'progress';
   };
-  
+
   fetchOrders: () => Promise<void>;
   updateItemStatus: (itemId: string, purchased: boolean) => Promise<void>;
   setFilters: (filters: Partial<ShortlistContextType['filters']>) => void;
@@ -108,7 +108,7 @@ export function ShortlistProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setOrders(data.data.orders);
         setStats(data.data.stats);
@@ -147,17 +147,9 @@ export function ShortlistProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
 
         if (data.success) {
-          // Optimistic update - update local state
-          setOrders((prevOrders) =>
-            prevOrders.map((order) => {
-              if (order.id === data.data.order.id) {
-                return data.data.order;
-              }
-              return order;
-            })
-          );
-
-          // Update stats
+          // ✅ Single source of truth — server থেকে fresh data নেওয়া হচ্ছে।
+          // আগে optimistic setOrders() + fetchOrders() দুটোই ছিল,
+          // optimistic update টা fetchOrders() এ overwrite হয়ে যেত — redundant ছিল।
           await fetchOrders();
         } else {
           setError(data.error || 'Failed to update');
