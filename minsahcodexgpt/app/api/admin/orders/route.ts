@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
           quantity: shortItem.quantity,
           buyPrice: new Decimal(0),
           sellPrice: shortItem.price,
-          adminId: payload.id,
+          adminId: payload.id as string,
         },
         update: {
           quantity: shortItem.quantity,
