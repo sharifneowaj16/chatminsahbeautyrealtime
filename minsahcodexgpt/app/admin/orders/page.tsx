@@ -10,7 +10,7 @@ import {
   AlertCircle, CreditCard, MapPin, User, Phone, Mail, Copy,
   ExternalLink, Printer, MessageSquare, ArrowUpDown, Calendar,
   TrendingUp, ShoppingBag, DollarSign, MoreHorizontal, Edit3,
-  Check, Loader2, ChevronUp, Hash, Layers, Star, Send
+  Check, Loader2, ChevronUp, Hash, Layers, Star, Send, Trash2
 } from 'lucide-react';
 import SteadfastShipPanel from '@/components/admin/SteadfastShipPanel';
 import SteadfastStatusBadge from '@/components/admin/SteadfastStatusBadge';
@@ -711,6 +711,10 @@ export default function OrdersPage() {
   const [pathaoSendingOrderId, setPathaoSendingOrderId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
 
+  // ── Delete state ───────────────────────────────────────────────────────────
+  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -959,6 +963,30 @@ export default function OrdersPage() {
       showToast('error', error instanceof Error ? error.message : 'Failed to send order to Pathao.');
     } finally {
       setPathaoSendingOrderId(null);
+    }
+  };
+
+  // ── Delete order ───────────────────────────────────────────────────────────
+
+  const handleDeleteOrder = async (order: Order) => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.dbId || order.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete order');
+      }
+      setOrders((prev) => prev.filter((o) => o.id !== order.id));
+      setDeleteConfirmOrder(null);
+      if (selectedOrder?.id === order.id) setSelectedOrder(null);
+      showToast('success', `Order #${order.id} deleted successfully.`);
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Failed to delete order');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1410,6 +1438,14 @@ export default function OrdersPage() {
                               </>
                             )}
                           </button>
+                          {/* Delete button */}
+                          <button
+                            onClick={() => setDeleteConfirmOrder(order)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
+                            title="Delete order"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1496,7 +1532,6 @@ export default function OrdersPage() {
         isOpen={shipPanelOpen}
         onClose={() => setShipPanelOpen(false)}
         onDispatched={(orderNumber, trackingCode) => {
-          // Update the order in list to show dispatched state
           setOrders((prev) => prev.map((o) =>
             o.id === orderNumber
               ? { ...o, steadfastTrackingCode: trackingCode, steadfastStatus: 'pending', status: 'shipped' }
@@ -1505,12 +1540,73 @@ export default function OrdersPage() {
           fetchOrders(pagination.page, true);
         }}
       />
+
+      {/* ── Delete Confirmation Modal ─────────────────────────────── */}
+      {deleteConfirmOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            {/* Header */}
+            <div className="p-6 pb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Delete Order</h3>
+                  <p className="text-xs text-gray-400">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Are you sure you want to permanently delete order{' '}
+                <span className="font-mono font-semibold text-gray-900">
+                  #{deleteConfirmOrder.id.slice(-8).toUpperCase()}
+                </span>
+                ?
+              </p>
+              {/* Warning list */}
+              <div className="mt-4 rounded-xl bg-red-50 border border-red-100 p-3 space-y-1.5">
+                {[
+                  'All order items and payment records',
+                  'Return requests linked to this order',
+                  'Purchase shortlist entries',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-xs text-red-700">
+                    <span className="w-1 h-1 rounded-full bg-red-400 flex-shrink-0" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="flex items-center gap-2 px-6 py-4 border-t border-gray-100">
+              <button
+                onClick={() => setDeleteConfirmOrder(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteOrder(deleteConfirmOrder)}
+                disabled={deleting}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-60"
+              >
+                {deleting
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Deleting…</>
+                  : <><Trash2 className="w-4 h-4" /> Delete Order</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // 'use client';
 
+// import Link from 'next/link';
 // import { useState, useEffect, useCallback, useRef } from 'react';
 // import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 // import { formatPrice } from '@/utils/currency';
@@ -1520,8 +1616,11 @@ export default function OrdersPage() {
 //   AlertCircle, CreditCard, MapPin, User, Phone, Mail, Copy,
 //   ExternalLink, Printer, MessageSquare, ArrowUpDown, Calendar,
 //   TrendingUp, ShoppingBag, DollarSign, MoreHorizontal, Edit3,
-//   Check, Loader2, ChevronUp, Hash, Layers, Star
+//   Check, Loader2, ChevronUp, Hash, Layers, Star, Send
 // } from 'lucide-react';
+// import SteadfastShipPanel from '@/components/admin/SteadfastShipPanel';
+// import SteadfastStatusBadge from '@/components/admin/SteadfastStatusBadge';
+// import SteadfastBulkDispatch from '@/components/admin/SteadfastBulkDispatch';
 
 // // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1566,6 +1665,26 @@ export default function OrdersPage() {
 //   actor?: string;
 // }
 
+// interface ApiOrderItem {
+//   id: string;
+//   name: string;
+//   sku: string;
+//   quantity: number;
+//   price: number | string;
+//   total: number | string;
+//   product?: { images?: Array<{ url?: string | null }> } | null;
+//   variant?: { name: string; attributes?: Record<string, string> } | null;
+// }
+
+// interface ApiPayment {
+//   id: string;
+//   method: string;
+//   status?: string | null;
+//   amount: number | string;
+//   transactionId?: string | null;
+//   createdAt: string;
+// }
+
 // interface Order {
 //   id: string;        // orderNumber
 //   dbId?: string;
@@ -1594,6 +1713,20 @@ export default function OrdersPage() {
 //   shippedAt?: string;
 //   deliveredAt?: string;
 //   cancelledAt?: string;
+//   // Steadfast fields
+//   steadfastConsignmentId?: string | null;
+//   steadfastTrackingCode?: string | null;
+//   steadfastStatus?: string | null;
+//   steadfastSentAt?: string | null;
+//   pathaoStatus?: string | null;
+//   pathaoTrackingCode?: string | null;
+//   pathaoConsignmentId?: string | null;
+//   pathaoSentAt?: string | null;
+//   courier?: 'pathao' | 'steadfast';
+//   trackingId?: string | null;
+//   consignmentId?: string | null;
+//   currentStatus?: string | null;
+//   lastUpdatedAt?: string | null;
 // }
 
 // interface Stats {
@@ -1610,21 +1743,28 @@ export default function OrdersPage() {
 //   pages: number;
 // }
 
+// interface ToastState {
+//   type: 'success' | 'error';
+//   message: string;
+// }
+
 // // ─── Constants ────────────────────────────────────────────────────────────────
 
 // const STATUS_CONFIG = {
-//   pending:    { label: 'Pending',    color: 'bg-amber-50 text-amber-700 border-amber-200',    dot: 'bg-amber-400',   icon: Clock },
-//   confirmed:  { label: 'Confirmed',  color: 'bg-blue-50 text-blue-700 border-blue-200',       dot: 'bg-blue-400',    icon: CheckCircle },
-//   processing: { label: 'Processing', color: 'bg-violet-50 text-violet-700 border-violet-200', dot: 'bg-violet-400',  icon: Layers },
-//   shipped:    { label: 'Shipped',    color: 'bg-cyan-50 text-cyan-700 border-cyan-200',        dot: 'bg-cyan-400',    icon: Truck },
-//   completed:  { label: 'Delivered',  color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-400', icon: CheckCircle },
-//   cancelled:  { label: 'Cancelled',  color: 'bg-red-50 text-red-700 border-red-200',          dot: 'bg-red-400',     icon: XCircle },
-//   refunded:   { label: 'Refunded',   color: 'bg-slate-50 text-slate-600 border-slate-200',    dot: 'bg-slate-400',   icon: AlertCircle },
+//   pending:    { label: 'Pending',    color: 'bg-amber-50 text-amber-700 border-amber-200',   dot: 'bg-amber-400' },
+//   confirmed:  { label: 'Confirmed',  color: 'bg-blue-50 text-blue-700 border-blue-200',      dot: 'bg-blue-400' },
+//   processing: { label: 'Processing', color: 'bg-violet-50 text-violet-700 border-violet-200', dot: 'bg-violet-400' },
+//   shipped:    { label: 'Shipped',    color: 'bg-cyan-50 text-cyan-700 border-cyan-200',      dot: 'bg-cyan-400' },
+//   completed:  { label: 'Completed',  color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-400' },
+//   delivered:  { label: 'Delivered',  color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-400' },
+//   cancelled:  { label: 'Cancelled',  color: 'bg-red-50 text-red-700 border-red-200',        dot: 'bg-red-400' },
+//   refunded:   { label: 'Refunded',   color: 'bg-slate-50 text-slate-600 border-slate-200',  dot: 'bg-slate-400' },
 // } as const;
 
 // const PAYMENT_STATUS_CONFIG = {
 //   pending:  { label: 'Pending',  color: 'bg-amber-50 text-amber-700 border-amber-200' },
 //   paid:     { label: 'Paid',     color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+//   completed:{ label: 'Paid',     color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 //   failed:   { label: 'Failed',   color: 'bg-red-50 text-red-700 border-red-200' },
 //   refunded: { label: 'Refunded', color: 'bg-slate-50 text-slate-600 border-slate-200' },
 // } as const;
@@ -1741,6 +1881,7 @@ export default function OrdersPage() {
 //   const buildTimeline = (): TimelineEvent[] => {
 //     const t: TimelineEvent[] = [{ timestamp: order.createdAt, status: 'Order Placed', note: 'Customer submitted order', actor: 'Customer' }];
 //     if (order.paidAt) t.push({ timestamp: order.paidAt, status: 'Payment Received', note: `Paid via ${PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}`, actor: 'System' });
+//     if (order.steadfastSentAt) t.push({ timestamp: order.steadfastSentAt, status: 'Sent to Steadfast', note: `Tracking: ${order.steadfastTrackingCode || '—'}`, actor: 'Admin' });
 //     if (order.shippedAt) t.push({ timestamp: order.shippedAt, status: 'Shipped', note: order.tracking ? `Tracking: ${order.tracking}` : 'Order dispatched', actor: 'Warehouse' });
 //     if (order.deliveredAt) t.push({ timestamp: order.deliveredAt, status: 'Delivered', note: 'Order delivered successfully', actor: 'Courier' });
 //     if (order.cancelledAt) t.push({ timestamp: order.cancelledAt, status: 'Cancelled', note: 'Order cancelled', actor: 'System' });
@@ -1748,122 +1889,214 @@ export default function OrdersPage() {
 //   };
 
 //   const timeline = order.timeline?.length ? order.timeline : buildTimeline();
+//   const courierName =
+//     order.courier === 'pathao' || order.shippingMethod === 'pathao'
+//       ? 'Pathao Courier'
+//       : order.courier === 'steadfast' || order.shippingMethod === 'steadfast' || order.steadfastStatus
+//         ? 'Steadfast Courier'
+//         : null;
+//   const currentTrackingId =
+//     order.trackingId ||
+//     order.pathaoTrackingCode ||
+//     order.steadfastTrackingCode ||
+//     order.tracking ||
+//     null;
+//   const currentConsignmentId =
+//     order.consignmentId ||
+//     order.pathaoConsignmentId ||
+//     order.steadfastConsignmentId ||
+//     null;
+//   const currentCourierStatus =
+//     order.currentStatus ||
+//     order.pathaoStatus ||
+//     order.steadfastStatus ||
+//     null;
+//   const courierLastUpdatedAt =
+//     order.lastUpdatedAt ||
+//     order.pathaoSentAt ||
+//     order.steadfastSentAt ||
+//     null;
 
 //   return (
-//     <div className="fixed inset-0 z-50 flex">
-//       {/* Backdrop */}
+//     <div className="fixed inset-0 z-40 flex">
 //       <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+//       <div className="w-full max-w-2xl bg-white h-full overflow-y-auto shadow-2xl flex flex-col">
 
-//       {/* Drawer */}
-//       <div className="w-full max-w-2xl bg-white shadow-2xl flex flex-col h-full overflow-hidden animate-slideIn">
-//         {/* Header */}
-//         <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
+//         {/* Drawer Header */}
+//         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
 //           <div>
 //             <div className="flex items-center gap-2">
-//               <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">Order</span>
-//               <span className="font-bold text-gray-900 font-mono">#{order.id}</span>
+//               <h2 className="text-lg font-bold text-gray-900">#{order.id}</h2>
 //               <CopyButton text={order.id} />
 //             </div>
-//             <div className="flex items-center gap-2 mt-0.5">
-//               <StatusBadge status={order.status} />
-//               <PaymentBadge status={order.paymentStatus} />
-//               <span className="text-xs text-gray-400">{timeAgo(order.createdAt)}</span>
-//             </div>
+//             <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(order.createdAt)}</p>
 //           </div>
 //           <div className="flex items-center gap-2">
-//             <button
-//               onClick={() => window.print()}
-//               className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 transition-colors"
-//               title="Print"
-//             >
-//               <Printer className="w-4 h-4" />
-//             </button>
-//             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 transition-colors">
-//               <X className="w-4 h-4" />
+//             <StatusBadge status={order.status} />
+//             <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+//               <X className="w-5 h-5" />
 //             </button>
 //           </div>
 //         </div>
 
 //         {/* Tabs */}
-//         <div className="flex border-b px-6 bg-white">
-//           {(['overview', 'items', 'payments', 'timeline'] as const).map((tab) => (
-//             <button
-//               key={tab}
-//               onClick={() => setActiveTab(tab)}
-//               className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors capitalize ${
-//                 activeTab === tab
-//                   ? 'border-violet-600 text-violet-600'
-//                   : 'border-transparent text-gray-500 hover:text-gray-700'
-//               }`}
-//             >
-//               {tab}
-//             </button>
-//           ))}
+//         <div className="px-6 border-b border-gray-100">
+//           <div className="flex gap-1 -mb-px">
+//             {(['overview', 'items', 'payments', 'timeline'] as const).map((tab) => (
+//               <button
+//                 key={tab}
+//                 onClick={() => setActiveTab(tab)}
+//                 className={`px-4 py-3 text-sm font-medium capitalize border-b-2 transition-colors ${
+//                   activeTab === tab
+//                     ? 'border-violet-600 text-violet-600'
+//                     : 'border-transparent text-gray-500 hover:text-gray-700'
+//                 }`}
+//               >
+//                 {tab}
+//               </button>
+//             ))}
+//           </div>
 //         </div>
 
-//         {/* Content */}
-//         <div className="flex-1 overflow-y-auto">
+//         <div className="flex-1 p-6 space-y-5">
 
-//           {/* ── OVERVIEW TAB ─────────────────────────────────────── */}
+//           {/* ── Overview Tab ──────────────────────────────────────── */}
 //           {activeTab === 'overview' && (
-//             <div className="p-6 space-y-5">
-
-//               {/* Customer Card */}
-//               <div className="rounded-xl border border-gray-100 overflow-hidden">
-//                 <div className="px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
-//                   <User className="w-4 h-4 text-gray-400" />
-//                   <span className="text-sm font-semibold text-gray-700">Customer</span>
-//                 </div>
-//                 <div className="p-4 space-y-2">
-//                   <p className="font-semibold text-gray-900">{order.customer.name}</p>
+//             <>
+//               {/* Customer */}
+//               <div className="bg-gray-50 rounded-xl p-4">
+//                 <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Customer</h3>
+//                 <div className="space-y-2">
+//                   <div className="flex items-center gap-2 text-sm">
+//                     <User className="w-4 h-4 text-gray-400" />
+//                     <span className="font-medium text-gray-900">{order.customer.name}</span>
+//                   </div>
 //                   <div className="flex items-center gap-2 text-sm text-gray-600">
-//                     <Mail className="w-3.5 h-3.5" />
-//                     <a href={`mailto:${order.customer.email}`} className="hover:text-violet-600 transition-colors">{order.customer.email}</a>
-//                     <CopyButton text={order.customer.email} />
+//                     <Mail className="w-4 h-4 text-gray-400" />
+//                     <a href={`mailto:${order.customer.email}`} className="hover:text-violet-600">{order.customer.email}</a>
 //                   </div>
 //                   {order.customer.phone && (
 //                     <div className="flex items-center gap-2 text-sm text-gray-600">
-//                       <Phone className="w-3.5 h-3.5" />
-//                       <a href={`tel:${order.customer.phone}`} className="hover:text-violet-600 transition-colors">{order.customer.phone}</a>
-//                       <CopyButton text={order.customer.phone} />
+//                       <Phone className="w-4 h-4 text-gray-400" />
+//                       <a href={`tel:${order.customer.phone}`} className="hover:text-violet-600">{order.customer.phone}</a>
 //                     </div>
 //                   )}
 //                 </div>
 //               </div>
 
-//               {/* Shipping */}
-//               <div className="rounded-xl border border-gray-100 overflow-hidden">
-//                 <div className="px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
-//                   <MapPin className="w-4 h-4 text-gray-400" />
-//                   <span className="text-sm font-semibold text-gray-700">Shipping Address</span>
-//                   {order.shippingMethod && (
-//                     <span className="ml-auto text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{order.shippingMethod}</span>
-//                   )}
-//                 </div>
-//                 <div className="p-4 text-sm text-gray-700 space-y-0.5">
-//                   {order.shipping.name && <p className="font-medium">{order.shipping.name}</p>}
-//                   {order.shipping.street1 && <p>{order.shipping.street1}</p>}
-//                   {order.shipping.street2 && <p>{order.shipping.street2}</p>}
-//                   <p>{[order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', ')}</p>
-//                   {order.shipping.country && <p className="text-gray-500">{order.shipping.country}</p>}
-//                   {order.shipping.phone && (
-//                     <div className="flex items-center gap-1.5 mt-1 text-gray-600">
-//                       <Phone className="w-3.5 h-3.5" />
-//                       {order.shipping.phone}
+//               {/* Shipping Address */}
+//               {order.shipping && (
+//                 <div className="bg-gray-50 rounded-xl p-4">
+//                   <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Shipping Address</h3>
+//                   <div className="flex items-start gap-2 text-sm text-gray-700">
+//                     <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+//                     <div>
+//                       {order.shipping.name && <p className="font-medium">{order.shipping.name}</p>}
+//                       {order.shipping.street1 && <p>{order.shipping.street1}</p>}
+//                       {order.shipping.street2 && <p>{order.shipping.street2}</p>}
+//                       <p>{[order.shipping.city, order.shipping.state, order.shipping.postalCode].filter(Boolean).join(', ')}</p>
+//                       {order.shipping.country && <p>{order.shipping.country}</p>}
+//                       {order.shipping.phone && (
+//                         <p className="mt-1 flex items-center gap-1 text-gray-500">
+//                           <Phone className="w-3 h-3" /> {order.shipping.phone}
+//                         </p>
+//                       )}
 //                     </div>
-//                   )}
+//                   </div>
 //                 </div>
-//               </div>
+//               )}
 
-//               {/* Order Summary */}
-//               <div className="rounded-xl border border-gray-100 overflow-hidden">
-//                 <div className="px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
-//                   <DollarSign className="w-4 h-4 text-gray-400" />
-//                   <span className="text-sm font-semibold text-gray-700">Order Summary</span>
+//               {/* Steadfast Status Block */}
+//               {(courierName || currentTrackingId || currentConsignmentId || currentCourierStatus || timeline.length > 0) && (
+//                 <div className="bg-gray-50 rounded-xl p-4">
+//                   <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Tracking Timeline</h3>
+//                   <div className="space-y-2 text-sm">
+//                     {courierName && (
+//                       <div className="flex justify-between gap-3">
+//                         <span className="text-gray-500">Courier</span>
+//                         <span className="font-medium text-gray-900">{courierName}</span>
+//                       </div>
+//                     )}
+//                     {currentTrackingId && (
+//                       <div className="flex justify-between gap-3">
+//                         <span className="text-gray-500">Tracking ID</span>
+//                         <span className="font-mono text-gray-900">{currentTrackingId}</span>
+//                       </div>
+//                     )}
+//                     {currentConsignmentId && (
+//                       <div className="flex justify-between gap-3">
+//                         <span className="text-gray-500">Consignment ID</span>
+//                         <span className="font-mono text-gray-900">{currentConsignmentId}</span>
+//                       </div>
+//                     )}
+//                     {currentCourierStatus && (
+//                       <div className="flex justify-between gap-3">
+//                         <span className="text-gray-500">Current Status</span>
+//                         <span className="font-medium text-gray-900">{currentCourierStatus}</span>
+//                       </div>
+//                     )}
+//                     {courierLastUpdatedAt && (
+//                       <div className="flex justify-between gap-3">
+//                         <span className="text-gray-500">Last Updated</span>
+//                         <span className="text-gray-900">{formatDateTime(courierLastUpdatedAt)}</span>
+//                       </div>
+//                     )}
+//                   </div>
 //                 </div>
-//                 <div className="p-4 space-y-2 text-sm">
+//               )}
+
+//               {/* Steadfast Status Block */}
+//               {(order.steadfastConsignmentId || order.steadfastTrackingCode) && (
+//                 <div className="bg-violet-50 border border-violet-200 rounded-xl p-4">
+//                   <h3 className="text-xs font-semibold text-violet-700 uppercase mb-3 flex items-center gap-1.5">
+//                     <Truck className="w-3.5 h-3.5" /> Steadfast Courier
+//                   </h3>
+//                   <div className="space-y-2">
+//                     {order.steadfastStatus && (
+//                       <div className="flex items-center gap-2">
+//                         <SteadfastStatusBadge status={order.steadfastStatus} trackingCode={order.steadfastTrackingCode} />
+//                       </div>
+//                     )}
+//                     {order.steadfastTrackingCode && (
+//                       <div className="flex items-center gap-2 text-sm">
+//                         <span className="text-gray-500 text-xs">Tracking:</span>
+//                         <span className="font-mono font-semibold text-gray-900">{order.steadfastTrackingCode}</span>
+//                         <CopyButton text={order.steadfastTrackingCode} />
+//                         <a
+//                           href={`/track?code=${order.steadfastTrackingCode}`}
+//                           target="_blank"
+//                           rel="noreferrer"
+//                           className="text-violet-600 hover:text-violet-800"
+//                         >
+//                           <ExternalLink className="w-3.5 h-3.5" />
+//                         </a>
+//                       </div>
+//                     )}
+//                     {order.steadfastConsignmentId && (
+//                       <p className="text-xs text-gray-500">
+//                         Consignment ID: <span className="font-mono">{order.steadfastConsignmentId}</span>
+//                       </p>
+//                     )}
+//                     {order.steadfastSentAt && (
+//                       <p className="text-xs text-gray-400">Dispatched: {formatDateTime(order.steadfastSentAt)}</p>
+//                     )}
+//                     <p className="text-xs text-violet-700 pt-2 border-t border-violet-100 mt-2">
+//                       Live updates from Steadfast use the{' '}
+//                       <Link href="/admin/shipping/steadfast-webhooks" className="font-medium underline hover:text-violet-900">
+//                         webhook log
+//                       </Link>
+//                       . Callback: <code className="text-[10px] bg-white/80 rounded px-1">/api/webhook/steadfast</code>
+//                     </p>
+//                   </div>
+//                 </div>
+//               )}
+
+//               {/* Order Totals */}
+//               <div className="bg-gray-50 rounded-xl p-4">
+//                 <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Order Summary</h3>
+//                 <div className="space-y-2 text-sm">
 //                   <div className="flex justify-between text-gray-600">
-//                     <span>Subtotal ({order.items.reduce((s, i) => s + i.quantity, 0)} items)</span>
+//                     <span>Subtotal</span>
 //                     <span>{formatPrice(order.subtotal ?? order.total)}</span>
 //                   </div>
 //                   {(order.shippingCost ?? 0) > 0 && (
@@ -1872,239 +2105,182 @@ export default function OrdersPage() {
 //                       <span>{formatPrice(order.shippingCost!)}</span>
 //                     </div>
 //                   )}
-//                   {(order.taxAmount ?? 0) > 0 && (
-//                     <div className="flex justify-between text-gray-600">
-//                       <span>Tax</span>
-//                       <span>{formatPrice(order.taxAmount!)}</span>
-//                     </div>
-//                   )}
 //                   {(order.discountAmount ?? 0) > 0 && (
 //                     <div className="flex justify-between text-emerald-600">
 //                       <span>Discount {order.couponCode && `(${order.couponCode})`}</span>
-//                       <span>−{formatPrice(order.discountAmount!)}</span>
+//                       <span>-{formatPrice(order.discountAmount!)}</span>
 //                     </div>
 //                   )}
-//                   <div className="flex justify-between font-bold text-gray-900 pt-2 border-t mt-2 text-base">
+//                   <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200">
 //                     <span>Total</span>
 //                     <span>{formatPrice(order.total)}</span>
 //                   </div>
-//                   <div className="flex justify-between text-gray-500 text-xs pt-1">
-//                     <span>Payment Method</span>
-//                     <span className="font-medium text-gray-700">{PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}</span>
+//                 </div>
+//                 <div className="mt-3 pt-3 border-t border-gray-200">
+//                   <div className="flex items-center justify-between">
+//                     <span className="text-xs text-gray-500">Payment</span>
+//                     <div className="flex items-center gap-2">
+//                       <span className="text-xs text-gray-700">{PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}</span>
+//                       <PaymentBadge status={order.paymentStatus} />
+//                     </div>
 //                   </div>
 //                 </div>
 //               </div>
 
-//               {/* Tracking */}
-//               {(order.status === 'shipped' || order.tracking) && (
-//                 <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
-//                   <div className="flex items-center gap-2 mb-1">
-//                     <Truck className="w-4 h-4 text-cyan-600" />
-//                     <span className="text-sm font-semibold text-cyan-800">Tracking Number</span>
-//                   </div>
-//                   {order.tracking ? (
-//                     <div className="flex items-center gap-2">
-//                       <span className="font-mono text-cyan-700 font-medium">{order.tracking}</span>
-//                       <CopyButton text={order.tracking} />
+//               {/* Status Update */}
+//               <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+//                 <h3 className="text-xs font-semibold text-gray-500 uppercase">Update Status</h3>
+//                 <div className="relative">
+//                   <button
+//                     onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+//                     className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 bg-white rounded-lg text-sm hover:border-violet-300 transition-colors"
+//                   >
+//                     <StatusBadge status={newStatus} />
+//                     <ChevronDown className="w-4 h-4 text-gray-400" />
+//                   </button>
+//                   {showStatusDropdown && (
+//                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+//                       {statusOptions.map((opt) => (
+//                         <button
+//                           key={opt.value}
+//                           onClick={() => { setNewStatus(opt.value as Order['status']); setShowStatusDropdown(false); }}
+//                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+//                         >
+//                           <StatusBadge status={opt.value} />
+//                         </button>
+//                       ))}
 //                     </div>
-//                   ) : (
-//                     <span className="text-xs text-cyan-600">No tracking number yet</span>
 //                   )}
 //                 </div>
-//               )}
-
-//               {/* Notes */}
-//               {order.customerNote && (
-//                 <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
-//                   <div className="flex items-center gap-2 mb-1">
-//                     <MessageSquare className="w-4 h-4 text-amber-600" />
-//                     <span className="text-sm font-semibold text-amber-800">Customer Note</span>
-//                   </div>
-//                   <p className="text-sm text-amber-700">{order.customerNote}</p>
-//                 </div>
-//               )}
+//                 <input
+//                   value={trackingInput}
+//                   onChange={(e) => setTrackingInput(e.target.value)}
+//                   placeholder="Tracking number (optional)"
+//                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+//                 />
+//                 <button
+//                   onClick={handleStatusSave}
+//                   disabled={updating}
+//                   className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors disabled:opacity-60"
+//                 >
+//                   {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+//                   Update Status
+//                 </button>
+//               </div>
 
 //               {/* Admin Note */}
-//               <div className="rounded-xl border border-gray-100 overflow-hidden">
-//                 <div className="px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
-//                   <Edit3 className="w-4 h-4 text-gray-400" />
-//                   <span className="text-sm font-semibold text-gray-700">Admin Note</span>
-//                 </div>
-//                 <div className="p-4">
-//                   <textarea
-//                     value={noteInput}
-//                     onChange={(e) => setNoteInput(e.target.value)}
-//                     rows={3}
-//                     placeholder="Add internal note..."
-//                     className="w-full text-sm border border-gray-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400"
-//                   />
-//                   <div className="flex justify-end mt-2">
-//                     <button
-//                       onClick={handleNoteSave}
-//                       disabled={savingNote}
-//                       className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
-//                     >
-//                       {savingNote ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-//                       Save Note
-//                     </button>
-//                   </div>
-//                 </div>
+//               <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+//                 <h3 className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1.5">
+//                   <MessageSquare className="w-3.5 h-3.5" /> Admin Note
+//                 </h3>
+//                 <textarea
+//                   value={noteInput}
+//                   onChange={(e) => setNoteInput(e.target.value)}
+//                   rows={3}
+//                   placeholder="Internal note (not visible to customer)…"
+//                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+//                 />
+//                 <button
+//                   onClick={handleNoteSave}
+//                   disabled={savingNote}
+//                   className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-800 font-medium disabled:opacity-60"
+//                 >
+//                   {savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+//                   Save Note
+//                 </button>
 //               </div>
-//             </div>
+
+//               {/* Customer Note */}
+//               {order.customerNote && (
+//                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+//                   <h3 className="text-xs font-semibold text-amber-700 uppercase mb-2">Customer Note</h3>
+//                   <p className="text-sm text-amber-900">{order.customerNote}</p>
+//                 </div>
+//               )}
+//             </>
 //           )}
 
-//           {/* ── ITEMS TAB ────────────────────────────────────────── */}
+//           {/* ── Items Tab ─────────────────────────────────────────── */}
 //           {activeTab === 'items' && (
-//             <div className="p-6">
-//               <div className="space-y-3">
-//                 {order.items.map((item) => (
-//                   <div key={item.id} className="flex gap-3 p-3 border border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
+//             <div className="space-y-3">
+//               {order.items.map((item) => (
+//                 <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+//                   <div className="w-14 h-14 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
 //                     {item.image ? (
-//                       <img src={item.image} alt={item.name} className="w-14 h-14 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+//                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
 //                     ) : (
-//                       <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex-shrink-0 flex items-center justify-center">
-//                         <Package className="w-5 h-5 text-gray-400" />
+//                       <div className="w-full h-full flex items-center justify-center">
+//                         <Package className="w-6 h-6 text-gray-400" />
 //                       </div>
 //                     )}
-//                     <div className="flex-1 min-w-0">
-//                       <p className="font-medium text-gray-900 text-sm truncate">{item.name}</p>
-//                       {item.variant && (
-//                         <p className="text-xs text-gray-500 mt-0.5">{item.variant.name}</p>
-//                       )}
-//                       <p className="text-xs text-gray-400 font-mono mt-0.5">SKU: {item.sku}</p>
-//                     </div>
-//                     <div className="text-right flex-shrink-0">
-//                       <p className="font-semibold text-gray-900 text-sm">{formatPrice(item.total)}</p>
-//                       <p className="text-xs text-gray-500 mt-0.5">{formatPrice(item.price)} × {item.quantity}</p>
-//                     </div>
 //                   </div>
-//                 ))}
-//               </div>
-//               <div className="mt-4 pt-4 border-t space-y-1">
-//                 {order.subtotal !== undefined && (
-//                   <div className="flex justify-between text-sm text-gray-600"><span>Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
-//                 )}
-//                 {(order.shippingCost ?? 0) > 0 && (
-//                   <div className="flex justify-between text-sm text-gray-600"><span>Shipping</span><span>{formatPrice(order.shippingCost!)}</span></div>
-//                 )}
-//                 {(order.discountAmount ?? 0) > 0 && (
-//                   <div className="flex justify-between text-sm text-emerald-600"><span>Discount</span><span>−{formatPrice(order.discountAmount!)}</span></div>
-//                 )}
-//                 <div className="flex justify-between font-bold text-gray-900 pt-2 border-t text-base">
-//                   <span>Total</span><span>{formatPrice(order.total)}</span>
+//                   <div className="flex-1 min-w-0">
+//                     <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+//                     <p className="text-xs text-gray-500">SKU: {item.sku}</p>
+//                     {item.variant && (
+//                       <p className="text-xs text-violet-600">{item.variant.name}</p>
+//                     )}
+//                     <p className="text-xs text-gray-500">Qty: {item.quantity} × {formatPrice(item.price)}</p>
+//                   </div>
+//                   <p className="text-sm font-bold text-gray-900">{formatPrice(item.total)}</p>
 //                 </div>
+//               ))}
+//               <div className="flex justify-between pt-3 border-t border-gray-200 font-bold text-sm">
+//                 <span>Total</span>
+//                 <span>{formatPrice(order.total)}</span>
 //               </div>
 //             </div>
 //           )}
 
-//           {/* ── PAYMENTS TAB ─────────────────────────────────────── */}
+//           {/* ── Payments Tab ──────────────────────────────────────── */}
 //           {activeTab === 'payments' && (
-//             <div className="p-6">
-//               {order.payments && order.payments.length > 0 ? (
-//                 <div className="space-y-3">
-//                   {order.payments.map((p) => (
-//                     <div key={p.id} className="border border-gray-100 rounded-xl p-4">
-//                       <div className="flex items-center justify-between mb-3">
-//                         <div className="flex items-center gap-2">
-//                           <CreditCard className="w-4 h-4 text-gray-400" />
-//                           <span className="font-medium text-gray-900 text-sm">{PAYMENT_METHOD_LABELS[p.method] || p.method}</span>
-//                         </div>
-//                         <PaymentBadge status={p.status} />
-//                       </div>
-//                       <div className="space-y-1.5 text-sm">
-//                         <div className="flex justify-between">
-//                           <span className="text-gray-500">Amount</span>
-//                           <span className="font-semibold">{formatPrice(p.amount)}</span>
-//                         </div>
-//                         {p.transactionId && (
-//                           <div className="flex justify-between">
-//                             <span className="text-gray-500">Transaction ID</span>
-//                             <div className="flex items-center gap-1">
-//                               <span className="font-mono text-xs text-gray-700">{p.transactionId}</span>
-//                               <CopyButton text={p.transactionId} />
-//                             </div>
-//                           </div>
-//                         )}
-//                         <div className="flex justify-between">
-//                           <span className="text-gray-500">Date</span>
-//                           <span className="text-gray-700">{formatDateTime(p.createdAt)}</span>
-//                         </div>
-//                       </div>
-//                     </div>
-//                   ))}
+//             <div className="space-y-3">
+//               {order.payments?.length ? order.payments.map((p) => (
+//                 <div key={p.id} className="bg-gray-50 rounded-xl p-4">
+//                   <div className="flex items-center justify-between mb-2">
+//                     <span className="text-sm font-medium capitalize">{PAYMENT_METHOD_LABELS[p.method] || p.method}</span>
+//                     <PaymentBadge status={p.status} />
+//                   </div>
+//                   <p className="text-lg font-bold text-gray-900">{formatPrice(p.amount)}</p>
+//                   {p.transactionId && (
+//                     <p className="text-xs text-gray-500 mt-1 font-mono">TXN: {p.transactionId}</p>
+//                   )}
+//                   <p className="text-xs text-gray-400 mt-1">{formatDateTime(p.createdAt)}</p>
 //                 </div>
-//               ) : (
-//                 <div className="text-center py-12 text-gray-400">
-//                   <CreditCard className="w-10 h-10 mx-auto mb-3 opacity-30" />
-//                   <p className="text-sm">No payment records found</p>
-//                   <p className="text-xs mt-1">Payment via: {PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}</p>
+//               )) : (
+//                 <div className="text-center py-8 text-gray-400">
+//                   <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-50" />
+//                   <p className="text-sm">No payment records yet</p>
 //                 </div>
 //               )}
 //             </div>
 //           )}
 
-//           {/* ── TIMELINE TAB ─────────────────────────────────────── */}
+//           {/* ── Timeline Tab ──────────────────────────────────────── */}
 //           {activeTab === 'timeline' && (
-//             <div className="p-6">
-//               <div className="relative">
-//                 <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-100" />
-//                 <div className="space-y-4">
-//                   {timeline.map((event, i) => {
-//                     const isLast = i === timeline.length - 1;
-//                     return (
-//                       <div key={i} className="relative flex gap-4 pl-10">
-//                         <div className={`absolute left-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${isLast ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-white'}`}>
-//                           <span className={`w-2 h-2 rounded-full ${isLast ? 'bg-violet-400' : 'bg-gray-300'}`} />
-//                         </div>
-//                         <div className="flex-1 pb-4">
-//                           <div className="flex items-center justify-between">
-//                             <p className="font-semibold text-sm text-gray-900">{event.status}</p>
-//                             <span className="text-xs text-gray-400">{formatDateTime(event.timestamp)}</span>
-//                           </div>
-//                           {event.note && <p className="text-xs text-gray-500 mt-0.5">{event.note}</p>}
-//                           {event.actor && <p className="text-xs text-gray-400 mt-0.5">by {event.actor}</p>}
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
+//             <div className="space-y-1">
+//               {timeline.map((event, idx) => (
+//                 <div key={idx} className="flex gap-3">
+//                   <div className="flex flex-col items-center">
+//                     <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+//                       <CheckCircle className="w-4 h-4 text-violet-600" />
+//                     </div>
+//                     {idx < timeline.length - 1 && (
+//                       <div className="w-px flex-1 bg-gray-200 my-1" />
+//                     )}
+//                   </div>
+//                   <div className="pb-4 pt-1">
+//                     <p className="text-sm font-medium text-gray-900">{event.status}</p>
+//                     {event.note && <p className="text-xs text-gray-500">{event.note}</p>}
+//                     {event.actor && (
+//                       <p className="text-[11px] uppercase tracking-wide text-violet-600 mt-1">{event.actor}</p>
+//                     )}
+//                     <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(event.timestamp)}</p>
+//                   </div>
 //                 </div>
-//               </div>
+//               ))}
 //             </div>
 //           )}
-//         </div>
-
-//         {/* ── Footer: Status Update ─────────────────────────────── */}
-//         <div className="border-t bg-gray-50 p-4">
-//           <div className="flex items-center gap-3">
-//             <div className="flex-1 relative">
-//               <select
-//                 value={newStatus}
-//                 onChange={(e) => setNewStatus(e.target.value as Order['status'])}
-//                 className="w-full appearance-none border border-gray-200 rounded-lg pl-3 pr-8 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-//               >
-//                 {statusOptions.map((o) => (
-//                   <option key={o.value} value={o.value}>{o.label}</option>
-//                 ))}
-//               </select>
-//               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-//             </div>
-//             {(newStatus === 'shipped' || order.status === 'shipped') && (
-//               <input
-//                 value={trackingInput}
-//                 onChange={(e) => setTrackingInput(e.target.value)}
-//                 placeholder="Tracking number"
-//                 className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-//               />
-//             )}
-//             <button
-//               onClick={handleStatusSave}
-//               disabled={updating || newStatus === order.status}
-//               className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-//             >
-//               {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-//               Update
-//             </button>
-//           </div>
 //         </div>
 //       </div>
 //     </div>
@@ -2135,7 +2311,38 @@ export default function OrdersPage() {
 
 //   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+//   // ── Steadfast state ────────────────────────────────────────────────────────
+//   const [shipPanelOrder, setShipPanelOrder] = useState<Order | null>(null);
+//   const [shipPanelOpen, setShipPanelOpen] = useState(false);
+//   const [pathaoSendingOrderId, setPathaoSendingOrderId] = useState<string | null>(null);
+//   const [toast, setToast] = useState<ToastState | null>(null);
+
 //   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+//   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+//   const showToast = useCallback((type: ToastState['type'], message: string) => {
+//     setToast({ type, message });
+//     if (toastRef.current) clearTimeout(toastRef.current);
+//     toastRef.current = setTimeout(() => setToast(null), 3000);
+//   }, []);
+
+//   useEffect(() => {
+//     if (typeof window === 'undefined') {
+//       return;
+//     }
+//     const params = new URLSearchParams(window.location.search);
+//     const q = params.get('search')?.trim();
+//     const status = params.get('status')?.trim();
+//     const paymentStatus = params.get('paymentStatus')?.trim();
+//     const range = params.get('dateRange')?.trim();
+//     const sort = params.get('sortBy')?.trim();
+
+//     if (q) setSearch(q);
+//     if (status) setStatusFilter(status);
+//     if (paymentStatus) setPaymentFilter(paymentStatus);
+//     if (range) setDateRange(range);
+//     if (sort) setSortBy(sort);
+//   }, []);
 
 //   // ── Fetch list ─────────────────────────────────────────────────────────────
 
@@ -2170,17 +2377,36 @@ export default function OrdersPage() {
 //     return () => { if (searchRef.current) clearTimeout(searchRef.current); };
 //   }, [fetchOrders, hasPermission, search]);
 
+//   useEffect(() => () => {
+//     if (toastRef.current) clearTimeout(toastRef.current);
+//   }, []);
+
 //   // ── Fetch single order detail ──────────────────────────────────────────────
 
 //   const openOrderDetail = async (order: Order) => {
 //     setDetailLoading(true);
-//     setSelectedOrder(order); // show immediately with list data
+//     setSelectedOrder(order);
 //     try {
 //       const res = await fetch(`/api/admin/orders/${order.dbId || order.id}`, { credentials: 'include' });
 //       if (res.ok) {
 //         const data = await res.json();
 //         const o = data.order;
-//         // Map API response to our Order type
+//         let trackingData: {
+//           courier?: 'pathao' | 'steadfast';
+//           trackingId?: string | null;
+//           consignmentId?: string | null;
+//           currentStatus?: string;
+//           lastUpdatedAt?: string | null;
+//           deliveryCharge?: number;
+//           timeline?: Array<{ status: string; message: string; timestamp: string; source: 'pathao' | 'steadfast' }>;
+//         } | null = null;
+//         const trackingRes = await fetch(`/api/orders/${o.id}/tracking`, {
+//           credentials: 'include',
+//           cache: 'no-store',
+//         });
+//         if (trackingRes.ok) {
+//           trackingData = await trackingRes.json();
+//         }
 //         setSelectedOrder({
 //           id: o.orderNumber,
 //           dbId: o.id,
@@ -2189,19 +2415,18 @@ export default function OrdersPage() {
 //             email: o.user?.email || '',
 //             phone: o.user?.phone || '',
 //           },
-//           items: (o.items || []).map((i: any) => ({
+//           items: ((o.items || []) as ApiOrderItem[]).map((i) => ({
 //             id: i.id,
 //             name: i.name,
 //             sku: i.sku,
 //             quantity: i.quantity,
 //             price: Number(i.price),
 //             total: Number(i.total),
-//             image: i.product?.images?.[0]?.url,
+//             image: i.product?.images?.[0]?.url ?? undefined,
 //             variant: i.variant ? { name: i.variant.name, attributes: i.variant.attributes } : undefined,
 //           })),
 //           total: Number(o.total),
 //           subtotal: Number(o.subtotal),
-//           shippingCost: Number(o.shippingCost),
 //           taxAmount: Number(o.taxAmount),
 //           discountAmount: Number(o.discountAmount),
 //           couponCode: o.couponCode,
@@ -2209,71 +2434,138 @@ export default function OrdersPage() {
 //           status: o.status?.toLowerCase() as Order['status'],
 //           paymentMethod: o.paymentMethod || 'cod',
 //           paymentStatus: o.paymentStatus?.toLowerCase() as Order['paymentStatus'],
-//           payments: (o.payments || []).map((p: any) => ({
+//           payments: ((o.payments || []) as ApiPayment[]).map((p) => ({
 //             id: p.id,
 //             method: p.method,
-//             status: p.status?.toLowerCase(),
+//             status: p.status?.toLowerCase() ?? 'pending',
 //             amount: Number(p.amount),
-//             transactionId: p.transactionId,
+//             transactionId: p.transactionId ?? undefined,
 //             createdAt: p.createdAt,
 //           })),
 //           shipping: o.shippingAddress ? {
-//             name: o.shippingAddress.fullName || o.shippingAddress.name,
-//             street1: o.shippingAddress.street1 || o.shippingAddress.addressLine1,
-//             street2: o.shippingAddress.street2 || o.shippingAddress.addressLine2,
+//             name: `${o.shippingAddress.firstName || ''} ${o.shippingAddress.lastName || ''}`.trim(),
+//             street1: o.shippingAddress.street1,
+//             street2: o.shippingAddress.street2,
 //             city: o.shippingAddress.city,
-//             state: o.shippingAddress.state || o.shippingAddress.division,
+//             state: o.shippingAddress.state,
 //             postalCode: o.shippingAddress.postalCode,
 //             country: o.shippingAddress.country,
 //             phone: o.shippingAddress.phone,
-//           } : order.shipping,
+//           } : {},
 //           shippingMethod: o.shippingMethod,
 //           tracking: o.trackingNumber,
 //           customerNote: o.customerNote,
 //           adminNote: o.adminNote,
+//           timeline: trackingData?.timeline?.map((event) => ({
+//             timestamp: event.timestamp,
+//             status: event.status,
+//             note: event.message,
+//             actor: event.source,
+//           })),
 //           createdAt: o.createdAt,
 //           updatedAt: o.updatedAt,
 //           paidAt: o.paidAt,
 //           shippedAt: o.shippedAt,
 //           deliveredAt: o.deliveredAt,
 //           cancelledAt: o.cancelledAt,
+//           steadfastConsignmentId: o.steadfastConsignmentId,
+//           steadfastTrackingCode: o.steadfastTrackingCode,
+//           steadfastStatus: o.steadfastStatus,
+//           steadfastSentAt: o.steadfastSentAt,
+//           pathaoStatus: o.pathaoStatus,
+//           pathaoTrackingCode: o.pathaoTrackingCode,
+//           pathaoConsignmentId: o.pathaoConsignmentId,
+//           courier: trackingData?.courier,
+//           trackingId: trackingData?.trackingId,
+//           consignmentId: trackingData?.consignmentId,
+//           currentStatus: trackingData?.currentStatus,
+//           lastUpdatedAt: trackingData?.lastUpdatedAt,
+//           shippingCost: typeof trackingData?.deliveryCharge === 'number'
+//             ? trackingData.deliveryCharge
+//             : Number(o.shippingCost),
 //         });
 //       }
-//     } catch {}
-//     finally { setDetailLoading(false); }
+//     } catch { /* keep list data */ } finally {
+//       setDetailLoading(false);
+//     }
 //   };
 
-//   // ── Status update ──────────────────────────────────────────────────────────
+//   // ── Status / Note update ───────────────────────────────────────────────────
 
-//   const handleStatusUpdate = async (orderId: string, status: string, tracking?: string) => {
-//     const target = orders.find((o) => o.id === orderId);
-//     const dbId = target?.dbId || orderId;
-//     const res = await fetch(`/api/admin/orders/${dbId}`, {
+//   const handleStatusUpdate = async (orderNumber: string, status: string, tracking?: string) => {
+//     const res = await fetch(`/api/admin/orders/${orderNumber}`, {
 //       method: 'PATCH',
-//       headers: { 'Content-Type': 'application/json' },
 //       credentials: 'include',
-//       body: JSON.stringify({ status, ...(tracking ? { trackingNumber: tracking } : {}) }),
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ status, trackingNumber: tracking }),
 //     });
-//     if (!res.ok) throw new Error((await res.json()).error || 'Update failed');
-//     const data = await res.json();
-//     const updatedStatus = data.order.status as Order['status'];
-//     setOrders((prev) => prev.map((o) =>
-//       o.id === orderId ? { ...o, status: updatedStatus, tracking: data.order.tracking || o.tracking } : o
-//     ));
-//     setSelectedOrder((prev) => prev && prev.id === orderId ? { ...prev, status: updatedStatus, tracking: data.order.tracking || prev.tracking } : prev);
+//     if (res.ok) {
+//       const data = await res.json();
+//       setOrders((prev) => prev.map((o) => o.id === orderNumber
+//         ? { ...o, status: data.order.status, tracking: data.order.tracking }
+//         : o));
+//       setSelectedOrder((prev) => prev?.id === orderNumber
+//         ? { ...prev, status: data.order.status, tracking: data.order.tracking }
+//         : prev);
+//     }
 //   };
 
-//   const handleNoteUpdate = async (orderId: string, adminNote: string) => {
-//     const target = orders.find((o) => o.id === orderId);
-//     const dbId = target?.dbId || orderId;
-//     const res = await fetch(`/api/admin/orders/${dbId}`, {
+//   const handleNoteUpdate = async (orderNumber: string, adminNote: string) => {
+//     const res = await fetch(`/api/admin/orders/${orderNumber}`, {
 //       method: 'PATCH',
-//       headers: { 'Content-Type': 'application/json' },
 //       credentials: 'include',
+//       headers: { 'Content-Type': 'application/json' },
 //       body: JSON.stringify({ adminNote }),
 //     });
-//     if (!res.ok) throw new Error((await res.json()).error || 'Failed to save note');
-//     setSelectedOrder((prev) => prev && prev.id === orderId ? { ...prev, adminNote } : prev);
+//     if (res.ok) {
+//       setSelectedOrder((prev) => prev?.id === orderNumber ? { ...prev, adminNote } : prev);
+//     }
+//   };
+
+//   const handleSendToPathao = async (order: Order) => {
+//     setPathaoSendingOrderId(order.id);
+//     try {
+//       const res = await fetch('/api/admin/shipping/pathao/send', {
+//         method: 'POST',
+//         credentials: 'include',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ orderId: order.dbId || order.id }),
+//       });
+//       const data = await res.json();
+//       if (!res.ok) {
+//         throw new Error(data.error || 'Failed to send order to Pathao');
+//       }
+
+//       setOrders((prev) => prev.map((current) =>
+//         current.id === order.id
+//           ? {
+//               ...current,
+//               shippingMethod: 'pathao',
+//               pathaoStatus: data.pathaoStatus ?? current.pathaoStatus,
+//               pathaoTrackingCode: data.trackingCode ?? current.pathaoTrackingCode,
+//               pathaoConsignmentId: data.consignmentId ?? current.pathaoConsignmentId,
+//               pathaoSentAt: new Date().toISOString(),
+//               shippingCost: typeof data.shippingCost === 'number' ? data.shippingCost : current.shippingCost,
+//             }
+//           : current
+//       ));
+//       setSelectedOrder((prev) => prev?.id === order.id
+//         ? {
+//             ...prev,
+//             shippingMethod: 'pathao',
+//             pathaoStatus: data.pathaoStatus ?? prev.pathaoStatus,
+//             pathaoTrackingCode: data.trackingCode ?? prev.pathaoTrackingCode,
+//             pathaoConsignmentId: data.consignmentId ?? prev.pathaoConsignmentId,
+//             pathaoSentAt: new Date().toISOString(),
+//             shippingCost: typeof data.shippingCost === 'number' ? data.shippingCost : prev.shippingCost,
+//           }
+//         : prev);
+//       showToast('success', data.alreadyDispatched ? 'Order was already sent to Pathao.' : 'Order sent to Pathao.');
+//     } catch (error) {
+//       showToast('error', error instanceof Error ? error.message : 'Failed to send order to Pathao.');
+//     } finally {
+//       setPathaoSendingOrderId(null);
+//     }
 //   };
 
 //   // ── Bulk actions ───────────────────────────────────────────────────────────
@@ -2281,7 +2573,11 @@ export default function OrdersPage() {
 //   const toggleSelect = (id: string) => {
 //     setSelectedIds((prev) => {
 //       const next = new Set(prev);
-//       next.has(id) ? next.delete(id) : next.add(id);
+//       if (next.has(id)) {
+//         next.delete(id);
+//       } else {
+//         next.add(id);
+//       }
 //       return next;
 //     });
 //   };
@@ -2290,7 +2586,7 @@ export default function OrdersPage() {
 //     if (selectedIds.size === orders.length) {
 //       setSelectedIds(new Set());
 //     } else {
-//       setSelectedIds(new Set(orders.map((o) => o.id)));
+//       setSelectedIds(new Set(orders.map((o) => o.dbId || o.id)));
 //     }
 //   };
 
@@ -2298,7 +2594,7 @@ export default function OrdersPage() {
 
 //   const exportCSV = () => {
 //     const rows = [
-//       ['Order #', 'Date', 'Customer', 'Email', 'Phone', 'Items', 'Total', 'Status', 'Payment Status', 'Payment Method', 'City', 'Tracking'],
+//       ['Order #', 'Date', 'Customer', 'Email', 'Phone', 'Items', 'Total', 'Status', 'Payment Status', 'Payment Method', 'City', 'Tracking', 'Steadfast Status', 'Steadfast Tracking'],
 //       ...orders.map((o) => [
 //         o.id,
 //         formatDate(o.createdAt),
@@ -2310,8 +2606,10 @@ export default function OrdersPage() {
 //         o.status,
 //         o.paymentStatus,
 //         PAYMENT_METHOD_LABELS[o.paymentMethod] || o.paymentMethod,
-//         o.shipping.city || '',
+//         o.shipping?.city || '',
 //         o.tracking || '',
+//         o.steadfastStatus || '',
+//         o.steadfastTrackingCode || '',
 //       ]),
 //     ];
 //     const csv = rows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
@@ -2338,6 +2636,19 @@ export default function OrdersPage() {
 
 //   return (
 //     <div className="min-h-screen bg-[#F7F8FA]">
+//       {toast && (
+//         <div className="fixed right-4 top-4 z-50">
+//           <div
+//             className={`rounded-xl border px-4 py-3 text-sm shadow-lg ${
+//               toast.type === 'success'
+//                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+//                 : 'border-red-200 bg-red-50 text-red-700'
+//             }`}
+//           >
+//             {toast.message}
+//           </div>
+//         </div>
+//       )}
 
 //       {/* ── Top Header ────────────────────────────────────────────── */}
 //       <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
@@ -2382,108 +2693,87 @@ export default function OrdersPage() {
 //               key={stat.label}
 //               onClick={() => stat.filter && setStatusFilter(statusFilter === stat.filter ? '' : stat.filter)}
 //               className={`bg-white border rounded-xl p-4 text-left hover:shadow-md transition-all ${
-//                 stat.filter && statusFilter === stat.filter ? 'border-violet-300 ring-1 ring-violet-200' : 'border-gray-100'
+//                 stat.filter && statusFilter === stat.filter
+//                   ? 'border-violet-400 ring-2 ring-violet-100'
+//                   : 'border-gray-100 hover:border-gray-200'
 //               }`}
 //             >
-//               <div className="flex items-center justify-between mb-2">
-//                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{stat.label}</p>
-//                 <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center`}>
-//                   <stat.icon className={`w-4 h-4 ${stat.color}`} />
+//               <div className="flex items-center gap-3">
+//                 <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center`}>
+//                   <stat.icon className={`w-4.5 h-4.5 ${stat.color}`} />
+//                 </div>
+//                 <div>
+//                   <p className="text-xs text-gray-500">{stat.label}</p>
+//                   <p className="text-lg font-bold text-gray-900">{stat.value}</p>
 //                 </div>
 //               </div>
-//               <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
 //             </button>
 //           ))}
 //         </div>
 
-//         {/* ── Search & Filter Row ───────────────────────────────────── */}
-//         <div className="flex items-center gap-3">
-//           <div className="flex-1 relative">
-//             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+//         {/* ── Search & Filters ──────────────────────────────────────── */}
+//         <div className="flex flex-col sm:flex-row gap-2">
+//           <div className="relative flex-1">
+//             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
 //             <input
 //               value={search}
 //               onChange={(e) => setSearch(e.target.value)}
-//               placeholder="Search by order #, customer name, or email..."
-//               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+//               placeholder="Search by order #, customer name or email…"
+//               className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
 //             />
 //           </div>
 //           <button
 //             onClick={() => setShowFilters(!showFilters)}
-//             className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors ${
+//             className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm transition-colors ${
 //               showFilters || activeFilters > 0
-//                 ? 'border-violet-300 bg-violet-50 text-violet-700'
-//                 : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+//                 ? 'bg-violet-50 border-violet-300 text-violet-700'
+//                 : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
 //             }`}
 //           >
 //             <Filter className="w-4 h-4" />
 //             Filters
 //             {activeFilters > 0 && (
-//               <span className="bg-violet-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{activeFilters}</span>
+//               <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center font-bold">
+//                 {activeFilters}
+//               </span>
 //             )}
 //           </button>
 //         </div>
 
-//         {/* ── Filter Panel ─────────────────────────────────────────── */}
+//         {/* Expanded Filters */}
 //         {showFilters && (
-//           <div className="bg-white border border-gray-100 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-//             {/* Status */}
-//             <div>
-//               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Order Status</label>
-//               <select
-//                 value={statusFilter}
-//                 onChange={(e) => setStatusFilter(e.target.value)}
-//                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-//               >
-//                 <option value="">All Statuses</option>
-//                 {Object.entries(STATUS_CONFIG).map(([v, c]) => (
-//                   <option key={v} value={v}>{c.label}</option>
-//                 ))}
-//               </select>
-//             </div>
-//             {/* Payment */}
-//             <div>
-//               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Payment Status</label>
-//               <select
-//                 value={paymentFilter}
-//                 onChange={(e) => setPaymentFilter(e.target.value)}
-//                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-//               >
-//                 <option value="">All</option>
-//                 {Object.entries(PAYMENT_STATUS_CONFIG).map(([v, c]) => (
-//                   <option key={v} value={v}>{c.label}</option>
-//                 ))}
-//               </select>
-//             </div>
-//             {/* Date Range */}
-//             <div>
-//               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Date Range</label>
-//               <select
-//                 value={dateRange}
-//                 onChange={(e) => setDateRange(e.target.value)}
-//                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-//               >
-//                 <option value="">All Time</option>
-//                 <option value="today">Today</option>
-//                 <option value="7d">Last 7 Days</option>
-//                 <option value="30d">Last 30 Days</option>
-//                 <option value="90d">Last 90 Days</option>
-//               </select>
-//             </div>
-//             {/* Sort */}
-//             <div>
-//               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Sort By</label>
-//               <select
-//                 value={sortBy}
-//                 onChange={(e) => setSortBy(e.target.value)}
-//                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-//               >
-//                 <option value="created">Newest First</option>
-//                 <option value="updated">Last Updated</option>
-//                 <option value="total_high">Highest Total</option>
-//                 <option value="total_low">Lowest Total</option>
-//                 <option value="customer">Customer A–Z</option>
-//               </select>
-//             </div>
+//           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-white border border-gray-100 rounded-xl">
+//             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+//               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+//               <option value="">All Statuses</option>
+//               {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+//                 <option key={v} value={v}>{c.label}</option>
+//               ))}
+//             </select>
+//             <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)}
+//               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+//               <option value="">All Payments</option>
+//               <option value="pending">Pending</option>
+//               <option value="paid">Paid</option>
+//               <option value="failed">Failed</option>
+//               <option value="refunded">Refunded</option>
+//             </select>
+//             <select value={dateRange} onChange={(e) => setDateRange(e.target.value)}
+//               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+//               <option value="">All Time</option>
+//               <option value="today">Today</option>
+//               <option value="7d">Last 7 days</option>
+//               <option value="30d">Last 30 days</option>
+//               <option value="90d">Last 90 days</option>
+//             </select>
+//             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+//               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+//               <option value="created">Newest First</option>
+//               <option value="updated">Recently Updated</option>
+//               <option value="total_high">Highest Total</option>
+//               <option value="total_low">Lowest Total</option>
+//               <option value="customer">Customer A–Z</option>
+//             </select>
 //             {activeFilters > 0 && (
 //               <div className="col-span-full flex justify-end">
 //                 <button
@@ -2501,11 +2791,19 @@ export default function OrdersPage() {
 //         {selectedIds.size > 0 && (
 //           <div className="bg-violet-600 text-white rounded-xl px-4 py-3 flex items-center gap-3">
 //             <span className="text-sm font-medium">{selectedIds.size} selected</span>
-//             <div className="flex items-center gap-2 ml-auto">
-//               <button className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors">
-//                 Mark as Processing
-//               </button>
-//               <button className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors">
+//             <div className="flex items-center gap-2 ml-auto flex-wrap">
+//               {/* Steadfast Bulk Dispatch */}
+//               <SteadfastBulkDispatch
+//                 selectedIds={selectedIds}
+//                 onComplete={() => {
+//                   setSelectedIds(new Set());
+//                   fetchOrders(pagination.page, true);
+//                 }}
+//               />
+//               <button
+//                 onClick={exportCSV}
+//                 className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors"
+//               >
 //                 Export Selected
 //               </button>
 //               <button onClick={() => setSelectedIds(new Set())} className="text-white/70 hover:text-white">
@@ -2531,16 +2829,16 @@ export default function OrdersPage() {
 //             </div>
 //           ) : orders.length === 0 ? (
 //             <div className="flex flex-col items-center justify-center py-24 text-center px-6">
-//               <ShoppingBag className="w-12 h-12 text-gray-200 mb-3" />
+//               <ShoppingBag className="w-10 h-10 text-gray-200 mb-3" />
 //               <p className="text-gray-500 font-medium">No orders found</p>
-//               <p className="text-gray-400 text-sm mt-1">Try adjusting your search or filters</p>
+//               <p className="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
 //             </div>
 //           ) : (
 //             <div className="overflow-x-auto">
-//               <table className="w-full min-w-[900px]">
+//               <table className="w-full">
 //                 <thead>
-//                   <tr className="border-b border-gray-100">
-//                     <th className="px-4 py-3 text-left w-10">
+//                   <tr className="border-b border-gray-100 bg-gray-50/60">
+//                     <th className="px-4 py-3 text-left">
 //                       <input
 //                         type="checkbox"
 //                         checked={selectedIds.size === orders.length && orders.length > 0}
@@ -2548,106 +2846,180 @@ export default function OrdersPage() {
 //                         className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
 //                       />
 //                     </th>
-//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Order</th>
-//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
-//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Items</th>
-//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
-//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Payment</th>
-//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Date</th>
-//                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Order</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Items</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Courier</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Payment</th>
+//                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Date</th>
+//                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
 //                   </tr>
 //                 </thead>
 //                 <tbody className="divide-y divide-gray-50">
-//                   {orders.map((order) => {
-//                     const StatusIcon = STATUS_CONFIG[order.status]?.icon || Clock;
-//                     return (
-//                       <tr
-//                         key={order.id}
-//                         className={`group hover:bg-gray-50/70 transition-colors ${selectedIds.has(order.id) ? 'bg-violet-50/40' : ''}`}
-//                       >
-//                         <td className="px-4 py-3.5">
-//                           <input
-//                             type="checkbox"
-//                             checked={selectedIds.has(order.id)}
-//                             onChange={() => toggleSelect(order.id)}
-//                             className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
-//                           />
-//                         </td>
+//                   {orders.map((order) => (
+//                     <tr
+//                       key={order.id}
+//                       className={`group hover:bg-gray-50/50 transition-colors ${
+//                         selectedIds.has(order.dbId || order.id) ? 'bg-violet-50/30' : ''
+//                       }`}
+//                     >
+//                       {/* Checkbox */}
+//                       <td className="px-4 py-3.5">
+//                         <input
+//                           type="checkbox"
+//                           checked={selectedIds.has(order.dbId || order.id)}
+//                           onChange={() => toggleSelect(order.dbId || order.id)}
+//                           className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+//                         />
+//                       </td>
 
-//                         {/* Order # */}
-//                         <td className="px-4 py-3.5">
-//                           <div className="flex items-center gap-1.5">
-//                             <span className="font-mono text-sm font-semibold text-gray-900">#{order.id}</span>
-//                             <CopyButton text={order.id} />
-//                           </div>
-//                           {order.tracking && (
-//                             <div className="text-xs text-cyan-600 font-mono mt-0.5 flex items-center gap-1">
-//                               <Truck className="w-3 h-3" />
-//                               {order.tracking}
-//                             </div>
-//                           )}
-//                         </td>
+//                       {/* Order # */}
+//                       <td className="px-4 py-3.5">
+//                         <div className="flex items-center gap-1">
+//                           <span className="text-sm font-mono font-semibold text-gray-900">#{order.id.slice(-8).toUpperCase()}</span>
+//                           <CopyButton text={order.id} />
+//                         </div>
+//                         {order.tracking && (
+//                           <p className="text-xs text-gray-400 mt-0.5 font-mono">
+//                             🚚 {order.tracking.slice(0, 12)}
+//                           </p>
+//                         )}
+//                       </td>
 
-//                         {/* Customer */}
-//                         <td className="px-4 py-3.5">
-//                           <p className="text-sm font-medium text-gray-900 truncate max-w-[160px]">{order.customer.name}</p>
-//                           <p className="text-xs text-gray-400 truncate max-w-[160px]">{order.customer.email}</p>
-//                           {order.customer.phone && (
-//                             <p className="text-xs text-gray-400">{order.customer.phone}</p>
-//                           )}
-//                         </td>
+//                       {/* Customer */}
+//                       <td className="px-4 py-3.5">
+//                         <p className="text-sm font-medium text-gray-900 truncate max-w-[140px]">{order.customer.name}</p>
+//                         <p className="text-xs text-gray-400 truncate max-w-[140px]">{order.customer.email}</p>
+//                         {order.shipping?.city && (
+//                           <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
+//                             <MapPin className="w-2.5 h-2.5" />{order.shipping.city}
+//                           </p>
+//                         )}
+//                       </td>
 
-//                         {/* Items */}
-//                         <td className="px-4 py-3.5 hidden md:table-cell">
-//                           <div className="flex items-center gap-1.5">
-//                             <Package className="w-3.5 h-3.5 text-gray-300" />
-//                             <span className="text-sm text-gray-600">
-//                               {order.items.reduce((s, i) => s + i.quantity, 0)} items
+//                       {/* Items */}
+//                       <td className="px-4 py-3.5 hidden md:table-cell">
+//                         <p className="text-sm text-gray-700 truncate max-w-[160px]">
+//                           {order.items[0]?.name}
+//                           {order.items.length > 1 ? ` +${order.items.length - 1}` : ''}
+//                         </p>
+//                       </td>
+
+//                       {/* Total */}
+//                       <td className="px-4 py-3.5">
+//                         <p className="text-sm font-bold text-gray-900">{formatPrice(order.total)}</p>
+//                         <p className="text-xs text-gray-400 capitalize">
+//                           {PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}
+//                         </p>
+//                       </td>
+
+//                       {/* Status */}
+//                       <td className="px-4 py-3.5">
+//                         <StatusBadge status={order.status} />
+//                       </td>
+
+//                       {/* Courier */}
+//                       <td className="px-4 py-3.5">
+//                         {order.shippingMethod === 'pathao' ? (
+//                           <div className="space-y-1">
+//                             <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+//                               Pathao
 //                             </span>
+//                             {order.pathaoStatus && (
+//                               <p className="text-[11px] text-gray-700">{order.pathaoStatus}</p>
+//                             )}
+//                             {(order.pathaoTrackingCode || order.tracking) && (
+//                               <p className="text-[11px] font-mono text-gray-500">
+//                                 {(order.pathaoTrackingCode || order.tracking)?.slice(0, 12)}
+//                               </p>
+//                             )}
 //                           </div>
-//                           <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[120px]">
-//                             {order.items[0]?.name}{order.items.length > 1 ? ` +${order.items.length - 1}` : ''}
-//                           </p>
-//                         </td>
+//                         ) : (
+//                           <SteadfastStatusBadge
+//                             status={order.steadfastStatus}
+//                             trackingCode={order.steadfastTrackingCode}
+//                           />
+//                         )}
+//                       </td>
 
-//                         {/* Total */}
-//                         <td className="px-4 py-3.5">
-//                           <p className="text-sm font-bold text-gray-900">{formatPrice(order.total)}</p>
-//                           <p className="text-xs text-gray-400 capitalize">
-//                             {PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}
-//                           </p>
-//                         </td>
+//                       {/* Payment */}
+//                       <td className="px-4 py-3.5 hidden lg:table-cell">
+//                         <PaymentBadge status={order.paymentStatus} />
+//                       </td>
 
-//                         {/* Status */}
-//                         <td className="px-4 py-3.5">
-//                           <StatusBadge status={order.status} />
-//                         </td>
+//                       {/* Date */}
+//                       <td className="px-4 py-3.5 hidden lg:table-cell">
+//                         <p className="text-xs text-gray-600">{formatDate(order.createdAt)}</p>
+//                         <p className="text-xs text-gray-400">{timeAgo(order.createdAt)}</p>
+//                       </td>
 
-//                         {/* Payment */}
-//                         <td className="px-4 py-3.5 hidden lg:table-cell">
-//                           <PaymentBadge status={order.paymentStatus} />
-//                         </td>
-
-//                         {/* Date */}
-//                         <td className="px-4 py-3.5 hidden lg:table-cell">
-//                           <p className="text-xs text-gray-600">{formatDate(order.createdAt)}</p>
-//                           <p className="text-xs text-gray-400">{timeAgo(order.createdAt)}</p>
-//                         </td>
-
-//                         {/* Actions */}
-//                         <td className="px-4 py-3.5 text-right">
+//                       {/* Actions */}
+//                       <td className="px-4 py-3.5 text-right">
+//                         <div className="flex items-center justify-end gap-1.5">
+//                           {/* View detail */}
 //                           <button
 //                             onClick={() => openOrderDetail(order)}
-//                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-600 bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors group-hover:border-violet-200"
+//                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-violet-600 bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors"
 //                           >
 //                             <Eye className="w-3.5 h-3.5" />
 //                             View
 //                           </button>
-//                         </td>
-//                       </tr>
-//                     );
-//                   })}
+//                           <button
+//                             onClick={() => handleSendToPathao(order)}
+//                             disabled={Boolean(order.pathaoConsignmentId) || pathaoSendingOrderId === order.id}
+//                             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+//                               order.pathaoConsignmentId
+//                                 ? 'cursor-not-allowed border-blue-200 bg-blue-50 text-blue-700'
+//                                 : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+//                             } disabled:opacity-70`}
+//                           >
+//                             {pathaoSendingOrderId === order.id ? (
+//                               <>
+//                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
+//                                 Sending...
+//                               </>
+//                             ) : order.pathaoConsignmentId ? (
+//                               <>
+//                                 <Check className="w-3.5 h-3.5" />
+//                                 Pathao Sent
+//                               </>
+//                             ) : (
+//                               <>
+//                                 <Send className="w-3.5 h-3.5" />
+//                                 Send to Pathao
+//                               </>
+//                             )}
+//                           </button>
+//                           {/* Steadfast Dispatch / Track button */}
+//                           <button
+//                             onClick={() => {
+//                               setShipPanelOrder(order);
+//                               setShipPanelOpen(true);
+//                             }}
+//                             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+//                               order.steadfastConsignmentId
+//                                 ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+//                                 : 'text-gray-600 bg-gray-50 border-gray-200 hover:bg-gray-100'
+//                             }`}
+//                           >
+//                             {order.steadfastConsignmentId ? (
+//                               <>
+//                                 <Truck className="w-3.5 h-3.5" />
+//                                 Track
+//                               </>
+//                             ) : (
+//                               <>
+//                                 <Send className="w-3.5 h-3.5" />
+//                                 Parcel
+//                               </>
+//                             )}
+//                           </button>
+//                         </div>
+//                       </td>
+//                     </tr>
+//                   ))}
 //                 </tbody>
 //               </table>
 //             </div>
@@ -2656,41 +3028,38 @@ export default function OrdersPage() {
 
 //         {/* ── Pagination ────────────────────────────────────────────── */}
 //         {pagination.pages > 1 && (
-//           <div className="flex items-center justify-between py-2">
+//           <div className="flex items-center justify-between">
 //             <p className="text-sm text-gray-500">
-//               Showing {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total.toLocaleString()}
+//               Showing {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
 //             </p>
 //             <div className="flex items-center gap-1">
 //               <button
 //                 onClick={() => fetchOrders(pagination.page - 1)}
 //                 disabled={pagination.page <= 1}
-//                 className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+//                 className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 //               >
 //                 <ChevronLeft className="w-4 h-4" />
 //               </button>
-//               {Array.from({ length: Math.min(pagination.pages, 7) }, (_, i) => {
-//                 const p = pagination.pages <= 7 ? i + 1 :
-//                   pagination.page <= 4 ? i + 1 :
-//                   pagination.page >= pagination.pages - 3 ? pagination.pages - 6 + i :
-//                   pagination.page - 3 + i;
+//               {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+//                 const page = Math.max(1, Math.min(pagination.pages - 4, pagination.page - 2)) + i;
 //                 return (
 //                   <button
-//                     key={p}
-//                     onClick={() => fetchOrders(p)}
-//                     className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-//                       p === pagination.page
-//                         ? 'bg-violet-600 text-white'
-//                         : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+//                     key={page}
+//                     onClick={() => fetchOrders(page)}
+//                     className={`w-9 h-9 text-sm rounded-lg border transition-colors ${
+//                       page === pagination.page
+//                         ? 'bg-violet-600 text-white border-violet-600'
+//                         : 'border-gray-200 hover:bg-gray-50'
 //                     }`}
 //                   >
-//                     {p}
+//                     {page}
 //                   </button>
 //                 );
 //               })}
 //               <button
 //                 onClick={() => fetchOrders(pagination.page + 1)}
 //                 disabled={pagination.page >= pagination.pages}
-//                 className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+//                 className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 //               >
 //                 <ChevronRight className="w-4 h-4" />
 //               </button>
@@ -2709,16 +3078,39 @@ export default function OrdersPage() {
 //         />
 //       )}
 
-//       {/* ── CSS for animation ─────────────────────────────────────── */}
-//       <style jsx global>{`
-//         @keyframes slideIn {
-//           from { transform: translateX(100%); opacity: 0; }
-//           to { transform: translateX(0); opacity: 1; }
-//         }
-//         .animate-slideIn {
-//           animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-//         }
-//       `}</style>
+//       {/* ── Steadfast Ship Panel ──────────────────────────────────── */}
+//       <SteadfastShipPanel
+//         order={shipPanelOrder ? {
+//           id: shipPanelOrder.id,
+//           dbId: shipPanelOrder.dbId || shipPanelOrder.id,
+//           customer: shipPanelOrder.customer,
+//           total: shipPanelOrder.total,
+//           paymentMethod: shipPanelOrder.paymentMethod,
+//           paymentStatus: shipPanelOrder.paymentStatus,
+//           status: shipPanelOrder.status,
+//           shipping: shipPanelOrder.shipping ? {
+//             name: shipPanelOrder.shipping.name || shipPanelOrder.customer.name,
+//             address: [shipPanelOrder.shipping.street1, shipPanelOrder.shipping.street2].filter(Boolean).join(', '),
+//             city: shipPanelOrder.shipping.city || '',
+//             phone: shipPanelOrder.shipping.phone || shipPanelOrder.customer.phone,
+//           } : undefined,
+//           steadfastConsignmentId: shipPanelOrder.steadfastConsignmentId || undefined,
+//           steadfastTrackingCode: shipPanelOrder.steadfastTrackingCode || undefined,
+//           steadfastStatus: shipPanelOrder.steadfastStatus || undefined,
+//           steadfastSentAt: shipPanelOrder.steadfastSentAt || undefined,
+//         } : null}
+//         isOpen={shipPanelOpen}
+//         onClose={() => setShipPanelOpen(false)}
+//         onDispatched={(orderNumber, trackingCode) => {
+//           // Update the order in list to show dispatched state
+//           setOrders((prev) => prev.map((o) =>
+//             o.id === orderNumber
+//               ? { ...o, steadfastTrackingCode: trackingCode, steadfastStatus: 'pending', status: 'shipped' }
+//               : o
+//           ));
+//           fetchOrders(pagination.page, true);
+//         }}
+//       />
 //     </div>
 //   );
 // }
