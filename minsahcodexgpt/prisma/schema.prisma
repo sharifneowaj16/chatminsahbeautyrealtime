@@ -150,8 +150,9 @@ model AdminUser {
   updatedAt   DateTime  @updatedAt
   lastLoginAt DateTime?
 
-  refreshTokens AdminRefreshToken[]
-  shortlistItems InventoryShortlist[]
+  refreshTokens      AdminRefreshToken[]
+  shortlistItems     InventoryShortlist[]
+  purchaseShortlist  PurchaseShortlist[]   // ✨ Added
 
   @@index([email])
 }
@@ -351,18 +352,19 @@ model Product {
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 
-  images        ProductImage[]
-  variants      ProductVariant[]
-  cartItems     CartItem[]
-  wishlistItems WishlistItem[]
-  orderItems    OrderItem[]
-  reviews       Review[]
-  searchClicks  SearchClickEvent[]
-  searchMetrics SearchClickMetrics[]
-  giftRequests  GiftRequest[]
-  supplierLinks SupplierProduct[]
-  purchaseItems PurchaseOrderItem[]
-  shortlistItems InventoryShortlist[]
+  images             ProductImage[]
+  variants           ProductVariant[]
+  cartItems          CartItem[]
+  wishlistItems      WishlistItem[]
+  orderItems         OrderItem[]
+  reviews            Review[]
+  searchClicks       SearchClickEvent[]
+  searchMetrics      SearchClickMetrics[]
+  giftRequests       GiftRequest[]
+  supplierLinks      SupplierProduct[]
+  purchaseItems      PurchaseOrderItem[]
+  shortlistItems     InventoryShortlist[]
+  purchaseShortlist  PurchaseShortlist[]   // ✨ Added
 
   @@index([slug])
   @@index([sku])
@@ -486,6 +488,42 @@ model InventoryShortlist {
 }
 
 // ==========================================
+// Purchase Shortlist Model
+// ==========================================
+
+model PurchaseShortlist {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  productName String
+  quantity    Int
+  buyPrice    Decimal  @db.Decimal(10, 2)
+  sellPrice   Decimal  @db.Decimal(10, 2)
+
+  purchased   Boolean  @default(false)
+  purchasedAt DateTime?
+  priority    String   @default("NORMAL")
+  notes       String?  @db.Text
+
+  adminId     String?
+  admin       AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([orderId, productId])
+  @@index([orderId])
+  @@index([productId])
+  @@index([adminId])
+  @@index([purchased])
+  @@index([priority])
+}
+
+// ==========================================
 // Cart Models
 // ==========================================
 
@@ -576,7 +614,8 @@ model Order {
   returns  Return[]
   notifications AdminNotification[]
   steadfastWebhookEvents SteadfastWebhookEvent[]
-  pathaoWebhookEvents PathaoWebhookEvent[]
+  pathaoWebhookEvents    PathaoWebhookEvent[]
+  purchaseShortlist      PurchaseShortlist[]       // ✨ Added
 
   @@index([userId])
   @@index([orderNumber])
