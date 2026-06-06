@@ -135,8 +135,8 @@ export default function CreateOrderPage() {
   // UI state
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const searchDebounceRef = useRef<NodeJS.Timeout>();
-  const toastRef = useRef<NodeJS.Timeout>();
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const toastRef = useRef<NodeJS.Timeout | null>(null);
 
   // Guard
   if (!hasPermission(PERMISSIONS.ORDERS_CREATE)) {
