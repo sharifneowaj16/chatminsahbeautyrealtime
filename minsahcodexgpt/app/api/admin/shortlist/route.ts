@@ -1,8 +1,10 @@
-// app/api/admin/shortlist/route.ts
+// app/api/admin/shortlist/route.ts — FIXED
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
+
+// ─── interfaces (unchanged) ───────────────────────────────────────────────────
 
 interface ShortlistItem {
   id: string;
@@ -20,22 +22,7 @@ interface ShortlistItem {
   updatedAt: Date;
 }
 
-interface Order {
-  id: string;
-  orderNumber: string;
-  userId: string;
-  createdAt: Date;
-  user: {
-    firstName: string | null;
-    lastName: string | null;
-    phone: string | null;
-  };
-}
-
-interface OrderCustomer {
-  name: string;
-  phone: string | null;
-}
+interface OrderCustomer { name: string; phone: string | null; }
 
 interface OrderBase {
   id: string;
@@ -66,164 +53,199 @@ interface ShortlistStats {
   completionRate: number;
 }
 
+// ─── GET ──────────────────────────────────────────────────────────────────────
+
 export async function GET(request: NextRequest) {
   try {
-    // ===== AUTH CHECK =====
+    // ===== AUTH CHECK (unchanged) =====
     const accessToken = request.cookies.get('admin_access_token')?.value;
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
+    if (!accessToken)
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const payload = await verifyAdminAccessToken(accessToken);
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
+    if (!payload)
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
 
-    // ===== QUERY PARAMETERS =====
+    // ===== QUERY PARAMS =====
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'pending'; // pending | completed
-    const priority = searchParams.get('priority') || 'ALL'; // URGENT | NORMAL | LOW_PRIORITY | ALL
-    const dateRange = searchParams.get('dateRange') || 'all'; // today | week | all
-    const searchQuery = searchParams.get('search') || '';
-    const sortBy = searchParams.get('sort') || 'recent'; // recent | urgent | progress
+    const status     = searchParams.get('status')    || 'pending';
+    const priority   = searchParams.get('priority')  || 'ALL';
+    const dateRange  = searchParams.get('dateRange') || 'all';
+    const searchQuery = searchParams.get('search')   || '';
+    const sortBy     = searchParams.get('sort')      || 'recent';
 
-    // ===== DATE RANGE FILTER =====
-    let createdAtFilter: { gte?: Date; lte?: Date } = {};
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // ===== FIX #1 — don't pass empty object to Prisma =====
+    // Before: where: { createdAt: {} }  ← Prisma error / empty result
+    // After:  only add createdAt filter when actually needed
+    const now     = new Date();
+    const today   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    if (dateRange === 'today') {
-      createdAtFilter.gte = today;
-    } else if (dateRange === 'week') {
-      createdAtFilter.gte = weekAgo;
-    }
+    const dateFilter: { gte?: Date } = {};
+    if (dateRange === 'today') dateFilter.gte = today;
+    else if (dateRange === 'week') dateFilter.gte = weekAgo;
+    // 'all' → dateFilter stays {} and is NOT spread into where
 
-    // ===== FETCH ORDERS WITH ITEMS =====
+    // ===== FETCH ORDERS =====
     const orders = await prisma.order.findMany({
       where: {
-        createdAt: createdAtFilter,
+        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
       },
       include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
+        user:  { select: { firstName: true, lastName: true, phone: true } },
         items: {
           include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                costPrice: true,
-                price: true,
-              },
-            },
+            product: { select: { id: true, name: true, costPrice: true, price: true } },
           },
         },
       },
-      orderBy:
-        sortBy === 'recent'
-          ? { createdAt: 'desc' }
-          : { updatedAt: 'desc' },
+      orderBy: sortBy === 'recent' ? { createdAt: 'desc' } : { updatedAt: 'desc' },
     });
 
-    // ===== PROCESS INTO SHORTLIST ITEMS =====
+    // Early return when no orders at all
+    if (orders.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          orders: [],
+          stats: {
+            pendingOrders: 0, completedOrders: 0,
+            productsRemaining: 0, productsPurchased: 0,
+            totalPotentialRevenue: 0, expectedProfit: 0, completionRate: 0,
+          },
+        },
+      });
+    }
+
+    const orderIds = orders.map(o => o.id);
+
+    // ===== FIX #2 + #3 — batch fetch + auto-create missing shortlist records =====
+
+    // FIX #3: ONE query for ALL orders (was: findMany inside a for loop — N+1 problem)
+    let shortlistRecords = await prisma.purchaseShortlist.findMany({
+      where: { orderId: { in: orderIds } },
+    });
+
+    // FIX #2: PurchaseShortlist records might not exist yet for new orders.
+    // Without real DB IDs, item.id was a fake composite string like "orderId-productId".
+    // PUT /api/admin/shortlist/[id] does findUnique({ where: { id } }) → null → 404.
+    // Fix: auto-create any missing records so every item always has a real DB id.
+
+    const existingKeys = new Set(
+      shortlistRecords.map(r => `${r.orderId}::${r.productId}`)
+    );
+
+    // Schema check: productName, quantity, buyPrice, sellPrice are all NOT NULL
+    // → must include them when creating records
+    const toCreate: {
+      orderId: string;
+      productId: string;
+      productName: string;
+      quantity: number;
+      buyPrice: number;
+      sellPrice: number;
+      purchased: boolean;
+      priority: string;
+    }[] = [];
+
+    for (const order of orders) {
+      for (const item of order.items) {
+        if (!existingKeys.has(`${order.id}::${item.productId}`)) {
+          toCreate.push({
+            orderId:     order.id,
+            productId:   item.productId,
+            productName: item.product.name,                                       // NOT NULL
+            quantity:    item.quantity,                                            // NOT NULL
+            buyPrice:    item.product.costPrice                                    // NOT NULL
+                           ? parseFloat(item.product.costPrice.toString())
+                           : 0,
+            sellPrice:   parseFloat(item.price.toString()),                        // NOT NULL
+            purchased:   false,
+            priority:    'NORMAL',
+          });
+        }
+      }
+    }
+
+    if (toCreate.length > 0) {
+      await prisma.purchaseShortlist.createMany({
+        data: toCreate,
+        skipDuplicates: true, // safe guard against race conditions
+      });
+
+      // Re-fetch so newly created records have their real IDs
+      shortlistRecords = await prisma.purchaseShortlist.findMany({
+        where: { orderId: { in: orderIds } },
+      });
+    }
+
+    // ===== BUILD MAP for O(1) lookup =====
+    // key: "orderId::productId" → shortlist record
+    const shortlistMap = new Map(
+      shortlistRecords.map(r => [`${r.orderId}::${r.productId}`, r])
+    );
+
+    // ===== PROCESS ORDERS =====
     const allShortlistItems: ShortlistItem[] = [];
     const orderMap = new Map<string, OrderBase>();
 
     for (const order of orders) {
-      const items: ShortlistItem[] = order.items.map((item) => ({
-        id: `${order.id}-${item.productId}`, // Unique ID for each product in order
-        orderId: order.id,
-        productId: item.productId,
-        productName: item.product.name,
-        quantity: item.quantity,
-        buyPrice: item.product.costPrice
-          ? parseFloat(item.product.costPrice.toString())
-          : 0,
-        sellPrice: parseFloat(item.price.toString()),
-        purchased: false, // Will update from DB if exists
-        purchasedAt: null,
-        priority: 'NORMAL',
-        notes: null,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-      }));
+      const mergedItems: ShortlistItem[] = order.items.map(item => {
+        const dbItem = shortlistMap.get(`${order.id}::${item.productId}`);
 
-      // Fetch actual shortlist data from DB
-      const shortlistData = await prisma.purchaseShortlist.findMany({
-        where: { orderId: order.id },
-      });
-
-      // Merge with actual data
-      const mergedItems = items.map((item) => {
-        const dbItem = shortlistData.find(
-          (s) => s.productId === item.productId
-        );
         return {
-          ...item,
-          ...(dbItem && {
-            id: dbItem.id,
-            purchased: dbItem.purchased,
-            purchasedAt: dbItem.purchasedAt,
-            priority: dbItem.priority || 'NORMAL',
-            notes: dbItem.notes,
-          }),
+          // dbItem always exists now (created above if missing) — no more fake IDs
+          id:          dbItem?.id          ?? `${order.id}-${item.productId}`,
+          orderId:     order.id,
+          productId:   item.productId,
+          productName: item.product.name,
+          quantity:    item.quantity,
+          buyPrice:    item.product.costPrice
+                         ? parseFloat(item.product.costPrice.toString())
+                         : 0,
+          sellPrice:   parseFloat(item.price.toString()),
+          purchased:   dbItem?.purchased   ?? false,
+          purchasedAt: dbItem?.purchasedAt ?? null,
+          priority:    dbItem?.priority    ?? 'NORMAL',
+          notes:       dbItem?.notes       ?? null,
+          createdAt:   order.createdAt,
+          updatedAt:   order.updatedAt,
         };
       });
 
       allShortlistItems.push(...mergedItems);
 
-      // Store order info
       orderMap.set(order.id, {
-        id: order.id,
+        id:          order.id,
         orderNumber: order.orderNumber,
-        userId: order.userId,
-        createdAt: order.createdAt,
+        userId:      order.userId,
+        createdAt:   order.createdAt,
         customer: {
-          name: `${order.user.firstName || ''} ${
-            order.user.lastName || ''
-          }`.trim(),
+          name:  `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim(),
           phone: order.user.phone,
         },
       });
     }
 
-    // ===== GROUP BY ORDER =====
+    // ===== GROUP BY ORDER (unchanged logic) =====
     const ordersWithShortlist: OrderWithShortlist[] = Array.from(orderMap.values()).map(
       (orderData): OrderWithShortlist => {
-        const items = allShortlistItems.filter(
-          (item) => item.orderId === orderData.id
-        );
+        const items = allShortlistItems.filter(i => i.orderId === orderData.id);
 
-        // Filter by priority
-        let filteredItems = items;
-        if (priority !== 'ALL') {
-          filteredItems = items.filter((item) => item.priority === priority);
-        }
+        const filteredItems = priority !== 'ALL'
+          ? items.filter(i => i.priority === priority)
+          : items;
 
-        // Calculate metrics
-        const totalProducts = items.length;
-        const purchasedProducts = items.filter((i) => i.purchased).length;
+        const totalProducts      = items.length;
+        const purchasedProducts  = items.filter(i => i.purchased).length;
         const unpurchasedProducts = totalProducts - purchasedProducts;
-        const progress = totalProducts > 0 ? (purchasedProducts / totalProducts) * 100 : 0;
+        const progress    = totalProducts > 0 ? (purchasedProducts / totalProducts) * 100 : 0;
         const isCompleted = purchasedProducts === totalProducts && totalProducts > 0;
 
-        // Calculate profit
-        const totalProfit = items.reduce((sum, item) => {
-          const profit = (item.sellPrice - item.buyPrice) * item.quantity;
-          return sum + profit;
-        }, 0);
+        const totalProfit = items.reduce(
+          (sum, i) => sum + (i.sellPrice - i.buyPrice) * i.quantity,
+          0
+        );
 
         return {
           ...orderData,
@@ -231,10 +253,10 @@ export async function GET(request: NextRequest) {
           totalProducts,
           purchasedProducts,
           unpurchasedProducts,
-          progress: Math.round(progress),
+          progress:    Math.round(progress),
           isCompleted,
           totalProfit: Math.round(totalProfit),
-          completedAt: isCompleted ? new Date() : null,
+          completedAt: isCompleted ? now : null,
         };
       }
     );
@@ -242,84 +264,52 @@ export async function GET(request: NextRequest) {
     // ===== FILTER BY STATUS & SEARCH =====
     let filteredOrders = ordersWithShortlist;
 
-    // Status filter
-    if (status === 'pending') {
-      filteredOrders = filteredOrders.filter((o) => !o.isCompleted);
-    } else if (status === 'completed') {
-      filteredOrders = filteredOrders.filter((o) => o.isCompleted);
-    }
+    if (status === 'pending')   filteredOrders = filteredOrders.filter(o => !o.isCompleted);
+    if (status === 'completed') filteredOrders = filteredOrders.filter(o => o.isCompleted);
 
-    // Search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filteredOrders = filteredOrders.filter(
-        (order) =>
-          order.orderNumber.toLowerCase().includes(query) ||
-          order.customer.name.toLowerCase().includes(query) ||
-          order.customer.phone?.includes(query)
+      const q = searchQuery.toLowerCase();
+      filteredOrders = filteredOrders.filter(o =>
+        o.orderNumber.toLowerCase().includes(q) ||
+        o.customer.name.toLowerCase().includes(q) ||
+        o.customer.phone?.includes(q)
       );
     }
 
     // ===== SORT =====
     if (sortBy === 'urgent') {
       filteredOrders.sort((a, b) => {
-        const aUrgent = a.items.some((i) => i.priority === 'URGENT') ? 1 : 0;
-        const bUrgent = b.items.some((i) => i.priority === 'URGENT') ? 1 : 0;
-        return bUrgent - aUrgent;
+        const aU = a.items.some(i => i.priority === 'URGENT') ? 1 : 0;
+        const bU = b.items.some(i => i.priority === 'URGENT') ? 1 : 0;
+        return bU - aU;
       });
     } else if (sortBy === 'progress') {
       filteredOrders.sort((a, b) => a.progress - b.progress);
     }
 
-    // ===== CALCULATE STATS =====
-    const totalProductsCount =
-      filteredOrders.reduce((sum, o) => sum + o.unpurchasedProducts, 0) +
-      filteredOrders.reduce((sum, o) => sum + o.purchasedProducts, 0);
-
-    const productsPurchasedCount = filteredOrders.reduce(
-      (sum, o) => sum + o.purchasedProducts,
-      0
-    );
+    // ===== STATS =====
+    const totalCount     = filteredOrders.reduce((s, o) => s + o.totalProducts, 0);
+    const purchasedCount = filteredOrders.reduce((s, o) => s + o.purchasedProducts, 0);
 
     const stats: ShortlistStats = {
-      pendingOrders: filteredOrders.filter((o) => !o.isCompleted).length,
-      completedOrders: filteredOrders.filter((o) => o.isCompleted).length,
-      productsRemaining: filteredOrders.reduce(
-        (sum, o) => sum + o.unpurchasedProducts,
-        0
-      ),
-      productsPurchased: productsPurchasedCount,
+      pendingOrders:        filteredOrders.filter(o => !o.isCompleted).length,
+      completedOrders:      filteredOrders.filter(o => o.isCompleted).length,
+      productsRemaining:    filteredOrders.reduce((s, o) => s + o.unpurchasedProducts, 0),
+      productsPurchased:    purchasedCount,
       totalPotentialRevenue: Math.round(
-        filteredOrders.reduce((sum, o) => {
-          return (
-            sum +
-            o.items.reduce((itemSum, item) => {
-              return itemSum + item.sellPrice * item.quantity;
-            }, 0)
-          );
-        }, 0)
+        filteredOrders.reduce(
+          (s, o) => s + o.items.reduce((is, i) => is + i.sellPrice * i.quantity, 0),
+          0
+        )
       ),
-      expectedProfit: Math.round(
-        filteredOrders.reduce((sum, o) => sum + o.totalProfit, 0)
-      ),
-      completionRate:
-        totalProductsCount > 0
-          ? Math.round((productsPurchasedCount / totalProductsCount) * 100)
-          : 0,
+      expectedProfit: Math.round(filteredOrders.reduce((s, o) => s + o.totalProfit, 0)),
+      completionRate: totalCount > 0 ? Math.round((purchasedCount / totalCount) * 100) : 0,
     };
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        orders: filteredOrders,
-        stats,
-      },
-    });
+    return NextResponse.json({ success: true, data: { orders: filteredOrders, stats } });
+
   } catch (error) {
     console.error('Shortlist GET error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
