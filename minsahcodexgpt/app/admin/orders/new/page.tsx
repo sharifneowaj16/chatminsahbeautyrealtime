@@ -668,7 +668,9 @@ export default function CreateOrderPage() {
                   placeholder={customer.phone}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
-              </div>
+             </div>
+          </div>
+
           {/* Products Section */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
