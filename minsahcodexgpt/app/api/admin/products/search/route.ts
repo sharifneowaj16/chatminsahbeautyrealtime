@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma } from '@/generated/prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+type Decimal = Prisma.Decimal;
+const Decimal = Prisma.Decimal;
 
 export const dynamic = 'force-dynamic';
 
