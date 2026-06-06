@@ -139,7 +139,7 @@ export default function CreateOrderPage() {
   const toastRef = useRef<NodeJS.Timeout | null>(null);
 
   // Guard
-  if (!hasPermission(PERMISSIONS.ORDERS_CREATE)) {
+  if (!hasPermission(PERMISSIONS.ORDERS_VIEW)) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
