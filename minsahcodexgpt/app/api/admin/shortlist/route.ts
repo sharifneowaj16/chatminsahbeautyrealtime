@@ -32,6 +32,40 @@ interface Order {
   };
 }
 
+interface OrderCustomer {
+  name: string;
+  phone: string | null;
+}
+
+interface OrderBase {
+  id: string;
+  orderNumber: string;
+  userId: string;
+  createdAt: Date;
+  customer: OrderCustomer;
+}
+
+interface OrderWithShortlist extends OrderBase {
+  items: ShortlistItem[];
+  totalProducts: number;
+  purchasedProducts: number;
+  unpurchasedProducts: number;
+  progress: number;
+  isCompleted: boolean;
+  totalProfit: number;
+  completedAt: Date | null;
+}
+
+interface ShortlistStats {
+  pendingOrders: number;
+  completedOrders: number;
+  productsRemaining: number;
+  productsPurchased: number;
+  totalPotentialRevenue: number;
+  expectedProfit: number;
+  completionRate: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // ===== AUTH CHECK =====
@@ -105,7 +139,7 @@ export async function GET(request: NextRequest) {
 
     // ===== PROCESS INTO SHORTLIST ITEMS =====
     const allShortlistItems: ShortlistItem[] = [];
-    const orderMap = new Map<string, any>();
+    const orderMap = new Map<string, OrderBase>();
 
     for (const order of orders) {
       const items: ShortlistItem[] = order.items.map((item) => ({
@@ -166,8 +200,8 @@ export async function GET(request: NextRequest) {
     }
 
     // ===== GROUP BY ORDER =====
-    const ordersWithShortlist = Array.from(orderMap.values()).map(
-      (orderData) => {
+    const ordersWithShortlist: OrderWithShortlist[] = Array.from(orderMap.values()).map(
+      (orderData): OrderWithShortlist => {
         const items = allShortlistItems.filter(
           (item) => item.orderId === orderData.id
         );
@@ -238,17 +272,23 @@ export async function GET(request: NextRequest) {
     }
 
     // ===== CALCULATE STATS =====
-    const stats = {
+    const totalProductsCount =
+      filteredOrders.reduce((sum, o) => sum + o.unpurchasedProducts, 0) +
+      filteredOrders.reduce((sum, o) => sum + o.purchasedProducts, 0);
+
+    const productsPurchasedCount = filteredOrders.reduce(
+      (sum, o) => sum + o.purchasedProducts,
+      0
+    );
+
+    const stats: ShortlistStats = {
       pendingOrders: filteredOrders.filter((o) => !o.isCompleted).length,
       completedOrders: filteredOrders.filter((o) => o.isCompleted).length,
       productsRemaining: filteredOrders.reduce(
         (sum, o) => sum + o.unpurchasedProducts,
         0
       ),
-      productsPurchased: filteredOrders.reduce(
-        (sum, o) => sum + o.purchasedProducts,
-        0
-      ),
+      productsPurchased: productsPurchasedCount,
       totalPotentialRevenue: Math.round(
         filteredOrders.reduce((sum, o) => {
           return (
@@ -262,13 +302,11 @@ export async function GET(request: NextRequest) {
       expectedProfit: Math.round(
         filteredOrders.reduce((sum, o) => sum + o.totalProfit, 0)
       ),
+      completionRate:
+        totalProductsCount > 0
+          ? Math.round((productsPurchasedCount / totalProductsCount) * 100)
+          : 0,
     };
-
-    const totalProducts = stats.productsRemaining + stats.productsPurchased;
-    stats.completionRate =
-      totalProducts > 0
-        ? Math.round((stats.productsPurchased / totalProducts) * 100)
-        : 0;
 
     return NextResponse.json({
       success: true,
