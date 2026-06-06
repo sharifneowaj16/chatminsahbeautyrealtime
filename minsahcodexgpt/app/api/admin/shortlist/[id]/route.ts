@@ -6,9 +6,12 @@ import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ===== GET PARAMS =====
+    const { id } = await context.params;
+
     // ===== AUTH CHECK =====
     const accessToken = request.cookies.get('admin_access_token')?.value;
     if (!accessToken) {
@@ -26,7 +29,7 @@ export async function PUT(
       );
     }
 
-    const itemId = params.id;
+    const itemId = id;
     const body = await request.json();
     const { purchased, purchasedAt, priority, notes } = body;
 
