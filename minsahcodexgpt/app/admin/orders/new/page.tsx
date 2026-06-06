@@ -657,20 +657,6 @@ export default function CreateOrderPage() {
                 </select>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Street Address *
-                </label>
-                <input
-                  type="text"
-                  value={address.street1 || ''}
-                  onChange={(e) => setAddress((p) => ({ ...p, street1: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  required
-                />
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Phone
