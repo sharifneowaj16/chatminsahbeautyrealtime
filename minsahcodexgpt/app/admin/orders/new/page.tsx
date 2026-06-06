@@ -19,9 +19,6 @@ import {
   Package,
   DollarSign,
   Edit3,
-  Tag,
-  Archive,
-  Cpu,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -183,17 +180,8 @@ export default function CreateOrderPage() {
   const productDropRef  = useRef<HTMLDivElement>(null);
   const custDropRef     = useRef<HTMLDivElement>(null);
 
-  // ── Permission guard ────────────────────────────────────────────────────────
-  if (!hasPermission(PERMISSIONS.ORDERS_VIEW)) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="w-10 h-10 text-red-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">No permission to create orders.</p>
-        </div>
-      </div>
-    );
-  }
+  // ── Permission guard — must come AFTER all hooks ─────────────────────────────
+  const hasAccess = hasPermission(PERMISSIONS.ORDERS_VIEW);
 
   // ── Toast helper ────────────────────────────────────────────────────────────
   const showToast = useCallback((type: ToastState['type'], message: string) => {
@@ -454,6 +442,17 @@ export default function CreateOrderPage() {
   };
 
   // ─── Render ──────────────────────────────────────────────────────────────────
+  if (!hasAccess) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="w-10 h-10 text-red-300 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">No permission to create orders.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F7F8FA] p-6">
 
