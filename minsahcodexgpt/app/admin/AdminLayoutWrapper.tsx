@@ -86,6 +86,7 @@ const menuItems: MenuItem[] = [
     badge: 12,
     children: [
       { title: 'All Orders', href: '/admin/orders' },
+      { title: 'Create Order', href: '/admin/orders/new', permission: PERMISSIONS.ORDERS_VIEW },
       { title: 'Processing', href: '/admin/orders?status=processing', permission: PERMISSIONS.ORDERS_PROCESS },
       { title: 'Returns', href: '/admin/orders/returns', permission: PERMISSIONS.ORDERS_REFUND },
       {
