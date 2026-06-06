@@ -191,7 +191,7 @@ export default function CreateOrderPage() {
         const res = await fetch('/api/shipping/pathao/cities', { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
-          setCities(data.cities || []);
+          setCities(data || []);
         }
       } catch (e) {
         console.error('Failed to load cities:', e);
@@ -215,7 +215,7 @@ export default function CreateOrderPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setZones(data.zones || []);
+          setZones(data || []);
         }
       } catch (e) {
         console.error('Failed to load zones:', e);
@@ -239,7 +239,7 @@ export default function CreateOrderPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setAreas(data.areas || []);
+          setAreas(data || []);
         }
       } catch (e) {
         console.error('Failed to load areas:', e);
@@ -669,28 +669,6 @@ export default function CreateOrderPage() {
                   onChange={(e) => setAddress((p) => ({ ...p, street1: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                   required
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Street Address 2
-                </label>
-                <input
-                  type="text"
-                  value={address.street2 || ''}
-                  onChange={(e) => setAddress((p) => ({ ...p, street2: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  value={address.postalCode || ''}
-                  onChange={(e) => setAddress((p) => ({ ...p, postalCode: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
               <div>
