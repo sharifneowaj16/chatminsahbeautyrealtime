@@ -80,6 +80,8 @@ interface OrderLineItem {
   quantity: number;
   productType: ProductType;
   isCustom: boolean;
+  variant?: string;
+  size?: string;
 }
 
 interface ToastState {
@@ -357,7 +359,7 @@ export default function CreateOrderPage() {
 
   const startEdit = (item: OrderLineItem) => {
     setEditingKey(item.key);
-    setEditValues({ price: item.price, name: item.name, sku: item.sku, productType: item.productType });
+    setEditValues({ price: item.price, name: item.name, sku: item.sku, productType: item.productType, variant: item.variant, size: item.size });
   };
 
   const commitEdit = (key: string) => {
@@ -597,28 +599,16 @@ export default function CreateOrderPage() {
               <MapPin className="w-5 h-5" /> Delivery Address
             </h2>
 
-            {/* Name override */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
-                <input
-                  type="text"
-                  value={address.firstName || ''}
-                  onChange={e => setAddress(p => ({ ...p, firstName: e.target.value }))}
-                  placeholder={customer.firstName}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
-                <input
-                  type="text"
-                  value={address.lastName || ''}
-                  onChange={e => setAddress(p => ({ ...p, lastName: e.target.value }))}
-                  placeholder={customer.lastName}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
+            {/* Full Name */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+              <input
+                type="text"
+                value={address.firstName || ''}
+                onChange={e => setAddress(p => ({ ...p, firstName: e.target.value, lastName: '' }))}
+                placeholder={`${customer.firstName || ''} ${customer.lastName || ''}`.trim()}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
             </div>
 
             {/* Street */}
@@ -877,7 +867,11 @@ export default function CreateOrderPage() {
                               )}
                               <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
                             </div>
-                            <p className="text-xs text-gray-400">SKU: {item.sku} &nbsp;·&nbsp; Unit: {formatPrice(item.price)}</p>
+                            <p className="text-xs text-gray-400">
+                              SKU: {item.sku} &nbsp;·&nbsp; Unit: {formatPrice(item.price)}
+                              {item.variant && <span className="ml-1">&nbsp;·&nbsp; {item.variant}</span>}
+                              {item.size && <span className="ml-1">&nbsp;·&nbsp; Size: {item.size}</span>}
+                            </p>
                           </div>
 
                           {/* Qty */}
@@ -964,7 +958,29 @@ export default function CreateOrderPage() {
                               </select>
                             </div>
                           </div>
-
+                          {/* Variant + Size */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium text-gray-600 mb-1 block">Variant</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Red, 100ml"
+                                value={editValues.variant ?? item.variant ?? ''}
+                                onChange={e => setEditValues(p => ({ ...p, variant: e.target.value }))}
+                                className="w-full px-3 py-2 border border-violet-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-gray-600 mb-1 block">Size</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. S, M, L, XL"
+                                value={editValues.size ?? item.size ?? ''}
+                                onChange={e => setEditValues(p => ({ ...p, size: e.target.value }))}
+                                className="w-full px-3 py-2 border border-violet-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+                              />
+                            </div>
+                          </div>
                           {/* Save / Cancel */}
                           <div className="flex gap-2 justify-end pt-1">
                             <button
