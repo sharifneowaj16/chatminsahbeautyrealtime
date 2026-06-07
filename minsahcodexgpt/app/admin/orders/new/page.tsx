@@ -771,7 +771,7 @@ export default function CreateOrderPage() {
                             </p>
 
                             {/* Variant chips */}
-                            {product.variants.length > 0 && (
+                            {(product.variants ?? []).length > 0 && (
                               <div className="mt-2">
                                 <p className="text-xs text-gray-400 mb-1">Variant:</p>
                                 <div className="flex flex-wrap gap-1.5">
@@ -787,7 +787,7 @@ export default function CreateOrderPage() {
                                   >
                                     Base ({formatPrice(product.price)})
                                   </button>
-                                  {product.variants.map(v => (
+                                   {(product.variants ?? []).map(v => (
                                     <button
                                       key={v.id}
                                       type="button"
