@@ -633,17 +633,6 @@ export default function CreateOrderPage() {
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Street 2</label>
-              <input
-                type="text"
-                value={address.street2 || ''}
-                onChange={e => setAddress(p => ({ ...p, street2: e.target.value }))}
-                placeholder="Apartment, floor, landmark…"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-
             {/* Pathao cascading */}
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
@@ -700,27 +689,16 @@ export default function CreateOrderPage() {
               </div>
             </div>
 
-            {/* Postal + Phone */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Postal Code</label>
-                <input
-                  type="text"
-                  value={address.postalCode || ''}
-                  onChange={e => setAddress(p => ({ ...p, postalCode: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
-                <input
-                  type="tel"
-                  value={address.phone || ''}
-                  onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))}
-                  placeholder={customer.phone}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+              <input
+                type="tel"
+                value={address.phone || ''}
+                onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))}
+                placeholder={customer.phone}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
             </div>
           </div>
 
