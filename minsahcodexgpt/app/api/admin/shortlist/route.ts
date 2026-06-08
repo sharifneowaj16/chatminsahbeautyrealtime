@@ -153,13 +153,13 @@ export async function GET(request: NextRequest) {
         if (!existingKeys.has(`${order.id}::${item.productId}`)) {
           toCreate.push({
             orderId:     order.id,
-            productId:   item.productId,
-            productName: item.product.name,                                       // NOT NULL
-            quantity:    item.quantity,                                            // NOT NULL
-            buyPrice:    item.product.costPrice                                    // NOT NULL
+            productId:   item.productId ?? '',
+            productName: item.product?.name ?? item.name,
+            quantity:    item.quantity,
+            buyPrice:    item.product?.costPrice
                            ? parseFloat(item.product.costPrice.toString())
                            : 0,
-            sellPrice:   parseFloat(item.price.toString()),                        // NOT NULL
+            sellPrice:   parseFloat(item.price.toString()),
             purchased:   false,
             priority:    'NORMAL',
           });
