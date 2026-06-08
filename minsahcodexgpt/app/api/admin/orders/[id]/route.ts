@@ -121,7 +121,7 @@ export async function GET(
       }),
       productIds.length
         ? prisma.product.findMany({
-            where: { id: { in: productIds } },
+            where: { id: { in: productIds.filter((id): id is string => id !== null) } },
             select: {
               id: true,
               name: true,
