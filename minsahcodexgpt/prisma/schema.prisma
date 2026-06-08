@@ -685,7 +685,7 @@ model SteadfastWebhookEvent {
 model OrderItem {
   id        String  @id @default(cuid())
   orderId   String
-  productId String
+  productId String?
   variantId String?
   name      String
   sku       String
