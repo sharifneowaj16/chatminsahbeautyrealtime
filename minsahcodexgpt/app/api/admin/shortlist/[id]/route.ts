@@ -113,13 +113,13 @@ export async function PUT(
         ? parseFloat(item.product.costPrice.toString())
         : 0,
       sellPrice: parseFloat(item.price.toString()),
-      purchased: allItems.find((ai) => ai.productId === item.productId)
+       purchased: allItems.find((ai) => ai.productId === (item.productId ?? item.id))
         ?.purchased || false,
-      purchasedAt: allItems.find((ai) => ai.productId === item.productId)
+      purchasedAt: allItems.find((ai) => ai.productId === (item.productId ?? item.id))
         ?.purchasedAt || null,
-      priority: allItems.find((ai) => ai.productId === item.productId)
+      priority: allItems.find((ai) => ai.productId === (item.productId ?? item.id))
         ?.priority || 'NORMAL',
-      notes: allItems.find((ai) => ai.productId === item.productId)?.notes || null,
+      notes: allItems.find((ai) => ai.productId === (item.productId ?? item.id))?.notes || null,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     }));
