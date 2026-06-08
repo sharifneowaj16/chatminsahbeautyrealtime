@@ -104,12 +104,12 @@ export async function PUT(
 
     // ===== CALCULATE ORDER METRICS =====
     const items = order.items.map((item) => ({
-      id: `${order.id}-${item.productId}`,
+      id: `${order.id}-${item.productId ?? item.id}`,
       orderId: order.id,
-      productId: item.productId,
-      productName: item.product.name,
+      productId: item.productId ?? '',
+      productName: item.product?.name ?? item.name,
       quantity: item.quantity,
-      buyPrice: item.product.costPrice
+      buyPrice: item.product?.costPrice
         ? parseFloat(item.product.costPrice.toString())
         : 0,
       sellPrice: parseFloat(item.price.toString()),
