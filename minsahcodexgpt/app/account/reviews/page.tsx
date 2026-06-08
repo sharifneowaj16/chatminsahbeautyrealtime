@@ -60,7 +60,7 @@ async function getReviewsData(userId: string) {
   }>();
 
   for (const item of deliveredOrderItems) {
-    if (!item.product || reviewedProductIds.has(item.productId) || uniqueReviewableProducts.has(item.productId)) {
+   if (!item.product || !item.productId || reviewedProductIds.has(item.productId) || uniqueReviewableProducts.has(item.productId)) {
       continue;
     }
 
