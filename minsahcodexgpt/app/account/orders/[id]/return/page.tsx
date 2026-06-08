@@ -55,7 +55,7 @@ async function getReturnRequestData(orderId: string, userId: string) {
     createdAt: order.createdAt,
     items: order.items.map((item) => ({
       id: item.id,
-      productId: item.productId,
+      productId: item.productId ?? '',
       productName: item.name,
       productSlug: item.product?.slug ?? item.productId,
       productImage: item.variant?.image ?? item.product?.images?.[0]?.url ?? null,
