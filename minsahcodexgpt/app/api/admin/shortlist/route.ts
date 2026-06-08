@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
 
     for (const order of orders) {
       for (const item of order.items) {
-        if (!existingKeys.has(`${order.id}::${item.productId}`)) {
+        if (item.productId && !existingKeys.has(`${order.id}::${item.productId}`)) {
           toCreate.push({
             orderId:     order.id,
             productId:   item.productId ?? '',
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
     const orderMap = new Map<string, OrderBase>();
 
     for (const order of orders) {
-      const mergedItems: ShortlistItem[] = order.items.map(item => {
+     const mergedItems: ShortlistItem[] = order.items.filter(item => !!item.productId).map(item => {
         const dbItem = shortlistMap.get(`${order.id}::${item.productId ?? ''}`);
 
         return {
