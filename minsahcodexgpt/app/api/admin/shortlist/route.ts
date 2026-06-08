@@ -150,10 +150,11 @@ export async function GET(request: NextRequest) {
 
     for (const order of orders) {
       for (const item of order.items) {
-        if (item.productId && !existingKeys.has(`${order.id}::${item.productId}`)) {
+        const surrogateId = item.productId ?? item.id;
+        if (!existingKeys.has(`${order.id}::${surrogateId}`)) {
           toCreate.push({
             orderId:     order.id,
-            productId:   item.productId ?? '',
+            productId:   surrogateId,
             productName: item.product?.name ?? item.name,
             quantity:    item.quantity,
             buyPrice:    item.product?.costPrice
@@ -190,8 +191,9 @@ export async function GET(request: NextRequest) {
     const orderMap = new Map<string, OrderBase>();
 
     for (const order of orders) {
-     const mergedItems: ShortlistItem[] = order.items.filter(item => !!item.productId).map(item => {
-        const dbItem = shortlistMap.get(`${order.id}::${item.productId ?? ''}`);
+     const mergedItems: ShortlistItem[] = order.items.map(item => {
+        const surrogateId = item.productId ?? item.id;
+        const dbItem = shortlistMap.get(`${order.id}::${surrogateId}`);
 
         return {
           // dbItem always exists now (created above if missing) — no more fake IDs
