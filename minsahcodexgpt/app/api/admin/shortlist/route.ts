@@ -9,7 +9,7 @@ import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 interface ShortlistItem {
   id: string;
   orderId: string;
-  productId: string;
+  productId: string | null;
   productName: string;
   quantity: number;
   buyPrice: number;
@@ -191,13 +191,13 @@ export async function GET(request: NextRequest) {
 
     for (const order of orders) {
       const mergedItems: ShortlistItem[] = order.items.map(item => {
-        const dbItem = shortlistMap.get(`${order.id}::${item.productId}`);
+        const dbItem = shortlistMap.get(`${order.id}::${item.productId ?? ''}`);
 
         return {
           // dbItem always exists now (created above if missing) — no more fake IDs
           id:          dbItem?.id          ?? `${order.id}-${item.productId}`,
           orderId:     order.id,
-          productId:   item.productId,
+          productId:   item.productId ?? null,
           productName: item.product.name,
           quantity:    item.quantity,
           buyPrice:    item.product.costPrice
