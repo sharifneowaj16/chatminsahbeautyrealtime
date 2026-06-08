@@ -198,9 +198,9 @@ export async function GET(request: NextRequest) {
           id:          dbItem?.id          ?? `${order.id}-${item.productId}`,
           orderId:     order.id,
           productId:   item.productId ?? null,
-          productName: item.product.name,
+          productName: item.product?.name ?? item.name,
           quantity:    item.quantity,
-          buyPrice:    item.product.costPrice
+          buyPrice:    item.product?.costPrice
                          ? parseFloat(item.product.costPrice.toString())
                          : 0,
           sellPrice:   parseFloat(item.price.toString()),
