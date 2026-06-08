@@ -57,7 +57,7 @@ async function getReturnRequestData(orderId: string, userId: string) {
       id: item.id,
       productId: item.productId ?? '',
       productName: item.name,
-      productSlug: item.product?.slug ?? item.productId,
+      productSlug: item.product?.slug ?? item.productId ?? '',
       productImage: item.variant?.image ?? item.product?.images?.[0]?.url ?? null,
       quantity: item.quantity,
       price: Number(item.price),
