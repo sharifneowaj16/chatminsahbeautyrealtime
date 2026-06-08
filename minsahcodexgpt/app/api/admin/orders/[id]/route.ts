@@ -165,7 +165,7 @@ export async function GET(
           ...item,
           price: toNumber(item.price),
           total: toNumber(item.total),
-          product: productMap.get(item.productId) ?? null,
+          product: item.productId ? productMap.get(item.productId) ?? null : null,
           variant: item.variantId ? variantMap.get(item.variantId) ?? null : null,
         })),
         payments: order.payments.map((payment) => ({
