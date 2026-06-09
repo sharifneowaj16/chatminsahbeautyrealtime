@@ -152,7 +152,7 @@ model AdminUser {
 
   refreshTokens      AdminRefreshToken[]
   shortlistItems     InventoryShortlist[]
-  purchaseShortlist  PurchaseShortlist[]   // ✨ Added
+  purchaseShortlist  PurchaseShortlist[]
 
   @@index([email])
 }
@@ -364,7 +364,7 @@ model Product {
   supplierLinks      SupplierProduct[]
   purchaseItems      PurchaseOrderItem[]
   shortlistItems     InventoryShortlist[]
-  purchaseShortlist  PurchaseShortlist[]   // ✨ Added
+  purchaseShortlist  PurchaseShortlist[]
 
   @@index([slug])
   @@index([sku])
@@ -496,8 +496,8 @@ model PurchaseShortlist {
   orderId   String
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   productName String
   quantity    Int
@@ -521,6 +521,29 @@ model PurchaseShortlist {
   @@index([adminId])
   @@index([purchased])
   @@index([priority])
+}
+
+// ==========================================
+// Unlisted Products (Custom Products from Orders)
+// ==========================================
+
+model UnlistedProduct {
+  id          String   @id @default(cuid())
+  name        String
+  sku         String   @unique
+  price       Decimal  @db.Decimal(10, 2)
+  quantity    Int      @default(0)
+  costPrice   Decimal? @db.Decimal(10, 2)
+  description String?  @db.Text
+  image       String?
+  usageCount  Int      @default(1)
+  lastUsedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([sku])
+  @@index([lastUsedAt])
 }
 
 // ==========================================
@@ -615,7 +638,7 @@ model Order {
   notifications AdminNotification[]
   steadfastWebhookEvents SteadfastWebhookEvent[]
   pathaoWebhookEvents    PathaoWebhookEvent[]
-  purchaseShortlist      PurchaseShortlist[]       // ✨ Added
+  purchaseShortlist      PurchaseShortlist[]
 
   @@index([userId])
   @@index([orderNumber])
