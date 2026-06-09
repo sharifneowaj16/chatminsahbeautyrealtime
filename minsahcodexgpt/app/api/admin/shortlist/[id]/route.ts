@@ -9,56 +9,34 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ===== GET PARAMS =====
     const { id } = await context.params;
 
-    // ===== AUTH CHECK =====
     const accessToken = request.cookies.get('admin_access_token')?.value;
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
+    if (!accessToken)
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const payload = await verifyAdminAccessToken(accessToken);
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
+    if (!payload)
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
 
-    const itemId = id;
     const body = await request.json();
     const { purchased, purchasedAt, priority, notes } = body;
 
-    // ===== VALIDATE INPUT =====
-    if (typeof purchased !== 'boolean') {
-      return NextResponse.json(
-        { error: 'Invalid purchased status' },
-        { status: 400 }
-      );
-    }
+    if (typeof purchased !== 'boolean')
+      return NextResponse.json({ error: 'Invalid purchased status' }, { status: 400 });
 
-    // ===== FIND SHORTLIST ITEM =====
-    let shortlistItem = await prisma.purchaseShortlist.findUnique({
-      where: { id: itemId },
-    });
+    // Find the shortlist item — works for both real and custom products
+    // because both now have a real DB row with a real cuid
+    let shortlistItem = await prisma.purchaseShortlist.findUnique({ where: { id } });
 
-    if (!shortlistItem) {
-      return NextResponse.json(
-        { error: 'Shortlist item not found' },
-        { status: 404 }
-      );
-    }
+    if (!shortlistItem)
+      return NextResponse.json({ error: 'Shortlist item not found' }, { status: 404 });
 
     const orderId = shortlistItem.orderId;
-
-    // ===== UPDATE ITEM =====
     const now = new Date();
+
     shortlistItem = await prisma.purchaseShortlist.update({
-      where: { id: itemId },
+      where: { id },
       data: {
         purchased,
         purchasedAt: purchased ? new Date(purchasedAt || now) : null,
@@ -68,102 +46,97 @@ export async function PUT(
       },
     });
 
-    // ===== CHECK IF ORDER IS COMPLETE =====
-    const allItems = await prisma.purchaseShortlist.findMany({
+    // Fetch all shortlist records for this order
+    const allShortlistRecords = await prisma.purchaseShortlist.findMany({
       where: { orderId },
     });
 
-    const allPurchased = allItems.every((item) => item.purchased);
-    const completedAt = allPurchased ? now : null;
+    const allPurchased = allShortlistRecords.every(r => r.purchased);
 
-    // ===== GET UPDATED ORDER DATA =====
+    // Fetch order with items
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
         items: {
           include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                costPrice: true,
-                price: true,
-              },
-            },
+            product: { select: { id: true, name: true, costPrice: true, price: true } },
           },
         },
       },
     });
 
-    if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
-    }
+    if (!order)
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-    // ===== CALCULATE ORDER METRICS =====
-    const items = order.items.map((item) => ({
-      id: `${order.id}-${item.productId ?? item.id}`,
-      orderId: order.id,
-      productId: item.productId ?? '',
-      productName: item.product?.name ?? item.name,
-      quantity: item.quantity,
-      buyPrice: item.product?.costPrice
-        ? parseFloat(item.product.costPrice.toString())
-        : 0,
-      sellPrice: parseFloat(item.price.toString()),
-       purchased: allItems.find((ai) => ai.productId === (item.productId ?? item.id))
-        ?.purchased || false,
-      purchasedAt: allItems.find((ai) => ai.productId === (item.productId ?? item.id))
-        ?.purchasedAt || null,
-      priority: allItems.find((ai) => ai.productId === (item.productId ?? item.id))
-        ?.priority || 'NORMAL',
-      notes: allItems.find((ai) => ai.productId === (item.productId ?? item.id))?.notes || null,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-    }));
+    const usedCustomIds = new Set<string>();
 
-    const totalProducts = items.length;
-    const purchasedProducts = items.filter((i) => i.purchased).length;
+    const items = order.items.map(item => {
+      let dbRecord: (typeof allShortlistRecords)[number] | undefined;
+
+      if (item.productId) {
+        // Real product: match by productId
+        dbRecord = allShortlistRecords.find(r => r.productId === item.productId);
+      } else {
+        // Custom product: match by productName, avoid double-matching
+        dbRecord = allShortlistRecords.find(
+          r => r.productId === null
+            && r.productName === (item.product?.name ?? item.name)
+            && !usedCustomIds.has(r.id)
+        );
+        if (dbRecord) usedCustomIds.add(dbRecord.id);
+      }
+
+      return {
+        id:          dbRecord?.id          ?? `fallback-${order.id}-${item.id}`,
+        orderId:     order.id,
+        productId:   item.productId ?? null,
+        productName: item.product?.name ?? item.name,
+        quantity:    item.quantity,
+        buyPrice:    item.product?.costPrice
+                       ? parseFloat(item.product.costPrice.toString())
+                       : 0,
+        sellPrice:   parseFloat(item.price.toString()),
+        purchased:   dbRecord?.purchased   ?? false,
+        purchasedAt: dbRecord?.purchasedAt ?? null,
+        priority:    dbRecord?.priority    ?? 'NORMAL',
+        notes:       dbRecord?.notes       ?? null,
+        createdAt:   order.createdAt,
+        updatedAt:   order.updatedAt,
+      };
+    });
+
+    const totalProducts       = items.length;
+    const purchasedProducts   = items.filter(i => i.purchased).length;
     const unpurchasedProducts = totalProducts - purchasedProducts;
-    const progress =
-      totalProducts > 0 ? (purchasedProducts / totalProducts) * 100 : 0;
+    const progress    = totalProducts > 0 ? (purchasedProducts / totalProducts) * 100 : 0;
     const isCompleted = purchasedProducts === totalProducts && totalProducts > 0;
-
-    const totalProfit = items.reduce((sum, item) => {
-      const profit = (item.sellPrice - item.buyPrice) * item.quantity;
-      return sum + profit;
-    }, 0);
+    const totalProfit = items.reduce(
+      (sum, i) => sum + (i.sellPrice - i.buyPrice) * i.quantity, 0
+    );
 
     const user = await prisma.user.findUnique({
       where: { id: order.userId },
-      select: {
-        firstName: true,
-        lastName: true,
-        phone: true,
-      },
+      select: { firstName: true, lastName: true, phone: true },
     });
 
-    // ===== RESPONSE =====
     return NextResponse.json({
       success: true,
       data: {
         shortlistItem,
         order: {
-          id: order.id,
-          orderNumber: order.orderNumber,
-          userId: order.userId,
-          createdAt: order.createdAt,
+          id:           order.id,
+          orderNumber:  order.orderNumber,
+          userId:       order.userId,
+          createdAt:    order.createdAt,
           customer: {
-            name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+            name:  `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
             phone: user?.phone,
           },
           items,
           totalProducts,
           purchasedProducts,
           unpurchasedProducts,
-          progress: Math.round(progress),
+          progress:    Math.round(progress),
           isCompleted,
           totalProfit: Math.round(totalProfit),
           completedAt: isCompleted ? now : null,
@@ -175,9 +148,6 @@ export async function PUT(
     });
   } catch (error) {
     console.error('Shortlist PUT error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+} 
