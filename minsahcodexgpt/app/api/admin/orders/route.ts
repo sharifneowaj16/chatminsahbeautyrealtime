@@ -114,11 +114,12 @@ export async function POST(request: NextRequest) {
 
     // Calculate totals & validate products
     let subtotal = new Decimal(0);
-    // Change 1: productId is now string | null to support custom products
     const orderItems: { productId: string | null; variantId?: string; name: string; sku: string; price: Decimal; quantity: number; total: Decimal }[] = [];
     const shortlistItems: { productId: string; quantity: number; price: Decimal }[] = [];
 
-    // Change 2: for loop now supports both DB products and custom products
+    // ✨ NEW: Track custom products for UnlistedProduct
+    const customProducts: { name: string; sku: string; price: Decimal }[] = [];
+
     for (const item of items) {
       const itemQuantity = item.quantity || 1;
       const itemPrice = new Decimal(item.price || 0);
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
           });
         }
       } else {
-        // Custom product — no DB lookup
+        // ✨ Custom product — track for unlisted
         orderItems.push({
           productId: null,
           variantId: undefined,
@@ -163,6 +164,12 @@ export async function POST(request: NextRequest) {
           price: itemPrice,
           quantity: itemQuantity,
           total: itemTotal,
+        });
+
+        customProducts.push({
+          name: item.name || 'Custom Product',
+          sku: item.sku || `CUSTOM-${Date.now()}`,
+          price: itemPrice,
         });
       }
     }
@@ -225,6 +232,24 @@ export async function POST(request: NextRequest) {
         update: {
           quantity: shortItem.quantity,
           sellPrice: shortItem.price,
+        },
+      });
+    }
+
+    // ✨ NEW: Track custom products in UnlistedProduct
+    for (const customProduct of customProducts) {
+      await prisma.unlistedProduct.upsert({
+        where: { sku: customProduct.sku },
+        create: {
+          name: customProduct.name,
+          sku: customProduct.sku,
+          price: customProduct.price,
+          usageCount: 1,
+          lastUsedAt: new Date(),
+        },
+        update: {
+          usageCount: { increment: 1 },
+          lastUsedAt: new Date(),
         },
       });
     }
