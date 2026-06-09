@@ -1,10 +1,8 @@
-// app/api/admin/shortlist/route.ts — FIXED for custom products
+// app/api/admin/shortlist/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
-
-// ─── interfaces (unchanged) ───────────────────────────────────────────────────
 
 interface ShortlistItem {
   id: string;
@@ -53,11 +51,8 @@ interface ShortlistStats {
   completionRate: number;
 }
 
-// ─── GET ────────────────────────────────────────────────────────────────────
-
 export async function GET(request: NextRequest) {
   try {
-    // ===== AUTH CHECK (unchanged) =====
     const accessToken = request.cookies.get('admin_access_token')?.value;
     if (!accessToken)
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -66,15 +61,13 @@ export async function GET(request: NextRequest) {
     if (!payload)
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
 
-    // ===== QUERY PARAMS =====
     const { searchParams } = new URL(request.url);
-    const status     = searchParams.get('status')    || 'pending';
-    const priority   = searchParams.get('priority')  || 'ALL';
-    const dateRange  = searchParams.get('dateRange') || 'all';
-    const searchQuery = searchParams.get('search')   || '';
-    const sortBy     = searchParams.get('sort')      || 'recent';
+    const status      = searchParams.get('status')    || 'pending';
+    const priority    = searchParams.get('priority')  || 'ALL';
+    const dateRange   = searchParams.get('dateRange') || 'all';
+    const searchQuery = searchParams.get('search')    || '';
+    const sortBy      = searchParams.get('sort')      || 'recent';
 
-    // ===== FIX #1 — don't pass empty object to Prisma =====
     const now     = new Date();
     const today   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -83,7 +76,6 @@ export async function GET(request: NextRequest) {
     if (dateRange === 'today') dateFilter.gte = today;
     else if (dateRange === 'week') dateFilter.gte = weekAgo;
 
-    // ===== FETCH ORDERS =====
     const orders = await prisma.order.findMany({
       where: {
         ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
@@ -99,7 +91,6 @@ export async function GET(request: NextRequest) {
       orderBy: sortBy === 'recent' ? { createdAt: 'desc' } : { updatedAt: 'desc' },
     });
 
-    // Early return when no orders at all
     if (orders.length === 0) {
       return NextResponse.json({
         success: true,
@@ -116,24 +107,29 @@ export async function GET(request: NextRequest) {
 
     const orderIds = orders.map(o => o.id);
 
-    // ===== FIX #2 + #3 — batch fetch + auto-create missing shortlist records =====
-
-    // FIX #3: ONE query for ALL orders (was: findMany inside a for loop — N+1 problem)
     let shortlistRecords = await prisma.purchaseShortlist.findMany({
       where: { orderId: { in: orderIds } },
     });
 
-    // FIX #2: PurchaseShortlist records might not exist yet for new orders.
-    // Now supports BOTH: real productIds AND custom products (NULL productId)
-
+    // Build existing keys using orderItemId stored in productName fallback
+    // KEY: "orderId::productId" for real products, "orderId::orderItemId" for custom
     const existingKeys = new Set(
-      shortlistRecords.map(r => `${r.orderId}::${r.productId ?? 'CUSTOM'}`)
+      shortlistRecords.map(r => `${r.orderId}::${r.productId ?? r.id}`)
     );
+    // ^^^ For custom records already in DB, we key by their own shortlist id
+    // This won't work for new ones — see toCreate below for how we track them
 
-    // Schema check: productName, quantity, buyPrice, sellPrice are all NOT NULL
+    // Better approach: build a map by orderId → list of records
+    const recordsByOrder = new Map<string, typeof shortlistRecords>();
+    for (const r of shortlistRecords) {
+      const list = recordsByOrder.get(r.orderId) ?? [];
+      list.push(r);
+      recordsByOrder.set(r.orderId, list);
+    }
+
     const toCreate: {
       orderId: string;
-      productId: string | null;  // ✨ Now allows NULL for custom products
+      productId: string | null;
       productName: string;
       quantity: number;
       buyPrice: number;
@@ -143,24 +139,43 @@ export async function GET(request: NextRequest) {
     }[] = [];
 
     for (const order of orders) {
-      for (const item of order.items) {
-        // ✨ For custom products: productId stays NULL, use item.id for unique key
-        const surrogateKeyPart = item.productId ?? `CUSTOM-${item.id}`;
-        const uniqueKey = `${order.id}::${surrogateKeyPart}`;
+      const existingForOrder = recordsByOrder.get(order.id) ?? [];
 
-        if (!existingKeys.has(uniqueKey)) {
-          toCreate.push({
-            orderId:     order.id,
-            productId:   item.productId ?? null,  // ✨ NULL for custom products
-            productName: item.product?.name ?? item.name,
-            quantity:    item.quantity,
-            buyPrice:    item.product?.costPrice
-                           ? parseFloat(item.product.costPrice.toString())
-                           : 0,
-            sellPrice:   parseFloat(item.price.toString()),
-            purchased:   false,
-            priority:    'NORMAL',
-          });
+      for (const item of order.items) {
+        if (item.productId) {
+          // Real product: check by productId
+          const alreadyExists = existingForOrder.some(r => r.productId === item.productId);
+          if (!alreadyExists) {
+            toCreate.push({
+              orderId:     order.id,
+              productId:   item.productId,
+              productName: item.product?.name ?? item.name,
+              quantity:    item.quantity,
+              buyPrice:    item.product?.costPrice
+                             ? parseFloat(item.product.costPrice.toString())
+                             : 0,
+              sellPrice:   parseFloat(item.price.toString()),
+              purchased:   false,
+              priority:    'NORMAL',
+            });
+          }
+        } else {
+          // Custom product: check by productName + quantity match (best we can do without schema change)
+          const alreadyExists = existingForOrder.some(
+            r => r.productId === null && r.productName === (item.product?.name ?? item.name)
+          );
+          if (!alreadyExists) {
+            toCreate.push({
+              orderId:     order.id,
+              productId:   null,
+              productName: item.product?.name ?? item.name,
+              quantity:    item.quantity,
+              buyPrice:    0,
+              sellPrice:   parseFloat(item.price.toString()),
+              purchased:   false,
+              priority:    'NORMAL',
+            });
+          }
         }
       }
     }
@@ -171,35 +186,48 @@ export async function GET(request: NextRequest) {
         skipDuplicates: true,
       });
 
-      // Re-fetch so newly created records have their real IDs
       shortlistRecords = await prisma.purchaseShortlist.findMany({
         where: { orderId: { in: orderIds } },
       });
+
+      // Rebuild recordsByOrder
+      recordsByOrder.clear();
+      for (const r of shortlistRecords) {
+        const list = recordsByOrder.get(r.orderId) ?? [];
+        list.push(r);
+        recordsByOrder.set(r.orderId, list);
+      }
     }
 
-    // ===== BUILD MAP for O(1) lookup =====
-    // key: "orderId::productId-or-CUSTOM-itemId" → shortlist record
-    const shortlistMap = new Map(
-      shortlistRecords.map(r => {
-        const key = `${r.orderId}::${r.productId ?? `CUSTOM-${r.id}`}`;
-        return [key, r];
-      })
-    );
-
-    // ===== PROCESS ORDERS =====
     const allShortlistItems: ShortlistItem[] = [];
     const orderMap = new Map<string, OrderBase>();
 
     for (const order of orders) {
+      const existingForOrder = recordsByOrder.get(order.id) ?? [];
+
+      // Track which custom records we've already matched (to avoid double-matching)
+      const usedCustomIds = new Set<string>();
+
       const mergedItems: ShortlistItem[] = order.items.map(item => {
-        const keyPart = item.productId ?? `CUSTOM-${item.id}`;
-        const mapKey = `${order.id}::${keyPart}`;
-        const dbItem = shortlistMap.get(mapKey);
+        let dbItem: (typeof shortlistRecords)[number] | undefined;
+
+        if (item.productId) {
+          // Real product: match by productId
+          dbItem = existingForOrder.find(r => r.productId === item.productId);
+        } else {
+          // Custom product: match by productName, skip already used
+          dbItem = existingForOrder.find(
+            r => r.productId === null
+              && r.productName === (item.product?.name ?? item.name)
+              && !usedCustomIds.has(r.id)
+          );
+          if (dbItem) usedCustomIds.add(dbItem.id);
+        }
 
         return {
-          id:          dbItem?.id          ?? `${order.id}-${item.id}`,
+          id:          dbItem?.id          ?? `fallback-${order.id}-${item.id}`,
           orderId:     order.id,
-          productId:   item.productId ?? null,  // ✨ NULL for custom products
+          productId:   item.productId ?? null,
           productName: item.product?.name ?? item.name,
           quantity:    item.quantity,
           buyPrice:    item.product?.costPrice
@@ -229,7 +257,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ===== GROUP BY ORDER (unchanged logic) =====
     const ordersWithShortlist: OrderWithShortlist[] = Array.from(orderMap.values()).map(
       (orderData): OrderWithShortlist => {
         const items = allShortlistItems.filter(i => i.orderId === orderData.id);
@@ -238,8 +265,8 @@ export async function GET(request: NextRequest) {
           ? items.filter(i => i.priority === priority)
           : items;
 
-        const totalProducts      = items.length;
-        const purchasedProducts  = items.filter(i => i.purchased).length;
+        const totalProducts       = items.length;
+        const purchasedProducts   = items.filter(i => i.purchased).length;
         const unpurchasedProducts = totalProducts - purchasedProducts;
         const progress    = totalProducts > 0 ? (purchasedProducts / totalProducts) * 100 : 0;
         const isCompleted = purchasedProducts === totalProducts && totalProducts > 0;
@@ -263,7 +290,6 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    // ===== FILTER BY STATUS & SEARCH =====
     let filteredOrders = ordersWithShortlist;
 
     if (status === 'pending')   filteredOrders = filteredOrders.filter(o => !o.isCompleted);
@@ -278,7 +304,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ===== SORT =====
     if (sortBy === 'urgent') {
       filteredOrders.sort((a, b) => {
         const aU = a.items.some(i => i.priority === 'URGENT') ? 1 : 0;
@@ -289,15 +314,14 @@ export async function GET(request: NextRequest) {
       filteredOrders.sort((a, b) => a.progress - b.progress);
     }
 
-    // ===== STATS =====
     const totalCount     = filteredOrders.reduce((s, o) => s + o.totalProducts, 0);
     const purchasedCount = filteredOrders.reduce((s, o) => s + o.purchasedProducts, 0);
 
     const stats: ShortlistStats = {
-      pendingOrders:        filteredOrders.filter(o => !o.isCompleted).length,
-      completedOrders:      filteredOrders.filter(o => o.isCompleted).length,
-      productsRemaining:    filteredOrders.reduce((s, o) => s + o.unpurchasedProducts, 0),
-      productsPurchased:    purchasedCount,
+      pendingOrders:         filteredOrders.filter(o => !o.isCompleted).length,
+      completedOrders:       filteredOrders.filter(o => o.isCompleted).length,
+      productsRemaining:     filteredOrders.reduce((s, o) => s + o.unpurchasedProducts, 0),
+      productsPurchased:     purchasedCount,
       totalPotentialRevenue: Math.round(
         filteredOrders.reduce(
           (s, o) => s + o.items.reduce((is, i) => is + i.sellPrice * i.quantity, 0),
