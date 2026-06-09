@@ -1,4 +1,4 @@
-// app/api/admin/shortlist/route.ts — FIXED
+// app/api/admin/shortlist/route.ts — FIXED for custom products
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -53,7 +53,7 @@ interface ShortlistStats {
   completionRate: number;
 }
 
-// ─── GET ──────────────────────────────────────────────────────────────────────
+// ─── GET ────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,8 +75,6 @@ export async function GET(request: NextRequest) {
     const sortBy     = searchParams.get('sort')      || 'recent';
 
     // ===== FIX #1 — don't pass empty object to Prisma =====
-    // Before: where: { createdAt: {} }  ← Prisma error / empty result
-    // After:  only add createdAt filter when actually needed
     const now     = new Date();
     const today   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -84,7 +82,6 @@ export async function GET(request: NextRequest) {
     const dateFilter: { gte?: Date } = {};
     if (dateRange === 'today') dateFilter.gte = today;
     else if (dateRange === 'week') dateFilter.gte = weekAgo;
-    // 'all' → dateFilter stays {} and is NOT spread into where
 
     // ===== FETCH ORDERS =====
     const orders = await prisma.order.findMany({
@@ -127,19 +124,16 @@ export async function GET(request: NextRequest) {
     });
 
     // FIX #2: PurchaseShortlist records might not exist yet for new orders.
-    // Without real DB IDs, item.id was a fake composite string like "orderId-productId".
-    // PUT /api/admin/shortlist/[id] does findUnique({ where: { id } }) → null → 404.
-    // Fix: auto-create any missing records so every item always has a real DB id.
+    // Now supports BOTH: real productIds AND custom products (NULL productId)
 
     const existingKeys = new Set(
-      shortlistRecords.map(r => `${r.orderId}::${r.productId}`)
+      shortlistRecords.map(r => `${r.orderId}::${r.productId ?? 'CUSTOM'}`)
     );
 
     // Schema check: productName, quantity, buyPrice, sellPrice are all NOT NULL
-    // → must include them when creating records
     const toCreate: {
       orderId: string;
-      productId: string;
+      productId: string | null;  // ✨ Now allows NULL for custom products
       productName: string;
       quantity: number;
       buyPrice: number;
@@ -150,11 +144,14 @@ export async function GET(request: NextRequest) {
 
     for (const order of orders) {
       for (const item of order.items) {
-        const surrogateId = item.productId ?? item.id;
-        if (!existingKeys.has(`${order.id}::${surrogateId}`)) {
+        // ✨ For custom products: productId stays NULL, use item.id for unique key
+        const surrogateKeyPart = item.productId ?? `CUSTOM-${item.id}`;
+        const uniqueKey = `${order.id}::${surrogateKeyPart}`;
+
+        if (!existingKeys.has(uniqueKey)) {
           toCreate.push({
             orderId:     order.id,
-            productId:   surrogateId,
+            productId:   item.productId ?? null,  // ✨ NULL for custom products
             productName: item.product?.name ?? item.name,
             quantity:    item.quantity,
             buyPrice:    item.product?.costPrice
@@ -171,7 +168,7 @@ export async function GET(request: NextRequest) {
     if (toCreate.length > 0) {
       await prisma.purchaseShortlist.createMany({
         data: toCreate,
-        skipDuplicates: true, // safe guard against race conditions
+        skipDuplicates: true,
       });
 
       // Re-fetch so newly created records have their real IDs
@@ -181,9 +178,12 @@ export async function GET(request: NextRequest) {
     }
 
     // ===== BUILD MAP for O(1) lookup =====
-    // key: "orderId::productId" → shortlist record
+    // key: "orderId::productId-or-CUSTOM-itemId" → shortlist record
     const shortlistMap = new Map(
-      shortlistRecords.map(r => [`${r.orderId}::${r.productId}`, r])
+      shortlistRecords.map(r => {
+        const key = `${r.orderId}::${r.productId ?? `CUSTOM-${r.id}`}`;
+        return [key, r];
+      })
     );
 
     // ===== PROCESS ORDERS =====
@@ -191,15 +191,15 @@ export async function GET(request: NextRequest) {
     const orderMap = new Map<string, OrderBase>();
 
     for (const order of orders) {
-     const mergedItems: ShortlistItem[] = order.items.map(item => {
-        const surrogateId = item.productId ?? item.id;
-        const dbItem = shortlistMap.get(`${order.id}::${surrogateId}`);
+      const mergedItems: ShortlistItem[] = order.items.map(item => {
+        const keyPart = item.productId ?? `CUSTOM-${item.id}`;
+        const mapKey = `${order.id}::${keyPart}`;
+        const dbItem = shortlistMap.get(mapKey);
 
         return {
-          // dbItem always exists now (created above if missing) — no more fake IDs
-          id:          dbItem?.id          ?? `${order.id}-${item.productId}`,
+          id:          dbItem?.id          ?? `${order.id}-${item.id}`,
           orderId:     order.id,
-          productId:   item.productId ?? null,
+          productId:   item.productId ?? null,  // ✨ NULL for custom products
           productName: item.product?.name ?? item.name,
           quantity:    item.quantity,
           buyPrice:    item.product?.costPrice
