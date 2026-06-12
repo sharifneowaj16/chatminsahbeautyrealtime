@@ -301,13 +301,36 @@ model Product {
   metaKeywords       String?
   bengaliName        String?
   bengaliDescription String? @db.Text
-  focusKeyword       String?
-  secondaryKeywords  String[]
-  bengaliFocusKeyword String?
-  ogDescription       String?
-  ogTitle            String?
-  ogImageUrl         String?
-  canonicalUrl       String?
+  focusKeyword         String?
+  secondaryKeywords    String[] @default([])
+  bengaliFocusKeyword  String?
+  bengaliSecondaryKeywords String[] @default([])
+  ogDescription        String?
+  ogTitle              String?
+  ogImageUrl           String?
+  canonicalUrl         String?
+
+  // Extended SEO & semantic search fields
+  searchIntent         String?
+  targetAudience       String?  @db.Text
+  primaryConcern       String?
+  keyBenefits          String[] @default([])
+  buyingIntentKeywords String[] @default([])
+  searchTags           String[] @default([])
+  synonyms             String[] @default([])
+  banglaSearchTerms    String[] @default([])
+  reviewKeywords       String[] @default([])
+  entities             String[] @default([])
+
+  // Product page structured content
+  descriptionSections  Json?
+  productSpecs         Json?
+  productAttributes    Json?
+  shadeOptions         Json?
+  usageInstructions    String[] @default([])
+  imageAltTexts        String[] @default([])
+  faqSchemaReady       Boolean  @default(false)
+  gender               String?
 
   // Beauty & Product Specs
   subcategory   String?
