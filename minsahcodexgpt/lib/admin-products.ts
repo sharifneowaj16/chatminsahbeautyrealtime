@@ -34,6 +34,7 @@ type ProductVariantPayload = {
   name?: unknown;
   size?: unknown;
   color?: unknown;
+  shade?: unknown;
   price?: unknown;
   stock?: unknown;
   quantity?: unknown;
@@ -101,6 +102,31 @@ function getString(value: unknown): string | undefined {
 
 function getPayloadString(payload: ProductPayload, key: string): string | undefined {
   return getString(payload[key]);
+}
+
+function hasAny(payload: ProductPayload, keys: string[]): boolean {
+  return keys.some((key) => hasOwn(payload, key));
+}
+
+function getPayloadValueByKeys(payload: ProductPayload, keys: string[]): unknown {
+  for (const key of keys) {
+    if (hasOwn(payload, key)) {
+      return payload[key];
+    }
+  }
+
+  return undefined;
+}
+
+function getPayloadStringByKeys(payload: ProductPayload, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = getPayloadString(payload, key);
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
 }
 
 function getBoolean(value: unknown, fallback = false): boolean {
@@ -241,6 +267,65 @@ function normalizeRelatedProducts(value: unknown, fallback: string | null): stri
   }
 
   return JSON.stringify(value);
+}
+
+function normalizeStringArray(value: unknown, fallback: string[] = []): string[] {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  if (value == null || value === '') {
+    return [];
+  }
+
+  const rawValues = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(',')
+      : [];
+
+  return [
+    ...new Set(
+      rawValues
+        .map((entry) => String(entry).trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
+function normalizeJsonValue(
+  value: unknown,
+  fallback: unknown = Prisma.JsonNull
+): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  if (value === undefined) {
+    return fallback as Prisma.InputJsonValue | typeof Prisma.JsonNull;
+  }
+
+  if (value == null || value === '') {
+    return Prisma.JsonNull;
+  }
+
+  return value as Prisma.InputJsonValue;
+}
+
+function getVariantColorOrShade(variant: ProductVariantPayload): string {
+  return getString(variant.color) || getString(variant.shade) || '';
+}
+
+function buildVariantDisplayName(
+  variant: ProductVariantPayload,
+  fallbackName: string
+): string {
+  const explicitName = getString(variant.name);
+  if (explicitName) {
+    return explicitName;
+  }
+
+  const combined = [getString(variant.size), getVariantColorOrShade(variant)]
+    .filter(Boolean)
+    .join(' / ');
+
+  return combined || fallbackName;
 }
 
 function buildStoredSubcategory(subcategory: unknown, item: unknown): string | null {
@@ -484,9 +569,12 @@ async function assertProductSkuAvailable(sku: string, excludeProductId?: string)
 }
 
 function buildVariantAttributes(variant: ProductVariantPayload): Prisma.InputJsonValue {
+  const colorOrShade = getVariantColorOrShade(variant);
+
   return {
     size: getString(variant.size) || '',
-    color: getString(variant.color) || '',
+    color: colorOrShade,
+    shade: getString(variant.shade) || colorOrShade,
   };
 }
 
@@ -723,14 +811,31 @@ export function formatAdminProductDetail(product: AdminProductDetailProduct) {
     bengaliName: product.bengaliName || '',
     bengaliDescription: product.bengaliDescription || '',
     focusKeyword: product.focusKeyword || '',
-    // ── NEW SEO fields ──
     secondaryKeywords: product.secondaryKeywords || [],
     bengaliFocusKeyword: product.bengaliFocusKeyword || '',
+    bengaliSecondaryKeywords: product.bengaliSecondaryKeywords || [],
     ogDescription: product.ogDescription || '',
-    // ───────────────────
     ogTitle: product.ogTitle || '',
     ogImageUrl: product.ogImageUrl || '',
     canonicalUrl: product.canonicalUrl || '',
+    searchIntent: product.searchIntent || '',
+    targetAudience: product.targetAudience || '',
+    primaryConcern: product.primaryConcern || '',
+    keyBenefits: product.keyBenefits || [],
+    buyingIntentKeywords: product.buyingIntentKeywords || [],
+    searchTags: product.searchTags || [],
+    synonyms: product.synonyms || [],
+    banglaSearchTerms: product.banglaSearchTerms || [],
+    reviewKeywords: product.reviewKeywords || [],
+    entities: product.entities || [],
+    descriptionSections: product.descriptionSections || [],
+    productSpecs: product.productSpecs || null,
+    productAttributes: product.productAttributes || null,
+    shadeOptions: product.shadeOptions || null,
+    usageInstructions: product.usageInstructions || [],
+    imageAltTexts: product.imageAltTexts || [],
+    faqSchemaReady: product.faqSchemaReady || false,
+    gender: product.gender || '',
     condition: product.condition || 'NEW',
     gtin: product.gtin || '',
     averageRating: product.averageRating ? product.averageRating.toNumber() : 0,
@@ -815,17 +920,34 @@ export async function createAdminProduct(input: unknown) {
       metaTitle: getPayloadString(payload, 'metaTitle') || null,
       metaDescription: getPayloadString(payload, 'metaDescription') || null,
       metaKeywords: getPayloadString(payload, 'tags') || getPayloadString(payload, 'metaKeywords') || null,
-      bengaliName: getPayloadString(payload, 'bengaliName') || null,
-      bengaliDescription: getPayloadString(payload, 'bengaliDescription') || null,
+      bengaliName: getPayloadStringByKeys(payload, ['bengaliName', 'bengaliProductName']) || null,
+      bengaliDescription: getPayloadStringByKeys(payload, ['bengaliDescription', 'bengaliMetaDescription']) || null,
       focusKeyword: getPayloadString(payload, 'focusKeyword') || null,
-      // ── NEW SEO fields ──
-      secondaryKeywords: Array.isArray(payload.secondaryKeywords) ? (payload.secondaryKeywords as string[]) : [],
+      secondaryKeywords: normalizeStringArray(payload.secondaryKeywords),
       bengaliFocusKeyword: getPayloadString(payload, 'bengaliFocusKeyword') || null,
+      bengaliSecondaryKeywords: normalizeStringArray(payload.bengaliSecondaryKeywords),
       ogDescription: getPayloadString(payload, 'ogDescription') || null,
-      // ───────────────────
       ogTitle: getPayloadString(payload, 'ogTitle') || null,
       ogImageUrl: getPayloadString(payload, 'ogImageUrl') || null,
       canonicalUrl: getPayloadString(payload, 'canonicalUrl') || null,
+      searchIntent: getPayloadString(payload, 'searchIntent') || null,
+      targetAudience: getPayloadString(payload, 'targetAudience') || null,
+      primaryConcern: getPayloadString(payload, 'primaryConcern') || null,
+      keyBenefits: normalizeStringArray(payload.keyBenefits),
+      buyingIntentKeywords: normalizeStringArray(payload.buyingIntentKeywords),
+      searchTags: normalizeStringArray(payload.searchTags),
+      synonyms: normalizeStringArray(payload.synonyms),
+      banglaSearchTerms: normalizeStringArray(payload.banglaSearchTerms),
+      reviewKeywords: normalizeStringArray(payload.reviewKeywords),
+      entities: normalizeStringArray(payload.entities),
+      descriptionSections: normalizeJsonValue(payload.descriptionSections),
+      productSpecs: normalizeJsonValue(getPayloadValueByKeys(payload, ['productSpecs', 'product_specs'])),
+      productAttributes: normalizeJsonValue(getPayloadValueByKeys(payload, ['productAttributes', 'attributes'])),
+      shadeOptions: normalizeJsonValue(payload.shadeOptions),
+      usageInstructions: normalizeStringArray(payload.usageInstructions),
+      imageAltTexts: normalizeStringArray(payload.imageAltTexts),
+      faqSchemaReady: getBoolean(payload.faqSchemaReady, false),
+      gender: getPayloadString(payload, 'gender') || null,
       subcategory: storedSubcategory,
       skinType: normalizeSkinTypes(payload.skinType, []),
       ingredients: getPayloadString(payload, 'ingredients') || null,
@@ -869,7 +991,7 @@ export async function createAdminProduct(input: unknown) {
         return {
           productId: product.id,
           sku,
-          name: getString(variant.name) || getString(variant.size) || getString(variant.color) || name,
+          name: buildVariantDisplayName(variant, name),
           price,
           quantity: stock,
           attributes: buildVariantAttributes(variant),
@@ -969,23 +1091,74 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
       metaKeywords: hasOwn(payload, 'tags') || hasOwn(payload, 'metaKeywords')
         ? getPayloadString(payload, 'tags') || getPayloadString(payload, 'metaKeywords') || null
         : existing.metaKeywords,
-      bengaliName: hasOwn(payload, 'bengaliName') ? getPayloadString(payload, 'bengaliName') || null : existing.bengaliName,
-      bengaliDescription: hasOwn(payload, 'bengaliDescription') ? getPayloadString(payload, 'bengaliDescription') || null : existing.bengaliDescription,
+      bengaliName: hasAny(payload, ['bengaliName', 'bengaliProductName'])
+        ? getPayloadStringByKeys(payload, ['bengaliName', 'bengaliProductName']) || null
+        : existing.bengaliName,
+      bengaliDescription: hasAny(payload, ['bengaliDescription', 'bengaliMetaDescription'])
+        ? getPayloadStringByKeys(payload, ['bengaliDescription', 'bengaliMetaDescription']) || null
+        : existing.bengaliDescription,
       focusKeyword: hasOwn(payload, 'focusKeyword') ? getPayloadString(payload, 'focusKeyword') || null : existing.focusKeyword,
-      // ── NEW SEO fields ──
       secondaryKeywords: hasOwn(payload, 'secondaryKeywords')
-        ? (Array.isArray(payload.secondaryKeywords) ? (payload.secondaryKeywords as string[]) : existing.secondaryKeywords)
+        ? normalizeStringArray(payload.secondaryKeywords, existing.secondaryKeywords)
         : existing.secondaryKeywords,
       bengaliFocusKeyword: hasOwn(payload, 'bengaliFocusKeyword')
         ? getPayloadString(payload, 'bengaliFocusKeyword') || null
         : existing.bengaliFocusKeyword,
+      bengaliSecondaryKeywords: hasOwn(payload, 'bengaliSecondaryKeywords')
+        ? normalizeStringArray(payload.bengaliSecondaryKeywords, existing.bengaliSecondaryKeywords)
+        : existing.bengaliSecondaryKeywords,
       ogDescription: hasOwn(payload, 'ogDescription')
         ? getPayloadString(payload, 'ogDescription') || null
         : existing.ogDescription,
-      // ───────────────────
       ogTitle: hasOwn(payload, 'ogTitle') ? getPayloadString(payload, 'ogTitle') || null : existing.ogTitle,
       ogImageUrl: hasOwn(payload, 'ogImageUrl') ? getPayloadString(payload, 'ogImageUrl') || null : existing.ogImageUrl,
       canonicalUrl: hasOwn(payload, 'canonicalUrl') ? getPayloadString(payload, 'canonicalUrl') || null : existing.canonicalUrl,
+      searchIntent: hasOwn(payload, 'searchIntent') ? getPayloadString(payload, 'searchIntent') || null : existing.searchIntent,
+      targetAudience: hasOwn(payload, 'targetAudience') ? getPayloadString(payload, 'targetAudience') || null : existing.targetAudience,
+      primaryConcern: hasOwn(payload, 'primaryConcern') ? getPayloadString(payload, 'primaryConcern') || null : existing.primaryConcern,
+      keyBenefits: hasOwn(payload, 'keyBenefits')
+        ? normalizeStringArray(payload.keyBenefits, existing.keyBenefits)
+        : existing.keyBenefits,
+      buyingIntentKeywords: hasOwn(payload, 'buyingIntentKeywords')
+        ? normalizeStringArray(payload.buyingIntentKeywords, existing.buyingIntentKeywords)
+        : existing.buyingIntentKeywords,
+      searchTags: hasOwn(payload, 'searchTags')
+        ? normalizeStringArray(payload.searchTags, existing.searchTags)
+        : existing.searchTags,
+      synonyms: hasOwn(payload, 'synonyms')
+        ? normalizeStringArray(payload.synonyms, existing.synonyms)
+        : existing.synonyms,
+      banglaSearchTerms: hasOwn(payload, 'banglaSearchTerms')
+        ? normalizeStringArray(payload.banglaSearchTerms, existing.banglaSearchTerms)
+        : existing.banglaSearchTerms,
+      reviewKeywords: hasOwn(payload, 'reviewKeywords')
+        ? normalizeStringArray(payload.reviewKeywords, existing.reviewKeywords)
+        : existing.reviewKeywords,
+      entities: hasOwn(payload, 'entities')
+        ? normalizeStringArray(payload.entities, existing.entities)
+        : existing.entities,
+      descriptionSections: hasOwn(payload, 'descriptionSections')
+        ? normalizeJsonValue(payload.descriptionSections)
+        : (existing.descriptionSections ?? Prisma.JsonNull),
+      productSpecs: hasAny(payload, ['productSpecs', 'product_specs'])
+        ? normalizeJsonValue(getPayloadValueByKeys(payload, ['productSpecs', 'product_specs']))
+        : (existing.productSpecs ?? Prisma.JsonNull),
+      productAttributes: hasAny(payload, ['productAttributes', 'attributes'])
+        ? normalizeJsonValue(getPayloadValueByKeys(payload, ['productAttributes', 'attributes']))
+        : (existing.productAttributes ?? Prisma.JsonNull),
+      shadeOptions: hasOwn(payload, 'shadeOptions')
+        ? normalizeJsonValue(payload.shadeOptions)
+        : (existing.shadeOptions ?? Prisma.JsonNull),
+      usageInstructions: hasOwn(payload, 'usageInstructions')
+        ? normalizeStringArray(payload.usageInstructions, existing.usageInstructions)
+        : existing.usageInstructions,
+      imageAltTexts: hasOwn(payload, 'imageAltTexts')
+        ? normalizeStringArray(payload.imageAltTexts, existing.imageAltTexts)
+        : existing.imageAltTexts,
+      faqSchemaReady: hasOwn(payload, 'faqSchemaReady')
+        ? getBoolean(payload.faqSchemaReady, existing.faqSchemaReady)
+        : existing.faqSchemaReady,
+      gender: hasOwn(payload, 'gender') ? getPayloadString(payload, 'gender') || null : existing.gender,
       subcategory: storedSubcategory,
       skinType: hasOwn(payload, 'skinType') ? normalizeSkinTypes(payload.skinType, existing.skinType) : existing.skinType,
       ingredients: hasOwn(payload, 'ingredients') ? getPayloadString(payload, 'ingredients') || null : existing.ingredients,
@@ -1062,7 +1235,7 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
         : Math.max(0, Math.trunc(toOptionalNumber(variant.stock ?? variant.quantity) ?? 0));
       const variantData = {
         productId: existing.id,
-        name: getString(variant.name) || getString(variant.size) || getString(variant.color) || updated.name,
+        name: buildVariantDisplayName(variant, updated.name),
         sku: variantSku,
         price: toOptionalNumber(variant.price) ?? updated.price,
         quantity: variantStock,
