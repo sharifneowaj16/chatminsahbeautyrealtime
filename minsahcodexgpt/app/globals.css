@@ -51,8 +51,7 @@ body {
 
 /* Circular Std Font */
 .font-circular-std {
-  font-family: var(--font-circular-std),
-               -apple-system,
+  font-family: -apple-system,
                BlinkMacSystemFont,
                "Segoe UI",
                Roboto,
@@ -73,99 +72,8 @@ html {
   }
 }
 
-/* Hero Section Styles */
-.main-block {
-  height: 100vh;
-  width: 100vw;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  position: relative;
-  z-index: 1;
-}
-
-/* Responsive: Mobile */
-@media (max-width: 768px) {
-  .main-block {
-    background-attachment: scroll;
-    background-position: center top;
-  }
-}
-
-.main-block,
-.main-text span:before {
-  background-repeat: no-repeat;
-  background-position: 50%;
-}
-
-@media screen and (max-width: 991px) {
-  .main-block {
-    padding-top: 60px;
-    padding-bottom: 60px;
-    position: relative;
-    z-index: 1;
-    background-size: cover;
-  }
-}
-
-.main-content {
-  min-width: 320px;
-  text-align: left;
-  width: 100%;
-  order: 2;
-  -webkit-order: 2;
-  flex-grow: 1;
-  -webkit-flex-grow: 1;
-  overflow: hidden;
-}
-
-/* Decorative image for hero section */
-.main-block__decor {
-  position: absolute;
-  left: 0;
-  top: 36%;
-  width: 42.4%;
-  z-index: -1;
-  max-width: 100%;
-}
-
 img {
   max-width: 100%;
-}
-
-@media screen and (max-width: 991px) {
-  .main-block__decor {
-    width: 50%;
-    top: 30%;
-  }
-}
-
-/* Hero Title Styles */
-.main-block h1 {
-  font-family: var(--font-tenor-sans), sans-serif;
-  font-size: 100px;
-  font-weight: 400;
-  color: #222;
-  text-transform: capitalize;
-  text-align: left;
-  line-height: normal;
-  margin: 4px 0 30px 0;
-  padding: 0;
-  border: 0;
-  display: block;
-  -webkit-font-smoothing: antialiased;
-  -webkit-text-size-adjust: none;
-  box-sizing: border-box;
-}
-
-@media screen and (max-width: 991px) {
-  .main-block h1 {
-    font-size: 42px;
-  }
 }
 
 .line-clamp-2 {

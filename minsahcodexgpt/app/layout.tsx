@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Tenor_Sans, Lato, Inter } from "next/font/google";
+import { Tenor_Sans, Lato } from "next/font/google";
 import "./globals.css";
 import SocialFloatingButtons from "./components/SocialFloatingButtons";
 import AllPixels from "@/lib/tracking/pixels/AllPixels";
@@ -16,17 +16,10 @@ const tenorSans = Tenor_Sans({
 });
 
 const lato = Lato({
-  weight: ["300", "400", "700"],
+  weight: ["400", "700"],
   subsets: ["latin"],
   display: "swap",
   variable: "--font-lato",
-});
-
-const circularStd = Inter({
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-circular-std",
 });
 
 // ✅ FIX 1: Google Fonts manual <link> সরিয়ে Next.js font system এ নিলাম
@@ -156,7 +149,7 @@ export default function RootLayout({
     <html
       lang="bn"
       // ✅ FIX 1 continued: mrsSaintDelafield variable add করলাম
-      className={`${tenorSans.variable} ${lato.variable} ${circularStd.variable}`}
+      className={`${tenorSans.variable} ${lato.variable}`}
     >
       <head>
         {/* ✅ FIX 1: manual <link> Google Fonts সরিয়ে দিলাম — এটাই 750ms block করছিল */}
