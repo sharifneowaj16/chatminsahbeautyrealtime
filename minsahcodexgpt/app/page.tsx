@@ -143,7 +143,7 @@ function HomePageInner() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const [currentComboSlide, setCurrentComboSlide] = useState(0);
+  const currentComboSlide = 0;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 7, minutes: 33, seconds: 28 });
   const [categories, setCategories] = useState<{ id: string; name: string; slug: string; icon: string; color: string }[]>([]);
 
@@ -303,20 +303,6 @@ function HomePageInner() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    let comboSlideTimer: ReturnType<typeof setInterval> | null = null;
-    const startTimer = setTimeout(() => {
-      comboSlideTimer = setInterval(() => {
-        setCurrentComboSlide(prev => (prev + 1) % 3);
-      }, 7000);
-    }, 12000);
-
-    return () => {
-      clearTimeout(startTimer);
-      if (comboSlideTimer) clearInterval(comboSlideTimer);
-    };
-  }, []);
-
   return (
     <div className="min-h-screen bg-minsah-light pb-20">
       {/* Header */}
@@ -424,20 +410,30 @@ function HomePageInner() {
       {/* Browse by Categories */}
       <section className="px-4 py-6 bg-white">
         <h2 className="text-lg font-bold text-minsah-dark mb-4">Browse by Categories</h2>
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map((category) => (
+        <div className="flex min-h-[92px] gap-4 overflow-x-auto pb-2 scrollbar-hide">
+          {(categories.length > 0 ? categories : Array.from({ length: 6 }, (_, index) => ({
+            id: `category-placeholder-${index}`,
+            name: '',
+            slug: '',
+            icon: '',
+            color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+          }))).map((category) => (
             <Link
               key={category.id ?? category.name}
-              href={`/categories/${category.slug ?? category.name.toLowerCase().replace(/\s+/g, '-')}`}
-              className="flex flex-col items-center gap-2 flex-shrink-0"
+              href={category.name ? `/categories/${category.slug ?? category.name.toLowerCase().replace(/\s+/g, '-')}` : '#'}
+              className={`flex flex-col items-center gap-2 flex-shrink-0 ${category.name ? '' : 'pointer-events-none'}`}
+              aria-hidden={!category.name}
+              tabIndex={category.name ? undefined : -1}
             >
               <div className={`w-16 h-16 ${category.color} rounded-full flex items-center justify-center text-3xl overflow-hidden`}>
                 {category.icon && (category.icon.startsWith('/') || category.icon.startsWith('http'))
                   ? <img src={category.icon} alt={category.name} className="w-full h-full object-cover" />
-                  : (category.icon || DEFAULT_CATEGORY_ICON)
+                  : category.icon || <span className="h-7 w-7 rounded-full bg-white/60" />
                 }
               </div>
-              <span className="text-xs text-minsah-dark font-medium text-center">{category.name}</span>
+              <span className="min-h-[16px] text-xs text-minsah-dark font-medium text-center">
+                {category.name}
+              </span>
             </Link>
           ))}
         </div>
