@@ -23,6 +23,13 @@ interface ImportVariant {
   sku: string;
 }
 
+interface ImportImage {
+  url: string;
+  alt?: string;
+  title?: string;
+  sortOrder?: number;
+}
+
 interface ImportData {
   name: string;
   category: string;
@@ -65,6 +72,7 @@ interface ImportData {
   shadeOptions: Array<Record<string, unknown>>;
   usageInstructions: string[];
   imageAltTexts: string[];
+  images: ImportImage[];
   descriptionSections: Array<{ heading: string; points: string[] }>;
   faqSchemaReady: boolean;
   gender: string;
@@ -137,12 +145,43 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function asImportImages(value: unknown, imageAltTexts: string[]): ImportImage[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((entry, index) => {
+      if (typeof entry === 'string') {
+        const url = entry.trim();
+        return url ? { url, alt: imageAltTexts[index], sortOrder: index } : null;
+      }
+
+      if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+        const image = entry as Record<string, unknown>;
+        const url = String(image.url || image.src || image.image || '').trim();
+        if (!url) return null;
+
+        return {
+          url,
+          alt: String(image.alt || image.altText || imageAltTexts[index] || '').trim() || undefined,
+          title: String(image.title || image.alt || image.altText || imageAltTexts[index] || '').trim() || undefined,
+          sortOrder: Number.isFinite(Number(image.sortOrder)) ? Number(image.sortOrder) : index,
+        };
+      }
+
+      return null;
+    })
+    .filter((image): image is ImportImage => Boolean(image));
+}
+
 function numericText(value: string): string | undefined {
   const trimmed = value.trim();
   return trimmed && Number.isFinite(Number(trimmed)) ? trimmed : undefined;
 }
 
 function normalizeImportData(p: Record<string, unknown>): ImportData {
+  const imageAltTexts = asStringArray(p.imageAltTexts);
+  const images = asImportImages(p.images || p.imageUrls || p.productImages, imageAltTexts);
+
   return {
     name:           String(p.name          || ''),
     category:       String(p.category      || ''),
@@ -192,7 +231,8 @@ function normalizeImportData(p: Record<string, unknown>): ImportData {
     productAttributes:   asRecord(p.productAttributes) || asRecord(p.attributes),
     shadeOptions:        Array.isArray(p.shadeOptions) ? p.shadeOptions as Array<Record<string, unknown>> : [],
     usageInstructions:   asStringArray(p.usageInstructions),
-    imageAltTexts:       asStringArray(p.imageAltTexts),
+    imageAltTexts,
+    images,
     descriptionSections: Array.isArray(p.descriptionSections)
       ? (p.descriptionSections as Array<Record<string, unknown>>).map((section) => ({
           heading: String(section.heading || ''),
@@ -362,7 +402,12 @@ export default function ImportProductPage() {
           ingredients:   importData.ingredients   || undefined,
           skinType:      importData.skinType.length > 0 ? importData.skinType : undefined,
           shelfLife:     importData.shelfLife     || undefined,
-          images:        [],
+          images:        importData.images.map((image, index) => ({
+            url:       image.url,
+            alt:       image.alt || importData.imageAltTexts[index] || importData.name,
+            title:     image.title || image.alt || importData.imageAltTexts[index] || importData.name,
+            sortOrder: image.sortOrder ?? index,
+          })),
           variants:      importData.variants.map((v) => ({
             size:       v.size,
             color:      v.color,

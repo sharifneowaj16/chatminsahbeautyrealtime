@@ -129,6 +129,7 @@ interface ProductClientProps {
     keyBenefits?: string[];
     primaryConcern?: string;
     targetAudience?: string;
+    gender?: string;
     productSpecs?: Record<string, unknown> | null;
     productAttributes?: Record<string, unknown> | null;
     shadeOptions?: Array<{ shadeCode?: string; shadeName?: string }> | null;
@@ -226,15 +227,42 @@ function StockUrgency({ stock, inStock }: { stock: number; inStock: boolean }) {
   );
 }
 
+function formatDetailValue(value: unknown): string {
+  if (value == null || value === '') return '';
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => formatDetailValue(item))
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+
+    if (Array.isArray(record.values)) {
+      return formatDetailValue(record.values);
+    }
+
+    return Object.entries(record)
+      .map(([label, nestedValue]) => {
+        const formattedValue = formatDetailValue(nestedValue);
+        return formattedValue ? `${label}: ${formattedValue}` : '';
+      })
+      .filter(Boolean)
+      .join(' | ');
+  }
+
+  return String(value);
+}
+
 function getSpecEntries(value: Record<string, unknown> | null | undefined) {
   if (!value) return [];
 
   return Object.entries(value)
     .filter(([, specValue]) => specValue != null && specValue !== '')
-    .map(([label, specValue]) => [
-      label,
-      typeof specValue === 'object' ? JSON.stringify(specValue) : String(specValue),
-    ] as const);
+    .map(([label, specValue]) => [label, formatDetailValue(specValue)] as const)
+    .filter(([, specValue]) => specValue);
 }
 
 export default function ProductClient({
@@ -527,6 +555,32 @@ export default function ProductClient({
                 <p className="whitespace-pre-line text-sm leading-relaxed text-[#4A2C1A]">
                   {product.description}
                 </p>
+              </div>
+            )}
+
+            {(product.targetAudience || product.primaryConcern || product.gender) && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                  Best Match
+                </p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    { label: 'Audience', value: product.targetAudience },
+                    { label: 'Concern', value: product.primaryConcern },
+                    { label: 'Gender', value: product.gender },
+                  ]
+                    .filter((item) => item.value)
+                    .map((item) => (
+                      <div key={item.label} className="rounded-xl border border-[#E8D5C0] bg-[#FFF9F3] p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8B5E3C]">
+                          {item.label}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold leading-relaxed text-[#3D1F0E]">
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
 

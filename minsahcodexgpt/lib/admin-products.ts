@@ -203,6 +203,14 @@ function getPayloadImages(payload: ProductPayload): ProductImagePayload[] {
     : [];
 }
 
+function getPayloadImageAltTexts(payload: ProductPayload): string[] {
+  return Array.isArray(payload.imageAltTexts)
+    ? payload.imageAltTexts.map((entry) => String(entry).trim())
+    : typeof payload.imageAltTexts === 'string'
+      ? payload.imageAltTexts.split(',').map((entry) => entry.trim())
+      : [];
+}
+
 function resolveBasePrice(payload: ProductPayload, fallback = 0): number {
   const directPrice = toOptionalNumber(payload.price);
   if (directPrice != null) {
@@ -579,6 +587,8 @@ function buildVariantAttributes(variant: ProductVariantPayload): Prisma.InputJso
 }
 
 function buildImageRows(payload: ProductPayload, productId: string, productName: string) {
+  const imageAltTexts = getPayloadImageAltTexts(payload);
+
   return getPayloadImages(payload)
     .map((image, index) => {
       const url = getString(image.url);
@@ -587,7 +597,7 @@ function buildImageRows(payload: ProductPayload, productId: string, productName:
       }
 
       const sortOrder = toOptionalNumber(image.sortOrder);
-      const alt = getString(image.alt) || productName;
+      const alt = getString(image.alt) || imageAltTexts[index] || productName;
 
       return {
         productId,

@@ -178,6 +178,7 @@ interface LoadedAdminProduct {
   productAttributes?: unknown;
   shadeOptions?: unknown;
   usageInstructions?: string[];
+  imageAltTexts?: string[];
   descriptionSections?: unknown;
   faqSchemaReady?: boolean;
   gender?: string;
@@ -261,6 +262,9 @@ export default function EditProductPage() {
         const data = await adminFetchJson<{ product: LoadedAdminProduct }>(`/api/admin/products/${productId}`);
         const p = data.product;
         setDbProductId(p.id);
+        const savedImageAltTexts = Array.isArray(p.imageAltTexts)
+          ? p.imageAltTexts.map(String)
+          : [];
 
         const existingImages: ProductImage[] = (p.images || []).map(
           (img: { id: string; url: string; alt?: string; isDefault?: boolean }, i: number) => ({
@@ -268,7 +272,7 @@ export default function EditProductPage() {
             preview:     img.url,
             isMain:      img.isDefault || i === 0,
             existingUrl: img.url,
-            _alt:        img.alt || '',
+            _alt:        img.alt || savedImageAltTexts[i] || '',
           })
         );
 
@@ -299,7 +303,12 @@ export default function EditProductPage() {
           featured:      p.featured      || p.isFeatured || false,
           description:   p.description   || '',
           images:        existingImages,
-          imageAltTexts: existingImages.map((img) => img._alt || ''),
+          imageAltTexts: existingImages.length > 0
+            ? [
+                ...existingImages.map((img, index) => img._alt || savedImageAltTexts[index] || ''),
+                ...savedImageAltTexts.slice(existingImages.length),
+              ]
+            : savedImageAltTexts,
           variants:      existingVariants,
           weight:           p.weight     != null ? String(p.weight) : '',
           ingredients:      p.ingredients   || '',
