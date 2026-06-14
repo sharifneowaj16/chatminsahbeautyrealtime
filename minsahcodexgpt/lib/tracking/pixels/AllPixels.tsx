@@ -1,18 +1,20 @@
 'use client';
 
-import FacebookPixel from './FacebookPixel';
-import GoogleAnalytics from './GoogleAnalytics';
-import GoogleTagManager from './GoogleTagManager';
-import TikTokPixel from './TikTokPixel';
-import SnapchatPixel from './SnapchatPixel';
-import PinterestPixel from './PinterestPixel';
-import TwitterPixel from './TwitterPixel';
-import LinkedInPixel from './LinkedInPixel';
-import RedditPixel from './RedditPixel';
-import MicrosoftPixel from './MicrosoftPixel';
-import HotjarPixel from './HotjarPixel';
-import ClarityPixel from './ClarityPixel';
-import MixpanelPixel from './MixpanelPixel';
+import dynamic from 'next/dynamic';
+
+const FacebookPixel = dynamic(() => import('./FacebookPixel'), { ssr: false });
+const GoogleAnalytics = dynamic(() => import('./GoogleAnalytics'), { ssr: false });
+const GoogleTagManager = dynamic(() => import('./GoogleTagManager'), { ssr: false });
+const TikTokPixel = dynamic(() => import('./TikTokPixel'), { ssr: false });
+const SnapchatPixel = dynamic(() => import('./SnapchatPixel'), { ssr: false });
+const PinterestPixel = dynamic(() => import('./PinterestPixel'), { ssr: false });
+const TwitterPixel = dynamic(() => import('./TwitterPixel'), { ssr: false });
+const LinkedInPixel = dynamic(() => import('./LinkedInPixel'), { ssr: false });
+const RedditPixel = dynamic(() => import('./RedditPixel'), { ssr: false });
+const MicrosoftPixel = dynamic(() => import('./MicrosoftPixel'), { ssr: false });
+const HotjarPixel = dynamic(() => import('./HotjarPixel'), { ssr: false });
+const ClarityPixel = dynamic(() => import('./ClarityPixel'), { ssr: false });
+const MixpanelPixel = dynamic(() => import('./MixpanelPixel'), { ssr: false });
 
 export default function AllPixels() {
   const facebookPixelId =
@@ -78,82 +80,69 @@ export default function AllPixels() {
   return (
     <>
       {/* Facebook Pixel */}
-      <FacebookPixel
-        pixelId={config.facebook.pixelId}
-        enabled={config.facebook.enabled}
-      />
+      {config.facebook.enabled && config.facebook.pixelId && (
+        <FacebookPixel pixelId={config.facebook.pixelId} enabled />
+      )}
 
       {/* Google Analytics 4 */}
-      <GoogleAnalytics
-        measurementId={config.google.measurementId}
-        enabled={config.google.enabled && !!config.google.measurementId}
-      />
+      {config.google.enabled && config.google.measurementId && (
+        <GoogleAnalytics measurementId={config.google.measurementId} enabled />
+      )}
 
       {/* Google Tag Manager */}
-      <GoogleTagManager
-        tagManagerId={config.google.tagManagerId}
-        enabled={config.google.enabled && !!config.google.tagManagerId}
-      />
+      {config.google.enabled && config.google.tagManagerId && (
+        <GoogleTagManager tagManagerId={config.google.tagManagerId} enabled />
+      )}
 
       {/* TikTok Pixel */}
-      <TikTokPixel
-        pixelId={config.tiktok.pixelId}
-        enabled={config.tiktok.enabled}
-      />
+      {config.tiktok.enabled && config.tiktok.pixelId && (
+        <TikTokPixel pixelId={config.tiktok.pixelId} enabled />
+      )}
 
       {/* Snapchat Pixel */}
-      <SnapchatPixel
-        pixelId={config.snapchat.pixelId}
-        enabled={config.snapchat.enabled}
-      />
+      {config.snapchat.enabled && config.snapchat.pixelId && (
+        <SnapchatPixel pixelId={config.snapchat.pixelId} enabled />
+      )}
 
       {/* Pinterest Tag */}
-      <PinterestPixel
-        tagId={config.pinterest.tagId}
-        enabled={config.pinterest.enabled}
-      />
+      {config.pinterest.enabled && config.pinterest.tagId && (
+        <PinterestPixel tagId={config.pinterest.tagId} enabled />
+      )}
 
       {/* Twitter/X Pixel */}
-      <TwitterPixel
-        pixelId={config.twitter.pixelId}
-        enabled={config.twitter.enabled}
-      />
+      {config.twitter.enabled && config.twitter.pixelId && (
+        <TwitterPixel pixelId={config.twitter.pixelId} enabled />
+      )}
 
       {/* LinkedIn Insight Tag */}
-      <LinkedInPixel
-        partnerId={config.linkedin.partnerId}
-        enabled={config.linkedin.enabled}
-      />
+      {config.linkedin.enabled && config.linkedin.partnerId && (
+        <LinkedInPixel partnerId={config.linkedin.partnerId} enabled />
+      )}
 
       {/* Reddit Pixel */}
-      <RedditPixel
-        pixelId={config.reddit.pixelId}
-        enabled={config.reddit.enabled}
-      />
+      {config.reddit.enabled && config.reddit.pixelId && (
+        <RedditPixel pixelId={config.reddit.pixelId} enabled />
+      )}
 
       {/* Microsoft/Bing UET */}
-      <MicrosoftPixel
-        uetTagId={config.microsoft.uetTagId}
-        enabled={config.microsoft.enabled}
-      />
+      {config.microsoft.enabled && config.microsoft.uetTagId && (
+        <MicrosoftPixel uetTagId={config.microsoft.uetTagId} enabled />
+      )}
 
       {/* Hotjar - Heatmaps & Session Recording */}
-      <HotjarPixel
-        siteId={config.hotjar.siteId}
-        enabled={config.hotjar.enabled}
-      />
+      {config.hotjar.enabled && config.hotjar.siteId && (
+        <HotjarPixel siteId={config.hotjar.siteId} enabled />
+      )}
 
       {/* Microsoft Clarity - Heatmaps & Session Recording */}
-      <ClarityPixel
-        projectId={config.clarity.projectId}
-        enabled={config.clarity.enabled}
-      />
+      {config.clarity.enabled && config.clarity.projectId && (
+        <ClarityPixel projectId={config.clarity.projectId} enabled />
+      )}
 
       {/* Mixpanel - Product Analytics */}
-      <MixpanelPixel
-        token={config.mixpanel.token}
-        enabled={config.mixpanel.enabled}
-      />
+      {config.mixpanel.enabled && config.mixpanel.token && (
+        <MixpanelPixel token={config.mixpanel.token} enabled />
+      )}
     </>
   );
 }

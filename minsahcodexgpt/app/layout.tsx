@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { Tenor_Sans, Lato, Inter } from "next/font/google";
 import "./globals.css";
 import SocialFloatingButtons from "./components/SocialFloatingButtons";
-import { FacebookPixel } from "@/lib/facebook/pixel";
 import AllPixels from "@/lib/tracking/pixels/AllPixels";
 import { TrackingProvider } from "@/contexts/TrackingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -187,7 +186,6 @@ export default function RootLayout({
         </TrackingProvider>
 
         {/* ✅ FIX 2: Pixel scripts body এর একদম শেষে */}
-        <FacebookPixel />
         <AllPixels />
       </body>
     </html>

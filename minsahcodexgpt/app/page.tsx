@@ -467,14 +467,16 @@ function HomePageInner() {
             {comboSlides.map((_, index) => (
               <div
                 key={index}
-                className="h-1.5 rounded-full bg-minsah-primary"
-                style={{
-                  width: currentComboSlide === index ? '24px' : '6px',
-                  opacity: currentComboSlide === index ? 1 : 0.4,
-                  transition: 'width 0.3s ease, opacity 0.3s ease',
-                  willChange: 'width',
-                }}
-              />
+                className="h-1.5 w-6 overflow-hidden rounded-full"
+              >
+                <span
+                  className="block h-full w-full origin-center rounded-full bg-minsah-primary transition-[opacity,transform] duration-300 ease-out"
+                  style={{
+                    opacity: currentComboSlide === index ? 1 : 0.4,
+                    transform: currentComboSlide === index ? 'scaleX(1)' : 'scaleX(0.25)',
+                  }}
+                />
+              </div>
             ))}
           </div>
         </div>

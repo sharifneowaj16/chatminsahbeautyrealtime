@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import Script from 'next/script';
 
 interface FacebookPixelProps {
@@ -15,7 +14,7 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
     <>
       <Script
         id="facebook-pixel"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         dangerouslySetInnerHTML={{
           __html: `
             !function(f,b,e,v,n,t,s)
@@ -37,6 +36,7 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
           width="1"
           style={{ display: 'none' }}
           src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
+          alt=""
         />
       </noscript>
     </>
