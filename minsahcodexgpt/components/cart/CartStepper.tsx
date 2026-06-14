@@ -1,14 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import VariantModal, {
-  type VariantAdjustmentPayload,
-  type VariantModalMode,
-  type VariantOption,
-  type VariantSelectionPayload,
+import type {
+  VariantAdjustmentPayload,
+  VariantModalMode,
+  VariantOption,
+  VariantSelectionPayload,
 } from './VariantModal';
+
+const VariantModal = dynamic(() => import('./VariantModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface CartStepperProps {
   productId: string;
@@ -315,7 +321,7 @@ export default function CartStepper({
   const showZeroStepper = qty === 0 && zeroStateMode === 'stepper';
   const plusDisabled = disabled || isBusy || isOutOfStock || (!isVariantProduct && qty >= safeMaxStock);
 
-  const variantModalNode = (
+  const variantModalNode = isVariantModalOpen ? (
     <VariantModal
       isOpen={isVariantModalOpen}
       mode={modalMode}
@@ -328,7 +334,7 @@ export default function CartStepper({
       onConfirm={handleSelectConfirm}
       onAdjust={handleAdjustVariant}
     />
-  );
+  ) : null;
 
   // ─── CIRCLE-ADD MODE ──────────────────────────────────────────────────────
   if (circleAdd) {

@@ -1,8 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
-import BuyNowModal, { type BuyNowVariantOption } from './BuyNowModal';
+import type { BuyNowVariantOption } from './BuyNowModal';
+
+const BuyNowModal = dynamic(() => import('./BuyNowModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface CardBuyNowButtonProps {
   productId: string;
@@ -37,15 +43,17 @@ export default function CardBuyNowButton({
         Buy Now
       </button>
 
-      <BuyNowModal
-        isOpen={isBuyNowOpen}
-        productId={productId}
-        productName={productName}
-        productImage={productImage}
-        basePrice={price}
-        variants={variants}
-        onClose={() => setIsBuyNowOpen(false)}
-      />
+      {isBuyNowOpen && (
+        <BuyNowModal
+          isOpen={isBuyNowOpen}
+          productId={productId}
+          productName={productName}
+          productImage={productImage}
+          basePrice={price}
+          variants={variants}
+          onClose={() => setIsBuyNowOpen(false)}
+        />
+      )}
     </>
   );
 }

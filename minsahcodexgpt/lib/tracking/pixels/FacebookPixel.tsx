@@ -15,8 +15,8 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
     if (!enabled || !pixelId || shouldLoad) return;
 
     const loadPixel = () => setShouldLoad(true);
-    const timer = window.setTimeout(loadPixel, 15000);
-    const events: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'scroll'];
+    const timer = window.setTimeout(loadPixel, 30000);
+    const events: Array<keyof WindowEventMap> = ['pointerdown', 'keydown'];
 
     events.forEach((eventName) => {
       window.addEventListener(eventName, loadPixel, { once: true, passive: true });

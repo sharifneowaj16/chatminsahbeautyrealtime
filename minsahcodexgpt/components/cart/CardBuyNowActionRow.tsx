@@ -1,9 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
-import BuyNowModal, { type BuyNowVariantOption } from './BuyNowModal';
+import type { BuyNowVariantOption } from './BuyNowModal';
 import CartStepper from './CartStepper';
+
+const BuyNowModal = dynamic(() => import('./BuyNowModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface CardBuyNowActionRowProps {
   productId: string;
@@ -67,15 +73,17 @@ export default function CardBuyNowActionRow({
         </button>
       </div>
 
-      <BuyNowModal
-        isOpen={isBuyNowOpen}
-        productId={productId}
-        productName={productName}
-        productImage={productImage}
-        basePrice={price}
-        variants={variants}
-        onClose={() => setIsBuyNowOpen(false)}
-      />
+      {isBuyNowOpen && (
+        <BuyNowModal
+          isOpen={isBuyNowOpen}
+          productId={productId}
+          productName={productName}
+          productImage={productImage}
+          basePrice={price}
+          variants={variants}
+          onClose={() => setIsBuyNowOpen(false)}
+        />
+      )}
     </>
   );
 }
