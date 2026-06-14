@@ -178,6 +178,13 @@ function numericText(value: string): string | undefined {
   return trimmed && Number.isFinite(Number(trimmed)) ? trimmed : undefined;
 }
 
+function priceText(value: unknown, fallback: unknown = ''): string {
+  const resolvedValue = value == null || value === '' ? fallback : value;
+  const numericValue = Number(resolvedValue);
+
+  return Number.isFinite(numericValue) && numericValue > 0 ? String(numericValue) : '';
+}
+
 function normalizeImportData(p: Record<string, unknown>): ImportData {
   const imageAltTexts = asStringArray(p.imageAltTexts);
   const images = asImportImages(p.images || p.imageUrls || p.productImages, imageAltTexts);
@@ -200,11 +207,11 @@ function normalizeImportData(p: Record<string, unknown>): ImportData {
           size:  String(v.size  || ''),
           color: String(v.color || v.shade || ''),
           shade: String(v.shade || v.color || ''),
-          price: '',   // always blank — user fills
+          price: priceText(v.price ?? v.salePrice, p.price),
           stock: String(v.stock || '10'),
           sku:   String(v.sku   || `MSH-VAR-${i + 1}`),
         }))
-      : [{ size: '', color: '', shade: '', price: '', stock: '10', sku: '' }],
+      : [{ size: '', color: '', shade: '', price: priceText(p.price), stock: '10', sku: '' }],
     metaTitle:              String(p.metaTitle              || ''),
     metaDescription:        String(p.metaDescription        || ''),
     bengaliProductName:     String(p.bengaliProductName     || ''),
