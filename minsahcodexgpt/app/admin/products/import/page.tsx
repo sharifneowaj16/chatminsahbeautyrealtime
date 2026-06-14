@@ -17,6 +17,7 @@ import {
 interface ImportVariant {
   size: string;
   color: string;
+  shade: string;
   price: string;
   stock: string;
   sku: string;
@@ -48,6 +49,25 @@ interface ImportData {
   ogDescription: string;             // ← NEW
   urlSlug: string;
   tags: string;
+  bengaliSecondaryKeywords: string[];
+  searchIntent: string;
+  targetAudience: string;
+  primaryConcern: string;
+  keyBenefits: string[];
+  buyingIntentKeywords: string[];
+  searchTags: string[];
+  synonyms: string[];
+  banglaSearchTerms: string[];
+  reviewKeywords: string[];
+  entities: string[];
+  productSpecs: Record<string, unknown> | null;
+  productAttributes: Record<string, unknown> | null;
+  shadeOptions: Array<Record<string, unknown>>;
+  usageInstructions: string[];
+  imageAltTexts: string[];
+  descriptionSections: Array<{ heading: string; points: string[] }>;
+  faqSchemaReady: boolean;
+  gender: string;
   // Shipping
   shippingWeight: string;
   dimensions: { length: string; width: string; height: string };
@@ -99,6 +119,29 @@ function parseImportData(raw: string): ParseResult {
   }
 }
 
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map(String).map((entry) => entry.trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value.split(',').map((entry) => entry.trim()).filter(Boolean);
+  }
+
+  return [];
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function numericText(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed && Number.isFinite(Number(trimmed)) ? trimmed : undefined;
+}
+
 function normalizeImportData(p: Record<string, unknown>): ImportData {
   return {
     name:           String(p.name          || ''),
@@ -116,12 +159,13 @@ function normalizeImportData(p: Record<string, unknown>): ImportData {
     variants: Array.isArray(p.variants)
       ? (p.variants as Array<Record<string, unknown>>).map((v, i) => ({
           size:  String(v.size  || ''),
-          color: String(v.color || ''),
+          color: String(v.color || v.shade || ''),
+          shade: String(v.shade || v.color || ''),
           price: '',   // always blank — user fills
           stock: String(v.stock || '10'),
           sku:   String(v.sku   || `MSH-VAR-${i + 1}`),
         }))
-      : [{ size: '', color: '', price: '', stock: '10', sku: '' }],
+      : [{ size: '', color: '', shade: '', price: '', stock: '10', sku: '' }],
     metaTitle:              String(p.metaTitle              || ''),
     metaDescription:        String(p.metaDescription        || ''),
     bengaliProductName:     String(p.bengaliProductName     || ''),
@@ -133,6 +177,30 @@ function normalizeImportData(p: Record<string, unknown>): ImportData {
       : [],
     bengaliFocusKeyword: String(p.bengaliFocusKeyword || ''),
     ogDescription:       String(p.ogDescription       || ''),
+    bengaliSecondaryKeywords: asStringArray(p.bengaliSecondaryKeywords),
+    searchIntent:        String(p.searchIntent || ''),
+    targetAudience:      String(p.targetAudience || ''),
+    primaryConcern:      String(p.primaryConcern || ''),
+    keyBenefits:         asStringArray(p.keyBenefits),
+    buyingIntentKeywords: asStringArray(p.buyingIntentKeywords),
+    searchTags:          asStringArray(p.searchTags),
+    synonyms:            asStringArray(p.synonyms),
+    banglaSearchTerms:   asStringArray(p.banglaSearchTerms),
+    reviewKeywords:      asStringArray(p.reviewKeywords),
+    entities:            asStringArray(p.entities),
+    productSpecs:        asRecord(p.productSpecs) || asRecord(p.product_specs),
+    productAttributes:   asRecord(p.productAttributes) || asRecord(p.attributes),
+    shadeOptions:        Array.isArray(p.shadeOptions) ? p.shadeOptions as Array<Record<string, unknown>> : [],
+    usageInstructions:   asStringArray(p.usageInstructions),
+    imageAltTexts:       asStringArray(p.imageAltTexts),
+    descriptionSections: Array.isArray(p.descriptionSections)
+      ? (p.descriptionSections as Array<Record<string, unknown>>).map((section) => ({
+          heading: String(section.heading || ''),
+          points: asStringArray(section.points),
+        })).filter((section) => section.heading || section.points.length > 0)
+      : [],
+    faqSchemaReady:      Boolean(p.faqSchemaReady),
+    gender:              String(p.gender || ''),
     // ────────────────────────────────────────────────────────────────────────
     ogTitle:             String(p.ogTitle    || ''),
     urlSlug:             String(p.urlSlug    || ''),
@@ -278,7 +346,7 @@ export default function ImportProductPage() {
           status:        'active',
           featured:      importData.featured,
           description:   importData.description,
-          weight:        importData.weight        || undefined,
+          weight:        numericText(importData.weight),
           ingredients:   importData.ingredients   || undefined,
           skinType:      importData.skinType.length > 0 ? importData.skinType : undefined,
           shelfLife:     importData.shelfLife     || undefined,
@@ -286,10 +354,10 @@ export default function ImportProductPage() {
           variants:      importData.variants.map((v) => ({
             size:       v.size,
             color:      v.color,
+            shade:      v.shade,
             price:      parseFloat(v.price) || basePrice,
             stock:      parseInt(v.stock)   || 0,
             sku:        v.sku,
-            attributes: { size: v.size || '', color: v.color || '' },
           })),
           metaTitle:          importData.metaTitle          || undefined,
           metaDescription:    importData.metaDescription    || undefined,
@@ -301,7 +369,26 @@ export default function ImportProductPage() {
           // ── NEW SEO fields ────────────────────────────────────────────
           secondaryKeywords:    importData.secondaryKeywords.length > 0 ? importData.secondaryKeywords : undefined,
           bengaliFocusKeyword:  importData.bengaliFocusKeyword || undefined,
+          bengaliSecondaryKeywords: importData.bengaliSecondaryKeywords.length > 0 ? importData.bengaliSecondaryKeywords : undefined,
           ogDescription:        importData.ogDescription       || undefined,
+          searchIntent:         importData.searchIntent || undefined,
+          targetAudience:       importData.targetAudience || undefined,
+          primaryConcern:       importData.primaryConcern || undefined,
+          keyBenefits:          importData.keyBenefits.length > 0 ? importData.keyBenefits : undefined,
+          buyingIntentKeywords: importData.buyingIntentKeywords.length > 0 ? importData.buyingIntentKeywords : undefined,
+          searchTags:           importData.searchTags.length > 0 ? importData.searchTags : undefined,
+          synonyms:             importData.synonyms.length > 0 ? importData.synonyms : undefined,
+          banglaSearchTerms:    importData.banglaSearchTerms.length > 0 ? importData.banglaSearchTerms : undefined,
+          reviewKeywords:       importData.reviewKeywords.length > 0 ? importData.reviewKeywords : undefined,
+          entities:             importData.entities.length > 0 ? importData.entities : undefined,
+          productSpecs:         importData.productSpecs || undefined,
+          productAttributes:    importData.productAttributes || undefined,
+          shadeOptions:         importData.shadeOptions.length > 0 ? importData.shadeOptions : undefined,
+          usageInstructions:    importData.usageInstructions.length > 0 ? importData.usageInstructions : undefined,
+          imageAltTexts:        importData.imageAltTexts.length > 0 ? importData.imageAltTexts : undefined,
+          descriptionSections:  importData.descriptionSections.length > 0 ? importData.descriptionSections : undefined,
+          faqSchemaReady:       importData.faqSchemaReady,
+          gender:               importData.gender || undefined,
           // ─────────────────────────────────────────────────────────────
           ogTitle:            importData.ogTitle || importData.metaTitle || undefined,
           canonicalUrl:       importData.urlSlug

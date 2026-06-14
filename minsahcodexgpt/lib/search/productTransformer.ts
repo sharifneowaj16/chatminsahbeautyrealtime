@@ -20,6 +20,19 @@ interface ProductWithRelations {
   metaTitle?: string | null;
   metaDescription?: string | null;
   metaKeywords?: string | null;
+  focusKeyword?: string | null;
+  secondaryKeywords?: string[];
+  bengaliFocusKeyword?: string | null;
+  bengaliSecondaryKeywords?: string[];
+  searchTags?: string[];
+  synonyms?: string[];
+  banglaSearchTerms?: string[];
+  buyingIntentKeywords?: string[];
+  reviewKeywords?: string[];
+  entities?: string[];
+  keyBenefits?: string[];
+  ingredients?: string | null;
+  flashSaleEligible?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   images?: Array<{ url: string; alt?: string | null }>;
@@ -56,6 +69,14 @@ export interface ESProductDocument {
   images: string[];
   sku: string;
   tags: string[];
+  focusKeyword: string;
+  secondaryKeywords: string[];
+  searchTags: string[];
+  synonyms: string[];
+  banglaSearchTerms: string[];
+  buyingIntentKeywords: string[];
+  reviewKeywords: string[];
+  entities: string[];
   ingredients: string;
   isFeatured: boolean;
   isNewArrival: boolean;
@@ -113,6 +134,19 @@ function buildSuggestions(
   // Category
   if (product.category?.name) inputs.add(product.category.name);
 
+  [
+    product.focusKeyword,
+    product.bengaliFocusKeyword,
+    ...(product.secondaryKeywords || []),
+    ...(product.bengaliSecondaryKeywords || []),
+    ...(product.searchTags || []),
+    ...(product.synonyms || []),
+    ...(product.banglaSearchTerms || []),
+    ...(product.buyingIntentKeywords || []),
+    ...(product.reviewKeywords || []),
+    ...(product.entities || []),
+  ].filter(Boolean).forEach((value) => inputs.add(String(value)));
+
   // Weight: featured products get higher weight
   let weight = 1;
   if (product.isFeatured) weight += 5;
@@ -151,6 +185,14 @@ export function transformProductToES(
       : 0;
 
   const hierarchy = buildCategoryHierarchy(product.category);
+  const tags = [
+    ...(product.metaKeywords ? product.metaKeywords.split(',') : []),
+    ...(product.searchTags || []),
+    ...(product.secondaryKeywords || []),
+    ...(product.synonyms || []),
+    ...(product.banglaSearchTerms || []),
+    ...(product.buyingIntentKeywords || []),
+  ].map((tag) => tag.trim()).filter(Boolean);
 
   return {
     id: product.id,
@@ -171,11 +213,19 @@ export function transformProductToES(
     image: product.images?.[0]?.url || '',
     images: product.images?.map((img) => img.url) || [],
     sku: product.sku || '',
-    tags: [],
-    ingredients: '',
+    tags: [...new Set(tags)],
+    focusKeyword: product.focusKeyword || '',
+    secondaryKeywords: product.secondaryKeywords || [],
+    searchTags: product.searchTags || [],
+    synonyms: product.synonyms || [],
+    banglaSearchTerms: product.banglaSearchTerms || [],
+    buyingIntentKeywords: product.buyingIntentKeywords || [],
+    reviewKeywords: product.reviewKeywords || [],
+    entities: product.entities || [],
+    ingredients: product.ingredients || '',
     isFeatured: product.isFeatured || false,
     isNewArrival: product.isNew || false,
-    isFlashSale: false,
+    isFlashSale: product.flashSaleEligible || false,
     isFavourite: false,
     isRecommended: false,
     isForYou: false,

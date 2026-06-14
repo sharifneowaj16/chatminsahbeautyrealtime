@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  CheckCircle,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -53,6 +54,16 @@ interface RatingData {
   average: number;
   total: number;
   distribution: Record<number, number>;
+}
+
+interface DescriptionSection {
+  heading: string;
+  points: string[];
+}
+
+interface ProductFaq {
+  question: string;
+  answer: string;
 }
 
 interface RelatedProduct {
@@ -115,6 +126,15 @@ interface ProductClientProps {
     codAvailable?: boolean;
     returnEligible?: boolean;
     weight?: number | null;
+    keyBenefits?: string[];
+    primaryConcern?: string;
+    targetAudience?: string;
+    productSpecs?: Record<string, unknown> | null;
+    productAttributes?: Record<string, unknown> | null;
+    shadeOptions?: Array<{ shadeCode?: string; shadeName?: string }> | null;
+    usageInstructions?: string[];
+    descriptionSections?: DescriptionSection[];
+    faqs?: ProductFaq[];
     variants: Variant[];
   };
   reviews: Review[];
@@ -206,6 +226,17 @@ function StockUrgency({ stock, inStock }: { stock: number; inStock: boolean }) {
   );
 }
 
+function getSpecEntries(value: Record<string, unknown> | null | undefined) {
+  if (!value) return [];
+
+  return Object.entries(value)
+    .filter(([, specValue]) => specValue != null && specValue !== '')
+    .map(([label, specValue]) => [
+      label,
+      typeof specValue === 'object' ? JSON.stringify(specValue) : String(specValue),
+    ] as const);
+}
+
 export default function ProductClient({
   product,
   reviews,
@@ -242,6 +273,9 @@ export default function ProductClient({
   const galleryImages = (product.images as Array<string | { url: string; alt?: string }>).map((img) =>
     typeof img === 'string' ? { url: img, alt: product.name } : img
   );
+  const specEntries = getSpecEntries(product.productSpecs);
+  const attributeEntries = getSpecEntries(product.productAttributes);
+  const faqs = product.faqs?.filter((faq) => faq.question && faq.answer) ?? [];
   const stickyBarVariants = useMemo(
     () =>
       product.variants.map((variant) => ({
@@ -496,6 +530,94 @@ export default function ProductClient({
               </div>
             )}
 
+            {product.keyBenefits && product.keyBenefits.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                  Key Benefits
+                </p>
+                <ul className="space-y-2">
+                  {product.keyBenefits.map((benefit) => (
+                    <li key={benefit} className="flex gap-2 text-sm leading-relaxed text-[#4A2C1A]">
+                      <CheckCircle size={14} className="mt-0.5 flex-shrink-0 text-green-600" />
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {product.descriptionSections && product.descriptionSections.length > 0 && (
+              <div className="space-y-4">
+                {product.descriptionSections.map((section) => (
+                  <div key={section.heading}>
+                    {section.heading && (
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                        {section.heading}
+                      </p>
+                    )}
+                    {section.points.length > 0 && (
+                      <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-[#4A2C1A]">
+                        {section.points.map((point) => (
+                          <li key={point}>{point}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {product.usageInstructions && product.usageInstructions.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                  How to Use
+                </p>
+                <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-[#4A2C1A]">
+                  {product.usageInstructions.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {(specEntries.length > 0 || attributeEntries.length > 0) && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                  Product Details
+                </p>
+                <div className="overflow-hidden rounded-2xl border border-[#E8D5C0]">
+                  {[...specEntries, ...attributeEntries].map(([label, value]) => (
+                    <div key={`${label}-${value}`} className="grid grid-cols-2 border-b border-[#E8D5C0] last:border-b-0">
+                      <div className="bg-[#F5E9DC] px-3 py-2 text-xs font-semibold text-[#3D1F0E]">
+                        {label}
+                      </div>
+                      <div className="px-3 py-2 text-xs text-[#4A2C1A]">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {product.shadeOptions && product.shadeOptions.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                  Shades
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {product.shadeOptions.map((shade) => {
+                    const label = [shade.shadeCode, shade.shadeName].filter(Boolean).join(' ');
+                    return label ? (
+                      <span key={label} className="rounded-full bg-[#F5E9DC] px-3 py-1 text-xs font-medium text-[#6B4226]">
+                        {label}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+
             {product.ingredients && (
               <div className="overflow-hidden rounded-2xl border border-[#E8D5C0]">
                 <button
@@ -519,6 +641,22 @@ export default function ProductClient({
                     <p className="text-xs leading-relaxed text-[#4A2C1A]">{product.ingredients}</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {faqs.length > 0 && (
+              <div>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                  FAQ
+                </p>
+                <div className="space-y-2">
+                  {faqs.map((faq) => (
+                    <div key={faq.question} className="rounded-2xl border border-[#E8D5C0] p-3">
+                      <p className="text-sm font-semibold text-[#1A0D06]">{faq.question}</p>
+                      <p className="mt-1.5 text-xs leading-relaxed text-[#4A2C1A]">{faq.answer}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -275,7 +275,21 @@ export async function searchProducts(
     must.push({
       multi_match: {
         query,
-        fields: ['name^5', 'brand^3', 'category^2', 'description^1.5', 'tags^2'],
+        fields: [
+          'name^5',
+          'focusKeyword^4',
+          'brand^3',
+          'secondaryKeywords^3',
+          'searchTags^3',
+          'synonyms^3',
+          'banglaSearchTerms^3',
+          'category^2',
+          'buyingIntentKeywords^2.5',
+          'reviewKeywords^2',
+          'entities^2',
+          'description^1.5',
+          'tags^2',
+        ],
         type: 'best_fields',
         fuzziness: 'AUTO',
         prefix_length: 2,

@@ -46,6 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const title       = product.metaTitle       || `${product.name} | Minsah Beauty`;
   const description = product.metaDescription || product.shortDescription || '';
+  const ogDescription = product.ogDescription || description;
   const canonical   = product.canonicalUrl    || `${BASE_URL}/products/${product.slug}`;
   const ogTitle     = product.ogTitle         || product.metaTitle || product.name;
   const ogImage     = product.ogImageUrl      || product.image     || '';
@@ -53,6 +54,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // Build keywords: focus keyword + tags + bengali name + category
   const keywordParts: string[] = [];
   if (product.focusKeyword) keywordParts.push(product.focusKeyword);
+  if (Array.isArray(product.secondaryKeywords)) keywordParts.push(...product.secondaryKeywords);
+  if (product.bengaliFocusKeyword) keywordParts.push(product.bengaliFocusKeyword);
+  if (Array.isArray(product.bengaliSecondaryKeywords)) keywordParts.push(...product.bengaliSecondaryKeywords);
+  if (Array.isArray(product.searchTags)) keywordParts.push(...product.searchTags);
+  if (Array.isArray(product.synonyms)) keywordParts.push(...product.synonyms);
+  if (Array.isArray(product.banglaSearchTerms)) keywordParts.push(...product.banglaSearchTerms);
+  if (Array.isArray(product.reviewKeywords)) keywordParts.push(...product.reviewKeywords);
+  if (Array.isArray(product.entities)) keywordParts.push(...product.entities);
   if (product.tags)         keywordParts.push(...product.tags.split(',').map((t: string) => t.trim()));
   if (product.bengaliName)  keywordParts.push(product.bengaliName);
   if (product.category)     keywordParts.push(`${product.category} bangladesh`);
@@ -61,7 +70,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
-    keywords: keywordParts.filter(Boolean),
+    keywords: [...new Set(keywordParts.filter(Boolean))],
     alternates: {
       canonical,
     },
@@ -81,7 +90,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url:         canonical,
       siteName:    'Minsah Beauty',
       title:       ogTitle,
-      description,
+      description: ogDescription,
       images: ogImage
         ? [{ url: ogImage, width: 1200, height: 630, alt: ogTitle }]
         : [],
@@ -89,7 +98,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card:        'summary_large_image',
       title:       ogTitle,
-      description,
+      description: ogDescription,
       images:      ogImage ? [ogImage] : [],
     },
   };
@@ -153,6 +162,21 @@ function buildProductSchema(product: Record<string, unknown>, rating: { average:
 
   // GTIN
   if (product.gtin) schema.gtin13 = product.gtin;
+  if (product.category) schema.category = product.category;
+
+  if (
+    product.productSpecs &&
+    typeof product.productSpecs === 'object' &&
+    !Array.isArray(product.productSpecs)
+  ) {
+    schema.additionalProperty = Object.entries(product.productSpecs as Record<string, unknown>)
+      .filter(([, value]) => value != null && value !== '')
+      .map(([name, value]) => ({
+        '@type': 'PropertyValue',
+        name,
+        value: String(value),
+      }));
+  }
 
   // Rating
   if (rating.total > 0) {
