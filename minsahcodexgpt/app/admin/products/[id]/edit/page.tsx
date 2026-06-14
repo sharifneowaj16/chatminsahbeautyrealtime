@@ -67,6 +67,24 @@ interface ProductFormData {
   bengaliFocusKeyword: string;       // ← NEW
   ogTitle: string;
   ogDescription: string;             // ← NEW
+  bengaliSecondaryKeywords: string[];
+  searchIntent: string;
+  targetAudience: string;
+  primaryConcern: string;
+  keyBenefits: string[];
+  buyingIntentKeywords: string[];
+  searchTags: string[];
+  synonyms: string[];
+  banglaSearchTerms: string[];
+  reviewKeywords: string[];
+  entities: string[];
+  productSpecsJson: string;
+  productAttributesJson: string;
+  shadeOptionsJson: string;
+  usageInstructions: string[];
+  descriptionSectionsJson: string;
+  faqSchemaReady: boolean;
+  gender: string;
   ogImageFile: File | null;
   ogImagePreview: string;
   imageAltTexts: string[];
@@ -145,6 +163,24 @@ interface LoadedAdminProduct {
   bengaliFocusKeyword?: string;      // ← NEW
   ogTitle?: string;
   ogDescription?: string;            // ← NEW
+  bengaliSecondaryKeywords?: string[];
+  searchIntent?: string;
+  targetAudience?: string;
+  primaryConcern?: string;
+  keyBenefits?: string[];
+  buyingIntentKeywords?: string[];
+  searchTags?: string[];
+  synonyms?: string[];
+  banglaSearchTerms?: string[];
+  reviewKeywords?: string[];
+  entities?: string[];
+  productSpecs?: unknown;
+  productAttributes?: unknown;
+  shadeOptions?: unknown;
+  usageInstructions?: string[];
+  descriptionSections?: unknown;
+  faqSchemaReady?: boolean;
+  gender?: string;
   ogImageUrl?: string;
   shippingWeight?: string;
   isFragile?: boolean;
@@ -180,6 +216,11 @@ const defaultFormData: ProductFormData = {
   secondaryKeywords: [],             // ← NEW
   bengaliFocusKeyword: '',           // ← NEW
   ogTitle: '', ogDescription: '',    // ← NEW ogDescription
+  bengaliSecondaryKeywords: [], searchIntent: '', targetAudience: '', primaryConcern: '',
+  keyBenefits: [], buyingIntentKeywords: [], searchTags: [], synonyms: [],
+  banglaSearchTerms: [], reviewKeywords: [], entities: [], usageInstructions: [],
+  productSpecsJson: '{}', productAttributesJson: '{}', shadeOptionsJson: '[]',
+  descriptionSectionsJson: '[]', faqSchemaReady: false, gender: '',
   ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
   shippingWeight: '',
   dimensions: { length: '', width: '', height: '' },
@@ -281,6 +322,24 @@ export default function EditProductPage() {
           bengaliFocusKeyword:  p.bengaliFocusKeyword  || '',
           ogTitle:              p.ogTitle              || '',
           ogDescription:        p.ogDescription        || '',
+          bengaliSecondaryKeywords: Array.isArray(p.bengaliSecondaryKeywords) ? p.bengaliSecondaryKeywords : [],
+          searchIntent:         p.searchIntent || '',
+          targetAudience:       p.targetAudience || '',
+          primaryConcern:       p.primaryConcern || '',
+          keyBenefits:          Array.isArray(p.keyBenefits) ? p.keyBenefits : [],
+          buyingIntentKeywords: Array.isArray(p.buyingIntentKeywords) ? p.buyingIntentKeywords : [],
+          searchTags:           Array.isArray(p.searchTags) ? p.searchTags : [],
+          synonyms:             Array.isArray(p.synonyms) ? p.synonyms : [],
+          banglaSearchTerms:    Array.isArray(p.banglaSearchTerms) ? p.banglaSearchTerms : [],
+          reviewKeywords:       Array.isArray(p.reviewKeywords) ? p.reviewKeywords : [],
+          entities:             Array.isArray(p.entities) ? p.entities : [],
+          productSpecsJson:     JSON.stringify(p.productSpecs || {}, null, 2),
+          productAttributesJson: JSON.stringify(p.productAttributes || {}, null, 2),
+          shadeOptionsJson:     JSON.stringify(p.shadeOptions || [], null, 2),
+          usageInstructions:    Array.isArray(p.usageInstructions) ? p.usageInstructions : [],
+          descriptionSectionsJson: JSON.stringify(p.descriptionSections || [], null, 2),
+          faqSchemaReady:       Boolean(p.faqSchemaReady),
+          gender:               p.gender || '',
           // ────────────────────────────────────────────────────────────────
           ogImagePreview:         p.ogImageUrl         || '',
           shippingWeight:       p.shippingWeight      || '',
@@ -330,6 +389,24 @@ export default function EditProductPage() {
       ...prev,
       secondaryKeywords: value.split(',').map((s) => s.trim()).filter(Boolean),
     }));
+  };
+
+  const handleArrayFieldChange = (field: keyof ProductFormData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value.split(',').map((s) => s.trim()).filter(Boolean),
+    }));
+  };
+
+  const parseJsonField = (field: keyof ProductFormData, fallback: unknown) => {
+    const rawValue = formData[field];
+    if (typeof rawValue !== 'string' || !rawValue.trim()) return fallback;
+
+    try {
+      return JSON.parse(rawValue);
+    } catch {
+      throw new Error(`${String(field)} must be valid JSON`);
+    }
   };
 
   const handleDimensionChange = (field: 'length' | 'width' | 'height', value: string) => {
@@ -530,6 +607,10 @@ export default function EditProductPage() {
       const originalPrice = formData.discountPercentage
         ? basePrice / (1 - parseFloat(formData.discountPercentage) / 100)
         : formData.salePrice ? parseFloat(formData.salePrice) : undefined;
+      const productSpecs = parseJsonField('productSpecsJson', {});
+      const productAttributes = parseJsonField('productAttributesJson', {});
+      const shadeOptions = parseJsonField('shadeOptionsJson', []);
+      const descriptionSections = parseJsonField('descriptionSectionsJson', []);
 
       const payload = {
         name:          formData.name,
@@ -584,6 +665,25 @@ export default function EditProductPage() {
         bengaliFocusKeyword:  formData.bengaliFocusKeyword || undefined,
         ogTitle:              formData.ogTitle || formData.metaTitle || undefined,
         ogDescription:        formData.ogDescription || undefined,
+        bengaliSecondaryKeywords: formData.bengaliSecondaryKeywords.length > 0 ? formData.bengaliSecondaryKeywords : undefined,
+        searchIntent:         formData.searchIntent || undefined,
+        targetAudience:       formData.targetAudience || undefined,
+        primaryConcern:       formData.primaryConcern || undefined,
+        keyBenefits:          formData.keyBenefits.length > 0 ? formData.keyBenefits : undefined,
+        buyingIntentKeywords: formData.buyingIntentKeywords.length > 0 ? formData.buyingIntentKeywords : undefined,
+        searchTags:           formData.searchTags.length > 0 ? formData.searchTags : undefined,
+        synonyms:             formData.synonyms.length > 0 ? formData.synonyms : undefined,
+        banglaSearchTerms:    formData.banglaSearchTerms.length > 0 ? formData.banglaSearchTerms : undefined,
+        reviewKeywords:       formData.reviewKeywords.length > 0 ? formData.reviewKeywords : undefined,
+        entities:             formData.entities.length > 0 ? formData.entities : undefined,
+        productSpecs,
+        productAttributes,
+        shadeOptions,
+        usageInstructions:    formData.usageInstructions.length > 0 ? formData.usageInstructions : undefined,
+        imageAltTexts:        formData.imageAltTexts.filter(Boolean).length > 0 ? formData.imageAltTexts.filter(Boolean) : undefined,
+        descriptionSections,
+        faqSchemaReady:       formData.faqSchemaReady,
+        gender:               formData.gender || undefined,
         // ─────────────────────────────────────────────────────────────────
         ogImageUrl:           uploadedOgImageUrl || undefined,
 
@@ -1169,6 +1269,65 @@ export default function EditProductPage() {
         </div>
 
         {/* ── FAQ Section ──────────────────────────────────────────────── */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center mb-4">
+            <Settings className="w-5 h-5 text-purple-600 mr-2" />
+            <h2 className="text-lg font-semibold text-gray-900">Semantic SEO & Structured Content</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Search intent" />
+              <input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Primary concern" />
+              <input type="text" name="gender" value={formData.gender} onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Gender" />
+            </div>
+            <textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+              placeholder="Target audience" />
+            {[
+              ['keyBenefits', 'Key Benefits'],
+              ['buyingIntentKeywords', 'Buying Intent Keywords'],
+              ['searchTags', 'Search Tags'],
+              ['synonyms', 'Synonyms'],
+              ['banglaSearchTerms', 'Bangla Search Terms'],
+              ['reviewKeywords', 'Review Keywords'],
+              ['entities', 'Entities'],
+              ['bengaliSecondaryKeywords', 'Bengali Secondary Keywords'],
+              ['usageInstructions', 'Usage Instructions'],
+            ].map(([field, label]) => (
+              <div key={field}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                <textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
+                  onChange={(e) => handleArrayFieldChange(field as keyof ProductFormData, e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" />
+              </div>
+            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                ['productSpecsJson', 'Product Specs JSON'],
+                ['productAttributesJson', 'Product Attributes JSON'],
+                ['shadeOptionsJson', 'Shade Options JSON'],
+                ['descriptionSectionsJson', 'Description Sections JSON'],
+              ].map(([field, label]) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <textarea name={field} value={formData[field as keyof ProductFormData] as string}
+                    onChange={handleChange} rows={7}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono" />
+                </div>
+              ))}
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
+                className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+              <span className="text-sm text-gray-700">FAQ schema ready</span>
+            </label>
+          </div>
+        </div>
+
         <ProductFaqSection
           faqs={formData.faqs}
           onChange={(faqs) => setFormData((prev) => ({ ...prev, faqs }))}

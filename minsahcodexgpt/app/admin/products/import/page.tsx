@@ -290,6 +290,14 @@ export default function ImportProductPage() {
     setImportData((prev) => prev ? { ...prev, dimensions: { ...prev.dimensions, [field]: value } } : prev);
   };
 
+  const updateJsonField = <K extends keyof ImportData>(field: K, value: string) => {
+    try {
+      updateField(field, JSON.parse(value));
+    } catch {
+      // Keep the last valid value; malformed JSON is ignored during live editing.
+    }
+  };
+
   const toggleSkinType = (type: string) => {
     setImportData((prev) => {
       if (!prev) return prev;
@@ -303,6 +311,10 @@ export default function ImportProductPage() {
   // Secondary keywords helper
   const handleSecondaryKeywordsChange = (value: string) => {
     updateField('secondaryKeywords', value.split(',').map((s) => s.trim()).filter(Boolean));
+  };
+
+  const handleStringArrayChange = (field: keyof ImportData, value: string) => {
+    updateField(field, value.split(',').map((s) => s.trim()).filter(Boolean));
   };
 
   const removeSecondaryKeyword = (index: number) => {
@@ -835,6 +847,91 @@ export default function ImportProductPage() {
           </Section>
 
           {/* ── Shipping ── */}
+          <Section
+            icon={<Sparkles className="w-5 h-5 text-purple-600" />}
+            title="Semantic SEO"
+            sectionKey="semantic"
+            expanded={expandedSections.semantic}
+            onToggle={() => toggleSection('semantic')}
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" value={importData.searchIntent} onChange={(e) => updateField('searchIntent', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Search intent" />
+                <input type="text" value={importData.primaryConcern} onChange={(e) => updateField('primaryConcern', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Primary concern" />
+                <input type="text" value={importData.gender} onChange={(e) => updateField('gender', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Gender" />
+              </div>
+              <textarea value={importData.targetAudience} onChange={(e) => updateField('targetAudience', e.target.value)}
+                rows={2} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                placeholder="Target audience" />
+              {[
+                ['keyBenefits', 'Key Benefits'],
+                ['buyingIntentKeywords', 'Buying Intent Keywords'],
+                ['searchTags', 'Search Tags'],
+                ['synonyms', 'Synonyms'],
+                ['banglaSearchTerms', 'Bangla Search Terms'],
+                ['reviewKeywords', 'Review Keywords'],
+                ['entities', 'Entities'],
+                ['bengaliSecondaryKeywords', 'Bengali Secondary Keywords'],
+              ].map(([field, label]) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <textarea value={(importData[field as keyof ImportData] as string[]).join(', ')}
+                    onChange={(e) => handleStringArrayChange(field as keyof ImportData, e.target.value)}
+                    rows={2}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" />
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section
+            icon={<Package className="w-5 h-5 text-purple-600" />}
+            title="Structured Content"
+            sectionKey="content"
+            expanded={expandedSections.content}
+            onToggle={() => toggleSection('content')}
+          >
+            <div className="space-y-4">
+              {[
+                ['usageInstructions', 'Usage Instructions'],
+                ['imageAltTexts', 'Image Alt Texts'],
+              ].map(([field, label]) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <textarea value={(importData[field as keyof ImportData] as string[]).join(', ')}
+                    onChange={(e) => handleStringArrayChange(field as keyof ImportData, e.target.value)}
+                    rows={2}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" />
+                </div>
+              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  ['productSpecs', importData.productSpecs || {}],
+                  ['productAttributes', importData.productAttributes || {}],
+                  ['shadeOptions', importData.shadeOptions],
+                  ['descriptionSections', importData.descriptionSections],
+                ].map(([field, value]) => (
+                  <div key={field as string}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{field as string} JSON</label>
+                    <textarea defaultValue={JSON.stringify(value, null, 2)}
+                      onBlur={(e) => updateJsonField(field as keyof ImportData, e.target.value)}
+                      rows={7}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono" />
+                  </div>
+                ))}
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={importData.faqSchemaReady}
+                  onChange={(e) => updateField('faqSchemaReady', e.target.checked)}
+                  className="w-4 h-4 text-purple-600 rounded" />
+                <span className="text-sm text-gray-700">FAQ schema ready</span>
+              </label>
+            </div>
+          </Section>
+
           <Section
             icon={<TruckIcon className="w-5 h-5 text-purple-600" />}
             title="Shipping"
