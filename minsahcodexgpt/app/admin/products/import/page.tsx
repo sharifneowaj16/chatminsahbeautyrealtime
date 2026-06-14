@@ -149,28 +149,27 @@ function asImportImages(value: unknown, imageAltTexts: string[]): ImportImage[] 
   if (!Array.isArray(value)) return [];
 
   return value
-    .map((entry, index) => {
+    .flatMap((entry, index): ImportImage[] => {
       if (typeof entry === 'string') {
         const url = entry.trim();
-        return url ? { url, alt: imageAltTexts[index], sortOrder: index } : null;
+        return url ? [{ url, alt: imageAltTexts[index], sortOrder: index }] : [];
       }
 
       if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
         const image = entry as Record<string, unknown>;
         const url = String(image.url || image.src || image.image || '').trim();
-        if (!url) return null;
+        if (!url) return [];
 
-        return {
+        return [{
           url,
           alt: String(image.alt || image.altText || imageAltTexts[index] || '').trim() || undefined,
           title: String(image.title || image.alt || image.altText || imageAltTexts[index] || '').trim() || undefined,
           sortOrder: Number.isFinite(Number(image.sortOrder)) ? Number(image.sortOrder) : index,
-        };
+        }];
       }
 
-      return null;
-    })
-    .filter((image): image is ImportImage => Boolean(image));
+      return [];
+    });
 }
 
 function numericText(value: string): string | undefined {
