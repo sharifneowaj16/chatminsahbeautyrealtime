@@ -1,26 +1,11 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Tenor_Sans, Lato } from "next/font/google";
 import "./globals.css";
 import SocialFloatingButtons from "./components/SocialFloatingButtons";
 import AllPixels from "@/lib/tracking/pixels/AllPixels";
 import { TrackingProvider } from "@/contexts/TrackingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-
-const tenorSans = Tenor_Sans({
-  weight: "400",
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-tenor-sans",
-});
-
-const lato = Lato({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-lato",
-});
 
 // ✅ FIX 1: Google Fonts manual <link> সরিয়ে Next.js font system এ নিলাম
 // এটা render-blocking 750ms বাঁচাবে
@@ -149,14 +134,11 @@ export default function RootLayout({
     <html
       lang="bn"
       // ✅ FIX 1 continued: mrsSaintDelafield variable add করলাম
-      className={`${tenorSans.variable} ${lato.variable}`}
+      className="font-sans"
     >
       <head>
         {/* ✅ FIX 1: manual <link> Google Fonts সরিয়ে দিলাম — এটাই 750ms block করছিল */}
         {/* <link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&display=swap" rel="stylesheet" /> */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
@@ -166,7 +148,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
       </head>
-      <body className={`${lato.variable} antialiased`}>
+      <body className="antialiased">
         {/* ✅ FIX 2: FacebookPixel এবং AllPixels body এর শেষে নিলাম */}
         {/* Main content আগে render হবে, pixel পরে load হবে */}
         <TrackingProvider>

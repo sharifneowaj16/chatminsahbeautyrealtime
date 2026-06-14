@@ -312,7 +312,7 @@ function HomePageInner() {
             <div className="flex items-center gap-2">
               <span className="text-xs">9:41</span>
             </div>
-            <h1 className="text-xl font-bold font-[\'Tenor_Sans\']">Home</h1>
+            <h1 className="text-xl font-bold">Home</h1>
             <div className="w-12"></div>
           </div>
 
