@@ -1,6 +1,5 @@
 -- Add UnlistedProduct table to track custom products from orders
-
-CREATE TABLE "UnlistedProduct" (
+CREATE TABLE IF NOT EXISTS "UnlistedProduct" (
   "id" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "sku" TEXT NOT NULL,
@@ -13,11 +12,9 @@ CREATE TABLE "UnlistedProduct" (
   "lastUsedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
-
   CONSTRAINT "UnlistedProduct_pkey" PRIMARY KEY ("id")
 );
-
-CREATE UNIQUE INDEX "UnlistedProduct_sku_key" ON "UnlistedProduct"("sku");
-CREATE INDEX "UnlistedProduct_name_idx" ON "UnlistedProduct"("name");
-CREATE INDEX "UnlistedProduct_sku_idx" ON "UnlistedProduct"("sku");
-CREATE INDEX "UnlistedProduct_lastUsedAt_idx" ON "UnlistedProduct"("lastUsedAt");
+CREATE UNIQUE INDEX IF NOT EXISTS "UnlistedProduct_sku_key" ON "UnlistedProduct"("sku");
+CREATE INDEX IF NOT EXISTS "UnlistedProduct_name_idx" ON "UnlistedProduct"("name");
+CREATE INDEX IF NOT EXISTS "UnlistedProduct_sku_idx" ON "UnlistedProduct"("sku");
+CREATE INDEX IF NOT EXISTS "UnlistedProduct_lastUsedAt_idx" ON "UnlistedProduct"("lastUsedAt");
