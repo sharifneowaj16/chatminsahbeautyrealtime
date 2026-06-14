@@ -421,8 +421,12 @@ function HomePageInner() {
                 <h3 className="text-2xl font-bold mb-2">{comboSlides[currentComboSlide].title}</h3>
                 <p className="min-h-[20px] text-sm opacity-90">{comboSlides[currentComboSlide].description}</p>
               </div>
-              <div className="text-7xl opacity-20">
-                {comboSlides[currentComboSlide].image}
+              <div className="relative h-20 w-20 flex-shrink-0 opacity-25" aria-hidden="true">
+                <div className="absolute inset-2 rounded-2xl border-4 border-white/70" />
+                <div className="absolute left-1/2 top-1 h-[72px] w-3 -translate-x-1/2 rounded-full bg-white/70" />
+                <div className="absolute left-1 top-1/2 h-3 w-[72px] -translate-y-1/2 rounded-full bg-white/70" />
+                <div className="absolute left-5 top-0 h-5 w-7 -rotate-12 rounded-full border-4 border-white/70" />
+                <div className="absolute right-5 top-0 h-5 w-7 rotate-12 rounded-full border-4 border-white/70" />
               </div>
             </div>
           </Link>
