@@ -304,10 +304,17 @@ function HomePageInner() {
   }, []);
 
   useEffect(() => {
-    const comboSlideTimer = setInterval(() => {
-      setCurrentComboSlide(prev => (prev + 1) % 3);
-    }, 5000);
-    return () => clearInterval(comboSlideTimer);
+    let comboSlideTimer: ReturnType<typeof setInterval> | null = null;
+    const startTimer = setTimeout(() => {
+      comboSlideTimer = setInterval(() => {
+        setCurrentComboSlide(prev => (prev + 1) % 3);
+      }, 7000);
+    }, 12000);
+
+    return () => {
+      clearTimeout(startTimer);
+      if (comboSlideTimer) clearInterval(comboSlideTimer);
+    };
   }, []);
 
   return (
@@ -452,9 +459,9 @@ function HomePageInner() {
               className={`bg-gradient-to-br ${comboSlides[currentComboSlide].gradient} rounded-3xl p-6 h-[200px] flex items-center justify-between overflow-hidden`}
               style={{ transition: 'background 0.5s ease' }}
             >
-              <div className="text-white z-10 flex-1">
+              <div className="text-white z-10 flex min-h-[92px] flex-1 flex-col justify-center">
                 <h3 className="text-2xl font-bold mb-2">{comboSlides[currentComboSlide].title}</h3>
-                <p className="text-sm opacity-90">{comboSlides[currentComboSlide].description}</p>
+                <p className="min-h-[20px] text-sm opacity-90">{comboSlides[currentComboSlide].description}</p>
               </div>
               <div className="text-7xl opacity-20">
                 {comboSlides[currentComboSlide].image}
