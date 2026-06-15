@@ -252,7 +252,17 @@ function mapApiProduct(product: ApiProduct): Product {
   };
 }
 
-export function ProductsProvider({ children }: { children: ReactNode }) {
+interface ProductsProviderProps {
+  children: ReactNode;
+  activeOnly?: boolean;
+  limit?: number;
+}
+
+export function ProductsProvider({
+  children,
+  activeOnly = false,
+  limit = 500,
+}: ProductsProviderProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -262,7 +272,11 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/products?activeOnly=false&limit=500');
+      const params = new URLSearchParams({
+        activeOnly: String(activeOnly),
+        limit: String(limit),
+      });
+      const res = await fetch(`/api/products?${params.toString()}`);
       if (!res.ok) {
         const errorText = await res.text().catch(() => '');
         let errorMessage = `HTTP ${res.status}`;

@@ -738,7 +738,7 @@ function HomePageInner() {
 // ✅ Fix D: Outer export wraps everything in ProductsProvider
 export default function HomePage() {
   return (
-    <ProductsProvider>
+    <ProductsProvider activeOnly limit={48}>
       <HomePageInner />
     </ProductsProvider>
   );
