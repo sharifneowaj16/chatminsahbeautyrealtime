@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect, useMemo } from 'react';
 import { Heart, ChevronRight, Flame } from 'lucide-react';
 import { formatPrice } from '@/utils/currency';
-import HomeSearch from './components/HomeSearch';
 
 const CartStepper = dynamic(() => import('@/components/cart/CartStepper'), {
   ssr: false,
@@ -278,21 +277,6 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
 
   return (
     <div className="min-h-screen bg-minsah-light pb-20">
-      {/* Header */}
-      <header className="bg-minsah-dark text-minsah-light sticky top-0 z-50 shadow-md">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs">9:41</span>
-            </div>
-            <h1 className="text-xl font-bold">Home</h1>
-            <div className="w-12"></div>
-          </div>
-
-          <HomeSearch />
-        </div>
-      </header>
-
       <main id="main-content">
       {/* Browse by Categories */}
       <section className="px-4 py-6 bg-white">
