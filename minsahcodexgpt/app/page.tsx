@@ -319,7 +319,7 @@ function HomePageInner() {
           <div ref={searchRef} className="relative">
             <button
               onClick={handleSearch}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-minsah-secondary z-10"
+              className="absolute left-0 top-0 z-10 flex h-full min-h-11 w-11 items-center justify-center text-minsah-secondary"
               aria-label="Search"
             >
               <Search size={20} />
@@ -331,7 +331,7 @@ function HomePageInner() {
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder="Search here"
-              className="w-full pl-10 pr-4 py-2.5 bg-minsah-accent text-minsah-dark placeholder:text-minsah-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-minsah-primary"
+              className="w-full pl-12 pr-4 py-3 bg-minsah-accent text-minsah-dark placeholder:text-minsah-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-minsah-primary"
             />
             {showSuggestions && suggestions.length > 0 && (
               <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-minsah-accent rounded-lg shadow-lg z-50 overflow-hidden">
