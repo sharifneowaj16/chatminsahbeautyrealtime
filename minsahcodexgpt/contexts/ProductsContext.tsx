@@ -254,17 +254,19 @@ function mapApiProduct(product: ApiProduct): Product {
 
 interface ProductsProviderProps {
   children: ReactNode;
+  initialProducts?: Product[];
   activeOnly?: boolean;
   limit?: number;
 }
 
 export function ProductsProvider({
   children,
+  initialProducts = [],
   activeOnly = false,
   limit = 500,
 }: ProductsProviderProps) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [loading, setLoading] = useState(initialProducts.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = async (retryCount = 0) => {
@@ -322,9 +324,10 @@ export function ProductsProvider({
   };
 
   useEffect(() => {
+    if (initialProducts.length > 0) return;
     fetchProducts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialProducts.length]);
 
   const saveProducts = (newProducts: Product[]) => {
     setProducts(newProducts);
