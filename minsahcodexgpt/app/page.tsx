@@ -369,6 +369,7 @@ function HomePageInner() {
         </div>
       </header>
 
+      <main id="main-content">
       {/* Browse by Categories */}
       <section className="px-4 py-6 bg-white">
         <h2 className="text-lg font-bold text-minsah-dark mb-4">Browse by Categories</h2>
@@ -405,7 +406,7 @@ function HomePageInner() {
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">Browse by Combos</h2>
-          <Link href="/combos" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
+          <Link href="/combos" aria-label="View all combos" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
             View all <ChevronRight size={16} />
           </Link>
         </div>
@@ -534,7 +535,7 @@ function HomePageInner() {
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">New Arrival</h2>
-          <Link href="/new-arrivals" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
+          <Link href="/new-arrivals" aria-label="View all new arrivals" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
             View all <ChevronRight size={16} />
           </Link>
         </div>
@@ -572,7 +573,7 @@ function HomePageInner() {
       <section className="px-4 py-6 bg-minsah-light">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">For You</h2>
-          <Link href="/for-you" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
+          <Link href="/for-you" aria-label="View all products for you" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
             View all <ChevronRight size={16} />
           </Link>
         </div>
@@ -605,7 +606,7 @@ function HomePageInner() {
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">Recommendation</h2>
-          <Link href="/recommendations" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
+          <Link href="/recommendations" aria-label="View all recommendations" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
             View all <ChevronRight size={16} />
           </Link>
         </div>
@@ -646,7 +647,7 @@ function HomePageInner() {
       <section className="px-4 py-6 bg-minsah-light">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">Favourite</h2>
-          <Link href="/favourites" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
+          <Link href="/favourites" aria-label="View all favourites" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
             View all <ChevronRight size={16} />
           </Link>
         </div>
@@ -679,7 +680,7 @@ function HomePageInner() {
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-minsah-dark">Browse Popular Brand</h2>
-          <Link href="/brands" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
+          <Link href="/brands" aria-label="View all popular brands" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
             View all <ChevronRight size={16} />
           </Link>
         </div>
@@ -698,6 +699,7 @@ function HomePageInner() {
           ))}
         </div>
       </section>
+      </main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-minsah-accent shadow-lg z-50">
