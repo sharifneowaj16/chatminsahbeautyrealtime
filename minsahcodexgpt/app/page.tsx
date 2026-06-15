@@ -1,8 +1,21 @@
-import HomePageClient from './HomePageClient';
+import HomePageClient, { type HomeCategory } from './HomePageClient';
 import prisma from '@/lib/prisma';
 import type { Product } from '@/contexts/ProductsContext';
 
 export const revalidate = 60;
+
+const CATEGORY_COLORS = [
+  'bg-pink-100',
+  'bg-blue-100',
+  'bg-purple-100',
+  'bg-yellow-100',
+  'bg-green-100',
+  'bg-orange-100',
+  'bg-red-100',
+  'bg-teal-100',
+];
+
+const DEFAULT_CATEGORY_ICON = '🏷️';
 
 function toNumber(value: { toNumber?: () => number } | number | null | undefined): number {
   if (typeof value === 'number') return value;
@@ -116,8 +129,45 @@ async function getInitialProducts(): Promise<Product[]> {
   }
 }
 
-export default async function HomePage() {
-  const initialProducts = await getInitialProducts();
+async function getInitialCategories(): Promise<HomeCategory[]> {
+  try {
+    const categories = await prisma.category.findMany({
+      where: {
+        isActive: true,
+        parentId: null,
+      },
+      orderBy: { sortOrder: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        image: true,
+      },
+    });
 
-  return <HomePageClient initialProducts={initialProducts} />;
+    return categories.map((category, index) => ({
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      icon: category.image || DEFAULT_CATEGORY_ICON,
+      color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+    }));
+  } catch (error) {
+    console.error('[home] Failed to load initial categories:', error);
+    return [];
+  }
+}
+
+export default async function HomePage() {
+  const [initialProducts, initialCategories] = await Promise.all([
+    getInitialProducts(),
+    getInitialCategories(),
+  ]);
+
+  return (
+    <HomePageClient
+      initialProducts={initialProducts}
+      initialCategories={initialCategories}
+    />
+  );
 }

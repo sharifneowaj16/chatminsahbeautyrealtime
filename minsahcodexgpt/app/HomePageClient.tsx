@@ -73,6 +73,14 @@ const CATEGORY_COLORS = [
 
 const DEFAULT_CATEGORY_ICON = '🏷️';
 
+export interface HomeCategory {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  color: string;
+}
+
 const comboSlides = [
   {
     title: 'Best Value Combos',
@@ -112,7 +120,7 @@ interface HomeProductCardItem {
 }
 
 // ✅ Fix D: Inner component যেখানে useProducts ও useCart call হয়
-function HomePageInner() {
+function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCategory[] }) {
   const router = useRouter();
   const { items } = useCart();
   const { products } = useProducts();
@@ -162,7 +170,7 @@ function HomePageInner() {
 
   const currentComboSlide = 0;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 7, minutes: 33, seconds: 28 });
-  const [categories, setCategories] = useState<{ id: string; name: string; slug: string; icon: string; color: string }[]>([]);
+  const [categories, setCategories] = useState<HomeCategory[]>(initialCategories);
 
   const activeProducts = useMemo(
     () => products.filter(p => p.status === 'active'),
@@ -291,6 +299,8 @@ function HomePageInner() {
   };
 
   useEffect(() => {
+    if (categories.length > 0) return;
+
     fetch('/api/categories?activeOnly=true')
       .then(res => res.json())
       .then(data => {
@@ -306,7 +316,7 @@ function HomePageInner() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [categories.length]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -753,10 +763,16 @@ function HomePageInner() {
 }
 
 // ✅ Fix D: Outer export wraps everything in ProductsProvider
-export default function HomePageClient({ initialProducts = [] }: { initialProducts?: Product[] }) {
+export default function HomePageClient({
+  initialProducts = [],
+  initialCategories = [],
+}: {
+  initialProducts?: Product[];
+  initialCategories?: HomeCategory[];
+}) {
   return (
     <ProductsProvider activeOnly limit={48} initialProducts={initialProducts}>
-      <HomePageInner />
+      <HomePageInner initialCategories={initialCategories} />
     </ProductsProvider>
   );
 }
