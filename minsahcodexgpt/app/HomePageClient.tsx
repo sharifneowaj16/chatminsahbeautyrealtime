@@ -58,27 +58,6 @@ const brands = [
   { name: 'Chanel', logo: 'CHANEL' },
 ];
 
-const CATEGORY_COLORS = [
-  'bg-pink-100',
-  'bg-blue-100',
-  'bg-purple-100',
-  'bg-yellow-100',
-  'bg-green-100',
-  'bg-orange-100',
-  'bg-red-100',
-  'bg-teal-100',
-];
-
-const DEFAULT_CATEGORY_ICON = '🏷️';
-
-export interface HomeCategory {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string;
-  color: string;
-}
-
 const comboSlides = [
   {
     title: 'Best Value Combos',
@@ -110,12 +89,11 @@ interface HomeProductCardItem {
 }
 
 // ✅ Fix D: Inner component where homepage product state is consumed
-function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCategory[] }) {
+function HomePageInner() {
   const { products } = useProducts();
 
   const currentComboSlide = 0;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 7, minutes: 33, seconds: 28 });
-  const [categories, setCategories] = useState<HomeCategory[]>(initialCategories);
 
   const activeProducts = useMemo(
     () => products.filter(p => p.status === 'active'),
@@ -244,26 +222,6 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
   };
 
   useEffect(() => {
-    if (categories.length > 0) return;
-
-    fetch('/api/categories?activeOnly=true')
-      .then(res => res.json())
-      .then(data => {
-        if (data.categories) {
-          const mapped = data.categories.map((cat: { id: string; name: string; slug: string; icon?: string }, index: number) => ({
-            id: cat.id,
-            name: cat.name,
-            slug: cat.slug,
-            icon: cat.icon || DEFAULT_CATEGORY_ICON,
-            color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
-          }));
-          setCategories(mapped);
-        }
-      })
-      .catch(() => {});
-  }, [categories.length]);
-
-  useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
@@ -277,39 +235,6 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
 
   return (
     <div className="min-h-screen bg-minsah-light pb-20">
-      <main id="main-content">
-      {/* Browse by Categories */}
-      <section className="px-4 py-6 bg-white">
-        <h2 className="text-lg font-bold text-minsah-dark mb-4">Browse by Categories</h2>
-        <div className="flex min-h-[92px] gap-4 overflow-x-auto pb-2 scrollbar-hide">
-          {(categories.length > 0 ? categories : Array.from({ length: 6 }, (_, index) => ({
-            id: `category-placeholder-${index}`,
-            name: '',
-            slug: '',
-            icon: '',
-            color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
-          }))).map((category) => (
-            <Link
-              key={category.id ?? category.name}
-              href={category.name ? `/categories/${category.slug ?? category.name.toLowerCase().replace(/\s+/g, '-')}` : '#'}
-              className={`flex flex-col items-center gap-2 flex-shrink-0 ${category.name ? '' : 'pointer-events-none'}`}
-              aria-hidden={!category.name}
-              tabIndex={category.name ? undefined : -1}
-            >
-              <div className={`w-16 h-16 ${category.color} rounded-full flex items-center justify-center text-3xl overflow-hidden`}>
-                {category.icon && (category.icon.startsWith('/') || category.icon.startsWith('http'))
-                  ? <img src={category.icon} alt={category.name} className="w-full h-full object-cover" />
-                  : category.icon || <span className="h-7 w-7 rounded-full bg-white/60" />
-                }
-              </div>
-              <span className="min-h-[16px] text-xs text-minsah-dark font-medium text-center">
-                {category.name}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       {/* Browse by Combos */}
       <section className="px-4 py-6 bg-white">
         <div className="flex items-center justify-between mb-4">
@@ -607,7 +532,6 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
           ))}
         </div>
       </section>
-      </main>
     </div>
   );
 }
@@ -615,14 +539,12 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
 // ✅ Fix D: Outer export wraps everything in ProductsProvider
 export default function HomePageClient({
   initialProducts = [],
-  initialCategories = [],
 }: {
   initialProducts?: Product[];
-  initialCategories?: HomeCategory[];
 }) {
   return (
     <ProductsProvider activeOnly limit={48} initialProducts={initialProducts}>
-      <HomePageInner initialCategories={initialCategories} />
+      <HomePageInner />
     </ProductsProvider>
   );
 }

@@ -1,4 +1,5 @@
-import HomePageClient, { type HomeCategory } from './HomePageClient';
+import HomePageClient from './HomePageClient';
+import HomeCategoriesSection, { type HomeCategory } from './components/HomeCategoriesSection';
 import HomeHeader from './components/HomeHeader';
 import HomeBottomNav from './components/HomeBottomNav';
 import prisma from '@/lib/prisma';
@@ -169,10 +170,10 @@ export default async function HomePage() {
   return (
     <>
       <HomeHeader />
-      <HomePageClient
-        initialProducts={initialProducts}
-        initialCategories={initialCategories}
-      />
+      <main id="main-content">
+        <HomeCategoriesSection categories={initialCategories} />
+        <HomePageClient initialProducts={initialProducts} />
+      </main>
       <HomeBottomNav />
     </>
   );
