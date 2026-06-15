@@ -5,10 +5,10 @@ import { ProductsProvider, type Product, useProducts } from '@/contexts/Products
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, Heart, ShoppingCart, Home as HomeIcon, User, ChevronRight, Flame } from 'lucide-react';
 import { formatPrice } from '@/utils/currency';
+import HomeSearch from './components/HomeSearch';
 
 const CartStepper = dynamic(() => import('@/components/cart/CartStepper'), {
   ssr: false,
@@ -102,14 +102,6 @@ const comboSlides = [
   },
 ];
 
-interface Suggestion {
-  text: string;
-  slug: string;
-  productName: string;
-  price: number;
-  image?: string;
-}
-
 interface HomeProductCardItem {
   id: string;
   name: string;
@@ -121,52 +113,8 @@ interface HomeProductCardItem {
 
 // ✅ Fix D: Inner component যেখানে useProducts ও useCart call হয়
 function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCategory[] }) {
-  const router = useRouter();
   const { items } = useCart();
   const { products } = useProducts();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
-
-  const handleSearch = useCallback(() => {
-    const q = searchQuery.trim();
-    if (q) {
-      setShowSuggestions(false);
-      router.push(`/shop?q=${encodeURIComponent(q)}`);
-    }
-  }, [searchQuery, router]);
-
-  useEffect(() => {
-    const q = searchQuery.trim();
-    if (q.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}&limit=6`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setSuggestions(data.suggestions ?? []);
-        setShowSuggestions(true);
-      } catch {
-        // silently ignore
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const currentComboSlide = 0;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 7, minutes: 33, seconds: 28 });
@@ -343,6 +291,8 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
             <div className="w-12"></div>
           </div>
 
+          <HomeSearch />
+          {/* Legacy inline search moved to HomeSearch.
           <div ref={searchRef} className="relative">
             <button
               onClick={handleSearch}
@@ -393,6 +343,7 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
               </ul>
             )}
           </div>
+          */}
         </div>
       </header>
 
