@@ -6,12 +6,31 @@ import { useProducts } from '@/contexts/ProductsContext';
 import { ProductsProvider } from '@/contexts/ProductsContext';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, Heart, ShoppingCart, Home as HomeIcon, User, ChevronRight, Flame } from 'lucide-react';
 import { formatPrice } from '@/utils/currency';
-import CartStepper from '@/components/cart/CartStepper';
-import CardBuyNowButton from '@/components/cart/CardBuyNowButton';
+
+const CartStepper = dynamic(() => import('@/components/cart/CartStepper'), {
+  ssr: false,
+  loading: () => (
+    <span
+      className="block h-8 w-8 rounded-full bg-[#FACC15]/60 shadow-[0_4px_14px_rgba(250,204,21,0.20)]"
+      aria-hidden="true"
+    />
+  ),
+});
+
+const CardBuyNowButton = dynamic(() => import('@/components/cart/CardBuyNowButton'), {
+  ssr: false,
+  loading: () => (
+    <span
+      className="block h-10 w-full rounded-2xl bg-[#3D1F0E]/15"
+      aria-hidden="true"
+    />
+  ),
+});
 
 // ✅ Fix E: priority prop যোগ করা হয়েছে
 function ProductImage({ src, alt, priority = false }: {
