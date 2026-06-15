@@ -1,4 +1,5 @@
 import HomePageClient, { type HomeCategory } from './HomePageClient';
+import HomeBottomNav from './components/HomeBottomNav';
 import prisma from '@/lib/prisma';
 import type { Product } from '@/contexts/ProductsContext';
 
@@ -165,9 +166,12 @@ export default async function HomePage() {
   ]);
 
   return (
-    <HomePageClient
-      initialProducts={initialProducts}
-      initialCategories={initialCategories}
-    />
+    <>
+      <HomePageClient
+        initialProducts={initialProducts}
+        initialCategories={initialCategories}
+      />
+      <HomeBottomNav />
+    </>
   );
 }
