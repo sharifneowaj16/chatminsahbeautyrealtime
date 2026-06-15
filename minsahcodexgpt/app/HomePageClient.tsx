@@ -1,6 +1,5 @@
 'use client';
 
-import { useCart } from '@/contexts/CartContext';
 import { ProductsProvider, type Product, useProducts } from '@/contexts/ProductsContext';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,6 +8,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, Heart, ShoppingCart, Home as HomeIcon, User, ChevronRight, Flame } from 'lucide-react';
 import { formatPrice } from '@/utils/currency';
 import HomeSearch from './components/HomeSearch';
+import CartNavBadge from './components/CartNavBadge';
 
 const CartStepper = dynamic(() => import('@/components/cart/CartStepper'), {
   ssr: false,
@@ -111,9 +111,8 @@ interface HomeProductCardItem {
   hasVariants: boolean;
 }
 
-// ✅ Fix D: Inner component যেখানে useProducts ও useCart call হয়
+// ✅ Fix D: Inner component where homepage product state is consumed
 function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCategory[] }) {
-  const { items } = useCart();
   const { products } = useProducts();
 
   const currentComboSlide = 0;
@@ -644,11 +643,7 @@ function HomePageInner({ initialCategories = [] }: { initialCategories?: HomeCat
           </Link>
           <Link href="/cart" className="flex flex-col items-center gap-1 text-minsah-secondary hover:text-minsah-primary transition relative">
             <ShoppingCart size={24} />
-            {items.length > 0 && (
-              <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                {items.length}
-              </span>
-            )}
+            <CartNavBadge />
             <span className="text-xs">Cart</span>
           </Link>
           <Link href="/login" className="flex flex-col items-center gap-1 text-minsah-secondary hover:text-minsah-primary transition">
