@@ -456,14 +456,14 @@ function HomePageInner() {
             <div className="text-3xl">💄</div>
             <div>
               <h4 className="font-semibold text-sm text-minsah-dark">Makeup Combos</h4>
-              <p className="text-xs text-minsah-secondary">From Tk 1001</p>
+              <p className="text-xs font-medium text-minsah-dark/80">From Tk 1001</p>
             </div>
           </Link>
           <Link href="/combos" className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
             <div className="text-3xl">✨</div>
             <div>
               <h4 className="font-semibold text-sm text-minsah-dark">Skincare Sets</h4>
-              <p className="text-xs text-minsah-secondary">From Tk 1001</p>
+              <p className="text-xs font-medium text-minsah-dark/80">From Tk 1001</p>
             </div>
           </Link>
         </div>
@@ -630,10 +630,10 @@ function HomePageInner() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1 mb-2">
-                  <div className="flex text-yellow-400 text-[10px]">
+                  <div className="flex text-amber-700 text-[10px]">
                     {'★'.repeat(product.rating)}{'☆'.repeat(5 - product.rating)}
                   </div>
-                  <span className="text-[8px] text-minsah-secondary">({product.reviews})</span>
+                  <span className="text-[9px] font-medium text-minsah-dark/75">({product.reviews})</span>
                 </div>
               </Link>
               {renderHomeBuyNowButton(product, 'w-full text-xs')}
