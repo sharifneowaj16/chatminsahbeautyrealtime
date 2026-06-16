@@ -134,19 +134,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // FIX: Handle the unique constraint properly
-    // When variantId is undefined, we need to handle it explicitly
-    const whereClause = variantId
-      ? { userId_productId_variantId: { userId, productId: resolvedProductId, variantId } }
-      : {
-          userId,
-          productId: resolvedProductId,
-          variantId: null, // This is the fix - explicitly set to null when no variant
-        };
-
     // Check if item already exists in cart
     const existing = await prisma.cartItem.findFirst({
-      where: whereClause,
+      where: {
+        userId,
+        productId: resolvedProductId,
+        variantId: variantId || null,
+      },
     });
 
     let cartItem;
