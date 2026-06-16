@@ -742,13 +742,6 @@ export default function BuyNowModal({
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 space-y-2 border-t border-stone-200 pt-4 text-sm">
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Subtotal</span><span className="font-semibold text-stone-900">{formatPrice(subtotal)}</span></div>
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Package Weight</span><span className="font-semibold text-stone-900">{formatWeight(selectedParcelWeightKg)}</span></div>
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Delivery Charge</span><span className="font-semibold text-stone-900">{deliveryState === 'loading' ? 'Calculating...' : deliveryState === 'success' ? formatPrice(deliveryCharge ?? 0) : 'Select city, zone and area'}</span></div>
-                    <div className="flex items-center justify-between border-t border-stone-200 pt-3"><span className="font-semibold text-stone-900">Grand Total</span><span className="text-lg font-bold text-[#3D1F0E]">{formatPrice(grandTotal)}</span></div>
-                    {deliveryMessage ? <p className="text-xs text-amber-700">{deliveryMessage}</p> : null}
-                  </div>
                 </div>
 
                 <div className="rounded-3xl border border-stone-200 p-4">
@@ -775,6 +768,17 @@ export default function BuyNowModal({
                 <div className="rounded-3xl border border-stone-200 p-4">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Payment</h3>
                   <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#F7F2EC] px-4 py-3"><span className="h-3 w-3 rounded-full bg-[#3D1F0E]" /><div><p className="text-sm font-semibold text-stone-900">COD</p><p className="text-xs text-stone-500">Cash on Delivery</p></div></div>
+                </div>
+
+                <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Total</h3>
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex items-center justify-between"><span className="text-stone-600">Subtotal</span><span className="font-semibold text-stone-900">{formatPrice(subtotal)}</span></div>
+                    <div className="flex items-center justify-between"><span className="text-stone-600">Package Weight</span><span className="font-semibold text-stone-900">{formatWeight(selectedParcelWeightKg)}</span></div>
+                    <div className="flex items-center justify-between"><span className="text-stone-600">Delivery Charge</span><span className="font-semibold text-stone-900">{deliveryState === 'loading' ? 'Calculating...' : deliveryState === 'success' ? formatPrice(deliveryCharge ?? 0) : 'Select city, zone and area'}</span></div>
+                    <div className="flex items-center justify-between border-t border-stone-200 pt-3"><span className="font-semibold text-stone-900">Grand Total</span><span className="text-lg font-bold text-[#3D1F0E]">{formatPrice(grandTotal)}</span></div>
+                    {deliveryMessage ? <p className="text-xs text-amber-700">{deliveryMessage}</p> : null}
+                  </div>
                 </div>
 
                 {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
