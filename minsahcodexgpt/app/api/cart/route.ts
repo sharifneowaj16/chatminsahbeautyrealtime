@@ -1,29 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/nextauth';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-async function getCartUserId(request: NextRequest): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (session?.user?.id) return session.user.id;
-
-  const token =
-    request.cookies.get('auth_token')?.value ||
-    request.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return null;
-
-  const payload = await verifyAccessToken(token);
-  return payload?.userId ?? null;
-}
-
 // GET /api/cart - Get user's cart
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getCartUserId(request);
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -93,7 +78,7 @@ export async function GET(request: NextRequest) {
 // POST /api/cart - Add item to cart
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCartUserId(request);
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -241,7 +226,7 @@ export async function POST(request: NextRequest) {
 // PUT /api/cart - Update cart item quantity
 export async function PUT(request: NextRequest) {
   try {
-    const userId = await getCartUserId(request);
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -325,7 +310,7 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/cart - Remove item from cart
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await getCartUserId(request);
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

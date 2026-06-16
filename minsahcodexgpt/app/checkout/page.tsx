@@ -5,9 +5,70 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useRef, Suspense, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, CreditCard, FileText, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
+import { ArrowLeft, MapPin, CreditCard, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatPrice } from '@/utils/currency';
 import SocialLoginModal from '@/app/products/[id]/components/SocialLoginModal';
+
+type DeliveryOption = {
+  id: number;
+  name: string;
+};
+
+type DeliveryAreaOption = DeliveryOption & {
+  homeDeliveryAvailable?: boolean;
+  pickupAvailable?: boolean;
+};
+
+type ShippingFormState = {
+  fullName: string;
+  phoneNumber: string;
+  city: string;
+  zone: string;
+  area: string;
+  pathao_city_id: number | null;
+  pathao_zone_id: number | null;
+  pathao_area_id: number | null;
+};
+
+function normalizeDeliveryOptions(value: unknown): DeliveryOption[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((option) => {
+      if (!option || typeof option !== 'object') return null;
+      const candidate = option as { id?: unknown; name?: unknown };
+      const id = Number(candidate.id);
+      const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+      return Number.isFinite(id) && name ? { id, name } : null;
+    })
+    .filter((option): option is DeliveryOption => Boolean(option));
+}
+
+function normalizeDeliveryAreas(value: unknown): DeliveryAreaOption[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((option) => {
+      if (!option || typeof option !== 'object') return null;
+      const candidate = option as {
+        id?: unknown;
+        name?: unknown;
+        homeDeliveryAvailable?: unknown;
+        pickupAvailable?: unknown;
+      };
+      const id = Number(candidate.id);
+      const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+      return Number.isFinite(id) && name
+        ? {
+            id,
+            name,
+            homeDeliveryAvailable: Boolean(candidate.homeDeliveryAvailable),
+            pickupAvailable: Boolean(candidate.pickupAvailable),
+          }
+        : null;
+    })
+    .filter((option): option is DeliveryAreaOption => Boolean(option));
+}
 
 function CheckoutContent() {
   const router = useRouter();
@@ -17,7 +78,6 @@ function CheckoutContent() {
   const {
     items,
     subtotal,
-    selectedAddress,
     selectedPaymentMethod,
     clearCart,
   } = useCart();
@@ -25,12 +85,25 @@ function CheckoutContent() {
   const [expandedSection, setExpandedSection] = useState<'address' | 'payment' | 'summary' | null>('address');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [shippingForm, setShippingForm] = useState<ShippingFormState>({
+    fullName: '',
+    phoneNumber: '',
+    city: '',
+    zone: '',
+    area: '',
+    pathao_city_id: null,
+    pathao_zone_id: null,
+    pathao_area_id: null,
+  });
+  const [cities, setCities] = useState<DeliveryOption[]>([]);
+  const [zones, setZones] = useState<DeliveryOption[]>([]);
+  const [areas, setAreas] = useState<DeliveryAreaOption[]>([]);
+  const [locationLoading, setLocationLoading] = useState<'cities' | 'zones' | 'areas' | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [deliveryCharge, setDeliveryCharge] = useState<number>(0);
   const [deliveryState, setDeliveryState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [deliveryProvider, setDeliveryProvider] = useState<'steadfast' | 'pathao' | null>(null);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
-  // Ref to track that "Place Order" was clicked while logged out
   const pendingOrderRef = useRef(false);
   const shippingQuoteItems = useMemo(
     () =>
@@ -45,34 +118,142 @@ function CheckoutContent() {
     () => Number((items.reduce((sum, item) => sum + Math.max(1, item.quantity), 0) * 0.1).toFixed(3)),
     [items]
   );
-  const hasPathaoAddressIds = Boolean(selectedAddress?.pathao_city_id && selectedAddress?.pathao_zone_id);
+  const hasDeliveryLocation = Boolean(
+    shippingForm.pathao_city_id &&
+    shippingForm.pathao_zone_id &&
+    shippingForm.pathao_area_id
+  );
+  const hasRequiredShippingFields = Boolean(
+    shippingForm.fullName.trim() &&
+    shippingForm.phoneNumber.trim() &&
+    shippingForm.city.trim() &&
+    shippingForm.zone.trim() &&
+    shippingForm.area.trim() &&
+    hasDeliveryLocation
+  );
   const finalTotal = subtotal + deliveryCharge;
 
   useEffect(() => {
-    setDeliveryState('idle');
-    setDeliveryCharge(0);
-    setDeliveryError(null);
-  }, [selectedAddress?.id, deliveryProvider]);
+    if (!user) return;
+    setShippingForm((current) => ({
+      ...current,
+      fullName: current.fullName || [user.firstName, user.lastName].filter(Boolean).join(' '),
+      phoneNumber: current.phoneNumber || user.phone || '',
+    }));
+  }, [user]);
 
   useEffect(() => {
-    if (!items.length || !selectedAddress || !deliveryProvider) {
+    let isCancelled = false;
+    const controller = new AbortController();
+
+    const loadCities = async () => {
+      setLocationLoading('cities');
+      setLocationError(null);
+      try {
+        const response = await fetch('/api/shipping/pathao/cities', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Could not load cities');
+        const data = await response.json();
+        if (!isCancelled) setCities(normalizeDeliveryOptions(data));
+      } catch {
+        if (!isCancelled && !controller.signal.aborted) {
+          setCities([]);
+          setLocationError('Could not load delivery cities. Please try again.');
+        }
+      } finally {
+        if (!isCancelled) setLocationLoading(null);
+      }
+    };
+
+    void loadCities();
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!shippingForm.pathao_city_id) {
+      setZones([]);
+      setAreas([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const controller = new AbortController();
+
+    const loadZones = async () => {
+      setLocationLoading('zones');
+      setLocationError(null);
+      try {
+        const response = await fetch(`/api/shipping/pathao/zones?city_id=${shippingForm.pathao_city_id}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Could not load zones');
+        const data = await response.json();
+        if (!isCancelled) setZones(normalizeDeliveryOptions(data));
+      } catch {
+        if (!isCancelled && !controller.signal.aborted) {
+          setZones([]);
+          setLocationError('Could not load zones for this city. Please try again.');
+        }
+      } finally {
+        if (!isCancelled) setLocationLoading(null);
+      }
+    };
+
+    void loadZones();
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [shippingForm.pathao_city_id]);
+
+  useEffect(() => {
+    if (!shippingForm.pathao_zone_id) {
+      setAreas([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const controller = new AbortController();
+
+    const loadAreas = async () => {
+      setLocationLoading('areas');
+      setLocationError(null);
+      try {
+        const response = await fetch(`/api/shipping/pathao/areas?zone_id=${shippingForm.pathao_zone_id}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Could not load areas');
+        const data = await response.json();
+        if (!isCancelled) setAreas(normalizeDeliveryAreas(data));
+      } catch {
+        if (!isCancelled && !controller.signal.aborted) {
+          setAreas([]);
+          setLocationError('Could not load areas for this zone. Please try again.');
+        }
+      } finally {
+        if (!isCancelled) setLocationLoading(null);
+      }
+    };
+
+    void loadAreas();
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [shippingForm.pathao_zone_id]);
+
+  useEffect(() => {
+    if (!items.length || !hasDeliveryLocation || estimatedTotalWeightKg <= 0) {
       setDeliveryCharge(0);
       setDeliveryState('idle');
       setDeliveryError(null);
-      return;
-    }
-
-    if (deliveryProvider === 'pathao' && !hasPathaoAddressIds) {
-      setDeliveryCharge(0);
-      setDeliveryState('idle');
-      setDeliveryError('Please edit your address and select Pathao city/zone.');
-      return;
-    }
-
-    if (deliveryProvider === 'pathao' && estimatedTotalWeightKg <= 0) {
-      setDeliveryCharge(0);
-      setDeliveryState('idle');
-      setDeliveryError('Could not calculate Pathao shipping. Please check address.');
       return;
     }
 
@@ -83,52 +264,34 @@ function CheckoutContent() {
       setDeliveryState('loading');
       setDeliveryError(null);
       try {
-        const response =
-          deliveryProvider === 'pathao'
-            ? await fetch('/api/shipping/pathao/price', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  items: shippingQuoteItems,
-                  totalWeightKg: estimatedTotalWeightKg,
-                  address: {
-                    pathao_city_id: selectedAddress.pathao_city_id,
-                    pathao_zone_id: selectedAddress.pathao_zone_id,
-                  },
-                }),
-                signal: abortController.signal,
-              })
-            : await fetch('/api/buy-now/shipping', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  items: shippingQuoteItems,
-                  city: selectedAddress.city,
-                  area: selectedAddress.zone,
-                  provider: 'steadfast',
-                }),
-                signal: abortController.signal,
-              });
+        const response = await fetch('/api/shipping/pathao/price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: shippingQuoteItems,
+            totalWeightKg: estimatedTotalWeightKg,
+            address: {
+              pathao_city_id: shippingForm.pathao_city_id,
+              pathao_zone_id: shippingForm.pathao_zone_id,
+            },
+          }),
+          signal: abortController.signal,
+        });
 
         if (!response.ok) {
           throw new Error('Failed to quote delivery');
         }
 
-        const data = (await response.json()) as { deliveryCharge?: number; shippingCharge?: number };
-        const charge = deliveryProvider === 'pathao' ? data.shippingCharge : data.deliveryCharge;
-        if (!isCancelled && typeof charge === 'number') {
-          setDeliveryCharge(charge);
+        const data = (await response.json()) as { shippingCharge?: number };
+        if (!isCancelled && typeof data.shippingCharge === 'number') {
+          setDeliveryCharge(data.shippingCharge);
           setDeliveryState('success');
         }
       } catch {
-        if (!isCancelled) {
+        if (!isCancelled && !abortController.signal.aborted) {
           setDeliveryCharge(0);
           setDeliveryState('error');
-          setDeliveryError(
-            deliveryProvider === 'pathao'
-              ? 'Could not calculate Pathao shipping. Please check address.'
-              : 'Could not calculate Steadfast shipping.'
-          );
+          setDeliveryError('Could not calculate delivery charge. Please check city, zone and area.');
         }
       }
     };
@@ -138,12 +301,19 @@ function CheckoutContent() {
       isCancelled = true;
       abortController.abort();
     };
-  }, [items.length, selectedAddress, shippingQuoteItems, deliveryProvider, hasPathaoAddressIds, estimatedTotalWeightKg]);
+  }, [
+    items.length,
+    hasDeliveryLocation,
+    shippingQuoteItems,
+    estimatedTotalWeightKg,
+    shippingForm.pathao_city_id,
+    shippingForm.pathao_zone_id,
+  ]);
 
-  // ── Core order submission (called directly or after login) ───────────────
   const submitOrder = async (sessionUserId?: string) => {
-    if (!selectedAddress) {
-      alert('Please select a shipping address');
+    if (!hasRequiredShippingFields) {
+      alert('Please enter name, phone, city, zone and area');
+      setExpandedSection('address');
       return;
     }
     if (!selectedPaymentMethod) {
@@ -154,20 +324,14 @@ function CheckoutContent() {
       alert('Cart is empty');
       return;
     }
-    if (deliveryProvider === 'pathao' && !hasPathaoAddressIds) {
-      alert('Please edit your address and select Pathao city/zone.');
-      return;
-    }
-    if (deliveryProvider === 'pathao' && deliveryState !== 'success') {
-      alert('Could not calculate Pathao shipping. Please check address.');
+    if (deliveryState !== 'success') {
+      alert('Could not calculate delivery charge. Please check city, zone and area.');
       return;
     }
 
     setIsPlacingOrder(true);
 
     try {
-      const isRealDbId = selectedAddress.id && !/^\d+$/.test(selectedAddress.id);
-
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,23 +342,23 @@ function CheckoutContent() {
             variantId: item.variantId ?? undefined,
             quantity: item.quantity,
           })),
-          addressId: isRealDbId ? selectedAddress.id : undefined,
           addressData: {
-            fullName: selectedAddress.fullName,
-            phoneNumber: selectedAddress.phoneNumber,
-            address: selectedAddress.address,
-            zone: selectedAddress.zone,
-            city: selectedAddress.city,
-            provinceRegion: selectedAddress.provinceRegion,
-            landmark: selectedAddress.landmark,
-            pathao_city_id: selectedAddress.pathao_city_id,
-            pathao_zone_id: selectedAddress.pathao_zone_id,
-            pathao_area_id: selectedAddress.pathao_area_id,
+            fullName: shippingForm.fullName.trim(),
+            phoneNumber: shippingForm.phoneNumber.trim(),
+            address: shippingForm.area.trim(),
+            zone: shippingForm.zone.trim(),
+            city: shippingForm.city.trim(),
+            provinceRegion: shippingForm.city.trim(),
+            landmark: '',
+            pathao_city_id: shippingForm.pathao_city_id,
+            pathao_zone_id: shippingForm.pathao_zone_id,
+            pathao_area_id: shippingForm.pathao_area_id,
           },
           paymentMethod: selectedPaymentMethod.type,
           shippingCost: deliveryCharge,
-          shippingMethod: deliveryProvider ?? undefined,
+          shippingMethod: 'pathao',
           customerNote: '',
+          sessionUserId,
         }),
       });
 
@@ -214,10 +378,8 @@ function CheckoutContent() {
     }
   };
 
-  // ── Place Order button handler ────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     if (!user) {
-      // Not logged in — open login modal, order will auto-submit after login
       pendingOrderRef.current = true;
       setShowLoginModal(true);
       return;
@@ -225,8 +387,7 @@ function CheckoutContent() {
     await submitOrder();
   };
 
-  // ── Called by SocialLoginModal on successful login ────────────────────────
-  const handleLoginSuccess = async (userId: string, userName: string) => {
+  const handleLoginSuccess = async (userId: string) => {
     setShowLoginModal(false);
     if (pendingOrderRef.current) {
       pendingOrderRef.current = false;
@@ -238,23 +399,55 @@ function CheckoutContent() {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
+  const handleCityChange = (cityId: string) => {
+    const selectedCity = cities.find((city) => String(city.id) === cityId);
+    setShippingForm((current) => ({
+      ...current,
+      city: selectedCity?.name ?? '',
+      zone: '',
+      area: '',
+      pathao_city_id: selectedCity?.id ?? null,
+      pathao_zone_id: null,
+      pathao_area_id: null,
+    }));
+    setZones([]);
+    setAreas([]);
+  };
+
+  const handleZoneChange = (zoneId: string) => {
+    const selectedZone = zones.find((zone) => String(zone.id) === zoneId);
+    setShippingForm((current) => ({
+      ...current,
+      zone: selectedZone?.name ?? '',
+      area: '',
+      pathao_zone_id: selectedZone?.id ?? null,
+      pathao_area_id: null,
+    }));
+    setAreas([]);
+  };
+
+  const handleAreaChange = (areaId: string) => {
+    const selectedArea = areas.find((area) => String(area.id) === areaId);
+    setShippingForm((current) => ({
+      ...current,
+      area: selectedArea?.name ?? '',
+      pathao_area_id: selectedArea?.id ?? null,
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-minsah-light pb-24">
-
-      {/* ── Header ───────────────────────────────────────────────── */}
       <header className="bg-minsah-dark text-minsah-light sticky top-0 z-50 shadow-md">
         <div className="px-4 py-4 flex items-center justify-between">
           <Link href="/cart" className="p-2 hover:bg-minsah-primary rounded-lg transition">
             <ArrowLeft size={24} />
           </Link>
           <h1 className="text-xl font-semibold">Checkout</h1>
-          <div className="w-10"></div>
+          <div className="w-10" />
         </div>
       </header>
 
       <div className="px-4 py-6 space-y-4">
-
-        {/* ── Shipping Address ─────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <button
             onClick={() => toggleSection('address')}
@@ -265,10 +458,10 @@ function CheckoutContent() {
                 <MapPin size={20} className="text-minsah-primary" />
               </div>
               <div className="text-left">
-                <h2 className="font-bold text-minsah-dark">Shipping Address</h2>
-                {selectedAddress && expandedSection !== 'address' && (
+                <h2 className="font-bold text-minsah-dark">Delivery Location</h2>
+                {hasRequiredShippingFields && expandedSection !== 'address' && (
                   <p className="text-xs text-minsah-secondary line-clamp-1">
-                    {selectedAddress.address}
+                    {shippingForm.area}, {shippingForm.zone}, {shippingForm.city}
                   </p>
                 )}
               </div>
@@ -280,42 +473,57 @@ function CheckoutContent() {
 
           {expandedSection === 'address' && (
             <div className="px-4 pb-4 border-t border-minsah-accent">
-              {selectedAddress ? (
-                <div className="mt-4 p-4 bg-minsah-accent rounded-xl relative">
-                  <Link
-                    href="/checkout/select-address"
-                    className="absolute top-3 right-3 p-2 bg-white rounded-lg hover:bg-minsah-light transition"
-                  >
-                    <Edit2 size={16} className="text-minsah-primary" />
-                  </Link>
-                  <div className="pr-12">
-                    <div className="flex items-start gap-2 mb-2">
-                      <MapPin size={16} className="text-minsah-primary mt-0.5" />
-                      <p className="text-sm font-semibold text-minsah-dark">
-                        {selectedAddress.address}
-                      </p>
-                    </div>
-                    <p className="text-sm text-minsah-secondary ml-6">
-                      {selectedAddress.city}, {selectedAddress.zone}
-                    </p>
-                    <p className="text-sm text-minsah-secondary ml-6">
-                      {selectedAddress.fullName} • {selectedAddress.phoneNumber}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  href="/checkout/select-address"
-                  className="mt-4 block w-full bg-minsah-primary text-minsah-light text-center py-3 rounded-xl font-semibold hover:bg-minsah-dark transition"
+              <div className="mt-4 grid gap-3">
+                <input
+                  value={shippingForm.fullName}
+                  onChange={(event) => setShippingForm((current) => ({ ...current, fullName: event.target.value }))}
+                  placeholder="Full name"
+                  className="w-full rounded-xl border border-minsah-accent px-4 py-3 text-sm outline-none transition focus:border-minsah-primary"
+                />
+                <input
+                  value={shippingForm.phoneNumber}
+                  onChange={(event) => setShippingForm((current) => ({ ...current, phoneNumber: event.target.value }))}
+                  placeholder="Phone number"
+                  className="w-full rounded-xl border border-minsah-accent px-4 py-3 text-sm outline-none transition focus:border-minsah-primary"
+                />
+                <select
+                  value={shippingForm.pathao_city_id ?? ''}
+                  onChange={(event) => handleCityChange(event.target.value)}
+                  className="w-full rounded-xl border border-minsah-accent px-4 py-3 text-sm outline-none transition focus:border-minsah-primary"
                 >
-                  Add Shipping Address
-                </Link>
-              )}
+                  <option value="">{locationLoading === 'cities' ? 'Loading cities...' : 'City'}</option>
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.id}>{city.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={shippingForm.pathao_zone_id ?? ''}
+                  onChange={(event) => handleZoneChange(event.target.value)}
+                  disabled={!shippingForm.pathao_city_id || locationLoading === 'zones'}
+                  className="w-full rounded-xl border border-minsah-accent px-4 py-3 text-sm outline-none transition focus:border-minsah-primary disabled:cursor-not-allowed disabled:bg-minsah-accent/40"
+                >
+                  <option value="">{locationLoading === 'zones' ? 'Loading zones...' : 'Zone'}</option>
+                  {zones.map((zone) => (
+                    <option key={zone.id} value={zone.id}>{zone.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={shippingForm.pathao_area_id ?? ''}
+                  onChange={(event) => handleAreaChange(event.target.value)}
+                  disabled={!shippingForm.pathao_zone_id || locationLoading === 'areas'}
+                  className="w-full rounded-xl border border-minsah-accent px-4 py-3 text-sm outline-none transition focus:border-minsah-primary disabled:cursor-not-allowed disabled:bg-minsah-accent/40"
+                >
+                  <option value="">{locationLoading === 'areas' ? 'Loading areas...' : 'Area'}</option>
+                  {areas.map((area) => (
+                    <option key={area.id} value={area.id}>{area.name}</option>
+                  ))}
+                </select>
+                {locationError && <p className="text-xs text-red-600">{locationError}</p>}
+              </div>
             </div>
           )}
         </div>
 
-        {/* ── Payment Method ───────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <button
             onClick={() => toggleSection('payment')}
@@ -353,7 +561,6 @@ function CheckoutContent() {
           )}
         </div>
 
-        {/* ── Order Summary ─────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <button
             onClick={() => toggleSection('summary')}
@@ -381,7 +588,7 @@ function CheckoutContent() {
                 <div className="mt-4 text-center py-6">
                   <p className="text-sm text-minsah-secondary mb-3">Cart empty</p>
                   <Link href="/shop" className="text-minsah-primary font-semibold text-sm">
-                    Continue Shopping →
+                    Continue Shopping
                   </Link>
                 </div>
               ) : (
@@ -398,7 +605,7 @@ function CheckoutContent() {
                           />
                         ) : (
                           <span className="w-full h-full flex items-center justify-center text-2xl">
-                            {item.image || '✨'}
+                            {item.image || '*'}
                           </span>
                         )}
                       </div>
@@ -418,66 +625,21 @@ function CheckoutContent() {
                   ))}
 
                   <div className="border-t border-minsah-accent pt-3 space-y-2">
-                    <div className="pb-2">
-                      <p className="text-sm font-semibold text-minsah-dark mb-2">Delivery Partner</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setDeliveryProvider('steadfast')}
-                          className={`px-3 py-2 rounded-xl text-sm font-semibold border transition ${
-                            deliveryProvider === 'steadfast'
-                              ? 'bg-minsah-primary text-minsah-light border-minsah-primary'
-                              : 'bg-white text-minsah-dark border-minsah-accent hover:bg-minsah-accent/30'
-                          }`}
-                        >
-                          Steadfast
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeliveryProvider('pathao')}
-                          disabled={Boolean(selectedAddress && !hasPathaoAddressIds)}
-                          className={`px-3 py-2 rounded-xl text-sm font-semibold border transition ${
-                            deliveryProvider === 'pathao'
-                              ? 'bg-minsah-primary text-minsah-light border-minsah-primary'
-                              : 'bg-white text-minsah-dark border-minsah-accent hover:bg-minsah-accent/30'
-                          }`}
-                        >
-                          Pathao
-                        </button>
-                      </div>
-                      {selectedAddress && !hasPathaoAddressIds && (
-                        <p className="mt-2 text-xs text-amber-700">
-                          This address is missing Pathao city/zone IDs.
-                        </p>
-                      )}
-                    </div>
                     <div className="flex justify-between text-sm text-minsah-secondary">
                       <span>Subtotal</span>
                       <span>{formatPrice(subtotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-minsah-secondary">
-                      <span>Shipping</span>
+                      <span>Delivery</span>
                       <span>
                         {deliveryState === 'loading'
-                          ? 'Calculating shipping...'
-                          : deliveryState === 'error'
-                            ? '0'
-                            : formatPrice(deliveryCharge)}
+                          ? 'Calculating...'
+                          : deliveryState === 'success'
+                            ? formatPrice(deliveryCharge)
+                            : 'Select city, zone and area'}
                       </span>
                     </div>
-                    {deliveryError && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-red-600">{deliveryError}</p>
-                        {deliveryProvider === 'pathao' && !hasPathaoAddressIds && selectedAddress && (
-                          <Link
-                            href={`/checkout/add-address?fullName=${encodeURIComponent(selectedAddress.fullName)}&phoneNumber=${encodeURIComponent(selectedAddress.phoneNumber)}&address=${encodeURIComponent(selectedAddress.address)}&city=${encodeURIComponent(selectedAddress.city)}&zone=${encodeURIComponent(selectedAddress.zone)}&landmark=${encodeURIComponent(selectedAddress.landmark ?? '')}&provinceRegion=${encodeURIComponent(selectedAddress.provinceRegion ?? 'Dhaka')}&type=${encodeURIComponent(selectedAddress.type)}`}
-                            className="inline-block text-xs font-semibold text-minsah-primary underline"
-                          >
-                            Edit address
-                          </Link>
-                        )}
-                      </div>
-                    )}
+                    {deliveryError && <p className="text-xs text-red-600">{deliveryError}</p>}
                     <div className="flex justify-between font-bold text-minsah-dark">
                       <span>Total</span>
                       <span>{formatPrice(finalTotal)}</span>
@@ -490,7 +652,6 @@ function CheckoutContent() {
         </div>
       </div>
 
-      {/* ── Place Order Button (fixed bottom) ────────────────────── */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-minsah-accent shadow-lg">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-minsah-secondary">Total</span>
@@ -501,8 +662,8 @@ function CheckoutContent() {
           disabled={
             isPlacingOrder ||
             items.length === 0 ||
-            !deliveryProvider ||
-            (deliveryProvider === 'pathao' && (!hasPathaoAddressIds || deliveryState !== 'success'))
+            !hasRequiredShippingFields ||
+            deliveryState !== 'success'
           }
           className="w-full bg-minsah-primary text-minsah-light py-4 rounded-xl font-bold text-base shadow-lg hover:bg-minsah-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -519,7 +680,6 @@ function CheckoutContent() {
         </button>
       </div>
 
-      {/* ── Social Login Modal Overlay ────────────────────────────── */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in">

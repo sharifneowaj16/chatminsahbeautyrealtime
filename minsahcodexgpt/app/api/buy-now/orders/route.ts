@@ -18,9 +18,13 @@ interface BuyNowItemInput {
 interface BuyNowAddressInput {
   name: string;
   phone: string;
-  address: string;
+  address?: string;
   city: string;
+  zone?: string;
   area: string;
+  pathao_city_id?: number | null;
+  pathao_zone_id?: number | null;
+  pathao_area_id?: number | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -58,9 +62,11 @@ export async function POST(request: NextRequest) {
     if (
       !shippingAddress?.name?.trim() ||
       !shippingAddress.phone?.trim() ||
-      !shippingAddress.address?.trim() ||
       !shippingAddress.city?.trim() ||
-      !shippingAddress.area?.trim()
+      !shippingAddress.area?.trim() ||
+      !shippingAddress.pathao_city_id ||
+      !shippingAddress.pathao_zone_id ||
+      !shippingAddress.pathao_area_id
     ) {
       return NextResponse.json({ error: 'Shipping address is incomplete' }, { status: 400 });
     }
@@ -178,14 +184,17 @@ export async function POST(request: NextRequest) {
           firstName: shippingAddress.name.trim(),
           lastName: '',
           phone: shippingAddress.phone.trim(),
-          street1: shippingAddress.address.trim(),
-          street2: shippingAddress.area.trim(),
+          street1: shippingAddress.address?.trim() || shippingAddress.area.trim(),
+          street2: shippingAddress.zone?.trim() || shippingAddress.area.trim(),
           city: shippingAddress.city.trim(),
-          state: shippingAddress.area.trim(),
+          state: shippingAddress.zone?.trim() || shippingAddress.area.trim(),
           postalCode: '',
           country: 'Bangladesh',
           isDefault: false,
           type: 'SHIPPING',
+          pathaoCityId: shippingAddress.pathao_city_id ?? null,
+          pathaoZoneId: shippingAddress.pathao_zone_id ?? null,
+          pathaoAreaId: shippingAddress.pathao_area_id ?? null,
         },
       });
 

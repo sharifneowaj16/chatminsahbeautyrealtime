@@ -145,7 +145,7 @@ function mapApiItem(apiItem: {
 
 // ── Provider ───────────────────────────────────────────────────────────────
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, refreshToken } = useAuth();
 
   const [items, setItems]             = useState<CartItem[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
@@ -175,7 +175,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const fetchCartFromDB = useCallback(async () => {
     setCartLoading(true);
     try {
-      const res = await fetch('/api/cart', { credentials: 'include' });
+      let res = await fetch('/api/cart', { credentials: 'include' });
+      if (res.status === 401 && await refreshToken()) {
+        res = await fetch('/api/cart', { credentials: 'include' });
+      }
       if (!res.ok) return;
       const data = await res.json();
       const mapped: CartItem[] = (data.items ?? []).map(mapApiItem);
@@ -189,12 +192,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setCartLoading(false);
     }
-  }, []);
+  }, [refreshToken]);
 
   const mergeGuestCartToDB = useCallback(async (guestItems: CartItem[]) => {
     for (const item of guestItems) {
       try {
-        await fetch('/api/cart', {
+        let res = await fetch('/api/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -205,9 +208,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
             quantity:  item.quantity,
           }),
         });
+        if (res.status === 401 && await refreshToken()) {
+          res = await fetch('/api/cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              productId: item.productId ?? item.id,
+              variantId: item.variantId ?? null,
+              quantity:  item.quantity,
+            }),
+          });
+        }
+        if (!res.ok) throw new Error('Failed to merge cart item');
       } catch { /* ignore */ }
     }
-  }, []);
+  }, [refreshToken]);
 
   // ── Load cart on auth change ────────────────────────────────────
 
@@ -327,18 +343,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         try {
-          await fetch('/api/cart', {
+          const requestBody = JSON.stringify({
+            productId: item.productId ?? item.id,
+            variantId: item.variantId ?? null,
+            quantity:  item.quantity,
+          });
+          let res = await fetch('/api/cart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-              productId: item.productId ?? item.id,
-              variantId: item.variantId ?? null,
-              quantity:  item.quantity,
-            }),
+            body: requestBody,
           });
+          if (res.status === 401 && await refreshToken()) {
+            res = await fetch('/api/cart', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: requestBody,
+            });
+          }
+          if (!res.ok) throw new Error('Failed to add item to cart');
           await fetchCartFromDB(); // sync to get cartItemId + correct quantity
-        } catch { /* keep optimistic */ }
+        } catch {
+          await fetchCartFromDB();
+        }
       } else {
         setItems((prev) => {
           const existing = prev.find((i) => i.id === item.id);
@@ -351,7 +379,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [user, fetchCartFromDB]
+    [user, refreshToken, fetchCartFromDB]
   );
 
   const removeItem = useCallback(
@@ -361,10 +389,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems((prev) => prev.filter((i) => i.id !== itemId));
         if (target?.cartItemId) {
           try {
-            await fetch(`/api/cart/${target.cartItemId}`, {
+            let res = await fetch(`/api/cart/${target.cartItemId}`, {
               method: 'DELETE',
               credentials: 'include',
             });
+            if (res.status === 401 && await refreshToken()) {
+              res = await fetch(`/api/cart/${target.cartItemId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+              });
+            }
+            if (!res.ok) throw new Error('Failed to remove cart item');
           } catch {
             await fetchCartFromDB();
           }
@@ -373,7 +408,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems((prev) => prev.filter((i) => i.id !== itemId));
       }
     },
-    [user, items, fetchCartFromDB]
+    [user, items, refreshToken, fetchCartFromDB]
   );
 
   const updateQuantity = useCallback(
@@ -390,12 +425,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
         if (target?.cartItemId) {
           try {
-            await fetch(`/api/cart/${target.cartItemId}`, {
+            const requestBody = JSON.stringify({ quantity });
+            let res = await fetch(`/api/cart/${target.cartItemId}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
-              body: JSON.stringify({ quantity }),
+              body: requestBody,
             });
+            if (res.status === 401 && await refreshToken()) {
+              res = await fetch(`/api/cart/${target.cartItemId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: requestBody,
+              });
+            }
+            if (!res.ok) throw new Error('Failed to update cart item');
           } catch {
             await fetchCartFromDB();
           }
@@ -406,7 +451,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    [user, items, removeItem, fetchCartFromDB]
+    [user, items, removeItem, refreshToken, fetchCartFromDB]
   );
 
   const clearCart = useCallback(async () => {
@@ -415,12 +460,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setDiscount(0);
     if (user) {
       try {
-        await fetch('/api/cart', { method: 'DELETE', credentials: 'include' });
+        let res = await fetch('/api/cart', { method: 'DELETE', credentials: 'include' });
+        if (res.status === 401 && await refreshToken()) {
+          res = await fetch('/api/cart', { method: 'DELETE', credentials: 'include' });
+        }
+        if (!res.ok) throw new Error('Failed to clear cart');
       } catch { /* ignore */ }
     } else {
       localStorage.setItem('minsah_cart', JSON.stringify([]));
     }
-  }, [user]);
+  }, [user, refreshToken]);
 
   useEffect(() => {
     if (!user) localStorage.setItem('minsah_cart', JSON.stringify(items));

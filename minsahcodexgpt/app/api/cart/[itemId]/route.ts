@@ -1,31 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/nextauth';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
-
-async function getCartUserId(request: NextRequest): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (session?.user?.id) return session.user.id;
-
-  const token =
-    request.cookies.get('auth_token')?.value ||
-    request.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return null;
-
-  const payload = await verifyAccessToken(token);
-  return payload?.userId ?? null;
-}
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
-    const userId = await getCartUserId(request);
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -114,7 +99,7 @@ export async function DELETE(
   { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
-    const userId = await getCartUserId(request);
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

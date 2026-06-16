@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide-react';
-import { bangladeshLocations } from '@/data/bangladesh-locations';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/currency';
 import SocialLoginModal from '@/app/products/[id]/components/SocialLoginModal';
@@ -30,18 +29,6 @@ interface BuyNowModalProps {
   onClose: () => void;
 }
 
-interface SavedAddress {
-  id: string;
-  firstName: string;
-  lastName: string;
-  street1: string;
-  street2: string | null;
-  city: string;
-  state: string;
-  phone: string | null;
-  isDefault: boolean;
-}
-
 interface ProductResponse {
   product: {
     id: string;
@@ -64,20 +51,23 @@ interface ProductResponse {
 interface ShippingFormState {
   name: string;
   phone: string;
-  address: string;
   city: string;
+  zone: string;
   area: string;
+  pathao_city_id: number | null;
+  pathao_zone_id: number | null;
+  pathao_area_id: number | null;
 }
 
-interface DeliveryResponse {
-  deliveryCharge: number;
-  message: string | null;
-  weights: {
-    itemsWeightKg: number;
-    packagingWeightKg: number;
-    parcelWeightKg: number;
-  };
-}
+type DeliveryOption = {
+  id: number;
+  name: string;
+};
+
+type DeliveryAreaOption = DeliveryOption & {
+  homeDeliveryAvailable?: boolean;
+  pickupAvailable?: boolean;
+};
 
 type ModalStage = 'select' | 'summary' | 'success';
 
@@ -109,7 +99,45 @@ function clampQuantity(nextQuantity: number, stock: number) {
   return Math.max(0, Math.min(stock, nextQuantity));
 }
 
-const districtOptions = bangladeshLocations.flatMap((division) => division.districts);
+function normalizeDeliveryOptions(value: unknown): DeliveryOption[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((option) => {
+      if (!option || typeof option !== 'object') return null;
+      const candidate = option as { id?: unknown; name?: unknown };
+      const id = Number(candidate.id);
+      const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+      return Number.isFinite(id) && name ? { id, name } : null;
+    })
+    .filter((option): option is DeliveryOption => Boolean(option));
+}
+
+function normalizeDeliveryAreas(value: unknown): DeliveryAreaOption[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((option) => {
+      if (!option || typeof option !== 'object') return null;
+      const candidate = option as {
+        id?: unknown;
+        name?: unknown;
+        homeDeliveryAvailable?: unknown;
+        pickupAvailable?: unknown;
+      };
+      const id = Number(candidate.id);
+      const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+      return Number.isFinite(id) && name
+        ? {
+            id,
+            name,
+            homeDeliveryAvailable: Boolean(candidate.homeDeliveryAvailable),
+            pickupAvailable: Boolean(candidate.pickupAvailable),
+          }
+        : null;
+    })
+    .filter((option): option is DeliveryAreaOption => Boolean(option));
+}
 
 export default function BuyNowModal({
   isOpen,
@@ -126,7 +154,6 @@ export default function BuyNowModal({
   const { user } = useAuth();
   const [stage, setStage] = useState<ModalStage>('select');
   const [loading, setLoading] = useState(false);
-  const [addressesLoading, setAddressesLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -139,14 +166,21 @@ export default function BuyNowModal({
   const [shippingForm, setShippingForm] = useState<ShippingFormState>({
     name: '',
     phone: '',
-    address: '',
     city: '',
+    zone: '',
     area: '',
+    pathao_city_id: null,
+    pathao_zone_id: null,
+    pathao_area_id: null,
   });
+  const [cities, setCities] = useState<DeliveryOption[]>([]);
+  const [zones, setZones] = useState<DeliveryOption[]>([]);
+  const [areas, setAreas] = useState<DeliveryAreaOption[]>([]);
+  const [locationLoading, setLocationLoading] = useState<'cities' | 'zones' | 'areas' | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [deliveryState, setDeliveryState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [deliveryCharge, setDeliveryCharge] = useState<number | null>(null);
   const [deliveryMessage, setDeliveryMessage] = useState<string | null>(null);
-  const [weights, setWeights] = useState<DeliveryResponse['weights'] | null>(null);
   const [successPayload, setSuccessPayload] = useState<{ orderNumber: string; estimatedDelivery: string } | null>(null);
 
   const hasVariants = resolvedVariants.length > 0;
@@ -170,9 +204,11 @@ export default function BuyNowModal({
     setDeliveryState('idle');
     setDeliveryCharge(null);
     setDeliveryMessage(null);
-    setWeights(null);
     setSuccessPayload(null);
     setShowLoginModal(false);
+    setLocationError(null);
+    setZones([]);
+    setAreas([]);
     setResolvedProductName(productName);
     setResolvedProductImage(productImage);
     setResolvedBasePrice(basePrice);
@@ -181,9 +217,12 @@ export default function BuyNowModal({
     setShippingForm({
       name: user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : '',
       phone: user?.phone ?? '',
-      address: '',
       city: '',
+      zone: '',
       area: '',
+      pathao_city_id: null,
+      pathao_zone_id: null,
+      pathao_area_id: null,
     });
 
     if (variants?.length) {
@@ -232,41 +271,120 @@ export default function BuyNowModal({
       }
     };
 
-    const loadAddresses = async () => {
-      if (!user) return;
-      setAddressesLoading(true);
-      try {
-        const response = await fetch('/api/addresses', { credentials: 'include', cache: 'no-store' });
-        if (!response.ok) return;
-        const data = (await response.json()) as { addresses?: SavedAddress[] };
-        if (!active) return;
-        const preferredAddress = data.addresses?.find((address) => address.isDefault) ?? data.addresses?.[0];
-        if (!preferredAddress) return;
-        setShippingForm((current) => ({
-          name: current.name || [preferredAddress.firstName, preferredAddress.lastName].filter(Boolean).join(' '),
-          phone: current.phone || preferredAddress.phone || '',
-          address: current.address || preferredAddress.street1,
-          city: current.city || preferredAddress.city,
-          area: current.area || preferredAddress.street2 || preferredAddress.state || '',
-        }));
-      } finally {
-        if (active) setAddressesLoading(false);
-      }
-    };
-
-    void Promise.all([loadProduct(), loadAddresses()]);
+    void loadProduct();
 
     return () => {
       active = false;
     };
   }, [basePrice, baseWeightKg, initialQuantity, initialVariantId, isOpen, productId, productImage, productName, user, variants]);
 
-  const areaOptions = useMemo(() => {
-    if (!shippingForm.city) return [];
-    const district = districtOptions.find((option) => option.name === shippingForm.city);
-    if (!district) return [];
-    return district.thanas.flatMap((thana) => [thana.name, ...(thana.areas?.map((area) => area.name) ?? [])]);
-  }, [shippingForm.city]);
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    const controller = new AbortController();
+
+    const loadCities = async () => {
+      setLocationLoading('cities');
+      setLocationError(null);
+      try {
+        const response = await fetch('/api/shipping/pathao/cities', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Could not load cities');
+        const data = await response.json();
+        if (active) setCities(normalizeDeliveryOptions(data));
+      } catch {
+        if (active && !controller.signal.aborted) {
+          setCities([]);
+          setLocationError('Could not load delivery cities. Please try again.');
+        }
+      } finally {
+        if (active) setLocationLoading(null);
+      }
+    };
+
+    void loadCities();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !shippingForm.pathao_city_id) {
+      setZones([]);
+      setAreas([]);
+      return;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+
+    const loadZones = async () => {
+      setLocationLoading('zones');
+      setLocationError(null);
+      try {
+        const response = await fetch(`/api/shipping/pathao/zones?city_id=${shippingForm.pathao_city_id}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Could not load zones');
+        const data = await response.json();
+        if (active) setZones(normalizeDeliveryOptions(data));
+      } catch {
+        if (active && !controller.signal.aborted) {
+          setZones([]);
+          setLocationError('Could not load zones for this city. Please try again.');
+        }
+      } finally {
+        if (active) setLocationLoading(null);
+      }
+    };
+
+    void loadZones();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [isOpen, shippingForm.pathao_city_id]);
+
+  useEffect(() => {
+    if (!isOpen || !shippingForm.pathao_zone_id) {
+      setAreas([]);
+      return;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+
+    const loadAreas = async () => {
+      setLocationLoading('areas');
+      setLocationError(null);
+      try {
+        const response = await fetch(`/api/shipping/pathao/areas?zone_id=${shippingForm.pathao_zone_id}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Could not load areas');
+        const data = await response.json();
+        if (active) setAreas(normalizeDeliveryAreas(data));
+      } catch {
+        if (active && !controller.signal.aborted) {
+          setAreas([]);
+          setLocationError('Could not load areas for this zone. Please try again.');
+        }
+      } finally {
+        if (active) setLocationLoading(null);
+      }
+    };
+
+    void loadAreas();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [isOpen, shippingForm.pathao_zone_id]);
 
   const selectedItems = useMemo(() => {
     if (hasVariants) {
@@ -310,16 +428,25 @@ export default function BuyNowModal({
   const subtotal = Number(selectedItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2));
   const grandTotal = Number((subtotal + (deliveryCharge ?? 0)).toFixed(2));
   const canContinue = selectedItems.length > 0;
-  const hasRequiredShippingFields = Boolean(shippingForm.name.trim() && shippingForm.phone.trim() && shippingForm.address.trim() && shippingForm.city.trim() && shippingForm.area.trim());
-  const canPlaceOrder = canContinue && hasRequiredShippingFields && !submitting && (deliveryState === 'success' || deliveryState === 'error');
+  const hasRequiredShippingFields = Boolean(
+    shippingForm.name.trim() &&
+    shippingForm.phone.trim() &&
+    shippingForm.city.trim() &&
+    shippingForm.zone.trim() &&
+    shippingForm.area.trim() &&
+    shippingForm.pathao_city_id &&
+    shippingForm.pathao_zone_id &&
+    shippingForm.pathao_area_id
+  );
+  const selectedParcelWeightKg = Number(selectedItems.reduce((sum, item) => sum + item.totalWeightKg, 0).toFixed(3));
+  const canPlaceOrder = canContinue && hasRequiredShippingFields && !submitting && deliveryState === 'success';
 
   useEffect(() => {
     if (!isOpen || stage !== 'summary' || !canContinue) return;
-    if (!shippingForm.city || !shippingForm.area) {
+    if (!hasRequiredShippingFields) {
       setDeliveryState('idle');
       setDeliveryCharge(null);
       setDeliveryMessage(null);
-      setWeights(null);
       return;
     }
 
@@ -329,35 +456,36 @@ export default function BuyNowModal({
       setDeliveryState('loading');
       setDeliveryMessage(null);
       try {
-        const response = await fetch('/api/buy-now/shipping', {
+        const response = await fetch('/api/shipping/pathao/price', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            city: shippingForm.city,
-            area: shippingForm.area,
             items: selectedItems.map((item) => ({
               productId: item.productId,
               variantId: item.variantId,
               quantity: item.quantity,
             })),
+            totalWeightKg: selectedParcelWeightKg,
+            address: {
+              pathao_city_id: shippingForm.pathao_city_id,
+              pathao_zone_id: shippingForm.pathao_zone_id,
+            },
           }),
           signal: controller.signal,
         });
-        const data = (await response.json()) as DeliveryResponse | { error?: string };
+        const data = (await response.json()) as { shippingCharge?: number; error?: string };
         if (!active) return;
-        if (!response.ok || !('deliveryCharge' in data)) {
-          throw new Error('error' in data && data.error ? data.error : 'Delivery charge will be confirmed');
+        if (!response.ok || typeof data.shippingCharge !== 'number') {
+          throw new Error(data.error || 'Could not calculate delivery charge');
         }
-        setDeliveryCharge(data.deliveryCharge);
+        setDeliveryCharge(data.shippingCharge);
         setDeliveryState('success');
-        setDeliveryMessage(data.message);
-        setWeights(data.weights);
+        setDeliveryMessage(null);
       } catch (deliveryError) {
         if (!active || controller.signal.aborted) return;
         setDeliveryCharge(0);
-        setWeights(null);
         setDeliveryState('error');
-        setDeliveryMessage(deliveryError instanceof Error ? deliveryError.message : 'Delivery charge will be confirmed');
+        setDeliveryMessage(deliveryError instanceof Error ? deliveryError.message : 'Could not calculate delivery charge');
       }
     }, 350);
 
@@ -366,7 +494,16 @@ export default function BuyNowModal({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [canContinue, isOpen, selectedItems, shippingForm.area, shippingForm.city, stage]);
+  }, [
+    canContinue,
+    hasRequiredShippingFields,
+    isOpen,
+    selectedItems,
+    selectedParcelWeightKg,
+    shippingForm.pathao_city_id,
+    shippingForm.pathao_zone_id,
+    stage,
+  ]);
 
   useEffect(() => {
     if (!isOpen || stage !== 'success' || !successPayload) return;
@@ -412,13 +549,23 @@ export default function BuyNowModal({
             variantId: item.variantId,
             quantity: item.quantity,
           })),
-          parcelWeight: weights?.parcelWeightKg ?? selectedItems.reduce((sum, item) => sum + item.totalWeightKg, 0),
-          shippingAddress: shippingForm,
+          parcelWeight: selectedParcelWeightKg,
+          shippingAddress: {
+            name: shippingForm.name.trim(),
+            phone: shippingForm.phone.trim(),
+            address: shippingForm.area.trim(),
+            city: shippingForm.city.trim(),
+            zone: shippingForm.zone.trim(),
+            area: shippingForm.area.trim(),
+            pathao_city_id: shippingForm.pathao_city_id,
+            pathao_zone_id: shippingForm.pathao_zone_id,
+            pathao_area_id: shippingForm.pathao_area_id,
+          },
           deliveryCharge: deliveryCharge ?? 0,
           subtotal,
           grandTotal,
           paymentMethod: 'COD',
-          deliveryPendingConfirmation: deliveryState === 'error',
+          deliveryPendingConfirmation: false,
         }),
       });
 
@@ -451,22 +598,42 @@ export default function BuyNowModal({
 
   const handleLoginSuccess = async () => {
     setShowLoginModal(false);
-    try {
-      const response = await fetch('/api/addresses', { credentials: 'include', cache: 'no-store' });
-      if (!response.ok) return;
-      const data = (await response.json()) as { addresses?: SavedAddress[] };
-      const preferredAddress = data.addresses?.find((address) => address.isDefault) ?? data.addresses?.[0];
-      if (!preferredAddress) return;
-      setShippingForm((current) => ({
-        name: current.name || [preferredAddress.firstName, preferredAddress.lastName].filter(Boolean).join(' '),
-        phone: current.phone || preferredAddress.phone || '',
-        address: current.address || preferredAddress.street1,
-        city: current.city || preferredAddress.city,
-        area: current.area || preferredAddress.street2 || preferredAddress.state || '',
-      }));
-    } catch {
-      return;
-    }
+  };
+
+  const handleCityChange = (cityId: string) => {
+    const selectedCity = cities.find((city) => String(city.id) === cityId);
+    setShippingForm((current) => ({
+      ...current,
+      city: selectedCity?.name ?? '',
+      zone: '',
+      area: '',
+      pathao_city_id: selectedCity?.id ?? null,
+      pathao_zone_id: null,
+      pathao_area_id: null,
+    }));
+    setZones([]);
+    setAreas([]);
+  };
+
+  const handleZoneChange = (zoneId: string) => {
+    const selectedZone = zones.find((zone) => String(zone.id) === zoneId);
+    setShippingForm((current) => ({
+      ...current,
+      zone: selectedZone?.name ?? '',
+      area: '',
+      pathao_zone_id: selectedZone?.id ?? null,
+      pathao_area_id: null,
+    }));
+    setAreas([]);
+  };
+
+  const handleAreaChange = (areaId: string) => {
+    const selectedArea = areas.find((area) => String(area.id) === areaId);
+    setShippingForm((current) => ({
+      ...current,
+      area: selectedArea?.name ?? '',
+      pathao_area_id: selectedArea?.id ?? null,
+    }));
   };
 
   if (!isOpen) return null;
@@ -578,28 +745,32 @@ export default function BuyNowModal({
                   </div>
                   <div className="mt-4 space-y-2 border-t border-stone-200 pt-4 text-sm">
                     <div className="flex items-center justify-between"><span className="text-stone-600">Subtotal</span><span className="font-semibold text-stone-900">{formatPrice(subtotal)}</span></div>
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Package Weight</span><span className="font-semibold text-stone-900">{weights ? formatWeight(weights.parcelWeightKg) : formatWeight(selectedItems.reduce((sum, item) => sum + item.totalWeightKg, 0))}</span></div>
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Delivery Charge</span><span className="font-semibold text-stone-900">{deliveryState === 'loading' ? 'Calculating...' : deliveryState === 'success' ? formatPrice(deliveryCharge ?? 0) : deliveryState === 'error' ? 'Will be confirmed' : 'Select city and area'}</span></div>
-                    <div className="flex items-center justify-between border-t border-stone-200 pt-3"><span className="font-semibold text-stone-900">Grand Total</span><span className="text-lg font-bold text-[#3D1F0E]">{deliveryState === 'error' ? `${formatPrice(subtotal)}+` : formatPrice(grandTotal)}</span></div>
-                    {deliveryMessage ? <p className={`text-xs ${deliveryState === 'error' ? 'text-amber-700' : 'text-stone-500'}`}>{deliveryMessage}</p> : null}
+                    <div className="flex items-center justify-between"><span className="text-stone-600">Package Weight</span><span className="font-semibold text-stone-900">{formatWeight(selectedParcelWeightKg)}</span></div>
+                    <div className="flex items-center justify-between"><span className="text-stone-600">Delivery Charge</span><span className="font-semibold text-stone-900">{deliveryState === 'loading' ? 'Calculating...' : deliveryState === 'success' ? formatPrice(deliveryCharge ?? 0) : 'Select city, zone and area'}</span></div>
+                    <div className="flex items-center justify-between border-t border-stone-200 pt-3"><span className="font-semibold text-stone-900">Grand Total</span><span className="text-lg font-bold text-[#3D1F0E]">{formatPrice(grandTotal)}</span></div>
+                    {deliveryMessage ? <p className="text-xs text-amber-700">{deliveryMessage}</p> : null}
                   </div>
                 </div>
 
                 <div className="rounded-3xl border border-stone-200 p-4">
-                  <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Shipping Address</h3>{addressesLoading ? <Loader2 size={14} className="animate-spin text-stone-500" /> : null}</div>
+                  <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Delivery Location</h3>{locationLoading ? <Loader2 size={14} className="animate-spin text-stone-500" /> : null}</div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <input value={shippingForm.name} onChange={(event) => setShippingForm((current) => ({ ...current, name: event.target.value }))} placeholder="Name" className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]" />
                     <input value={shippingForm.phone} onChange={(event) => setShippingForm((current) => ({ ...current, phone: event.target.value }))} placeholder="Phone" className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]" />
-                    <textarea value={shippingForm.address} onChange={(event) => setShippingForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" rows={3} className="sm:col-span-2 rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]" />
-                    <select value={shippingForm.city} onChange={(event) => setShippingForm((current) => ({ ...current, city: event.target.value, area: '' }))} className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]">
-                      <option value="">City</option>
-                      {districtOptions.map((district) => <option key={district.name} value={district.name}>{district.name}</option>)}
+                    <select value={shippingForm.pathao_city_id ?? ''} onChange={(event) => handleCityChange(event.target.value)} className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]">
+                      <option value="">{locationLoading === 'cities' ? 'Loading cities...' : 'City'}</option>
+                      {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
                     </select>
-                    <select value={shippingForm.area} onChange={(event) => setShippingForm((current) => ({ ...current, area: event.target.value }))} disabled={!shippingForm.city} className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E] disabled:cursor-not-allowed disabled:bg-stone-100">
-                      <option value="">Area</option>
-                      {areaOptions.map((area) => <option key={area} value={area}>{area}</option>)}
+                    <select value={shippingForm.pathao_zone_id ?? ''} onChange={(event) => handleZoneChange(event.target.value)} disabled={!shippingForm.pathao_city_id || locationLoading === 'zones'} className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E] disabled:cursor-not-allowed disabled:bg-stone-100">
+                      <option value="">{locationLoading === 'zones' ? 'Loading zones...' : 'Zone'}</option>
+                      {zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
+                    </select>
+                    <select value={shippingForm.pathao_area_id ?? ''} onChange={(event) => handleAreaChange(event.target.value)} disabled={!shippingForm.pathao_zone_id || locationLoading === 'areas'} className="sm:col-span-2 rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E] disabled:cursor-not-allowed disabled:bg-stone-100">
+                      <option value="">{locationLoading === 'areas' ? 'Loading areas...' : 'Area'}</option>
+                      {areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}
                     </select>
                   </div>
+                  {locationError ? <p className="mt-2 text-xs text-red-600">{locationError}</p> : null}
                 </div>
 
                 <div className="rounded-3xl border border-stone-200 p-4">
