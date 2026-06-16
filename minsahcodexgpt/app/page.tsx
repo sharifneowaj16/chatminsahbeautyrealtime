@@ -2,6 +2,7 @@ import HomeCategoriesSection, { type HomeCategory } from './components/HomeCateg
 import HomeCombosSection from './components/HomeCombosSection';
 import HomeHeader from './components/HomeHeader';
 import HomeBottomNav from './components/HomeBottomNav';
+import HomeProductsClientFallback from './components/HomeProductsClientFallback';
 import HomeProductSections from './components/HomeProductSections';
 import prisma from '@/lib/prisma';
 import type { Product } from '@/contexts/ProductsContext';
@@ -174,7 +175,11 @@ export default async function HomePage() {
       <main id="main-content">
         <HomeCategoriesSection categories={initialCategories} />
         <HomeCombosSection />
-        <HomeProductSections products={initialProducts} />
+        {initialProducts.length > 0 ? (
+          <HomeProductSections products={initialProducts} />
+        ) : (
+          <HomeProductsClientFallback />
+        )}
       </main>
       <HomeBottomNav />
     </>
