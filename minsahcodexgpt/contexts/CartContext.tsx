@@ -73,6 +73,20 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+function getAttributeValue(attributes: Record<string, string>, keys: string[]): string | null {
+  for (const key of keys) {
+    const exact = attributes[key];
+    if (exact) return exact;
+  }
+
+  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
+  for (const [key, value] of Object.entries(attributes)) {
+    if (normalizedKeys.has(key.toLowerCase()) && value) return value;
+  }
+
+  return null;
+}
+
 // ── Map API response item → CartItem ──────────────────────────────────────
 // IMPORTANT:
 //   item.id        = variantId ?? productId  (local key only)
@@ -101,8 +115,8 @@ function mapApiItem(apiItem: {
 }): CartItem {
   const price  = apiItem.variant?.price ?? apiItem.product.price;
   const attrs  = apiItem.variant?.attributes ?? {};
-  const size   = attrs.size  ?? null;
-  const color  = attrs.color ?? null;
+  const size   = getAttributeValue(attrs, ['size', 'Size']);
+  const color  = getAttributeValue(attrs, ['color', 'Color', 'shade', 'Shade']);
 
   const variantParts = [size, color].filter(Boolean);
   const variantName  = apiItem.variant

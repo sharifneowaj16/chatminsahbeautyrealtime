@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/nextauth';
 import prisma from '@/lib/prisma';
 import { Prisma, OrderStatus } from '@/generated/prisma/client';
+import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,14 +36,13 @@ interface AddressDataInput {
 export async function POST(request: NextRequest) {
   try {
     // 1. Auth — userId is required by Order schema
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const userId = await getAuthenticatedUserId(request);
+    if (!userId) {
       return NextResponse.json(
         { error: 'Please log in to place an order.', code: 'AUTH_REQUIRED' },
         { status: 401 }
       );
     }
-    const userId = session.user.id;
 
     // 2. Parse & validate body
     const body = await request.json();
@@ -306,8 +304,8 @@ export async function POST(request: NextRequest) {
 // ─── GET /api/orders ──────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const userId = await getAuthenticatedUserId(request);
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -325,7 +323,7 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     const where: Prisma.OrderWhereInput = {
-      userId: session.user.id,
+      userId,
       ...(orderStatus ? { status: orderStatus } : {}),
     };
 

@@ -81,8 +81,24 @@ interface DeliveryResponse {
 
 type ModalStage = 'select' | 'summary' | 'success';
 
+function getAttributeValue(attributes: Record<string, string>, keys: string[]) {
+  for (const key of keys) {
+    const exact = attributes[key];
+    if (exact) return exact;
+  }
+
+  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
+  for (const [key, value] of Object.entries(attributes)) {
+    if (normalizedKeys.has(key.toLowerCase()) && value) return value;
+  }
+
+  return null;
+}
+
 function toVariantLabel(variant: BuyNowVariantOption) {
-  return [variant.attributes.size, variant.attributes.color].filter(Boolean).join(' / ') || variant.name;
+  const size = getAttributeValue(variant.attributes, ['size', 'Size']);
+  const color = getAttributeValue(variant.attributes, ['color', 'Color', 'shade', 'Shade']);
+  return [size, color].filter(Boolean).join(' / ') || variant.name;
 }
 
 function formatWeight(weightKg: number) {

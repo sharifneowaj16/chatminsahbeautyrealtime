@@ -50,6 +50,28 @@ function clampStock(stock?: number) {
   return Math.max(0, stock);
 }
 
+function getAttributeValue(attributes: Record<string, string>, keys: string[]) {
+  for (const key of keys) {
+    const exact = attributes[key];
+    if (exact) return exact;
+  }
+
+  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
+  for (const [key, value] of Object.entries(attributes)) {
+    if (normalizedKeys.has(key.toLowerCase()) && value) return value;
+  }
+
+  return null;
+}
+
+function getVariantDisplay(variant: { name: string; attributes: Record<string, string> }) {
+  const size = getAttributeValue(variant.attributes, ['size', 'Size']);
+  const color = getAttributeValue(variant.attributes, ['color', 'Color', 'shade', 'Shade']);
+  const label = [size, color].filter(Boolean).join(' / ') || variant.name;
+
+  return { label, size, color };
+}
+
 export default function CartStepper({
   productId,
   productName,
@@ -203,6 +225,7 @@ export default function CartStepper({
   }, quantity = 1) => {
     const targetId = variant.id;
     const existingQty = items.find((item) => item.id === targetId)?.quantity ?? 0;
+    const display = getVariantDisplay(variant);
     if (!variantId) setBoundVariantId(targetId);
     if (existingQty > 0) {
       await Promise.resolve(updateQuantity(targetId, existingQty + quantity));
@@ -210,8 +233,8 @@ export default function CartStepper({
     }
     await Promise.resolve(addItem({
       id: targetId, productId, variantId: targetId,
-      variantName: [variant.attributes.size, variant.attributes.color].filter(Boolean).join(' / ') || variant.name,
-      size: variant.attributes.size ?? null, color: variant.attributes.color ?? null,
+      variantName: display.label,
+      size: display.size, color: display.color,
       variantImage: variant.image ?? null, name: productName, price: variant.price,
       quantity: Math.max(initialQuantity, quantity), image: variant.image || effectiveProductImage,
     }));

@@ -265,6 +265,25 @@ function getSpecEntries(value: Record<string, unknown> | null | undefined) {
     .filter(([, specValue]) => specValue);
 }
 
+function getAttributeValue(
+  attributes: Record<string, string> | null | undefined,
+  keys: string[]
+): string | null {
+  if (!attributes) return null;
+
+  for (const key of keys) {
+    const exact = attributes[key];
+    if (exact) return exact;
+  }
+
+  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
+  for (const [key, value] of Object.entries(attributes)) {
+    if (normalizedKeys.has(key.toLowerCase()) && value) return value;
+  }
+
+  return null;
+}
+
 export default function ProductClient({
   product,
   reviews,
@@ -283,8 +302,13 @@ export default function ProductClient({
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>([]);
 
   const selectedVariantObj = product.variants.find((variant) => variant.id === selectedVariantId) ?? null;
-  const variantSize = selectedVariantObj?.attributes?.size ?? null;
-  const variantColor = selectedVariantObj?.attributes?.color ?? null;
+  const variantSize = getAttributeValue(selectedVariantObj?.attributes, ['size', 'Size']);
+  const variantColor = getAttributeValue(selectedVariantObj?.attributes, [
+    'color',
+    'Color',
+    'shade',
+    'Shade',
+  ]);
   const variantImage = selectedVariantObj?.image ?? null;
   const variantNameLabel = selectedVariantObj
     ? [variantSize, variantColor].filter(Boolean).join(' / ') || selectedVariantObj.name
