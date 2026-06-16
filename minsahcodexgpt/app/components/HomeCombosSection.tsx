@@ -28,7 +28,11 @@ export default function HomeCombosSection() {
     <section className="px-4 py-6 bg-white">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-minsah-dark">Browse by Combos</h2>
-        <Link href="/combos" aria-label="View all combos" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
+        <Link
+          href="/combos"
+          aria-label="View all combos"
+          className="text-sm text-minsah-primary font-semibold flex items-center gap-1"
+        >
           View all <ChevronRight size={16} />
         </Link>
       </div>
@@ -70,14 +74,18 @@ export default function HomeCombosSection() {
 
       <div className="mt-6 grid grid-cols-2 gap-3">
         <Link href="/combos" className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
-          <div className="text-3xl">💄</div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary">
+            M
+          </div>
           <div>
             <h4 className="font-semibold text-sm text-minsah-dark">Makeup Combos</h4>
             <p className="text-xs font-medium text-minsah-dark/80">From Tk 1001</p>
           </div>
         </Link>
         <Link href="/combos" className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
-          <div className="text-3xl">✨</div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary">
+            S
+          </div>
           <div>
             <h4 className="font-semibold text-sm text-minsah-dark">Skincare Sets</h4>
             <p className="text-xs font-medium text-minsah-dark/80">From Tk 1001</p>

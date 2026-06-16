@@ -17,6 +17,7 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
         fill
         className="object-cover"
         sizes="(max-width: 640px) 50vw, 33vw"
+        quality={60}
       />
     );
   }

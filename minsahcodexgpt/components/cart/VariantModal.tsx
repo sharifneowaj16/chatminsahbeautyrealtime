@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, Minus, Plus, ShoppingCart, X } from 'lucide-react';
+import { formatPrice } from '@/utils/currency';
 
 export interface VariantOption {
   id: string;
@@ -353,7 +354,7 @@ export default function VariantModal({
                         <p className="mt-0.5 text-xs text-stone-500">
                           {outOfStock
                             ? 'Out of stock'
-                            : `à§³${variant.price.toLocaleString('bn-BD')} Â· ${variant.stock} available`}
+                            : `${formatPrice(variant.price)} - ${variant.stock} available`}
                         </p>
                       </div>
                     </div>
@@ -394,8 +395,8 @@ export default function VariantModal({
                   <span className="text-stone-600">Subtotal</span>
                   <span className="font-semibold text-stone-900">
                     {selectedVariant
-                      ? `à§³${(selectedVariant.price * selectedQuantity).toLocaleString('bn-BD')}`
-                      : 'à§³0'}
+                      ? formatPrice(selectedVariant.price * selectedQuantity)
+                      : formatPrice(0)}
                   </span>
                 </div>
               </div>
@@ -446,7 +447,7 @@ export default function VariantModal({
                           {variant.stock > 0 ? `${variant.stock} available` : 'Out of stock'}
                         </p>
                         <p className="mt-2 text-sm font-semibold text-stone-900">
-                          à§³{variant.price.toLocaleString('bn-BD')}
+                          {formatPrice(variant.price)}
                         </p>
                       </div>
                     </div>

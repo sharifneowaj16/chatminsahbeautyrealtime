@@ -22,10 +22,10 @@ interface HomeProductCardItem {
   hasVariants: boolean;
 }
 
-function ProductImage({ src, alt, priority = false }: {
+function ProductImage({ src, alt, sizes = '(max-width: 640px) 50vw, 33vw' }: {
   src: string;
   alt: string;
-  priority?: boolean;
+  sizes?: string;
 }) {
   const isUrl = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:');
   if (isUrl) {
@@ -35,9 +35,9 @@ function ProductImage({ src, alt, priority = false }: {
         alt={alt}
         fill
         className="object-cover rounded-inherit"
-        sizes="(max-width: 640px) 50vw, 33vw"
-        loading={priority ? 'eager' : 'lazy'}
-        priority={priority}
+        sizes={sizes}
+        loading="lazy"
+        quality={60}
       />
     );
   }
@@ -74,6 +74,8 @@ function renderBuyNow(product: HomeProductCardItem, className: string) {
 
 export default function HomeProductSections({ products }: { products: Product[] }) {
   const activeProducts = products.filter((product) => product.status === 'active');
+  const filledStar = String.fromCharCode(9733);
+  const emptyStar = String.fromCharCode(9734);
 
   const newArrivals = [...activeProducts]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -88,7 +90,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
       hasVariants: Boolean(product.variants?.length),
     }));
 
-  const forYouProducts = activeProducts.slice(0, 6).map((product) => ({
+  const forYouProducts = activeProducts.slice(0, 4).map((product) => ({
     id: product.id,
     name: product.name,
     price: product.price,
@@ -99,7 +101,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
 
   const recommendations = [...activeProducts]
     .sort((a, b) => b.rating - a.rating)
-    .slice(0, 6)
+    .slice(0, 3)
     .map((product) => ({
       id: product.id,
       name: product.name,
@@ -113,7 +115,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
 
   const favourites = [...activeProducts]
     .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
-    .slice(0, 6)
+    .slice(0, 3)
     .map((product) => ({
       id: product.id,
       name: product.name,
@@ -160,7 +162,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
                   <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} priority={index < 2} />
+                    <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                     {product.discount}%
@@ -195,7 +197,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
                   <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} priority={index < 2} />
+                    <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
                     <Heart size={16} className="text-minsah-secondary" />
@@ -228,7 +230,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
                   <div className="w-full aspect-square bg-minsah-accent rounded-xl flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} />
+                    <ProductImage src={product.image} alt={product.name} sizes="144px" />
                   </div>
                   <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm">
                     <Heart size={14} className="text-minsah-secondary" />
@@ -260,7 +262,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
                   <div className="w-full aspect-square bg-white rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
-                    <ProductImage src={product.image} alt={product.name} />
+                    <ProductImage src={product.image} alt={product.name} sizes="33vw" />
                   </div>
                   <div className="absolute top-1 right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
                     <Heart size={12} className="text-minsah-secondary" />
@@ -273,7 +275,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
                 </div>
                 <div className="flex items-center gap-1 mb-2">
                   <div className="flex text-amber-700 text-[10px]">
-                    {'★'.repeat(product.rating)}{'☆'.repeat(5 - product.rating)}
+                    {filledStar.repeat(product.rating)}{emptyStar.repeat(5 - product.rating)}
                   </div>
                   <span className="text-[9px] font-medium text-minsah-dark/75">({product.reviews})</span>
                 </div>
@@ -298,7 +300,7 @@ export default function HomeProductSections({ products }: { products: Product[] 
               <Link href={`/products/${product.id}`}>
                 <div className="relative mb-2">
                   <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
-                    <ProductImage src={product.image} alt={product.name} />
+                    <ProductImage src={product.image} alt={product.name} sizes="33vw" />
                   </div>
                   <div className="absolute top-1 right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
                     <Heart size={12} className="text-red-500 fill-red-500" />

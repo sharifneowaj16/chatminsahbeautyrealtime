@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
+import { formatPrice } from '@/utils/currency';
 
 interface Suggestion {
   text: string;
@@ -90,14 +91,20 @@ export default function HomeSearch() {
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-minsah-accent/50 transition-colors"
               >
                 {suggestion.image && (
-                  <img src={suggestion.image} alt={suggestion.productName} className="w-9 h-9 object-cover rounded" />
+                  <img
+                    src={suggestion.image}
+                    alt={suggestion.productName}
+                    className="w-9 h-9 object-cover rounded"
+                  />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-minsah-dark truncate">
                     {suggestion.productName || suggestion.text}
                   </p>
                   {suggestion.price > 0 && (
-                    <p className="text-xs text-minsah-secondary">৳{suggestion.price.toLocaleString()}</p>
+                    <p className="text-xs text-minsah-secondary">
+                      {formatPrice(suggestion.price)}
+                    </p>
                   )}
                 </div>
                 <Search size={14} className="text-minsah-secondary flex-shrink-0" />

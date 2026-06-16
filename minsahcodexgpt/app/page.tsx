@@ -20,7 +20,8 @@ const CATEGORY_COLORS = [
   'bg-teal-100',
 ];
 
-const DEFAULT_CATEGORY_ICON = '🏷️';
+const DEFAULT_CATEGORY_FALLBACK_ICON = 'Tag';
+
 
 function toNumber(value: { toNumber?: () => number } | number | null | undefined): number {
   if (typeof value === 'number') return value;
@@ -154,7 +155,7 @@ async function getInitialCategories(): Promise<HomeCategory[]> {
       id: category.id,
       name: category.name,
       slug: category.slug,
-      icon: category.image || DEFAULT_CATEGORY_ICON,
+      icon: category.image || DEFAULT_CATEGORY_FALLBACK_ICON,
       color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
     }));
   } catch (error) {
