@@ -84,25 +84,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { productId, variantId, quantity = 1 } = body;
+    const { productId, variantId, quantity: rawQuantity = 1 } = body;
+    const quantity = Math.trunc(Number(rawQuantity));
 
     if (!productId) {
       return NextResponse.json({ error: 'productId is required' }, { status: 400 });
     }
 
-    if (quantity < 1) {
+    if (!Number.isFinite(quantity) || quantity < 1) {
       return NextResponse.json({ error: 'quantity must be at least 1' }, { status: 400 });
     }
 
-    // Verify product exists
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    // Verify product exists. Some older cards may pass slug, so accept both.
+    const product = await prisma.product.findFirst({
+      where: {
+        isActive: true,
+        OR: [
+          { id: productId },
+          { slug: productId },
+        ],
+      },
       include: { variants: true },
     });
 
-    if (!product || !product.isActive) {
+    if (!product) {
       return NextResponse.json({ error: 'Product not found or inactive' }, { status: 404 });
     }
+
+    const resolvedProductId = product.id;
 
     // If variantId is provided, verify it belongs to this product
     if (variantId) {
@@ -111,8 +120,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid variant for this product' }, { status: 400 });
       }
 
-      // Check variant stock
-      if (variant.quantity < quantity) {
+      // Check variant stock only when inventory is enforced for this product.
+      if (product.trackInventory && !product.allowBackorder && variant.quantity < quantity) {
         return NextResponse.json(
           { error: 'Insufficient stock for this variant' },
           { status: 400 }
@@ -120,7 +129,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Check product stock
-      if (product.quantity < quantity) {
+      if (product.trackInventory && !product.allowBackorder && product.quantity < quantity) {
         return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 });
       }
     }
@@ -128,10 +137,10 @@ export async function POST(request: NextRequest) {
     // FIX: Handle the unique constraint properly
     // When variantId is undefined, we need to handle it explicitly
     const whereClause = variantId
-      ? { userId_productId_variantId: { userId, productId, variantId } }
+      ? { userId_productId_variantId: { userId, productId: resolvedProductId, variantId } }
       : {
           userId,
-          productId,
+          productId: resolvedProductId,
           variantId: null, // This is the fix - explicitly set to null when no variant
         };
 
@@ -151,7 +160,7 @@ export async function POST(request: NextRequest) {
         ? product.variants.find((v) => v.id === variantId)?.quantity || 0
         : product.quantity;
 
-      if (newQuantity > availableStock) {
+      if (product.trackInventory && !product.allowBackorder && newQuantity > availableStock) {
         return NextResponse.json(
           { error: 'Cannot add more items than available stock' },
           { status: 400 }
@@ -176,7 +185,7 @@ export async function POST(request: NextRequest) {
       cartItem = await prisma.cartItem.create({
         data: {
           userId,
-          productId,
+          productId: resolvedProductId,
           variantId: variantId || null, // Explicitly set null if undefined
           quantity,
         },
@@ -206,12 +215,14 @@ export async function POST(request: NextRequest) {
           price: cartItem.product.price.toNumber(),
           image: cartItem.product.images[0]?.url || null,
           brand: cartItem.product.brand?.name || null,
+          stock: cartItem.product.quantity,
         },
         variant: cartItem.variant
           ? {
               id: cartItem.variant.id,
               name: cartItem.variant.name,
               price: cartItem.variant.price?.toNumber() || cartItem.product.price.toNumber(),
+              stock: cartItem.variant.quantity,
               attributes: cartItem.variant.attributes,
             }
           : null,
@@ -232,13 +243,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { itemId, quantity } = body;
+    const { itemId, quantity: rawQuantity } = body;
+    const quantity = Math.trunc(Number(rawQuantity));
 
     if (!itemId) {
       return NextResponse.json({ error: 'itemId is required' }, { status: 400 });
     }
 
-    if (quantity < 1) {
+    if (!Number.isFinite(quantity) || quantity < 1) {
       return NextResponse.json({ error: 'quantity must be at least 1' }, { status: 400 });
     }
 
@@ -257,7 +269,7 @@ export async function PUT(request: NextRequest) {
       ? cartItem.variant.quantity
       : cartItem.product.quantity;
 
-    if (quantity > availableStock) {
+    if (cartItem.product.trackInventory && !cartItem.product.allowBackorder && quantity > availableStock) {
       return NextResponse.json(
         { error: `Only ${availableStock} items available in stock` },
         { status: 400 }

@@ -16,7 +16,8 @@ export async function PATCH(
     }
 
     const { itemId } = await params;
-    const { quantity } = (await request.json()) as { quantity?: number };
+    const { quantity: rawQuantity } = (await request.json()) as { quantity?: number | string };
+    const quantity = Math.trunc(Number(rawQuantity));
 
     if (quantity == null || !Number.isFinite(quantity) || quantity < 0) {
       return NextResponse.json({ error: 'Valid quantity is required' }, { status: 400 });
@@ -40,7 +41,7 @@ export async function PATCH(
       ? cartItem.variant.quantity
       : cartItem.product.quantity;
 
-    if (quantity > availableStock) {
+    if (cartItem.product.trackInventory && !cartItem.product.allowBackorder && quantity > availableStock) {
       return NextResponse.json(
         { error: `Only ${availableStock} items available in stock` },
         { status: 400 }

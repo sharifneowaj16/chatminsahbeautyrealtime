@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -153,6 +153,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [discount, setDiscount]       = useState(0);
   const [addresses, setAddresses]     = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const cartSyncVersionRef = useRef(0);
 
   const paymentMethods: PaymentMethod[] = [
     { id: '1', type: 'cod',    name: 'Cash on Delivery',  icon: '💵' },
@@ -173,6 +174,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ── DB helpers ─────────────────────────────────────────────────
 
   const fetchCartFromDB = useCallback(async () => {
+    const requestVersion = cartSyncVersionRef.current;
     setCartLoading(true);
     try {
       let res = await fetch('/api/cart', { credentials: 'include' });
@@ -182,15 +184,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const data = await res.json();
       const mapped: CartItem[] = (data.items ?? []).map(mapApiItem);
+      if (requestVersion !== cartSyncVersionRef.current) return;
       setItems(mapped);
-      localStorage.setItem('minsah_cart', JSON.stringify(mapped));
     } catch {
       try {
+        if (requestVersion !== cartSyncVersionRef.current) return;
         const saved = localStorage.getItem('minsah_cart');
         if (saved) setItems(JSON.parse(saved));
       } catch { /* ignore */ }
     } finally {
-      setCartLoading(false);
+      if (requestVersion === cartSyncVersionRef.current) {
+        setCartLoading(false);
+      }
     }
   }, [refreshToken]);
 
@@ -232,15 +237,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const guestCart = (() => {
         try {
           const saved = localStorage.getItem('minsah_cart');
-          return saved ? (JSON.parse(saved) as CartItem[]) : [];
+          const parsed = saved ? (JSON.parse(saved) as CartItem[]) : [];
+          return parsed.filter((item) => !item.cartItemId);
         } catch { return []; }
       })();
 
       const init = async () => {
         if (guestCart.length > 0) {
           await mergeGuestCartToDB(guestCart);
-          localStorage.removeItem('minsah_cart');
         }
+        localStorage.removeItem('minsah_cart');
         await fetchCartFromDB();
       };
       init();
@@ -331,6 +337,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(
     async (item: CartItem) => {
       if (user) {
+        cartSyncVersionRef.current += 1;
         // Optimistic update
         setItems((prev) => {
           const existing = prev.find((i) => i.id === item.id);
@@ -363,9 +370,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
             });
           }
           if (!res.ok) throw new Error('Failed to add item to cart');
-          await fetchCartFromDB(); // sync to get cartItemId + correct quantity
+          const data = await res.json();
+          if (data.item) {
+            const mapped = mapApiItem(data.item);
+            setItems((prev) => {
+              const existing = prev.find((cartItem) => cartItem.id === mapped.id);
+              if (existing) {
+                return prev.map((cartItem) => cartItem.id === mapped.id ? mapped : cartItem);
+              }
+              return [mapped, ...prev];
+            });
+          } else {
+            await fetchCartFromDB();
+          }
         } catch {
           await fetchCartFromDB();
+        } finally {
+          setCartLoading(false);
         }
       } else {
         setItems((prev) => {
@@ -385,6 +406,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = useCallback(
     async (itemId: string) => {
       if (user) {
+        cartSyncVersionRef.current += 1;
         const target = items.find((i) => i.id === itemId);
         setItems((prev) => prev.filter((i) => i.id !== itemId));
         if (target?.cartItemId) {
@@ -419,6 +441,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       if (user) {
+        cartSyncVersionRef.current += 1;
         const target = items.find((i) => i.id === itemId);
         setItems((prev) =>
           prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
@@ -456,6 +479,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(async () => {
     setItems([]);
+    cartSyncVersionRef.current += 1;
     setPromoCode('');
     setDiscount(0);
     if (user) {
