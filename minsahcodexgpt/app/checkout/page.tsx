@@ -47,27 +47,26 @@ function normalizeDeliveryOptions(value: unknown): DeliveryOption[] {
 function normalizeDeliveryAreas(value: unknown): DeliveryAreaOption[] {
   if (!Array.isArray(value)) return [];
 
-  return value
-    .map((option) => {
-      if (!option || typeof option !== 'object') return null;
-      const candidate = option as {
-        id?: unknown;
-        name?: unknown;
-        homeDeliveryAvailable?: unknown;
-        pickupAvailable?: unknown;
-      };
-      const id = Number(candidate.id);
-      const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
-      return Number.isFinite(id) && name
-        ? {
-            id,
-            name,
-            homeDeliveryAvailable: Boolean(candidate.homeDeliveryAvailable),
-            pickupAvailable: Boolean(candidate.pickupAvailable),
-          }
-        : null;
-    })
-    .filter((option): option is DeliveryAreaOption => Boolean(option));
+  const areas: DeliveryAreaOption[] = [];
+  for (const option of value) {
+    if (!option || typeof option !== 'object') continue;
+    const candidate = option as {
+      id?: unknown;
+      name?: unknown;
+      homeDeliveryAvailable?: unknown;
+      pickupAvailable?: unknown;
+    };
+    const id = Number(candidate.id);
+    const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+    if (!Number.isFinite(id) || !name) continue;
+    areas.push({
+      id,
+      name,
+      homeDeliveryAvailable: Boolean(candidate.homeDeliveryAvailable),
+      pickupAvailable: Boolean(candidate.pickupAvailable),
+    });
+  }
+  return areas;
 }
 
 function CheckoutContent() {
