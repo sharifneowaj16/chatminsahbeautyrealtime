@@ -1,8 +1,8 @@
-import HomePageClient from './HomePageClient';
 import HomeCategoriesSection, { type HomeCategory } from './components/HomeCategoriesSection';
 import HomeCombosSection from './components/HomeCombosSection';
 import HomeHeader from './components/HomeHeader';
 import HomeBottomNav from './components/HomeBottomNav';
+import HomeProductSections from './components/HomeProductSections';
 import prisma from '@/lib/prisma';
 import type { Product } from '@/contexts/ProductsContext';
 
@@ -174,7 +174,7 @@ export default async function HomePage() {
       <main id="main-content">
         <HomeCategoriesSection categories={initialCategories} />
         <HomeCombosSection />
-        <HomePageClient initialProducts={initialProducts} />
+        <HomeProductSections products={initialProducts} />
       </main>
       <HomeBottomNav />
     </>
