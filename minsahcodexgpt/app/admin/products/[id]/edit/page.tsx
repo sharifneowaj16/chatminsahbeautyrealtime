@@ -67,6 +67,22 @@ interface ProductFormData {
   bengaliFocusKeyword: string;       // ← NEW
   ogTitle: string;
   ogDescription: string;             // ← NEW
+  canonicalUrl: string;
+  pageH1: string;
+  seoIntro: string;
+  faqSchemaNote: string;
+  authenticityNote: string;
+  ingredientVerificationStatus: string;
+  seoValidationChecklist: string[];
+  structuredDataJsonLdJson: string;
+  productGroupJsonLdJson: string;
+  merchantListingJsonLdJson: string;
+  breadcrumbJsonLdJson: string;
+  sitemapIndexingJson: string;
+  variantUrlStrategyJson: string;
+  variantPriceTableJson: string;
+  variantComparisonTableJson: string;
+  internalLinksJson: string;
   bengaliSecondaryKeywords: string[];
   searchIntent: string;
   targetAudience: string;
@@ -163,6 +179,22 @@ interface LoadedAdminProduct {
   bengaliFocusKeyword?: string;      // ← NEW
   ogTitle?: string;
   ogDescription?: string;            // ← NEW
+  canonicalUrl?: string;
+  pageH1?: string;
+  seoIntro?: string;
+  faqSchemaNote?: string;
+  authenticityNote?: string;
+  ingredientVerificationStatus?: string;
+  seoValidationChecklist?: string[];
+  structuredDataJsonLd?: unknown;
+  productGroupJsonLd?: unknown;
+  merchantListingJsonLd?: unknown;
+  breadcrumbJsonLd?: unknown;
+  sitemapIndexing?: unknown;
+  variantUrlStrategy?: unknown;
+  variantPriceTable?: unknown;
+  variantComparisonTable?: unknown;
+  internalLinks?: unknown;
   bengaliSecondaryKeywords?: string[];
   searchIntent?: string;
   targetAudience?: string;
@@ -217,6 +249,11 @@ const defaultFormData: ProductFormData = {
   secondaryKeywords: [],             // ← NEW
   bengaliFocusKeyword: '',           // ← NEW
   ogTitle: '', ogDescription: '',    // ← NEW ogDescription
+  canonicalUrl: '', pageH1: '', seoIntro: '', faqSchemaNote: '', authenticityNote: '',
+  ingredientVerificationStatus: '', seoValidationChecklist: [],
+  structuredDataJsonLdJson: '{}', productGroupJsonLdJson: '{}', merchantListingJsonLdJson: '{}',
+  breadcrumbJsonLdJson: '{}', sitemapIndexingJson: '{}', variantUrlStrategyJson: '{}',
+  variantPriceTableJson: '[]', variantComparisonTableJson: '[]', internalLinksJson: '[]',
   bengaliSecondaryKeywords: [], searchIntent: '', targetAudience: '', primaryConcern: '',
   keyBenefits: [], buyingIntentKeywords: [], searchTags: [], synonyms: [],
   banglaSearchTerms: [], reviewKeywords: [], entities: [], usageInstructions: [],
@@ -331,6 +368,22 @@ export default function EditProductPage() {
           bengaliFocusKeyword:  p.bengaliFocusKeyword  || '',
           ogTitle:              p.ogTitle              || '',
           ogDescription:        p.ogDescription        || '',
+          canonicalUrl:         p.canonicalUrl         || '',
+          pageH1:               p.pageH1               || '',
+          seoIntro:             p.seoIntro             || '',
+          faqSchemaNote:        p.faqSchemaNote        || '',
+          authenticityNote:     p.authenticityNote     || '',
+          ingredientVerificationStatus: p.ingredientVerificationStatus || '',
+          seoValidationChecklist: Array.isArray(p.seoValidationChecklist) ? p.seoValidationChecklist : [],
+          structuredDataJsonLdJson: JSON.stringify(p.structuredDataJsonLd || {}, null, 2),
+          productGroupJsonLdJson: JSON.stringify(p.productGroupJsonLd || {}, null, 2),
+          merchantListingJsonLdJson: JSON.stringify(p.merchantListingJsonLd || {}, null, 2),
+          breadcrumbJsonLdJson: JSON.stringify(p.breadcrumbJsonLd || {}, null, 2),
+          sitemapIndexingJson: JSON.stringify(p.sitemapIndexing || {}, null, 2),
+          variantUrlStrategyJson: JSON.stringify(p.variantUrlStrategy || {}, null, 2),
+          variantPriceTableJson: JSON.stringify(p.variantPriceTable || [], null, 2),
+          variantComparisonTableJson: JSON.stringify(p.variantComparisonTable || [], null, 2),
+          internalLinksJson: JSON.stringify(p.internalLinks || [], null, 2),
           bengaliSecondaryKeywords: Array.isArray(p.bengaliSecondaryKeywords) ? p.bengaliSecondaryKeywords : [],
           searchIntent:         p.searchIntent || '',
           targetAudience:       p.targetAudience || '',
@@ -620,6 +673,15 @@ export default function EditProductPage() {
       const productAttributes = parseJsonField('productAttributesJson', {});
       const shadeOptions = parseJsonField('shadeOptionsJson', []);
       const descriptionSections = parseJsonField('descriptionSectionsJson', []);
+      const structuredDataJsonLd = parseJsonField('structuredDataJsonLdJson', {});
+      const productGroupJsonLd = parseJsonField('productGroupJsonLdJson', {});
+      const merchantListingJsonLd = parseJsonField('merchantListingJsonLdJson', {});
+      const breadcrumbJsonLd = parseJsonField('breadcrumbJsonLdJson', {});
+      const sitemapIndexing = parseJsonField('sitemapIndexingJson', {});
+      const variantUrlStrategy = parseJsonField('variantUrlStrategyJson', {});
+      const variantPriceTable = parseJsonField('variantPriceTableJson', []);
+      const variantComparisonTable = parseJsonField('variantComparisonTableJson', []);
+      const internalLinks = parseJsonField('internalLinksJson', []);
 
       const payload = {
         name:          formData.name,
@@ -674,6 +736,22 @@ export default function EditProductPage() {
         bengaliFocusKeyword:  formData.bengaliFocusKeyword || undefined,
         ogTitle:              formData.ogTitle || formData.metaTitle || undefined,
         ogDescription:        formData.ogDescription || undefined,
+        canonicalUrl:         formData.canonicalUrl || undefined,
+        pageH1:               formData.pageH1 || undefined,
+        seoIntro:             formData.seoIntro || undefined,
+        faqSchemaNote:        formData.faqSchemaNote || undefined,
+        authenticityNote:     formData.authenticityNote || undefined,
+        ingredientVerificationStatus: formData.ingredientVerificationStatus || undefined,
+        seoValidationChecklist: formData.seoValidationChecklist.length > 0 ? formData.seoValidationChecklist : undefined,
+        structuredDataJsonLd,
+        productGroupJsonLd,
+        merchantListingJsonLd,
+        breadcrumbJsonLd,
+        sitemapIndexing,
+        variantUrlStrategy,
+        variantPriceTable,
+        variantComparisonTable,
+        internalLinks,
         bengaliSecondaryKeywords: formData.bengaliSecondaryKeywords.length > 0 ? formData.bengaliSecondaryKeywords : undefined,
         searchIntent:         formData.searchIntent || undefined,
         targetAudience:       formData.targetAudience || undefined,
@@ -1263,6 +1341,32 @@ export default function EditProductPage() {
               <p className="mt-1 text-xs text-gray-500">URL: /products/<strong>{formData.urlSlug || 'product-url-slug'}</strong> — max 50 chars, include focus keyword</p>
             </div>
 
+            {/* Canonical URL + H1 + SEO Intro */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Canonical URL</label>
+                <input type="text" name="canonicalUrl" value={formData.canonicalUrl} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="https://minsahbeauty.com/products/product-url-slug" />
+                <p className="mt-1 text-xs text-gray-500">Owner fill: final live product URL. Leave blank to let frontend use slug URL.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Page H1</label>
+                <input type="text" name="pageH1" value={formData.pageH1} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Sunsilk Power Shot Hair Treatment Price in Bangladesh" />
+                <p className="mt-1 text-xs text-gray-500">Visible product page H1. Leave blank to use product name.</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SEO Intro / Top Visible Intro</label>
+              <textarea name="seoIntro" value={formData.seoIntro} onChange={handleChange} rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Short visible intro with product, price, size, variant and Bangladesh buying intent." />
+              <p className="mt-1 text-xs text-gray-500">This should render near the top of the product page.</p>
+            </div>
+
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1329,6 +1433,63 @@ export default function EditProductPage() {
                 </div>
               ))}
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">FAQ Schema Note</label>
+                <textarea name="faqSchemaNote" value={formData.faqSchemaNote} onChange={handleChange} rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  placeholder="FAQ content is for users. Product/Merchant listing schema is SEO priority." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Authenticity Note</label>
+                <textarea name="authenticityNote" value={formData.authenticityNote} onChange={handleChange} rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  placeholder="Imported Thailand product. Check packaging, expiry and batch/barcode after receiving." />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ingredient Verification Status</label>
+                <input type="text" name="ingredientVerificationStatus" value={formData.ingredientVerificationStatus} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Pending physical packaging verification" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SEO Validation Checklist</label>
+                <textarea value={formData.seoValidationChecklist.join(', ')}
+                  onChange={(e) => handleArrayFieldChange('seoValidationChecklist', e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  placeholder="Run Rich Results Test, Check canonical URL 200, Check images crawlable" />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">1–22 SEO Render Payloads</h3>
+              <p className="text-xs text-gray-500 mb-3">These JSON fields are saved for product-page rendering, ProductGroup/Merchant listing schema, breadcrumbs, variant URL strategy and internal links.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  ['variantPriceTableJson', 'Variant Price Table JSON'],
+                  ['variantComparisonTableJson', 'Variant Comparison Table JSON'],
+                  ['internalLinksJson', 'Internal Links JSON'],
+                  ['breadcrumbJsonLdJson', 'Breadcrumb JSON-LD'],
+                  ['merchantListingJsonLdJson', 'Merchant Listing JSON-LD'],
+                  ['productGroupJsonLdJson', 'ProductGroup JSON-LD'],
+                  ['structuredDataJsonLdJson', 'Full Structured Data JSON-LD'],
+                  ['sitemapIndexingJson', 'Sitemap / Indexing JSON'],
+                  ['variantUrlStrategyJson', 'Variant URL Strategy JSON'],
+                ].map(([field, label]) => (
+                  <div key={field}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                    <textarea name={field} value={formData[field as keyof ProductFormData] as string}
+                      onChange={handleChange} rows={7}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <label className="flex items-center gap-2">
               <input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
                 className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
