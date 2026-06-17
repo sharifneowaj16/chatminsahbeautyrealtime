@@ -78,6 +78,23 @@ interface ProductFormData {
   bengaliFocusKeyword: string;        // ← NEW
   ogTitle: string;
   ogDescription: string;              // ← NEW
+  ogImageUrl: string;
+  canonicalUrl: string;
+  pageH1: string;
+  seoIntro: string;
+  faqSchemaNote: string;
+  authenticityNote: string;
+  ingredientVerificationStatus: string;
+  seoValidationChecklist: string[];
+  structuredDataJsonLdJson: string;
+  productGroupJsonLdJson: string;
+  merchantListingJsonLdJson: string;
+  breadcrumbJsonLdJson: string;
+  sitemapIndexingJson: string;
+  variantUrlStrategyJson: string;
+  variantPriceTableJson: string;
+  variantComparisonTableJson: string;
+  internalLinksJson: string;
   bengaliSecondaryKeywords: string[];
   searchIntent: string;
   targetAudience: string;
@@ -147,6 +164,11 @@ const defaultForm: ProductFormData = {
   secondaryKeywords: [],              // ← NEW
   bengaliFocusKeyword: '',            // ← NEW
   ogTitle: '', ogDescription: '',     // ← NEW ogDescription
+  ogImageUrl: '', canonicalUrl: '', pageH1: '', seoIntro: '', faqSchemaNote: '',
+  authenticityNote: '', ingredientVerificationStatus: '', seoValidationChecklist: [],
+  structuredDataJsonLdJson: '{}', productGroupJsonLdJson: '{}', merchantListingJsonLdJson: '{}',
+  breadcrumbJsonLdJson: '{}', sitemapIndexingJson: '{}', variantUrlStrategyJson: '{}',
+  variantPriceTableJson: '[]', variantComparisonTableJson: '[]', internalLinksJson: '[]',
   bengaliSecondaryKeywords: [], searchIntent: '', targetAudience: '', primaryConcern: '',
   keyBenefits: [], buyingIntentKeywords: [], searchTags: [], synonyms: [],
   banglaSearchTerms: [], reviewKeywords: [], entities: [], usageInstructions: [],
@@ -295,6 +317,23 @@ export default function NewProductPage() {
           : [],
         bengaliFocusKeyword: String(p.bengaliFocusKeyword || ''),
         ogDescription:       String(p.ogDescription || ''),
+        ogImageUrl:          String(p.ogImageUrl || ''),
+        canonicalUrl:        String(p.canonicalUrl || ''),
+        pageH1:              String(p.pageH1 || ''),
+        seoIntro:            String(p.seoIntro || ''),
+        faqSchemaNote:       String(p.faqSchemaNote || ''),
+        authenticityNote:    String(p.authenticityNote || ''),
+        ingredientVerificationStatus: String(p.ingredientVerificationStatus || ''),
+        seoValidationChecklist: Array.isArray(p.seoValidationChecklist) ? (p.seoValidationChecklist as string[]).map(String) : [],
+        structuredDataJsonLdJson: JSON.stringify(p.structuredDataJsonLd || {}, null, 2),
+        productGroupJsonLdJson: JSON.stringify(p.productGroupJsonLd || {}, null, 2),
+        merchantListingJsonLdJson: JSON.stringify(p.merchantListingJsonLd || {}, null, 2),
+        breadcrumbJsonLdJson: JSON.stringify(p.breadcrumbJsonLd || {}, null, 2),
+        sitemapIndexingJson: JSON.stringify(p.sitemapIndexing || {}, null, 2),
+        variantUrlStrategyJson: JSON.stringify(p.variantUrlStrategy || {}, null, 2),
+        variantPriceTableJson: JSON.stringify(Array.isArray(p.variantPriceTable) ? p.variantPriceTable : [], null, 2),
+        variantComparisonTableJson: JSON.stringify(Array.isArray(p.variantComparisonTable) ? p.variantComparisonTable : [], null, 2),
+        internalLinksJson: JSON.stringify(Array.isArray(p.internalLinks) ? p.internalLinks : [], null, 2),
         bengaliSecondaryKeywords: Array.isArray(p.bengaliSecondaryKeywords) ? (p.bengaliSecondaryKeywords as string[]).map(String) : [],
         searchIntent:        String(p.searchIntent || ''),
         targetAudience:      String(p.targetAudience || ''),
@@ -554,6 +593,15 @@ export default function NewProductPage() {
       const productAttributes = parseJsonField('productAttributesJson', {});
       const shadeOptions = parseJsonField('shadeOptionsJson', []);
       const descriptionSections = parseJsonField('descriptionSectionsJson', []);
+      const structuredDataJsonLd = parseJsonField('structuredDataJsonLdJson', {});
+      const productGroupJsonLd = parseJsonField('productGroupJsonLdJson', {});
+      const merchantListingJsonLd = parseJsonField('merchantListingJsonLdJson', {});
+      const breadcrumbJsonLd = parseJsonField('breadcrumbJsonLdJson', {});
+      const sitemapIndexing = parseJsonField('sitemapIndexingJson', {});
+      const variantUrlStrategy = parseJsonField('variantUrlStrategyJson', {});
+      const variantPriceTable = parseJsonField('variantPriceTableJson', []);
+      const variantComparisonTable = parseJsonField('variantComparisonTableJson', []);
+      const internalLinks = parseJsonField('internalLinksJson', []);
 
       await adminFetchJson<{ success: boolean }>('/api/admin/products', {
         method: 'POST',
@@ -578,6 +626,21 @@ export default function NewProductPage() {
           secondaryKeywords:   formData.secondaryKeywords.length > 0 ? formData.secondaryKeywords : undefined,
           bengaliFocusKeyword: formData.bengaliFocusKeyword || undefined,
           ogDescription:       formData.ogDescription || undefined,
+          pageH1:              formData.pageH1 || undefined,
+          seoIntro:            formData.seoIntro || undefined,
+          faqSchemaNote:       formData.faqSchemaNote || undefined,
+          authenticityNote:    formData.authenticityNote || undefined,
+          ingredientVerificationStatus: formData.ingredientVerificationStatus || undefined,
+          seoValidationChecklist: formData.seoValidationChecklist.length > 0 ? formData.seoValidationChecklist : undefined,
+          structuredDataJsonLd,
+          productGroupJsonLd,
+          merchantListingJsonLd,
+          breadcrumbJsonLd,
+          sitemapIndexing,
+          variantUrlStrategy,
+          variantPriceTable,
+          variantComparisonTable,
+          internalLinks,
           bengaliSecondaryKeywords: formData.bengaliSecondaryKeywords.length > 0 ? formData.bengaliSecondaryKeywords : undefined,
           searchIntent:        formData.searchIntent || undefined,
           targetAudience:      formData.targetAudience || undefined,
@@ -599,8 +662,8 @@ export default function NewProductPage() {
           gender:              formData.gender || undefined,
           // ─────────────────────────────────────────────────────────────
           ogTitle: formData.ogTitle || formData.metaTitle || undefined,
-          ogImageUrl: uploadedOgImageUrl || undefined,
-          canonicalUrl: formData.urlSlug ? `https://minsahbeauty.cloud/products/${formData.urlSlug}` : undefined,
+          ogImageUrl: uploadedOgImageUrl || formData.ogImageUrl || undefined,
+          canonicalUrl: formData.canonicalUrl || (formData.urlSlug ? `https://minsahbeauty.cloud/products/${formData.urlSlug}` : undefined),
           condition: formData.productCondition || 'NEW', gtin: formData.gtin || undefined,
           averageRating: formData.averageRating || 0, reviewCount: formData.reviewCount || 0,
           shippingWeight: formData.shippingWeight || undefined,
@@ -1218,6 +1281,59 @@ export default function NewProductPage() {
               </div>
             </div>
 
+            {/* Canonical, H1 and visible SEO intro */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Canonical URL</label>
+                <input
+                  type="text"
+                  name="canonicalUrl"
+                  value={formData.canonicalUrl}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="https://minsahbeauty.cloud/products/product-url-slug"
+                />
+                <p className="text-xs text-gray-400 mt-1">Leave blank to auto-generate from slug.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Page H1</label>
+                <input
+                  type="text"
+                  name="pageH1"
+                  value={formData.pageH1}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Sunsilk Power Shot Hair Treatment Price in Bangladesh"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SEO Intro / Top Visible Intro</label>
+              <textarea
+                name="seoIntro"
+                value={formData.seoIntro}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Short visible intro with price, sizes, variants and Bangladesh buying intent."
+              />
+            </div>
+
+            {/* Manual OG Image URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">OG Image URL</label>
+              <input
+                type="text"
+                name="ogImageUrl"
+                value={formData.ogImageUrl}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="https://cdn.example.com/products/og-image.webp"
+              />
+              <p className="text-xs text-gray-400 mt-1">Uploading a social image below will override this URL.</p>
+            </div>
+
             {/* Social Sharing Image */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Social Sharing Image (1200×630px)</label>
@@ -1272,6 +1388,43 @@ export default function NewProductPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">FAQ Schema Note</label>
+                <textarea
+                  name="faqSchemaNote"
+                  value={formData.faqSchemaNote}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  placeholder="FAQ content is for customers; Product/Merchant schema is SEO priority."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Authenticity Note</label>
+                <textarea
+                  name="authenticityNote"
+                  value={formData.authenticityNote}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  placeholder="Imported product. Check packaging, expiry and batch/barcode after receiving."
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ingredient Verification Status</label>
+              <input
+                type="text"
+                name="ingredientVerificationStatus"
+                value={formData.ingredientVerificationStatus}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="Pending physical packaging verification"
+              />
+            </div>
+
             {[
               ['keyBenefits', 'Key Benefits'],
               ['buyingIntentKeywords', 'Buying Intent Keywords'],
@@ -1281,6 +1434,7 @@ export default function NewProductPage() {
               ['reviewKeywords', 'Review Keywords'],
               ['entities', 'Entities'],
               ['bengaliSecondaryKeywords', 'Bengali Secondary Keywords'],
+              ['seoValidationChecklist', 'SEO Validation Checklist'],
               ['usageInstructions', 'Usage Instructions'],
             ].map(([field, label]) => (
               <div key={field}>
@@ -1298,6 +1452,15 @@ export default function NewProductPage() {
                 ['productAttributesJson', 'Product Attributes JSON'],
                 ['shadeOptionsJson', 'Shade Options JSON'],
                 ['descriptionSectionsJson', 'Description Sections JSON'],
+                ['variantPriceTableJson', 'Variant Price Table JSON'],
+                ['variantComparisonTableJson', 'Variant Comparison Table JSON'],
+                ['internalLinksJson', 'Internal Links JSON'],
+                ['structuredDataJsonLdJson', 'Full Structured Data JSON-LD'],
+                ['productGroupJsonLdJson', 'ProductGroup JSON-LD'],
+                ['merchantListingJsonLdJson', 'Merchant Listing JSON-LD'],
+                ['breadcrumbJsonLdJson', 'Breadcrumb JSON-LD'],
+                ['sitemapIndexingJson', 'Sitemap / Indexing JSON'],
+                ['variantUrlStrategyJson', 'Variant URL Strategy JSON'],
               ].map(([field, label]) => (
                 <div key={field}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
