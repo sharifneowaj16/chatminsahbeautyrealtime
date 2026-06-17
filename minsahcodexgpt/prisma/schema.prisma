@@ -310,6 +310,22 @@ model Product {
   ogImageUrl           String?
   canonicalUrl         String?
 
+  // Full SEO rendering fields for product pages
+  pageH1                    String?
+  seoIntro                  String?  @db.Text
+  faqSchemaNote             String?  @db.Text
+  authenticityNote          String?  @db.Text
+  ingredientVerificationStatus String?
+  seoValidationChecklist    String[] @default([])
+
+  // JSON-LD / technical SEO payloads
+  structuredDataJsonLd      Json?
+  productGroupJsonLd        Json?
+  merchantListingJsonLd     Json?
+  breadcrumbJsonLd          Json?
+  sitemapIndexing           Json?
+  variantUrlStrategy        Json?
+
   // Extended SEO & semantic search fields
   searchIntent         String?
   targetAudience       String?  @db.Text
@@ -327,6 +343,9 @@ model Product {
   productSpecs         Json?
   productAttributes    Json?
   shadeOptions         Json?
+  variantPriceTable    Json?
+  variantComparisonTable Json?
+  internalLinks        Json?
   usageInstructions    String[] @default([])
   imageAltTexts        String[] @default([])
   faqSchemaReady       Boolean  @default(false)
@@ -395,6 +414,8 @@ model Product {
   @@index([brandId])
   @@index([deletedAt])
   @@index([isActive, isFeatured])
+  @@index([isActive, deletedAt])
+  @@index([canonicalUrl])
 }
 
 model ProductImage {
