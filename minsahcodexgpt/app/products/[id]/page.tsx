@@ -37,6 +37,39 @@ async function fetchProduct(idOrSlug: string) {
 
 const BASE_URL = 'https://minsahbeauty.cloud';
 
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function parseJsonLd(value: unknown): Record<string, unknown> | null {
+  if (!value) return null;
+  if (typeof value === 'object') return value as Record<string, unknown>;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function shouldIndexProduct(value: unknown) {
+  const indexing = parseJsonLd(value);
+  if (!indexing) return true;
+  if (indexing.index === false) return false;
+  if (indexing.noindex === true) return false;
+  if (typeof indexing.robots === 'string' && indexing.robots.toLowerCase().includes('noindex')) return false;
+  return true;
+}
+
 // ── generateMetadata ──────────────────────────────────────────────────────────
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
@@ -44,42 +77,44 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!data) return { title: 'Product Not Found' };
   const { product } = data;
 
-  const title       = product.metaTitle       || `${product.name} | Minsah Beauty`;
-  const description = product.metaDescription || product.shortDescription || '';
-  const ogDescription = product.ogDescription || description;
+  const title       = product.metaTitle       || product.pageH1 || `${product.name} | Minsah Beauty`;
+  const description = product.metaDescription || product.seoIntro || product.shortDescription || product.bengaliDescription || '';
   const canonical   = product.canonicalUrl    || `${BASE_URL}/products/${product.slug}`;
-  const ogTitle     = product.ogTitle         || product.metaTitle || product.name;
+  const ogTitle     = product.ogTitle         || product.metaTitle || product.pageH1 || product.name;
+  const ogDescription = product.ogDescription || description;
   const ogImage     = product.ogImageUrl      || product.image     || '';
+  const indexProduct = shouldIndexProduct(product.sitemapIndexing);
 
-  // Build keywords: focus keyword + tags + bengali name + category
-  const keywordParts: string[] = [];
-  if (product.focusKeyword) keywordParts.push(product.focusKeyword);
-  if (Array.isArray(product.secondaryKeywords)) keywordParts.push(...product.secondaryKeywords);
-  if (product.bengaliFocusKeyword) keywordParts.push(product.bengaliFocusKeyword);
-  if (Array.isArray(product.bengaliSecondaryKeywords)) keywordParts.push(...product.bengaliSecondaryKeywords);
-  if (Array.isArray(product.searchTags)) keywordParts.push(...product.searchTags);
-  if (Array.isArray(product.synonyms)) keywordParts.push(...product.synonyms);
-  if (Array.isArray(product.banglaSearchTerms)) keywordParts.push(...product.banglaSearchTerms);
-  if (Array.isArray(product.reviewKeywords)) keywordParts.push(...product.reviewKeywords);
-  if (Array.isArray(product.entities)) keywordParts.push(...product.entities);
-  if (product.tags)         keywordParts.push(...product.tags.split(',').map((t: string) => t.trim()));
-  if (product.bengaliName)  keywordParts.push(product.bengaliName);
-  if (product.category)     keywordParts.push(`${product.category} bangladesh`);
-  if (product.brand)        keywordParts.push(`${product.brand} bangladesh`);
+  const keywordParts = [
+    product.focusKeyword,
+    ...asStringArray(product.secondaryKeywords),
+    product.bengaliFocusKeyword,
+    ...asStringArray(product.bengaliSecondaryKeywords),
+    ...asStringArray(product.searchTags),
+    ...asStringArray(product.synonyms),
+    ...asStringArray(product.banglaSearchTerms),
+    ...asStringArray(product.reviewKeywords),
+    ...asStringArray(product.entities),
+    ...asStringArray(product.buyingIntentKeywords),
+    ...asStringArray(product.metaKeywords),
+    product.bengaliName,
+    product.category ? `${product.category} bangladesh` : null,
+    product.brand ? `${product.brand} bangladesh` : null,
+  ];
 
   return {
     title,
     description,
-    keywords: [...new Set(keywordParts.filter(Boolean))],
+    keywords: Array.from(new Set(keywordParts.filter(Boolean) as string[])),
     alternates: {
       canonical,
     },
     robots: {
-      index:  true,
-      follow: true,
+      index:  indexProduct,
+      follow: indexProduct,
       googleBot: {
-        index:              true,
-        follow:             true,
+        index:              indexProduct,
+        follow:             indexProduct,
         'max-image-preview': 'large',
         'max-snippet':       -1,
       },
@@ -98,7 +133,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card:        'summary_large_image',
       title:       ogTitle,
-      description: ogDescription,
+      description:   ogDescription,
       images:      ogImage ? [ogImage] : [],
     },
   };
@@ -131,7 +166,7 @@ function buildProductSchema(product: Record<string, unknown>, rating: { average:
       '@type':           'Offer',
       '@id':             `${productUrl}#offer`,
       url:               productUrl,
-      price:             product.price,
+      price:             product.salePrice || product.price,
       priceCurrency:     'BDT',
       priceValidUntil:   new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       availability:      (product.inStock || (product as {stock?: number}).stock !== 0)
@@ -162,21 +197,6 @@ function buildProductSchema(product: Record<string, unknown>, rating: { average:
 
   // GTIN
   if (product.gtin) schema.gtin13 = product.gtin;
-  if (product.category) schema.category = product.category;
-
-  if (
-    product.productSpecs &&
-    typeof product.productSpecs === 'object' &&
-    !Array.isArray(product.productSpecs)
-  ) {
-    schema.additionalProperty = Object.entries(product.productSpecs as Record<string, unknown>)
-      .filter(([, value]) => value != null && value !== '')
-      .map(([name, value]) => ({
-        '@type': 'PropertyValue',
-        name,
-        value: String(value),
-      }));
-  }
 
   // Rating
   if (rating.total > 0) {
@@ -260,16 +280,17 @@ export default async function ProductPage({ params }: PageProps) {
   if (!data?.product) notFound();
 
   const { product, reviews, rating, relatedProducts, frequentlyBoughtTogether } = data;
-  const productUrl  = `${BASE_URL}/products/${product.slug}`;
+  const productUrl  = product.canonicalUrl || `${BASE_URL}/products/${product.slug}`;
 
-  // Parse FAQs safely
-  const faqs: FaqItem[] = Array.isArray(product.faqs)
-    ? product.faqs
-    : [];
+  const faqs: FaqItem[] = Array.isArray(product.faqs) ? product.faqs : [];
 
-  const productSchema   = buildProductSchema(product, rating, productUrl);
-  const breadcrumbSchema = buildBreadcrumbSchema(product, productUrl);
-  const faqSchema        = buildFaqSchema(faqs);
+  const productSchema    = parseJsonLd(product.structuredDataJsonLd) || buildProductSchema(product, rating, productUrl);
+  const breadcrumbSchema = parseJsonLd(product.breadcrumbJsonLd) || buildBreadcrumbSchema(product, productUrl);
+  const faqSchema        = product.faqSchemaReady || faqs.length > 0 ? buildFaqSchema(faqs) : null;
+  const extraJsonLdSchemas = [
+    parseJsonLd(product.productGroupJsonLd),
+    parseJsonLd(product.merchantListingJsonLd),
+  ].filter(Boolean) as Record<string, unknown>[];
 
   return (
     <div className="min-h-screen bg-[#FDF8F3]">
@@ -328,6 +349,15 @@ export default async function ProductPage({ params }: PageProps) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
       )}
+
+      {/* 4. Optional ProductGroup / MerchantListing schemas from admin SEO */}
+      {extraJsonLdSchemas.map((schema, index) => (
+        <script
+          key={`extra-jsonld-${index}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
     </div>
   );
 }
