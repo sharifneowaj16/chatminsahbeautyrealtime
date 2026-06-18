@@ -30,7 +30,8 @@ import {
 } from 'lucide-react';
 
 // CHANGE THIS ONLY IF YOUR LIVE PRODUCT URL BASE IS DIFFERENT.
-const DEFAULT_PRODUCT_BASE_URL = 'https://minsahbeauty.com/products';
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://minsahbeauty.cloud').replace(/\/$/, '');
+const DEFAULT_PRODUCT_BASE_URL = `${SITE_URL}/products`;
 
 type JsonRecord = Record<string, unknown>;
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from 'next/link';
 import { categories } from '@/data/categories';
 import { useState, useRef, useEffect } from 'react';
@@ -176,7 +176,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ category, isOpen, onToggle, onClose
                     Top Picks in {category.name}
                   </h4>
                   <div className="space-y-4">
-                    {featuredItems.map((product, index) => (
+                    {featuredItems.map((product) => (
                       <Link
                         key={product.name}
                         href={product.href}
