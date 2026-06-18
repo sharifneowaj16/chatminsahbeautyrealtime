@@ -22,6 +22,55 @@ export interface Product {
   description: string;
   shortDescription: string;
 
+  // SEO 1-22 / public product page fields
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  bengaliName?: string;
+  bengaliDescription?: string;
+  focusKeyword?: string;
+  secondaryKeywords?: string[];
+  bengaliFocusKeyword?: string;
+  bengaliSecondaryKeywords?: string[];
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
+  canonicalUrl?: string;
+  pageH1?: string;
+  seoIntro?: string;
+  faqSchemaNote?: string;
+  authenticityNote?: string;
+  ingredientVerificationStatus?: string;
+  seoValidationChecklist?: string[];
+  structuredDataJsonLd?: unknown;
+  productGroupJsonLd?: unknown;
+  merchantListingJsonLd?: unknown;
+  breadcrumbJsonLd?: unknown;
+  sitemapIndexing?: unknown;
+  variantUrlStrategy?: unknown;
+  searchIntent?: string;
+  targetAudience?: string;
+  primaryConcern?: string;
+  keyBenefits?: string[];
+  buyingIntentKeywords?: string[];
+  searchTags?: string[];
+  synonyms?: string[];
+  banglaSearchTerms?: string[];
+  reviewKeywords?: string[];
+  entities?: string[];
+  descriptionSections?: unknown;
+  productSpecs?: unknown;
+  productAttributes?: unknown;
+  shadeOptions?: unknown;
+  variantPriceTable?: unknown;
+  variantComparisonTable?: unknown;
+  internalLinks?: unknown;
+  usageInstructions?: string[];
+  imageAltTexts?: string[];
+  faqSchemaReady?: boolean;
+  faqs?: unknown;
+  gender?: string;
+
   // Badges
   isNew: boolean;
   isBestSeller: boolean;
@@ -48,6 +97,29 @@ export interface Product {
   isSameDayDelivery: boolean;
   freeShippingEligible: boolean;
   deliveryDays: number;
+
+  // Extended inventory / shipping / offer fields
+  lowStockThreshold?: number;
+  trackInventory?: boolean;
+  allowBackorder?: boolean;
+  shelfLife?: string;
+  expiryDate?: string | Date | null;
+  originCountry?: string;
+  shippingWeight?: string;
+  dimensions?: { length?: string | number | null; width?: string | number | null; height?: string | number | null };
+  isFragile?: boolean;
+  discountPercentage?: number;
+  salePrice?: number;
+  offerStartDate?: string | Date | null;
+  offerEndDate?: string | Date | null;
+  flashSaleEligible?: boolean;
+  returnEligible?: boolean;
+  codAvailable?: boolean;
+  preOrderOption?: boolean;
+  barcode?: string;
+  condition?: string;
+  gtin?: string;
+  relatedProducts?: string;
 
   // Payments
   isEMIAvailable: boolean;
