@@ -56,6 +56,52 @@ export interface Product {
   codAvailable?: boolean;
   preOrderOption?: boolean;
   relatedProducts?: string;
+
+  // SEO 1-22 fields
+  bengaliName?: string;
+  bengaliDescription?: string;
+  focusKeyword?: string;
+  secondaryKeywords?: string[];
+  bengaliFocusKeyword?: string;
+  bengaliSecondaryKeywords?: string[];
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
+  canonicalUrl?: string;
+  pageH1?: string;
+  seoIntro?: string;
+  faqSchemaNote?: string;
+  authenticityNote?: string;
+  ingredientVerificationStatus?: string;
+  seoValidationChecklist?: string[];
+  structuredDataJsonLd?: unknown;
+  productGroupJsonLd?: unknown;
+  merchantListingJsonLd?: unknown;
+  breadcrumbJsonLd?: unknown;
+  sitemapIndexing?: unknown;
+  variantUrlStrategy?: unknown;
+  searchIntent?: string;
+  targetAudience?: string;
+  primaryConcern?: string;
+  keyBenefits?: string[];
+  buyingIntentKeywords?: string[];
+  searchTags?: string[];
+  synonyms?: string[];
+  banglaSearchTerms?: string[];
+  reviewKeywords?: string[];
+  entities?: string[];
+  descriptionSections?: unknown;
+  productSpecs?: unknown;
+  productAttributes?: unknown;
+  shadeOptions?: unknown;
+  variantPriceTable?: unknown;
+  variantComparisonTable?: unknown;
+  internalLinks?: unknown;
+  usageInstructions?: string[];
+  imageAltTexts?: string[];
+  faqSchemaReady?: boolean;
+  faqs?: unknown;
+  gender?: string;
 }
 
 interface ProductsContextType {
@@ -151,6 +197,54 @@ type ApiProduct = {
   codAvailable?: boolean;
   preOrderOption?: boolean;
   relatedProducts?: unknown;
+  condition?: string | null;
+  gtin?: string | null;
+  trackInventory?: boolean;
+  allowBackorder?: boolean;
+  bengaliName?: string | null;
+  bengaliDescription?: string | null;
+  focusKeyword?: string | null;
+  secondaryKeywords?: string[];
+  bengaliFocusKeyword?: string | null;
+  bengaliSecondaryKeywords?: string[];
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  ogImageUrl?: string | null;
+  canonicalUrl?: string | null;
+  pageH1?: string | null;
+  seoIntro?: string | null;
+  faqSchemaNote?: string | null;
+  authenticityNote?: string | null;
+  ingredientVerificationStatus?: string | null;
+  seoValidationChecklist?: string[];
+  structuredDataJsonLd?: unknown;
+  productGroupJsonLd?: unknown;
+  merchantListingJsonLd?: unknown;
+  breadcrumbJsonLd?: unknown;
+  sitemapIndexing?: unknown;
+  variantUrlStrategy?: unknown;
+  searchIntent?: string | null;
+  targetAudience?: string | null;
+  primaryConcern?: string | null;
+  keyBenefits?: string[];
+  buyingIntentKeywords?: string[];
+  searchTags?: string[];
+  synonyms?: string[];
+  banglaSearchTerms?: string[];
+  reviewKeywords?: string[];
+  entities?: string[];
+  descriptionSections?: unknown;
+  productSpecs?: unknown;
+  productAttributes?: unknown;
+  shadeOptions?: unknown;
+  variantPriceTable?: unknown;
+  variantComparisonTable?: unknown;
+  internalLinks?: unknown;
+  usageInstructions?: string[];
+  imageAltTexts?: string[];
+  faqSchemaReady?: boolean;
+  faqs?: unknown;
+  gender?: string | null;
   variants?: ApiVariant[];
 };
 
@@ -238,6 +332,54 @@ function mapApiProduct(product: ApiProduct): Product {
     codAvailable: product.codAvailable ?? true,
     preOrderOption: product.preOrderOption ?? false,
     relatedProducts: stringifyOptional(product.relatedProducts),
+    condition: product.condition || '',
+    gtin: product.gtin || '',
+    trackInventory: product.trackInventory ?? true,
+    allowBackorder: product.allowBackorder ?? false,
+    bengaliName: product.bengaliName || '',
+    bengaliDescription: product.bengaliDescription || '',
+    focusKeyword: product.focusKeyword || '',
+    secondaryKeywords: Array.isArray(product.secondaryKeywords) ? product.secondaryKeywords : [],
+    bengaliFocusKeyword: product.bengaliFocusKeyword || '',
+    bengaliSecondaryKeywords: Array.isArray(product.bengaliSecondaryKeywords) ? product.bengaliSecondaryKeywords : [],
+    ogTitle: product.ogTitle || '',
+    ogDescription: product.ogDescription || '',
+    ogImageUrl: product.ogImageUrl || '',
+    canonicalUrl: product.canonicalUrl || '',
+    pageH1: product.pageH1 || '',
+    seoIntro: product.seoIntro || '',
+    faqSchemaNote: product.faqSchemaNote || '',
+    authenticityNote: product.authenticityNote || '',
+    ingredientVerificationStatus: product.ingredientVerificationStatus || '',
+    seoValidationChecklist: Array.isArray(product.seoValidationChecklist) ? product.seoValidationChecklist : [],
+    structuredDataJsonLd: product.structuredDataJsonLd ?? null,
+    productGroupJsonLd: product.productGroupJsonLd ?? null,
+    merchantListingJsonLd: product.merchantListingJsonLd ?? null,
+    breadcrumbJsonLd: product.breadcrumbJsonLd ?? null,
+    sitemapIndexing: product.sitemapIndexing ?? null,
+    variantUrlStrategy: product.variantUrlStrategy ?? null,
+    searchIntent: product.searchIntent || '',
+    targetAudience: product.targetAudience || '',
+    primaryConcern: product.primaryConcern || '',
+    keyBenefits: Array.isArray(product.keyBenefits) ? product.keyBenefits : [],
+    buyingIntentKeywords: Array.isArray(product.buyingIntentKeywords) ? product.buyingIntentKeywords : [],
+    searchTags: Array.isArray(product.searchTags) ? product.searchTags : [],
+    synonyms: Array.isArray(product.synonyms) ? product.synonyms : [],
+    banglaSearchTerms: Array.isArray(product.banglaSearchTerms) ? product.banglaSearchTerms : [],
+    reviewKeywords: Array.isArray(product.reviewKeywords) ? product.reviewKeywords : [],
+    entities: Array.isArray(product.entities) ? product.entities : [],
+    descriptionSections: product.descriptionSections ?? null,
+    productSpecs: product.productSpecs ?? null,
+    productAttributes: product.productAttributes ?? null,
+    shadeOptions: product.shadeOptions ?? null,
+    variantPriceTable: product.variantPriceTable ?? null,
+    variantComparisonTable: product.variantComparisonTable ?? null,
+    internalLinks: product.internalLinks ?? null,
+    usageInstructions: Array.isArray(product.usageInstructions) ? product.usageInstructions : [],
+    imageAltTexts: Array.isArray(product.imageAltTexts) ? product.imageAltTexts : [],
+    faqSchemaReady: product.faqSchemaReady ?? false,
+    faqs: product.faqs ?? null,
+    gender: product.gender || '',
     variants: Array.isArray(product.variants)
       ? product.variants.map((variant) => ({
           id: variant.id || '',
