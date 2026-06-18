@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  CheckCircle,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -56,16 +55,6 @@ interface RatingData {
   distribution: Record<number, number>;
 }
 
-interface DescriptionSection {
-  heading: string;
-  points: string[];
-}
-
-interface ProductFaq {
-  question: string;
-  answer: string;
-}
-
 interface RelatedProduct {
   id: string;
   name: string;
@@ -106,9 +95,15 @@ interface ProductClientProps {
     id: string;
     name: string;
     slug: string;
+    pageH1?: string;
+    bengaliName?: string;
     description: string;
     shortDescription: string;
+    seoIntro?: string;
+    bengaliDescription?: string;
     price: number;
+    salePrice?: number | null;
+    discountPercentage?: number | null;
     originalPrice: number | null;
     image: string;
     images: ImageItem[] | string[];
@@ -126,16 +121,38 @@ interface ProductClientProps {
     codAvailable?: boolean;
     returnEligible?: boolean;
     weight?: number | null;
-    keyBenefits?: string[];
-    primaryConcern?: string;
+    lowStockThreshold?: number;
+    allowBackorder?: boolean;
+    preOrderOption?: boolean;
+    flashSaleEligible?: boolean;
+    offerStartDate?: string | null;
+    offerEndDate?: string | null;
     targetAudience?: string;
+    primaryConcern?: string;
     gender?: string;
-    productSpecs?: Record<string, unknown> | null;
-    productAttributes?: Record<string, unknown> | null;
-    shadeOptions?: Array<{ shadeCode?: string; shadeName?: string }> | null;
+    keyBenefits?: string[];
+    descriptionSections?: unknown;
+    productSpecs?: unknown;
+    productAttributes?: unknown;
+    shadeOptions?: unknown;
+    variantPriceTable?: unknown;
+    variantComparisonTable?: unknown;
+    internalLinks?: unknown;
     usageInstructions?: string[];
-    descriptionSections?: DescriptionSection[];
-    faqs?: ProductFaq[];
+    authenticityNote?: string;
+    ingredientVerificationStatus?: string;
+    originCountry?: string;
+    shelfLife?: string;
+    expiryDate?: string | null;
+    shippingWeight?: string;
+    isFragile?: boolean;
+    length?: number | null;
+    width?: number | null;
+    height?: number | null;
+    dimensions?: { length?: number | null; width?: number | null; height?: number | null } | null;
+    barcode?: string;
+    condition?: string;
+    gtin?: string;
     variants: Variant[];
   };
   reviews: Review[];
@@ -190,7 +207,7 @@ function DeliveryEstimate() {
   );
 }
 
-function StockUrgency({ stock, inStock }: { stock: number; inStock: boolean }) {
+function StockUrgency({ stock, inStock, threshold = 10 }: { stock: number; inStock: boolean; threshold?: number }) {
   if (!inStock) {
     return (
       <div className="flex items-center gap-2">
@@ -200,8 +217,8 @@ function StockUrgency({ stock, inStock }: { stock: number; inStock: boolean }) {
     );
   }
 
-  if (stock <= 10) {
-    const pct = Math.max(10, Math.round((stock / 10) * 100));
+  if (stock <= threshold) {
+    const pct = Math.max(10, Math.round((stock / Math.max(threshold, 1)) * 100));
     return (
       <div className="space-y-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
         <div className="flex items-center justify-between">
@@ -227,61 +244,129 @@ function StockUrgency({ stock, inStock }: { stock: number; inStock: boolean }) {
   );
 }
 
-function formatDetailValue(value: unknown): string {
+
+type DisplayRow = { label: string; value: string };
+type DisplaySection = { heading: string; content?: string; bullets?: string[] };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function humanizeKey(key: string) {
+  return key.replace(/([A-Z])/g, ' $1').replace(/[_-]+/g, ' ').replace(/^./, (char) => char.toUpperCase());
+}
+
+function stringifyValue(value: unknown): string {
   if (value == null || value === '') return '';
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => formatDetailValue(item))
-      .filter(Boolean)
-      .join(', ');
-  }
-
-  if (typeof value === 'object') {
-    const record = value as Record<string, unknown>;
-
-    if (Array.isArray(record.values)) {
-      return formatDetailValue(record.values);
-    }
-
-    return Object.entries(record)
-      .map(([label, nestedValue]) => {
-        const formattedValue = formatDetailValue(nestedValue);
-        return formattedValue ? `${label}: ${formattedValue}` : '';
-      })
-      .filter(Boolean)
-      .join(' | ');
-  }
-
-  return String(value);
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(stringifyValue).filter(Boolean).join(', ');
+  return JSON.stringify(value);
 }
 
-function getSpecEntries(value: Record<string, unknown> | null | undefined) {
+function toDisplayRows(value: unknown): DisplayRow[] {
   if (!value) return [];
-
-  return Object.entries(value)
-    .filter(([, specValue]) => specValue != null && specValue !== '')
-    .map(([label, specValue]) => [label, formatDetailValue(specValue)] as const)
-    .filter(([, specValue]) => specValue);
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => {
+      if (typeof item === 'string') return [{ label: `Item ${index + 1}`, value: item }];
+      if (!isRecord(item)) return [];
+      const label = stringifyValue(item.label ?? item.name ?? item.title ?? item.key ?? item.variant ?? item.option ?? `Item ${index + 1}`);
+      const itemValue = stringifyValue(item.value ?? item.text ?? item.description ?? item.price ?? item.content ?? item.stock);
+      if (itemValue) return [{ label, value: itemValue }];
+      return Object.entries(item)
+        .filter(([, entryValue]) => stringifyValue(entryValue))
+        .map(([entryKey, entryValue]) => ({ label: humanizeKey(entryKey), value: stringifyValue(entryValue) }));
+    });
+  }
+  if (isRecord(value)) {
+    return Object.entries(value)
+      .filter(([, entryValue]) => stringifyValue(entryValue))
+      .map(([entryKey, entryValue]) => ({ label: humanizeKey(entryKey), value: stringifyValue(entryValue) }));
+  }
+  return [];
 }
 
-function getAttributeValue(
-  attributes: Record<string, string> | null | undefined,
-  keys: string[]
-): string | null {
-  if (!attributes) return null;
+function toDisplaySections(value: unknown): DisplaySection[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index) => {
+    if (typeof item === 'string') return [{ heading: `Section ${index + 1}`, content: item }];
+    if (!isRecord(item)) return [];
+    const heading = stringifyValue(item.heading ?? item.title ?? item.name ?? `Section ${index + 1}`);
+    const content = stringifyValue(item.content ?? item.description ?? item.text);
+    const bullets = Array.isArray(item.bullets)
+      ? item.bullets.map(stringifyValue).filter(Boolean)
+      : Array.isArray(item.items)
+        ? item.items.map(stringifyValue).filter(Boolean)
+        : [];
+    return heading || content || bullets.length ? [{ heading, content, bullets }] : [];
+  });
+}
 
-  for (const key of keys) {
-    const exact = attributes[key];
-    if (exact) return exact;
-  }
+function formatDateLabel(value?: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('bn-BD', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
-  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
-  for (const [key, value] of Object.entries(attributes)) {
-    if (normalizedKeys.has(key.toLowerCase()) && value) return value;
-  }
+function InfoRowsBlock({ title, rows }: { title: string; rows: DisplayRow[] }) {
+  const visibleRows = rows.filter((row) => row.value);
+  if (visibleRows.length === 0) return null;
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">{title}</p>
+      <div className="overflow-hidden rounded-2xl border border-[#E8D5C0] bg-[#FFFDF9]">
+        {visibleRows.map((row, index) => (
+          <div key={`${row.label}-${index}`} className="grid grid-cols-[42%_1fr] gap-3 border-b border-[#F0DFC9] px-3 py-2.5 last:border-b-0">
+            <p className="text-xs font-medium text-[#8B5E3C]">{row.label}</p>
+            <p className="text-xs font-semibold text-[#1A0D06]">{row.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-  return null;
+function DescriptionSectionsBlock({ sections }: { sections: DisplaySection[] }) {
+  if (sections.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      {sections.map((section, index) => (
+        <div key={`${section.heading}-${index}`} className="rounded-2xl bg-[#F5E9DC] p-4">
+          <p className="text-sm font-semibold text-[#3D1F0E]">{section.heading}</p>
+          {section.content && <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[#4A2C1A]">{section.content}</p>}
+          {section.bullets && section.bullets.length > 0 && (
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-[#4A2C1A]">
+              {section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InternalLinksBlock({ value }: { value: unknown }) {
+  const rows = Array.isArray(value) ? value : [];
+  const links = rows
+    .filter(isRecord)
+    .map((item) => ({
+      label: stringifyValue(item.label ?? item.text ?? item.title ?? item.name),
+      href: stringifyValue(item.href ?? item.url ?? item.link),
+    }))
+    .filter((item) => item.label && item.href);
+  if (links.length === 0) return null;
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">আরও দেখুন</p>
+      <div className="flex flex-wrap gap-2">
+        {links.map((link) => (
+          <Link key={`${link.label}-${link.href}`} href={link.href} className="rounded-full border border-[#D4B896] px-3 py-1.5 text-xs font-medium text-[#3D1F0E] hover:bg-[#F5E9DC]">
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function ProductClient({
@@ -295,20 +380,16 @@ export default function ProductClient({
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     product.variants.length === 1 ? product.variants[0].id : null
   );
-  const [currentPrice, setCurrentPrice] = useState(product.price);
+  const baseDisplayPrice = product.salePrice && product.salePrice > 0 ? product.salePrice : product.price;
+  const [currentPrice, setCurrentPrice] = useState(baseDisplayPrice);
   const [quantity, setQuantity] = useState(1);
   const [expandIngredients, setExpandIngredients] = useState(false);
   const [variantImageOverride, setVariantImageOverride] = useState<string | null>(null);
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>([]);
 
   const selectedVariantObj = product.variants.find((variant) => variant.id === selectedVariantId) ?? null;
-  const variantSize = getAttributeValue(selectedVariantObj?.attributes, ['size', 'Size']);
-  const variantColor = getAttributeValue(selectedVariantObj?.attributes, [
-    'color',
-    'Color',
-    'shade',
-    'Shade',
-  ]);
+  const variantSize = selectedVariantObj?.attributes?.size ?? null;
+  const variantColor = selectedVariantObj?.attributes?.color ?? null;
   const variantImage = selectedVariantObj?.image ?? null;
   const variantNameLabel = selectedVariantObj
     ? [variantSize, variantColor].filter(Boolean).join(' / ') || selectedVariantObj.name
@@ -317,17 +398,23 @@ export default function ProductClient({
   const requiresVariantSelection = product.variants.length > 0 && !selectedVariantObj;
   const activeStock = selectedVariantObj ? selectedVariantObj.stock : requiresVariantSelection ? 0 : product.stock;
   const activeInStock = !requiresVariantSelection && activeStock > 0;
-  const discountPct =
+  const comparePrice =
     product.originalPrice && product.originalPrice > currentPrice
-      ? Math.round(((product.originalPrice - currentPrice) / product.originalPrice) * 100)
-      : null;
+      ? product.originalPrice
+      : product.salePrice && product.price > currentPrice
+        ? product.price
+        : null;
+  const discountPct =
+    product.discountPercentage && product.discountPercentage > 0
+      ? Math.round(product.discountPercentage)
+      : comparePrice && comparePrice > currentPrice
+        ? Math.round(((comparePrice - currentPrice) / comparePrice) * 100)
+        : null;
+  const lowStockThreshold = product.lowStockThreshold ?? 10;
   const totalPrice = currentPrice * quantity;
   const galleryImages = (product.images as Array<string | { url: string; alt?: string }>).map((img) =>
     typeof img === 'string' ? { url: img, alt: product.name } : img
   );
-  const specEntries = getSpecEntries(product.productSpecs);
-  const attributeEntries = getSpecEntries(product.productAttributes);
-  const faqs = product.faqs?.filter((faq) => faq.question && faq.answer) ?? [];
   const stickyBarVariants = useMemo(
     () =>
       product.variants.map((variant) => ({
@@ -352,6 +439,39 @@ export default function ProductClient({
     setVariantImageOverride(imageUrl);
   }, []);
 
+  const displayTitle = product.pageH1 || product.name;
+  const productInfoRows: DisplayRow[] = [
+    { label: 'Brand', value: product.brand || '' },
+    { label: 'Category', value: product.category || '' },
+    { label: 'Origin', value: product.originCountry || '' },
+    { label: 'Shelf life', value: product.shelfLife || '' },
+    { label: 'Expiry date', value: formatDateLabel(product.expiryDate) },
+    { label: 'Shipping weight', value: product.shippingWeight || '' },
+    { label: 'Dimensions', value: [product.dimensions?.length ?? product.length, product.dimensions?.width ?? product.width, product.dimensions?.height ?? product.height].filter(Boolean).join(' × ') },
+    { label: 'Barcode', value: product.barcode || '' },
+    { label: 'GTIN', value: product.gtin || '' },
+    { label: 'Condition', value: product.condition || '' },
+    { label: 'Fragile item', value: product.isFragile ? 'Yes' : '' },
+    { label: 'Pre-order', value: product.preOrderOption ? 'Available' : '' },
+    { label: 'Backorder', value: product.allowBackorder ? 'Available' : '' },
+  ];
+  const bestMatchRows: DisplayRow[] = [
+    { label: 'Target audience', value: product.targetAudience || '' },
+    { label: 'Primary concern', value: product.primaryConcern || '' },
+    { label: 'Gender', value: product.gender || '' },
+  ];
+  const offerRows: DisplayRow[] = [
+    { label: 'Flash sale', value: product.flashSaleEligible ? 'Eligible' : '' },
+    { label: 'Offer starts', value: formatDateLabel(product.offerStartDate) },
+    { label: 'Offer ends', value: formatDateLabel(product.offerEndDate) },
+  ];
+  const descriptionSections = toDisplaySections(product.descriptionSections);
+  const specRows = toDisplayRows(product.productSpecs);
+  const attributeRows = toDisplayRows(product.productAttributes);
+  const shadeRows = toDisplayRows(product.shadeOptions);
+  const variantPriceRows = toDisplayRows(product.variantPriceTable);
+  const variantComparisonRows = toDisplayRows(product.variantComparisonTable);
+
   useEffect(() => {
     const storageKey = 'minsah_recently_viewed_products';
 
@@ -365,7 +485,7 @@ export default function ProductClient({
         id: product.id,
         slug: product.slug,
         name: product.name,
-        price: product.price,
+        price: baseDisplayPrice,
         originalPrice: product.originalPrice,
         image: product.image,
         stock: product.stock,
@@ -384,6 +504,7 @@ export default function ProductClient({
     product.slug,
     product.name,
     product.price,
+    product.salePrice,
     product.originalPrice,
     product.image,
     product.stock,
@@ -393,7 +514,7 @@ export default function ProductClient({
   return (
     <>
       <ProductStickyHeader
-        productName={product.name}
+        productName={displayTitle}
         price={currentPrice}
         variantName={variantNameLabel}
         requiresVariantSelection={requiresVariantSelection}
@@ -406,7 +527,7 @@ export default function ProductClient({
           <div className="lg:sticky lg:top-20">
             <ProductGallery
               images={galleryImages}
-              productName={product.name}
+              productName={displayTitle}
               discountPct={discountPct}
               isNew={product.isNew}
               overrideImage={variantImageOverride}
@@ -431,8 +552,11 @@ export default function ProductClient({
 
             <div>
               <h1 className="text-xl font-semibold leading-tight text-[#1A0D06] md:text-2xl lg:text-3xl">
-                {product.name}
+                {displayTitle}
               </h1>
+              {product.bengaliName && product.bengaliName !== displayTitle && (
+                <p className="mt-1 text-sm font-medium text-[#8B5E3C]">{product.bengaliName}</p>
+              )}
               {rating.total > 0 && (
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex gap-0.5">
@@ -455,9 +579,9 @@ export default function ProductClient({
               <span className="text-2xl font-semibold text-[#1A0D06] md:text-3xl">
                 ৳{currentPrice.toLocaleString('bn-BD')}
               </span>
-              {product.originalPrice && product.originalPrice > currentPrice && (
+              {comparePrice && comparePrice > currentPrice && (
                 <span className="text-lg text-[#A0856A] line-through">
-                  ৳{product.originalPrice.toLocaleString('bn-BD')}
+                  ৳{comparePrice.toLocaleString('bn-BD')}
                 </span>
               )}
               {discountPct && (
@@ -475,7 +599,7 @@ export default function ProductClient({
                 </p>
               </div>
             ) : (
-              <StockUrgency stock={activeStock} inStock={activeInStock} />
+              <StockUrgency stock={activeStock} inStock={activeInStock} threshold={lowStockThreshold} />
             )}
 
             {activeInStock && <DeliveryEstimate />}
@@ -484,11 +608,17 @@ export default function ProductClient({
               <p className="text-sm leading-relaxed text-[#4A2C1A]">{product.shortDescription}</p>
             )}
 
+            {product.seoIntro && (
+              <div className="rounded-2xl bg-[#F5E9DC] p-4">
+                <p className="text-sm leading-relaxed text-[#4A2C1A]">{product.seoIntro}</p>
+              </div>
+            )}
+
             <div className="h-px bg-[#E8D5C0]" />
 
             <VariantSelector
               variants={product.variants}
-              basePrice={product.price}
+              basePrice={baseDisplayPrice}
               baseStock={product.stock}
               onVariantChange={handleVariantChange}
               onImageChange={handleVariantImageChange}
@@ -571,6 +701,33 @@ export default function ProductClient({
               ))}
             </div>
 
+            {product.authenticityNote && (
+              <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-green-700">Authenticity</p>
+                <p className="mt-1 text-sm leading-relaxed text-green-800">{product.authenticityNote}</p>
+              </div>
+            )}
+
+            {product.ingredientVerificationStatus && (
+              <div className="rounded-2xl border border-[#E8D5C0] bg-[#FFFDF9] p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">Ingredient verification</p>
+                <p className="mt-1 text-sm text-[#4A2C1A]">{product.ingredientVerificationStatus}</p>
+              </div>
+            )}
+
+            <InfoRowsBlock title="Best Match" rows={bestMatchRows} />
+
+            {product.keyBenefits && product.keyBenefits.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">Key Benefits</p>
+                <div className="flex flex-wrap gap-2">
+                  {product.keyBenefits.map((benefit) => (
+                    <span key={benefit} className="rounded-full bg-[#F5E9DC] px-3 py-1 text-xs font-medium text-[#6B4226]">{benefit}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {product.description && product.description !== product.shortDescription && (
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
@@ -582,119 +739,32 @@ export default function ProductClient({
               </div>
             )}
 
-            {(product.targetAudience || product.primaryConcern || product.gender) && (
+            {product.bengaliDescription && product.bengaliDescription !== product.description && (
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                  Best Match
-                </p>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {[
-                    { label: 'Audience', value: product.targetAudience },
-                    { label: 'Concern', value: product.primaryConcern },
-                    { label: 'Gender', value: product.gender },
-                  ]
-                    .filter((item) => item.value)
-                    .map((item) => (
-                      <div key={item.label} className="rounded-xl border border-[#E8D5C0] bg-[#FFF9F3] p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8B5E3C]">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold leading-relaxed text-[#3D1F0E]">
-                          {item.value}
-                        </p>
-                      </div>
-                    ))}
-                </div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">বাংলা বিস্তারিত</p>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-[#4A2C1A]">{product.bengaliDescription}</p>
               </div>
             )}
 
-            {product.keyBenefits && product.keyBenefits.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                  Key Benefits
-                </p>
-                <ul className="space-y-2">
-                  {product.keyBenefits.map((benefit) => (
-                    <li key={benefit} className="flex gap-2 text-sm leading-relaxed text-[#4A2C1A]">
-                      <CheckCircle size={14} className="mt-0.5 flex-shrink-0 text-green-600" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {product.descriptionSections && product.descriptionSections.length > 0 && (
-              <div className="space-y-4">
-                {product.descriptionSections.map((section) => (
-                  <div key={section.heading}>
-                    {section.heading && (
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                        {section.heading}
-                      </p>
-                    )}
-                    {section.points.length > 0 && (
-                      <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-[#4A2C1A]">
-                        {section.points.map((point) => (
-                          <li key={point}>{point}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <DescriptionSectionsBlock sections={descriptionSections} />
 
             {product.usageInstructions && product.usageInstructions.length > 0 && (
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                  How to Use
-                </p>
-                <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-[#4A2C1A]">
-                  {product.usageInstructions.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">ব্যবহারবিধি</p>
+                <ol className="list-decimal space-y-1 pl-4 text-sm text-[#4A2C1A]">
+                  {product.usageInstructions.map((step) => <li key={step}>{step}</li>)}
                 </ol>
               </div>
             )}
 
-            {(specEntries.length > 0 || attributeEntries.length > 0) && (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                  Product Details
-                </p>
-                <div className="overflow-hidden rounded-2xl border border-[#E8D5C0]">
-                  {[...specEntries, ...attributeEntries].map(([label, value]) => (
-                    <div key={`${label}-${value}`} className="grid grid-cols-2 border-b border-[#E8D5C0] last:border-b-0">
-                      <div className="bg-[#F5E9DC] px-3 py-2 text-xs font-semibold text-[#3D1F0E]">
-                        {label}
-                      </div>
-                      <div className="px-3 py-2 text-xs text-[#4A2C1A]">
-                        {value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {product.shadeOptions && product.shadeOptions.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                  Shades
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {product.shadeOptions.map((shade) => {
-                    const label = [shade.shadeCode, shade.shadeName].filter(Boolean).join(' ');
-                    return label ? (
-                      <span key={label} className="rounded-full bg-[#F5E9DC] px-3 py-1 text-xs font-medium text-[#6B4226]">
-                        {label}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            )}
+            <InfoRowsBlock title="Product Details" rows={productInfoRows} />
+            <InfoRowsBlock title="Product Specs" rows={specRows} />
+            <InfoRowsBlock title="Attributes" rows={attributeRows} />
+            <InfoRowsBlock title="Shade Options" rows={shadeRows} />
+            <InfoRowsBlock title="Variant Price Table" rows={variantPriceRows} />
+            <InfoRowsBlock title="Variant Comparison" rows={variantComparisonRows} />
+            <InfoRowsBlock title="Offer Details" rows={offerRows} />
+            <InternalLinksBlock value={product.internalLinks} />
 
             {product.ingredients && (
               <div className="overflow-hidden rounded-2xl border border-[#E8D5C0]">
@@ -722,30 +792,12 @@ export default function ProductClient({
               </div>
             )}
 
-            {faqs.length > 0 && (
-              <div>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                  FAQ
-                </p>
-                <div className="space-y-2">
-                  {faqs.map((faq) => (
-                    <div key={faq.question} className="rounded-2xl border border-[#E8D5C0] p-3">
-                      <p className="text-sm font-semibold text-[#1A0D06]">{faq.question}</p>
-                      <p className="mt-1.5 text-xs leading-relaxed text-[#4A2C1A]">{faq.answer}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {rating.total > 0 && (
-              <div>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
-                  কাস্টমার রিভিউ
-                </p>
-                <ReviewSection reviews={reviews} rating={rating} />
-              </div>
-            )}
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#3D1F0E]">
+                কাস্টমার রিভিউ
+              </p>
+              <ReviewSection reviews={reviews} rating={rating} />
+            </div>
 
             {relatedProducts.length > 0 && (
               <div>
