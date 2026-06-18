@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const flat = url.searchParams.get('flat') === '1';
     const all = url.searchParams.get('all') === '1';
+    const includeAreas = url.searchParams.get('include_areas') === '1';
     const cityId = Number(url.searchParams.get('city_id'));
     const zoneId = Number(url.searchParams.get('zone_id'));
 
@@ -27,6 +28,16 @@ export async function GET(request: NextRequest) {
 
     if (cityId) {
       const zones = await fetchPathaoZones(cityId);
+
+      if (!includeAreas) {
+        return NextResponse.json({
+          message: 'Use ?zone_id=ID to load areas for one zone, or add &include_areas=1 to load all areas for this city.',
+          counts: { cities: 1, zones: zones.length, areas: 0 },
+          cityId,
+          zones,
+        });
+      }
+
       const zonesWithAreas = await Promise.all(
         zones.map(async (zone) => ({
           ...zone,
@@ -69,7 +80,7 @@ export async function GET(request: NextRequest) {
     if (!all) {
       const cities = await fetchPathaoCities();
       return NextResponse.json({
-        message: 'Use ?city_id=ID to load zones and areas for one city, or ?all=1 for the full tree.',
+        message: 'Use ?city_id=ID to load zones, then ?zone_id=ID to load areas. Use ?all=1 only for the full tree.',
         counts: { cities: cities.length, zones: 0, areas: 0 },
         cities,
       });
