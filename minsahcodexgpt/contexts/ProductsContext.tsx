@@ -56,6 +56,10 @@ export interface Product {
   codAvailable?: boolean;
   preOrderOption?: boolean;
   relatedProducts?: string;
+  condition?: string;
+  gtin?: string;
+  trackInventory?: boolean;
+  allowBackorder?: boolean;
 
   // SEO 1-22 fields
   bengaliName?: string;
