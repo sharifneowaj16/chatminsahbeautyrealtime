@@ -1,12 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchPathaoLocationTree } from '@/lib/pathao-locations';
+import {
+  fetchPathaoAreas,
+  fetchPathaoCities,
+  fetchPathaoLocationTree,
+  fetchPathaoZones,
+} from '@/lib/pathao-locations';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
     const flat = url.searchParams.get('flat') === '1';
+    const all = url.searchParams.get('all') === '1';
+    const cityId = Number(url.searchParams.get('city_id'));
+    const zoneId = Number(url.searchParams.get('zone_id'));
+
+    if (zoneId) {
+      const areas = await fetchPathaoAreas(zoneId);
+      return NextResponse.json({
+        counts: { cities: 0, zones: 1, areas: areas.length },
+        areas,
+      });
+    }
+
+    if (cityId) {
+      const zones = await fetchPathaoZones(cityId);
+      const zonesWithAreas = await Promise.all(
+        zones.map(async (zone) => ({
+          ...zone,
+          areas: await fetchPathaoAreas(zone.id),
+        }))
+      );
+
+      if (flat) {
+        return NextResponse.json({
+          counts: {
+            cities: 1,
+            zones: zonesWithAreas.length,
+            areas: zonesWithAreas.reduce((total, zone) => total + zone.areas.length, 0),
+          },
+          locations: zonesWithAreas.flatMap((zone) =>
+            zone.areas.map((area) => ({
+              cityId,
+              zoneId: zone.id,
+              zoneName: zone.name,
+              areaId: area.id,
+              areaName: area.name,
+              homeDeliveryAvailable: area.homeDeliveryAvailable,
+              pickupAvailable: area.pickupAvailable,
+            }))
+          ),
+        });
+      }
+
+      return NextResponse.json({
+        counts: {
+          cities: 1,
+          zones: zonesWithAreas.length,
+          areas: zonesWithAreas.reduce((total, zone) => total + zone.areas.length, 0),
+        },
+        cityId,
+        zones: zonesWithAreas,
+      });
+    }
+
+    if (!all) {
+      const cities = await fetchPathaoCities();
+      return NextResponse.json({
+        message: 'Use ?city_id=ID to load zones and areas for one city, or ?all=1 for the full tree.',
+        counts: { cities: cities.length, zones: 0, areas: 0 },
+        cities,
+      });
+    }
+
     const locations = await fetchPathaoLocationTree();
 
     const counts = locations.reduce(
