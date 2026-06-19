@@ -23,6 +23,8 @@ type ZoneWithAreas = PathaoZone & {
   error?: string;
 };
 
+type ExportType = 'all' | 'cities' | 'zones' | 'areas';
+
 const encoder = new TextEncoder();
 
 function toErrorMessage(error: unknown): string {
@@ -81,6 +83,141 @@ async function loadZoneWithAreas(zone: PathaoZone, counts: ExportCounts): Promis
     counts.errors += 1;
     return { ...zone, areas: [], error: toErrorMessage(error) };
   }
+}
+
+function createCityExportStream() {
+  const counts: ExportCounts = { cities: 0, zones: 0, areas: 0, errors: 0 };
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
+
+      write(`{"generatedAt":${JSON.stringify(new Date().toISOString())},"type":"cities","cities":[`);
+
+      try {
+        const cities = await withRetry(() => fetchPathaoCities());
+        counts.cities = cities.length;
+        write(cities.map((city) => JSON.stringify(city)).join(','));
+        write(`],"counts":${JSON.stringify(counts)}}`);
+      } catch (error) {
+        counts.errors += 1;
+        write(
+          `],"counts":${JSON.stringify(counts)},"fatalError":${JSON.stringify(toErrorMessage(error))}}`
+        );
+      } finally {
+        controller.close();
+      }
+    },
+  });
+}
+
+function createZoneExportStream() {
+  const counts: ExportCounts = { cities: 0, zones: 0, areas: 0, errors: 0 };
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
+
+      write(`{"generatedAt":${JSON.stringify(new Date().toISOString())},"type":"zones","zones":[`);
+
+      try {
+        const cities = await withRetry(() => fetchPathaoCities());
+        let firstZone = true;
+
+        for (const city of cities) {
+          counts.cities += 1;
+
+          try {
+            const zones = await withRetry(() => fetchPathaoZones(city.id));
+            counts.zones += zones.length;
+
+            for (const zone of zones) {
+              const row = {
+                cityId: city.id,
+                cityName: city.name,
+                zoneId: zone.id,
+                zoneName: zone.name,
+              };
+
+              write(`${firstZone ? '' : ','}${JSON.stringify(row)}`);
+              firstZone = false;
+            }
+          } catch {
+            counts.errors += 1;
+          }
+        }
+
+        write(`],"counts":${JSON.stringify(counts)}}`);
+      } catch (error) {
+        counts.errors += 1;
+        write(
+          `],"counts":${JSON.stringify(counts)},"fatalError":${JSON.stringify(toErrorMessage(error))}}`
+        );
+      } finally {
+        controller.close();
+      }
+    },
+  });
+}
+
+function createAreaExportStream() {
+  const counts: ExportCounts = { cities: 0, zones: 0, areas: 0, errors: 0 };
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
+
+      write(`{"generatedAt":${JSON.stringify(new Date().toISOString())},"type":"areas","areas":[`);
+
+      try {
+        const cities = await withRetry(() => fetchPathaoCities());
+        let firstArea = true;
+
+        for (const city of cities) {
+          counts.cities += 1;
+
+          let zones: PathaoZone[] = [];
+          try {
+            zones = await withRetry(() => fetchPathaoZones(city.id));
+          } catch {
+            counts.errors += 1;
+            continue;
+          }
+
+          const zonesWithAreas = await mapWithConcurrency(zones, 4, (zone) =>
+            loadZoneWithAreas(zone, counts)
+          );
+
+          for (const zone of zonesWithAreas) {
+            for (const area of zone.areas) {
+              const row = {
+                cityId: city.id,
+                cityName: city.name,
+                zoneId: zone.id,
+                zoneName: zone.name,
+                areaId: area.id,
+                areaName: area.name,
+                homeDeliveryAvailable: area.homeDeliveryAvailable,
+                pickupAvailable: area.pickupAvailable,
+              };
+
+              write(`${firstArea ? '' : ','}${JSON.stringify(row)}`);
+              firstArea = false;
+            }
+          }
+        }
+
+        write(`],"counts":${JSON.stringify(counts)}}`);
+      } catch (error) {
+        counts.errors += 1;
+        write(
+          `],"counts":${JSON.stringify(counts)},"fatalError":${JSON.stringify(toErrorMessage(error))}}`
+        );
+      } finally {
+        controller.close();
+      }
+    },
+  });
 }
 
 function createNestedLocationStream() {
@@ -198,9 +335,29 @@ function createFlatLocationStream() {
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const flat = url.searchParams.get('flat') === '1';
-  const filename = flat ? 'pathao-locations-flat.json' : 'pathao-locations.json';
+  const type = (url.searchParams.get('type') ?? 'all') as ExportType;
+  const stream =
+    type === 'cities'
+      ? createCityExportStream()
+      : type === 'zones'
+        ? createZoneExportStream()
+        : type === 'areas'
+          ? createAreaExportStream()
+          : flat
+            ? createFlatLocationStream()
+            : createNestedLocationStream();
+  const filename =
+    type === 'cities'
+      ? 'pathao-cities.json'
+      : type === 'zones'
+        ? 'pathao-zones-linked.json'
+        : type === 'areas'
+          ? 'pathao-areas-linked.json'
+          : flat
+            ? 'pathao-locations-flat.json'
+            : 'pathao-locations.json';
 
-  return new Response(flat ? createFlatLocationStream() : createNestedLocationStream(), {
+  return new Response(stream, {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
