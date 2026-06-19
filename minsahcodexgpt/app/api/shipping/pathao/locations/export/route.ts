@@ -160,7 +160,7 @@ function createZoneExportStream() {
   });
 }
 
-function createAreaExportStream() {
+function createAreaExportStream(filters: { cityId?: number; zoneId?: number } = {}) {
   const counts: ExportCounts = { cities: 0, zones: 0, areas: 0, errors: 0 };
 
   return new ReadableStream<Uint8Array>({
@@ -170,7 +170,10 @@ function createAreaExportStream() {
       write(`{"generatedAt":${JSON.stringify(new Date().toISOString())},"type":"areas","areas":[`);
 
       try {
-        const cities = await withRetry(() => fetchPathaoCities());
+        const allCities = await withRetry(() => fetchPathaoCities());
+        const cities = filters.cityId
+          ? allCities.filter((city) => city.id === filters.cityId)
+          : allCities;
         let firstArea = true;
 
         for (const city of cities) {
@@ -184,7 +187,11 @@ function createAreaExportStream() {
             continue;
           }
 
-          const zonesWithAreas = await mapWithConcurrency(zones, 4, (zone) =>
+          const selectedZones = filters.zoneId
+            ? zones.filter((zone) => zone.id === filters.zoneId)
+            : zones;
+
+          const zonesWithAreas = await mapWithConcurrency(selectedZones, 4, (zone) =>
             loadZoneWithAreas(zone, counts)
           );
 
@@ -336,23 +343,33 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const flat = url.searchParams.get('flat') === '1';
   const type = (url.searchParams.get('type') ?? 'all') as ExportType;
+  const cityId = Number(url.searchParams.get('city_id')) || undefined;
+  const zoneId = Number(url.searchParams.get('zone_id')) || undefined;
   const stream =
     type === 'cities'
       ? createCityExportStream()
       : type === 'zones'
         ? createZoneExportStream()
         : type === 'areas'
-          ? createAreaExportStream()
+          ? createAreaExportStream({ cityId, zoneId })
           : flat
             ? createFlatLocationStream()
             : createNestedLocationStream();
+  const areaScope =
+    type === 'areas' && cityId && zoneId
+      ? `-city-${cityId}-zone-${zoneId}`
+      : type === 'areas' && cityId
+        ? `-city-${cityId}`
+        : type === 'areas' && zoneId
+          ? `-zone-${zoneId}`
+          : '';
   const filename =
     type === 'cities'
       ? 'pathao-cities.json'
       : type === 'zones'
         ? 'pathao-zones-linked.json'
         : type === 'areas'
-          ? 'pathao-areas-linked.json'
+          ? `pathao-areas-linked${areaScope}.json`
           : flat
             ? 'pathao-locations-flat.json'
             : 'pathao-locations.json';
