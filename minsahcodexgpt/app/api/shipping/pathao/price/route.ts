@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pathaoRequest } from '@/lib/pathao';
+import { pathaoRequest, resolvePathaoStore } from '@/lib/pathao';
 import prisma from '@/lib/prisma';
 import {
   extractVariantWeightKg,
@@ -24,17 +24,18 @@ interface PriceRequestBody {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as PriceRequestBody;
-    const storeId = Number(process.env.PATHAO_STORE_ID);
     let totalWeightKg = Number(body.totalWeightKg ?? 0);
     const recipientCity = Number(body.address?.pathao_city_id);
     const recipientZone = Number(body.address?.pathao_zone_id);
 
-    if (!storeId || !recipientCity || !recipientZone) {
+    if (!recipientCity || !recipientZone) {
       return NextResponse.json(
         { error: 'PATHAO_PRICE_INPUT_INVALID' },
         { status: 400 }
       );
     }
+
+    const storeInfo = await resolvePathaoStore();
 
     if (body.items?.length) {
       const productIds = [...new Set(body.items.map((item) => item.productId))];
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
     const response = await pathaoRequest<{ data?: { final_price?: number; price?: number } }>(
       '/aladdin/api/v1/merchant/price-plan',
       {
-        store_id: storeId,
+        store_id: storeInfo.storeId,
         item_type: 2,
         delivery_type: 48,
         item_weight: pathaoWeightKg,
@@ -115,6 +116,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       shippingCharge,
+      store: {
+        storeId: storeInfo.storeId,
+        source: storeInfo.source,
+        cityId: storeInfo.store?.cityId ?? null,
+        zoneId: storeInfo.store?.zoneId ?? null,
+      },
       weight: {
         calculatedWeightKg: totalWeightKg,
         pathaoWeightKg,

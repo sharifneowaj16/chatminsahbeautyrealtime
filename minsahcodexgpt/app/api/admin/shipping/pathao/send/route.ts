@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { extractVariantWeightKg, parseWeightToKg } from '@/lib/buy-now';
-import { extractPathaoObject, getPathaoBaseUrl, pathaoRequest } from '@/lib/pathao';
+import { extractPathaoObject, getPathaoBaseUrl, pathaoRequest, resolvePathaoStore } from '@/lib/pathao';
 import { Prisma } from '@/generated/prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -168,9 +168,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Order is missing a shipping address' }, { status: 400 });
   }
 
-  const storeId = Number(process.env.PATHAO_STORE_ID);
-  if (!storeId) {
-    return NextResponse.json({ error: 'PATHAO_STORE_ID is not configured' }, { status: 501 });
+  let storeInfo: Awaited<ReturnType<typeof resolvePathaoStore>>;
+  try {
+    storeInfo = await resolvePathaoStore();
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Pathao store is not configured' },
+      { status: 501 }
+    );
   }
 
   const recipientName =
@@ -196,7 +201,7 @@ export async function POST(request: NextRequest) {
   }
 
   const createOrderPayload = {
-    store_id: storeId,
+    store_id: storeInfo.storeId,
     merchant_order_id: order.id.toString(),
     recipient_name: recipientName,
     recipient_phone: recipientPhone,

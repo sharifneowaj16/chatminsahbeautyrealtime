@@ -5,7 +5,20 @@ interface PathaoTokenResponse {
 }
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
+let cachedStores: { value: PathaoStore[]; expiresAt: number } | null = null;
 type PathaoHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface PathaoStore {
+  storeId: number;
+  storeName: string | null;
+  storeAddress: string | null;
+  isActive: boolean;
+  cityId: number | null;
+  zoneId: number | null;
+  hubId: number | null;
+  isDefaultStore: boolean;
+  isDefaultReturnStore: boolean;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -160,4 +173,120 @@ export function extractPathaoObject(value: unknown): Record<string, unknown> {
   }
 
   return isRecord(current) ? current : {};
+}
+
+function normalizeBooleanFlag(value: unknown): boolean {
+  return value === 1 || value === true || value === '1' || value === 'true';
+}
+
+function normalizeNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function normalizePathaoStore(value: unknown): PathaoStore | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const storeId = normalizeNumber(value.store_id ?? value.storeId ?? value.id);
+  if (!storeId) {
+    return null;
+  }
+
+  return {
+    storeId,
+    storeName: typeof value.store_name === 'string' ? value.store_name : null,
+    storeAddress: typeof value.store_address === 'string' ? value.store_address : null,
+    isActive: normalizeBooleanFlag(value.is_active),
+    cityId: normalizeNumber(value.city_id),
+    zoneId: normalizeNumber(value.zone_id),
+    hubId: normalizeNumber(value.hub_id),
+    isDefaultStore: normalizeBooleanFlag(value.is_default_store),
+    isDefaultReturnStore: normalizeBooleanFlag(value.is_default_return_store),
+  };
+}
+
+export async function fetchPathaoStores(): Promise<PathaoStore[]> {
+  const now = Date.now();
+  if (cachedStores && cachedStores.expiresAt > now) {
+    return cachedStores.value;
+  }
+
+  const response = await pathaoRequest<unknown>('/aladdin/api/v1/stores', undefined, 'GET');
+  const storesPayload = extractPathaoObject(response);
+  const rawStores = Array.isArray(storesPayload.data) ? storesPayload.data : extractPathaoArray(response);
+  const stores = rawStores
+    .map(normalizePathaoStore)
+    .filter((store): store is PathaoStore => !!store);
+
+  cachedStores = {
+    value: stores,
+    expiresAt: now + 5 * 60 * 1000,
+  };
+
+  return stores;
+}
+
+export async function resolvePathaoStore(): Promise<{
+  storeId: number;
+  store: PathaoStore | null;
+  source: 'env' | 'default_store' | 'first_active_store';
+}> {
+  const configuredStoreId = normalizeNumber(process.env.PATHAO_STORE_ID);
+  let stores: PathaoStore[];
+  try {
+    stores = await fetchPathaoStores();
+  } catch (error) {
+    if (configuredStoreId) {
+      return {
+        storeId: configuredStoreId,
+        store: null,
+        source: 'env',
+      };
+    }
+
+    throw error;
+  }
+
+  const activeStores = stores.filter((store) => store.isActive);
+
+  if (configuredStoreId) {
+    const configuredStore = stores.find((store) => store.storeId === configuredStoreId) ?? null;
+    if (!configuredStore || configuredStore.isActive) {
+      return {
+        storeId: configuredStoreId,
+        store: configuredStore,
+        source: 'env',
+      };
+    }
+  }
+
+  const defaultStore = activeStores.find((store) => store.isDefaultStore) ?? null;
+  if (defaultStore) {
+    return {
+      storeId: defaultStore.storeId,
+      store: defaultStore,
+      source: 'default_store',
+    };
+  }
+
+  const firstActiveStore = activeStores[0] ?? null;
+  if (firstActiveStore) {
+    return {
+      storeId: firstActiveStore.storeId,
+      store: firstActiveStore,
+      source: 'first_active_store',
+    };
+  }
+
+  if (configuredStoreId) {
+    return {
+      storeId: configuredStoreId,
+      store: null,
+      source: 'env',
+    };
+  }
+
+  throw new Error('No active Pathao store found');
 }

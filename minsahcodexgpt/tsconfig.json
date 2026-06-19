@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "realtime-service", "addtovartbuynow", "addtocardallfiles"]
+  "exclude": ["node_modules", "realtime-service", "addtovartbuynow", "addtocardallfiles", "derivrychargeclculate"]
 }
