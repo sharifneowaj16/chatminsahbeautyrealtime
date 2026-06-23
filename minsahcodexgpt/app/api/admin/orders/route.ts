@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma, $Enums } from '@/generated/prisma/client';
 import { generateDailyOrderNumber } from '@/lib/order-number';
+import { notifyNewOrder } from '@/lib/telegram-notify';
 
 type Decimal = Prisma.Decimal;
 const Decimal = Prisma.Decimal;
@@ -254,6 +255,13 @@ export async function POST(request: NextRequest) {
         },
       });
     }
+
+    notifyNewOrder({
+      orderNumber: order.orderNumber,
+      total: toNumber(order.total),
+      paymentMethod: order.paymentMethod || 'cash_on_delivery',
+      itemsCount: order.items.length,
+    }).catch(() => {});
 
     return NextResponse.json(
       {
