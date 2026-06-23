@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma, $Enums } from '@/generated/prisma/client';
+import { generateDailyOrderNumber } from '@/lib/order-number';
 
 type Decimal = Prisma.Decimal;
 const Decimal = Prisma.Decimal;
@@ -180,9 +181,9 @@ export async function POST(request: NextRequest) {
     const total = subtotal.add(shippingCostDec).minus(discountDec);
 
     // Create order
-    const order = await prisma.order.create({
+    const order = await prisma.$transaction(async (tx) => tx.order.create({
       data: {
-        orderNumber: `ORD${Date.now()}`,
+        orderNumber: await generateDailyOrderNumber(tx),
         userId: user.id,
         status: status.toUpperCase() as $Enums.OrderStatus,
         paymentStatus: (paymentStatus || 'PENDING').toUpperCase() as $Enums.PaymentStatus,
@@ -209,7 +210,7 @@ export async function POST(request: NextRequest) {
         },
       },
       include: { items: true },
-    });
+    }));
 
     // Create purchase shortlist for out-of-stock items
     for (const shortItem of shortlistItems) {

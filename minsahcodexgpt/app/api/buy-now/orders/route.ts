@@ -6,6 +6,8 @@ import {
   parseWeightToKg,
   resolvePackagingWeightKg,
 } from '@/lib/buy-now';
+import { generateDailyOrderNumber } from '@/lib/order-number';
+import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
 
 export const dynamic = 'force-dynamic';
 
@@ -198,7 +200,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const orderNumber = `MNS-${Date.now().toString().slice(-8)}`;
+      const orderNumber = await generateDailyOrderNumber(tx);
       const customerNoteParts = [
         'Placed with Buy Now flow',
         `Parcel weight: ${parcelWeightKg.toFixed(3)}kg`,
@@ -216,11 +218,12 @@ export async function POST(request: NextRequest) {
           orderNumber,
           userId,
           addressId: addressRecord.id,
-          status: 'PENDING',
+          status: 'CONFIRMED',
           paymentStatus: 'PENDING',
           paymentMethod,
           subtotal,
           shippingCost: deliveryCharge,
+          shippingMethod: 'pathao',
           taxAmount: 0,
           discountAmount: 0,
           total,
@@ -259,6 +262,11 @@ export async function POST(request: NextRequest) {
       return createdOrder;
     });
 
+    const pathaoDelivery = await createPathaoDeliveryForOrder(order.id, {
+      preserveOrderStatus: true,
+      saveFailureStatus: true,
+    });
+
     return NextResponse.json({
       success: true,
       orderId: order.id,
@@ -268,6 +276,8 @@ export async function POST(request: NextRequest) {
       grandTotal: total,
       parcelWeightKg,
       estimatedDelivery: shippingAddress.city.toLowerCase().includes('dhaka') ? '1-2 days' : '2-3 days',
+      redirectURL: `/checkout/order-confirmed?orderNumber=${order.orderNumber}`,
+      pathaoDelivery,
     });
   } catch (error) {
     console.error('POST /api/buy-now/orders error:', error);

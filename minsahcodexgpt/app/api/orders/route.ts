@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { Prisma, OrderStatus } from '@/generated/prisma/client';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
+import { generateDailyOrderNumber } from '@/lib/order-number';
+import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
 
 export const dynamic = 'force-dynamic';
 
@@ -211,11 +213,8 @@ export async function POST(request: NextRequest) {
         throw new Error('SHIPPING_ADDRESS_REQUIRED');
       }
 
-      // 6b. Unique order number
-      const orderNumber = `MB${Date.now()}${Math.random()
-        .toString(36)
-        .substring(2, 6)
-        .toUpperCase()}`;
+      // 6b. Unique daily order number
+      const orderNumber = await generateDailyOrderNumber(tx);
 
       // 6c. Create order
       const newOrder = await tx.order.create({
@@ -223,7 +222,7 @@ export async function POST(request: NextRequest) {
           orderNumber,
           userId,
           addressId:      resolvedAddressId,
-          status:         'PENDING',
+          status:         'CONFIRMED',
           paymentStatus:  'PENDING',
           paymentMethod,
           subtotal,
@@ -268,12 +267,21 @@ export async function POST(request: NextRequest) {
       return newOrder;
     });
 
+    const pathaoDelivery =
+      (shippingMethod || '').toLowerCase() === 'pathao'
+        ? await createPathaoDeliveryForOrder(order.id, {
+            preserveOrderStatus: true,
+            saveFailureStatus: true,
+          })
+        : null;
+
     return NextResponse.json({
       success:     true,
       orderId:     order.id,
       orderNumber: order.orderNumber,
       total:       order.total,
       redirectURL: `/checkout/order-confirmed?orderNumber=${order.orderNumber}`,
+      pathaoDelivery,
     });
 
   } catch (error) {

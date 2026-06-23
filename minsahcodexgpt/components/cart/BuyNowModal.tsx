@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/currency';
@@ -150,6 +151,7 @@ export default function BuyNowModal({
   initialQuantity = 1,
   onClose,
 }: BuyNowModalProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const [stage, setStage] = useState<ModalStage>('select');
   const [loading, setLoading] = useState(false);
@@ -572,6 +574,7 @@ export default function BuyNowModal({
         error?: string;
         orderNumber?: string;
         estimatedDelivery?: string;
+        redirectURL?: string;
       };
 
       if (response.status === 401) {
@@ -582,6 +585,8 @@ export default function BuyNowModal({
       if (!response.ok || !data.orderNumber) {
         throw new Error(data.error || 'Failed to place order');
       }
+
+      router.push(data.redirectURL || `/checkout/order-confirmed?orderNumber=${encodeURIComponent(data.orderNumber)}`);
 
       setSuccessPayload({
         orderNumber: data.orderNumber,

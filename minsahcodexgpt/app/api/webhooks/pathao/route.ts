@@ -52,10 +52,10 @@ function toJsonInput(value: unknown): Prisma.InputJsonValue {
 
 function mapPathaoEventToOrderStatus(
   eventName: string
-): 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | null {
+): 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | null {
   switch (eventName) {
     case 'Order Created':
-      return 'PENDING';
+      return 'CONFIRMED';
     case 'Order Updated':
     case 'Pickup Requested':
     case 'Assigned For Pickup':
