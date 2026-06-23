@@ -4,6 +4,7 @@ import { Prisma, OrderStatus } from '@/generated/prisma/client';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import { generateDailyOrderNumber } from '@/lib/order-number';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
+import { notifyNewOrder } from '@/lib/telegram-notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -274,6 +275,13 @@ export async function POST(request: NextRequest) {
             saveFailureStatus: true,
           })
         : null;
+
+    notifyNewOrder({
+      orderNumber: order.orderNumber,
+      total,
+      paymentMethod,
+      itemsCount: orderItems.length,
+    }).catch(() => {});
 
     return NextResponse.json({
       success:     true,
