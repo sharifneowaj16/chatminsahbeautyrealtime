@@ -157,13 +157,12 @@ export async function POST(request: NextRequest) {
 
     // ✨ NEW: Track custom products for UnlistedProduct
     const customProducts: { name: string; sku: string; price: Decimal }[] = [];
-    const variantIds = [
-      ...new Set(
-        items
-          .map((item: { variantId?: unknown }) => item.variantId)
-          .filter((variantId: unknown): variantId is string => typeof variantId === 'string' && variantId.length > 0)
-      ),
-    ];
+    const variantIds: string[] = [];
+    for (const item of items as Array<{ variantId?: unknown }>) {
+      if (typeof item.variantId === 'string' && item.variantId.length > 0 && !variantIds.includes(item.variantId)) {
+        variantIds.push(item.variantId);
+      }
+    }
     const variantMap = new Map(
       (
         variantIds.length
