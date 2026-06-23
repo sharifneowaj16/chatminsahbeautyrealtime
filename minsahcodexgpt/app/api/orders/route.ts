@@ -34,6 +34,41 @@ interface AddressDataInput {
   pathao_area_id?: number;
 }
 
+function readVariantAttribute(attributes: unknown, keys: string[]) {
+  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+    return null;
+  }
+
+  const record = attributes as Record<string, unknown>;
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number') return String(value);
+  }
+
+  const loweredKeys = keys.map((key) => key.toLowerCase());
+  for (const [key, value] of Object.entries(record)) {
+    if (!loweredKeys.includes(key.toLowerCase())) continue;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number') return String(value);
+  }
+
+  return null;
+}
+
+function formatVariantForNotification(variant: { name: string; attributes?: unknown } | null | undefined) {
+  if (!variant) return null;
+
+  const sizeOrVolume = readVariantAttribute(variant.attributes, ['size', 'Size', 'volume', 'Volume']);
+  const colorOrShade = readVariantAttribute(variant.attributes, ['color', 'Color', 'shade', 'Shade']);
+  const details = [
+    sizeOrVolume ? `Size/Volume: ${sizeOrVolume}` : null,
+    colorOrShade ? `Color/Shade: ${colorOrShade}` : null,
+  ].filter(Boolean);
+
+  return details.length ? details.join(' / ') : variant.name || null;
+}
+
 // ─── POST /api/orders ─────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
@@ -100,7 +135,7 @@ export async function POST(request: NextRequest) {
       variantIds.length
         ? prisma.productVariant.findMany({
             where: { id: { in: variantIds } },
-            select: { id: true, price: true, quantity: true, sku: true, name: true },
+            select: { id: true, price: true, quantity: true, sku: true, name: true, attributes: true },
           })
         : Promise.resolve([]),
     ]);
@@ -163,6 +198,19 @@ export async function POST(request: NextRequest) {
     const total           = parseFloat(
       (subtotal + shippingCostNum - discountAmount).toFixed(2)
     );
+    const notifyItems = items.map((item) => {
+      const product   = productMap.get(item.productId)!;
+      const variant   = item.variantId ? variantMap.get(item.variantId) : null;
+      const unitPrice = parseFloat((variant?.price ?? product.price).toString());
+
+      return {
+        name: product.name,
+        variant: formatVariantForNotification(variant),
+        quantity: item.quantity,
+        unitPrice,
+        total: parseFloat((unitPrice * item.quantity).toFixed(2)),
+      };
+    });
 
     // 6. Single transaction: resolve address → create order → decrement stock → clear cart
     const order = await prisma.$transaction(async (tx) => {
@@ -294,12 +342,7 @@ export async function POST(request: NextRequest) {
         zone: resolvedAddress?.street2 || null,
         area: resolvedAddress?.street1 || null,
       },
-      items: orderItems.map((item) => ({
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        total: item.total,
-      })),
+      items: notifyItems,
       subtotal,
       shippingCost: shippingCostNum,
       total,

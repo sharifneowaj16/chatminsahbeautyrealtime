@@ -31,6 +31,41 @@ function toNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function readVariantAttribute(attributes: unknown, keys: string[]) {
+  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+    return null;
+  }
+
+  const record = attributes as Record<string, unknown>;
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number') return String(value);
+  }
+
+  const loweredKeys = keys.map((key) => key.toLowerCase());
+  for (const [key, value] of Object.entries(record)) {
+    if (!loweredKeys.includes(key.toLowerCase())) continue;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number') return String(value);
+  }
+
+  return null;
+}
+
+function formatVariantForNotification(variant: { name: string; attributes?: unknown } | null | undefined) {
+  if (!variant) return null;
+
+  const sizeOrVolume = readVariantAttribute(variant.attributes, ['size', 'Size', 'volume', 'Volume']);
+  const colorOrShade = readVariantAttribute(variant.attributes, ['color', 'Color', 'shade', 'Shade']);
+  const details = [
+    sizeOrVolume ? `Size/Volume: ${sizeOrVolume}` : null,
+    colorOrShade ? `Color/Shade: ${colorOrShade}` : null,
+  ].filter(Boolean);
+
+  return details.length ? details.join(' / ') : variant.name || null;
+}
+
 // POST /api/admin/orders — Create order (admin-created on behalf of customer)
 export async function POST(request: NextRequest) {
   try {
@@ -117,10 +152,28 @@ export async function POST(request: NextRequest) {
     // Calculate totals & validate products
     let subtotal = new Decimal(0);
     const orderItems: { productId: string | null; variantId?: string; name: string; sku: string; price: Decimal; quantity: number; total: Decimal }[] = [];
+    const notifyItems: { name: string; variant: string | null; quantity: number; unitPrice: number; total: number }[] = [];
     const shortlistItems: { productId: string; quantity: number; price: Decimal }[] = [];
 
     // ✨ NEW: Track custom products for UnlistedProduct
     const customProducts: { name: string; sku: string; price: Decimal }[] = [];
+    const variantIds = [
+      ...new Set(
+        items
+          .map((item: { variantId?: unknown }) => item.variantId)
+          .filter((variantId): variantId is string => typeof variantId === 'string' && variantId.length > 0)
+      ),
+    ];
+    const variantMap = new Map(
+      (
+        variantIds.length
+          ? await prisma.productVariant.findMany({
+              where: { id: { in: variantIds } },
+              select: { id: true, name: true, attributes: true },
+            })
+          : []
+      ).map((variant) => [variant.id, variant])
+    );
 
     for (const item of items) {
       const itemQuantity = item.quantity || 1;
@@ -148,6 +201,13 @@ export async function POST(request: NextRequest) {
           quantity: itemQuantity,
           total: itemTotal,
         });
+        notifyItems.push({
+          name: product.name,
+          variant: formatVariantForNotification(item.variantId ? variantMap.get(item.variantId) : null),
+          quantity: itemQuantity,
+          unitPrice: toNumber(itemPrice),
+          total: toNumber(itemTotal),
+        });
 
         if (product.quantity < itemQuantity) {
           shortlistItems.push({
@@ -166,6 +226,13 @@ export async function POST(request: NextRequest) {
           price: itemPrice,
           quantity: itemQuantity,
           total: itemTotal,
+        });
+        notifyItems.push({
+          name: item.name || 'Custom Product',
+          variant: null,
+          quantity: itemQuantity,
+          unitPrice: toNumber(itemPrice),
+          total: toNumber(itemTotal),
         });
 
         customProducts.push({
@@ -270,13 +337,7 @@ export async function POST(request: NextRequest) {
         zone: address.state || address.street2 || null,
         area: address.street1 || null,
       },
-      items: order.items.map((item) => ({
-        name: item.name,
-        variant: null,
-        quantity: item.quantity,
-        unitPrice: toNumber(item.price),
-        total: toNumber(item.total),
-      })),
+      items: notifyItems,
       subtotal: toNumber(order.subtotal),
       shippingCost: toNumber(order.shippingCost),
       total: toNumber(order.total),
