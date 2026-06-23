@@ -93,6 +93,73 @@ function toNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function dedupeParts(parts: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const part of parts) {
+    const cleaned = part.trim().replace(/\s+/g, ' ');
+    if (!cleaned) continue;
+
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    result.push(cleaned);
+  }
+
+  return result;
+}
+
+function normalizeRecipientName(value: string): string {
+  const name = value.trim().replace(/\s+/g, ' ');
+  if (name.length >= 3) {
+    return name.slice(0, 100);
+  }
+
+  return `${name || 'Minsah'} Customer`.slice(0, 100);
+}
+
+function normalizeBangladeshPhone(value: string): string {
+  const digits = value.replace(/\D/g, '');
+
+  if (digits.length === 11 && digits.startsWith('01')) {
+    return digits;
+  }
+
+  if (digits.length === 13 && digits.startsWith('8801')) {
+    return `0${digits.slice(3)}`;
+  }
+
+  if (digits.length === 10 && digits.startsWith('1')) {
+    return `0${digits}`;
+  }
+
+  return digits;
+}
+
+function buildRecipientAddress(address: {
+  street1?: string | null;
+  street2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+}): string {
+  const parts = dedupeParts([
+    address.street1 ?? '',
+    address.street2 ?? '',
+    address.city ?? '',
+    address.state ?? '',
+    address.postalCode ?? '',
+    address.country ?? 'Bangladesh',
+  ]);
+
+  const fullAddress = parts.join(', ');
+  const withFallback = fullAddress.length >= 10 ? fullAddress : `${fullAddress}, Bangladesh`;
+  return withFallback.slice(0, 220);
+}
+
 function getPathaoCreateOrderEndpoint(): string {
   const rawEndpoint = process.env.PATHAO_CREATE_ORDER_ENDPOINT;
   const endpoint = rawEndpoint === undefined ? DEFAULT_CREATE_ORDER_ENDPOINT : rawEndpoint.trim();
@@ -213,11 +280,12 @@ export async function createPathaoDeliveryForOrder(
     }
 
     const storeInfo = await resolvePathaoStore();
-    const recipientName =
+    const recipientName = normalizeRecipientName(
       `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`.trim() ||
-      `${order.user.firstName ?? ''} ${order.user.lastName ?? ''}`.trim();
-    const recipientPhone = order.shippingAddress.phone || order.user.phone || '';
-    const recipientAddress = order.shippingAddress.street1 || '';
+      `${order.user.firstName ?? ''} ${order.user.lastName ?? ''}`.trim()
+    );
+    const recipientPhone = normalizeBangladeshPhone(order.shippingAddress.phone || order.user.phone || '');
+    const recipientAddress = buildRecipientAddress(order.shippingAddress);
     const totalQuantity = order.items.reduce((sum, item) => sum + Math.max(1, item.quantity), 0);
     const finalWeightKg = calculateOrderWeightKg(order.items);
     const paymentMethod = order.paymentMethod?.toLowerCase() ?? '';
@@ -226,10 +294,10 @@ export async function createPathaoDeliveryForOrder(
     if (!recipientName) {
       throw new Error('Missing recipient_name');
     }
-    if (!recipientPhone) {
+    if (!/^01\d{9}$/.test(recipientPhone)) {
       throw new Error('Missing recipient_phone');
     }
-    if (!recipientAddress) {
+    if (recipientAddress.length < 10) {
       throw new Error('Missing recipient_address');
     }
     if (finalWeightKg <= 0) {
@@ -251,7 +319,7 @@ export async function createPathaoDeliveryForOrder(
       item_quantity: totalQuantity,
       item_weight: finalWeightKg,
       item_description: generateItemDescription(order.items),
-      amount_to_collect: isCOD ? toNumber(order.total) : 0,
+      amount_to_collect: isCOD ? Math.max(0, Math.round(toNumber(order.total))) : 0,
     };
 
     console.info('Pathao create-order request', {
@@ -277,8 +345,8 @@ export async function createPathaoDeliveryForOrder(
       extractField(data, ['tracking_number', 'tracking_no', 'tracking_code', 'trackingCode']) ??
       extractField(response, ['tracking_number', 'tracking_no', 'tracking_code', 'trackingCode']);
     const status =
-      extractField(data, ['status', 'delivery_status']) ??
-      extractField(response, ['status', 'delivery_status']) ??
+      extractField(data, ['order_status', 'orderStatus', 'status', 'delivery_status']) ??
+      extractField(response, ['order_status', 'orderStatus', 'status', 'delivery_status']) ??
       'Order Created';
     const deliveryFee =
       extractNumericField(data, ['delivery_fee', 'delivery_charge', 'courier_charge', 'charge']) ??
