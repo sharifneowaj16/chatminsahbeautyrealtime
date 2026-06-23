@@ -14,8 +14,6 @@ import {
   Trash2,
   MapPin,
   User,
-  Phone,
-  Mail,
   Package,
   DollarSign,
   Edit3,
@@ -378,7 +376,10 @@ export default function CreateOrderPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!customer.firstName || !customer.phone) { showToast('error', 'Customer name and phone required'); return; }
+    const customerName = (customer.firstName || address.firstName || '').trim();
+    const customerPhone = (customer.phone || address.phone || '').trim();
+
+    if (!customerName || !customerPhone) { showToast('error', 'Customer name and phone required'); return; }
     if (!address.street1 || !address.city)       { showToast('error', 'Street and city required');        return; }
     if (orderItems.length === 0)                  { showToast('error', 'Add at least one product');        return; }
 
@@ -390,20 +391,20 @@ export default function CreateOrderPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer: {
-            firstName: customer.firstName,
+            firstName: customerName,
             lastName:  customer.lastName  || '',
             email:     customer.email     || `${Date.now()}@order.local`,
-            phone:     customer.phone,
+            phone:     customerPhone,
           },
           shippingAddress: {
-            firstName:    address.firstName || customer.firstName,
+            firstName:    address.firstName || customerName,
             lastName:     address.lastName  || customer.lastName || '',
             street1:      address.street1,
             street2:      address.street2   || '',
             city:         address.city,
             state:        address.state     || '',
             postalCode:   address.postalCode || '',
-            phone:        address.phone     || customer.phone,
+            phone:        address.phone     || customerPhone,
             pathaoCityId: address.pathaoCityId,
             pathaoZoneId: address.pathaoZoneId,
             pathaoAreaId: address.pathaoAreaId,
@@ -544,51 +545,6 @@ export default function CreateOrderPage() {
               </div>
             )}
 
-            {/* Customer fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name *</label>
-                <input
-                  type="text"
-                  value={customer.firstName || ''}
-                  onChange={e => setCustomer(p => ({ ...p, firstName: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
-                <input
-                  type="text"
-                  value={customer.lastName || ''}
-                  onChange={e => setCustomer(p => ({ ...p, lastName: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                  <Phone className="w-4 h-4" /> Phone *
-                </label>
-                <input
-                  type="tel"
-                  value={customer.phone || ''}
-                  onChange={e => setCustomer(p => ({ ...p, phone: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                  <Mail className="w-4 h-4" /> Email
-                </label>
-                <input
-                  type="email"
-                  value={customer.email || ''}
-                  onChange={e => setCustomer(p => ({ ...p, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-            </div>
           </div>
 
           {/* ════════════════════════════════════════
@@ -601,7 +557,7 @@ export default function CreateOrderPage() {
 
             {/* Full Name */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name *</label>
               <input
                 type="text"
                 value={address.firstName || ''}
@@ -681,7 +637,7 @@ export default function CreateOrderPage() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone *</label>
               <input
                 type="tel"
                 value={address.phone || ''}

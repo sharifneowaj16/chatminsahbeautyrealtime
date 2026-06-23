@@ -189,6 +189,7 @@ export async function POST(request: NextRequest) {
         status: status.toUpperCase() as $Enums.OrderStatus,
         paymentStatus: (paymentStatus || 'PENDING').toUpperCase() as $Enums.PaymentStatus,
         paymentMethod: paymentMethod || 'cash_on_delivery',
+        shippingMethod: 'pathao',
         subtotal,
         shippingCost: shippingCostDec,
         taxAmount: new Decimal(0),
@@ -257,10 +258,29 @@ export async function POST(request: NextRequest) {
     }
 
     notifyNewOrder({
+      orderId: order.id,
       orderNumber: order.orderNumber,
+      customerName:
+        `${address.firstName} ${address.lastName}`.trim() ||
+        `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+        'N/A',
+      customerPhone: address.phone || user.phone || 'N/A',
+      address: {
+        city: address.city || 'N/A',
+        zone: address.state || address.street2 || null,
+        area: address.street1 || null,
+      },
+      items: order.items.map((item) => ({
+        name: item.name,
+        variant: null,
+        quantity: item.quantity,
+        unitPrice: toNumber(item.price),
+        total: toNumber(item.total),
+      })),
+      subtotal: toNumber(order.subtotal),
+      shippingCost: toNumber(order.shippingCost),
       total: toNumber(order.total),
       paymentMethod: order.paymentMethod || 'cash_on_delivery',
-      itemsCount: order.items.length,
     }).catch(() => {});
 
     return NextResponse.json(

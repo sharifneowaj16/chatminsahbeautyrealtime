@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 import { Prisma, OrderStatus } from '@/generated/prisma/client';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import { generateDailyOrderNumber } from '@/lib/order-number';
-import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
 import { notifyNewOrder } from '@/lib/telegram-notify';
 
 export const dynamic = 'force-dynamic';
@@ -268,19 +267,43 @@ export async function POST(request: NextRequest) {
       return newOrder;
     });
 
-    const pathaoDelivery =
-      (shippingMethod || '').toLowerCase() === 'pathao'
-        ? await createPathaoDeliveryForOrder(order.id, {
-            preserveOrderStatus: true,
-            saveFailureStatus: true,
-          })
-        : null;
+    // Pathao delivery এখন এখানে create হবে না - Telegram থেকে Confirm করার পর হবে
+    const resolvedAddress = order.addressId
+      ? await prisma.address.findUnique({
+          where: { id: order.addressId },
+          select: {
+            firstName: true,
+            lastName:  true,
+            phone:     true,
+            city:      true,
+            street2:   true,
+            street1:   true,
+          },
+        })
+      : null;
 
     notifyNewOrder({
+      orderId: order.id,
       orderNumber: order.orderNumber,
+      customerName: resolvedAddress
+        ? `${resolvedAddress.firstName} ${resolvedAddress.lastName}`.trim()
+        : 'N/A',
+      customerPhone: resolvedAddress?.phone || 'N/A',
+      address: {
+        city: resolvedAddress?.city || 'N/A',
+        zone: resolvedAddress?.street2 || null,
+        area: resolvedAddress?.street1 || null,
+      },
+      items: orderItems.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.price,
+        total: item.total,
+      })),
+      subtotal,
+      shippingCost: shippingCostNum,
       total,
       paymentMethod,
-      itemsCount: orderItems.length,
     }).catch(() => {});
 
     return NextResponse.json({
@@ -289,7 +312,6 @@ export async function POST(request: NextRequest) {
       orderNumber: order.orderNumber,
       total:       order.total,
       redirectURL: `/checkout/order-confirmed?orderNumber=${order.orderNumber}`,
-      pathaoDelivery,
     });
 
   } catch (error) {
