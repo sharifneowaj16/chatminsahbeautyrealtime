@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       ...new Set(
         items
           .map((item: { variantId?: unknown }) => item.variantId)
-          .filter((variantId): variantId is string => typeof variantId === 'string' && variantId.length > 0)
+          .filter((variantId: unknown): variantId is string => typeof variantId === 'string' && variantId.length > 0)
       ),
     ];
     const variantMap = new Map(
