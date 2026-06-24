@@ -11,9 +11,12 @@ export type FacebookPixelEvent =
   | 'PageView'
   | 'ViewContent'
   | 'AddToCart'
+  | 'AddToWishlist'
   | 'InitiateCheckout'
   | 'AddPaymentInfo'
-  | 'Purchase';
+  | 'Purchase'
+  | 'Search'
+  | 'CompleteRegistration';
 
 export interface FacebookPixelParams {
   content_ids?: string[];
