@@ -235,7 +235,66 @@ class TrackingManager {
     if (typeof window === 'undefined' || !window.fbq) return;
 
     const fbEvent = this.mapToFacebookEvent(event);
-    window.fbq('track', fbEvent, data as Record<string, any>);
+    const eventId = `${fbEvent}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    // Browser pixel — eventID পাঠাও deduplication এর জন্য
+    window.fbq('track', fbEvent, data as Record<string, any>, { eventID: eventId });
+
+    // Server-side CAPI — same eventID দিয়ে
+    this.sendToFacebookCAPI(fbEvent, eventId, data);
+  }
+
+  /**
+   * Send event to Facebook Conversions API (server-side)
+   * Same eventID as browser pixel — Meta automatically deduplicates
+   */
+  private async sendToFacebookCAPI(
+    eventName: string,
+    eventId: string,
+    data?: TrackingEventData
+  ): Promise<void> {
+    if (typeof window === 'undefined') return;
+
+    // শুধু Facebook supported events পাঠাও
+    const capiEvents = [
+      'PageView', 'ViewContent', 'AddToCart', 'AddToWishlist',
+      'InitiateCheckout', 'Purchase', 'Search', 'CompleteRegistration'
+    ];
+    if (!capiEvents.includes(eventName)) return;
+
+    try {
+      const fbc = document.cookie.match(/_fbc=([^;]+)/)?.[1];
+      const fbp = document.cookie.match(/_fbp=([^;]+)/)?.[1];
+
+      await fetch('/api/facebook-capi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventName,
+          eventId,
+          eventSourceUrl: window.location.href,
+          fbc,
+          fbp,
+          value: data?.value,
+          currency: data?.currency || 'BDT',
+          contentIds: data?.contentIds,
+          contentType: data?.contentType,
+          contentName: data?.contentName,
+          contentCategory: data?.contentCategory,
+          contents: data?.contents,
+          numItems: data?.numItems,
+          orderId: data?.orderId,
+          email: data?.email,
+          phone: data?.phone,
+          firstName: data?.firstName,
+          lastName: data?.lastName,
+          city: data?.city,
+          country: data?.country || 'BD',
+        }),
+      });
+    } catch {
+      // Silently fail — browser pixel already fired
+    }
   }
 
   /**
@@ -329,6 +388,7 @@ class TrackingManager {
 
   /**
    * Send tracking data to server for storage and analysis
+   * Note: শুধু sessionId ও deviceId পাঠাও — পুরো session history না
    */
   private async sendToServer(event: TrackingEvent, data?: TrackingEventData): Promise<void> {
     try {
@@ -338,7 +398,8 @@ class TrackingManager {
         body: JSON.stringify({
           event,
           data,
-          session: this.sessionData,
+          sessionId: this.sessionData?.sessionId,
+          deviceId: this.sessionData?.deviceId,
           timestamp: Date.now(),
         }),
       });
