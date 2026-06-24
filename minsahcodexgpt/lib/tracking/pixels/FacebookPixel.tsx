@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Script from 'next/script';
 
 interface FacebookPixelProps {
@@ -9,51 +8,28 @@ interface FacebookPixelProps {
 }
 
 export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixelProps) {
-  const [shouldLoad, setShouldLoad] = useState(false);
-
-  useEffect(() => {
-    if (!enabled || !pixelId || shouldLoad) return;
-
-    const loadPixel = () => setShouldLoad(true);
-    const timer = window.setTimeout(loadPixel, 30000);
-    const events: Array<keyof WindowEventMap> = ['pointerdown', 'keydown'];
-
-    events.forEach((eventName) => {
-      window.addEventListener(eventName, loadPixel, { once: true, passive: true });
-    });
-
-    return () => {
-      window.clearTimeout(timer);
-      events.forEach((eventName) => {
-        window.removeEventListener(eventName, loadPixel);
-      });
-    };
-  }, [enabled, pixelId, shouldLoad]);
-
   if (!enabled || !pixelId) return null;
 
   return (
     <>
-      {shouldLoad && (
-        <Script
-          id="facebook-pixel"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${pixelId}');
-              fbq('track', 'PageView');
-            `,
-          }}
-        />
-      )}
+      <Script
+        id="facebook-pixel"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${pixelId}');
+            fbq('track', 'PageView');
+          `,
+        }}
+      />
       <noscript>
         <img
           height="1"
