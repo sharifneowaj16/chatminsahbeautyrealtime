@@ -28,18 +28,24 @@ function createRedisClient(): Redis | null {
   try {
     return new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
-      retryStrategy: (times) => {
-        if (times > 3) {
-          console.error('❌ Redis connection failed after 3 retries');
-          return null;
-        }
-        return Math.min(times * 200, 2_000);
-      },
+      // ✅ FIX: কখনো permanently হাল ছাড়বে না (আগে times > 3 হলে null
+      // রিটার্ন করতো, যেটা connection-কে স্থায়ীভাবে মেরে দিতো)।
+      // capped exponential backoff — সবসময় retry চালিয়ে যাবে।
+      retryStrategy: (times) => Math.min(times * 200, 5_000),
       lazyConnect: true,
       // ✅ Connection timeout
       connectTimeout: 10_000,
-      // ✅ Graceful error handling
-      enableOfflineQueue: false,
+      // ✅ FIX: TCP keepalive চালু — idle connection নেটওয়ার্কে silently
+      // drop হয়ে গেলে সেটা তাড়াতাড়ি ধরা পড়বে এবং reconnect হবে,
+      // আগে keepalive বন্ধ থাকায় drop হওয়া connection অনেকক্ষণ
+      // "looks alive but isn't" অবস্থায় থাকতো।
+      keepAlive: 10_000,
+      // ✅ FIX: brief reconnect window-এ command queue হবে এবং reconnect
+      // হওয়ার পর সেটা flush হবে — আগে enableOfflineQueue: false থাকায়
+      // এই কয়েক সেকেন্ডের window-এ আসা যেকোনো command (যেমন health
+      // check) সাথে সাথে "Stream isn't writeable" error ছুঁড়ে দিতো,
+      // যেটাই Uptime Kuma-তে repeated short downtime হিসেবে দেখাচ্ছিল।
+      enableOfflineQueue: true,
     });
   } catch (error) {
     console.error('❌ Failed to create Redis client:', error);
@@ -166,7 +172,7 @@ export async function cacheIncrement(
 // ✅ Health check helper
 export async function isRedisConnected(): Promise<boolean> {
   if (!redis) return false;
-  
+
   try {
     await redis.ping();
     return true;
