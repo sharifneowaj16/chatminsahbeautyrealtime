@@ -41,6 +41,7 @@ export interface TrackingEventData {
   contents?: Array<{
     id: string;
     quantity: number;
+    item_price?: number;
     price?: number;
   }>;
 

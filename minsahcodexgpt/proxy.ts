@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
+import { sanitizeTrackingPath, sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
 
 // Get allowed origins from environment or use defaults
 function getAllowedOrigins(): string[] {
@@ -32,6 +33,128 @@ function generateNonce(): string {
   const array = new Uint8Array(16);
   crypto.getRandomValues(array);
   return Buffer.from(array).toString('base64');
+}
+
+const TRACKING_COOKIE_MAX_AGE = {
+  fbp: 90 * 24 * 60 * 60,
+  fbc: 90 * 24 * 60 * 60,
+  attribution: 30 * 24 * 60 * 60,
+  visitor: 180 * 24 * 60 * 60,
+};
+
+const ATTRIBUTION_PARAMS = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_content',
+  'campaign_id',
+  'adset_id',
+  'ad_id',
+  'placement',
+] as const;
+
+function encodeCookieJson(value: Record<string, string>) {
+  return encodeURIComponent(JSON.stringify(value));
+}
+
+function createFbp() {
+  return `fb.1.${Date.now()}.${Math.floor(Math.random() * 1_000_000_000_000_000_000)}`;
+}
+
+function createVisitorId() {
+  return `mbv_${Date.now()}_${crypto.randomUUID()}`;
+}
+
+function shouldApplyTrackingCookies(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (request.method !== 'GET' && request.method !== 'HEAD') return false;
+  if (pathname.startsWith('/api')) return false;
+  if (pathname.startsWith('/admin')) return false;
+  if (pathname.startsWith('/checkout/payment-bridge')) return false;
+  return true;
+}
+
+function applyTrackingCookies(request: NextRequest, response: NextResponse): NextResponse {
+  if (!shouldApplyTrackingCookies(request)) return response;
+
+  const secure = request.nextUrl.protocol === 'https:';
+  const cookieOptions = {
+    path: '/',
+    sameSite: 'lax' as const,
+    secure,
+  };
+  const searchParams = request.nextUrl.searchParams;
+  const fbclid = searchParams.get('fbclid')?.trim();
+  const attribution = ATTRIBUTION_PARAMS.reduce<Record<string, string>>((acc, key) => {
+    const value = searchParams.get(key)?.trim();
+    if (value) acc[key] = value;
+    return acc;
+  }, {});
+
+  if (!request.cookies.get('_fbp')?.value) {
+    response.cookies.set('_fbp', createFbp(), {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.fbp,
+    });
+  }
+
+  if (fbclid && !request.cookies.get('_fbc')?.value) {
+    response.cookies.set('_fbc', `fb.1.${Date.now()}.${fbclid}`, {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.fbc,
+    });
+  }
+
+  if (!request.cookies.get('mb_vid')?.value) {
+    response.cookies.set('mb_vid', createVisitorId(), {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
+    });
+  }
+
+  if (Object.keys(attribution).length > 0) {
+    response.cookies.set('mb_attribution', encodeCookieJson(attribution), {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.attribution,
+    });
+  }
+
+  if (!request.cookies.get('mb_first_landing_path')?.value) {
+    response.cookies.set(
+      'mb_first_landing_path',
+      encodeURIComponent(
+        sanitizeTrackingPath(`${request.nextUrl.pathname}${request.nextUrl.search}`) ?? request.nextUrl.pathname
+      ),
+      {
+        ...cookieOptions,
+        maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
+      }
+    );
+  }
+
+  if (!request.cookies.get('mb_first_landing_url')?.value) {
+    response.cookies.set(
+      'mb_first_landing_url',
+      encodeURIComponent(sanitizeTrackingUrl(request.nextUrl.href) ?? request.nextUrl.origin),
+      {
+        ...cookieOptions,
+        maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
+      }
+    );
+  }
+
+  const referrer = request.headers.get('referer')?.trim();
+  if (referrer && !request.cookies.get('mb_referrer')?.value) {
+    const safeReferrer = sanitizeTrackingUrl(referrer);
+    if (safeReferrer) {
+      response.cookies.set('mb_referrer', encodeURIComponent(safeReferrer), {
+        ...cookieOptions,
+        maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
+      });
+    }
+  }
+
+  return response;
 }
 
 // Create base response with security headers
@@ -86,7 +209,7 @@ function handleCors(request: NextRequest, response: NextResponse): NextResponse 
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Handle CORS preflight requests
@@ -102,7 +225,7 @@ export async function middleware(request: NextRequest) {
     // - Response Content-Type is set by each route handler (e.g. NextResponse.json()).
     // - Upload routes receive multipart/form-data requests; forcing application/json
     //   onto the NextResponse.next() object overwrites the forwarded request Content-Type
-    //   header in Next.js App Router middleware, causing request.formData() to throw.
+    //   header in Next.js App Router proxy, causing request.formData() to throw.
     return handleCors(request, createSecureResponse(response));
   }
 
@@ -169,7 +292,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // All other routes
-  return createSecureResponse(NextResponse.next());
+  return applyTrackingCookies(request, createSecureResponse(NextResponse.next()));
 }
 
 export const config = {

@@ -8,6 +8,7 @@ import {
 } from '@/lib/buy-now';
 import { generateDailyOrderNumber } from '@/lib/order-number';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
+import { readOrderAttribution } from '@/lib/tracking/order-attribution';
 
 export const dynamic = 'force-dynamic';
 
@@ -178,6 +179,7 @@ export async function POST(request: NextRequest) {
     const total = Number((subtotal + deliveryCharge).toFixed(2));
     const computedSubtotal = Number(body.subtotal ?? 0);
     const computedGrandTotal = Number(body.grandTotal ?? 0);
+    const orderAttribution = readOrderAttribution(request, { userId });
 
     const order = await prisma.$transaction(async (tx) => {
       const addressRecord = await tx.address.create({
@@ -228,6 +230,7 @@ export async function POST(request: NextRequest) {
           discountAmount: 0,
           total,
           customerNote: customerNoteParts.join(' | '),
+          ...orderAttribution,
           items: {
             create: orderItems.map((item) => ({
               productId: item.productId,
@@ -267,6 +270,11 @@ export async function POST(request: NextRequest) {
       saveFailureStatus: true,
     });
 
+    const normalizedPaymentMethod = paymentMethod.trim().toLowerCase();
+    const redirectURL = ['bkash', 'nagad'].includes(normalizedPaymentMethod)
+      ? `/checkout/payment/${normalizedPaymentMethod}?orderId=${order.id}&orderNumber=${order.orderNumber}`
+      : `/checkout/order-confirmed?orderNumber=${order.orderNumber}`;
+
     return NextResponse.json({
       success: true,
       orderId: order.id,
@@ -276,7 +284,7 @@ export async function POST(request: NextRequest) {
       grandTotal: total,
       parcelWeightKg,
       estimatedDelivery: shippingAddress.city.toLowerCase().includes('dhaka') ? '1-2 days' : '2-3 days',
-      redirectURL: `/checkout/order-confirmed?orderNumber=${order.orderNumber}`,
+      redirectURL,
       pathaoDelivery,
     });
   } catch (error) {

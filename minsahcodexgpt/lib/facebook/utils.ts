@@ -39,23 +39,48 @@ export function hashSHA256(value: string | undefined | null): string | undefined
  * Normalize and hash email
  * Removes spaces, converts to lowercase, then hashes
  */
-export function hashEmail(email: string | undefined | null): string | undefined {
+export function normalizeEmail(email: string | undefined | null): string | undefined {
   if (!email) return undefined;
   const normalized = email.trim().toLowerCase().replace(/\s/g, '');
+  return normalized || undefined;
+}
+
+export function hashEmail(email: string | undefined | null): string | undefined {
+  const normalized = normalizeEmail(email);
   return hashSHA256(normalized);
 }
 
 /**
- * Normalize and hash phone number
- * Removes all non-digit characters, then hashes
- * Example: "+1 (555) 123-4567" -> hash("15551234567")
+ * Normalize and hash phone number.
+ * Bangladesh numbers are normalized to E.164, for example 017... -> +88017...
  */
-export function hashPhone(phone: string | undefined | null): string | undefined {
+export function normalizeBangladeshPhone(phone: string | undefined | null): string | undefined {
   if (!phone) return undefined;
-  // Remove all non-digit characters
-  const digitsOnly = phone.replace(/\D/g, '');
-  if (!digitsOnly) return undefined;
-  return hashSHA256(digitsOnly);
+  let digits = phone.replace(/\D/g, '');
+  if (!digits) return undefined;
+
+  if (digits.startsWith('00880')) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.startsWith('8801') && digits.length === 13) {
+    return `+${digits}`;
+  }
+
+  if (digits.startsWith('01') && digits.length === 11) {
+    return `+88${digits}`;
+  }
+
+  if (digits.startsWith('1') && digits.length === 10) {
+    return `+880${digits}`;
+  }
+
+  return digits;
+}
+
+export function hashPhone(phone: string | undefined | null): string | undefined {
+  const normalized = normalizeBangladeshPhone(phone);
+  return hashSHA256(normalized);
 }
 
 /**
@@ -137,7 +162,18 @@ export function sanitizeUrl(url: string): string {
   try {
     const urlObj = new URL(url);
     // Remove sensitive params like email, token, etc.
-    const sensitiveParams = ['email', 'token', 'password', 'key', 'secret'];
+    const sensitiveParams = [
+      'email',
+      'phone',
+      'token',
+      'bpt',
+      'access_token',
+      'signature',
+      'sig',
+      'password',
+      'key',
+      'secret',
+    ];
     sensitiveParams.forEach(param => {
       urlObj.searchParams.delete(param);
     });

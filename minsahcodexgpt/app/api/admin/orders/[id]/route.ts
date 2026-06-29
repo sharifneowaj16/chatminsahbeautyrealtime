@@ -236,6 +236,7 @@ export async function PATCH(
     }
 
     if (paymentStatus) {
+      const normalizedPaymentStatus = paymentStatus.toLowerCase();
       const paymentMap: Record<string, string> = {
         pending: 'PENDING',
         paid: 'COMPLETED',
@@ -244,9 +245,12 @@ export async function PATCH(
         refunded: 'REFUNDED',
         cancelled: 'CANCELLED',
       };
-      updateData.paymentStatus = paymentMap[paymentStatus.toLowerCase()] || paymentStatus.toUpperCase();
-      if ((paymentStatus === 'paid' || paymentStatus === 'completed') && !existing.paidAt) {
+      updateData.paymentStatus = paymentMap[normalizedPaymentStatus] || paymentStatus.toUpperCase();
+      if ((normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed') && !existing.paidAt) {
         updateData.paidAt = new Date();
+      }
+      if ((normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed') && !existing.paymentPaidAt) {
+        updateData.paymentPaidAt = updateData.paidAt || new Date();
       }
     }
 
@@ -277,6 +281,7 @@ export async function PATCH(
         deliveredAt: updated.deliveredAt?.toISOString(),
         cancelledAt: updated.cancelledAt?.toISOString(),
         paidAt: updated.paidAt?.toISOString(),
+        paymentPaidAt: updated.paymentPaidAt?.toISOString(),
       },
     });
   } catch (error) {

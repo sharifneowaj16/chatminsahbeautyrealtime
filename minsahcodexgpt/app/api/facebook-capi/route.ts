@@ -1,21 +1,16 @@
 /**
- * Facebook Conversion API (CAPI) Server-side Route
+ * Facebook Conversion API (CAPI) queue route
  *
- * PRODUCTION-GRADE IMPLEMENTATION
- * - Handles server-side conversion tracking
- * - Implements strict deduplication with Pixel via event_id
- * - SHA-256 hashes all PII before sending to Meta
- * - Idempotent: Prevents duplicate Purchase events
- * - Secure: No secrets exposed to client
- *
- * @route POST /api/facebook-capi
+ * - Browser-callable endpoint for non-Purchase events only
+ * - Builds Meta CAPI payload server-side with hashed PII
+ * - Enqueues CAPI event for async retry/backoff/safe failure logging
+ * - Purchase is blocked here and must use verified COD/online flows
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
   TrackingPayload,
   FacebookConversionAPIRequest,
-  FacebookConversionAPIResponse,
   ServerTrackingResponse,
 } from '@/types/facebook';
 import {
@@ -26,66 +21,50 @@ import {
   formatCurrency,
   validatePixelId,
   validateAccessToken,
+  sanitizeUrl,
 } from '@/lib/facebook/utils';
+import { enqueueMetaCapiCoreEvent } from '@/lib/queue/metaCapiQueue';
 
-// Environment variables (MUST be set in production)
-const FACEBOOK_PIXEL_ID = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
-const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_CONVERSION_API_TOKEN;
-const FACEBOOK_TEST_EVENT_CODE = process.env.FACEBOOK_TEST_EVENT_CODE; // Optional: for testing
+const FACEBOOK_PIXEL_ID =
+  process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
+  process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
+  process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+  process.env.META_PIXEL_ID;
+const FACEBOOK_ACCESS_TOKEN =
+  process.env.FACEBOOK_CONVERSION_API_TOKEN || process.env.META_CAPI_ACCESS_TOKEN;
+const FACEBOOK_TEST_EVENT_CODE =
+  process.env.NODE_ENV === 'production'
+    ? undefined
+    : process.env.FACEBOOK_TEST_EVENT_CODE || process.env.META_TEST_EVENT_CODE;
 
-// Meta Conversion API endpoint
-const FACEBOOK_GRAPH_API_VERSION = 'v21.0';
-const FACEBOOK_CAPI_ENDPOINT = `https://graph.facebook.com/${FACEBOOK_GRAPH_API_VERSION}/${FACEBOOK_PIXEL_ID}/events`;
+const PUBLIC_CAPI_ALLOWED_EVENTS = new Set([
+  'PageView',
+  'ViewContent',
+  'AddToCart',
+  'AddToWishlist',
+  'InitiateCheckout',
+  'Search',
+  'CompleteRegistration',
+]);
 
-// In-memory cache for idempotency (prevents duplicate purchases)
-// In production, use Redis or database for distributed systems
-const processedEvents = new Map<string, number>();
-const IDEMPOTENCY_TTL = 60 * 60 * 1000; // 1 hour
-
-/**
- * Clean up expired idempotency entries
- */
-function cleanupIdempotencyCache() {
-  const now = Date.now();
-  for (const [key, timestamp] of processedEvents.entries()) {
-    if (now - timestamp > IDEMPOTENCY_TTL) {
-      processedEvents.delete(key);
+function compactObject<T extends Record<string, unknown>>(input: T): Partial<T> {
+  const output: Partial<T> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined && value !== null) {
+      output[key as keyof T] = value as T[keyof T];
     }
   }
+  return output;
 }
 
-/**
- * Check if event was already processed (idempotency)
- */
-function isEventProcessed(eventId: string): boolean {
-  const timestamp = processedEvents.get(eventId);
-  if (!timestamp) return false;
-
-  const now = Date.now();
-  if (now - timestamp > IDEMPOTENCY_TTL) {
-    processedEvents.delete(eventId);
-    return false;
-  }
-
-  return true;
+function getMetaEventSourceUrl(payloadUrl: string | undefined, fallbackUrl: string) {
+  return sanitizeUrl(payloadUrl || fallbackUrl);
 }
 
-/**
- * Mark event as processed
- */
-function markEventProcessed(eventId: string): void {
-  processedEvents.set(eventId, Date.now());
-}
-
-/**
- * POST /api/facebook-capi
- * Send conversion event to Facebook Conversion API
- */
 export async function POST(request: NextRequest) {
   try {
-    // Validate environment variables
     if (!validatePixelId(FACEBOOK_PIXEL_ID)) {
-      console.error('[CAPI] Invalid or missing NEXT_PUBLIC_FACEBOOK_PIXEL_ID');
+      console.error('[CAPI][Queue] Invalid or missing Facebook Pixel ID');
       return NextResponse.json(
         {
           success: false,
@@ -97,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!validateAccessToken(FACEBOOK_ACCESS_TOKEN)) {
-      console.error('[CAPI] Invalid or missing FACEBOOK_CONVERSION_API_TOKEN');
+      console.error('[CAPI][Queue] Invalid or missing Facebook CAPI access token');
       return NextResponse.json(
         {
           success: false,
@@ -108,10 +87,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse request body
     const payload: TrackingPayload = await request.json();
 
-    // Validate required fields
     if (!payload.eventName) {
       return NextResponse.json(
         {
@@ -134,142 +111,118 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Idempotency check: Prevent duplicate Purchase events
     if (payload.eventName === 'Purchase') {
-      if (isEventProcessed(payload.eventId)) {
-        console.log(`[CAPI] Duplicate Purchase event blocked: ${payload.eventId}`);
-        return NextResponse.json(
-          {
-            success: true,
-            message: 'Event already processed (idempotent)',
-            eventId: payload.eventId,
-          } as ServerTrackingResponse,
-          { status: 200 }
-        );
-      }
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Purchase events are not accepted on the public Facebook CAPI endpoint',
+          error: 'PURCHASE_NOT_ALLOWED_ON_PUBLIC_CAPI',
+        } as ServerTrackingResponse,
+        { status: 403 }
+      );
     }
 
-    // Cleanup old idempotency entries (run periodically)
-    if (Math.random() < 0.1) {
-      cleanupIdempotencyCache();
+    if (!PUBLIC_CAPI_ALLOWED_EVENTS.has(payload.eventName)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Unsupported Facebook CAPI event',
+          error: 'UNSUPPORTED_EVENT',
+        } as ServerTrackingResponse,
+        { status: 400 }
+      );
     }
 
-    // Extract client information
     const headers = request.headers;
     const clientIp = getClientIp(headers);
     const userAgent = headers.get('user-agent') || undefined;
+    const fbc = payload.fbc || request.cookies.get('_fbc')?.value;
+    const fbp = payload.fbp || request.cookies.get('_fbp')?.value;
+    const externalId = payload.externalId || request.cookies.get('mb_vid')?.value;
 
-    // Hash all PII using SHA-256
-    const hashedUserData = {
-      em: payload.email ? [hashEmail(payload.email)].filter(Boolean) as string[] : undefined,
-      ph: payload.phone ? [hashPhone(payload.phone)].filter(Boolean) as string[] : undefined,
+    const hashedUserData = compactObject({
+      em: payload.email ? ([hashEmail(payload.email)].filter(Boolean) as string[]) : undefined,
+      ph: payload.phone ? ([hashPhone(payload.phone)].filter(Boolean) as string[]) : undefined,
+      external_id: hashSHA256(externalId),
       fn: hashSHA256(payload.firstName),
       ln: hashSHA256(payload.lastName),
       ct: hashSHA256(payload.city),
       st: hashSHA256(payload.state),
       zp: hashSHA256(payload.zipCode),
       country: hashSHA256(payload.country),
-      fbc: payload.fbc,
-      fbp: payload.fbp,
+      fbc,
+      fbp,
       client_ip_address: clientIp,
       client_user_agent: userAgent,
-    };
-
-    // Remove undefined fields
-    Object.keys(hashedUserData).forEach(key => {
-      if (hashedUserData[key as keyof typeof hashedUserData] === undefined) {
-        delete hashedUserData[key as keyof typeof hashedUserData];
-      }
     });
 
-    // Build custom data
-    const customData = {
+    const customData = compactObject({
       value: formatCurrency(payload.value),
       currency: payload.currency || 'BDT',
       content_ids: payload.contentIds,
       content_type: payload.contentType,
       content_name: payload.contentName,
       content_category: payload.contentCategory,
-      contents: payload.contents,
+      contents: payload.contents?.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        item_price: item.item_price ?? item.price ?? 0,
+      })),
       num_items: payload.numItems,
       order_id: payload.orderId,
-    };
-
-    // Remove undefined fields from custom data
-    Object.keys(customData).forEach(key => {
-      if (customData[key as keyof typeof customData] === undefined) {
-        delete customData[key as keyof typeof customData];
-      }
     });
 
-    // Build Conversion API request
+    const eventTime = Math.floor(Date.now() / 1000);
     const capiRequest: FacebookConversionAPIRequest = {
       data: [
         {
           event_name: payload.eventName,
-          event_time: Math.floor(Date.now() / 1000), // Unix timestamp
-          event_id: payload.eventId, // CRITICAL: Must match Pixel eventID
-          event_source_url: payload.eventSourceUrl || request.url,
+          event_time: eventTime,
+          event_id: payload.eventId,
+          event_source_url: getMetaEventSourceUrl(payload.eventSourceUrl, request.url),
           action_source: 'website',
           user_data: hashedUserData,
-          custom_data: Object.keys(customData).length > 0 ? customData : undefined,
+          custom_data: Object.keys(customData).length > 0 ? customData : {},
         },
       ],
     };
 
-    // Add test event code if in testing mode
     if (FACEBOOK_TEST_EVENT_CODE) {
       capiRequest.test_event_code = FACEBOOK_TEST_EVENT_CODE;
     }
 
-    // Send to Facebook Conversion API
-    const response = await fetch(
-      `${FACEBOOK_CAPI_ENDPOINT}?access_token=${FACEBOOK_ACCESS_TOKEN}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(capiRequest),
-      }
-    );
-
-    const responseData: FacebookConversionAPIResponse = await response.json();
-
-    // Handle Facebook API errors
-    if (!response.ok) {
-      console.error('[CAPI] Facebook API error:', responseData);
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Failed to send event to Facebook',
-          error: JSON.stringify(responseData),
-        } as ServerTrackingResponse,
-        { status: response.status }
-      );
-    }
-
-    // Mark Purchase events as processed (idempotency)
-    if (payload.eventName === 'Purchase') {
-      markEventProcessed(payload.eventId);
-    }
-
-    // Success response
-    console.log(`[CAPI] Event sent successfully: ${payload.eventName} (${payload.eventId})`);
-    console.log(`[CAPI] FB Trace ID: ${responseData.fbtrace_id}`);
+    await enqueueMetaCapiCoreEvent({
+      eventName: payload.eventName,
+      eventId: payload.eventId,
+      orderId: payload.orderId,
+      capiPayload: capiRequest as unknown as Record<string, unknown>,
+      safePayload: {
+        event_name: payload.eventName,
+        event_id: payload.eventId,
+        order_id: payload.orderId,
+        event_time: eventTime,
+        value: typeof customData.value === 'number' ? customData.value : undefined,
+        currency: typeof customData.currency === 'string' ? customData.currency : undefined,
+        has_fbp: Boolean(fbp),
+        has_fbc: Boolean(fbc),
+        has_external_id: Boolean(hashedUserData.external_id),
+        has_email_hash: Array.isArray(hashedUserData.em) && hashedUserData.em.length > 0,
+        has_phone_hash: Array.isArray(hashedUserData.ph) && hashedUserData.ph.length > 0,
+        has_ip: Boolean(clientIp),
+        has_ua: Boolean(userAgent),
+      },
+    });
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Event sent successfully',
+        message: 'Event queued successfully',
         eventId: payload.eventId,
-        fbTraceId: responseData.fbtrace_id,
       } as ServerTrackingResponse,
-      { status: 200 }
+      { status: 202 }
     );
-
   } catch (error) {
-    console.error('[CAPI] Unexpected error:', error);
+    console.error('[CAPI][Queue] Unexpected error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       {
         success: false,
@@ -281,10 +234,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * GET /api/facebook-capi
- * Health check endpoint
- */
 export async function GET() {
   const isConfigured = validatePixelId(FACEBOOK_PIXEL_ID) && validateAccessToken(FACEBOOK_ACCESS_TOKEN);
 
@@ -292,6 +241,8 @@ export async function GET() {
     status: 'ok',
     configured: isConfigured,
     pixelId: FACEBOOK_PIXEL_ID ? '***' + FACEBOOK_PIXEL_ID.slice(-4) : 'not set',
+    queue: 'meta-capi-purchase',
+    mode: 'async',
     testMode: !!FACEBOOK_TEST_EVENT_CODE,
   });
 }

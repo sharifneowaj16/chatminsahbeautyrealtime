@@ -18,10 +18,13 @@ const MixpanelPixel = dynamic(() => import('./MixpanelPixel'), { ssr: false });
 
 export default function AllPixels() {
   const facebookPixelId =
-    process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || process.env.NEXT_PUBLIC_FB_PIXEL_ID || '';
+    process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
+    process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
+    process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+    '';
   const facebookPixelEnabled =
     process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED === 'true' ||
-    (!!process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID &&
+    (!!facebookPixelId &&
       process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED !== 'false');
 
   // Read from environment variables
@@ -31,8 +34,16 @@ export default function AllPixels() {
       pixelId: facebookPixelId,
     },
     google: {
-      enabled: process.env.NEXT_PUBLIC_GA_ENABLED === 'true',
-      measurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '',
+      // Accepts both NEXT_PUBLIC_GA4_MEASUREMENT_ID (canonical, matches manager.ts + .env.example)
+      // and the legacy NEXT_PUBLIC_GA_MEASUREMENT_ID so existing deployments keep working.
+      enabled:
+        process.env.NEXT_PUBLIC_GA_ENABLED === 'true' ||
+        !!process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
+        !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+      measurementId:
+        process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
+        process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
+        '',
       tagManagerId: process.env.NEXT_PUBLIC_GTM_ID || '',
     },
     tiktok: {

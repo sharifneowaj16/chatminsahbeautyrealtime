@@ -384,6 +384,18 @@ model Product {
   reviewCount   Int      @default(0)
   faqs          Json?
 
+  // Tracking & product analytics counters
+  viewCount           Int     @default(0)
+  uniqueViewCount     Int     @default(0)
+  addToCartCount      Int     @default(0)
+  checkoutStartCount  Int     @default(0)
+  orderCount          Int     @default(0)
+  confirmedOrderCount Int     @default(0)
+  deliveredOrderCount Int     @default(0)
+  cancelledOrderCount Int     @default(0)
+  returnedOrderCount  Int     @default(0)
+  analyticsRevenue    Decimal @default(0) @db.Decimal(12, 2)
+
   // Relations
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
@@ -402,6 +414,7 @@ model Product {
   reviews            Review[]
   searchClicks       SearchClickEvent[]
   searchMetrics      SearchClickMetrics[]
+  productDailyMetrics ProductDailyMetric[]
   giftRequests       GiftRequest[]
   supplierLinks      SupplierProduct[]
   purchaseItems      PurchaseOrderItem[]
@@ -416,6 +429,10 @@ model Product {
   @@index([isActive, isFeatured])
   @@index([isActive, deletedAt])
   @@index([canonicalUrl])
+  @@index([viewCount])
+  @@index([addToCartCount])
+  @@index([orderCount])
+  @@index([deliveredOrderCount])
 }
 
 model ProductImage {
@@ -448,6 +465,45 @@ model ProductVariant {
 
   @@index([productId])
   @@index([sku])
+}
+
+model ProductDailyMetric {
+  id                  String   @id @default(cuid())
+  productId           String
+  metricDate          DateTime
+
+  views               Int      @default(0)
+  uniqueViews         Int      @default(0)
+  addToCarts          Int      @default(0)
+  checkoutStarts      Int      @default(0)
+  orders              Int      @default(0)
+  confirmedOrders     Int      @default(0)
+  deliveredOrders     Int      @default(0)
+  cancelledOrders     Int      @default(0)
+  returnedOrders      Int      @default(0)
+
+  revenue             Decimal  @default(0) @db.Decimal(12, 2)
+  deliveredRevenue    Decimal  @default(0) @db.Decimal(12, 2)
+  estimatedProfit     Decimal? @db.Decimal(12, 2)
+
+  addToCartRate       Decimal? @db.Decimal(7, 4)
+  checkoutRate        Decimal? @db.Decimal(7, 4)
+  purchaseRate        Decimal? @db.Decimal(7, 4)
+  confirmationRate    Decimal? @db.Decimal(7, 4)
+  deliveryRate        Decimal? @db.Decimal(7, 4)
+  returnRate          Decimal? @db.Decimal(7, 4)
+
+  grade               String?
+  notes               String?  @db.Text
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  product             Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, metricDate])
+  @@index([metricDate])
+  @@index([grade])
 }
 
 model SupplierProduct {
@@ -674,6 +730,70 @@ model Order {
   isGiftOrder  Boolean @default(false)
   giftToken    String?
 
+  // Facebook / Meta CAPI data — save at checkout
+  fbp                  String?
+  fbc                  String?
+  externalId           String?
+  anonymousVisitorId   String?
+  customerIp           String?
+  customerUa           String?
+
+  // GA4 / Measurement Protocol data
+  gaClientId           String?
+  gaSessionId          String?
+  gaPurchaseSent       Boolean   @default(false)
+  gaPurchaseSentAt     DateTime?
+  gaPurchaseProcessingAt DateTime?
+  gaRefundSent         Boolean   @default(false)
+  gaRefundSentAt       DateTime?
+
+  // Meta Purchase tracking / idempotency
+  metaPurchaseSent     Boolean   @default(false)
+  metaPurchaseSentAt   DateTime?
+  metaPurchaseProcessingAt  DateTime?
+  metaBrowserPurchaseClaimedAt DateTime?   // DB-level guard: signed browser purchase flow was authorized/claimed; not guaranteed Pixel delivery
+  metaEventId          String?
+
+  // UTM / Ad attribution
+  utmSource            String?
+  utmMedium            String?
+  utmCampaign          String?
+  utmContent           String?
+  campaignId           String?
+  adsetId              String?
+  adId                 String?
+  placement            String?
+
+  // Landing / creative / A-B test attribution
+  firstLandingPath     String?
+  firstLandingUrl      String?
+  referrer             String?
+  offerVersion         String?
+  abVariant            String?
+
+  // COD / payment / return timestamps
+  phoneConfirmedAt     DateTime?
+  paymentPaidAt        DateTime?
+  returnedAt           DateTime?
+  refundedAt           DateTime?
+
+  // Test/internal order flag
+  isTest               Boolean   @default(false)
+
+  // Generic courier reconciliation
+  courierName          String?
+  courierConsignmentId String?
+  courierStatus        String?
+  courierDeliveredAt   DateTime?
+  courierReturnedAt    DateTime?
+
+  // Phone confirmation quality
+  confirmationStatus   String?
+  confirmationNote     String?   @db.Text
+  confirmedByAdminId   String?
+
+  // Tracking debug/version
+  trackingSchemaVersion String?  @default("mb_tracking_v1")
 
   user     User        @relation(fields: [userId], references: [id])
   items    OrderItem[]
@@ -683,6 +803,7 @@ model Order {
   steadfastWebhookEvents SteadfastWebhookEvent[]
   pathaoWebhookEvents    PathaoWebhookEvent[]
   purchaseShortlist      PurchaseShortlist[]
+  metaCapiFailures       MetaCapiFailure[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -694,6 +815,28 @@ model Order {
   @@index([pathaoTrackingCode])
   @@index([isGiftOrder])
   @@index([giftToken])
+  @@index([fbp])
+  @@index([fbc])
+  @@index([externalId])
+  @@index([anonymousVisitorId])
+  @@index([gaClientId])
+  @@index([gaPurchaseSent])
+  @@index([gaPurchaseProcessingAt])
+  @@index([metaPurchaseSent])
+  @@index([metaPurchaseProcessingAt])
+  @@index([metaBrowserPurchaseClaimedAt])
+  @@index([metaEventId])
+  @@index([utmSource])
+  @@index([campaignId])
+  @@index([adsetId])
+  @@index([adId])
+  @@index([phoneConfirmedAt])
+  @@index([paymentPaidAt])
+  @@index([returnedAt])
+  @@index([refundedAt])
+  @@index([isTest])
+  @@index([courierConsignmentId])
+  @@index([confirmationStatus])
 }
 
 model PathaoWebhookEvent {
@@ -768,21 +911,109 @@ model OrderItem {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  orderId         String
-  method          String
-  status          PaymentStatus @default(PENDING)
-  amount          Decimal       @db.Decimal(10, 2)
-  transactionId   String?
-  gatewayResponse Json?
+  id                   String        @id @default(cuid())
+  orderId              String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Existing checkout/payment fields
+  method               String
+  status               PaymentStatus @default(PENDING)
+  amount               Decimal       @db.Decimal(10, 2)
+  currency             String        @default("BDT")
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Gateway idempotency / reconciliation
+  gateway              String?
+  transactionId        String?
+  gatewayTransactionId String?       @unique
+  rawStatus            String?
+  gatewayResponse      Json?
+  rawPayload           Json?
+  verifiedAt           DateTime?
+
+  // Safety checks
+  signatureVerified    Boolean       @default(false)
+  amountMatched        Boolean       @default(false)
+  currencyMatched      Boolean       @default(false)
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  order                Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
+  @@index([method])
+  @@index([gateway])
+  @@index([status])
   @@index([transactionId])
+  @@index([verifiedAt])
+}
+
+// ==========================================
+// Tracking / CAPI Failure Log
+// ==========================================
+
+model MetaCapiFailure {
+  id                String   @id @default(cuid())
+
+  orderId           String?
+  order             Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  eventName         String
+  eventId           String?
+  provider          String   @default("META")
+  schemaVersion     String?  @default("mb_tracking_v1")
+
+  statusCode        Int?
+  errorCode         String?
+  errorSubcode      String?
+  errorMessage      String?  @db.Text
+
+  retryCount        Int      @default(0)
+  finalFailed       Boolean  @default(false)
+
+  hasFbp            Boolean  @default(false)
+  hasFbc            Boolean  @default(false)
+  hasExternalId     Boolean  @default(false)
+  hasEmailHash      Boolean  @default(false)
+  hasPhoneHash      Boolean  @default(false)
+  hasIp             Boolean  @default(false)
+  hasUa             Boolean  @default(false)
+
+  safePayload       Json?
+  responsePayload   Json?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([eventName])
+  @@index([eventId])
+  @@index([provider])
+  @@index([statusCode])
+  @@index([errorCode])
+  @@index([finalFailed])
+  @@index([createdAt])
+}
+
+model TrackingHealthCheck {
+  id                    String   @id @default(cuid())
+  checkDate             DateTime
+
+  ordersCreated         Int      @default(0)
+  ordersConfirmed       Int      @default(0)
+  metaPurchaseSent      Int      @default(0)
+  gaPurchaseSent        Int      @default(0)
+  capiFailureCount      Int      @default(0)
+
+  status                String   @default("OK")
+  notes                 String?  @db.Text
+  details               Json?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([checkDate])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ==========================================

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { trackAddToCart } from '@/lib/tracking/ecommerce';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export interface CartItem {
@@ -383,6 +384,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           } else {
             await fetchCartFromDB();
           }
+          trackAddToCart(item, item.quantity);
         } catch {
           await fetchCartFromDB();
         } finally {
@@ -398,6 +400,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
           return [...prev, item];
         });
+        trackAddToCart(item, item.quantity);
       }
     },
     [user, refreshToken, fetchCartFromDB]
@@ -440,12 +443,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      const target = items.find((i) => i.id === itemId);
+      const quantityDelta = target ? quantity - target.quantity : 0;
+
       if (user) {
         cartSyncVersionRef.current += 1;
-        const target = items.find((i) => i.id === itemId);
         setItems((prev) =>
           prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
         );
+        let didUpdate = false;
         if (target?.cartItemId) {
           try {
             const requestBody = JSON.stringify({ quantity });
@@ -464,14 +470,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
               });
             }
             if (!res.ok) throw new Error('Failed to update cart item');
+            didUpdate = true;
           } catch {
             await fetchCartFromDB();
           }
+        } else {
+          didUpdate = Boolean(target);
+        }
+        if (didUpdate && target && quantityDelta > 0) {
+          trackAddToCart({ ...target, quantity: quantityDelta }, quantityDelta);
         }
       } else {
         setItems((prev) =>
           prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
         );
+        if (target && quantityDelta > 0) {
+          trackAddToCart({ ...target, quantity: quantityDelta }, quantityDelta);
+        }
       }
     },
     [user, items, removeItem, refreshToken, fetchCartFromDB]

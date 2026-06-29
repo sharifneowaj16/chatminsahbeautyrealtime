@@ -4,6 +4,7 @@ import { Prisma, OrderStatus } from '@/generated/prisma/client';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import { generateDailyOrderNumber } from '@/lib/order-number';
 import { notifyNewOrder } from '@/lib/telegram-notify';
+import { readOrderAttribution } from '@/lib/tracking/order-attribution';
 
 export const dynamic = 'force-dynamic';
 
@@ -211,6 +212,7 @@ export async function POST(request: NextRequest) {
         total: parseFloat((unitPrice * item.quantity).toFixed(2)),
       };
     });
+    const orderAttribution = readOrderAttribution(request, { userId });
 
     // 6. Single transaction: resolve address → create order → decrement stock → clear cart
     const order = await prisma.$transaction(async (tx) => {
@@ -282,6 +284,7 @@ export async function POST(request: NextRequest) {
           couponCode:     couponCode     || null,
           couponDiscount: discountAmount > 0 ? discountAmount : null,
           customerNote:   customerNote   || null,
+          ...orderAttribution,
           items: {
             create: orderItems,
           },
@@ -349,12 +352,17 @@ export async function POST(request: NextRequest) {
       paymentMethod,
     }).catch(() => {});
 
+    const normalizedPaymentMethod = paymentMethod.trim().toLowerCase();
+    const redirectURL = ['bkash', 'nagad'].includes(normalizedPaymentMethod)
+      ? `/checkout/payment/${normalizedPaymentMethod}?orderId=${order.id}&orderNumber=${order.orderNumber}`
+      : `/checkout/order-confirmed?orderNumber=${order.orderNumber}`;
+
     return NextResponse.json({
       success:     true,
       orderId:     order.id,
       orderNumber: order.orderNumber,
       total:       order.total,
-      redirectURL: `/checkout/order-confirmed?orderNumber=${order.orderNumber}`,
+      redirectURL,
     });
 
   } catch (error) {

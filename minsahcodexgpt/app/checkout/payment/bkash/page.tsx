@@ -1,24 +1,32 @@
 'use client';
 
 import { useCart } from '@/contexts/CartContext';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { formatPrice, convertUSDtoBDT } from '@/utils/currency';
 
-export default function BkashPaymentPage() {
-  const router = useRouter();
-  const { total, selectedAddress, items } = useCart();
+function BkashPaymentContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('orderId') || '';
+  const orderNumber = searchParams.get('orderNumber') || '';
+  const { total } = useCart();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
   const bdtTotal = convertUSDtoBDT(total);
+  const displayAmount = bdtTotal > 0 ? formatPrice(bdtTotal) : 'Order total';
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!orderId) {
+      setError('Missing order reference. Please go back to checkout and place the order again.');
+      return;
+    }
 
     // Validate phone number
     if (!phoneNumber || phoneNumber.length < 11) {
@@ -34,15 +42,8 @@ export default function BkashPaymentPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: bdtTotal,
-          phoneNumber,
-          items: items.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: convertUSDtoBDT(item.price),
-            quantity: item.quantity
-          })),
-          shippingAddress: selectedAddress
+          orderId,
+          phoneNumber
         })
       });
 
@@ -54,7 +55,7 @@ export default function BkashPaymentPage() {
           window.location.href = data.bkashURL;
         } else {
           // If payment ID is returned, redirect to callback
-          router.push(`/checkout/payment/bkash/callback?paymentID=${data.paymentID}`);
+          window.location.href = `/api/payments/bkash/callback?orderId=${encodeURIComponent(orderId)}&paymentID=${encodeURIComponent(data.paymentID)}`;
         }
       } else {
         setError(data.message || 'Payment failed. Please try again.');
@@ -93,7 +94,8 @@ export default function BkashPaymentPage() {
         {/* Amount to Pay */}
         <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl p-6 shadow-sm mb-6 border-2 border-pink-200">
           <p className="text-sm text-pink-700 mb-1">Amount to Pay</p>
-          <p className="text-4xl font-bold text-pink-600">{formatPrice(bdtTotal)}</p>
+          {orderNumber && <p className="text-xs text-pink-700 mb-2">Order #{orderNumber}</p>}
+          <p className="text-4xl font-bold text-pink-600">{displayAmount}</p>
         </div>
 
         {/* Payment Form */}
@@ -172,7 +174,7 @@ export default function BkashPaymentPage() {
             ) : (
               <>
                 <span>Proceed to Pay</span>
-                <span>{formatPrice(bdtTotal)}</span>
+                <span>{displayAmount}</span>
               </>
             )}
           </button>
@@ -186,5 +188,12 @@ export default function BkashPaymentPage() {
         </div>
       </div>
     </div>
+  );
+}
+export default function BkashPaymentPage() {
+  return (
+    <Suspense fallback={null}>
+      <BkashPaymentContent />
+    </Suspense>
   );
 }

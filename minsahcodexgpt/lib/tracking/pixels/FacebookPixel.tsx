@@ -1,21 +1,69 @@
 'use client';
 
 import Script from 'next/script';
-import { useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 
 interface FacebookPixelProps {
   pixelId: string;
   enabled?: boolean;
 }
 
-/**
- * Send PageView to Facebook Conversions API (server-side)
- * Same eventID as browser pixel — Meta automatically deduplicates
- */
-async function sendPageViewToCAPI(pixelId: string, eventId: string) {
+function getCookieValue(name: string): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  if (!match) return undefined;
+
   try {
-    const fbc = document.cookie.match(/_fbc=([^;]+)/)?.[1];
-    const fbp = document.cookie.match(/_fbp=([^;]+)/)?.[1];
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+function getFacebookIdentity() {
+  return {
+    fbc: getCookieValue('_fbc'),
+    fbp: getCookieValue('_fbp'),
+    externalId: getCookieValue('mb_vid'),
+  };
+}
+
+
+const SENSITIVE_EVENT_SOURCE_PARAMS = [
+  'bpt',
+  'token',
+  'access_token',
+  'signature',
+  'secret',
+  'auth',
+  'session',
+  'nonce',
+];
+
+function getSafeEventSourceUrl() {
+  if (typeof window === 'undefined') return undefined;
+
+  try {
+    const url = new URL(window.location.href);
+    for (const param of SENSITIVE_EVENT_SOURCE_PARAMS) {
+      url.searchParams.delete(param);
+    }
+    return url.toString();
+  } catch {
+    return window.location.origin + window.location.pathname;
+  }
+}
+
+/**
+ * Send PageView to Facebook Conversions API with the same eventID as the browser pixel.
+ */
+async function sendPageViewToCAPI(eventId: string) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const identity = getFacebookIdentity();
 
     await fetch('/api/facebook-capi', {
       method: 'POST',
@@ -23,36 +71,57 @@ async function sendPageViewToCAPI(pixelId: string, eventId: string) {
       body: JSON.stringify({
         eventName: 'PageView',
         eventId,
-        eventSourceUrl: window.location.href,
-        fbc,
-        fbp,
+        eventSourceUrl: getSafeEventSourceUrl(),
+        fbc: identity.fbc,
+        fbp: identity.fbp,
+        externalId: identity.externalId,
         country: 'BD',
       }),
     });
   } catch {
-    // Silently fail — browser pixel already fired
+    // Browser pixel already fired.
   }
 }
 
 export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixelProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const lastPageViewKey = useRef<string | null>(null);
+
   useEffect(() => {
     if (!enabled || !pixelId) return;
 
-    // CAPI এ PageView পাঠাও — browser pixel এর same eventId দিয়ে
-    const eventId = `PageView-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const pageViewKey =
+      typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : pathname || '';
+    if (lastPageViewKey.current === pageViewKey) return;
+    lastPageViewKey.current = pageViewKey;
 
-    // window.fbq ready হওয়ার পরে eventId দিয়ে PageView fire করো
+    const eventId = `PageView-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     const fireWithEventId = () => {
-      if (typeof window !== 'undefined' && window.fbq) {
+      if (typeof window === 'undefined') return;
+
+      if (!window.fbq && attempts < 50) {
+        attempts += 1;
+        timer = setTimeout(fireWithEventId, 100);
+        return;
+      }
+
+      if (window.fbq) {
         window.fbq('track', 'PageView', {}, { eventID: eventId });
-        sendPageViewToCAPI(pixelId, eventId);
+        sendPageViewToCAPI(eventId);
       }
     };
 
-    // Pixel script load হওয়ার পরে fire করো
-    const timer = setTimeout(fireWithEventId, 100);
-    return () => clearTimeout(timer);
-  }, [pixelId, enabled]);
+    timer = setTimeout(fireWithEventId, 0);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [pathname, searchParams, pixelId, enabled]);
 
   if (!enabled || !pixelId) return null;
 
@@ -71,7 +140,18 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${pixelId}');
+            var mbVidMatch = document.cookie.match(/(?:^|; )mb_vid=([^;]*)/);
+            var externalId;
+            try {
+              externalId = mbVidMatch ? decodeURIComponent(mbVidMatch[1]) : undefined;
+            } catch (e) {
+              externalId = mbVidMatch ? mbVidMatch[1] : undefined;
+            }
+            if (externalId) {
+              fbq('init', ${JSON.stringify(pixelId)}, { external_id: externalId });
+            } else {
+              fbq('init', ${JSON.stringify(pixelId)});
+            }
           `,
         }}
       />

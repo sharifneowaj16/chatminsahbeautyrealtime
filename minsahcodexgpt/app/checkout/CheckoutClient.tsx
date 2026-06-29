@@ -1,18 +1,12 @@
 /**
  * Checkout Client Component
- * Handles Purchase event tracking with Facebook Pixel + CAPI deduplication
+ * Legacy checkout UI only. Purchase tracking is intentionally disabled here.
  */
 
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  generateEventId,
-  trackPurchase,
-  sendToServerCAPI,
-  trackInitiateCheckout,
-} from '@/lib/facebook/pixel';
 
 interface CheckoutFormData {
   fullName: string;
@@ -67,8 +61,8 @@ export default function CheckoutClient({
   };
 
   /**
-   * Handle Place Order button click
-   * Implements HYBRID tracking: Pixel (client) + CAPI (server) with deduplication
+   * Legacy checkout component kept for compatibility only.
+   * Purchase tracking is intentionally not fired here.
    */
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,65 +76,10 @@ export default function CheckoutClient({
     setIsProcessing(true);
 
     try {
-      // Step 1: Generate unique event ID for deduplication
-      const eventId = generateEventId();
-      console.log('[Checkout] Generated Event ID:', eventId);
-
-      // Step 2: Simulate payment processing (replace with real payment gateway)
+      // Simulate legacy order processing only; do not send Pixel/CAPI Purchase here.
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Step 3: Generate order ID (in production, this comes from your payment processor)
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
-
-      // Step 4: Track Purchase with Facebook Pixel (CLIENT-SIDE)
-      // This sends event to Facebook with eventID
-      trackPurchase({
-        value: total,
-        currency: 'BDT',
-        contentIds: ['sample-product-1', 'sample-product-2'], // Replace with actual cart product IDs
-        numItems: 3, // Replace with actual cart item count
-        eventId: eventId, // CRITICAL: Same eventID used for server-side
-      });
-
-      console.log('[Checkout] Pixel Purchase event sent');
-
-      // Step 5: Extract first and last name
-      const nameParts = formData.fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      // Step 6: Send Purchase to Server-side CAPI (same eventID for deduplication)
-      const serverResult = await sendToServerCAPI({
-        eventName: 'Purchase',
-        eventId: eventId, // CRITICAL: Same eventID for deduplication
-        email: formData.email,
-        phone: formData.phone,
-        firstName: firstName,
-        lastName: lastName,
-        city: formData.city,
-        state: formData.state,
-        zipCode: formData.zipCode,
-        country: formData.country,
-        value: total,
-        currency: 'BDT',
-        contentIds: ['sample-product-1', 'sample-product-2'], // Replace with actual cart
-        numItems: 3, // Replace with actual cart item count
-        orderId: orderId,
-        contents: [
-          // Replace with actual cart contents
-          { id: 'sample-product-1', quantity: 1, price: 29.99 },
-          { id: 'sample-product-2', quantity: 2, price: 24.99 },
-        ],
-      });
-
-      if (!serverResult.success) {
-        console.error('[Checkout] Server-side CAPI failed:', serverResult.error);
-        // Continue anyway - Pixel tracking already sent
-      } else {
-        console.log('[Checkout] Server-side CAPI sent successfully');
-      }
-
-      // Step 7: Show success and redirect
       alert(`Order placed successfully! Order ID: ${orderId}`);
       router.push(`/account/orders/${orderId}`);
 

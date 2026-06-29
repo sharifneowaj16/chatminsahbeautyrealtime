@@ -26,6 +26,7 @@ interface BkashCreatePaymentRequest {
   merchantInvoiceNumber: string;
   intent: 'sale' | 'authorization';
   currency?: string;
+  callbackURL?: string;
 }
 
 interface BkashCreatePaymentResponse {
@@ -108,6 +109,7 @@ class BkashPaymentGateway {
     amount: number;
     orderNumber: string;
     intent?: 'sale' | 'authorization';
+    callbackURL?: string;
   }): Promise<BkashCreatePaymentResponse> {
     try {
       const token = await this.getToken();
@@ -116,7 +118,8 @@ class BkashPaymentGateway {
         amount: params.amount,
         currency: 'BDT',
         intent: params.intent || 'sale',
-        merchantInvoiceNumber: params.orderNumber
+        merchantInvoiceNumber: params.orderNumber,
+        ...(params.callbackURL ? { callbackURL: params.callbackURL } : {})
       };
 
       const response = await fetch(`${this.config.baseURL}/tokenized/checkout/create`, {
@@ -144,24 +147,34 @@ class BkashPaymentGateway {
   }
 
   /**
+   * Execute payment after user approval and return the raw gateway response.
+   * This is useful for sandbox/live callback handling because bKash can return
+   * useful status payloads even when the status code is not a success code.
+   */
+  async executePaymentRaw(paymentID: string): Promise<any> {
+    const token = await this.getToken();
+
+    const response = await fetch(`${this.config.baseURL}/tokenized/checkout/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': token,
+        'X-APP-Key': this.config.appKey
+      },
+      body: JSON.stringify({ paymentID })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { ...data, _httpStatus: response.status };
+  }
+
+  /**
    * Execute payment after user approval
    */
   async executePayment(paymentID: string): Promise<any> {
     try {
-      const token = await this.getToken();
-
-      const response = await fetch(`${this.config.baseURL}/tokenized/checkout/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': token,
-          'X-APP-Key': this.config.appKey
-        },
-        body: JSON.stringify({ paymentID })
-      });
-
-      const data = await response.json();
+      const data = await this.executePaymentRaw(paymentID);
 
       if (data.statusCode !== '0000') {
         throw new Error(data.statusMessage || 'Payment execution failed');

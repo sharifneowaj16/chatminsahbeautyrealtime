@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronUp,
@@ -21,6 +21,7 @@ import ProductStickyHeader from './ProductStickyHeader';
 import VariantSelector from './VariantSelector';
 import StickyBottomBar from './StickyBottomBar';
 import ReviewSection from './ReviewSection';
+import { trackProductView } from '@/lib/tracking/ecommerce';
 
 interface ImageItem {
   url: string;
@@ -386,6 +387,7 @@ export default function ProductClient({
   const [expandIngredients, setExpandIngredients] = useState(false);
   const [variantImageOverride, setVariantImageOverride] = useState<string | null>(null);
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>([]);
+  const viewedProductIdRef = useRef<string | null>(null);
 
   const selectedVariantObj = product.variants.find((variant) => variant.id === selectedVariantId) ?? null;
   const variantSize = selectedVariantObj?.attributes?.size ?? null;
@@ -438,6 +440,31 @@ export default function ProductClient({
   const handleVariantImageChange = useCallback((imageUrl: string | null) => {
     setVariantImageOverride(imageUrl);
   }, []);
+
+  useEffect(() => {
+    if (viewedProductIdRef.current === product.id) return;
+    viewedProductIdRef.current = product.id;
+
+    trackProductView({
+      id: product.id,
+      sku: product.sku,
+      name: product.name,
+      price: product.price,
+      salePrice: product.salePrice,
+      category: product.category,
+      brand: product.brand,
+      variants: product.variants,
+    });
+  }, [
+    product.id,
+    product.sku,
+    product.name,
+    product.price,
+    product.salePrice,
+    product.category,
+    product.brand,
+    product.variants,
+  ]);
 
   const displayTitle = product.pageH1 || product.name;
   const productInfoRows: DisplayRow[] = [

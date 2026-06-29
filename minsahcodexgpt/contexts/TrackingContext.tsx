@@ -24,23 +24,9 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
 
     setInitialized(true);
 
-    // Track page views on route changes
-    const handleRouteChange = () => {
-      track('PageView', {
-        page_path: window.location.pathname,
-        page_title: document.title,
-      });
-    };
-
-    // Listen for Next.js route changes
-    window.addEventListener('popstate', handleRouteChange);
-
-    // Initial page view
-    handleRouteChange();
-
-    return () => {
-      window.removeEventListener('popstate', handleRouteChange);
-    };
+    // PageView is owned by lib/tracking/pixels/FacebookPixel.tsx.
+    // Keeping PageView out of this generic context prevents duplicate initial-load
+    // PageView events with different event IDs.
   }, []);
 
   return (

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, CreditCard, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatPrice } from '@/utils/currency';
 import SocialLoginModal from '@/app/products/[id]/components/SocialLoginModal';
+import { trackInitiateCheckout } from '@/lib/tracking/ecommerce';
 
 type DeliveryOption = {
   id: number;
@@ -104,6 +105,7 @@ function CheckoutContent() {
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
   const pendingOrderRef = useRef(false);
+  const initiateCheckoutTrackedRef = useRef(false);
   const shippingQuoteItems = useMemo(
     () =>
       items.map((item) => ({
@@ -131,6 +133,12 @@ function CheckoutContent() {
     hasDeliveryLocation
   );
   const finalTotal = subtotal + deliveryCharge;
+
+  useEffect(() => {
+    if (initiateCheckoutTrackedRef.current || items.length === 0 || subtotal <= 0) return;
+    initiateCheckoutTrackedRef.current = true;
+    trackInitiateCheckout(items, subtotal);
+  }, [items, subtotal]);
 
   useEffect(() => {
     if (!user) return;

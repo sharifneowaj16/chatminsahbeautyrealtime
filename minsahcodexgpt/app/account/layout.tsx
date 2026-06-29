@@ -53,7 +53,7 @@ async function getUserFromSession(userId: string) {
 }
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  // Use NextAuth session — this is what middleware already validates
+  // Use NextAuth session — this is what proxy already validates
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {

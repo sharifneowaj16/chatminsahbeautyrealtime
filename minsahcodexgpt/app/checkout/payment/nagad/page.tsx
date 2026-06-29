@@ -1,24 +1,32 @@
 'use client';
 
 import { useCart } from '@/contexts/CartContext';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { formatPrice, convertUSDtoBDT } from '@/utils/currency';
 
-export default function NagadPaymentPage() {
-  const router = useRouter();
-  const { total, selectedAddress, items } = useCart();
+function NagadPaymentContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('orderId') || '';
+  const orderNumber = searchParams.get('orderNumber') || '';
+  const { total } = useCart();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
   const bdtTotal = convertUSDtoBDT(total);
+  const displayAmount = bdtTotal > 0 ? formatPrice(bdtTotal) : 'Order total';
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!orderId) {
+      setError('Missing order reference. Please go back to checkout and place the order again.');
+      return;
+    }
 
     if (!phoneNumber || phoneNumber.length < 11) {
       setError('Please enter a valid Nagad number');
@@ -32,15 +40,8 @@ export default function NagadPaymentPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: bdtTotal,
-          phoneNumber,
-          items: items.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: convertUSDtoBDT(item.price),
-            quantity: item.quantity
-          })),
-          shippingAddress: selectedAddress
+          orderId,
+          phoneNumber
         })
       });
 
@@ -50,7 +51,7 @@ export default function NagadPaymentPage() {
         if (data.nagadURL) {
           window.location.href = data.nagadURL;
         } else {
-          router.push(`/checkout/payment/nagad/callback?paymentID=${data.paymentID}`);
+          window.location.href = `/api/payments/nagad/callback?orderId=${encodeURIComponent(orderId)}&paymentReferenceId=${encodeURIComponent(data.paymentID)}`;
         }
       } else {
         setError(data.message || 'Payment failed. Please try again.');
@@ -89,7 +90,8 @@ export default function NagadPaymentPage() {
         {/* Amount to Pay */}
         <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 shadow-sm mb-6 border-2 border-orange-200">
           <p className="text-sm text-orange-700 mb-1">Amount to Pay</p>
-          <p className="text-4xl font-bold text-orange-600">{formatPrice(bdtTotal)}</p>
+          {orderNumber && <p className="text-xs text-orange-700 mb-2">Order #{orderNumber}</p>}
+          <p className="text-4xl font-bold text-orange-600">{displayAmount}</p>
         </div>
 
         {/* Payment Form */}
@@ -168,7 +170,7 @@ export default function NagadPaymentPage() {
             ) : (
               <>
                 <span>Proceed to Pay</span>
-                <span>{formatPrice(bdtTotal)}</span>
+                <span>{displayAmount}</span>
               </>
             )}
           </button>
@@ -182,5 +184,12 @@ export default function NagadPaymentPage() {
         </div>
       </div>
     </div>
+  );
+}
+export default function NagadPaymentPage() {
+  return (
+    <Suspense fallback={null}>
+      <NagadPaymentContent />
+    </Suspense>
   );
 }

@@ -57,11 +57,11 @@ function formatAmount(value: number) {
 
 function buildBasicMessage(order: BasicOrderNotification) {
   return (
-    `🛒 <b>নতুন Order!</b>\n\n` +
-    `📦 Order: <b>${escapeHtml(order.orderNumber)}</b>\n` +
-    `💰 Total: ৳${formatAmount(order.total)}\n` +
-    `💳 Payment: ${escapeHtml(order.paymentMethod)}\n` +
-    `📋 Items: ${order.itemsCount}`
+    `<b>New Order</b>\n\n` +
+    `Order: <b>${escapeHtml(order.orderNumber)}</b>\n` +
+    `Total: BDT ${formatAmount(order.total)}\n` +
+    `Payment: ${escapeHtml(order.paymentMethod)}\n` +
+    `Items: ${order.itemsCount}`
   );
 }
 
@@ -82,34 +82,54 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
     [order.address.city, order.address.zone, order.address.area]
       .filter(Boolean)
       .map(escapeHtml)
-      .join(' › ') || 'N/A';
+      .join(' > ') || 'N/A';
 
   const itemLines = order.items
     .map((item) => {
       const variantLine = item.variant ? `\n   Variant: ${escapeHtml(item.variant)}` : '';
       return (
-        `▸ ${escapeHtml(item.name)}${variantLine}\n` +
-        `   Qty: ${item.quantity} × ৳${formatAmount(item.unitPrice)} = ৳${formatAmount(item.total)}`
+        `- ${escapeHtml(item.name)}${variantLine}\n` +
+        `   Qty: ${item.quantity} x BDT ${formatAmount(item.unitPrice)} = BDT ${formatAmount(item.total)}`
       );
     })
     .join('\n\n');
 
   return (
-    `🛍️ <b>নতুন অর্ডার — Minsah Beauty</b>\n\n` +
-    `🆔 #${escapeHtml(order.orderNumber)}\n` +
-    `📅 ${dateStr}, ${timeStr}\n\n` +
-    `👤 <b>গ্রাহক তথ্য</b>\n` +
-    `নাম: ${escapeHtml(order.customerName)}\n` +
-    `ফোন: ${escapeHtml(order.customerPhone)}\n` +
-    `ঠিকানা: ${addressLine}\n\n` +
-    `📦 <b>অর্ডার ডিটেইলস</b>\n` +
+    `<b>New Order - Minsah Beauty</b>\n\n` +
+    `Order: <b>#${escapeHtml(order.orderNumber)}</b>\n` +
+    `Time: ${dateStr}, ${timeStr}\n\n` +
+    `<b>Customer</b>\n` +
+    `Name: ${escapeHtml(order.customerName)}\n` +
+    `Phone: ${escapeHtml(order.customerPhone)}\n` +
+    `Address: ${addressLine}\n\n` +
+    `<b>Items</b>\n` +
     `${itemLines || 'N/A'}\n\n` +
-    `সাবটোটাল: ৳${formatAmount(order.subtotal)}\n` +
-    `ডেলিভারি চার্জ: ৳${formatAmount(order.shippingCost)}\n` +
-    `💰 <b>সর্বমোট: ৳${formatAmount(order.total)}</b>\n\n` +
-    `💵 পেমেন্ট: ${escapeHtml(order.paymentMethod)}\n\n` +
-    `অনুগ্রহ করে নিচের বাটন থেকে অর্ডার confirm করুন:`
+    `Subtotal: BDT ${formatAmount(order.subtotal)}\n` +
+    `Delivery: BDT ${formatAmount(order.shippingCost)}\n` +
+    `<b>Total: BDT ${formatAmount(order.total)}</b>\n\n` +
+    `Payment: ${escapeHtml(order.paymentMethod)}\n\n` +
+    `Call the customer first. After phone confirmation, tap <b>Phone Confirmed</b>.\n` +
+    `Courier/Pathao sending is a separate next step.`
   );
+}
+
+async function sendTelegramMessage(body: Record<string, unknown>) {
+  if (!TELEGRAM_RELAY_BASE || !BOT_TOKEN) {
+    throw new Error('Telegram order bot not configured.');
+  }
+
+  const res = await fetch(`${TELEGRAM_RELAY_BASE}${BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Telegram sendMessage failed: ${res.status} ${text}`);
+  }
+
+  return res.json().catch(() => null);
 }
 
 export async function notifyNewOrder(order: NewOrderNotification) {
@@ -129,18 +149,26 @@ export async function notifyNewOrder(order: NewOrderNotification) {
       body.reply_markup = {
         inline_keyboard: [
           [
-            { text: '✅ Confirm করুন (Pathao তে পাঠান)', callback_data: `confirm_${order.orderId}` },
-            { text: '❌ Cancel', callback_data: `cancel_${order.orderId}` },
+            {
+              text: 'Phone Confirmed',
+              callback_data: `phone_confirm_${order.orderId}`,
+            },
+          ],
+          [
+            {
+              text: 'Phone Off',
+              callback_data: `phone_off_${order.orderId}`,
+            },
+            {
+              text: 'Cancel',
+              callback_data: `cancel_${order.orderId}`,
+            },
           ],
         ],
       };
     }
 
-    await fetch(`${TELEGRAM_RELAY_BASE}${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    await sendTelegramMessage(body);
   } catch (err) {
     console.error('Telegram notify failed:', err);
   }

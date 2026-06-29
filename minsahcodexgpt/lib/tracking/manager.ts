@@ -10,6 +10,7 @@ declare global {
   interface Window {
     fbq?: (...args: any[]) => void;
     gtag: (...args: any[]) => void;
+    dataLayer?: any[] & { __mbPurchaseGuardInstalled?: boolean };
     ttq: { track: (...args: any[]) => void };
     snaptr: (...args: any[]) => void;
     pintrk: (...args: any[]) => void;
@@ -20,6 +21,27 @@ declare global {
     uetq: any[];
     mixpanel: { track: (...args: any[]) => void };
   }
+}
+
+function getCookieValue(name: string): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  if (!match) return undefined;
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+function getFacebookIdentity() {
+  return {
+    fbc: getCookieValue('_fbc'),
+    fbp: getCookieValue('_fbp'),
+    externalId: getCookieValue('mb_vid'),
+  };
 }
 
 class TrackingManager {
@@ -35,16 +57,26 @@ class TrackingManager {
    * Load tracking configuration from environment variables and settings
    */
   private loadConfig(): AllPlatformsConfig {
+    const facebookPixelId =
+      process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
+      process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
+      process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+      '';
+
     return {
       facebook: {
-        enabled: !!process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID,
-        pixelId: process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || '',
-        accessToken: process.env.FACEBOOK_CONVERSION_API_TOKEN,
-        testEventCode: process.env.FACEBOOK_TEST_EVENT_CODE,
+        enabled: !!facebookPixelId,
+        pixelId: facebookPixelId,
       },
       google: {
-        enabled: !!process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
-        measurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || '',
+        enabled:
+          process.env.NEXT_PUBLIC_GA_ENABLED === 'true' ||
+          !!process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
+          !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+        measurementId:
+          process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
+          process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
+          '',
         tagManagerId: process.env.NEXT_PUBLIC_GTM_ID,
         adsConversionId: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID,
         adsConversionLabel: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
@@ -231,10 +263,24 @@ class TrackingManager {
   /**
    * Track on Facebook Pixel
    */
-  private trackFacebook(event: TrackingEvent, data?: TrackingEventData): void {
-    if (typeof window === 'undefined' || !window.fbq) return;
+  private trackFacebook(event: TrackingEvent, data?: TrackingEventData, attempt = 0): void {
+    if (typeof window === 'undefined') return;
+
+    if (!window.fbq) {
+      if (attempt < 50) {
+        window.setTimeout(() => this.trackFacebook(event, data, attempt + 1), 100);
+      }
+      return;
+    }
 
     const fbEvent = this.mapToFacebookEvent(event);
+    if (fbEvent === 'Purchase') {
+      console.warn(
+        '[Tracking] Generic Facebook Purchase is blocked. Use the verified online/COD Purchase flows only.'
+      );
+      return;
+    }
+
     const eventId = `${fbEvent}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
     // Browser pixel — eventID পাঠাও deduplication এর জন্য
@@ -258,13 +304,12 @@ class TrackingManager {
     // শুধু Facebook supported events পাঠাও
     const capiEvents = [
       'PageView', 'ViewContent', 'AddToCart', 'AddToWishlist',
-      'InitiateCheckout', 'Purchase', 'Search', 'CompleteRegistration'
+      'InitiateCheckout', 'Search', 'CompleteRegistration'
     ];
     if (!capiEvents.includes(eventName)) return;
 
     try {
-      const fbc = document.cookie.match(/_fbc=([^;]+)/)?.[1];
-      const fbp = document.cookie.match(/_fbp=([^;]+)/)?.[1];
+      const identity = getFacebookIdentity();
 
       await fetch('/api/facebook-capi', {
         method: 'POST',
@@ -273,21 +318,22 @@ class TrackingManager {
           eventName,
           eventId,
           eventSourceUrl: window.location.href,
-          fbc,
-          fbp,
+          fbc: identity.fbc,
+          fbp: identity.fbp,
+          externalId: identity.externalId,
           value: data?.value,
           currency: data?.currency || 'BDT',
-          contentIds: data?.contentIds,
-          contentType: data?.contentType,
-          contentName: data?.contentName,
-          contentCategory: data?.contentCategory,
+          contentIds: data?.content_ids || data?.contentIds,
+          contentType: data?.content_type || data?.contentType,
+          contentName: data?.content_name || data?.contentName,
+          contentCategory: data?.content_category || data?.contentCategory,
           contents: data?.contents,
-          numItems: data?.numItems,
-          orderId: data?.orderId,
+          numItems: data?.num_items || data?.numItems,
+          orderId: data?.transaction_id || data?.orderId,
           email: data?.email,
           phone: data?.phone,
-          firstName: data?.firstName,
-          lastName: data?.lastName,
+          firstName: data?.first_name || data?.firstName,
+          lastName: data?.last_name || data?.lastName,
           city: data?.city,
           country: data?.country || 'BD',
         }),
@@ -304,6 +350,21 @@ class TrackingManager {
     if (typeof window === 'undefined' || !window.gtag) return;
 
     const gaEvent = this.mapToGoogleEvent(event);
+    if (gaEvent === 'purchase') {
+      console.warn(
+        '[GA4] Client-side purchase is blocked. GA4 Purchase must be sent only by the verified server-side Measurement Protocol flow.'
+      );
+      if (Array.isArray(window.dataLayer)) {
+        window.dataLayer.push({
+          event: 'mb_ga4_purchase_blocked',
+          mb_reason: 'ga4_purchase_is_server_side_measurement_protocol_only',
+          mb_original_event: 'purchase',
+          transaction_id: data?.transaction_id || data?.orderId,
+        });
+      }
+      return;
+    }
+
     window.gtag('event', gaEvent, data);
   }
 

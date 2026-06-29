@@ -66,21 +66,6 @@ function formatVariantForNotification(variant: { name: string; attributes?: unkn
   return details.length ? details.join(' / ') : variant.name || null;
 }
 
-function cleanString(value: unknown) {
-  return typeof value === 'string' && value.trim() ? value.trim() : null;
-}
-
-function formatManualVariantForNotification(item: { variant?: unknown; size?: unknown }) {
-  const variant = cleanString(item.variant);
-  const size = cleanString(item.size);
-  const details = [
-    size ? `Size/Volume: ${size}` : null,
-    variant ? `Color/Shade: ${variant}` : null,
-  ].filter(Boolean);
-
-  return details.length ? details.join(' / ') : null;
-}
-
 // POST /api/admin/orders — Create order (admin-created on behalf of customer)
 export async function POST(request: NextRequest) {
   try {
@@ -217,9 +202,7 @@ export async function POST(request: NextRequest) {
         });
         notifyItems.push({
           name: product.name,
-          variant:
-            formatManualVariantForNotification(item) ||
-            formatVariantForNotification(item.variantId ? variantMap.get(item.variantId) : null),
+          variant: formatVariantForNotification(item.variantId ? variantMap.get(item.variantId) : null),
           quantity: itemQuantity,
           unitPrice: toNumber(itemPrice),
           total: toNumber(itemTotal),
@@ -245,7 +228,7 @@ export async function POST(request: NextRequest) {
         });
         notifyItems.push({
           name: item.name || 'Custom Product',
-          variant: formatManualVariantForNotification(item),
+          variant: null,
           quantity: itemQuantity,
           unitPrice: toNumber(itemPrice),
           total: toNumber(itemTotal),

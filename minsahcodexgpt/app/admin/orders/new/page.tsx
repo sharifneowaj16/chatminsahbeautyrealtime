@@ -418,8 +418,6 @@ export default function CreateOrderPage() {
             price:       item.price,
             productType: item.productType,
             isCustom:    item.isCustom,
-            variant:     item.variant,
-            size:        item.size,
           })),
           paymentMethod,
           paymentStatus,

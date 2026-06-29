@@ -20,7 +20,10 @@ import Script from 'next/script';
 import type { FacebookPixelEvent, FacebookPixelParams } from '@/types/facebook';
 
 // Get Pixel ID from environment
-const PIXEL_ID = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
+const PIXEL_ID =
+  process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
+  process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
+  process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
 // Window.fbq is declared globally in lib/tracking/manager.ts
 
@@ -43,20 +46,42 @@ export function generateEventId(): string {
 }
 
 /**
- * Get Facebook cookies (_fbp and _fbc)
+ * Read a browser cookie value.
+ */
+function getCookieValue(name: string): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  if (!match) return undefined;
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+/**
+ * Get Meta browser identity cookies.
+ */
+export function getFacebookBrowserIdentity(): {
+  fbp?: string;
+  fbc?: string;
+  externalId?: string;
+} {
+  return {
+    fbp: getCookieValue('_fbp'),
+    fbc: getCookieValue('_fbc'),
+    externalId: getCookieValue('mb_vid'),
+  };
+}
+
+/**
+ * Get Facebook cookies (_fbp and _fbc).
  */
 export function getFacebookCookies(): { fbp?: string; fbc?: string } {
-  if (typeof document === 'undefined') return {};
-
-  const cookies = document.cookie;
-
-  const fbpMatch = cookies.match(/_fbp=([^;]+)/);
-  const fbcMatch = cookies.match(/_fbc=([^;]+)/);
-
-  return {
-    fbp: fbpMatch ? fbpMatch[1] : undefined,
-    fbc: fbcMatch ? fbcMatch[1] : undefined,
-  };
+  const { fbp, fbc } = getFacebookBrowserIdentity();
+  return { fbp, fbc };
 }
 
 /**
@@ -69,7 +94,12 @@ export function initFacebookPixel() {
   }
 
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('init', PIXEL_ID);
+    const identity = getFacebookBrowserIdentity();
+    if (identity.externalId) {
+      window.fbq('init', PIXEL_ID, { external_id: identity.externalId });
+    } else {
+      window.fbq('init', PIXEL_ID);
+    }
     console.log('[FB Pixel] Initialized:', PIXEL_ID);
   }
 }
@@ -87,6 +117,13 @@ export function trackEvent(
   params?: FacebookPixelParams,
   eventId?: string
 ): string {
+  if (eventName === 'Purchase') {
+    console.warn(
+      '[FB Pixel] Purchase is blocked in the generic client helper. Use only the verified online Purchase browser flow.'
+    );
+    return '';
+  }
+
   if (!PIXEL_ID) {
     // Pixel ID not configured - silent skip
     return '';
@@ -100,18 +137,16 @@ export function trackEvent(
   // Generate eventID if not provided
   const finalEventId = eventId || generateEventId();
 
-  // Add eventID to params for deduplication
-  const paramsWithEventId: FacebookPixelParams = {
+  const eventParams: FacebookPixelParams = {
     ...params,
-    eventID: finalEventId,
   };
 
   // Send event to Facebook Pixel
-  window.fbq('track', eventName, paramsWithEventId);
+  window.fbq('track', eventName, eventParams, { eventID: finalEventId });
 
   console.log(`[FB Pixel] Event tracked: ${eventName}`, {
     eventID: finalEventId,
-    params: paramsWithEventId,
+    params: eventParams,
   });
 
   return finalEventId;
@@ -180,10 +215,8 @@ export function trackInitiateCheckout(params: {
 }
 
 /**
- * Track Purchase event (CLIENT-SIDE ONLY FOR PIXEL)
- * IMPORTANT: Server-side Purchase event MUST also be sent via CAPI with same eventID
- *
- * @returns eventID - MUST be sent to server for CAPI deduplication
+ * Disabled legacy Purchase helper.
+ * Purchase must only be fired by verified paid/confirmed purchase flows.
  */
 export function trackPurchase(params: {
   value: number;
@@ -192,16 +225,11 @@ export function trackPurchase(params: {
   numItems?: number;
   eventId?: string; // Pass this to CAPI
 }): string {
-  return trackEvent(
-    'Purchase',
-    {
-      value: params.value,
-      currency: params.currency || 'BDT',
-      content_ids: params.contentIds,
-      num_items: params.numItems,
-    },
-    params.eventId
+  console.warn(
+    '[FB Pixel] trackPurchase is disabled. Purchase must be fired only by verified paid/confirmed flows.'
   );
+  void params;
+  return '';
 }
 
 /**
@@ -233,8 +261,15 @@ export async function sendToServerCAPI(params: {
   numItems?: number;
   orderId?: string;
 }): Promise<{ success: boolean; error?: string }> {
+  if (params.eventName === 'Purchase') {
+    return {
+      success: false,
+      error: 'Purchase is not allowed from browser-callable CAPI helper',
+    };
+  }
+
   try {
-    const cookies = getFacebookCookies();
+    const identity = getFacebookBrowserIdentity();
 
     const response = await fetch('/api/facebook-capi', {
       method: 'POST',
@@ -253,8 +288,9 @@ export async function sendToServerCAPI(params: {
         state: params.state,
         zipCode: params.zipCode,
         country: params.country,
-        fbc: cookies.fbc,
-        fbp: cookies.fbp,
+        fbc: identity.fbc,
+        fbp: identity.fbp,
+        externalId: identity.externalId,
         value: params.value,
         currency: params.currency,
         contentIds: params.contentIds,
@@ -319,7 +355,18 @@ export function FacebookPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${PIXEL_ID}');
+            var mbVidMatch = document.cookie.match(/(?:^|; )mb_vid=([^;]*)/);
+            var externalId;
+            try {
+              externalId = mbVidMatch ? decodeURIComponent(mbVidMatch[1]) : undefined;
+            } catch (e) {
+              externalId = mbVidMatch ? mbVidMatch[1] : undefined;
+            }
+            if (externalId) {
+              fbq('init', ${JSON.stringify(PIXEL_ID)}, { external_id: externalId });
+            } else {
+              fbq('init', ${JSON.stringify(PIXEL_ID)});
+            }
             fbq('track', 'PageView');
           `,
         }}

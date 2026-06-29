@@ -1,45 +1,136 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 import nagad from '@/lib/payments/nagad';
+import type { Prisma } from '@/generated/prisma/client';
+
+function decimalToNumber(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (value && typeof value === 'object' && 'toString' in value) {
+    const parsed = Number(value.toString());
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, phoneNumber, items, shippingAddress } = body;
+    const orderId = typeof body.orderId === 'string' ? body.orderId.trim() : '';
+    const phoneNumber = typeof body.phoneNumber === 'string' ? body.phoneNumber.trim() : '';
 
-    if (!amount || !phoneNumber) {
+    if (!orderId || !phoneNumber) {
       return NextResponse.json(
-        { success: false, message: 'Amount and phone number are required' },
+        { success: false, message: 'Order ID and phone number are required' },
         { status: 400 }
       );
     }
 
-    const orderNumber = `MB${Date.now()}${Math.random().toString(36).substring(7).toUpperCase()}`;
-    const callbackURL = `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/nagad/callback`;
-
-    // Initialize Nagad payment
-    const payment = await nagad.initializePayment({
-      amount: Number(amount),
-      orderId: orderNumber,
-      productDetails: items.map((item: any) => item.name).join(', '),
-      merchantCallbackURL: callbackURL
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        orderNumber: true,
+        paymentMethod: true,
+        paymentStatus: true,
+        total: true,
+        items: { select: { name: true } },
+      },
     });
 
-    // Store order in database
-    // await db.orders.create({ ... });
+    if (!order) {
+      return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
+    }
+
+    if ((order.paymentMethod ?? '').toLowerCase() !== 'nagad') {
+      return NextResponse.json(
+        { success: false, message: 'Order is not configured for Nagad payment' },
+        { status: 400 }
+      );
+    }
+
+    if (String(order.paymentStatus).toUpperCase() === 'COMPLETED') {
+      return NextResponse.json(
+        { success: false, message: 'Order is already paid' },
+        { status: 409 }
+      );
+    }
+
+    const amount = decimalToNumber(order.total);
+    if (amount <= 0) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid order amount' },
+        { status: 400 }
+      );
+    }
+
+    const callbackURL = new URL('/api/payments/nagad/callback', request.nextUrl.origin);
+    callbackURL.searchParams.set('orderId', order.id);
+
+    const payment = await nagad.initializePayment({
+      amount,
+      orderId: order.orderNumber,
+      productDetails: order.items.map((item) => item.name).join(', ').slice(0, 250) || 'Minsah order',
+      merchantCallbackURL: callbackURL.toString(),
+    });
+    const gatewayResponse = payment as unknown as Prisma.InputJsonValue;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.payment.upsert({
+        where: { gatewayTransactionId: payment.paymentReferenceId },
+        update: {
+          orderId: order.id,
+          method: 'nagad',
+          gateway: 'nagad',
+          amount,
+          currency: 'BDT',
+          status: 'PROCESSING',
+          rawStatus: payment.status || 'INITIALIZED',
+          gatewayResponse,
+          signatureVerified: false,
+          amountMatched: false,
+          currencyMatched: false,
+        },
+        create: {
+          orderId: order.id,
+          method: 'nagad',
+          gateway: 'nagad',
+          gatewayTransactionId: payment.paymentReferenceId,
+          amount,
+          currency: 'BDT',
+          status: 'PROCESSING',
+          rawStatus: payment.status || 'INITIALIZED',
+          gatewayResponse,
+          signatureVerified: false,
+          amountMatched: false,
+          currencyMatched: false,
+        },
+      });
+
+      await tx.order.update({
+        where: { id: order.id },
+        data: { paymentStatus: 'PROCESSING' },
+      });
+    });
 
     return NextResponse.json({
       success: true,
       paymentID: payment.paymentReferenceId,
       nagadURL: payment.callbackURL,
-      orderNumber: orderNumber,
-      message: 'Payment initiated successfully'
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      amount,
+      message: 'Nagad payment initiated successfully',
     });
   } catch (error) {
     console.error('Nagad payment API error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: error instanceof Error ? error.message : 'Payment failed'
+        message: error instanceof Error ? error.message : 'Payment failed',
       },
       { status: 500 }
     );

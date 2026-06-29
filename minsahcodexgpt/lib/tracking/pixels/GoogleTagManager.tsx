@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import Script from 'next/script';
+import { createGa4PurchaseGuardScript } from './ga4PurchaseGuardScript';
 
 interface GoogleTagManagerProps {
   tagManagerId: string;
@@ -13,6 +13,13 @@ export default function GoogleTagManager({ tagManagerId, enabled = true }: Googl
 
   return (
     <>
+      <Script
+        id="gtm-ga4-purchase-guard"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: createGa4PurchaseGuardScript({ blockDataLayerPurchase: true }),
+        }}
+      />
       <Script
         id="google-tag-manager"
         strategy="afterInteractive"

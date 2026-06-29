@@ -55,6 +55,7 @@ export interface FacebookUserData {
   country?: string; // Country code (hashed)
 
   // Advanced matching (from cookies)
+  external_id?: string; // Stable visitor/customer ID (hashed)
   fbc?: string; // _fbc cookie (Facebook click ID)
   fbp?: string; // _fbp cookie (Facebook browser ID)
 
@@ -112,6 +113,7 @@ export interface TrackingPayload {
   // Cookies
   fbc?: string;
   fbp?: string;
+  externalId?: string;
 
   // Custom data
   value?: number;
@@ -123,7 +125,8 @@ export interface TrackingPayload {
   contents?: Array<{
     id: string;
     quantity: number;
-    item_price: number;
+    item_price?: number;
+    price?: number;
   }>;
   numItems?: number;
   orderId?: string;
