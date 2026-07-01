@@ -1,6 +1,13 @@
 import 'server-only';
 import type { NextRequest } from 'next/server';
 import { sanitizeTrackingPath, sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
+import { isPaymentGatewayReferralUrl } from '@/lib/tracking/payment-gateway-referrals';
+import { chooseCanonicalMetaExternalId, normalizeMetaExternalIdValue } from '@/lib/tracking/meta-external-id';
+import {
+  canLoadNonEssentialTracking,
+  getServerTrackingConsentFromCookie,
+  TRACKING_CONSENT_COOKIE,
+} from '@/lib/tracking/tracking-consent';
 
 const TRACKING_SCHEMA_VERSION = 'mb_tracking_v1';
 
@@ -102,17 +109,24 @@ function readGaSessionId(request: NextRequest) {
   return undefined;
 }
 
+function sanitizeNonGatewayReferrer(value?: string) {
+  const sanitized = sanitizeTrackingUrl(value);
+  if (!sanitized) return undefined;
+  return isPaymentGatewayReferralUrl(sanitized) ? undefined : sanitized;
+}
+
 export function readOrderAttribution(
   request: NextRequest,
   options: { userId?: string | null } = {}
 ) {
   const attribution = parseAttributionCookie(request);
-  const visitorId = readCookie(request, VISITOR_ID_COOKIE);
-  const externalId = options.userId
-    ? `user:${options.userId}`
-    : visitorId
-      ? `visitor:${visitorId}`
-      : undefined;
+  const visitorId = normalizeMetaExternalIdValue(readCookie(request, VISITOR_ID_COOKIE));
+  const externalId = chooseCanonicalMetaExternalId({
+    visitorId,
+    userId: options.userId,
+  });
+  const trackingConsent = getServerTrackingConsentFromCookie(readCookie(request, TRACKING_CONSENT_COOKIE));
+  const nonEssentialTrackingAllowed = canLoadNonEssentialTracking(trackingConsent);
 
   return {
     fbp: readCookie(request, '_fbp'),
@@ -133,7 +147,10 @@ export function readOrderAttribution(
     placement: clean(attribution.placement),
     firstLandingPath: sanitizeTrackingPath(readDecodedCookie(request, FIRST_LANDING_PATH_COOKIE)),
     firstLandingUrl: sanitizeTrackingUrl(readDecodedCookie(request, FIRST_LANDING_URL_COOKIE)),
-    referrer: sanitizeTrackingUrl(readDecodedCookie(request, REFERRER_COOKIE)),
+    referrer: sanitizeNonGatewayReferrer(readDecodedCookie(request, REFERRER_COOKIE)),
+    trackingConsent,
+    nonEssentialTrackingAllowed,
+    trackingFilteredReason: nonEssentialTrackingAllowed ? undefined : 'CONSENT_DENIED',
     trackingSchemaVersion: TRACKING_SCHEMA_VERSION,
   };
 }

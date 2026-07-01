@@ -1,0 +1,26 @@
+# Deployment package exclusions for clean source bundles
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.env
+.env.*
+!.env.example
+.vercel/
+.git/
+.claude/
+
+# Archive/reference folders not needed by the main Next.js production app
+addtocardallfiles/
+minsahinboxcodex/
+
+# Realtime service deploys separately
+realtime-service/node_modules/
+realtime-service/dist/
+realtime-service/prisma/generated/

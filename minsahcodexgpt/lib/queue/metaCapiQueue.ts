@@ -41,7 +41,14 @@ export type Ga4PurchaseJobData = {
   queuedAt: string;
 };
 
-export type MetaCapiJobData = MetaCapiPurchaseJobData | MetaCapiCoreJobData | Ga4PurchaseJobData;
+export type Ga4RefundJobData = {
+  type: 'ga4_refund';
+  orderId: string;
+  source: 'admin_refund' | 'return_completed' | 'manual_retry';
+  queuedAt: string;
+};
+
+export type MetaCapiJobData = MetaCapiPurchaseJobData | MetaCapiCoreJobData | Ga4PurchaseJobData | Ga4RefundJobData;
 
 const globalForMetaCapiQueue = globalThis as unknown as {
   metaCapiPurchaseQueue?: Queue<MetaCapiJobData>;
@@ -111,6 +118,23 @@ export function enqueueGa4Purchase(
     { type: 'ga4_purchase', ...input, queuedAt },
     {
       jobId: `ga4_purchase:${input.orderId}`,
+      ...options,
+    }
+  );
+}
+
+
+export function enqueueGa4Refund(
+  input: Omit<Ga4RefundJobData, 'queuedAt' | 'type'>,
+  options?: JobsOptions
+) {
+  const queuedAt = new Date().toISOString();
+
+  return metaCapiPurchaseQueue.add(
+    'ga4_refund',
+    { type: 'ga4_refund', ...input, queuedAt },
+    {
+      jobId: `ga4_refund:${input.orderId}`,
       ...options,
     }
   );

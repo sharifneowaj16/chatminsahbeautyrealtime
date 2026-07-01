@@ -8,8 +8,8 @@
  * Environment variables required:
  *   MINIO_ENDPOINT          – e.g. "minio"
  *   MINIO_PORT              – e.g. "9000"
- *   MINIO_ACCESS_KEY        – e.g. "minsah_admin_2025"
- *   MINIO_SECRET_KEY        – e.g. "YourSuperSecurePassword123!"
+ *   MINIO_ACCESS_KEY        – e.g. "your-minio-access-key"
+ *   MINIO_SECRET_KEY        – e.g. "your-minio-secret-key"
  *   MINIO_USE_SSL           – "true" | "false"  (default: "false")
  *   MINIO_BUCKET_NAME       – e.g. "minsah-beauty"
  *   NEXT_PUBLIC_MINIO_PUBLIC_URL – e.g. "https://minio.minsahbeauty.cloud"

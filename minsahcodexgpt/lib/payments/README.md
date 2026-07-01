@@ -156,14 +156,22 @@ window.location.href = payment.GatewayPageURL;
 
 ## API Routes
 
-All payment gateways have corresponding API routes in `/app/api/payments/`:
+Production payment completion must be bound to a canonical order created through `/api/orders`.
+Legacy direct-payment routes are intentionally disabled with `410 Gone` and must not be used by frontend code.
 
-- `/api/payments/bkash/create` - Create bKash payment
-- `/api/payments/bkash/execute` - Execute bKash payment
-- `/api/payments/nagad/create` - Create Nagad payment
-- `/api/payments/rocket/create` - Create Rocket payment
-- `/api/payments/card/create` - Create card payment
-- `/api/payments/cod/create` - Create Cash on Delivery order
+Active/canonical routes:
+
+- `/api/orders` - Create the canonical order and persist checkout tracking data
+- `/api/payments/verified` - Verify paid gateway callbacks/webhooks, update payment state, and queue Purchase tracking
+- `/api/payments/bkash/create` - Create bKash payment session only after a canonical order exists
+- `/api/payments/nagad/create` - Create Nagad payment session only after a canonical order exists
+
+Disabled legacy routes:
+
+- `/api/payments/bkash/execute` - Disabled; use `/api/payments/verified`
+- `/api/payments/card/create` - Disabled; raw card collection is not allowed
+- `/api/payments/cod/create` - Disabled; COD orders must be created through `/api/orders`
+- `/api/payments/rocket/create` - Disabled until a real verified Rocket adapter is added
 
 ## Security Considerations
 

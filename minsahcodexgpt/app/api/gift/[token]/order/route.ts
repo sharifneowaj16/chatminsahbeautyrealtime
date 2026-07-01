@@ -2,14 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth';
 import prisma from '@/lib/prisma';
+import { getTelegramOrderBotConfig } from '@/lib/telegram/auth';
 
 // ── Telegram notification ──────────────────────────────────────────────────────
+function escapeTelegramHtml(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 async function sendTelegram(message: string) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId   = process.env.TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) return;
+  const { relayBase, botToken, chatId } = getTelegramOrderBotConfig();
+  if (!relayBase || !botToken || !chatId) return;
   try {
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    await fetch(`${relayBase}${botToken}/sendMessage`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
@@ -257,17 +264,17 @@ export async function POST(
     const tgMsg = [
       `🎁 <b>নতুন Gift Order!</b>`,
       ``,
-      `📦 পণ্য: ${product.name}`,
+      `📦 পণ্য: ${escapeTelegramHtml(product.name)}`,
       `💰 মূল্য: ৳${parseFloat(product.price.toString()).toLocaleString()}`,
       ``,
-      `👤 Payer: ${payerName}`,
-      `📍 Delivery: ${deliveryName}`,
-      `📞 Phone: ${deliveryPhone}`,
-      `🏠 ঠিকানা: ${deliveryStreet}, ${deliveryCity}`,
+      `👤 Payer: ${escapeTelegramHtml(payerName)}`,
+      `📍 Delivery: ${escapeTelegramHtml(deliveryName)}`,
+      `📞 Phone: ${escapeTelegramHtml(deliveryPhone)}`,
+      `🏠 ঠিকানা: ${escapeTelegramHtml(deliveryStreet)}, ${escapeTelegramHtml(deliveryCity)}`,
       ``,
       `🎀 Type: ${isSendGift ? 'Send Gift' : 'Get Gift'}`,
-      `🔑 Token: <code>${token}</code>`,
-      `📋 Order: #${result.order.orderNumber}`,
+      `🔑 Token: <code>${escapeTelegramHtml(token)}</code>`,
+      `📋 Order: #${escapeTelegramHtml(result.order.orderNumber)}`,
     ].join('\n');
 
     sendTelegram(tgMsg).catch(() => {});

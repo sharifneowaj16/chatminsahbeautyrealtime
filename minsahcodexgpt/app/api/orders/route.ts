@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { recordProductOrderCreatedInTransaction } from '@/lib/analytics/product-metrics';
 import prisma from '@/lib/prisma';
 import { Prisma, OrderStatus } from '@/generated/prisma/client';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import { generateDailyOrderNumber } from '@/lib/order-number';
 import { notifyNewOrder } from '@/lib/telegram-notify';
 import { readOrderAttribution } from '@/lib/tracking/order-attribution';
+import { isCanonicalOnlinePaymentMethod, isCodPaymentMethod } from '@/lib/payments/canonical-payment-contract';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,6 +113,17 @@ export async function POST(request: NextRequest) {
     }
     if (!paymentMethod) {
       return NextResponse.json({ error: 'Payment method is required' }, { status: 400 });
+    }
+
+    if (!isCodPaymentMethod(paymentMethod) && !isCanonicalOnlinePaymentMethod(paymentMethod)) {
+      return NextResponse.json(
+        {
+          error: 'Unsupported payment method for production checkout.',
+          code: 'UNSUPPORTED_PAYMENT_METHOD',
+          allowedPaymentMethods: ['cod', 'bkash', 'nagad'],
+        },
+        { status: 400 }
+      );
     }
 
     // 3. Fetch products & variants from DB — never trust client prices
@@ -312,7 +325,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 6e. Clear user cart
+      // 6e. Product analytics: order counters are updated in the same DB transaction
+      // so backend product analytics never shows an order without matching product metrics.
+      await recordProductOrderCreatedInTransaction(tx, orderItems);
+
+      // 6f. Clear user cart
       await tx.cartItem.deleteMany({ where: { userId } });
 
       return newOrder;

@@ -1,6 +1,7 @@
 import 'server-only';
 import prisma from '@/lib/prisma';
-import { getMetaContentId } from '@/lib/tracking/meta-content-id';
+import { buildMetaCatalogContents, getMetaContentId } from '@/lib/tracking/meta-content-id';
+import { classifyStoredOrderTraffic } from '@/lib/tracking/traffic-filter';
 
 const GA4_MEASUREMENT_ID =
   process.env.GA4_MEASUREMENT_ID ??
@@ -16,8 +17,10 @@ const TRACKING_SCHEMA_VERSION = 'mb_tracking_v1';
 const GA4_PURCHASE_CLAIM_STALE_MS = 15 * 60 * 1000;
 
 type Ga4PurchaseSource = 'cod_phone_confirmed' | 'online_paid';
+type Ga4RefundSource = 'admin_refund' | 'return_completed' | 'manual_retry';
 
 type OrderForGa4 = Awaited<ReturnType<typeof loadOrderForGa4>>;
+type OrderForGa4Refund = Awaited<ReturnType<typeof loadOrderForGa4Refund>>;
 
 function decimalToNumber(value: unknown) {
   if (typeof value === 'number') return value;
@@ -66,7 +69,7 @@ async function loadOrderForGa4(orderId: string) {
   return prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      items: true,
+      items: { include: { product: true, variant: true } },
       payments: {
         where: {
           status: 'COMPLETED',
@@ -77,6 +80,27 @@ async function loadOrderForGa4(orderId: string) {
         },
         orderBy: { verifiedAt: 'desc' },
         take: 1,
+      },
+    },
+  });
+}
+
+async function loadOrderForGa4Refund(orderId: string) {
+  return prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: { include: { product: true, variant: true } },
+      payments: {
+        where: {
+          status: { in: ['COMPLETED', 'REFUNDED'] },
+          currency: 'BDT',
+        },
+        orderBy: { verifiedAt: 'desc' },
+      },
+      returns: {
+        where: { status: 'COMPLETED' },
+        include: { items: true },
+        orderBy: { updatedAt: 'desc' },
       },
     },
   });
@@ -127,6 +151,7 @@ async function markGa4PurchaseSent(orderId: string) {
 
 async function logGa4Failure(params: {
   orderId?: string;
+  eventName?: string;
   eventId?: string;
   errorCode?: string;
   errorMessage: string;
@@ -139,7 +164,7 @@ async function logGa4Failure(params: {
   await prisma.metaCapiFailure.create({
     data: {
       orderId: params.orderId,
-      eventName: 'purchase',
+      eventName: params.eventName ?? 'purchase',
       eventId: params.eventId,
       provider: 'GA4',
       schemaVersion: TRACKING_SCHEMA_VERSION,
@@ -231,7 +256,8 @@ export async function sendGa4Purchase(params: {
     return { ok: false, retry: false, reason: 'ORDER_NOT_FOUND' };
   }
 
-  if (order.isTest) return { ok: true, skipped: true, reason: 'TEST_ORDER' };
+  const traffic = classifyStoredOrderTraffic(order);
+  if (!traffic.allowed) return { ok: true, skipped: true, reason: traffic.reason };
   if (order.gaPurchaseSent) return { ok: true, skipped: true, reason: 'GA4_PURCHASE_ALREADY_SENT' };
   if (!order.gaClientId) return { ok: true, skipped: true, reason: 'GA_CLIENT_ID_MISSING' };
 
@@ -341,12 +367,26 @@ export async function sendGa4Purchase(params: {
   if (!claimed) return { ok: true, skipped: true, reason: 'GA4_PURCHASE_ALREADY_CLAIMED_OR_SENT' };
 
   const sessionId = getGaSessionId(order.gaSessionId);
-  const items = order.items.map((item) => ({
-    item_id: getItemId(item),
-    item_name: item.name,
+  const catalogItems = order.items.map((item) => ({
+    ...item,
     price: decimalToNumber(item.price),
-    quantity: item.quantity,
   }));
+  const catalogContents = buildMetaCatalogContents(catalogItems);
+  const items = order.items.map((item, index) => {
+    const catalogContent = catalogContents[index];
+
+    return {
+      item_id: getItemId(item),
+      item_name: item.name,
+      price: decimalToNumber(item.price),
+      quantity: item.quantity,
+      ...(catalogContent?.item_group_id && { item_group_id: catalogContent.item_group_id }),
+      ...(catalogContent?.variant_id && { variant_id: catalogContent.variant_id }),
+      ...(catalogContent?.item_variant && { item_variant: catalogContent.item_variant }),
+      ...(catalogContent?.shade && { shade: catalogContent.shade }),
+      ...(catalogContent?.size && { size: catalogContent.size }),
+    };
+  });
 
   const payload = {
     client_id: order.gaClientId,
@@ -419,6 +459,250 @@ export async function sendGa4Purchase(params: {
     if (finalAttempt) {
       await releaseGa4PurchaseClaim(orderId);
     }
+
+    throw error;
+  }
+}
+
+
+function buildGa4RefundSafePayload(
+  order: NonNullable<OrderForGa4Refund>,
+  source: Ga4RefundSource,
+  refundAmount: number,
+  itemCount: number,
+  eventTimeSeconds?: number
+) {
+  return {
+    event_name: 'refund',
+    transaction_id: order.id,
+    order_id: order.id,
+    order_number: order.orderNumber,
+    source,
+    event_time: eventTimeSeconds,
+    value: refundAmount,
+    currency: 'BDT',
+    item_count: itemCount,
+    has_ga_client_id: Boolean(order.gaClientId),
+    has_ga_session_id: Boolean(order.gaSessionId),
+    ga_purchase_sent: Boolean(order.gaPurchaseSent),
+    completed_return_count: order.returns.length,
+  };
+}
+
+function getCompletedReturnRefundAmount(order: NonNullable<OrderForGa4Refund>) {
+  return order.returns.reduce((total, returnRequest) => total + decimalToNumber(returnRequest.refundAmount), 0);
+}
+
+function hasActualRefundSignal(order: NonNullable<OrderForGa4Refund>) {
+  const paymentStatus = String(order.paymentStatus ?? '').toUpperCase();
+  const status = String(order.status ?? '').toUpperCase();
+  const hasRefundedPayment = order.payments.some((payment) => String(payment.status ?? '').toUpperCase() === 'REFUNDED');
+
+  return (
+    paymentStatus === 'REFUNDED' ||
+    status === 'REFUNDED' ||
+    Boolean(order.refundedAt) ||
+    hasRefundedPayment ||
+    order.returns.some((returnRequest) => returnRequest.status === 'COMPLETED' && decimalToNumber(returnRequest.refundAmount) > 0)
+  );
+}
+
+function getGa4RefundEventDate(order: NonNullable<OrderForGa4Refund>) {
+  return order.refundedAt ?? order.returns[0]?.updatedAt ?? new Date();
+}
+
+function buildRefundItems(order: NonNullable<OrderForGa4Refund>) {
+  const returnItems = order.returns.flatMap((returnRequest) => returnRequest.items);
+
+  if (returnItems.length > 0) {
+    return returnItems.map((item) => ({
+      item_id: item.productId ? getMetaContentId({ productId: item.productId, variantId: null, sku: null, id: item.id }) : item.id,
+      item_name: item.name,
+      price: decimalToNumber(item.price),
+      quantity: item.quantity,
+    }));
+  }
+
+  const catalogItems = order.items.map((item) => ({
+    ...item,
+    price: decimalToNumber(item.price),
+  }));
+  const catalogContents = buildMetaCatalogContents(catalogItems);
+
+  return order.items.map((item, index) => {
+    const catalogContent = catalogContents[index];
+
+    return {
+      item_id: getItemId(item),
+      item_name: item.name,
+      price: decimalToNumber(item.price),
+      quantity: item.quantity,
+      ...(catalogContent?.item_group_id && { item_group_id: catalogContent.item_group_id }),
+      ...(catalogContent?.variant_id && { variant_id: catalogContent.variant_id }),
+      ...(catalogContent?.item_variant && { item_variant: catalogContent.item_variant }),
+      ...(catalogContent?.shade && { shade: catalogContent.shade }),
+      ...(catalogContent?.size && { size: catalogContent.size }),
+    };
+  });
+}
+
+async function markGa4RefundSent(orderId: string) {
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      gaRefundSent: true,
+      gaRefundSentAt: new Date(),
+    },
+  });
+}
+
+export async function sendGa4Refund(params: {
+  orderId: string;
+  source: Ga4RefundSource;
+  retryCount?: number;
+  finalAttempt?: boolean;
+}) {
+  const { orderId, source, retryCount = 0, finalAttempt = false } = params;
+  const eventId = `GA4-Refund-${orderId}`;
+
+  if (!GA4_MEASUREMENT_ID || !GA4_API_SECRET) {
+    await logGa4Failure({
+      orderId,
+      eventName: 'refund',
+      eventId,
+      errorCode: 'GA4_ENV_MISSING',
+      errorMessage: 'GA4_MEASUREMENT_ID or GA4_API_SECRET is missing.',
+      retryCount,
+      finalFailed: true,
+      safePayload: { event_name: 'refund', order_id: orderId, has_ga_client_id: false },
+    });
+    return { ok: true, skipped: true, reason: 'GA4_ENV_MISSING' };
+  }
+
+  const order = await loadOrderForGa4Refund(orderId);
+  if (!order) {
+    await logGa4Failure({
+      orderId,
+      eventName: 'refund',
+      eventId,
+      errorCode: 'ORDER_NOT_FOUND',
+      errorMessage: 'Order not found for GA4 Refund.',
+      retryCount,
+      finalFailed: true,
+      safePayload: { event_name: 'refund', order_id: orderId, has_ga_client_id: false },
+    });
+    return { ok: false, retry: false, reason: 'ORDER_NOT_FOUND' };
+  }
+
+  const traffic = classifyStoredOrderTraffic(order);
+  if (!traffic.allowed) return { ok: true, skipped: true, reason: traffic.reason };
+  if (order.gaRefundSent) return { ok: true, skipped: true, reason: 'GA4_REFUND_ALREADY_SENT' };
+  if (!order.gaPurchaseSent) return { ok: true, skipped: true, reason: 'GA4_PURCHASE_NOT_SENT' };
+  if (!order.gaClientId) return { ok: true, skipped: true, reason: 'GA_CLIENT_ID_MISSING' };
+  if (!hasActualRefundSignal(order)) return { ok: true, skipped: true, reason: 'NO_ACTUAL_REFUND_SIGNAL' };
+
+  const completedReturnRefundAmount = getCompletedReturnRefundAmount(order);
+  const orderValue = decimalToNumber(order.total);
+  const refundAmount = completedReturnRefundAmount > 0 ? completedReturnRefundAmount : orderValue;
+
+  if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+    await logGa4Failure({
+      orderId,
+      eventName: 'refund',
+      eventId,
+      errorCode: 'INVALID_REFUND_VALUE',
+      errorMessage: 'Refund value must be greater than 0 for GA4 Refund.',
+      retryCount,
+      finalFailed: true,
+      safePayload: buildGa4RefundSafePayload(order, source, refundAmount, 0),
+    });
+    return { ok: false, retry: false, reason: 'INVALID_REFUND_VALUE' };
+  }
+
+  const eventDate = getGa4RefundEventDate(order);
+  const eventTimeSeconds = Math.floor(eventDate.getTime() / 1000);
+  const items = buildRefundItems(order);
+  const safePayload = buildGa4RefundSafePayload(order, source, refundAmount, items.reduce((sum, item) => sum + item.quantity, 0), eventTimeSeconds);
+
+  if (isFutureEventTime(eventTimeSeconds)) {
+    await logGa4Failure({
+      orderId,
+      eventName: 'refund',
+      eventId,
+      errorCode: 'EVENT_TIME_IN_FUTURE',
+      errorMessage: 'GA4 Refund event time is in the future.',
+      retryCount,
+      finalFailed: true,
+      safePayload,
+    });
+    return { ok: false, retry: false, reason: 'EVENT_TIME_IN_FUTURE' };
+  }
+
+  const sessionId = getGaSessionId(order.gaSessionId);
+  const payload = {
+    client_id: order.gaClientId,
+    timestamp_micros: eventDate.getTime() * 1000,
+    non_personalized_ads: false,
+    events: [
+      {
+        name: 'refund',
+        params: {
+          transaction_id: order.id,
+          event_id: eventId,
+          affiliation: 'Minsah Beauty',
+          currency: 'BDT',
+          value: refundAmount,
+          items,
+          engagement_time_msec: 1,
+          page_location: `${SITE_URL.replace(/\/$/, '')}/admin/orders/${order.id}`,
+          order_number: order.orderNumber,
+          ga_refund_source: source,
+          ...(sessionId ? { session_id: sessionId } : {}),
+        },
+      },
+    ],
+  };
+
+  const url = `https://www.google-analytics.com/mp/collect?measurement_id=${encodeURIComponent(GA4_MEASUREMENT_ID)}&api_secret=${encodeURIComponent(GA4_API_SECRET)}`;
+
+  try {
+    const res = await postGa4MeasurementProtocol(url, payload);
+    const responseText = await res.text().catch(() => '');
+    const responsePayload = responseText ? { body: responseText.slice(0, 500) } : undefined;
+
+    if (res.ok || res.status === 204) {
+      await markGa4RefundSent(orderId);
+      console.log(`[GA4][Refund] Sent successfully: order ${orderId} (${source})`);
+      return { ok: true, retry: false };
+    }
+
+    const retry = shouldRetryGa4(res.status);
+    await logGa4Failure({
+      orderId,
+      eventName: 'refund',
+      eventId,
+      statusCode: res.status,
+      errorCode: `GA4_HTTP_${res.status}`,
+      errorMessage: `GA4 Measurement Protocol refund failed with status ${res.status}`,
+      retryCount,
+      finalFailed: !retry || finalAttempt,
+      safePayload,
+      responsePayload,
+    });
+
+    if (retry) throw new Error(`Retryable GA4 refund Measurement Protocol error: ${res.status}`);
+    return { ok: false, retry: false, reason: 'GA4_REFUND_PERMANENT_FAILURE' };
+  } catch (error) {
+    await logGa4Failure({
+      orderId,
+      eventName: 'refund',
+      eventId,
+      errorCode: 'NETWORK_OR_RETRYABLE_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown GA4 refund network/retryable error',
+      retryCount,
+      finalFailed: finalAttempt,
+      safePayload,
+    });
 
     throw error;
   }

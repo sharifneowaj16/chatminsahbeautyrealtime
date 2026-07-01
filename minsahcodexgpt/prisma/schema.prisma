@@ -415,6 +415,7 @@ model Product {
   searchClicks       SearchClickEvent[]
   searchMetrics      SearchClickMetrics[]
   productDailyMetrics ProductDailyMetric[]
+  productViewDedups  ProductViewDedup[]
   giftRequests       GiftRequest[]
   supplierLinks      SupplierProduct[]
   purchaseItems      PurchaseOrderItem[]
@@ -504,6 +505,22 @@ model ProductDailyMetric {
   @@unique([productId, metricDate])
   @@index([metricDate])
   @@index([grade])
+}
+
+model ProductViewDedup {
+  id             String   @id @default(cuid())
+  productId      String
+  visitorKeyHash String
+  expiresAt      DateTime
+  lastSeenAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, visitorKeyHash])
+  @@index([expiresAt])
+  @@index([productId])
 }
 
 model SupplierProduct {
@@ -792,6 +809,11 @@ model Order {
   confirmationNote     String?   @db.Text
   confirmedByAdminId   String?
 
+  // Tracking consent / privacy filters
+  trackingConsent       String?  @default("unknown")
+  nonEssentialTrackingAllowed Boolean @default(true)
+  trackingFilteredReason String?
+
   // Tracking debug/version
   trackingSchemaVersion String?  @default("mb_tracking_v1")
 
@@ -837,6 +859,8 @@ model Order {
   @@index([isTest])
   @@index([courierConsignmentId])
   @@index([confirmationStatus])
+  @@index([trackingConsent])
+  @@index([nonEssentialTrackingAllowed])
 }
 
 model PathaoWebhookEvent {
@@ -945,6 +969,48 @@ model Payment {
   @@index([status])
   @@index([transactionId])
   @@index([verifiedAt])
+}
+
+// ==========================================
+// Telegram Order Action Security
+// ==========================================
+
+model TelegramActionToken {
+  id             String    @id @default(cuid())
+  tokenHash      String    @unique
+  action         String
+  orderId        String
+  telegramChatId String?
+  messageId      String?
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([action])
+  @@index([expiresAt])
+  @@index([consumedAt])
+}
+
+model TelegramActionLog {
+  id               String   @id @default(cuid())
+  callbackQueryId  String?  @unique
+  telegramUserId   String
+  telegramUsername String?
+  action           String
+  orderId          String?
+  status           String
+  errorMessage     String?  @db.Text
+  messageId        String?
+  chatId           String?
+  createdAt        DateTime @default(now())
+
+  @@index([orderId])
+  @@index([telegramUserId])
+  @@index([action])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ==========================================

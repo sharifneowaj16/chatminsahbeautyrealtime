@@ -18,6 +18,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
 import type { FacebookPixelEvent, FacebookPixelParams } from '@/types/facebook';
+import { buildVisitorMetaExternalId } from '@/lib/tracking/meta-external-id';
 
 // Get Pixel ID from environment
 const PIXEL_ID =
@@ -64,6 +65,10 @@ function getCookieValue(name: string): string | undefined {
 /**
  * Get Meta browser identity cookies.
  */
+function getMetaExternalIdRaw() {
+  return buildVisitorMetaExternalId(getCookieValue('mb_vid'));
+}
+
 export function getFacebookBrowserIdentity(): {
   fbp?: string;
   fbc?: string;
@@ -72,7 +77,8 @@ export function getFacebookBrowserIdentity(): {
   return {
     fbp: getCookieValue('_fbp'),
     fbc: getCookieValue('_fbc'),
-    externalId: getCookieValue('mb_vid'),
+    // Raw stable key sent only to our server; /api/facebook-capi hashes it before Meta.
+    externalId: getMetaExternalIdRaw(),
   };
 }
 
@@ -94,12 +100,8 @@ export function initFacebookPixel() {
   }
 
   if (typeof window !== 'undefined' && window.fbq) {
-    const identity = getFacebookBrowserIdentity();
-    if (identity.externalId) {
-      window.fbq('init', PIXEL_ID, { external_id: identity.externalId });
-    } else {
-      window.fbq('init', PIXEL_ID);
-    }
+    // Runtime init cannot synchronously hash external_id; the component inline script handles hashed init.
+    window.fbq('init', PIXEL_ID);
     console.log('[FB Pixel] Initialized:', PIXEL_ID);
   }
 }
@@ -355,19 +357,78 @@ export function FacebookPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            var mbVidMatch = document.cookie.match(/(?:^|; )mb_vid=([^;]*)/);
-            var externalId;
-            try {
-              externalId = mbVidMatch ? decodeURIComponent(mbVidMatch[1]) : undefined;
-            } catch (e) {
-              externalId = mbVidMatch ? mbVidMatch[1] : undefined;
+            function mbNormalizeMetaExternalId(input) {
+              if (input === undefined || input === null) return undefined;
+              var normalized = String(input).trim().toLowerCase();
+              if (!normalized) return undefined;
+              var separatorIndex = normalized.indexOf(':');
+              if (separatorIndex > 0) {
+                var prefix = normalized.slice(0, separatorIndex);
+                var id = normalized.slice(separatorIndex + 1).trim().toLowerCase();
+                if (id && (prefix === 'visitor' || prefix === 'user' || prefix === 'order')) {
+                  return prefix + ':' + id;
+                }
+              }
+              return 'visitor:' + normalized;
             }
-            if (externalId) {
-              fbq('init', ${JSON.stringify(PIXEL_ID)}, { external_id: externalId });
+            function mbSha256Hex(input) {
+              var normalizedInput = mbNormalizeMetaExternalId(input);
+              if (!normalizedInput || !window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+                return Promise.resolve(undefined);
+              }
+              return window.crypto.subtle
+                .digest('SHA-256', new TextEncoder().encode(normalizedInput))
+                .then(function(buffer) {
+                  return Array.from(new Uint8Array(buffer))
+                    .map(function(byte) { return byte.toString(16).padStart(2, '0'); })
+                    .join('');
+                })
+                .catch(function() { return undefined; });
+            }
+            function mbReadCookie(name) {
+              var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+              if (!match) return undefined;
+              try { return decodeURIComponent(match[1]); } catch (e) { return match[1]; }
+            }
+            function mbSetCookie(name, value, maxAge) {
+              document.cookie = name + '=' + encodeURIComponent(value) + ';max-age=' + maxAge + ';path=/;SameSite=Lax';
+            }
+            var mbVid = mbReadCookie('mb_vid');
+            if (!mbVid) {
+              mbVid = window.crypto && window.crypto.randomUUID
+                ? window.crypto.randomUUID()
+                : 'vid_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+            }
+            var normalizedMbVidExternal = mbNormalizeMetaExternalId(mbVid);
+            mbVid = normalizedMbVidExternal && normalizedMbVidExternal.indexOf('visitor:') === 0
+              ? normalizedMbVidExternal.slice('visitor:'.length)
+              : undefined;
+            if (mbVid) {
+              mbSetCookie('mb_vid', mbVid, 15552000);
+            }
+            try {
+              var fbclid = new URLSearchParams(window.location.search).get('fbclid');
+              if (fbclid && !mbReadCookie('_fbc')) {
+                mbSetCookie('_fbc', 'fb.1.' + Date.now() + '.' + fbclid, 7776000);
+              }
+            } catch (e) {}
+            var rawExternalId = mbNormalizeMetaExternalId(mbVid);
+            if (rawExternalId) {
+              mbSha256Hex(rawExternalId).then(function(hashedExternalId) {
+                if (hashedExternalId) {
+                  fbq('init', ${JSON.stringify(PIXEL_ID)}, { external_id: hashedExternalId });
+                  window.__mbFbInitReady = true;
+                } else {
+                  fbq('init', ${JSON.stringify(PIXEL_ID)});
+                  window.__mbFbInitReady = true;
+                }
+                fbq('track', 'PageView');
+              });
             } else {
               fbq('init', ${JSON.stringify(PIXEL_ID)});
+              window.__mbFbInitReady = true;
+              fbq('track', 'PageView');
             }
-            fbq('track', 'PageView');
           `,
         }}
       />

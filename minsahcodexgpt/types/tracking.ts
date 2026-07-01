@@ -43,6 +43,13 @@ export interface TrackingEventData {
     quantity: number;
     item_price?: number;
     price?: number;
+    item_group_id?: string;
+    variant_id?: string;
+    variant_sku?: string;
+    item_variant?: string;
+    shade?: string;
+    color?: string;
+    size?: string;
   }>;
 
   // Transaction Data

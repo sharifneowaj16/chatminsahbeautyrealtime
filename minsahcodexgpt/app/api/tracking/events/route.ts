@@ -1,43 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { shouldSkipServerTrackingRequest } from '@/lib/tracking/traffic-filter';
 
 /**
  * Server-side Tracking Events API
- * Receives and stores tracking events from client-side
+ * Receives client-side tracking events for lightweight behavioural analytics.
+ *
+ * Production safety: never logs full raw payload/session/user-agent/IP. Store or log only
+ * sanitized summaries unless a dedicated PII-safe database schema is added.
  */
+
+function getFirstIp(request: NextRequest) {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    request.headers.get('x-vercel-forwarded-for') ||
+    undefined
+  );
+}
+
+function redactIp(ip?: string) {
+  if (!ip) return undefined;
+
+  // IPv4: keep first two octets only. IPv6: keep first two hextets only.
+  if (ip.includes('.')) {
+    const parts = ip.split('.');
+    return parts.length === 4 ? `${parts[0]}.${parts[1]}.x.x` : 'redacted';
+  }
+
+  if (ip.includes(':')) {
+    const parts = ip.split(':').filter(Boolean);
+    return parts.length >= 2 ? `${parts[0]}:${parts[1]}::redacted` : 'redacted';
+  }
+
+  return 'redacted';
+}
+
+type TrackingSessionSummary = {
+  device?: { type?: string };
+  utmParams?: { source?: string };
+};
+
+function isTrackingSessionSummary(value: unknown): value is TrackingSessionSummary {
+  return Boolean(value && typeof value === 'object');
+}
+
+function sanitizeTrackingSummary(input: {
+  event?: unknown;
+  session?: unknown;
+  timestamp?: unknown;
+  ip?: string;
+  userAgent?: string;
+}) {
+  const session = isTrackingSessionSummary(input.session) ? input.session : undefined;
+
+  return {
+    event: typeof input.event === 'string' ? input.event : 'unknown',
+    timestamp: input.timestamp,
+    hasSession: Boolean(session),
+    deviceType: session?.device?.type || 'unknown',
+    hasUtm: Boolean(session?.utmParams?.source),
+    ip: redactIp(input.ip),
+    hasUserAgent: Boolean(input.userAgent),
+    createdAt: new Date().toISOString(),
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const skippedTraffic = shouldSkipServerTrackingRequest(request);
+    if (skippedTraffic) {
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: skippedTraffic.reason,
+      });
+    }
+
     const body = await request.json();
-    const { event, data, session, timestamp } = body;
+    const { event, session, timestamp } = body;
 
-    // Get client info
-    const headers = request.headers;
-    const clientIp = headers.get('x-forwarded-for')?.split(',')[0] ||
-                     headers.get('x-real-ip') ||
-                     headers.get('x-vercel-forwarded-for') ||
-                     'unknown';
-    const userAgent = headers.get('user-agent') || '';
+    const clientIp = getFirstIp(request);
+    const userAgent = request.headers.get('user-agent') || undefined;
 
-    // Enrich event data
-    const enrichedEvent = {
+    const sanitizedEvent = sanitizeTrackingSummary({
       event,
-      data,
       session,
       timestamp,
       ip: clientIp,
       userAgent,
-      createdAt: new Date().toISOString(),
-    };
+    });
 
-    // TODO: Store in database
-    // For now, we'll just log it
-    console.log('Tracking Event:', JSON.stringify(enrichedEvent, null, 2));
+    // TODO: Store a PII-safe summary in database if needed.
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Tracking Event Summary:', sanitizedEvent);
+    }
 
-    // You can add database storage here:
-    // await db.trackingEvents.create({ data: enrichedEvent });
-
-    // Calculate customer insights
-    const insights = await calculateInsights(enrichedEvent);
+    const insights = await calculateInsights(sanitizedEvent);
 
     return NextResponse.json({
       success: true,
@@ -45,7 +103,7 @@ export async function POST(request: NextRequest) {
       insights,
     });
   } catch (error) {
-    console.error('Tracking API Error:', error);
+    console.error('Tracking API Error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { success: false, error: 'Failed to process tracking event' },
       { status: 500 }
@@ -54,19 +112,13 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Calculate customer insights from event
+ * Calculate customer insights from a sanitized event summary.
  */
-async function calculateInsights(event: any) {
-  // TODO: Implement advanced analytics
-  // - Customer lifetime value prediction
-  // - Churn probability
-  // - Product affinity
-  // - Next best action
-
+async function calculateInsights(event: ReturnType<typeof sanitizeTrackingSummary>) {
   return {
-    deviceType: event.session?.device?.type || 'unknown',
-    hasUTM: !!event.session?.utmParams?.source,
-    isReturningVisitor: false, // Check against database
-    predictedValue: 0, // ML prediction
+    deviceType: event.deviceType || 'unknown',
+    hasUTM: Boolean(event.hasUtm),
+    isReturningVisitor: false,
+    predictedValue: 0,
   };
 }

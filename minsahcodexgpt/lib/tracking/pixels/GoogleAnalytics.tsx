@@ -1,7 +1,9 @@
 'use client';
 
+import { Suspense } from 'react';
 import Script from 'next/script';
 import { createGa4PurchaseGuardScript } from './ga4PurchaseGuardScript';
+import GoogleAnalyticsRouteTracker from './GoogleAnalyticsRouteTracker';
 
 interface GoogleAnalyticsProps {
   measurementId: string;
@@ -24,6 +26,9 @@ export default function GoogleAnalytics({ measurementId, enabled = true }: Googl
         src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
         strategy="afterInteractive"
       />
+      <Suspense fallback={null}>
+        <GoogleAnalyticsRouteTracker />
+      </Suspense>
       <Script
         id="google-analytics"
         strategy="afterInteractive"
@@ -43,8 +48,7 @@ export default function GoogleAnalytics({ measurementId, enabled = true }: Googl
             }
             gtag('js', new Date());
             gtag('config', '${measurementId}', {
-              page_path: window.location.pathname,
-              send_page_view: true
+              send_page_view: false
             });
           `,
         }}

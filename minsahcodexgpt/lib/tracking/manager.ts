@@ -1,9 +1,13 @@
+'use client';
+
 /**
  * Universal Tracking Manager
  * Centralized system to manage all tracking platforms
  */
 
 import { TrackingEvent, TrackingEventData, AllPlatformsConfig, CustomerSession } from '@/types/tracking';
+import { buildVisitorMetaExternalId } from '@/lib/tracking/meta-external-id';
+import { canRunClientTracking, getClientTrackingBlockReason } from '@/lib/tracking/client-traffic-filter';
 
 // Extend Window interface for tracking platform globals
 declare global {
@@ -40,7 +44,7 @@ function getFacebookIdentity() {
   return {
     fbc: getCookieValue('_fbc'),
     fbp: getCookieValue('_fbp'),
-    externalId: getCookieValue('mb_vid'),
+    externalId: buildVisitorMetaExternalId(getCookieValue('mb_vid')),
   };
 }
 
@@ -129,6 +133,11 @@ class TrackingManager {
    */
   initSession(): void {
     if (typeof window === 'undefined') return;
+    const blockReason = getClientTrackingBlockReason();
+    if (blockReason) {
+      this.initialized = false;
+      return;
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const deviceId = this.getOrCreateDeviceId();
@@ -204,8 +213,16 @@ class TrackingManager {
    * Track event across all enabled platforms
    */
   track(event: TrackingEvent, data?: TrackingEventData): void {
+    if (!canRunClientTracking()) {
+      return;
+    }
+
     if (!this.initialized) {
       this.initSession();
+    }
+
+    if (!this.initialized) {
+      return;
     }
 
     // Add event to session

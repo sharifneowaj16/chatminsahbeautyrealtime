@@ -2,14 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
 import { enqueueGa4Purchase, enqueueMetaCapiPurchase } from '@/lib/queue/metaCapiQueue';
+import {
+  assertTelegramUserAllowed,
+  getTelegramOrderBotConfig,
+  requireTelegramWebhookAuth,
+  telegramForbiddenResponse,
+} from '@/lib/telegram/auth';
+import {
+  consumeTelegramActionToken,
+  createTelegramActionToken,
+  parseTelegramCallbackToken,
+  resolveTelegramActionToken,
+  TELEGRAM_ORDER_ACTIONS,
+  type TelegramOrderAction,
+} from '@/lib/telegram/action-tokens';
+import {
+  canTelegramCancel,
+  canTelegramPathaoSend,
+  canTelegramPhoneConfirm,
+  canTelegramPhoneOff,
+} from '@/lib/telegram/order-state';
 
-const TELEGRAM_RELAY_BASE = process.env.TELEGRAM_RELAY_BASE;
-const BOT_TOKEN = process.env.TELEGRAM_ORDER_BOT_TOKEN;
-const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
-const TELEGRAM_ADMIN_USER_IDS = (process.env.TELEGRAM_ADMIN_USER_IDS ?? '')
-  .split(',')
-  .map((id) => id.trim())
-  .filter(Boolean);
+export const dynamic = 'force-dynamic';
 
 type TelegramCallbackQuery = {
   id: string;
@@ -22,27 +36,35 @@ type TelegramUpdate = {
   callback_query?: TelegramCallbackQuery;
 };
 
-function parseCallbackData(data?: string) {
-  if (!data) return null;
+type TelegramActionResult = {
+  ok: boolean;
+  status: 'SUCCESS' | 'BLOCKED' | 'NOT_FOUND' | 'FAILED';
+  message: string;
+  orderNumber?: string;
+  shouldQueuePurchase?: boolean;
+  isTest?: boolean;
+};
 
-  const prefixes = ['phone_confirm_', 'phone_off_', 'cancel_', 'pathao_send_'] as const;
+function escapeHtml(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
-  for (const prefix of prefixes) {
-    if (data.startsWith(prefix)) {
-      return {
-        action: prefix.slice(0, -1),
-        orderId: data.slice(prefix.length),
-      };
-    }
-  }
+function getCallbackChatId(callback: TelegramCallbackQuery) {
+  return callback.message?.chat.id == null ? null : String(callback.message.chat.id);
+}
 
-  return null;
+function getCallbackMessageId(callback: TelegramCallbackQuery) {
+  return callback.message?.message_id == null ? null : String(callback.message.message_id);
 }
 
 async function telegramApi(method: string, body: Record<string, unknown>) {
-  if (!TELEGRAM_RELAY_BASE || !BOT_TOKEN) return;
+  const config = getTelegramOrderBotConfig();
+  if (!config.relayBase || !config.botToken) return;
 
-  const res = await fetch(`${TELEGRAM_RELAY_BASE}${BOT_TOKEN}/${method}`, {
+  const res = await fetch(`${config.relayBase}${config.botToken}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -54,15 +76,46 @@ async function telegramApi(method: string, body: Record<string, unknown>) {
   }
 }
 
-async function answerCallbackQuery(callbackQueryId: string, text: string) {
+async function answerCallbackQuery(callbackQueryId: string, text: string, showAlert = false) {
   await telegramApi('answerCallbackQuery', {
     callback_query_id: callbackQueryId,
-    text,
-    show_alert: false,
+    text: text.slice(0, 190),
+    show_alert: showAlert,
   });
 }
 
-async function editTelegramMessage(callback: TelegramCallbackQuery, orderId: string, text: string) {
+async function createTelegramLog(params: {
+  callback: TelegramCallbackQuery;
+  action: string;
+  orderId?: string | null;
+  status: string;
+  errorMessage?: string | null;
+}) {
+  try {
+    await prisma.telegramActionLog.create({
+      data: {
+        callbackQueryId: params.callback.id,
+        telegramUserId: String(params.callback.from.id),
+        telegramUsername: params.callback.from.username ?? null,
+        action: params.action,
+        orderId: params.orderId ?? null,
+        status: params.status,
+        errorMessage: params.errorMessage ?? null,
+        messageId: getCallbackMessageId(params.callback),
+        chatId: getCallbackChatId(params.callback),
+      },
+    });
+    return true;
+  } catch (error) {
+    if (typeof error === 'object' && error && 'code' in error && error.code === 'P2002') {
+      return false;
+    }
+    console.error('Telegram action log write failed:', error);
+    return true;
+  }
+}
+
+async function editTelegramMessage(callback: TelegramCallbackQuery, text: string, replyMarkup?: Record<string, unknown>) {
   if (!callback.message) return;
 
   await telegramApi('editMessageText', {
@@ -70,20 +123,52 @@ async function editTelegramMessage(callback: TelegramCallbackQuery, orderId: str
     message_id: callback.message.message_id,
     text,
     parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: 'Send to Pathao',
-            callback_data: `pathao_send_${orderId}`,
-          },
-        ],
-      ],
-    },
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   });
 }
 
-async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: string) {
+async function buildPathaoButton(orderId: string, callback: TelegramCallbackQuery) {
+  const pathaoToken = await createTelegramActionToken({
+    action: TELEGRAM_ORDER_ACTIONS.PATHAO_SEND,
+    orderId,
+    telegramChatId: getCallbackChatId(callback),
+    messageId: getCallbackMessageId(callback),
+  });
+
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: 'Send to Pathao',
+          callback_data: pathaoToken.callbackData,
+        },
+      ],
+    ],
+  };
+}
+
+function orderSelectFields() {
+  return {
+    id: true,
+    orderNumber: true,
+    status: true,
+    paymentStatus: true,
+    paymentMethod: true,
+    phoneConfirmedAt: true,
+    metaPurchaseSent: true,
+    isTest: true,
+    pathaoConsignmentId: true,
+    pathaoTrackingCode: true,
+    pathaoSentAt: true,
+    shippedAt: true,
+    deliveredAt: true,
+    cancelledAt: true,
+    refundedAt: true,
+    addressId: true,
+  } as const;
+}
+
+async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
   const telegramUserId = String(callback.from.id);
   const confirmedAt = new Date();
   const eventId = `Purchase-${orderId}`;
@@ -91,32 +176,32 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
-      select: {
-        id: true,
-        orderNumber: true,
-        phoneConfirmedAt: true,
-        metaPurchaseSent: true,
-        isTest: true,
-      },
+      select: orderSelectFields(),
     });
 
     if (!order) {
-      return { status: 'NOT_FOUND' as const };
+      return { ok: false, status: 'NOT_FOUND' as const, message: 'Order not found' };
     }
 
-    if (order.metaPurchaseSent) {
+    const allowed = canTelegramPhoneConfirm(order);
+    if (!allowed.ok) {
       return {
-        status: 'ALREADY_SENT' as const,
+        ok: false,
+        status: 'BLOCKED' as const,
+        message: allowed.reason,
         orderNumber: order.orderNumber,
+        isTest: order.isTest,
       };
     }
 
     if (order.phoneConfirmedAt && !order.metaPurchaseSent) {
       return {
-        status: 'CONFIRMED_NEEDS_CAPI' as const,
-        orderId: order.id,
+        ok: true,
+        status: 'SUCCESS' as const,
+        message: 'Already phone-confirmed; Purchase queue will be retried if needed.',
         orderNumber: order.orderNumber,
         isTest: order.isTest,
+        shouldQueuePurchase: true,
       };
     }
 
@@ -126,7 +211,7 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
         status: 'CONFIRMED',
         phoneConfirmedAt: confirmedAt,
         confirmationStatus: 'CONFIRMED_BY_PHONE',
-        confirmedByAdminId: telegramUserId,
+        confirmedByAdminId: `telegram:${telegramUserId}`,
         metaEventId: eventId,
       },
       select: {
@@ -137,39 +222,30 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
     });
 
     return {
-      status: 'CONFIRMED' as const,
-      orderId: updated.id,
+      ok: true,
+      status: 'SUCCESS' as const,
+      message: 'Phone confirmed.',
       orderNumber: updated.orderNumber,
       isTest: updated.isTest,
+      shouldQueuePurchase: true,
     };
   });
 
-  if (result.status === 'NOT_FOUND') {
-    await answerCallbackQuery(callback.id, 'Order not found');
-    return;
-  }
-
-  if (result.status === 'ALREADY_SENT') {
-    await answerCallbackQuery(callback.id, 'Already confirmed and Meta Purchase already sent');
-    return;
-  }
-
-  const isFreshConfirm = result.status === 'CONFIRMED';
-
-  await answerCallbackQuery(
-    callback.id,
-    isFreshConfirm ? 'Phone confirmed' : 'Already confirmed; sending Meta Purchase if needed'
-  );
-
-  if (callback.message && isFreshConfirm) {
+  if (result.ok) {
+    await answerCallbackQuery(callback.id, result.message);
     await editTelegramMessage(
       callback,
-      orderId,
-      `<b>Phone Confirmed</b>\n\nOrder: <b>#${result.orderNumber}</b>\nMeta COD Purchase will use this confirmation time as event_time.`
+      `<b>Phone Confirmed</b>\n\n` +
+        `Order: <b>#${escapeHtml(result.orderNumber)}</b>\n` +
+        `Meta COD Purchase will use phoneConfirmedAt as event_time.` +
+        (result.isTest ? '\n\nTest order: production tracking skipped.' : ''),
+      await buildPathaoButton(orderId, callback)
     );
+  } else {
+    await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
   }
 
-  if (!result.isTest) {
+  if (result.shouldQueuePurchase && !result.isTest) {
     try {
       await enqueueMetaCapiPurchase({ type: 'cod_purchase', orderId });
     } catch (error) {
@@ -182,34 +258,113 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
       console.error('COD GA4 Purchase queue enqueue failed:', error);
     }
   }
+
+  return result;
 }
 
-async function handlePhoneOff(callback: TelegramCallbackQuery, orderId: string) {
-  await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      confirmationStatus: 'PHONE_OFF',
-      confirmationNote: 'Marked phone off from Telegram.',
-    },
+async function handlePhoneOff(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
+  const result = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
+    if (!order) return { ok: false, status: 'NOT_FOUND' as const, message: 'Order not found' };
+
+    const allowed = canTelegramPhoneOff(order);
+    if (!allowed.ok) {
+      return {
+        ok: false,
+        status: 'BLOCKED' as const,
+        message: allowed.reason,
+        orderNumber: order.orderNumber,
+      };
+    }
+
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        confirmationStatus: 'PHONE_OFF',
+        confirmationNote: 'Marked phone off from Telegram.',
+      },
+    });
+
+    return {
+      ok: true,
+      status: 'SUCCESS' as const,
+      message: 'Marked as Phone Off.',
+      orderNumber: order.orderNumber,
+    };
   });
 
-  await answerCallbackQuery(callback.id, 'Marked as Phone Off');
+  await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
+  if (result.ok) {
+    await editTelegramMessage(
+      callback,
+      `<b>Phone Off</b>\n\nOrder: <b>#${escapeHtml(result.orderNumber)}</b>\nNo Purchase was sent.`
+    );
+  }
+  return result;
 }
 
-async function handleCancel(callback: TelegramCallbackQuery, orderId: string) {
-  await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      status: 'CANCELLED',
-      cancelledAt: new Date(),
-      confirmationStatus: 'CANCELLED_FROM_TELEGRAM',
-    },
+async function handleCancel(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
+  const result = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
+    if (!order) return { ok: false, status: 'NOT_FOUND' as const, message: 'Order not found' };
+
+    const allowed = canTelegramCancel(order);
+    if (!allowed.ok) {
+      return {
+        ok: false,
+        status: 'BLOCKED' as const,
+        message: allowed.reason,
+        orderNumber: order.orderNumber,
+      };
+    }
+
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        status: 'CANCELLED',
+        paymentStatus: order.paymentStatus === 'COMPLETED' ? order.paymentStatus : 'CANCELLED',
+        cancelledAt: new Date(),
+        confirmationStatus: 'CANCELLED_FROM_TELEGRAM',
+        confirmationNote: 'Cancelled from Telegram before phone confirmation/dispatch.',
+      },
+    });
+
+    return {
+      ok: true,
+      status: 'SUCCESS' as const,
+      message: 'Order cancelled.',
+      orderNumber: order.orderNumber,
+    };
   });
 
-  await answerCallbackQuery(callback.id, 'Order cancelled');
+  await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
+  if (result.ok) {
+    await editTelegramMessage(
+      callback,
+      `<b>Order Cancelled</b>\n\nOrder: <b>#${escapeHtml(result.orderNumber)}</b>\nNo Purchase was sent.`
+    );
+  }
+  return result;
 }
 
-async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string) {
+async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
+  if (!order) {
+    await answerCallbackQuery(callback.id, 'Order not found');
+    return { ok: false, status: 'NOT_FOUND', message: 'Order not found' };
+  }
+
+  const allowed = canTelegramPathaoSend(order);
+  if (!allowed.ok) {
+    await answerCallbackQuery(callback.id, allowed.reason, true);
+    return {
+      ok: false,
+      status: 'BLOCKED',
+      message: allowed.reason,
+      orderNumber: order.orderNumber,
+    };
+  }
+
   const result = await createPathaoDeliveryForOrder(orderId, {
     preserveOrderStatus: false,
     saveFailureStatus: true,
@@ -219,8 +374,13 @@ async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string
   }));
 
   if (!result.success) {
-    await answerCallbackQuery(callback.id, `Pathao failed: ${result.error}`);
-    return;
+    await answerCallbackQuery(callback.id, `Pathao failed: ${result.error}`, true);
+    return {
+      ok: false,
+      status: 'FAILED',
+      message: result.error,
+      orderNumber: order.orderNumber,
+    };
   }
 
   await answerCallbackQuery(
@@ -228,73 +388,116 @@ async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string
     result.alreadyDispatched ? 'Already sent to Pathao' : 'Sent to Pathao'
   );
 
-  if (callback.message) {
-    const trackingLine = result.trackingCode
-      ? `Tracking: <b>${result.trackingCode}</b>\n`
-      : '';
-    await telegramApi('editMessageText', {
-      chat_id: callback.message.chat.id,
-      message_id: callback.message.message_id,
-      text:
-        `<b>Pathao Dispatch ${result.alreadyDispatched ? 'Already Exists' : 'Created'}</b>\n\n` +
-        `Order: <b>#${result.orderNumber}</b>\n` +
-        `${trackingLine}` +
-        `Status: ${result.pathaoStatus ?? 'N/A'}`,
-      parse_mode: 'HTML',
-    });
-  }
+  const trackingLine = result.trackingCode
+    ? `Tracking: <b>${escapeHtml(result.trackingCode)}</b>\n`
+    : '';
+  await editTelegramMessage(
+    callback,
+    `<b>Pathao Dispatch ${result.alreadyDispatched ? 'Already Exists' : 'Created'}</b>\n\n` +
+      `Order: <b>#${escapeHtml(result.orderNumber)}</b>\n` +
+      `${trackingLine}` +
+      `Status: ${escapeHtml(result.pathaoStatus ?? 'N/A')}`
+  );
+
+  return {
+    ok: true,
+    status: 'SUCCESS',
+    message: result.alreadyDispatched ? 'Already sent to Pathao' : 'Sent to Pathao',
+    orderNumber: result.orderNumber,
+  };
+}
+
+function isTelegramOrderAction(action: string): action is TelegramOrderAction {
+  return Object.values(TELEGRAM_ORDER_ACTIONS).includes(action as TelegramOrderAction);
+}
+
+async function runTelegramOrderAction(
+  callback: TelegramCallbackQuery,
+  action: TelegramOrderAction,
+  orderId: string
+) {
+  if (action === TELEGRAM_ORDER_ACTIONS.PHONE_CONFIRM) return handlePhoneConfirmed(callback, orderId);
+  if (action === TELEGRAM_ORDER_ACTIONS.PHONE_OFF) return handlePhoneOff(callback, orderId);
+  if (action === TELEGRAM_ORDER_ACTIONS.CANCEL) return handleCancel(callback, orderId);
+  if (action === TELEGRAM_ORDER_ACTIONS.PATHAO_SEND) return handlePathaoSend(callback, orderId);
+
+  await answerCallbackQuery(callback.id, 'Unknown action');
+  return { ok: false, status: 'FAILED' as const, message: 'Unknown action' };
 }
 
 export async function POST(req: NextRequest) {
-  if (TELEGRAM_WEBHOOK_SECRET) {
-    const secretHeader = req.headers.get('x-telegram-bot-api-secret-token');
-    if (secretHeader !== TELEGRAM_WEBHOOK_SECRET) {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-    }
-  }
+  const auth = requireTelegramWebhookAuth(req);
+  if (!auth.ok) return auth.response;
 
-  const update = (await req.json()) as TelegramUpdate;
-  const callback = update.callback_query;
+  const update = (await req.json().catch(() => null)) as TelegramUpdate | null;
+  const callback = update?.callback_query;
 
   if (!callback) {
     return NextResponse.json({ ok: true, skipped: 'not_callback_query' });
   }
 
-  if (
-    TELEGRAM_ADMIN_USER_IDS.length > 0 &&
-    !TELEGRAM_ADMIN_USER_IDS.includes(String(callback.from.id))
-  ) {
-    await answerCallbackQuery(callback.id, 'Unauthorized');
-    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 403 });
+  if (!assertTelegramUserAllowed(callback.from.id, auth.adminUserIds)) {
+    await answerCallbackQuery(callback.id, 'Unauthorized', true);
+    return telegramForbiddenResponse();
   }
 
-  const parsed = parseCallbackData(callback.data);
-
-  if (!parsed?.orderId) {
-    await answerCallbackQuery(callback.id, 'Invalid action');
+  const rawToken = parseTelegramCallbackToken(callback.data);
+  if (!rawToken) {
+    await answerCallbackQuery(callback.id, 'Invalid or expired action. Please use the latest order message.', true);
+    await createTelegramLog({
+      callback,
+      action: 'INVALID_CALLBACK_DATA',
+      status: 'BLOCKED',
+      errorMessage: 'Callback data is not a tokenized Telegram action.',
+    });
     return NextResponse.json({ ok: false, error: 'Invalid callback data' }, { status: 400 });
   }
 
-  if (parsed.action === 'phone_confirm') {
-    await handlePhoneConfirmed(callback, parsed.orderId);
-    return NextResponse.json({ ok: true });
+  const resolved = await resolveTelegramActionToken(rawToken);
+  if (!resolved.ok) {
+    await answerCallbackQuery(callback.id, resolved.message, true);
+    await createTelegramLog({
+      callback,
+      action: resolved.code,
+      status: 'BLOCKED',
+      errorMessage: resolved.message,
+    });
+    return NextResponse.json({ ok: false, error: resolved.message, code: resolved.code }, { status: 400 });
   }
 
-  if (parsed.action === 'phone_off') {
-    await handlePhoneOff(callback, parsed.orderId);
-    return NextResponse.json({ ok: true });
+  const action = resolved.token.action;
+  const orderId = resolved.token.orderId;
+
+  if (!isTelegramOrderAction(action)) {
+    await answerCallbackQuery(callback.id, 'Unknown action', true);
+    await createTelegramLog({ callback, action, orderId, status: 'BLOCKED', errorMessage: 'Unknown Telegram action' });
+    return NextResponse.json({ ok: false, error: 'Unknown action' }, { status: 400 });
   }
 
-  if (parsed.action === 'cancel') {
-    await handleCancel(callback, parsed.orderId);
-    return NextResponse.json({ ok: true });
+  const consumed = await consumeTelegramActionToken(resolved.token.id);
+  if (!consumed) {
+    await answerCallbackQuery(callback.id, 'Action already processed', true);
+    await createTelegramLog({ callback, action, orderId, status: 'DUPLICATE', errorMessage: 'Token already consumed' });
+    return NextResponse.json({ ok: true, duplicate: true });
   }
 
-  if (parsed.action === 'pathao_send') {
-    await handlePathaoSend(callback, parsed.orderId);
-    return NextResponse.json({ ok: true });
-  }
+  const result = await runTelegramOrderAction(callback, action, orderId);
+  await createTelegramLog({
+    callback,
+    action,
+    orderId,
+    status: result.status,
+    errorMessage: result.ok ? null : result.message,
+  });
 
-  await answerCallbackQuery(callback.id, 'Unknown action');
-  return NextResponse.json({ ok: false, error: 'Unknown action' }, { status: 400 });
+  const status = result.ok ? 200 : result.status === 'NOT_FOUND' ? 404 : result.status === 'BLOCKED' ? 409 : 500;
+  return NextResponse.json(
+    {
+      ok: result.ok,
+      status: result.status,
+      message: result.message,
+      orderNumber: result.orderNumber,
+    },
+    { status }
+  );
 }

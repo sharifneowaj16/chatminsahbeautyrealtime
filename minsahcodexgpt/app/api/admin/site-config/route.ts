@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { requireAdminPermission } from '@/app/api/admin/_utils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // GET /api/admin/site-config?key=homeSections
 export async function GET(request: NextRequest) {
+  const { response } = await requireAdminPermission(request, ADMIN_PERMISSIONS.SETTINGS_VIEW);
+  if (response) return response;
+
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
@@ -31,6 +36,9 @@ export async function GET(request: NextRequest) {
 // PUT /api/admin/site-config
 // Body: { key: string, value: any }
 export async function PUT(request: NextRequest) {
+  const { response } = await requireAdminPermission(request, ADMIN_PERMISSIONS.SETTINGS_EDIT);
+  if (response) return response;
+
   try {
     const body = await request.json();
     const { key, value } = body;

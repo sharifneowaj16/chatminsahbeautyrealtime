@@ -1,8 +1,7 @@
 import 'server-only';
 
-const TELEGRAM_RELAY_BASE = process.env.TELEGRAM_RELAY_BASE;
-const BOT_TOKEN = process.env.TELEGRAM_ORDER_BOT_TOKEN;
-const CHAT_ID = process.env.TELEGRAM_ORDER_CHAT_ID;
+import { createTelegramActionToken, TELEGRAM_ORDER_ACTIONS } from '@/lib/telegram/action-tokens';
+import { getTelegramOrderBotConfig } from '@/lib/telegram/auth';
 
 interface OrderItemDetail {
   name: string;
@@ -114,11 +113,12 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
 }
 
 async function sendTelegramMessage(body: Record<string, unknown>) {
-  if (!TELEGRAM_RELAY_BASE || !BOT_TOKEN) {
+  const config = getTelegramOrderBotConfig();
+  if (!config.relayBase || !config.botToken) {
     throw new Error('Telegram order bot not configured.');
   }
 
-  const res = await fetch(`${TELEGRAM_RELAY_BASE}${BOT_TOKEN}/sendMessage`, {
+  const res = await fetch(`${config.relayBase}${config.botToken}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -132,40 +132,51 @@ async function sendTelegramMessage(body: Record<string, unknown>) {
   return res.json().catch(() => null);
 }
 
+async function buildOrderActionButtons(orderId: string) {
+  const [phoneConfirm, phoneOff, cancel] = await Promise.all([
+    createTelegramActionToken({ action: TELEGRAM_ORDER_ACTIONS.PHONE_CONFIRM, orderId }),
+    createTelegramActionToken({ action: TELEGRAM_ORDER_ACTIONS.PHONE_OFF, orderId }),
+    createTelegramActionToken({ action: TELEGRAM_ORDER_ACTIONS.CANCEL, orderId }),
+  ]);
+
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: 'Phone Confirmed',
+          callback_data: phoneConfirm.callbackData,
+        },
+      ],
+      [
+        {
+          text: 'Phone Off',
+          callback_data: phoneOff.callbackData,
+        },
+        {
+          text: 'Cancel',
+          callback_data: cancel.callbackData,
+        },
+      ],
+    ],
+  };
+}
+
 export async function notifyNewOrder(order: NewOrderNotification) {
-  if (!TELEGRAM_RELAY_BASE || !BOT_TOKEN || !CHAT_ID) {
+  const config = getTelegramOrderBotConfig();
+  if (!config.relayBase || !config.botToken || !config.chatId) {
     console.error('Telegram order bot not configured - skipping notification.');
     return;
   }
 
   try {
     const body: Record<string, unknown> = {
-      chat_id: CHAT_ID,
+      chat_id: config.chatId,
       text: isDetailedOrder(order) ? buildDetailedMessage(order) : buildBasicMessage(order),
       parse_mode: 'HTML',
     };
 
     if (isDetailedOrder(order)) {
-      body.reply_markup = {
-        inline_keyboard: [
-          [
-            {
-              text: 'Phone Confirmed',
-              callback_data: `phone_confirm_${order.orderId}`,
-            },
-          ],
-          [
-            {
-              text: 'Phone Off',
-              callback_data: `phone_off_${order.orderId}`,
-            },
-            {
-              text: 'Cancel',
-              callback_data: `cancel_${order.orderId}`,
-            },
-          ],
-        ],
-      };
+      body.reply_markup = await buildOrderActionButtons(order.orderId);
     }
 
     await sendTelegramMessage(body);

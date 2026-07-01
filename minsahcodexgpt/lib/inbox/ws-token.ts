@@ -11,7 +11,7 @@ interface WsTokenPayload {
 }
 
 function getSecret(): string {
-  return process.env.WS_AUTH_SECRET ?? process.env.NEXT_PUBLIC_WS_AUTH_SECRET ?? ''
+  return process.env.WS_AUTH_SECRET?.trim() ?? ''
 }
 
 function encodeBase64Url(value: string): string {

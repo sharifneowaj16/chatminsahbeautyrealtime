@@ -40,7 +40,7 @@ export interface Address {
 
 export interface PaymentMethod {
   id: string;
-  type: 'cod' | 'bkash' | 'nagad' | 'rocket' | 'gpay' | 'card';
+  type: 'cod' | 'bkash' | 'nagad';
   name: string;
   icon?: string;
   details?: string;
@@ -103,6 +103,7 @@ function mapApiItem(apiItem: {
     price: number;
     image: string | null;
     brand: string | null;
+    sku?: string | null;
     stock: number;
     slug: string;
   };
@@ -111,6 +112,7 @@ function mapApiItem(apiItem: {
     name: string;
     price: number;
     stock: number;
+    sku?: string | null;
     attributes: Record<string, string> | null;
   } | null;
 }): CartItem {
@@ -138,6 +140,7 @@ function mapApiItem(apiItem: {
     price,
     quantity: apiItem.quantity,
     image:    apiItem.product.image ?? '',
+    sku:      apiItem.variant?.sku ?? apiItem.product.sku ?? undefined,
     variantName,
     size,
     color,
@@ -160,9 +163,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     { id: '1', type: 'cod',    name: 'Cash on Delivery',  icon: '💵' },
     { id: '2', type: 'bkash',  name: 'bKash',             icon: '💳' },
     { id: '3', type: 'nagad',  name: 'Nagad',             icon: '💰' },
-    { id: '4', type: 'rocket', name: 'Rocket',            icon: '🚀' },
-    { id: '5', type: 'gpay',   name: 'GPay',              icon: '📱' },
-    { id: '6', type: 'card',   name: 'Credit/Debit Card', icon: '💳' },
   ];
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(paymentMethods[0]);
@@ -710,7 +710,7 @@ export function useCart() {
 
 // export interface PaymentMethod {
 //   id: string;
-//   type: 'cod' | 'bkash' | 'nagad' | 'rocket' | 'gpay' | 'card';
+//   type: 'cod' | 'bkash' | 'nagad';
 //   name: string;
 //   icon?: string;
 //   details?: string;
@@ -798,9 +798,7 @@ export function useCart() {
 //     { id: '1', type: 'cod',    name: 'Cash on Delivery',  icon: '💵' },
 //     { id: '2', type: 'bkash',  name: 'bKash',             icon: '💳' },
 //     { id: '3', type: 'nagad',  name: 'Nagad',             icon: '💰' },
-//     { id: '4', type: 'rocket', name: 'Rocket',            icon: '🚀' },
-//     { id: '5', type: 'gpay',   name: 'GPay',              icon: '📱' },
-//     { id: '6', type: 'card',   name: 'Credit/Debit Card', icon: '💳' },
+// // //     { id: '6', type: 'card',   name: 'Credit/Debit Card', icon: '💳' },
 //   ];
 //   const [selectedPaymentMethod, setSelectedPaymentMethod] =
 //     useState<PaymentMethod | null>(paymentMethods[0]);

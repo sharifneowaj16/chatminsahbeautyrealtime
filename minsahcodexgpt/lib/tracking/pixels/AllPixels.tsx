@@ -1,7 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
+import { canRunClientTracking, getClientTrackingBlockReason } from '@/lib/tracking/client-traffic-filter';
+import { TRACKING_CONSENT_EVENT } from '@/lib/tracking/tracking-consent';
+import { TrackingConsentBanner, TrackingConsentModeScript } from './TrackingConsentManager';
 
+const AttributionCookieCapture = dynamic(() => import('./AttributionCookieCapture'), { ssr: false });
 const FacebookPixel = dynamic(() => import('./FacebookPixel'), { ssr: false });
 const GoogleAnalytics = dynamic(() => import('./GoogleAnalytics'), { ssr: false });
 const GoogleTagManager = dynamic(() => import('./GoogleTagManager'), { ssr: false });
@@ -17,6 +22,25 @@ const ClarityPixel = dynamic(() => import('./ClarityPixel'), { ssr: false });
 const MixpanelPixel = dynamic(() => import('./MixpanelPixel'), { ssr: false });
 
 export default function AllPixels() {
+  const [trackingAllowed, setTrackingAllowed] = useState(false);
+  const [blockReason, setBlockReason] = useState<string | null>('CLIENT_NOT_READY');
+
+  useEffect(() => {
+    const updateTrackingPermission = () => {
+      const reason = getClientTrackingBlockReason();
+      setBlockReason(reason);
+      setTrackingAllowed(!reason && canRunClientTracking());
+    };
+
+    updateTrackingPermission();
+    window.addEventListener(TRACKING_CONSENT_EVENT, updateTrackingPermission);
+    window.addEventListener('focus', updateTrackingPermission);
+    return () => {
+      window.removeEventListener(TRACKING_CONSENT_EVENT, updateTrackingPermission);
+      window.removeEventListener('focus', updateTrackingPermission);
+    };
+  }, []);
+
   const facebookPixelId =
     process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
     process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
@@ -88,8 +112,27 @@ export default function AllPixels() {
     },
   };
 
+  const gtmEnabled =
+    process.env.NEXT_PUBLIC_GTM_ENABLED === 'true' &&
+    !!config.google.tagManagerId;
+
+  if (!trackingAllowed) {
+    return (
+      <>
+        <TrackingConsentModeScript />
+        <TrackingConsentBanner />
+        {process.env.NODE_ENV !== 'production' && blockReason ? (
+          <span data-mb-tracking-blocked={blockReason} hidden />
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <>
+      <TrackingConsentModeScript />
+      <TrackingConsentBanner />
+      <AttributionCookieCapture />
       {/* Facebook Pixel */}
       {config.facebook.enabled && config.facebook.pixelId && (
         <FacebookPixel pixelId={config.facebook.pixelId} enabled />
@@ -101,7 +144,7 @@ export default function AllPixels() {
       )}
 
       {/* Google Tag Manager */}
-      {config.google.enabled && config.google.tagManagerId && (
+      {gtmEnabled && (
         <GoogleTagManager tagManagerId={config.google.tagManagerId} enabled />
       )}
 

@@ -31,7 +31,15 @@
     "search:analytics": "tsx scripts/search-analytics.ts",
     "search:trending": "tsx scripts/seed-trending.ts",
     "gemini": "node gemini-cli.js",
-    "gemini:interactive": "node gemini-cli.js --interactive"
+    "gemini:interactive": "node gemini-cli.js --interactive",
+    "cron:tracking-health": "tsx scripts/tracking-health-cron.ts",
+    "typecheck": "npx prisma generate && tsc --noEmit",
+    "qa:production": "tsx scripts/production-qa.ts",
+    "audit:security": "node scripts/security-audit.mjs",
+    "qa:phase8-static": "node scripts/phase8-static-contract-check.mjs",
+    "qa:predeploy": "npm run audit:security && npm run qa:phase8-static && npm run qa:admin-api-security && npm run qa:telegram-security && npm run typecheck && npm run build && npm run qa:production",
+    "qa:admin-api-security": "node scripts/admin-api-security-audit.mjs",
+    "qa:telegram-security": "node scripts/telegram-security-audit.mjs"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

@@ -4,7 +4,11 @@ import {
   ONLINE_BROWSER_PURCHASE_TOKEN_COOKIE,
   verifyOnlineBrowserPurchaseToken,
 } from '@/lib/tracking/meta-browser-purchase-token';
-import { getMetaContentId } from '@/lib/tracking/meta-content-id';
+import {
+  buildMetaCatalogContentIds,
+  buildMetaCatalogContents,
+  getMetaCatalogContentType,
+} from '@/lib/tracking/meta-content-id';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +104,7 @@ export async function POST(request: NextRequest) {
   const order = await prisma.order.findFirst({
     where: { id: orderId },
     include: {
-      items: true,
+      items: { include: { product: true, variant: true } },
       payments: {
         where: {
           status: 'COMPLETED',
@@ -185,11 +189,13 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 4. Return authorised fire payload ────────────────────────────────────
-  const contents = order.items.map((item) => ({
-    id: getMetaContentId(item),
-    quantity: item.quantity,
-    item_price: decimalToNumber(item.price),
+  const catalogItems = order.items.map((item) => ({
+    ...item,
+    price: decimalToNumber(item.price),
   }));
+  const contents = buildMetaCatalogContents(catalogItems);
+  const contentIds = buildMetaCatalogContentIds(catalogItems);
+  const contentType = getMetaCatalogContentType(catalogItems);
 
   const contentName = getContentName(order.items);
 
@@ -201,8 +207,8 @@ export async function POST(request: NextRequest) {
       value: orderValue,
       currency: 'BDT',
       order_id: String(order.id),
-      content_ids: contents.map((item) => item.id),
-      content_type: 'product',
+      content_ids: contentIds,
+      content_type: contentType,
       ...(contentName && { content_name: contentName }),
       contents,
       num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),

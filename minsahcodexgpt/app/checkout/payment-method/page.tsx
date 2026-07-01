@@ -12,17 +12,13 @@ export default function PaymentMethodPage() {
   const handleSelectPayment = (method: typeof paymentMethods[0]) => {
     setSelectedPaymentMethod(method);
 
-    // Navigate to specific payment pages for mobile financial services and cards
+    // Navigate only to production-supported verified online payment pages
     if (method.type === 'bkash') {
       router.push('/checkout/payment/bkash');
     } else if (method.type === 'nagad') {
       router.push('/checkout/payment/nagad');
-    } else if (method.type === 'rocket') {
-      router.push('/checkout/payment/rocket');
-    } else if (method.type === 'card') {
-      router.push('/checkout/payment/card');
     } else {
-      // For COD and GPay, go back to checkout
+      // COD and currently unsupported methods complete through the canonical /api/orders flow.
       router.back();
     }
   };

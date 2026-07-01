@@ -1,7 +1,10 @@
-export const DEFAULT_PATHAO_WEBHOOK_INTEGRATION_SECRET = 'f3992ecc-59da-4cbe-a049-a13da2018d51';
+export function getPathaoWebhookIntegrationSecret(): string | null {
+  const secret = process.env.PATHAO_WEBHOOK_INTEGRATION_SECRET?.trim();
+  return secret || null;
+}
 
-export function getPathaoWebhookIntegrationSecret(): string {
-  return process.env.PATHAO_WEBHOOK_INTEGRATION_SECRET?.trim() || DEFAULT_PATHAO_WEBHOOK_INTEGRATION_SECRET;
+export function isPathaoWebhookIntegrationSecretConfigured(): boolean {
+  return Boolean(getPathaoWebhookIntegrationSecret());
 }
 
 export function getPathaoWebhookCallbackUrl(origin?: string): string {

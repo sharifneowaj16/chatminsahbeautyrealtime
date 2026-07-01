@@ -9,9 +9,13 @@ import {
 } from '@/lib/elasticsearch/indexing';
 import { testConnection, indexExists, PRODUCT_INDEX } from '@/lib/elasticsearch';
 import prisma from '@/lib/prisma';
+import { requireSuperAdmin } from '@/app/api/admin/_utils';
 
 // GET - Check Elasticsearch status
 export async function GET(request: NextRequest) {
+  const { response } = await requireSuperAdmin(request, 'Elasticsearch index administration is restricted to SUPER_ADMIN users.');
+  if (response) return response;
+
   try {
     const action = request.nextUrl.searchParams.get('action');
 
@@ -59,6 +63,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Perform indexing operations
 export async function POST(request: NextRequest) {
+  const { response } = await requireSuperAdmin(request, 'Elasticsearch index administration is restricted to SUPER_ADMIN users.');
+  if (response) return response;
+
   try {
     const body = await request.json();
     const { action, productId, updates } = body;

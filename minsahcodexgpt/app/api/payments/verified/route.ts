@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { enqueueGa4Purchase, enqueueMetaCapiPurchase } from '@/lib/queue/metaCapiQueue';
 import { createOnlineBrowserPurchaseToken } from '@/lib/tracking/meta-browser-purchase-token';
+import {
+  getCanonicalPaymentContractErrorResponse,
+  validateVerifiedPaymentContract,
+} from '@/lib/payments/canonical-payment-contract';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +73,10 @@ function parsePaidAt(value?: string) {
   if (!value) return new Date();
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function isFutureTimestamp(date: Date) {
+  return date.getTime() > Date.now() + 60_000;
 }
 
 function wantsCustomerRedirect(request: NextRequest) {
@@ -147,6 +155,19 @@ export async function POST(request: NextRequest) {
   const gatewayTransactionId =
     payload.gatewayTransactionId?.trim() || payload.transactionId?.trim() || undefined;
   const gateway = payload.gateway?.trim() || 'unknown';
+
+  const contract = validateVerifiedPaymentContract({
+    paymentMethod: order.paymentMethod,
+    gateway,
+  });
+
+  if (!contract.ok) {
+    return NextResponse.json(
+      getCanonicalPaymentContractErrorResponse(contract),
+      { status: contract.code === 'COD_PAYMENT_CANNOT_USE_VERIFIED_ONLINE_FLOW' ? 409 : 400 }
+    );
+  }
+
   const rawStatus = payload.rawStatus?.trim() || payload.status?.trim() || 'unknown';
   const currency = (payload.currency?.trim() || 'BDT').toUpperCase();
   const amount = toNumber(payload.amount);
@@ -230,6 +251,17 @@ export async function POST(request: NextRequest) {
   }
 
   const paidAt = order.paymentPaidAt ?? order.paidAt ?? parsePaidAt(payload.paidAt);
+
+  if (isFutureTimestamp(paidAt)) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: 'PAYMENT_PAID_AT_IN_FUTURE',
+        error: 'Verified payment timestamp is in the future; payment was not recorded as paid.',
+      },
+      { status: 400 }
+    );
+  }
 
   await prisma.$transaction(async (tx) => {
     const paymentData = {

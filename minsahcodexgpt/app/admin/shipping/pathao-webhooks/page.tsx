@@ -26,7 +26,7 @@ type PathaoConfigStatus = {
   storeConfigured: boolean;
   webhookSecretConfigured: boolean;
   integrationSecretConfigured: boolean;
-  requiredIntegrationSecret: string;
+  requiredIntegrationSecret: string | null;
   test?: {
     ok: boolean;
     status?: number;
@@ -35,7 +35,6 @@ type PathaoConfigStatus = {
   };
 };
 
-const REQUIRED_INTEGRATION_SECRET = 'f3992ecc-59da-4cbe-a049-a13da2018d51';
 const REQUIRED_EVENTS = [
   'Order Created',
   'Order Updated',
@@ -218,7 +217,11 @@ export default function PathaoWebhooksPage() {
               </div>
               <p>Webhook secret in Pathao merchant panel must match server env <code className="rounded bg-gray-100 px-1">PATHAO_WEBHOOK_SECRET</code>.</p>
               <p>Integration test must receive <code className="rounded bg-gray-100 px-1">202</code> and header <code className="rounded bg-gray-100 px-1">X-Pathao-Merchant-Webhook-Integration-Secret</code>.</p>
-              <p>Required integration header value: <code className="rounded bg-gray-100 px-1">{REQUIRED_INTEGRATION_SECRET}</code></p>
+              {configStatus?.requiredIntegrationSecret ? (
+                <p>Required integration header value: <code className="rounded bg-gray-100 px-1">{configStatus.requiredIntegrationSecret}</code></p>
+              ) : (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">Set <code>PATHAO_WEBHOOK_INTEGRATION_SECRET</code> before running the merchant integration test.</p>
+              )}
               <button
                 type="button"
                 onClick={runIntegrationTest}

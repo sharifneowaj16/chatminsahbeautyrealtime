@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { sanitizeTrackingPath, sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
+import { normalizeMetaExternalIdValue } from '@/lib/tracking/meta-external-id';
 
 // Get allowed origins from environment or use defaults
 function getAllowedOrigins(): string[] {
@@ -105,8 +106,15 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
     });
   }
 
-  if (!request.cookies.get('mb_vid')?.value) {
+  const existingVisitorId = request.cookies.get('mb_vid')?.value;
+  const normalizedVisitorId = normalizeMetaExternalIdValue(existingVisitorId);
+  if (!normalizedVisitorId) {
     response.cookies.set('mb_vid', createVisitorId(), {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
+    });
+  } else if (existingVisitorId !== normalizedVisitorId) {
+    response.cookies.set('mb_vid', normalizedVisitorId, {
       ...cookieOptions,
       maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
     });

@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   TrackingPayload,
   FacebookConversionAPIRequest,
+  FacebookCustomData,
   ServerTrackingResponse,
 } from '@/types/facebook';
 import {
@@ -24,6 +25,8 @@ import {
   sanitizeUrl,
 } from '@/lib/facebook/utils';
 import { enqueueMetaCapiCoreEvent } from '@/lib/queue/metaCapiQueue';
+import { normalizeMetaExternalId } from '@/lib/tracking/meta-external-id';
+import { shouldSkipServerTrackingRequest } from '@/lib/tracking/traffic-filter';
 
 const FACEBOOK_PIXEL_ID =
   process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
@@ -60,6 +63,7 @@ function compactObject<T extends Record<string, unknown>>(input: T): Partial<T> 
 function getMetaEventSourceUrl(payloadUrl: string | undefined, fallbackUrl: string) {
   return sanitizeUrl(payloadUrl || fallbackUrl);
 }
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -133,12 +137,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const skippedTraffic = shouldSkipServerTrackingRequest(request);
+    if (skippedTraffic) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Event skipped by production traffic/privacy filter',
+          eventId: payload.eventId,
+          skipped: true,
+          reason: skippedTraffic.reason,
+        },
+        { status: 202 }
+      );
+    }
+
     const headers = request.headers;
     const clientIp = getClientIp(headers);
     const userAgent = headers.get('user-agent') || undefined;
     const fbc = payload.fbc || request.cookies.get('_fbc')?.value;
     const fbp = payload.fbp || request.cookies.get('_fbp')?.value;
-    const externalId = payload.externalId || request.cookies.get('mb_vid')?.value;
+    const externalId =
+      normalizeMetaExternalId(payload.externalId, 'visitor') ??
+      normalizeMetaExternalId(request.cookies.get('mb_vid')?.value, 'visitor');
 
     const hashedUserData = compactObject({
       em: payload.email ? ([hashEmail(payload.email)].filter(Boolean) as string[]) : undefined,
@@ -163,14 +183,23 @@ export async function POST(request: NextRequest) {
       content_type: payload.contentType,
       content_name: payload.contentName,
       content_category: payload.contentCategory,
-      contents: payload.contents?.map((item) => ({
-        id: item.id,
-        quantity: item.quantity,
-        item_price: item.item_price ?? item.price ?? 0,
-      })),
+      contents: payload.contents?.map((item) =>
+        compactObject({
+          id: item.id,
+          quantity: item.quantity,
+          item_price: item.item_price ?? item.price ?? 0,
+          item_group_id: item.item_group_id,
+          variant_id: item.variant_id,
+          variant_sku: item.variant_sku,
+          item_variant: item.item_variant,
+          shade: item.shade,
+          color: item.color,
+          size: item.size,
+        })
+      ),
       num_items: payload.numItems,
       order_id: payload.orderId,
-    });
+    }) as FacebookCustomData;
 
     const eventTime = Math.floor(Date.now() / 1000);
     const capiRequest: FacebookConversionAPIRequest = {

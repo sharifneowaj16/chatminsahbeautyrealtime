@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
+import { enqueueGa4Purchase, enqueueGa4Refund, enqueueMetaCapiPurchase } from '@/lib/queue/metaCapiQueue';
+import {
+  getCanonicalPaymentContractErrorResponse,
+  isCodPaymentMethod,
+  isCanonicalOnlinePaymentMethod,
+  isPaidLikePaymentStatus,
+} from '@/lib/payments/canonical-payment-contract';
+
+function isConfirmedStatus(status?: string | null) {
+  const normalized = status?.toLowerCase() ?? '';
+  return normalized === 'confirmed' || normalized === 'phone_confirmed' || normalized === 'phone-confirmed';
+}
 
 function toNumber(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -217,10 +229,18 @@ export async function PATCH(
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
+    const normalizedStatus = typeof status === 'string' ? status.toLowerCase() : undefined;
+    const codPhoneConfirmedFromAdmin =
+      isConfirmedStatus(status) && isCodPaymentMethod(existing.paymentMethod);
+    let shouldQueueCodPurchase = false;
+    let shouldQueueGa4Refund = false;
+
     if (status) {
       const statusMap: Record<string, string> = {
         pending: 'PENDING',
         confirmed: 'CONFIRMED',
+        phone_confirmed: 'CONFIRMED',
+        'phone-confirmed': 'CONFIRMED',
         processing: 'PROCESSING',
         shipped: 'SHIPPED',
         completed: 'DELIVERED',
@@ -228,15 +248,41 @@ export async function PATCH(
         cancelled: 'CANCELLED',
         refunded: 'REFUNDED',
       };
-      updateData.status = statusMap[status.toLowerCase()] || status.toUpperCase();
+      updateData.status = statusMap[normalizedStatus ?? ''] || status.toUpperCase();
 
-      if (status === 'shipped' && !existing.shippedAt) updateData.shippedAt = new Date();
-      if ((status === 'completed' || status === 'delivered') && !existing.deliveredAt) updateData.deliveredAt = new Date();
-      if (status === 'cancelled' && !existing.cancelledAt) updateData.cancelledAt = new Date();
+      if (normalizedStatus === 'shipped' && !existing.shippedAt) updateData.shippedAt = new Date();
+      if ((normalizedStatus === 'completed' || normalizedStatus === 'delivered') && !existing.deliveredAt) updateData.deliveredAt = new Date();
+      if (normalizedStatus === 'cancelled' && !existing.cancelledAt) updateData.cancelledAt = new Date();
+      if (normalizedStatus === 'refunded') {
+        updateData.refundedAt = existing.refundedAt ?? new Date();
+        shouldQueueGa4Refund = !existing.gaRefundSent && !existing.isTest;
+      }
+
+      if (codPhoneConfirmedFromAdmin) {
+        const confirmedAt = existing.phoneConfirmedAt ?? new Date();
+        updateData.phoneConfirmedAt = confirmedAt;
+        updateData.confirmationStatus = existing.confirmationStatus ?? 'CONFIRMED_BY_ADMIN';
+        updateData.confirmedByAdminId = existing.confirmedByAdminId ?? payload.adminId;
+        updateData.metaEventId = existing.metaEventId ?? `Purchase-${existing.id}`;
+        shouldQueueCodPurchase = !existing.metaPurchaseSent && !existing.isTest;
+      }
     }
 
     if (paymentStatus) {
       const normalizedPaymentStatus = paymentStatus.toLowerCase();
+
+      if (isPaidLikePaymentStatus(normalizedPaymentStatus) && !isCodPaymentMethod(existing.paymentMethod)) {
+        return NextResponse.json(
+          getCanonicalPaymentContractErrorResponse({
+            code: 'ADMIN_ONLINE_PAYMENT_COMPLETION_BLOCKED',
+            message: isCanonicalOnlinePaymentMethod(existing.paymentMethod)
+              ? 'Online payment cannot be manually marked paid from Admin. Use the signed /api/payments/verified gateway flow so amount, currency, transaction, and Purchase queue guards run together.'
+              : 'Unsupported online/manual payment method cannot be marked paid in production until a verified provider adapter is added.',
+          }),
+          { status: 409 }
+        );
+      }
+
       const paymentMap: Record<string, string> = {
         pending: 'PENDING',
         paid: 'COMPLETED',
@@ -246,11 +292,18 @@ export async function PATCH(
         cancelled: 'CANCELLED',
       };
       updateData.paymentStatus = paymentMap[normalizedPaymentStatus] || paymentStatus.toUpperCase();
-      if ((normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed') && !existing.paidAt) {
+
+      // COD cash collection can be recorded administratively, but it does not create
+      // Purchase. COD Purchase is queued only by the phone-confirmed status branch above.
+      if (isCodPaymentMethod(existing.paymentMethod) && isPaidLikePaymentStatus(normalizedPaymentStatus) && !existing.paidAt) {
         updateData.paidAt = new Date();
       }
-      if ((normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed') && !existing.paymentPaidAt) {
+      if (isCodPaymentMethod(existing.paymentMethod) && isPaidLikePaymentStatus(normalizedPaymentStatus) && !existing.paymentPaidAt) {
         updateData.paymentPaidAt = updateData.paidAt || new Date();
+      }
+      if (normalizedPaymentStatus === 'refunded') {
+        updateData.refundedAt = existing.refundedAt ?? new Date();
+        shouldQueueGa4Refund = !existing.gaRefundSent && !existing.isTest;
       }
     }
 
@@ -267,6 +320,33 @@ export async function PATCH(
       data: updateData,
     });
 
+    if (shouldQueueCodPurchase) {
+      try {
+        await enqueueMetaCapiPurchase({ type: 'cod_purchase', orderId: existing.id });
+      } catch (error) {
+        console.error('Admin COD Meta Purchase queue enqueue failed:', error);
+      }
+
+      try {
+        await enqueueGa4Purchase({ source: 'cod_phone_confirmed', orderId: existing.id });
+      } catch (error) {
+        console.error('Admin COD GA4 Purchase queue enqueue failed:', error);
+      }
+    }
+
+
+
+    if (shouldQueueGa4Refund) {
+      try {
+        await enqueueGa4Refund(
+          { orderId: existing.id, source: 'admin_refund' },
+          { jobId: `admin_refund:ga4_refund:${existing.id}:${Date.now()}` }
+        );
+      } catch (error) {
+        console.error('Admin GA4 Refund queue enqueue failed:', error);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       order: {
@@ -282,6 +362,9 @@ export async function PATCH(
         cancelledAt: updated.cancelledAt?.toISOString(),
         paidAt: updated.paidAt?.toISOString(),
         paymentPaidAt: updated.paymentPaidAt?.toISOString(),
+        refundedAt: updated.refundedAt?.toISOString(),
+        phoneConfirmedAt: updated.phoneConfirmedAt?.toISOString(),
+        confirmationStatus: updated.confirmationStatus,
       },
     });
   } catch (error) {

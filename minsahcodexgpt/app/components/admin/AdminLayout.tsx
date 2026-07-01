@@ -28,7 +28,6 @@ import {
   CreditCard,
   Building,
   Tag,
-  Clock,
   CheckCircle,
   AlertTriangle,
   MessageSquare
@@ -42,7 +41,7 @@ interface AdminLayoutProps {
 interface NavigationItem {
   name: string;
   href?: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   current?: boolean;
   badge?: number;
   children?: NavigationItem[];
@@ -64,7 +63,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
-  const [adminUser, setAdminUser] = useState<AdminUser>({
+  const [adminUser] = useState<AdminUser>({
     name: 'Admin User',
     email: 'admin@minsahbeauty.com',
     role: 'Super Admin',
@@ -242,6 +241,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           current: pathname === '/admin/google/remarketing',
         },
       ],
+    },
+    {
+      name: 'Tracking Health',
+      href: '/admin/tracking-health',
+      icon: AlertTriangle,
+      current: pathname.startsWith('/admin/tracking-health'),
+    },
+    {
+      name: 'Production QA',
+      href: '/admin/production-qa',
+      icon: ShieldCheck,
+      current: pathname.startsWith('/admin/production-qa'),
     },
     {
       name: 'Reports',

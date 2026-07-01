@@ -1,8 +1,14 @@
 import 'server-only';
 import crypto from 'node:crypto';
 import prisma from '@/lib/prisma';
-import { getMetaContentId } from '@/lib/tracking/meta-content-id';
+import {
+  buildMetaCatalogContentIds,
+  buildMetaCatalogContents,
+  getMetaCatalogContentType,
+} from '@/lib/tracking/meta-content-id';
 import { sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
+import { normalizeMetaExternalId } from '@/lib/tracking/meta-external-id';
+import { classifyStoredOrderTraffic } from '@/lib/tracking/traffic-filter';
 
 const META_GRAPH_API_VERSION = process.env.META_GRAPH_API_VERSION ?? 'v20.0';
 const META_PIXEL_ID =
@@ -172,10 +178,6 @@ async function markMetaPurchaseSent(orderId: string, eventId: string) {
   });
 }
 
-function getOrderContentIds(items: Array<{ productId?: string | null; variantId?: string | null; sku?: string | null; id: string }>) {
-  return items.map(getMetaContentId).filter(Boolean);
-}
-
 function getOrderContentName(items: Array<{ name?: string | null }>) {
   return items
     .map((item) => item.name?.trim())
@@ -255,7 +257,7 @@ export async function sendCodPurchaseToMeta(params: {
     where: { id: orderId },
     include: {
       user: true,
-      items: true,
+      items: { include: { product: true, variant: true } },
     },
   });
 
@@ -272,8 +274,9 @@ export async function sendCodPurchaseToMeta(params: {
     return { ok: false, retry: false, reason: 'ORDER_NOT_FOUND' };
   }
 
-  if (order.isTest) {
-    return { ok: true, skipped: true, reason: 'TEST_ORDER' };
+  const traffic = classifyStoredOrderTraffic(order);
+  if (!traffic.allowed) {
+    return { ok: true, skipped: true, reason: traffic.reason };
   }
 
   if (order.metaPurchaseSent) {
@@ -330,14 +333,16 @@ export async function sendCodPurchaseToMeta(params: {
   const normalizedPhone = normalizeBangladeshPhone(order.user.phone);
   const emailHash = normalizedEmail ? sha256(normalizedEmail) : undefined;
   const phoneHash = normalizedPhone ? sha256(normalizedPhone) : undefined;
-  const externalIdHash = order.externalId ? sha256(order.externalId.trim()) : undefined;
+  const normalizedExternalId = normalizeMetaExternalId(order.externalId, 'visitor');
+  const externalIdHash = normalizedExternalId ? sha256(normalizedExternalId) : undefined;
 
-  const contents = order.items.map((item) => ({
-    id: getMetaContentId(item),
-    quantity: item.quantity,
-    item_price: decimalToNumber(item.price),
+  const catalogItems = order.items.map((item) => ({
+    ...item,
+    price: decimalToNumber(item.price),
   }));
-  const contentIds = getOrderContentIds(order.items);
+  const contents = buildMetaCatalogContents(catalogItems);
+  const contentIds = buildMetaCatalogContentIds(catalogItems);
+  const contentType = getMetaCatalogContentType(catalogItems);
   const contentName = getOrderContentName(order.items);
   const orderValue = decimalToNumber(order.total);
 
@@ -388,7 +393,7 @@ export async function sendCodPurchaseToMeta(params: {
           value: orderValue,
           order_id: String(order.id),
           content_ids: contentIds,
-          content_type: 'product',
+          content_type: contentType,
           ...(contentName && { content_name: contentName }),
           contents,
           num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -528,7 +533,7 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
     where: { id: orderId },
     include: {
       user: true,
-      items: true,
+      items: { include: { product: true, variant: true } },
     },
   });
 
@@ -545,8 +550,9 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
     return { ok: false, retry: false, reason: 'ORDER_NOT_FOUND' };
   }
 
-  if (order.isTest) {
-    return { ok: true, skipped: true, reason: 'TEST_ORDER' };
+  const traffic = classifyStoredOrderTraffic(order);
+  if (!traffic.allowed) {
+    return { ok: true, skipped: true, reason: traffic.reason };
   }
 
   if (order.metaPurchaseSent) {
@@ -607,14 +613,16 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
   const normalizedPhone = normalizeBangladeshPhone(order.user.phone);
   const emailHash = normalizedEmail ? sha256(normalizedEmail) : undefined;
   const phoneHash = normalizedPhone ? sha256(normalizedPhone) : undefined;
-  const externalIdHash = order.externalId ? sha256(order.externalId.trim()) : undefined;
+  const normalizedExternalId = normalizeMetaExternalId(order.externalId, 'visitor');
+  const externalIdHash = normalizedExternalId ? sha256(normalizedExternalId) : undefined;
 
-  const contents = order.items.map((item) => ({
-    id: getMetaContentId(item),
-    quantity: item.quantity,
-    item_price: decimalToNumber(item.price),
+  const catalogItems = order.items.map((item) => ({
+    ...item,
+    price: decimalToNumber(item.price),
   }));
-  const contentIds = getOrderContentIds(order.items);
+  const contents = buildMetaCatalogContents(catalogItems);
+  const contentIds = buildMetaCatalogContentIds(catalogItems);
+  const contentType = getMetaCatalogContentType(catalogItems);
   const contentName = getOrderContentName(order.items);
   const orderValue = decimalToNumber(order.total);
 
@@ -718,7 +726,7 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
           value: orderValue,
           order_id: String(order.id),
           content_ids: contentIds,
-          content_type: 'product',
+          content_type: contentType,
           ...(contentName && { content_name: contentName }),
           contents,
           num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),

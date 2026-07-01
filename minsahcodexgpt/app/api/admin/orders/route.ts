@@ -4,6 +4,12 @@ import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma, $Enums } from '@/generated/prisma/client';
 import { generateDailyOrderNumber } from '@/lib/order-number';
 import { notifyNewOrder } from '@/lib/telegram-notify';
+import {
+  getCanonicalPaymentContractErrorResponse,
+  isCanonicalOnlinePaymentMethod,
+  isCodPaymentMethod,
+  isPaidLikePaymentStatus,
+} from '@/lib/payments/canonical-payment-contract';
 
 type Decimal = Prisma.Decimal;
 const Decimal = Prisma.Decimal;
@@ -53,6 +59,27 @@ function readVariantAttribute(attributes: unknown, keys: string[]) {
   return null;
 }
 
+function normalizeAdminPaymentStatus(status?: string | null) {
+  const normalized = String(status || 'PENDING').trim().toLowerCase();
+  const paymentMap: Record<string, $Enums.PaymentStatus> = {
+    pending: 'PENDING',
+    processing: 'PROCESSING',
+    paid: 'COMPLETED',
+    completed: 'COMPLETED',
+    complete: 'COMPLETED',
+    success: 'COMPLETED',
+    successful: 'COMPLETED',
+    failed: 'FAILED',
+    fail: 'FAILED',
+    refunded: 'REFUNDED',
+    refund: 'REFUNDED',
+    cancelled: 'CANCELLED',
+    canceled: 'CANCELLED',
+  };
+
+  return paymentMap[normalized] ?? 'PENDING';
+}
+
 function formatVariantForNotification(variant: { name: string; attributes?: unknown } | null | undefined) {
   if (!variant) return null;
 
@@ -98,6 +125,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Customer firstName and phone required' },
         { status: 400 }
+      );
+    }
+
+    const requestedPaymentMethod = paymentMethod || 'cash_on_delivery';
+    const requestedPaymentStatusInput = String(paymentStatus || 'PENDING');
+    const requestedPaymentStatus = normalizeAdminPaymentStatus(requestedPaymentStatusInput);
+
+    if (!isCodPaymentMethod(requestedPaymentMethod) && !isCanonicalOnlinePaymentMethod(requestedPaymentMethod)) {
+      return NextResponse.json(
+        getCanonicalPaymentContractErrorResponse({
+          code: 'UNSUPPORTED_PAYMENT_METHOD',
+          message: 'Admin-created orders must use COD, bKash, or Nagad until a verified provider adapter is added.',
+        }),
+        { status: 400 }
+      );
+    }
+
+    if (isPaidLikePaymentStatus(requestedPaymentStatusInput) && !isCodPaymentMethod(requestedPaymentMethod)) {
+      return NextResponse.json(
+        getCanonicalPaymentContractErrorResponse({
+          code: 'ADMIN_ONLINE_PAYMENT_COMPLETION_BLOCKED',
+          message: 'Admin-created online orders cannot start as paid. Create the order as pending and let /api/payments/verified record paid status after gateway verification.',
+        }),
+        { status: 409 }
       );
     }
 
@@ -246,6 +297,9 @@ export async function POST(request: NextRequest) {
     const shippingCostDec = new Decimal(shippingCost || 0);
     const discountDec = new Decimal(discountAmount || 0);
     const total = subtotal.add(shippingCostDec).minus(discountDec);
+    const codAdminPaidAt = isCodPaymentMethod(requestedPaymentMethod) && isPaidLikePaymentStatus(requestedPaymentStatusInput)
+      ? new Date()
+      : null;
 
     // Create order
     const order = await prisma.$transaction(async (tx) => tx.order.create({
@@ -253,8 +307,8 @@ export async function POST(request: NextRequest) {
         orderNumber: await generateDailyOrderNumber(tx),
         userId: user.id,
         status: status.toUpperCase() as $Enums.OrderStatus,
-        paymentStatus: (paymentStatus || 'PENDING').toUpperCase() as $Enums.PaymentStatus,
-        paymentMethod: paymentMethod || 'cash_on_delivery',
+        paymentStatus: requestedPaymentStatus,
+        paymentMethod: requestedPaymentMethod,
         shippingMethod: 'pathao',
         subtotal,
         shippingCost: shippingCostDec,
@@ -264,7 +318,8 @@ export async function POST(request: NextRequest) {
         addressId: address.id,
         couponCode,
         adminNote,
-        paidAt: paymentStatus === 'COMPLETED' || paymentStatus === 'PAID' ? new Date() : null,
+        paidAt: codAdminPaidAt,
+        paymentPaidAt: codAdminPaidAt,
         items: {
           create: orderItems.map((item) => ({
             productId: item.productId,

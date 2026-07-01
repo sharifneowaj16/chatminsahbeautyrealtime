@@ -4,5 +4,5 @@ set -e
 echo "Running Prisma migrations..."
 npx prisma migrate deploy
 
-echo "Starting Next.js server..."
+echo "Starting Next.js server with embedded BullMQ workers..."
 exec node server.js

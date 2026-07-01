@@ -222,10 +222,18 @@ export async function POST(request: NextRequest) {
 
   const eventName = extractString(payload, ['event', 'event_name', 'status']);
   if (eventName === 'webhook_integration') {
+    const integrationSecret = getPathaoWebhookIntegrationSecret();
+    if (!integrationSecret) {
+      return NextResponse.json(
+        { error: 'PATHAO_WEBHOOK_INTEGRATION_SECRET is not configured.' },
+        { status: 503 }
+      );
+    }
+
     const response = NextResponse.json({ accepted: true }, { status: 202 });
     response.headers.set(
       'X-Pathao-Merchant-Webhook-Integration-Secret',
-      getPathaoWebhookIntegrationSecret()
+      integrationSecret
     );
     return response;
   }

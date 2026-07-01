@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma } from '@/generated/prisma/client';
+import { enqueueGa4Refund } from '@/lib/queue/metaCapiQueue';
 
 export const dynamic = 'force-dynamic';
 
@@ -159,6 +160,14 @@ export async function PATCH(request: NextRequest) {
       select: {
         id: true,
         returnNumber: true,
+        orderId: true,
+        order: {
+          select: {
+            id: true,
+            isTest: true,
+            gaRefundSent: true,
+          },
+        },
       },
     });
 
@@ -171,16 +180,39 @@ export async function PATCH(request: NextRequest) {
         id: { in: existingReturns.map((item) => item.id) },
       },
       data: {
-        status: normalizedStatus as any,
+        status: normalizedStatus as Prisma.ReturnUpdateManyMutationInput['status'],
         ...(adminNote !== undefined ? { adminNote } : {}),
       },
     });
+
+
+
+    const queuedGa4Refunds: string[] = [];
+    if (normalizedStatus === 'COMPLETED') {
+      const seenOrderIds = new Set<string>();
+      for (const returnRequest of existingReturns) {
+        const orderId = returnRequest.orderId;
+        if (seenOrderIds.has(orderId)) continue;
+        seenOrderIds.add(orderId);
+        if (returnRequest.order.isTest || returnRequest.order.gaRefundSent) continue;
+        try {
+          await enqueueGa4Refund(
+            { orderId, source: 'return_completed' },
+            { jobId: `return_completed:ga4_refund:${orderId}:${Date.now()}` }
+          );
+          queuedGa4Refunds.push(orderId);
+        } catch (error) {
+          console.error('Return completed GA4 Refund queue enqueue failed:', error);
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
       updatedCount: existingReturns.length,
       status: normalizedStatus.toLowerCase(),
       adminNote,
+      queuedGa4Refunds,
       ids: existingReturns.map((item) => item.returnNumber),
     });
   } catch (error) {

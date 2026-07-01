@@ -1,11 +1,76 @@
 import { NextResponse } from 'next/server';
-export {
-  getVerifiedAdmin,
+import type { NextRequest } from 'next/server';
+import type { AdminPermission } from '@/lib/auth/admin-permissions';
+import {
+  adminHasPermission,
+  getVerifiedAdmin as getVerifiedAdminFromRequest,
   type VerifiedAdmin,
 } from '@/lib/auth/admin-request';
 
-export function adminUnauthorizedResponse() {
-  return NextResponse.json({ error: 'Invalid or expired admin token' }, { status: 401 });
+export {
+  adminHasPermission,
+  getVerifiedAdminFromRequest as getVerifiedAdmin,
+  type VerifiedAdmin,
+};
+
+export function adminUnauthorizedResponse(message = 'Invalid or expired admin token') {
+  return NextResponse.json({ error: message }, { status: 401 });
+}
+
+export function adminForbiddenResponse(message = 'Admin permission denied') {
+  return NextResponse.json({ error: message }, { status: 403 });
+}
+
+export type AdminGuardResult =
+  | { admin: VerifiedAdmin; response: null }
+  | { admin: null; response: NextResponse };
+
+export async function requireAdmin(request: NextRequest): Promise<AdminGuardResult> {
+  const admin = await getVerifiedAdminFromRequest(request);
+  if (!admin) {
+    return { admin: null, response: adminUnauthorizedResponse() };
+  }
+  return { admin, response: null };
+}
+
+export async function requireSuperAdmin(
+  request: NextRequest,
+  message = 'This admin action is restricted to SUPER_ADMIN users.'
+): Promise<AdminGuardResult> {
+  const result = await requireAdmin(request);
+  if (result.response) return result;
+
+  if (result.admin.role !== 'SUPER_ADMIN') {
+    return { admin: null, response: adminForbiddenResponse(message) };
+  }
+
+  return result;
+}
+
+export async function requireAdminPermission(
+  request: NextRequest,
+  permission: AdminPermission,
+  options: { allowSuperAdmin?: boolean; message?: string } = {}
+): Promise<AdminGuardResult> {
+  const { allowSuperAdmin = true, message } = options;
+  const result = await requireAdmin(request);
+  if (result.response) return result;
+
+  const isSuperAdmin = result.admin.role === 'SUPER_ADMIN';
+  if (allowSuperAdmin && isSuperAdmin) {
+    return result;
+  }
+
+  if (!adminHasPermission(result.admin, permission)) {
+    return {
+      admin: null,
+      response: adminForbiddenResponse(
+        message || `Missing required admin permission: ${permission}`
+      ),
+    };
+  }
+
+  return result;
 }
 
 export function parseNonNegativeInt(value: unknown, fallback = 0) {

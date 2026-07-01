@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminUnauthorizedResponse, getVerifiedAdmin } from '@/app/api/admin/_utils';
 import { getPathaoBaseUrl } from '@/lib/pathao';
 import {
-  DEFAULT_PATHAO_WEBHOOK_INTEGRATION_SECRET,
   getPathaoWebhookCallbackUrl,
   getPathaoWebhookIntegrationSecret,
 } from '@/lib/pathao-webhook';
@@ -23,9 +22,8 @@ function configStatus(request: NextRequest) {
     ),
     storeConfigured: Boolean(process.env.PATHAO_STORE_ID),
     webhookSecretConfigured: Boolean(process.env.PATHAO_WEBHOOK_SECRET?.trim()),
-    integrationSecretConfigured: Boolean(process.env.PATHAO_WEBHOOK_INTEGRATION_SECRET?.trim()),
+    integrationSecretConfigured: Boolean(integrationSecret),
     requiredIntegrationSecret: integrationSecret,
-    usingDefaultIntegrationSecret: integrationSecret === DEFAULT_PATHAO_WEBHOOK_INTEGRATION_SECRET,
   };
 }
 
@@ -42,6 +40,19 @@ export async function POST(request: NextRequest) {
 
   const status = configStatus(request);
   try {
+    if (!status.requiredIntegrationSecret) {
+      return NextResponse.json(
+        {
+          ...status,
+          test: {
+            ok: false,
+            error: 'PATHAO_WEBHOOK_INTEGRATION_SECRET is not configured.',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const response = await fetch(status.callbackUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

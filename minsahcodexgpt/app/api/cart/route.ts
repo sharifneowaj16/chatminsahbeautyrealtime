@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
         price: item.product.price.toNumber(),
         image: item.product.images[0]?.url || null,
         brand: item.product.brand?.name || null,
+        sku: item.product.sku,
         stock: item.product.quantity,
       },
       variant: item.variant
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
             name: item.variant.name,
             price: item.variant.price?.toNumber() || item.product.price.toNumber(),
             stock: item.variant.quantity,
+            sku: item.variant.sku,
             attributes: item.variant.attributes,
           }
         : null,
@@ -209,6 +211,7 @@ export async function POST(request: NextRequest) {
           price: cartItem.product.price.toNumber(),
           image: cartItem.product.images[0]?.url || null,
           brand: cartItem.product.brand?.name || null,
+          sku: cartItem.product.sku,
           stock: cartItem.product.quantity,
         },
         variant: cartItem.variant
@@ -217,6 +220,7 @@ export async function POST(request: NextRequest) {
               name: cartItem.variant.name,
               price: cartItem.variant.price?.toNumber() || cartItem.product.price.toNumber(),
               stock: cartItem.variant.quantity,
+              sku: cartItem.variant.sku,
               attributes: cartItem.variant.attributes,
             }
           : null,
@@ -297,12 +301,14 @@ export async function PUT(request: NextRequest) {
           name: updated.product.name,
           price: updated.product.price.toNumber(),
           image: updated.product.images[0]?.url || null,
+          sku: updated.product.sku,
         },
         variant: updated.variant
           ? {
               id: updated.variant.id,
               name: updated.variant.name,
               price: updated.variant.price?.toNumber() || updated.product.price.toNumber(),
+              sku: updated.variant.sku,
             }
           : null,
       },
