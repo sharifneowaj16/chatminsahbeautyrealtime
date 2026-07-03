@@ -7,13 +7,13 @@ import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import AdminNotificationBell from '@/components/admin/AdminNotificationBell';
 import {
   Home,
+  AlertTriangle,
   ShoppingBag,
   Truck,
   Users,
   BarChart,
   Settings,
   FileText,
-  Tag,
   LogOut,
   Menu,
   X,
@@ -26,6 +26,7 @@ import {
   Megaphone,
   Sparkles,
   Minus,
+  ShieldCheck,
   PanelRightOpen,
 } from 'lucide-react';
 
@@ -39,6 +40,7 @@ interface MenuChild {
   title: string;
   href: string;
   permission?: string;
+  superAdminOnly?: boolean;
   icon?: React.ComponentType<{ className?: string }>;
   badge?: number;
 }
@@ -48,6 +50,7 @@ interface MenuItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   permission?: string;
+  superAdminOnly?: boolean;
   badge?: number;
   children?: MenuChild[];
 }
@@ -120,6 +123,8 @@ const menuItems: MenuItem[] = [
       { title: 'Overview', href: '/admin/analytics' },
       { title: 'Sales by Region', href: '/admin/sales-by-region' },
       { title: 'Tracking & Pixels', href: '/admin/tracking' },
+      { title: 'Tracking Health', href: '/admin/tracking-health', icon: AlertTriangle, superAdminOnly: true },
+      { title: 'Production QA', href: '/admin/production-qa', icon: ShieldCheck, superAdminOnly: true },
       { title: 'Retargeting Audiences', href: '/admin/retargeting' },
       { title: 'Campaign Targeting', href: '/admin/campaign-targeting' },
     ],
@@ -263,8 +268,20 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   }, [isLoading, pathname, user]);
 
   const filteredMenuItems = useMemo(
-    () => menuItems.filter(item => !item.permission || hasPermission(item.permission)),
-    [hasPermission]
+    () =>
+      menuItems
+        .filter(item => {
+          if (item.superAdminOnly && user?.role !== 'SUPER_ADMIN') return false;
+          return !item.permission || hasPermission(item.permission);
+        })
+        .map(item => ({
+          ...item,
+          children: item.children?.filter(child => {
+            if (child.superAdminOnly && user?.role !== 'SUPER_ADMIN') return false;
+            return !child.permission || hasPermission(child.permission);
+          }),
+        })),
+    [hasPermission, user?.role]
   );
   const resolvedMenuItems = useMemo(
     () =>
