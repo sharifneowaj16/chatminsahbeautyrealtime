@@ -73,6 +73,18 @@ if (process.env.NODE_ENV !== 'production') {
   globalForMetaCapiQueue.metaCapiPurchaseQueue = metaCapiPurchaseQueue;
 }
 
+function sanitizeBullJobId(jobId: string): string {
+  return jobId.replace(/:/g, '-');
+}
+
+function buildSafeJobOptions(defaultJobId: string, options?: JobsOptions): JobsOptions {
+  const requestedJobId = options?.jobId ?? defaultJobId;
+  return {
+    ...options,
+    jobId: sanitizeBullJobId(String(requestedJobId)),
+  };
+}
+
 export function enqueueMetaCapiPurchase(
   input: Omit<MetaCapiPurchaseJobData, 'queuedAt'>,
   options?: JobsOptions
@@ -82,10 +94,7 @@ export function enqueueMetaCapiPurchase(
   return metaCapiPurchaseQueue.add(
     input.type,
     { ...input, queuedAt },
-    {
-      jobId: `${input.type}:${input.orderId}`,
-      ...options,
-    }
+    buildSafeJobOptions(`${input.type}-${input.orderId}`, options)
   );
 }
 
@@ -99,10 +108,7 @@ export function enqueueMetaCapiCoreEvent(
   return metaCapiPurchaseQueue.add(
     'core_event',
     { type: 'core_event', ...input, queuedAt },
-    {
-      jobId: `core_event:${input.eventId}`,
-      ...options,
-    }
+    buildSafeJobOptions(`core_event-${input.eventId}`, options)
   );
 }
 
@@ -116,10 +122,7 @@ export function enqueueGa4Purchase(
   return metaCapiPurchaseQueue.add(
     'ga4_purchase',
     { type: 'ga4_purchase', ...input, queuedAt },
-    {
-      jobId: `ga4_purchase:${input.orderId}`,
-      ...options,
-    }
+    buildSafeJobOptions(`ga4_purchase-${input.orderId}`, options)
   );
 }
 
@@ -133,9 +136,6 @@ export function enqueueGa4Refund(
   return metaCapiPurchaseQueue.add(
     'ga4_refund',
     { type: 'ga4_refund', ...input, queuedAt },
-    {
-      jobId: `ga4_refund:${input.orderId}`,
-      ...options,
-    }
+    buildSafeJobOptions(`ga4_refund-${input.orderId}`, options)
   );
 }
