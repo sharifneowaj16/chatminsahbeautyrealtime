@@ -12,7 +12,7 @@
     "build": "node scripts/prisma-client-freshness.mjs && next build --webpack",
     "start": "prisma migrate deploy && next start",
     "lint": "eslint .",
-    "postinstall": "node scripts/prisma-client-freshness.mjs",
+    "postinstall": "prisma generate && node scripts/prisma-client-freshness.mjs --write",
     "db:generate": "prisma generate && node scripts/prisma-client-freshness.mjs --write",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
