@@ -11,6 +11,7 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/generated ./generated
 COPY . .
 
 ARG NEXT_PUBLIC_REALTIME_WS_URL
