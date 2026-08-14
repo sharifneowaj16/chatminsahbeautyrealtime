@@ -1,10 +1,11 @@
-FROM node:22.16.0-alpine AS base
+FROM node:22.23.1-alpine AS base
 
 FROM base AS deps
 WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+COPY scripts ./scripts
 RUN npm ci
 
 FROM base AS builder
