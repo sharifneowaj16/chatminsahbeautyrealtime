@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "mode": "production",
+  "decision": "BLOCKED",
+  "generatedAt": "2026-07-17T22:57:17.808Z",
+  "blockers": [
+    "gate:build",
+    "gate:critical-e2e:pending",
+    "gate:evidence-ledger",
+    "gate:graph-version-policy",
+    "gate:migration-apply-rollback:pending",
+    "gate:prisma-client-freshness",
+    "phase-02:status:READY_FOR_GENERATION",
+    "phase-03:events-manager-funnel:pending",
+    "phase-03:status:READY_FOR_RUNTIME_QA",
+    "phase-04:status:READY_FOR_GENERATION",
+    "phase-05:status:READY_FOR_GENERATION",
+    "phase-06:status:READY_FOR_GENERATION",
+    "phase-07:connection-health:pending",
+    "phase-07:status:READY_FOR_RUNTIME_QA",
+    "phase-08:lead-webhook-crm:pending",
+    "phase-08:status:READY_FOR_RUNTIME_QA",
+    "phase-09:status:PARTIAL",
+    "phase-10:catalog-diagnostics-live:pending",
+    "phase-10:paging-sla:pending",
+    "phase-10:status:PARTIAL",
+    "phase-11:status:READY_FOR_GENERATION",
+    "phase-12:status:READY_FOR_GENERATION",
+    "phase-13:ads-insights-and-mutation:pending",
+    "phase-13:status:READY_FOR_GENERATION",
+    "phase-14:instagram-webhook-and-reply:pending",
+    "phase-14:status:READY_FOR_GENERATION",
+    "phase-15:critical-e2e:pending",
+    "phase-15:migration-apply-rollback:pending",
+    "phase-15:release-rollback-drill:pending",
+    "phase-15:status:READY_FOR_GENERATION"
+  ],
+  "warnings": [],
+  "gates": [
+    {
+      "id": "global-blockers",
+      "status": "PASS",
+      "detail": "PASS A13 [P2,P4,P7,P8,P10,P13] Meta lifecycle statuses use Prisma enums | PASS A14 [P10] Catalog Diagnostics are persisted and exposed |  | Strict gate is enabled: unresolved blockers fail the command."
+    },
+    {
+      "id": "migration-governance",
+      "status": "PASS",
+      "detail": "PASS 20260718060000_meta_v6_phase14_instagram_social_crm hash matches | PASS 20260718060000_meta_v6_phase14_instagram_social_crm rollback/forward-fix note exists | PASS 20260718060000_meta_v6_phase14_instagram_social_crm verification note exists | PASS 20260718060000_meta_v6_phase14_instagram_social_crm destructive classification matches"
+    },
+    {
+      "id": "evidence-ledger",
+      "status": "FAIL",
+      "detail": "PASS all declared evidence files exist | PASS runtime-required COMPLETE phases have attached evidence | FAIL all phases are COMPLETE for production | FAIL all runtime evidence is attached for production"
+    },
+    {
+      "id": "graph-version-policy",
+      "status": "FAIL",
+      "detail": "PASS configured regression did not fail | FAIL release uses target version | FAIL target regression is approved | FAIL target SDK version is recorded"
+    },
+    {
+      "id": "prisma-client-freshness",
+      "status": "FAIL",
+      "detail": "Generated Prisma client is stale for prisma/schema.prisma. Run `npm run db:generate` and commit the refreshed generated/prisma snapshot."
+    },
+    {
+      "id": "command-evidence",
+      "status": "PASS",
+      "detail": "4 fresh hashed command artifacts verified.",
+      "evidence": "config/meta-v6-command-evidence.json"
+    },
+    {
+      "id": "typecheck",
+      "status": "PASS",
+      "detail": "npm run typecheck:ts exited 0; > minsah-beauty@2.0.0 typecheck:ts | > tsc --noEmit --pretty false",
+      "evidence": "docs/release/meta-v6/phase-16-command-typecheck.log"
+    },
+    {
+      "id": "lint",
+      "status": "PASS",
+      "detail": "npm run lint exited 0;   552:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |  | /mnt/data/phase16_work/minsahbeauty-meta-v6-update/types/tracking.ts |    84:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |   198:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |   242:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |  | /mnt/data/phase16_work/minsahbeauty-meta-v6-update/utils/formatting.ts |   56:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export |  | ✖ 474 problems (0 errors, 474 warnings) |   0 errors and 2 warnings potentially fixable with the `--fix` option.",
+      "evidence": "docs/release/meta-v6/phase-16-command-lint.log"
+    },
+    {
+      "id": "build",
+      "status": "FAIL",
+      "detail": "npm run build exited 1; > minsah-beauty@2.0.0 build | > node scripts/prisma-client-freshness.mjs && next build --webpack |  | Generated Prisma client is stale for prisma/schema.prisma. Run `npm run db:generate` and commit the refreshed generated/prisma snapshot.",
+      "evidence": "docs/release/meta-v6/phase-16-command-build.log"
+    },
+    {
+      "id": "master-tracking",
+      "status": "PASS",
+      "detail": "npm run qa:master-tracking exited 0;       \"exitCode\": 0, |       \"durationMs\": 71 |     }, |     { |       \"script\": \"scripts/phase7-tiktok-tracking-safety-audit.mjs\", |       \"ok\": true, |       \"exitCode\": 0, |       \"durationMs\": 75 |     } |   ], |   \"issues\": [] | }",
+      "evidence": "docs/release/meta-v6/phase-16-command-master-tracking.log"
+    },
+    {
+      "id": "critical-e2e",
+      "status": "PENDING",
+      "detail": "Attach isolated PostgreSQL/Redis and Meta staging E2E evidence."
+    },
+    {
+      "id": "migration-apply-rollback",
+      "status": "PENDING",
+      "detail": "Attach disposable PostgreSQL apply and rollback/forward-fix drill evidence."
+    }
+  ],
+  "phaseSummary": {
+    "total": 15,
+    "complete": 1,
+    "runtimeRequired": 7,
+    "runtimeReady": 0
+  },
+  "evidenceDigest": "95c5ac9a1b488eebd504a646cc9e374e8011a2968979e6f3d098273802b1c325"
+}

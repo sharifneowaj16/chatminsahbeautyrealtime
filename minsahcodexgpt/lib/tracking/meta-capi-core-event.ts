@@ -1,18 +1,39 @@
 import 'server-only';
 import prisma from '@/lib/prisma';
-import type { FacebookConversionAPIRequest } from '@/types/facebook';
 import type { MetaCapiCoreJobData } from '@/lib/queue/metaCapiQueue';
+import {
+  TRACKING_SCHEMA_VERSION,
+  withMetaCapiPayloadSchemaVersion,
+  withMetaSafePayloadSchema,
+} from '@/lib/tracking/meta-schema';
+import type { MetaBusinessSdkRequestInput } from '@/lib/tracking/meta-business-sdk';
+import { sendMetaCapiWithPhase28Cutover } from '@/lib/meta-platform/migration/phase28-capi-facade';
+import { getTrackingFailureLogRetentionMetadata } from '@/lib/tracking/failure-retention';
+import { logOperationalError } from '@/lib/observability/logger';
+import { computeMetaAdaptiveCooldownMs, parseMetaRateLimitHeaders } from '@/lib/jobs/rate-limit';
 
-const META_GRAPH_API_VERSION = process.env.META_GRAPH_API_VERSION ?? 'v20.0';
-const META_PIXEL_ID =
-  process.env.META_PIXEL_ID ??
-  process.env.NEXT_PUBLIC_META_PIXEL_ID ??
-  process.env.NEXT_PUBLIC_FB_PIXEL_ID ??
-  process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
-const META_CAPI_ACCESS_TOKEN =
-  process.env.META_CAPI_ACCESS_TOKEN ?? process.env.FACEBOOK_CONVERSION_API_TOKEN;
-const META_CAPI_TIMEOUT_MS = Number(process.env.META_CAPI_TIMEOUT_MS ?? 10_000) || 10_000;
-const TRACKING_SCHEMA_VERSION = 'mb_tracking_v1';
+class LoggedMetaCapiRetryableError extends Error {
+  readonly metaCapiFailureAlreadyLogged = true;
+  readonly providerStatus?: number;
+  readonly retryAfterMs?: number;
+
+  constructor(message: string, providerStatus?: number, retryAfterMs?: number) {
+    super(message);
+    this.name = 'LoggedMetaCapiRetryableError';
+    this.providerStatus = providerStatus;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+function isLoggedMetaCapiRetryableError(error: unknown): error is LoggedMetaCapiRetryableError {
+  return (
+    error instanceof LoggedMetaCapiRetryableError ||
+    (typeof error === 'object' &&
+      error !== null &&
+      'metaCapiFailureAlreadyLogged' in error &&
+      (error as { metaCapiFailureAlreadyLogged?: unknown }).metaCapiFailureAlreadyLogged === true)
+  );
+}
 
 function toPrismaJson(value: unknown) {
   if (value === undefined) return undefined;
@@ -29,22 +50,6 @@ function shouldRetryMetaCapi(status?: number, errorCode?: string | number | null
 
   if (status >= 400 && status < 500) return false;
   return false;
-}
-
-async function postMetaCapiPayload(url: string, payload: unknown) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), META_CAPI_TIMEOUT_MS);
-
-  try {
-    return await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
 }
 
 async function logMetaCoreFailure(params: {
@@ -67,6 +72,14 @@ async function logMetaCoreFailure(params: {
   hasIp?: boolean;
   hasUa?: boolean;
 }) {
+  const retention = getTrackingFailureLogRetentionMetadata({
+    provider: 'META',
+    statusCode: params.statusCode,
+    errorCode: params.errorCode,
+    errorMessage: params.errorMessage,
+    finalFailed: params.finalFailed ?? false,
+  });
+
   await prisma.metaCapiFailure.create({
     data: {
       orderId: params.orderId,
@@ -80,6 +93,8 @@ async function logMetaCoreFailure(params: {
       errorMessage: params.errorMessage,
       retryCount: params.retryCount ?? 0,
       finalFailed: params.finalFailed ?? false,
+      failureCategory: retention.failureCategory,
+      cleanupAfter: retention.cleanupAfter,
       safePayload: toPrismaJson(params.safePayload),
       responsePayload: toPrismaJson(params.responsePayload),
       hasFbp: params.hasFbp ?? false,
@@ -101,59 +116,69 @@ export async function sendCoreCapiEventToMeta(params: {
   const { jobData, retryCount = 0, finalAttempt = false } = params;
   const eventName = jobData.eventName;
   const eventId = jobData.eventId;
-  const safePayload = jobData.safePayload;
-
-  if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) {
-    await logMetaCoreFailure({
-      orderId: jobData.orderId,
-      eventName,
-      eventId,
-      errorCode: 'META_ENV_MISSING',
-      errorMessage: 'META_PIXEL_ID or META_CAPI_ACCESS_TOKEN is missing.',
-      retryCount,
-      finalFailed: true,
-      safePayload,
-      hasFbp: safePayload.has_fbp,
-      hasFbc: safePayload.has_fbc,
-      hasExternalId: safePayload.has_external_id,
-      hasEmailHash: safePayload.has_email_hash,
-      hasPhoneHash: safePayload.has_phone_hash,
-      hasIp: safePayload.has_ip,
-      hasUa: safePayload.has_ua,
-    });
-    return { ok: false, retry: false, reason: 'META_ENV_MISSING' };
-  }
-
-  const url = `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${META_PIXEL_ID}/events?access_token=${encodeURIComponent(META_CAPI_ACCESS_TOKEN)}`;
+  const safePayload = withMetaSafePayloadSchema(jobData.safePayload);
 
   try {
-    const res = await postMetaCapiPayload(url, jobData.capiPayload as unknown as FacebookConversionAPIRequest);
-    const responsePayload = (await res.json().catch(() => null)) as {
-      fbtrace_id?: string;
-      error?: {
-        code?: string | number;
-        error_subcode?: string | number;
-        message?: string;
-      };
-    } | null;
+    const queuedPayload = jobData.sdkPayload ?? jobData.capiPayload;
+    if (!queuedPayload) {
+      await logMetaCoreFailure({
+        orderId: jobData.orderId,
+        eventName,
+        eventId,
+        errorCode: 'BUSINESS_SDK_PAYLOAD_MISSING',
+        errorMessage: 'Queued Meta Business SDK payload is missing.',
+        retryCount,
+        finalFailed: true,
+        safePayload,
+        hasFbp: safePayload.has_fbp,
+        hasFbc: safePayload.has_fbc,
+        hasExternalId: safePayload.has_external_id,
+        hasEmailHash: safePayload.has_email_hash,
+        hasPhoneHash: safePayload.has_phone_hash,
+        hasIp: safePayload.has_ip,
+        hasUa: safePayload.has_ua,
+      });
+      return { ok: false, retry: false, reason: 'BUSINESS_SDK_PAYLOAD_MISSING' };
+    }
 
-    if (res.ok) {
-      console.log(`[CAPI][Core] Event sent successfully: ${eventName} (${eventId})`);
-      return { ok: true, retry: false, response: responsePayload };
+    const sdkPayload = withMetaCapiPayloadSchemaVersion(
+      queuedPayload
+    ) as unknown as MetaBusinessSdkRequestInput;
+
+    const result = await sendMetaCapiWithPhase28Cutover({
+      payload: sdkPayload,
+      correlationId: jobData.eventId,
+    });
+    const responsePayload = result.responsePayload;
+
+    if (result.ok) {
+      console.log(
+        `[CAPI][Phase28][Core] Event sent successfully: ${eventName} (${eventId})`
+      );
+      return {
+        ok: true,
+        retry: false,
+        response: responsePayload,
+        transport: result.transport,
+        cutoverMode: result.cutoverMode,
+        graphApiVersion: result.graphApiVersion,
+        sdkVersion: result.sdkVersion,
+        credentialVersion: result.credentialVersion,
+      };
     }
 
     const metaError = responsePayload?.error;
     const errorCode = metaError?.code ? String(metaError.code) : undefined;
-    const retry = shouldRetryMetaCapi(res.status, errorCode);
+    const retry = shouldRetryMetaCapi(result.status, errorCode);
 
     await logMetaCoreFailure({
       orderId: jobData.orderId,
       eventName,
       eventId,
-      statusCode: res.status,
+      statusCode: result.status,
       errorCode,
       errorSubcode: metaError?.error_subcode ? String(metaError.error_subcode) : undefined,
-      errorMessage: metaError?.message ?? `Meta CAPI failed with status ${res.status}`,
+      errorMessage: metaError?.message ?? `Meta CAPI Business SDK failed with status ${result.status}`,
       retryCount,
       finalFailed: !retry || finalAttempt,
       safePayload,
@@ -168,27 +193,48 @@ export async function sendCoreCapiEventToMeta(params: {
     });
 
     if (String(errorCode) === '190') {
-      console.error('[CRITICAL][META_CAPI][Core] Invalid access token or expired token.', {
-        eventName,
-        eventId,
-        orderId: jobData.orderId,
-        statusCode: res.status,
-        errorCode,
-      });
+      logOperationalError(
+        'tracking.meta_capi_core.invalid_access_token',
+        new Error('Meta CAPI access token is invalid or expired.'),
+        {
+          eventName,
+          eventId,
+          orderId: jobData.orderId,
+          statusCode: result.status,
+          errorCode,
+        }
+      );
     }
 
     if (retry) {
-      throw new Error(`Retryable Meta CAPI error: ${res.status}`);
+      const rateHeaders = parseMetaRateLimitHeaders(result.responseHeaders);
+      throw new LoggedMetaCapiRetryableError(
+        `Retryable Meta CAPI Business SDK error: ${result.status}`,
+        result.status,
+        computeMetaAdaptiveCooldownMs({ status: result.status, headers: rateHeaders })
+      );
     }
 
-    return { ok: false, retry: false, reason: 'META_CAPI_PERMANENT_FAILURE' };
+    return {
+      ok: false,
+      retry: false,
+      reason: 'META_CAPI_PERMANENT_FAILURE',
+      transport: result.transport,
+      cutoverMode: result.cutoverMode,
+      graphApiVersion: result.graphApiVersion,
+      sdkVersion: result.sdkVersion,
+    };
   } catch (error) {
+    if (isLoggedMetaCapiRetryableError(error)) {
+      throw error;
+    }
+
     await logMetaCoreFailure({
       orderId: jobData.orderId,
       eventName,
       eventId,
-      errorCode: 'NETWORK_OR_RETRYABLE_ERROR',
-      errorMessage: error instanceof Error ? error.message : 'Unknown network/retryable error',
+      errorCode: 'BUSINESS_SDK_NETWORK_OR_RUNTIME_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown Business SDK error',
       retryCount,
       finalFailed: finalAttempt,
       safePayload,

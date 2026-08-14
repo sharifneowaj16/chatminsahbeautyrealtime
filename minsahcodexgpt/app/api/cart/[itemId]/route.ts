@@ -5,6 +5,12 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+function toOptionalNumber(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ itemId: string }> }
@@ -77,6 +83,11 @@ export async function PATCH(
           image: updated.product.images[0]?.url || null,
           brand: updated.product.brand?.name || null,
           stock: updated.product.quantity,
+          trackInventory: updated.product.trackInventory,
+          allowBackorder: updated.product.allowBackorder,
+          sku: updated.product.sku,
+          weight: updated.product.weight ? updated.product.weight.toNumber() : null,
+          shippingWeight: toOptionalNumber(updated.product.shippingWeight),
         },
         variant: updated.variant
           ? {
@@ -84,6 +95,7 @@ export async function PATCH(
               name: updated.variant.name,
               price: updated.variant.price?.toNumber() || updated.product.price.toNumber(),
               stock: updated.variant.quantity,
+              sku: updated.variant.sku,
               attributes: updated.variant.attributes,
             }
           : null,

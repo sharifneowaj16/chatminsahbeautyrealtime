@@ -1,17 +1,24 @@
 'use client';
 
 import { useCart } from '@/contexts/CartContext';
+import { Badge } from '@/components/ui/Badge';
 
 export default function CartNavBadge() {
   const { items } = useCart();
 
-  if (items.length === 0) {
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (totalQuantity === 0) {
     return null;
   }
 
   return (
-    <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-      {items.length}
-    </span>
+    <Badge
+      tone="danger"
+      aria-label={`${totalQuantity} item${totalQuantity === 1 ? '' : 's'} in cart`}
+      className="absolute -top-1 -right-2 min-h-5 w-5 justify-center px-0 py-0"
+    >
+      {totalQuantity}
+    </Badge>
   );
 }

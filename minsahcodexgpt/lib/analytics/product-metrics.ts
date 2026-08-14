@@ -5,12 +5,21 @@ import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { redis } from '@/lib/cache/redis';
 import { getFirstClientIp, shouldSkipProductAnalyticsRequest } from '@/lib/tracking/traffic-filter';
+import {
+  decimalToNumber,
+  isCancelledOrder,
+  isConfirmedOrder,
+  isDeliveredOrder,
+  productGrade,
+  roundMoney,
+  safePercent,
+} from '@/lib/analytics/business';
 
 export const PRODUCT_VIEW_DEDUP_SECONDS = 30 * 60;
 export const PRODUCT_VIEW_DEDUP_WINDOW_LABEL = '30m';
 
 
-type ProductMetricAction = 'view' | 'add_to_cart' | 'checkout_start';
+type ProductMetricAction = 'view' | 'add_to_cart' | 'view_cart' | 'checkout_start' | 'checkout_shipping_info' | 'checkout_payment_info';
 
 type ProductMetricItem = {
   productId: string;
@@ -143,14 +152,17 @@ async function dbDedupProductView(productId: string, visitorKeyHash: string, now
 
 async function incrementProductMetric(
   productId: string,
-  increments: Partial<Record<'viewCount' | 'uniqueViewCount' | 'addToCartCount' | 'checkoutStartCount', number>>,
+  increments: Partial<Record<'viewCount' | 'uniqueViewCount' | 'addToCartCount' | 'viewCartCount' | 'checkoutStartCount' | 'checkoutShippingInfoCount' | 'checkoutPaymentInfoCount', number>>,
   metricDate = getDhakaMetricDate(),
   executor: PrismaExecutor = prisma
 ) {
   const views = increments.viewCount ?? 0;
   const uniqueViews = increments.uniqueViewCount ?? 0;
   const addToCarts = increments.addToCartCount ?? 0;
+  const viewCarts = increments.viewCartCount ?? 0;
   const checkoutStarts = increments.checkoutStartCount ?? 0;
+  const checkoutShippingInfos = increments.checkoutShippingInfoCount ?? 0;
+  const checkoutPaymentInfos = increments.checkoutPaymentInfoCount ?? 0;
 
   await executor.$transaction(async (tx) => {
     await tx.product.update({
@@ -159,7 +171,10 @@ async function incrementProductMetric(
         ...(views ? { viewCount: { increment: views } } : {}),
         ...(uniqueViews ? { uniqueViewCount: { increment: uniqueViews } } : {}),
         ...(addToCarts ? { addToCartCount: { increment: addToCarts } } : {}),
+        ...(viewCarts ? { viewCartCount: { increment: viewCarts } } : {}),
         ...(checkoutStarts ? { checkoutStartCount: { increment: checkoutStarts } } : {}),
+        ...(checkoutShippingInfos ? { checkoutShippingInfoCount: { increment: checkoutShippingInfos } } : {}),
+        ...(checkoutPaymentInfos ? { checkoutPaymentInfoCount: { increment: checkoutPaymentInfos } } : {}),
       },
       select: { id: true },
     });
@@ -177,13 +192,19 @@ async function incrementProductMetric(
         views,
         uniqueViews,
         addToCarts,
+        viewCarts,
         checkoutStarts,
+        checkoutShippingInfos,
+        checkoutPaymentInfos,
       },
       update: {
         ...(views ? { views: { increment: views } } : {}),
         ...(uniqueViews ? { uniqueViews: { increment: uniqueViews } } : {}),
         ...(addToCarts ? { addToCarts: { increment: addToCarts } } : {}),
+        ...(viewCarts ? { viewCarts: { increment: viewCarts } } : {}),
         ...(checkoutStarts ? { checkoutStarts: { increment: checkoutStarts } } : {}),
+        ...(checkoutShippingInfos ? { checkoutShippingInfos: { increment: checkoutShippingInfos } } : {}),
+        ...(checkoutPaymentInfos ? { checkoutPaymentInfos: { increment: checkoutPaymentInfos } } : {}),
       },
       select: { id: true },
     });
@@ -248,8 +269,14 @@ export async function recordProductMetricAction(
 
     if (action === 'add_to_cart') {
       await incrementProductMetric(productId, { addToCartCount: quantity }, metricDate);
-    } else {
+    } else if (action === 'view_cart') {
+      await incrementProductMetric(productId, { viewCartCount: quantity }, metricDate);
+    } else if (action === 'checkout_start') {
       await incrementProductMetric(productId, { checkoutStartCount: quantity }, metricDate);
+    } else if (action === 'checkout_shipping_info') {
+      await incrementProductMetric(productId, { checkoutShippingInfoCount: quantity }, metricDate);
+    } else if (action === 'checkout_payment_info') {
+      await incrementProductMetric(productId, { checkoutPaymentInfoCount: quantity }, metricDate);
     }
     updated += 1;
   }
@@ -277,6 +304,9 @@ export type ProductOrderMetricItem = {
 
 type ProductUpdateArgs = Parameters<typeof prisma.product.update>[0];
 type ProductDailyMetricUpsertArgs = Parameters<typeof prisma.productDailyMetric.upsert>[0];
+type ProductDailyMetricFindUniqueArgs = Parameters<typeof prisma.productDailyMetric.findUnique>[0];
+type ProductDailyMetricUpdateArgs = Parameters<typeof prisma.productDailyMetric.update>[0];
+type OrderItemFindManyArgs = Parameters<typeof prisma.orderItem.findMany>[0];
 
 type ProductMetricTransaction = {
   product: {
@@ -284,14 +314,21 @@ type ProductMetricTransaction = {
   };
   productDailyMetric: {
     upsert: (args: ProductDailyMetricUpsertArgs) => Promise<unknown>;
+    findUnique: (args: ProductDailyMetricFindUniqueArgs) => Promise<unknown>;
+    update: (args: ProductDailyMetricUpdateArgs) => Promise<unknown>;
+  };
+  orderItem: {
+    findMany: (args: OrderItemFindManyArgs) => Promise<unknown[]>;
   };
 };
 
 export async function recordProductOrderCreatedInTransaction(
   tx: ProductMetricTransaction,
   orderItems: ProductOrderMetricItem[],
-  metricDate = getDhakaMetricDate()
+  metricDate = getDhakaMetricDate(),
+  options: { skip?: boolean; reason?: string } = {}
 ) {
+  if (options.skip) return;
   const byProduct = new Map<string, { orderCount: number; revenue: number }>();
 
   for (const item of orderItems) {
@@ -334,4 +371,360 @@ export async function recordProductOrderCreatedInTransaction(
       select: { id: true },
     });
   }
+}
+
+
+export const productLifecycleOrderSelect = {
+  id: true,
+  createdAt: true,
+  status: true,
+  paymentStatus: true,
+  paymentMethod: true,
+  isTest: true,
+  phoneConfirmedAt: true,
+  paymentPaidAt: true,
+  paidAt: true,
+  deliveredAt: true,
+  cancelledAt: true,
+  returnedAt: true,
+  refundedAt: true,
+  courierDeliveredAt: true,
+  courierReturnedAt: true,
+} as const;
+
+type ProductLifecycleOrderSignal = {
+  id: string;
+  createdAt?: Date | null;
+  status?: string | null;
+  paymentStatus?: string | null;
+  paymentMethod?: string | null;
+  isTest?: boolean | null;
+  phoneConfirmedAt?: Date | null;
+  paymentPaidAt?: Date | null;
+  paidAt?: Date | null;
+  deliveredAt?: Date | null;
+  cancelledAt?: Date | null;
+  returnedAt?: Date | null;
+  refundedAt?: Date | null;
+  courierDeliveredAt?: Date | null;
+  courierReturnedAt?: Date | null;
+};
+
+type ProductLifecycleKey = 'confirmed' | 'delivered' | 'cancelled' | 'returned' | 'refunded';
+
+type ProductLifecycleTransition = {
+  key: ProductLifecycleKey;
+  metricDate: Date;
+};
+
+type ProductLifecycleItemSummary = {
+  orderCount: number;
+  revenue: number;
+  deliveredProfit: number | null;
+};
+
+function normalizeLifecycleOrder(order: ProductLifecycleOrderSignal) {
+  return {
+    status: String(order.status ?? '').toUpperCase(),
+    paymentStatus: String(order.paymentStatus ?? '').toUpperCase(),
+    paymentMethod: order.paymentMethod ?? null,
+    phoneConfirmedAt: order.phoneConfirmedAt ?? null,
+    paymentPaidAt: order.paymentPaidAt ?? null,
+    paidAt: order.paidAt ?? null,
+    deliveredAt: order.deliveredAt ?? null,
+    cancelledAt: order.cancelledAt ?? null,
+    returnedAt: order.returnedAt ?? null,
+    refundedAt: order.refundedAt ?? null,
+    courierDeliveredAt: order.courierDeliveredAt ?? null,
+    courierReturnedAt: order.courierReturnedAt ?? null,
+  };
+}
+
+function isReturnedLifecycleOrder(order: ProductLifecycleOrderSignal): boolean {
+  return Boolean(order.returnedAt || order.courierReturnedAt);
+}
+
+function isRefundedLifecycleOrder(order: ProductLifecycleOrderSignal): boolean {
+  const normalizedStatus = String(order.status ?? '').toUpperCase();
+  const normalizedPaymentStatus = String(order.paymentStatus ?? '').toUpperCase();
+  return Boolean(order.refundedAt || normalizedStatus === 'REFUNDED' || normalizedPaymentStatus === 'REFUNDED');
+}
+
+function firstLifecycleDate(...dates: Array<Date | null | undefined>): Date {
+  return dates.find((date): date is Date => date instanceof Date && Number.isFinite(date.getTime())) ?? new Date();
+}
+
+function getLifecycleTransitions(
+  previousOrder: ProductLifecycleOrderSignal,
+  nextOrder: ProductLifecycleOrderSignal
+): ProductLifecycleTransition[] {
+  const previous = normalizeLifecycleOrder(previousOrder);
+  const next = normalizeLifecycleOrder(nextOrder);
+
+  const transitions: ProductLifecycleTransition[] = [];
+
+  if (!isConfirmedOrder(previous) && isConfirmedOrder(next)) {
+    transitions.push({
+      key: 'confirmed',
+      metricDate: getDhakaMetricDate(firstLifecycleDate(next.phoneConfirmedAt, next.paymentPaidAt, next.paidAt, nextOrder.createdAt)),
+    });
+  }
+
+  if (!isDeliveredOrder(previous) && isDeliveredOrder(next)) {
+    transitions.push({
+      key: 'delivered',
+      metricDate: getDhakaMetricDate(firstLifecycleDate(next.deliveredAt, next.courierDeliveredAt)),
+    });
+  }
+
+  if (!isCancelledOrder(previous) && isCancelledOrder(next)) {
+    transitions.push({
+      key: 'cancelled',
+      metricDate: getDhakaMetricDate(firstLifecycleDate(next.cancelledAt)),
+    });
+  }
+
+  if (!isReturnedLifecycleOrder(previousOrder) && isReturnedLifecycleOrder(nextOrder)) {
+    transitions.push({
+      key: 'returned',
+      metricDate: getDhakaMetricDate(firstLifecycleDate(next.returnedAt, next.courierReturnedAt)),
+    });
+  }
+
+  if (!isRefundedLifecycleOrder(previousOrder) && isRefundedLifecycleOrder(nextOrder)) {
+    transitions.push({
+      key: 'refunded',
+      metricDate: getDhakaMetricDate(firstLifecycleDate(next.refundedAt)),
+    });
+  }
+
+  return transitions;
+}
+
+function addMoney(value: unknown): number {
+  const amount = decimalToNumber(value);
+  return Number.isFinite(amount) && amount > 0 ? roundMoney(amount) : 0;
+}
+
+function getItemCost(item: { product?: { costPrice?: unknown | null } | null; quantity?: unknown }): number | null {
+  const costPrice = decimalToNumber(item.product?.costPrice);
+  const quantity = normalizeCounterQuantity(item.quantity);
+  if (!Number.isFinite(costPrice) || costPrice <= 0) return null;
+  return roundMoney(costPrice * quantity);
+}
+
+async function summarizeLifecycleItems(
+  tx: ProductMetricTransaction,
+  orderId: string
+): Promise<Map<string, ProductLifecycleItemSummary>> {
+  const rows = await tx.orderItem.findMany({
+    where: { orderId },
+    select: {
+      productId: true,
+      quantity: true,
+      total: true,
+      product: {
+        select: {
+          costPrice: true,
+        },
+      },
+    },
+  }) as Array<{
+    productId: string | null;
+    quantity: number;
+    total: unknown;
+    product?: { costPrice?: unknown | null } | null;
+  }>;
+
+  const byProduct = new Map<string, ProductLifecycleItemSummary>();
+
+  for (const item of rows) {
+    const productId = normalizeId(item.productId);
+    if (!productId) continue;
+
+    const current = byProduct.get(productId) ?? {
+      orderCount: 0,
+      revenue: 0,
+      deliveredProfit: null,
+    };
+
+    // Lifecycle order counters are per product per order, not per unit.
+    current.orderCount = 1;
+    const itemRevenue = addMoney(item.total);
+    current.revenue = roundMoney(current.revenue + itemRevenue);
+
+    const cost = getItemCost(item);
+    if (cost !== null) {
+      current.deliveredProfit = roundMoney((current.deliveredProfit ?? 0) + itemRevenue - cost);
+    }
+
+    byProduct.set(productId, current);
+  }
+
+  return byProduct;
+}
+
+async function recalculateProductDailyMetricRatios(
+  tx: ProductMetricTransaction,
+  productId: string,
+  metricDate: Date
+) {
+  const row = await tx.productDailyMetric.findUnique({
+    where: { productId_metricDate: { productId, metricDate } },
+    select: {
+      views: true,
+      addToCarts: true,
+      checkoutStarts: true,
+      orders: true,
+      confirmedOrders: true,
+      deliveredOrders: true,
+      cancelledOrders: true,
+      returnedOrders: true,
+      deliveredRevenue: true,
+      estimatedProfit: true,
+    },
+  }) as {
+    views: number;
+    addToCarts: number;
+    checkoutStarts: number;
+    orders: number;
+    confirmedOrders: number;
+    deliveredOrders: number;
+    cancelledOrders: number;
+    returnedOrders: number;
+    deliveredRevenue: unknown;
+    estimatedProfit: unknown;
+  } | null;
+
+  if (!row) return;
+
+  const estimatedProfit = row.estimatedProfit === null ? null : decimalToNumber(row.estimatedProfit);
+
+  await tx.productDailyMetric.update({
+    where: { productId_metricDate: { productId, metricDate } },
+    data: {
+      addToCartRate: safePercent(row.addToCarts, row.views),
+      checkoutRate: safePercent(row.checkoutStarts, row.addToCarts),
+      purchaseRate: safePercent(row.confirmedOrders, row.views),
+      confirmationRate: safePercent(row.confirmedOrders, row.orders),
+      deliveryRate: safePercent(row.deliveredOrders, row.confirmedOrders),
+      returnRate: safePercent(row.returnedOrders, row.deliveredOrders),
+      grade: productGrade({
+        confirmedOrders: row.confirmedOrders,
+        deliveredOrders: row.deliveredOrders,
+        cancelledOrders: row.cancelledOrders,
+        returnedOrders: row.returnedOrders,
+        deliveredRevenue: decimalToNumber(row.deliveredRevenue),
+        estimatedGrossProfit: estimatedProfit === null ? null : estimatedProfit,
+      }),
+    },
+    select: { id: true },
+  });
+}
+
+export async function recordProductLifecycleTransitionInTransaction(
+  tx: ProductMetricTransaction,
+  previousOrder: ProductLifecycleOrderSignal,
+  nextOrder: ProductLifecycleOrderSignal
+): Promise<{ ok: boolean; skipped?: boolean; reason?: string; transitions: ProductLifecycleKey[]; productsUpdated: number }> {
+  if (nextOrder.isTest) {
+    return { ok: true, skipped: true, reason: 'TEST_ORDER', transitions: [], productsUpdated: 0 };
+  }
+
+  const transitions = getLifecycleTransitions(previousOrder, nextOrder);
+  if (transitions.length === 0) {
+    return { ok: true, skipped: true, reason: 'NO_LIFECYCLE_TRANSITION', transitions: [], productsUpdated: 0 };
+  }
+
+  const itemsByProduct = await summarizeLifecycleItems(tx, nextOrder.id);
+  if (itemsByProduct.size === 0) {
+    return { ok: true, skipped: true, reason: 'NO_TRACKABLE_ORDER_ITEMS', transitions: transitions.map((item) => item.key), productsUpdated: 0 };
+  }
+
+  for (const [productId, itemSummary] of itemsByProduct.entries()) {
+    const productIncrement: Record<string, { increment: number }> = {};
+    const metricByDate = new Map<number, { metricDate: Date; data: Record<string, unknown> }>();
+
+    for (const transition of transitions) {
+      const key = transition.metricDate.getTime();
+      const entry = metricByDate.get(key) ?? { metricDate: transition.metricDate, data: {} };
+
+      if (transition.key === 'confirmed') {
+        productIncrement.confirmedOrderCount = { increment: itemSummary.orderCount };
+        entry.data.confirmedOrders = { increment: itemSummary.orderCount };
+        entry.data.confirmedRevenue = { increment: itemSummary.revenue };
+      }
+
+      if (transition.key === 'delivered') {
+        productIncrement.deliveredOrderCount = { increment: itemSummary.orderCount };
+        entry.data.deliveredOrders = { increment: itemSummary.orderCount };
+        entry.data.deliveredRevenue = { increment: itemSummary.revenue };
+        if (itemSummary.deliveredProfit !== null) {
+          entry.data.estimatedProfit = { increment: itemSummary.deliveredProfit };
+        }
+      }
+
+      if (transition.key === 'cancelled') {
+        productIncrement.cancelledOrderCount = { increment: itemSummary.orderCount };
+        entry.data.cancelledOrders = { increment: itemSummary.orderCount };
+        entry.data.cancelledRevenue = { increment: itemSummary.revenue };
+      }
+
+      if (transition.key === 'returned') {
+        productIncrement.returnedOrderCount = { increment: itemSummary.orderCount };
+        entry.data.returnedOrders = { increment: itemSummary.orderCount };
+        entry.data.returnedRevenue = { increment: itemSummary.revenue };
+      }
+
+      if (transition.key === 'refunded') {
+        productIncrement.refundedOrderCount = { increment: itemSummary.orderCount };
+        entry.data.refundedOrders = { increment: itemSummary.orderCount };
+        entry.data.refundedRevenue = { increment: itemSummary.revenue };
+      }
+
+      metricByDate.set(key, entry);
+    }
+
+    if (Object.keys(productIncrement).length > 0) {
+      await tx.product.update({
+        where: { id: productId },
+        data: productIncrement,
+        select: { id: true },
+      });
+    }
+
+    for (const entry of metricByDate.values()) {
+      await tx.productDailyMetric.upsert({
+        where: {
+          productId_metricDate: {
+            productId,
+            metricDate: entry.metricDate,
+          },
+        },
+        create: {
+          productId,
+          metricDate: entry.metricDate,
+          ...(entry.data.confirmedOrders ? { confirmedOrders: itemSummary.orderCount, confirmedRevenue: itemSummary.revenue } : {}),
+          ...(entry.data.deliveredOrders ? {
+            deliveredOrders: itemSummary.orderCount,
+            deliveredRevenue: itemSummary.revenue,
+            ...(itemSummary.deliveredProfit !== null ? { estimatedProfit: itemSummary.deliveredProfit } : {}),
+          } : {}),
+          ...(entry.data.cancelledOrders ? { cancelledOrders: itemSummary.orderCount, cancelledRevenue: itemSummary.revenue } : {}),
+          ...(entry.data.returnedOrders ? { returnedOrders: itemSummary.orderCount, returnedRevenue: itemSummary.revenue } : {}),
+          ...(entry.data.refundedOrders ? { refundedOrders: itemSummary.orderCount, refundedRevenue: itemSummary.revenue } : {}),
+        },
+        update: entry.data,
+        select: { id: true },
+      });
+
+      await recalculateProductDailyMetricRatios(tx, productId, entry.metricDate);
+    }
+  }
+
+  return {
+    ok: true,
+    transitions: transitions.map((item) => item.key),
+    productsUpdated: itemsByProduct.size,
+  };
 }

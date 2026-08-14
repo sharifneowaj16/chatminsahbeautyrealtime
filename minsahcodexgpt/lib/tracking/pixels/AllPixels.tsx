@@ -7,10 +7,15 @@ import { TRACKING_CONSENT_EVENT } from '@/lib/tracking/tracking-consent';
 import { TrackingConsentBanner, TrackingConsentModeScript } from './TrackingConsentManager';
 
 const AttributionCookieCapture = dynamic(() => import('./AttributionCookieCapture'), { ssr: false });
-const FacebookPixel = dynamic(() => import('./FacebookPixel'), { ssr: false });
+const MetaPixelProvider = dynamic(() => import('@/components/tracking/MetaPixelProvider'), { ssr: false });
+const MetaEventBridge = dynamic(
+  () => import('@/components/tracking/MetaEventBridge').then((module) => module.MetaEventBridge),
+  { ssr: false },
+);
 const GoogleAnalytics = dynamic(() => import('./GoogleAnalytics'), { ssr: false });
 const GoogleTagManager = dynamic(() => import('./GoogleTagManager'), { ssr: false });
 const TikTokPixel = dynamic(() => import('./TikTokPixel'), { ssr: false });
+const TikTokRouteTracker = dynamic(() => import('./TikTokRouteTracker'), { ssr: false });
 const SnapchatPixel = dynamic(() => import('./SnapchatPixel'), { ssr: false });
 const PinterestPixel = dynamic(() => import('./PinterestPixel'), { ssr: false });
 const TwitterPixel = dynamic(() => import('./TwitterPixel'), { ssr: false });
@@ -20,6 +25,30 @@ const MicrosoftPixel = dynamic(() => import('./MicrosoftPixel'), { ssr: false })
 const HotjarPixel = dynamic(() => import('./HotjarPixel'), { ssr: false });
 const ClarityPixel = dynamic(() => import('./ClarityPixel'), { ssr: false });
 const MixpanelPixel = dynamic(() => import('./MixpanelPixel'), { ssr: false });
+
+type IdleTrackingWindow = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
+
+function useIdleTrackingReady(enabled: boolean) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const idleWindow = window as IdleTrackingWindow;
+    if (idleWindow.requestIdleCallback) {
+      const handle = idleWindow.requestIdleCallback(() => setReady(true), { timeout: 2500 });
+      return () => idleWindow.cancelIdleCallback?.(handle);
+    }
+
+    const timer = window.setTimeout(() => setReady(true), 1500);
+    return () => window.clearTimeout(timer);
+  }, [enabled]);
+
+  return ready;
+}
 
 export default function AllPixels() {
   const [trackingAllowed, setTrackingAllowed] = useState(false);
@@ -51,6 +80,10 @@ export default function AllPixels() {
     (!!facebookPixelId &&
       process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED !== 'false');
 
+  const tiktokPixelId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || '';
+  const tiktokPixelEnabled =
+    process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ENABLED === 'true' && !!tiktokPixelId;
+
   // Read from environment variables
   const config = {
     facebook: {
@@ -71,8 +104,8 @@ export default function AllPixels() {
       tagManagerId: process.env.NEXT_PUBLIC_GTM_ID || '',
     },
     tiktok: {
-      enabled: process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ENABLED === 'true',
-      pixelId: process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || '',
+      enabled: tiktokPixelEnabled,
+      pixelId: tiktokPixelId,
     },
     snapchat: {
       enabled: process.env.NEXT_PUBLIC_SNAPCHAT_PIXEL_ENABLED === 'true',
@@ -115,6 +148,9 @@ export default function AllPixels() {
   const gtmEnabled =
     process.env.NEXT_PUBLIC_GTM_ENABLED === 'true' &&
     !!config.google.tagManagerId;
+  const deferredExperienceTrackingReady = useIdleTrackingReady(
+    config.hotjar.enabled || config.clarity.enabled,
+  );
 
   if (!trackingAllowed) {
     return (
@@ -133,9 +169,10 @@ export default function AllPixels() {
       <TrackingConsentModeScript />
       <TrackingConsentBanner />
       <AttributionCookieCapture />
+      <MetaEventBridge />
       {/* Facebook Pixel */}
       {config.facebook.enabled && config.facebook.pixelId && (
-        <FacebookPixel pixelId={config.facebook.pixelId} enabled />
+        <MetaPixelProvider pixelId={config.facebook.pixelId} enabled />
       )}
 
       {/* Google Analytics 4 */}
@@ -150,7 +187,10 @@ export default function AllPixels() {
 
       {/* TikTok Pixel */}
       {config.tiktok.enabled && config.tiktok.pixelId && (
-        <TikTokPixel pixelId={config.tiktok.pixelId} enabled />
+        <>
+          <TikTokPixel pixelId={config.tiktok.pixelId} enabled />
+          <TikTokRouteTracker />
+        </>
       )}
 
       {/* Snapchat Pixel */}
@@ -184,12 +224,12 @@ export default function AllPixels() {
       )}
 
       {/* Hotjar - Heatmaps & Session Recording */}
-      {config.hotjar.enabled && config.hotjar.siteId && (
+      {deferredExperienceTrackingReady && config.hotjar.enabled && config.hotjar.siteId && (
         <HotjarPixel siteId={config.hotjar.siteId} enabled />
       )}
 
       {/* Microsoft Clarity - Heatmaps & Session Recording */}
-      {config.clarity.enabled && config.clarity.projectId && (
+      {deferredExperienceTrackingReady && config.clarity.enabled && config.clarity.projectId && (
         <ClarityPixel projectId={config.clarity.projectId} enabled />
       )}
 

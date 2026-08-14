@@ -6,16 +6,30 @@
  */
 
 import { TrackingEvent, TrackingEventData, AllPlatformsConfig, CustomerSession } from '@/types/tracking';
-import { buildVisitorMetaExternalId } from '@/lib/tracking/meta-external-id';
 import { canRunClientTracking, getClientTrackingBlockReason } from '@/lib/tracking/client-traffic-filter';
+import { buildMetaBrowserEvent, sanitizeMetaBrowserPayload } from '@/lib/meta/browser/payload';
+import { dispatchMetaBrowserEvent } from '@/lib/meta/browser/client';
+import { metaBrowserDebug } from '@/lib/meta/browser/diagnostics';
+import type { MetaBrowserEventName } from '@/lib/meta/browser/types';
+
+export type TrackingDispatchOptions = {
+  /** Generated once at the user-action boundary and reused by Pixel + CAPI. */
+  metaEventId?: string;
+};
 
 // Extend Window interface for tracking platform globals
 declare global {
   interface Window {
     fbq?: (...args: any[]) => void;
-    gtag: (...args: any[]) => void;
+    __mbFbInitReady?: boolean;
+    gtag?: (...args: any[]) => void;
     dataLayer?: any[] & { __mbPurchaseGuardInstalled?: boolean };
-    ttq: { track: (...args: any[]) => void };
+    ttq?: {
+      page?: () => void;
+      track?: (...args: any[]) => void;
+      ready?: (callback: () => void) => void;
+    };
+    __mbTikTokInitReady?: boolean;
     snaptr: (...args: any[]) => void;
     pintrk: (...args: any[]) => void;
     twq: (...args: any[]) => void;
@@ -27,25 +41,244 @@ declare global {
   }
 }
 
-function getCookieValue(name: string): string | undefined {
-  if (typeof document === 'undefined') return undefined;
+type Ga4ItemPayload = Record<string, string | number | undefined>;
 
-  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  if (!match) return undefined;
+const GA4_ECOMMERCE_EVENTS = new Set([
+  'view_item',
+  'add_to_cart',
+  'view_cart',
+  'add_to_wishlist',
+  'begin_checkout',
+  'add_shipping_info',
+  'add_payment_info',
+]);
 
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return match[1];
+function toFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
+  return undefined;
 }
 
-function getFacebookIdentity() {
+function toPositiveInteger(value: unknown, fallback = 1): number {
+  const parsed = toFiniteNumber(value);
+  if (parsed === undefined || parsed <= 0) return fallback;
+  return Math.max(1, Math.trunc(parsed));
+}
+
+function firstNonEmptyString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  }
+  return undefined;
+}
+
+function getContentIds(data?: TrackingEventData): string[] {
+  const rawIds = data?.content_ids ?? data?.contentIds;
+  if (!Array.isArray(rawIds)) return [];
+
+  return rawIds
+    .map((id) => firstNonEmptyString(id))
+    .filter((id): id is string => Boolean(id));
+}
+
+function buildGa4ItemFromContent(
+  content: Record<string, any>,
+  data?: TrackingEventData,
+  index?: number
+): Ga4ItemPayload | null {
+  const itemId = firstNonEmptyString(content.id, content.item_id, content.product_id, content.productId);
+  if (!itemId) return null;
+
+  const itemName = firstNonEmptyString(
+    content.item_name,
+    content.name,
+    data?.content_name,
+    data?.contentName
+  );
+  const itemCategory = firstNonEmptyString(
+    content.item_category,
+    content.category,
+    data?.content_category,
+    data?.contentCategory
+  );
+  const itemVariant = firstNonEmptyString(
+    content.item_variant,
+    content.variant_name,
+    content.variantName,
+    data?.variant_name,
+    data?.variantName,
+    data?.variant_attributes,
+    data?.variantAttributes,
+    content.size && content.color ? `${content.size} / ${content.color}` : undefined,
+    content.shade,
+    content.color,
+    content.size
+  );
+  const itemGroupId = firstNonEmptyString(
+    content.item_group_id,
+    content.itemGroupId,
+    data?.item_group_id,
+    data?.itemGroupId,
+    data?.product_id,
+    data?.productId
+  );
+  const price = toFiniteNumber(content.item_price ?? content.price ?? data?.value);
+  const quantity = toPositiveInteger(content.quantity, 1);
+
   return {
-    fbc: getCookieValue('_fbc'),
-    fbp: getCookieValue('_fbp'),
-    externalId: buildVisitorMetaExternalId(getCookieValue('mb_vid')),
+    item_id: itemId,
+    ...(itemName && { item_name: itemName }),
+    ...(itemCategory && { item_category: itemCategory }),
+    ...(itemVariant && { item_variant: itemVariant }),
+    ...(itemGroupId && { item_group_id: itemGroupId }),
+    ...(price !== undefined && { price }),
+    quantity,
+    ...(Number.isInteger(index) && { index }),
   };
+}
+
+function buildGa4Items(data?: TrackingEventData): Ga4ItemPayload[] {
+  const contents = Array.isArray(data?.contents) ? data.contents : [];
+  const itemsFromContents = contents
+    .map((content, index) =>
+      content && typeof content === 'object'
+        ? buildGa4ItemFromContent(content as Record<string, any>, data, index)
+        : null
+    )
+    .filter((item): item is Ga4ItemPayload => Boolean(item));
+
+  if (itemsFromContents.length > 0) {
+    return itemsFromContents;
+  }
+
+  return getContentIds(data)
+    .map((id, index) =>
+      buildGa4ItemFromContent(
+        {
+          id,
+          quantity: data?.num_items || data?.numItems || 1,
+          price: data?.value,
+        },
+        data,
+        index
+      )
+    )
+    .filter((item): item is Ga4ItemPayload => Boolean(item));
+}
+
+function buildGoogleEventPayload(gaEvent: string, data?: TrackingEventData): TrackingEventData {
+  const payload: TrackingEventData = { ...(data ?? {}) };
+
+  const value = toFiniteNumber(payload.value);
+  if (value !== undefined) payload.value = value;
+  if (!payload.currency && value !== undefined) payload.currency = 'BDT';
+
+  if (gaEvent === 'search') {
+    const searchTerm = firstNonEmptyString(payload.search_term, payload.search_string, payload.searchString);
+    if (searchTerm) payload.search_term = searchTerm;
+  }
+
+  if (GA4_ECOMMERCE_EVENTS.has(gaEvent)) {
+    const items = buildGa4Items(payload);
+    if (items.length > 0) {
+      payload.items = items;
+    }
+  }
+
+  return payload;
+}
+
+
+type TikTokContentPayload = {
+  content_id: string;
+  content_name?: string;
+  quantity: number;
+  price?: number;
+};
+
+function buildTikTokContents(data?: TrackingEventData): TikTokContentPayload[] {
+  const contents = Array.isArray(data?.contents) ? data.contents : [];
+  const mapped = contents
+    .map((content) => {
+      if (!content || typeof content !== 'object') return null;
+      const item = content as Record<string, unknown>;
+
+      const contentId = firstNonEmptyString(
+        item.id,
+        item.content_id,
+        item.item_id,
+        item.product_id,
+        item.productId,
+        item.variant_sku,
+        item.sku
+      );
+      if (!contentId) return null;
+
+      const contentName = firstNonEmptyString(
+        item.content_name,
+        item.item_name,
+        item.name,
+        data?.content_name,
+        data?.contentName
+      );
+      const price = toFiniteNumber(item.price ?? item.item_price ?? data?.value);
+      const quantity = toPositiveInteger(item.quantity, 1);
+
+      return {
+        content_id: contentId,
+        ...(contentName && { content_name: contentName }),
+        quantity,
+        ...(price !== undefined && { price }),
+      };
+    })
+    .filter((item): item is TikTokContentPayload => Boolean(item));
+
+  if (mapped.length > 0) return mapped;
+
+  return getContentIds(data).map((id) => ({
+    content_id: id,
+    ...(firstNonEmptyString(data?.content_name, data?.contentName) && {
+      content_name: firstNonEmptyString(data?.content_name, data?.contentName),
+    }),
+    quantity: toPositiveInteger(data?.num_items ?? data?.numItems ?? data?.quantity, 1),
+    ...(toFiniteNumber(data?.value) !== undefined && { price: toFiniteNumber(data?.value) }),
+  }));
+}
+
+function buildTikTokPayload(data?: TrackingEventData): Record<string, unknown> {
+  if (!data) return {};
+
+  const payload: Record<string, unknown> = {};
+  const value = toFiniteNumber(data.value);
+  const contentIds = getContentIds(data);
+  const contents = buildTikTokContents(data);
+  const quantity = toPositiveInteger(
+    data.num_items ?? data.numItems ?? data.quantity ?? contents.reduce((sum, item) => sum + (item.quantity || 1), 0),
+    1
+  );
+  const searchString = firstNonEmptyString(data.search_string, data.search_term, data.searchString);
+  const description = firstNonEmptyString(
+    data.description,
+    data.content_name,
+    data.contentName,
+    data.content_category,
+    data.contentCategory
+  );
+
+  payload.content_type = firstNonEmptyString(data.content_type, data.contentType) || 'product';
+  if (contentIds.length > 0) payload.content_ids = contentIds;
+  if (contents.length > 0) payload.contents = contents;
+  payload.quantity = quantity;
+  if (description) payload.description = description;
+  if (data.currency || value !== undefined) payload.currency = data.currency || 'BDT';
+  if (value !== undefined) payload.value = value;
+  if (searchString) payload.search_string = searchString;
+
+  return payload;
 }
 
 class TrackingManager {
@@ -66,6 +299,9 @@ class TrackingManager {
       process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
       process.env.NEXT_PUBLIC_META_PIXEL_ID ||
       '';
+    const tiktokPixelId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || '';
+    const tiktokPixelEnabled =
+      process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ENABLED === 'true' && !!tiktokPixelId;
 
     return {
       facebook: {
@@ -86,8 +322,8 @@ class TrackingManager {
         adsConversionLabel: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
       },
       tiktok: {
-        enabled: !!process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID,
-        pixelId: process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || '',
+        enabled: tiktokPixelEnabled,
+        pixelId: tiktokPixelId,
       },
       snapchat: {
         enabled: !!process.env.NEXT_PUBLIC_SNAPCHAT_PIXEL_ID,
@@ -212,38 +448,34 @@ class TrackingManager {
   /**
    * Track event across all enabled platforms
    */
-  track(event: TrackingEvent, data?: TrackingEventData): void {
-    if (!canRunClientTracking()) {
-      return;
-    }
+  track(event: TrackingEvent, data?: TrackingEventData, options: TrackingDispatchOptions = {}): void {
+    if (!canRunClientTracking()) return;
 
     if (!this.initialized) {
       this.initSession();
     }
+    if (!this.initialized) return;
 
-    if (!this.initialized) {
-      return;
-    }
+    // One privacy-safe browser payload is used for in-memory session data,
+    // platform adapters and the analytics ingestion endpoint.
+    const safeData = sanitizeMetaBrowserPayload(data);
 
-    // Add event to session
     if (this.sessionData) {
       this.sessionData.events.push({
         event,
         timestamp: Date.now(),
-        data,
+        data: safeData,
       });
       this.sessionData.lastActivity = Date.now();
     }
 
-    // Enrich data with UTM params
-    const enrichedData = {
-      ...data,
+    const enrichedData = sanitizeMetaBrowserPayload({
+      ...safeData,
       ...this.sessionData?.utmParams,
-    };
+    });
 
-    // Track on all enabled platforms
     if (this.config.facebook.enabled) {
-      this.trackFacebook(event, enrichedData);
+      this.trackFacebook(event, enrichedData, options.metaEventId);
     }
     if (this.config.google.enabled) {
       this.trackGoogle(event, enrichedData);
@@ -273,98 +505,43 @@ class TrackingManager {
       this.trackMixpanel(event, enrichedData);
     }
 
-    // Send to server for storage and analysis
     this.sendToServer(event, enrichedData);
   }
 
   /**
    * Track on Facebook Pixel
    */
-  private trackFacebook(event: TrackingEvent, data?: TrackingEventData, attempt = 0): void {
-    if (typeof window === 'undefined') return;
+  private trackFacebook(
+    event: TrackingEvent,
+    data?: TrackingEventData,
+    metaEventId?: string
+  ): void {
+    if (typeof window === 'undefined' || !canRunClientTracking()) return;
 
-    if (!window.fbq) {
-      if (attempt < 50) {
-        window.setTimeout(() => this.trackFacebook(event, data, attempt + 1), 100);
-      }
-      return;
-    }
-
-    const fbEvent = this.mapToFacebookEvent(event);
+    const fbEvent = this.mapToFacebookEvent(event) as MetaBrowserEventName;
     if (fbEvent === 'Purchase') {
-      console.warn(
-        '[Tracking] Generic Facebook Purchase is blocked. Use the verified online/COD Purchase flows only.'
-      );
+      // Generic Purchase remains blocked; verified online/COD flows own it.
       return;
     }
 
-    const eventId = `${fbEvent}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
-    // Browser pixel — eventID পাঠাও deduplication এর জন্য
-    window.fbq('track', fbEvent, data as Record<string, any>, { eventID: eventId });
-
-    // Server-side CAPI — same eventID দিয়ে
-    this.sendToFacebookCAPI(fbEvent, eventId, data);
-  }
-
-  /**
-   * Send event to Facebook Conversions API (server-side)
-   * Same eventID as browser pixel — Meta automatically deduplicates
-   */
-  private async sendToFacebookCAPI(
-    eventName: string,
-    eventId: string,
-    data?: TrackingEventData
-  ): Promise<void> {
-    if (typeof window === 'undefined') return;
-
-    // শুধু Facebook supported events পাঠাও
-    const capiEvents = [
-      'PageView', 'ViewContent', 'AddToCart', 'AddToWishlist',
-      'InitiateCheckout', 'Search', 'CompleteRegistration'
-    ];
-    if (!capiEvents.includes(eventName)) return;
-
-    try {
-      const identity = getFacebookIdentity();
-
-      await fetch('/api/facebook-capi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventName,
-          eventId,
-          eventSourceUrl: window.location.href,
-          fbc: identity.fbc,
-          fbp: identity.fbp,
-          externalId: identity.externalId,
-          value: data?.value,
-          currency: data?.currency || 'BDT',
-          contentIds: data?.content_ids || data?.contentIds,
-          contentType: data?.content_type || data?.contentType,
-          contentName: data?.content_name || data?.contentName,
-          contentCategory: data?.content_category || data?.contentCategory,
-          contents: data?.contents,
-          numItems: data?.num_items || data?.numItems,
-          orderId: data?.transaction_id || data?.orderId,
-          email: data?.email,
-          phone: data?.phone,
-          firstName: data?.first_name || data?.firstName,
-          lastName: data?.last_name || data?.lastName,
-          city: data?.city,
-          country: data?.country || 'BD',
-        }),
-      });
-    } catch {
-      // Silently fail — browser pixel already fired
+    const metaEvent = buildMetaBrowserEvent({
+      eventName: fbEvent,
+      eventId: metaEventId,
+      payload: data,
+    });
+    if (!metaEvent.validation.valid) {
+      metaBrowserDebug('warn', 'Manager blocked invalid Meta browser event', metaEvent);
+      return;
     }
+
+    void dispatchMetaBrowserEvent(metaEvent);
   }
 
   /**
    * Track on Google Analytics 4
    */
-  private trackGoogle(event: TrackingEvent, data?: TrackingEventData): void {
-    if (typeof window === 'undefined' || !window.gtag) return;
+  private trackGoogle(event: TrackingEvent, data?: TrackingEventData, attempt = 0): void {
+    if (typeof window === 'undefined') return;
 
     const gaEvent = this.mapToGoogleEvent(event);
     if (gaEvent === 'purchase') {
@@ -382,17 +559,49 @@ class TrackingManager {
       return;
     }
 
-    window.gtag('event', gaEvent, data);
+    if (typeof window.gtag !== 'function') {
+      if (attempt < 50) {
+        window.setTimeout(() => this.trackGoogle(event, data, attempt + 1), 100);
+      }
+      return;
+    }
+
+    window.gtag('event', gaEvent, buildGoogleEventPayload(gaEvent, data));
   }
 
   /**
    * Track on TikTok Pixel
    */
-  private trackTikTok(event: TrackingEvent, data?: TrackingEventData): void {
-    if (typeof window === 'undefined' || !window.ttq) return;
+  private trackTikTok(event: TrackingEvent, data?: TrackingEventData, attempt = 0): void {
+    if (typeof window === 'undefined') return;
+
+    if (event === 'Purchase') {
+      console.warn(
+        '[TikTok] Generic client-side Purchase is blocked. TikTok Purchase must be sent only by a verified server-side Events API flow.'
+      );
+      if (Array.isArray(window.dataLayer)) {
+        window.dataLayer.push({
+          event: 'mb_tiktok_purchase_blocked',
+          mb_reason: 'tiktok_purchase_requires_verified_server_side_events_api',
+          mb_original_event: 'Purchase',
+          transaction_id: data?.transaction_id || data?.orderId,
+        });
+      }
+      return;
+    }
+
+    const isTikTokReady = !!window.ttq?.track && window.__mbTikTokInitReady === true;
+    if (!isTikTokReady && attempt < 50) {
+      window.setTimeout(() => this.trackTikTok(event, data, attempt + 1), 100);
+      return;
+    }
+
+    if (!window.ttq?.track) {
+      return;
+    }
 
     const ttEvent = this.mapToTikTokEvent(event);
-    window.ttq.track(ttEvent, data);
+    window.ttq.track(ttEvent, buildTikTokPayload(data));
   }
 
   /**
@@ -495,8 +704,10 @@ class TrackingManager {
       ViewContent: 'ViewContent',
       Search: 'Search',
       AddToCart: 'AddToCart',
+      ViewCart: 'ViewCart',
       AddToWishlist: 'AddToWishlist',
       InitiateCheckout: 'InitiateCheckout',
+      AddShippingInfo: 'AddShippingInfo',
       AddPaymentInfo: 'AddPaymentInfo',
       Purchase: 'Purchase',
       Lead: 'Lead',
@@ -515,8 +726,10 @@ class TrackingManager {
       ViewContent: 'view_item',
       Search: 'search',
       AddToCart: 'add_to_cart',
+      ViewCart: 'view_cart',
       AddToWishlist: 'add_to_wishlist',
       InitiateCheckout: 'begin_checkout',
+      AddShippingInfo: 'add_shipping_info',
       AddPaymentInfo: 'add_payment_info',
       Purchase: 'purchase',
       Lead: 'generate_lead',
@@ -535,10 +748,12 @@ class TrackingManager {
       ViewContent: 'ViewContent',
       Search: 'Search',
       AddToCart: 'AddToCart',
+      ViewCart: 'ViewCart',
       AddToWishlist: 'AddToWishlist',
       InitiateCheckout: 'InitiateCheckout',
+      AddShippingInfo: 'AddShippingInfo',
       AddPaymentInfo: 'AddPaymentInfo',
-      Purchase: 'CompletePayment',
+      Purchase: 'Purchase',
       Lead: 'SubmitForm',
       CompleteRegistration: 'CompleteRegistration',
       Subscribe: 'Subscribe',
@@ -555,8 +770,10 @@ class TrackingManager {
       ViewContent: 'VIEW_CONTENT',
       Search: 'SEARCH',
       AddToCart: 'ADD_CART',
+      ViewCart: 'VIEW_CONTENT',
       AddToWishlist: 'ADD_TO_WISHLIST',
       InitiateCheckout: 'START_CHECKOUT',
+      AddShippingInfo: 'ADD_BILLING',
       AddPaymentInfo: 'ADD_BILLING',
       Purchase: 'PURCHASE',
       Lead: 'SIGN_UP',
@@ -575,8 +792,10 @@ class TrackingManager {
       ViewContent: 'viewcategory',
       Search: 'search',
       AddToCart: 'addtocart',
+      ViewCart: 'viewcategory',
       AddToWishlist: 'watchvideo',
       InitiateCheckout: 'checkout',
+      AddShippingInfo: 'addpaymentinfo',
       AddPaymentInfo: 'addpaymentinfo',
       Purchase: 'checkout',
       Lead: 'lead',
@@ -595,8 +814,10 @@ class TrackingManager {
       ViewContent: 'ViewContent',
       Search: 'Search',
       AddToCart: 'AddToCart',
+      ViewCart: 'ViewCart',
       AddToWishlist: 'AddToWishlist',
       InitiateCheckout: 'InitiateCheckout',
+      AddShippingInfo: 'AddShippingInfo',
       AddPaymentInfo: 'AddPaymentInfo',
       Purchase: 'Purchase',
       Lead: 'tw-o8wu4-ofh3r',
@@ -619,8 +840,10 @@ class TrackingManager {
       ViewContent: 'ViewContent',
       Search: 'Search',
       AddToCart: 'AddToCart',
+      ViewCart: 'ViewContent',
       AddToWishlist: 'AddToWishlist',
       InitiateCheckout: 'Purchase',
+      AddShippingInfo: 'AddPaymentInfo',
       AddPaymentInfo: 'AddPaymentInfo',
       Purchase: 'Purchase',
       Lead: 'Lead',
@@ -639,8 +862,10 @@ class TrackingManager {
       ViewContent: 'view_item',
       Search: 'search',
       AddToCart: 'add_to_cart',
+      ViewCart: 'view_cart',
       AddToWishlist: 'add_to_wishlist',
       InitiateCheckout: 'begin_checkout',
+      AddShippingInfo: 'add_shipping_info',
       AddPaymentInfo: 'add_payment_info',
       Purchase: 'purchase',
       Lead: 'generate_lead',
@@ -765,8 +990,12 @@ class TrackingManager {
 export const trackingManager = new TrackingManager();
 
 // Convenience functions
-export const track = (event: TrackingEvent, data?: TrackingEventData) => {
-  trackingManager.track(event, data);
+export const track = (
+  event: TrackingEvent,
+  data?: TrackingEventData,
+  options?: TrackingDispatchOptions
+) => {
+  trackingManager.track(event, data, options);
 };
 
 export const initTracking = () => {

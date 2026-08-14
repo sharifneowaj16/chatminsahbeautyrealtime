@@ -1,4 +1,6 @@
-﻿// TypeScript interfaces for Google Services Integration System
+﻿import { GOOGLE_PRODUCT_COLORS } from '@/lib/design-token-exceptions';
+
+// TypeScript interfaces for Google Services Integration System
 
 export interface GoogleService {
   id: string;
@@ -1769,21 +1771,8 @@ export const generateMockRemarketingData = (): RemarketingData => ({
   ]
 });
 
-// Google Colors
-export const GOOGLE_COLORS = {
-  primary: '#4285F4',    // Blue
-  success: '#34A853',    // Green
-  warning: '#FBBC04',    // Yellow
-  danger: '#EA4335',     // Red
-  dark: '#202124',       // Text Primary
-  secondary: '#5F6368',  // Text Secondary
-  background: '#F8F9FA', // Background
-  white: '#FFFFFF',      // White
-  border: '#E8EAED',     // Border
-  light: '#F1F3F4',      // Light Gray
-  purple: '#9C27B0',     // Purple
-  orange: '#FF9800'      // Orange
-} as const;
+// Google colors are approved external-product exceptions, not application semantic colors.
+export const GOOGLE_COLORS = GOOGLE_PRODUCT_COLORS;
 
 // Google Service Configurations
 export const GOOGLE_SERVICE_CONFIGS = {

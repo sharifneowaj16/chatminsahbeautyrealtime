@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-17T22:57:17.889Z",
+  "releaseDecision": "BLOCKED",
+  "blockerCount": 30,
+  "mappedCount": 30,
+  "unmapped": [],
+  "workstreams": [
+    {
+      "id": "prisma-generation",
+      "owner": "platform-engineering",
+      "blockerCount": 2,
+      "commands": [
+        "npm ci",
+        "npm run db:generate",
+        "npm run build"
+      ],
+      "requiredEvidence": [
+        "generated Prisma schema stamp",
+        "successful build command artifact"
+      ],
+      "completionRule": "Fresh generated client and build both pass from the same commit."
+    },
+    {
+      "id": "graph-version-release",
+      "owner": "meta-platform-owner",
+      "blockerCount": 1,
+      "commands": [
+        "npm run qa:meta-graph-version-gate"
+      ],
+      "requiredEvidence": [
+        "target Graph version regression artifact",
+        "exact SDK version record"
+      ],
+      "completionRule": "Configured version equals approved target and provider regressions pass."
+    },
+    {
+      "id": "runtime-provider-evidence",
+      "owner": "meta-operations",
+      "blockerCount": 8,
+      "commands": [
+        "npm run qa:meta-v6-evidence"
+      ],
+      "requiredEvidence": [
+        "hashed staging or production artifact",
+        "environment and capture timestamp",
+        "redacted operator notes"
+      ],
+      "completionRule": "Every runtime-required evidence key is ATTACHED or explicitly NOT_REQUIRED by policy."
+    },
+    {
+      "id": "phase-promotion",
+      "owner": "release-manager",
+      "blockerCount": 14,
+      "commands": [
+        "npm run qa:meta-v6-release"
+      ],
+      "requiredEvidence": [
+        "phase evidence file",
+        "all acceptance gates",
+        "runtime evidence when required"
+      ],
+      "completionRule": "Promote a phase to COMPLETE only after its attached evidence is independently verified."
+    },
+    {
+      "id": "critical-e2e",
+      "owner": "quality-engineering",
+      "blockerCount": 2,
+      "commands": [
+        "npm run qa:meta-v6-all-phases"
+      ],
+      "requiredEvidence": [
+        "isolated PostgreSQL and Redis test artifact",
+        "Meta staging catalog, CAPI, lead and webhook evidence"
+      ],
+      "completionRule": "Critical workflows pass in an isolated environment and provider staging evidence is attached."
+    },
+    {
+      "id": "migration-drill",
+      "owner": "database-owner",
+      "blockerCount": 2,
+      "commands": [
+        "npm run qa:meta-v6-migrations",
+        "npm run db:migrate"
+      ],
+      "requiredEvidence": [
+        "disposable PostgreSQL apply log",
+        "rollback or forward-fix drill log",
+        "post-drill verification query"
+      ],
+      "completionRule": "All migrations apply and the documented recovery path is successfully exercised."
+    },
+    {
+      "id": "rollback-handoff",
+      "owner": "release-manager",
+      "blockerCount": 1,
+      "commands": [
+        "npm run qa:meta-v6-release"
+      ],
+      "requiredEvidence": [
+        "rollback drill artifact",
+        "operator handoff acknowledgement"
+      ],
+      "completionRule": "Rollback procedure is rehearsed against the release candidate and attached."
+    },
+    {
+      "id": "command-evidence",
+      "owner": "ci-owner",
+      "blockerCount": 0,
+      "commands": [
+        "npm run capture:meta-v6-command-evidence"
+      ],
+      "requiredEvidence": [
+        "fresh hashed command ledger",
+        "redacted command logs"
+      ],
+      "completionRule": "Required command artifacts are fresh, untampered and pass."
+    }
+  ],
+  "issues": []
+}

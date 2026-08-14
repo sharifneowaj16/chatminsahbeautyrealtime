@@ -18,6 +18,7 @@ import {
   Sparkles,
   RotateCcw
 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { User } from '@/lib/auth';
 
 const navigation = [
@@ -90,7 +91,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
   const isPremium = user.role === 'premium';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div lang="en" className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <div className="lg:hidden bg-white shadow-sm">
         <div className="px-4 py-4 flex items-center justify-between">
@@ -103,22 +104,28 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
               <p className="text-sm text-gray-600">Welcome back, {user.firstName ?? 'User'}!</p>
             </div>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={mobileMenuOpen ? 'Close account navigation' : 'Open account navigation'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="account-mobile-navigation"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition"
+            className="rounded-lg hover:bg-gray-100"
           >
-            <div className="space-y-1">
+            <div className="space-y-1" aria-hidden="true">
               <div className="w-6 h-0.5 bg-gray-600"></div>
               <div className="w-6 h-0.5 bg-gray-600"></div>
               <div className="w-6 h-0.5 bg-gray-600"></div>
             </div>
-          </button>
+          </Button>
         </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="border-t border-gray-200">
-            <nav className="px-2 py-3 space-y-1">
+          <div id="account-mobile-navigation" className="border-t border-gray-200">
+            <nav aria-label="Account navigation" className="px-2 py-3 space-y-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -270,7 +277,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div role="main" id="account-main-content" className="lg:col-span-3">
             {/* Breadcrumb */}
             <div className="mb-6">
               <nav className="flex" aria-label="Breadcrumb">

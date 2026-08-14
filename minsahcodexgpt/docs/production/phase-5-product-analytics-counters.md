@@ -18,8 +18,26 @@ Product analytics counters are backend-owned. Browser events may request a count
 ## Other Product Funnel Counters
 
 - Successful AddToCart increments `Product.addToCartCount` and `ProductDailyMetric.addToCarts`.
+- ViewCart increments `Product.viewCartCount` and `ProductDailyMetric.viewCarts`.
 - Checkout start increments `Product.checkoutStartCount` and `ProductDailyMetric.checkoutStarts`.
+- Shipping info increments `Product.checkoutShippingInfoCount` and `ProductDailyMetric.checkoutShippingInfos`.
+- Payment info increments `Product.checkoutPaymentInfoCount` and `ProductDailyMetric.checkoutPaymentInfos`.
 - Created orders increment `Product.orderCount`, `Product.analyticsRevenue`, `ProductDailyMetric.orders`, and `ProductDailyMetric.revenue` inside the same order transaction.
+
+### Accepted `/api/product-analytics` Actions
+
+The server accepts the same non-blocking funnel actions emitted by `lib/tracking/ecommerce.ts`:
+
+```txt
+view
+add_to_cart
+view_cart
+checkout_start
+checkout_shipping_info
+checkout_payment_info
+```
+
+Any unknown action still returns `INVALID_PRODUCT_ANALYTICS_ACTION`, so typo/noise events do not pollute product counters.
 
 ## Traffic Safety
 
@@ -60,10 +78,13 @@ x-minsah-internal-traffic: 1
 5. Open a different product and confirm that product counts separately.
 6. Wait 30+ minutes or expire the Redis/DB dedup key and confirm the same product can count again.
 7. Add product to cart and confirm `addToCartCount` + daily `addToCarts` increase.
-8. Enter checkout and confirm `checkoutStartCount` + daily `checkoutStarts` increase.
-9. Place an order and confirm product order/revenue counters update inside the same order transaction.
-10. Run `npm run audit:security` before deployment.
+8. Open cart/checkout and confirm `viewCartCount` + daily `viewCarts` increase.
+9. Enter checkout and confirm `checkoutStartCount` + daily `checkoutStarts` increase.
+10. Add shipping info and confirm `checkoutShippingInfoCount` + daily `checkoutShippingInfos` increase.
+11. Add payment info and confirm `checkoutPaymentInfoCount` + daily `checkoutPaymentInfos` increase.
+12. Place an order and confirm product order/revenue counters update inside the same order transaction.
+13. Run `npm run audit:security` before deployment.
 
 ## Why This Exists
 
-Without this phase, product popularity, view-to-cart rate, checkout rate, and product-level revenue reports can be inflated or empty. The most dangerous bug is product page refresh repeatedly increasing product views. This implementation makes product counters reliable enough for production decisions.
+Without this phase, product popularity, view-to-cart rate, cart review, checkout start, shipping info, payment info, and product-level revenue reports can be inflated or empty. The most dangerous bug is product page refresh repeatedly increasing product views. This implementation makes product counters reliable enough for production decisions.

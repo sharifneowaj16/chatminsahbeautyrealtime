@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import SocialFloatingButtons from './components/SocialFloatingButtons';
 import AllPixels from '@/lib/tracking/pixels/AllPixels';
 import { TrackingProvider } from '@/contexts/TrackingContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
+import { CartDrawerProvider } from '@/contexts/CartDrawerContext';
+import { getSiteConfig } from '@/lib/site-config';
+import { getSiteUrl } from '@/lib/seo';
+import { ToastProvider } from '@/components/ui/ToastProvider';
 
-const BASE_URL = 'https://minsahbeauty.cloud';
+const BASE_URL = getSiteUrl();
+const siteConfig = getSiteConfig();
+const businessProfile = siteConfig.business;
+const businessSameAs = siteConfig.socialLinks.map((item) => item.href);
 
 const SITE_TITLE = 'Minsah Beauty - Authentic Beauty Products Bangladesh';
 const SITE_DESCRIPTION =
@@ -80,26 +86,36 @@ const organizationSchema = {
   logo: {
     '@type': 'ImageObject',
     url: `${BASE_URL}/images/logo.png`,
-    width: 300,
-    height: 100,
+    width: 512,
+    height: 512,
   },
   description:
     "Minsah Beauty is Bangladesh's trusted beauty e-commerce store offering authentic Korean skincare, makeup, lip tints, serums, sunscreens and more. Cash on delivery available nationwide.",
-  sameAs: [
-    'https://www.facebook.com/minsahbeauty',
-    'https://www.instagram.com/minsahbeauty',
-  ],
+  ...(businessSameAs.length ? { sameAs: businessSameAs } : {}),
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer service',
+    email: businessProfile.supportEmail,
+    ...(businessProfile.supportPhone ? { telephone: businessProfile.supportPhone } : {}),
     availableLanguage: ['Bengali', 'English'],
     areaServed: 'BD',
   },
-  address: {
-    '@type': 'PostalAddress',
-    addressCountry: 'BD',
-    addressRegion: 'Dhaka',
-  },
+  ...(businessProfile.businessAddress
+    ? {
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: businessProfile.businessAddress,
+          addressCountry: 'BD',
+          addressRegion: 'Dhaka',
+        },
+      }
+    : {
+        address: {
+          '@type': 'PostalAddress',
+          addressCountry: 'BD',
+          addressRegion: 'Dhaka',
+        },
+      }),
 };
 
 const websiteSchema = {
@@ -113,7 +129,7 @@ const websiteSchema = {
     '@type': 'SearchAction',
     target: {
       '@type': 'EntryPoint',
-      urlTemplate: `${BASE_URL}/search?q={search_term_string}`,
+      urlTemplate: `${BASE_URL}/shop?q={search_term_string}`,
     },
     'query-input': 'required name=search_term_string',
   },
@@ -126,7 +142,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className="font-sans">
+    <html lang="en" className="font-sans">
       <head>
         <script
           type="application/ld+json"
@@ -138,14 +154,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <TrackingProvider>
-          <AuthProvider>
-            <CartProvider>
-              {children}
-              <SocialFloatingButtons />
-            </CartProvider>
-          </AuthProvider>
-        </TrackingProvider>
+        <ToastProvider>
+          <TrackingProvider>
+            <AuthProvider>
+              <CartProvider>
+                <CartDrawerProvider>{children}</CartDrawerProvider>
+              </CartProvider>
+            </AuthProvider>
+          </TrackingProvider>
+        </ToastProvider>
 
         <AllPixels />
       </body>

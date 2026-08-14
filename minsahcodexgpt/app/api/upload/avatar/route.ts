@@ -1,22 +1,29 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { uploadAvatar, validateImageUpload } from '@/lib/storage/minio';
+import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const authenticatedUserId = await getAuthenticatedUserId(request);
+  if (!authenticatedUserId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const userId = formData.get('userId') as string | null;
+    const requestedUserId = formData.get('userId') as string | null;
+    const userId = requestedUserId || authenticatedUserId;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    if (requestedUserId && requestedUserId !== authenticatedUserId) {
+      return NextResponse.json({ error: 'Forbidden: Cannot upload avatar for another user' }, { status: 403 });
     }
 
     const validation = validateImageUpload({ size: file.size, type: file.type });

@@ -1,0 +1,61 @@
+#!/usr/bin/env node
+
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const contract = JSON.parse(fs.readFileSync('config/meta-phase31-lead-cutover.json', 'utf8'));
+const flags = JSON.parse(fs.readFileSync('config/meta-phase31-cutover-flags.json', 'utf8'));
+const envManifest = JSON.parse(fs.readFileSync('config/env.manifest.json', 'utf8'));
+const envExample = fs.readFileSync('.env.example', 'utf8');
+const cutover = fs.readFileSync('lib/meta-platform/domains/leads/cutover.ts', 'utf8');
+const comparison = fs.readFileSync('lib/meta-platform/domains/leads/shadow-comparison.ts', 'utf8');
+const production = fs.readFileSync('lib/meta-platform/domains/leads/production.ts', 'utf8');
+const legacy = fs.readFileSync('lib/meta/leads/legacy-service.ts', 'utf8');
+const platform = fs.readFileSync('lib/meta-platform/domains/leads/runtime.ts', 'utf8');
+const worker = fs.readFileSync('workers/meta-lead.worker.ts', 'utf8');
+const health = fs.readFileSync('lib/meta-platform/admin/provider-health.ts', 'utf8');
+const docs = fs.readFileSync('docs/runbooks/meta-phase31-layer8-lead-cutover.md', 'utf8');
+const schema = fs.readFileSync('prisma/schema.prisma', 'utf8');
+const execution = JSON.parse(fs.readFileSync('.ai/phase31-execution-manifest.json', 'utf8'));
+
+assert.equal(contract.item, '8.3');
+assert.deepEqual(contract.acceptedRuntimeValues, ['LEGACY', 'SHADOW', 'PLATFORM', 'DOMAIN', 'LEGACY_ROLLBACK']);
+assert.deepEqual(contract.platformPrerequisites, ['META_PLATFORM_LEADS', 'META_PLATFORM_SOCIAL_WEBHOOKS']);
+assert.equal(contract.shadowAuthority, 'LEGACY');
+assert.equal(contract.invalidRuntimePolicy, 'LEGACY_ROLLBACK');
+assert.equal(contract.stabilityCriteria.maximumDuplicateHandoffs, 0);
+assert.equal(contract.stabilityCriteria.rollbackDrillRequired, true);
+assert.deepEqual(envManifest.enums.META_PHASE31_LEAD_RUNTIME, contract.acceptedRuntimeValues);
+assert.match(envExample, /^META_PHASE31_LEAD_RUNTIME=LEGACY$/m);
+assert.match(cutover, /SHADOW_LEGACY_AUTHORITY/);
+assert.match(cutover, /PLATFORM_PREREQUISITES_DISABLED/);
+assert.match(cutover, /INVALID_RUNTIME_FAIL_SAFE_ROLLBACK/);
+assert.match(cutover, /runLegacy/);
+assert.match(cutover, /runPlatform/);
+assert.match(comparison, /differenceCodes/);
+assert.doesNotMatch(comparison, /phoneMasked|emailMasked|fullName:/);
+assert.match(production, /captureShadow/);
+assert.match(production, /compareMetaLeadShadowNormalization/);
+assert.match(production, /processDomainMetaLeadReceipt/);
+assert.match(legacy, /observeFetchedPayload/);
+assert.match(platform, /observeFetchedPayload/);
+assert.match(worker, /processMetaLeadReceiptProduction/);
+assert.match(health, /leadCutover/);
+assert.match(health, /stabilityCriteria/);
+assert.match(docs, /one full authority processor/i);
+assert.match(docs, /rollback/i);
+assert.match(schema, /generator client/);
+const leadCompatibility = flags.compatibilityControls.find((item) => item.name === 'META_PHASE31_LEAD_RUNTIME');
+assert.deepEqual(leadCompatibility.acceptedValues, contract.acceptedRuntimeValues);
+assert.equal(execution.layers['8'].items.find((item) => item.id === '8.3').status, 'COMPLETE');
+assert.match(execution.current_item, /^(?:8\.[4-7]|9\.[1-8])$/);
+assert.equal(execution.standard_item_contract.no_item_zip, true);
+assert.equal(execution.standard_item_contract.full_layer_zip_only, true);
+
+console.log('Phase 31 Layer 8.3 audit PASS');
+console.log('- Safe default: legacy authority');
+console.log('- Shadow: legacy authority plus side-effect-free platform parity');
+console.log('- Platform: requires canonical Lead and webhook flags');
+console.log('- Rollback: explicit and invalid-value fail-safe');
+console.log('- Duplicate CRM handoff boundary: one full authority processor');
+console.log('- Prisma schema change: NONE');

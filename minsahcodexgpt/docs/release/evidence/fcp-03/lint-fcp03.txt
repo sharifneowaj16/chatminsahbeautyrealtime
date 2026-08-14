@@ -1,0 +1,4 @@
+
+> minsah-beauty@2.0.0 lint:fcp03
+> eslint components/layout/AppShell.tsx components/layout/SiteHeader.tsx components/layout/SiteFooter.tsx components/layout/shell-policy.ts components/navigation/BottomNavigation.tsx components/navigation/navigation-config.ts app/\(storefront\)/layout.tsx tests/fcp03
+

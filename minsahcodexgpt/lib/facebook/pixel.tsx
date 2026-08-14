@@ -91,6 +91,22 @@ export function getFacebookCookies(): { fbp?: string; fbc?: string } {
 }
 
 /**
+ * Build a privacy-safe URL for Meta CAPI event_source_url.
+ *
+ * This legacy browser-callable helper is not used by the main tracking path, but
+ * keeping it sanitized prevents accidental leakage if it is imported later.
+ */
+function getSafeBrowserEventSourceUrl(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+
+  try {
+    return `${window.location.origin}${window.location.pathname}`;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Initialize Facebook Pixel
  */
 export function initFacebookPixel() {
@@ -281,7 +297,7 @@ export async function sendToServerCAPI(params: {
       body: JSON.stringify({
         eventName: params.eventName,
         eventId: params.eventId,
-        eventSourceUrl: window.location.href,
+        eventSourceUrl: getSafeBrowserEventSourceUrl(),
         email: params.email,
         phone: params.phone,
         firstName: params.firstName,

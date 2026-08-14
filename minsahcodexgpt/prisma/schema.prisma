@@ -153,6 +153,16 @@ model AdminUser {
   refreshTokens      AdminRefreshToken[]
   shortlistItems     InventoryShortlist[]
   purchaseShortlist  PurchaseShortlist[]
+  assignedMetaLeads  MetaLead[] @relation("MetaLeadAssignee")
+  metaLeadContactAttempts MetaLeadContactAttempt[]
+  metaLeadAssignmentRules MetaLeadAssignmentRule[]
+  metaLeadAgentProfile MetaLeadAgentProfile?
+  metaAdminApprovalsRequested MetaAdminApproval[] @relation("MetaAdminApprovalRequester")
+  metaAdminApprovalsApproved  MetaAdminApproval[] @relation("MetaAdminApprovalApprover")
+  metaAdminApprovalsRejected  MetaAdminApproval[] @relation("MetaAdminApprovalRejector")
+  metaAdminAudits             MetaAdminAudit[]    @relation("MetaAdminAuditActor")
+  metaIncidentsAcknowledged   MetaIncident[]      @relation("MetaIncidentAcknowledgedBy")
+  metaIncidentsResolved       MetaIncident[]      @relation("MetaIncidentResolvedBy")
 
   @@index([email])
 }
@@ -267,6 +277,18 @@ model Supplier {
   @@index([isActive])
 }
 
+enum ProductAvailabilityMode {
+  STANDARD
+  PREORDER
+  DISCONTINUED
+}
+
+enum ProductCondition {
+  NEW
+  REFURBISHED
+  USED
+}
+
 model Product {
   id               String   @id @default(cuid())
   sku              String   @unique
@@ -280,6 +302,7 @@ model Product {
 
   // Inventory
   quantity          Int     @default(0)
+  reservedQuantity  Int     @default(0)
   lowStockThreshold Int     @default(5)
   trackInventory    Boolean @default(true)
   allowBackorder    Boolean @default(false)
@@ -363,6 +386,15 @@ model Product {
   shippingWeight String?
   isFragile      Boolean @default(false)
 
+  // Delivery Offers
+  // Customer-facing delivery campaign fields. Actual courier cost stays separate on Order.
+  deliveryOfferEnabled   Boolean           @default(false)
+  deliveryOfferType      DeliveryOfferType @default(DEFAULT)
+  deliveryOfferAmount    Decimal?          @db.Decimal(10, 2)
+  deliveryOfferStartDate DateTime?
+  deliveryOfferEndDate   DateTime?
+  deliveryOfferBadgeText String?
+
   // Discount & Offers
   discountPercentage Decimal?  @db.Decimal(5, 2)
   salePrice          Decimal?  @db.Decimal(10, 2)
@@ -378,22 +410,31 @@ model Product {
   relatedProducts String?
 
   // Structured Data
-  condition     String?  @default("NEW")
-  gtin          String?
+  condition              ProductCondition        @default(NEW)
+  availabilityMode       ProductAvailabilityMode @default(STANDARD)
+  preorderAvailableOn    DateTime?
+  gtin                   String?
+  mpn                    String?
+  googleProductCategory  String?
+  facebookProductCategory String?
   averageRating Decimal? @db.Decimal(3, 2)
   reviewCount   Int      @default(0)
   faqs          Json?
 
   // Tracking & product analytics counters
-  viewCount           Int     @default(0)
-  uniqueViewCount     Int     @default(0)
-  addToCartCount      Int     @default(0)
-  checkoutStartCount  Int     @default(0)
+  viewCount                 Int     @default(0)
+  uniqueViewCount           Int     @default(0)
+  addToCartCount            Int     @default(0)
+  viewCartCount             Int     @default(0)
+  checkoutStartCount        Int     @default(0)
+  checkoutShippingInfoCount Int     @default(0)
+  checkoutPaymentInfoCount  Int     @default(0)
   orderCount          Int     @default(0)
   confirmedOrderCount Int     @default(0)
   deliveredOrderCount Int     @default(0)
   cancelledOrderCount Int     @default(0)
   returnedOrderCount  Int     @default(0)
+  refundedOrderCount  Int     @default(0)
   analyticsRevenue    Decimal @default(0) @db.Decimal(12, 2)
 
   // Relations
@@ -432,8 +473,15 @@ model Product {
   @@index([canonicalUrl])
   @@index([viewCount])
   @@index([addToCartCount])
+  @@index([viewCartCount])
+  @@index([checkoutStartCount])
+  @@index([checkoutShippingInfoCount])
+  @@index([checkoutPaymentInfoCount])
   @@index([orderCount])
   @@index([deliveredOrderCount])
+  @@index([refundedOrderCount])
+  @@index([deliveryOfferEnabled])
+  @@index([deliveryOfferType])
 }
 
 model ProductImage {
@@ -451,14 +499,27 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id         String   @id @default(cuid())
-  productId  String
-  sku        String   @unique
-  name       String
-  price      Decimal? @db.Decimal(10, 2)
-  quantity   Int      @default(0)
-  attributes Json?
-  image      String?
+  id                String   @id @default(cuid())
+  productId         String
+  sku               String   @unique
+  name              String
+  price             Decimal? @db.Decimal(10, 2)
+  salePrice         Decimal? @db.Decimal(10, 2)
+  offerStartDate    DateTime?
+  offerEndDate      DateTime?
+  quantity          Int      @default(0)
+  reservedQuantity  Int      @default(0)
+  allowBackorder    Boolean?
+  isActive          Boolean  @default(true)
+  deletedAt         DateTime?
+  availabilityMode  ProductAvailabilityMode?
+  preorderAvailableOn DateTime?
+  condition         ProductCondition?
+  gtin              String?
+  mpn               String?
+  barcode           String?
+  attributes        Json?
+  image             String?
 
   product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   cartItems  CartItem[]
@@ -466,6 +527,7 @@ model ProductVariant {
 
   @@index([productId])
   @@index([sku])
+  @@index([isActive, deletedAt])
 }
 
 model ProductDailyMetric {
@@ -476,7 +538,10 @@ model ProductDailyMetric {
   views               Int      @default(0)
   uniqueViews         Int      @default(0)
   addToCarts          Int      @default(0)
+  viewCarts           Int      @default(0)
   checkoutStarts      Int      @default(0)
+  checkoutShippingInfos Int    @default(0)
+  checkoutPaymentInfos  Int    @default(0)
   orders              Int      @default(0)
   confirmedOrders     Int      @default(0)
   deliveredOrders     Int      @default(0)
@@ -484,7 +549,12 @@ model ProductDailyMetric {
   returnedOrders      Int      @default(0)
 
   revenue             Decimal  @default(0) @db.Decimal(12, 2)
+  confirmedRevenue    Decimal  @default(0) @db.Decimal(12, 2)
   deliveredRevenue    Decimal  @default(0) @db.Decimal(12, 2)
+  cancelledRevenue    Decimal  @default(0) @db.Decimal(12, 2)
+  returnedRevenue     Decimal  @default(0) @db.Decimal(12, 2)
+  refundedOrders      Int      @default(0)
+  refundedRevenue     Decimal  @default(0) @db.Decimal(12, 2)
   estimatedProfit     Decimal? @db.Decimal(12, 2)
 
   addToCartRate       Decimal? @db.Decimal(7, 4)
@@ -597,7 +667,7 @@ model InventoryShortlist {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  admin   AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  admin   AdminUser? @relation(fields: [adminId], references: [id], onDelete: Restrict)
   product Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([adminId])
@@ -712,7 +782,16 @@ model Order {
   paymentMethod String?
 
   subtotal       Decimal @db.Decimal(10, 2)
+  // Customer-facing delivery charge. For free-delivery offers this remains 0.
   shippingCost   Decimal @default(0) @db.Decimal(10, 2)
+  // Internal courier/accounting fields. These must not overwrite customer totals after order creation.
+  courierDeliveryCharge  Decimal?              @db.Decimal(10, 2)
+  deliveryDiscountAmount Decimal               @default(0) @db.Decimal(10, 2)
+  deliveryPricingSource  DeliveryPricingSource @default(DEFAULT)
+  deliveryOfferType      DeliveryOfferType     @default(DEFAULT)
+  deliveryOfferProductId String?
+  deliveryOfferBadgeText String?
+
   taxAmount      Decimal @default(0) @db.Decimal(10, 2)
   discountAmount Decimal @default(0) @db.Decimal(10, 2)
   total          Decimal @db.Decimal(10, 2)
@@ -734,6 +813,19 @@ model Order {
 
   couponCode     String?
   couponDiscount Decimal? @db.Decimal(10, 2)
+
+  // Checkout duplicate-submission protection. Same user + key returns the existing
+  // order when the payload hash matches, and rejects conflicting payload reuse.
+  checkoutIdempotencyKey String?
+  checkoutPayloadHash    String?
+
+  // Online payment lifecycle/reservation guard. Online payment orders reserve stock
+  // briefly, become CONFIRMED only after verified payment, and can expire safely.
+  paymentExpiresAt DateTime?
+  stockReservedAt  DateTime?
+  stockFinalizedAt DateTime?
+  stockReleasedAt  DateTime?
+  adminNotifiedAt  DateTime?
 
   customerNote String?
   adminNote    String? @db.Text
@@ -764,18 +856,29 @@ model Order {
   gaRefundSent         Boolean   @default(false)
   gaRefundSentAt       DateTime?
 
+  // TikTok attribution / future Events API Purchase data
+  tiktokClickId              String?
+  tiktokTtp                  String?
+  tiktokExternalId           String?
+  tiktokEventId              String?
+  tiktokPurchaseSent         Boolean   @default(false)
+  tiktokPurchaseSentAt       DateTime?
+  tiktokPurchaseProcessingAt DateTime?
+
   // Meta Purchase tracking / idempotency
   metaPurchaseSent     Boolean   @default(false)
   metaPurchaseSentAt   DateTime?
   metaPurchaseProcessingAt  DateTime?
   metaBrowserPurchaseClaimedAt DateTime?   // DB-level guard: signed browser purchase flow was authorized/claimed; not guaranteed Pixel delivery
   metaEventId          String?
+  metaEventOutbox      MetaEventOutbox[]
 
   // UTM / Ad attribution
   utmSource            String?
   utmMedium            String?
   utmCampaign          String?
   utmContent           String?
+  utmTerm              String?
   campaignId           String?
   adsetId              String?
   adId                 String?
@@ -787,6 +890,10 @@ model Order {
   referrer             String?
   offerVersion         String?
   abVariant            String?
+  landingOffer         String?
+  attributionCouponCode String?
+  freeDeliveryThreshold Decimal? @db.Decimal(10, 2)
+  campaignSourceUrl    String?
 
   // COD / payment / return timestamps
   phoneConfirmedAt     DateTime?
@@ -811,7 +918,9 @@ model Order {
 
   // Tracking consent / privacy filters
   trackingConsent       String?  @default("unknown")
-  nonEssentialTrackingAllowed Boolean @default(true)
+  trackingConsentVersion String?
+  trackingPolicyReason   String?
+  nonEssentialTrackingAllowed Boolean @default(false)
   trackingFilteredReason String?
 
   // Tracking debug/version
@@ -826,8 +935,15 @@ model Order {
   pathaoWebhookEvents    PathaoWebhookEvent[]
   purchaseShortlist      PurchaseShortlist[]
   metaCapiFailures       MetaCapiFailure[]
+  convertedMetaLeads     MetaLead[] @relation("MetaLeadConvertedOrder")
 
+  @@unique([userId, checkoutIdempotencyKey])
   @@index([userId])
+  @@index([checkoutIdempotencyKey])
+  @@index([paymentExpiresAt])
+  @@index([stockFinalizedAt])
+  @@index([stockReleasedAt])
+  @@index([adminNotifiedAt])
   @@index([orderNumber])
   @@index([status])
   @@index([createdAt])
@@ -844,20 +960,30 @@ model Order {
   @@index([gaClientId])
   @@index([gaPurchaseSent])
   @@index([gaPurchaseProcessingAt])
+  @@index([tiktokClickId])
+  @@index([tiktokEventId])
+  @@index([tiktokPurchaseSent])
+  @@index([tiktokPurchaseProcessingAt])
   @@index([metaPurchaseSent])
   @@index([metaPurchaseProcessingAt])
   @@index([metaBrowserPurchaseClaimedAt])
   @@index([metaEventId])
   @@index([utmSource])
+  @@index([utmTerm])
   @@index([campaignId])
   @@index([adsetId])
   @@index([adId])
+  @@index([offerVersion])
+  @@index([abVariant])
+  @@index([attributionCouponCode])
   @@index([phoneConfirmedAt])
   @@index([paymentPaidAt])
   @@index([returnedAt])
   @@index([refundedAt])
   @@index([isTest])
   @@index([courierConsignmentId])
+  @@index([deliveryPricingSource])
+  @@index([deliveryOfferProductId])
   @@index([confirmationStatus])
   @@index([trackingConsent])
   @@index([nonEssentialTrackingAllowed])
@@ -1014,6 +1140,217 @@ model TelegramActionLog {
 }
 
 // ==========================================
+// Meta CAPI Transactional Outbox
+// ==========================================
+
+enum MetaEventOutboxStatus {
+  PENDING
+  DISPATCHED
+  PROCESSING
+  SENT
+  RETRY_SCHEDULED
+  FAILED_PERMANENT
+  SUPPRESSED
+}
+
+model MetaEventOutbox {
+  id              String                @id @default(cuid())
+  correlationId   String
+  provider        String                @default("META")
+  eventName       String
+  eventId         String
+  sourceType      String
+  sourceId        String?
+  orderId         String?
+  order           Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  actionSource    String
+  eventSourceUrl  String?
+  eventTime       DateTime
+  payload         Json
+  safePayload     Json?
+  policyVersion   String
+  policyReason    String
+  consentState    TrackingConsentState
+  consentVersion  String?
+  allowAdvancedMatching Boolean @default(false)
+  retentionUntil  DateTime
+  status          MetaEventOutboxStatus @default(PENDING)
+  attempts        Int                   @default(0)
+  nextAttemptAt   DateTime?
+  leaseToken      String?
+  leaseExpiresAt  DateTime?
+  dispatchedAt    DateTime?
+  processingAt    DateTime?
+  sentAt          DateTime?
+  response        Json?
+  lastError       Json?
+  suppressReason  String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  statusEvents    MetaEventOutboxStatusEvent[]
+
+  @@unique([provider, eventName, eventId])
+  @@index([correlationId])
+  @@index([status, nextAttemptAt])
+  @@index([leaseExpiresAt])
+  @@index([orderId])
+  @@index([sourceType, sourceId])
+  @@index([retentionUntil])
+  @@index([policyVersion, policyReason])
+  @@index([createdAt])
+}
+
+model MetaEventOutboxStatusEvent {
+  id         String                @id @default(cuid())
+  outboxId   String
+  outbox     MetaEventOutbox       @relation(fields: [outboxId], references: [id], onDelete: Cascade)
+  status     MetaEventOutboxStatus
+  attempt    Int                   @default(0)
+  note       String?
+  safeDetails Json?
+  createdAt  DateTime              @default(now())
+
+  @@index([outboxId, createdAt])
+  @@index([status, createdAt])
+}
+
+// ==========================================
+// Meta Durable Jobs / Queue Audit
+// ==========================================
+
+enum MetaJobStatus {
+  QUEUED
+  RUNNING
+  RETRYING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  DEAD_LETTER
+}
+
+model MetaJobAudit {
+  id               String        @id @default(cuid())
+  queueName        String
+  jobName          String
+  externalJobId    String?
+  idempotencyKey   String        @unique
+  correlationId    String?
+  status           MetaJobStatus @default(QUEUED)
+  attempts         Int           @default(0)
+  maxAttempts      Int           @default(5)
+  progress         Int?
+  sourceId         String?
+  payload          Json
+  lastError        Json?
+  rateLimitState   Json?
+  replayOfId       String?
+  replayCount      Int           @default(0)
+  requestedBy      String?
+  nextRunAt        DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  lastHeartbeatAt  DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([queueName, status])
+  @@index([sourceId])
+  @@index([replayOfId])
+  @@index([nextRunAt])
+  @@index([correlationId])
+}
+
+// ==========================================
+// Privacy / Consent / Data Governance
+// ==========================================
+
+enum TrackingConsentState {
+  UNKNOWN
+  GRANTED
+  DENIED
+  WITHDRAWN
+}
+
+enum DataDeletionRequestStatus {
+  RECEIVED
+  VERIFIED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model TrackingConsentRecord {
+  id          String               @id @default(cuid())
+  userId      String?
+  visitorId   String?
+  state       TrackingConsentState
+  version     String
+  source      String
+  policyVersion String
+  recordedAt  DateTime             @default(now())
+  withdrawnAt DateTime?
+  retentionUntil DateTime
+
+  @@index([userId, recordedAt])
+  @@index([visitorId, recordedAt])
+  @@index([state, recordedAt])
+  @@index([retentionUntil])
+}
+
+model DataDeletionRequest {
+  id               String                    @id @default(cuid())
+  userId           String?
+  externalRef      String?
+  source           String
+  confirmationCode String                    @unique
+  status           DataDeletionRequestStatus @default(RECEIVED)
+  policyVersion    String
+  requestedAt      DateTime                  @default(now())
+  completedAt      DateTime?
+  error            Json?
+  retentionUntil   DateTime
+  updatedAt        DateTime                  @updatedAt
+
+  @@index([userId, requestedAt])
+  @@index([externalRef])
+  @@index([status, requestedAt])
+  @@index([retentionUntil])
+}
+
+model PrivacyAuditLog {
+  id             String   @id @default(cuid())
+  action         String
+  actorType      String
+  actorId        String?
+  subjectUserId  String?
+  requestId      String?
+  policyVersion  String
+  safeDetails    Json?
+  retentionUntil DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([subjectUserId, createdAt])
+  @@index([requestId])
+  @@index([retentionUntil])
+}
+
+model TrackingSuppression {
+  id             String   @id @default(cuid())
+  identityHash   String   @unique
+  reason         String
+  source         String
+  policyVersion  String
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime?
+
+  @@index([active, createdAt])
+  @@index([expiresAt])
+}
+
+// ==========================================
 // Tracking / CAPI Failure Log
 // ==========================================
 
@@ -1035,6 +1372,10 @@ model MetaCapiFailure {
 
   retryCount        Int      @default(0)
   finalFailed       Boolean  @default(false)
+  failureCategory   String   @default("DEBUG_NON_CRITICAL")
+  lastRetryAt       DateTime?
+  resolvedAt        DateTime?
+  cleanupAfter      DateTime?
 
   hasFbp            Boolean  @default(false)
   hasFbc            Boolean  @default(false)
@@ -1057,6 +1398,47 @@ model MetaCapiFailure {
   @@index([statusCode])
   @@index([errorCode])
   @@index([finalFailed])
+  @@index([failureCategory])
+  @@index([cleanupAfter])
+  @@index([resolvedAt])
+  @@index([createdAt])
+}
+
+
+model ShopTrackingEvent {
+  id            String   @id @default(cuid())
+  eventName     String
+  eventId       String   @unique
+  schemaVersion String   @default("shop_cro_v1")
+
+  source        String?
+  listName      String?
+  searchTerm    String?
+  sortValue     String?
+  filterName    String?
+  filterValue   String?
+  totalProducts Int?
+  page          Int?
+  intentOnly    Boolean  @default(false)
+  value         Float?
+  currency      String   @default("BDT")
+
+  filters       Json?
+  items         Json?
+  metadata      Json?
+
+  occurredAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([eventName])
+  @@index([eventId])
+  @@index([source])
+  @@index([listName])
+  @@index([searchTerm])
+  @@index([sortValue])
+  @@index([filterName])
+  @@index([intentOnly])
+  @@index([occurredAt])
   @@index([createdAt])
 }
 
@@ -1068,7 +1450,9 @@ model TrackingHealthCheck {
   ordersConfirmed       Int      @default(0)
   metaPurchaseSent      Int      @default(0)
   gaPurchaseSent        Int      @default(0)
+  tiktokPurchaseSent    Int      @default(0)
   capiFailureCount      Int      @default(0)
+  tiktokFailureCount    Int      @default(0)
 
   status                String   @default("OK")
   notes                 String?  @db.Text
@@ -1235,6 +1619,93 @@ model CampaignAttribution {
 
   @@index([userId])
   @@index([deviceId])
+}
+
+// ==========================================
+// First-Party Marketing Attribution (Meta v6 Phase 11)
+// ==========================================
+
+enum MarketingAttributionConversionType {
+  SESSION
+  LEAD
+  ORDER
+}
+
+enum MarketingAttributionSourceModel {
+  FIRST_PARTY
+  META_REPORTED
+}
+
+model MarketingAttribution {
+  id               String   @id @default(cuid())
+  attributionKey   String   @unique
+  sessionId        String?
+  visitorId        String?
+  customerId       String?
+  orderId          String?
+  leadId           String?
+
+  fbclid           String?
+  fbc              String?
+  fbp              String?
+
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  landingPage      String?
+
+  firstTouch       Json?
+  lastTouch        Json?
+  checkoutSnapshot Json?
+  dataQuality      Json?
+  correctionAudit  Json?
+
+  consentState     String?
+  conversionType   MarketingAttributionConversionType @default(SESSION)
+  sourceModel      MarketingAttributionSourceModel     @default(FIRST_PARTY)
+  conversionValue  Decimal? @db.Decimal(12, 2)
+  currency         String?
+  firstTouchedAt   DateTime?
+  lastTouchedAt    DateTime?
+  convertedAt      DateTime?
+  captureCount     Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([leadId])
+  @@index([sessionId])
+  @@index([visitorId])
+  @@index([customerId])
+  @@index([utmSource, utmMedium, utmCampaign])
+  @@index([conversionType, convertedAt])
+  @@index([sourceModel, createdAt])
+}
+
+model MarketingAttributionDailyAggregate {
+  id               String   @id @default(cuid())
+  aggregateDate    DateTime @db.Date
+  sourceModel      MarketingAttributionSourceModel @default(FIRST_PARTY)
+  utmSource        String   @default("direct")
+  utmMedium        String   @default("none")
+  utmCampaign      String   @default("unattributed")
+  sessions         Int      @default(0)
+  leads            Int      @default(0)
+  orders           Int      @default(0)
+  newCustomerOrders Int     @default(0)
+  returningCustomerOrders Int @default(0)
+  revenue          Decimal  @default(0) @db.Decimal(14, 2)
+  attributedOrders Int      @default(0)
+  missingClickIds  Int      @default(0)
+  consentDenied    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([aggregateDate, sourceModel, utmSource, utmMedium, utmCampaign])
+  @@index([aggregateDate, sourceModel])
+  @@index([utmCampaign, aggregateDate])
 }
 
 // ==========================================
@@ -1599,8 +2070,494 @@ enum AddressType {
   BILLING
 }
 
+enum DeliveryOfferType {
+  DEFAULT
+  FREE
+  FIXED
+}
+
+enum DeliveryPricingSource {
+  DEFAULT
+  PATHAO
+  STEADFAST
+  PRODUCT_OFFER
+  MANUAL
+  FALLBACK
+}
+
+// ==========================================
+// Meta Business Platform
+// ==========================================
+
+enum MetaLeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+  LOST
+}
+
+enum MetaLeadRetrievalStatus {
+  PENDING
+  FETCHING
+  RETRYING
+  FETCHED
+  NOT_FOUND
+  TOKEN_ERROR
+  PERMANENT_FAILURE
+}
+
+enum MetaWebhookProcessingStatus {
+  RECEIVED
+  VERIFIED
+  QUEUED
+  PROCESSED
+  FAILED
+  REJECTED
+}
+
+enum MetaLeadDuplicateReason {
+  LEADGEN_ID
+  PHONE
+  EMAIL
+}
+
+enum MetaLeadContactChannel {
+  PHONE
+  WHATSAPP
+  EMAIL
+  MESSENGER
+  OTHER
+}
+
+enum MetaLeadHandoffDestination {
+  INTERNAL_CRM
+  CUSTOMER
+  CONTACT
+  ORDER
+  ADMIN_ASSIGNMENT
+}
+
+enum MetaLeadHandoffStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  BLOCKED
+}
+
+model MetaWebhookReceipt {
+  id               String                      @id @default(cuid())
+  objectType       String
+  externalId       String?
+  eventKey         String                      @unique
+  correlationId    String?
+  signatureOk      Boolean
+  payload          Json?
+  payloadDigest    String
+  payloadEncrypted String?                     @db.Text
+  pageId           String?
+  formId           String?
+  leadgenId        String?
+  status           MetaWebhookProcessingStatus @default(RECEIVED)
+  attemptCount     Int                         @default(0)
+  receivedAt       DateTime                    @default(now())
+  verifiedAt       DateTime?
+  queuedAt         DateTime?
+  processedAt      DateTime?
+  lastAttemptAt    DateTime?
+  cleanupAfter     DateTime?
+  error            Json?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  @@index([status, receivedAt])
+  @@index([leadgenId])
+  @@index([pageId, formId])
+  @@index([cleanupAfter])
+  @@index([correlationId])
+}
+
+// Phase 31 unified durable receipt shared by Lead Ads, Instagram and Facebook Page webhooks.
+enum MetaSocialWebhookProvider {
+  META
+}
+
+enum MetaSocialWebhookPlatform {
+  LEAD_ADS
+  INSTAGRAM
+  FACEBOOK_PAGE
+}
+
+enum MetaSocialWebhookReceiptState {
+  RECEIVED
+  QUEUED
+  PROCESSING
+  PROCESSED
+  BLOCKED
+  FAILED
+  DEAD_LETTERED
+}
+
+enum MetaSocialWebhookRetentionClass {
+  STANDARD_WEBHOOK
+  EXTENDED_FAILURE
+  REPLAY_AUDIT
+  SECURITY_REVIEW
+}
+
+enum MetaSocialWebhookReplayEligibility {
+  NOT_ELIGIBLE
+  APPROVAL_REQUIRED
+  ELIGIBLE
+  SOURCE_UNAVAILABLE
+  SOURCE_EXPIRED
+  UNKNOWN_OUTCOME_BLOCKED
+}
+
+enum MetaSocialWebhookReplaySourceType {
+  NONE
+  LEGACY_RECEIPT
+  NORMALIZED_LEAD
+  INSTAGRAM_MESSAGE
+  DURABLE_JOB
+}
+
+model MetaSocialWebhookReceipt {
+  id                  String                        @id @default(cuid())
+  provider            MetaSocialWebhookProvider     @default(META)
+  platform            MetaSocialWebhookPlatform
+  environment         MetaPlatformEnvironment
+  connectionKey       String
+  providerDeliveryId  String?
+  providerEventKey     String
+  payloadDigest       String
+  lastPayloadDigest   String
+  digestMismatchCount Int                           @default(0)
+  lastDigestMismatchAt DateTime?
+  lastDigestMismatchCode String?
+  safeMetadata        Json                          @default("{}")
+  retentionClass      MetaSocialWebhookRetentionClass @default(STANDARD_WEBHOOK)
+  retentionUntil      DateTime                      @default(dbgenerated("(CURRENT_TIMESTAMP + INTERVAL '30 days')"))
+  dedupeRetainUntil   DateTime                      @default(dbgenerated("(CURRENT_TIMESTAMP + INTERVAL '365 days')"))
+  metadataPrunedAt    DateTime?
+  receivedAt          DateTime                      @default(now())
+  firstSeenAt         DateTime                      @default(now())
+  lastSeenAt          DateTime                      @default(now())
+  duplicateCount      Int                           @default(0)
+  state               MetaSocialWebhookReceiptState @default(RECEIVED)
+  queueName           String?
+  jobReference        String?
+  attemptCount        Int                           @default(0)
+  lastAttemptAt       DateTime?
+  nextRetryAt         DateTime?
+  failureCode         String?
+  failureCategory     String?
+  failureSummary      String?                       @db.Text
+  deadLetteredAt      DateTime?
+  leaseToken          String?
+  leaseOwner          String?
+  leaseExpiresAt      DateTime?
+  queuedAt            DateTime?
+  processingStartedAt DateTime?
+  processedAt         DateTime?
+  blockedAt           DateTime?
+  failedAt            DateTime?
+  lastTransitionAt    DateTime?
+  lastTransitionCode  String?
+  lastTransitionActor String?
+  stateVersion        Int                           @default(0)
+  correlationId       String
+  parentReceiptId     String?
+  replayAttempt       Int                           @default(0)
+  replayReason        String?
+  replayRequestedBy   String?
+  replayRequestedAt   DateTime?
+  replayEligibility   MetaSocialWebhookReplayEligibility @default(NOT_ELIGIBLE)
+  replaySourceType    MetaSocialWebhookReplaySourceType @default(NONE)
+  replaySourceId      String?
+  replaySourceExpiresAt DateTime?
+  replayApprovalId    String?
+  replayApprovedBy    String?
+  replayApprovedAt    DateTime?
+  replayApprovalReference String?
+  replayCompletedAt   DateTime?
+  replayResultCode    String?
+  legacyReceiptType   String?
+  legacyReceiptId     String?
+  primaryIdentityReferenceId String?
+  normalizedLeadId    String?
+  instagramMessageId String?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+
+  parentReceipt MetaSocialWebhookReceipt?  @relation("MetaSocialWebhookReplay", fields: [parentReceiptId], references: [id], onDelete: SetNull)
+  replayReceipts MetaSocialWebhookReceipt[] @relation("MetaSocialWebhookReplay")
+  primaryIdentityReference MetaExternalReference? @relation("MetaSocialWebhookPrimaryIdentity", fields: [primaryIdentityReferenceId], references: [id], onDelete: SetNull)
+  normalizedLead          MetaLead?                  @relation("MetaSocialWebhookNormalizedLead", fields: [normalizedLeadId], references: [id], onDelete: SetNull)
+  instagramMessage        MetaMessage?               @relation("MetaSocialWebhookInstagramMessage", fields: [instagramMessageId], references: [id], onDelete: SetNull)
+  leadProcessingAttempt   MetaLeadProcessingAttempt?
+  leadDuplicates          MetaLeadDuplicate[]        @relation("MetaLeadDuplicateCanonicalReceipt")
+  replayApproval          MetaAdminApproval?          @relation("MetaSocialWebhookReplayApproval", fields: [replayApprovalId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, platform, environment, connectionKey, providerEventKey], map: "MetaSocialWebhookReceipt_dedupe_scope_key")
+  @@index([state, nextRetryAt], map: "MetaSocialWebhookReceipt_state_retry_idx")
+  @@index([state, leaseExpiresAt], map: "MetaSocialWebhookReceipt_state_lease_idx")
+  @@index([platform, receivedAt], map: "MetaSocialWebhookReceipt_platform_received_idx")
+  @@index([environment, connectionKey, receivedAt], map: "MetaSocialWebhookReceipt_connection_received_idx")
+  @@index([correlationId], map: "MetaSocialWebhookReceipt_correlation_idx")
+  @@index([providerDeliveryId], map: "MetaSocialWebhookReceipt_delivery_idx")
+  @@index([parentReceiptId], map: "MetaSocialWebhookReceipt_parent_idx")
+  @@index([retentionClass, retentionUntil], map: "MetaSocialWebhookReceipt_retention_idx")
+  @@index([dedupeRetainUntil], map: "MetaSocialWebhookReceipt_dedupe_retention_idx")
+  @@index([replayEligibility, replaySourceExpiresAt], map: "MetaSocialWebhookReceipt_replay_eligibility_idx")
+  @@index([replayApprovalId], map: "MetaSocialWebhookReceipt_replay_approval_idx")
+  @@index([legacyReceiptType, legacyReceiptId], map: "MetaSocialWebhookReceipt_legacy_idx")
+  @@index([primaryIdentityReferenceId], map: "MetaSocialWebhookReceipt_primary_identity_idx")
+  @@index([normalizedLeadId], map: "MetaSocialWebhookReceipt_normalized_lead_idx")
+  @@index([instagramMessageId], map: "MetaSocialWebhookReceipt_instagram_message_idx")
+}
+
+model MetaLead {
+  id                    String                  @id @default(cuid())
+  leadgenId             String                  @unique
+  provider              MetaSocialWebhookProvider @default(META)
+  environment           MetaPlatformEnvironment?
+  connectionKey         String?
+  pageIdentityReferenceId String?
+  formIdentityReferenceId String?
+  formId                String?
+  pageId                String?
+  adId                  String?
+  adName                String?
+  adsetId               String?
+  adsetName             String?
+  campaignId            String?
+  campaignName          String?
+  isOrganic             Boolean?
+  platform              String?
+  partnerName           String?
+  retailerItemId        String?
+  rawFields             Json
+  rawPayloadEncrypted   String?                 @db.Text
+  rawPayloadDigest      String?
+  normalizedData        Json?
+  normalizedPhoneHash   String?
+  normalizedEmailHash   String?
+  phoneFingerprint      String?
+  emailFingerprint      String?
+  fingerprintVersion    String?
+  phoneMasked           String?
+  emailMasked           String?
+  fullName              String?
+  city                  String?
+  area                  String?
+  productInterest       String?
+  isTestLead            Boolean?
+  status                MetaLeadStatus          @default(NEW)
+  retrievalStatus       MetaLeadRetrievalStatus @default(PENDING)
+  assignedToId          String?
+  assignmentRuleId      String?
+  assignmentReason      String?
+  receivedAt            DateTime
+  sourceCreatedAt       DateTime?
+  freshnessSeconds      Int?
+  fetchedAt             DateTime?
+  assignedAt            DateTime?
+  contactedAt           DateTime?
+  qualifiedAt           DateTime?
+  convertedAt           DateTime?
+  lostAt                DateTime?
+  convertedOrderId      String?
+  lastError             Json?
+  retentionUntil        DateTime
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  assignedTo            AdminUser?              @relation("MetaLeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  convertedOrder        Order?                  @relation("MetaLeadConvertedOrder", fields: [convertedOrderId], references: [id], onDelete: SetNull)
+  pageIdentityReference MetaExternalReference?  @relation("MetaLeadPageIdentity", fields: [pageIdentityReferenceId], references: [id], onDelete: SetNull)
+  formIdentityReference MetaExternalReference?  @relation("MetaLeadFormIdentity", fields: [formIdentityReferenceId], references: [id], onDelete: SetNull)
+  duplicates            MetaLeadDuplicate[]
+  contactAttempts       MetaLeadContactAttempt[]
+  processingAttempts    MetaLeadProcessingAttempt[]
+  handoffs              MetaLeadHandoff[]
+  webhookReceipts       MetaSocialWebhookReceipt[] @relation("MetaSocialWebhookNormalizedLead")
+
+  @@index([formId])
+  @@index([pageId])
+  @@index([adId])
+  @@index([adsetId])
+  @@index([campaignId])
+  @@index([status, receivedAt])
+  @@index([retrievalStatus, receivedAt])
+  @@index([assignedToId, status])
+  @@index([normalizedPhoneHash])
+  @@index([normalizedEmailHash])
+  @@index([phoneFingerprint])
+  @@index([emailFingerprint])
+  @@index([environment, connectionKey, receivedAt], map: "MetaLead_scope_received_idx")
+  @@index([pageIdentityReferenceId], map: "MetaLead_page_identity_idx")
+  @@index([formIdentityReferenceId], map: "MetaLead_form_identity_idx")
+  @@index([convertedOrderId])
+  @@index([retentionUntil])
+}
+
+model MetaLeadDuplicate {
+  id                String                  @id @default(cuid())
+  sourceLeadgenId   String                  @unique
+  canonicalLeadId   String
+  reason            MetaLeadDuplicateReason
+  matchedValueHash  String?
+  receiptId         String?
+  canonicalReceiptId String?
+  createdAt         DateTime                @default(now())
+
+  canonicalLead    MetaLead                  @relation(fields: [canonicalLeadId], references: [id], onDelete: Cascade)
+  canonicalReceipt MetaSocialWebhookReceipt? @relation("MetaLeadDuplicateCanonicalReceipt", fields: [canonicalReceiptId], references: [id], onDelete: SetNull)
+
+  @@index([canonicalLeadId, createdAt])
+  @@index([canonicalReceiptId], map: "MetaLeadDuplicate_canonical_receipt_idx")
+  @@index([reason, createdAt])
+}
+
+model MetaLeadProcessingAttempt {
+  id                      String                  @id @default(cuid())
+  receiptId               String                  @unique
+  providerLeadId          String
+  provider                MetaSocialWebhookProvider @default(META)
+  environment             MetaPlatformEnvironment
+  connectionKey           String
+  pageId                  String?
+  formId                  String?
+  pageIdentityReferenceId String?
+  formIdentityReferenceId String?
+  retrievalStatus         MetaLeadRetrievalStatus @default(PENDING)
+  retrievalAttempt        Int                     @default(0)
+  lastRetrievalAt         DateTime?
+  nextRetrievalAt         DateTime?
+  normalizedLeadId        String?
+  duplicateReason         MetaLeadDuplicateReason?
+  isTestLead              Boolean?
+  failureCode             String?
+  failureCategory         String?
+  failureSummary          String?                 @db.Text
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  receipt               MetaSocialWebhookReceipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  normalizedLead        MetaLead?                @relation(fields: [normalizedLeadId], references: [id], onDelete: SetNull)
+  pageIdentityReference MetaExternalReference?   @relation("MetaLeadAttemptPageIdentity", fields: [pageIdentityReferenceId], references: [id], onDelete: SetNull)
+  formIdentityReference MetaExternalReference?   @relation("MetaLeadAttemptFormIdentity", fields: [formIdentityReferenceId], references: [id], onDelete: SetNull)
+
+  @@index([providerLeadId, createdAt], map: "MetaLeadProcessingAttempt_provider_lead_idx")
+  @@index([environment, connectionKey, retrievalStatus, nextRetrievalAt], map: "MetaLeadProcessingAttempt_retry_idx")
+  @@index([normalizedLeadId], map: "MetaLeadProcessingAttempt_normalized_lead_idx")
+  @@index([pageIdentityReferenceId], map: "MetaLeadProcessingAttempt_page_identity_idx")
+  @@index([formIdentityReferenceId], map: "MetaLeadProcessingAttempt_form_identity_idx")
+}
+
+model MetaLeadHandoff {
+  id             String                     @id @default(cuid())
+  leadId         String
+  destination    MetaLeadHandoffDestination
+  idempotencyKey String                     @unique
+  status         MetaLeadHandoffStatus      @default(PENDING)
+  targetType     String?
+  targetId       String?
+  attemptCount   Int                        @default(0)
+  lastAttemptAt  DateTime?
+  nextRetryAt    DateTime?
+  failureCode    String?
+  failureSummary String?                    @db.Text
+  completedAt    DateTime?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  lead MetaLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, destination], map: "MetaLeadHandoff_lead_destination_key")
+  @@index([status, nextRetryAt], map: "MetaLeadHandoff_retry_idx")
+  @@index([targetType, targetId], map: "MetaLeadHandoff_target_idx")
+}
+
+model MetaLeadContactAttempt {
+  id             String                 @id @default(cuid())
+  leadId         String
+  actorId        String?
+  channel        MetaLeadContactChannel
+  outcome        String
+  notes          String?                @db.Text
+  attemptedAt    DateTime               @default(now())
+  nextFollowUpAt DateTime?
+  createdAt      DateTime               @default(now())
+
+  lead  MetaLead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  actor AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([leadId, attemptedAt])
+  @@index([actorId, attemptedAt])
+  @@index([nextFollowUpAt])
+}
+
+model MetaLeadAssignmentRule {
+  id              String    @id @default(cuid())
+  name            String
+  priority        Int       @default(0)
+  active          Boolean   @default(true)
+  campaignId      String?
+  formId          String?
+  city            String?
+  area            String?
+  productInterest String?
+  assignedToId    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  assignedTo AdminUser? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([active, priority])
+  @@index([campaignId])
+  @@index([formId])
+}
+
+model MetaLeadAgentProfile {
+  id             String    @id @default(cuid())
+  adminId        String    @unique
+  active         Boolean   @default(true)
+  maxOpenLeads   Int       @default(50)
+  lastAssignedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([active, lastAssignedAt])
+}
+
+model MetaBusinessSyncLog {
+  id           String    @id @default(cuid())
+  operation    String
+  resourceId   String?
+  status       String
+  itemCount    Int       @default(0)
+  requestData  Json?
+  responseData Json?
+  error        String?
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  @@index([operation])
+  @@index([resourceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 enum OrderStatus {
   PENDING
+  PENDING_PAYMENT
+  PAYMENT_EXPIRED
   CONFIRMED
   PROCESSING
   SHIPPED
@@ -1678,4 +2635,1635 @@ enum FbDeadLetterStatus {
   OPEN
   REQUEUED
   RESOLVED
+}
+
+model MetaBusinessSyncLock {
+  key       String   @id
+  owner     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+
+enum MetaCatalogItemStatus {
+  NEVER_SYNCED
+  SUBMITTED
+  ACTIVE
+  FAILED
+  DELETE_SUBMITTED
+  DELETED
+}
+
+enum MetaCatalogBatchStatus {
+  SUBMITTED
+  SUCCESS
+  FAILED
+}
+
+enum MetaCatalogDeletePlanStatus {
+  DRAFT
+  APPROVAL_PENDING
+  QUEUED
+  EXECUTING
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+model MetaCatalogSyncItem {
+  id               String                @id @default(cuid())
+  catalogId        String
+  retailerId       String
+  sourceType       String                @default("PRODUCT")
+  sourceId         String
+  payloadHash      String?
+  status           MetaCatalogItemStatus @default(NEVER_SYNCED)
+  lastSubmittedAt  DateTime?
+  lastSucceededAt  DateTime?
+  lastError        Json?
+  deletedAt        DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@unique([catalogId, retailerId])
+  @@index([catalogId])
+  @@index([sourceType, sourceId])
+  @@index([status])
+  @@index([lastSubmittedAt])
+}
+
+model MetaCatalogBatch {
+  id            String                 @id @default(cuid())
+  handle        String                 @unique
+  catalogId     String
+  status        MetaCatalogBatchStatus @default(SUBMITTED)
+  correlationId String?
+  operationKind String                 @default("SYNC")
+  deletePlanId  String?
+  itemCount     Int                    @default(0)
+  responseData  Json?
+  errorData     Json?
+  submittedAt   DateTime               @default(now())
+  checkedAt     DateTime?
+  completedAt   DateTime?
+  items         MetaCatalogBatchItem[]
+  deletePlan    MetaCatalogDeletePlan? @relation(fields: [deletePlanId], references: [id], onDelete: SetNull)
+
+  @@index([catalogId])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([correlationId])
+  @@index([deletePlanId, status])
+}
+
+model MetaCatalogDeletePlan {
+  id                        String                      @id @default(cuid())
+  catalogId                 String
+  digest                    String
+  retailerIds               String[]
+  itemCount                 Int
+  sourceSnapshotHash        String
+  managedItemCount          Int
+  deleteRatio               Float
+  requiresEmergencyOverride Boolean                     @default(false)
+  status                    MetaCatalogDeletePlanStatus @default(DRAFT)
+  approvalId                String?                     @unique
+  requestedById             String
+  executedById              String?
+  correlationId             String?
+  expiresAt                 DateTime
+  consumedAt                DateTime?
+  resultData                Json?
+  errorData                 Json?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  batches                   MetaCatalogBatch[]
+
+  @@index([catalogId, status, expiresAt])
+  @@index([requestedById, createdAt])
+  @@index([correlationId])
+}
+
+enum MetaCatalogDiagnosticSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum MetaCatalogDiagnosticStatus {
+  ACTIVE
+  RESOLVED
+}
+
+model MetaCatalogDiagnostic {
+  id                String                        @id @default(cuid())
+  catalogId         String
+  diagnosticKey     String
+  issueType         String
+  severity          MetaCatalogDiagnosticSeverity
+  title             String
+  description       String?                       @db.Text
+  affectedItemCount Int                           @default(0)
+  status            MetaCatalogDiagnosticStatus   @default(ACTIVE)
+  correlationId     String?
+  rawData           Json?
+  firstSeenAt       DateTime                      @default(now())
+  lastSeenAt        DateTime                      @default(now())
+  resolvedAt        DateTime?
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  items             MetaCatalogDiagnosticItem[]
+
+  @@unique([catalogId, diagnosticKey])
+  @@index([catalogId, status, severity])
+  @@index([issueType, status])
+  @@index([lastSeenAt])
+  @@index([correlationId])
+}
+
+model MetaCatalogDiagnosticItem {
+  id             String                      @id @default(cuid())
+  diagnosticId   String
+  retailerId     String
+  providerItemId String?
+  status         MetaCatalogDiagnosticStatus @default(ACTIVE)
+  firstSeenAt    DateTime                    @default(now())
+  lastSeenAt     DateTime                    @default(now())
+  resolvedAt     DateTime?
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+  diagnostic     MetaCatalogDiagnostic       @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+
+  @@unique([diagnosticId, retailerId])
+  @@index([retailerId, status])
+  @@index([status, lastSeenAt])
+}
+
+model MetaCatalogBatchItem {
+  id                 String                @id @default(cuid())
+  batchId            String
+  retailerId         String
+  method             String
+  payloadHash        String?
+  status             MetaCatalogItemStatus @default(SUBMITTED)
+  providerIndex      Int                   @default(0)
+  attempt            Int                   @default(1)
+  retryOfBatchItemId String?
+  errorData          Json?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  batch MetaCatalogBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, retailerId])
+  @@index([retailerId])
+  @@index([status])
+  @@index([retryOfBatchItemId])
+  @@index([batchId, providerIndex])
+}
+
+// ==========================================
+// Meta Product Sets / Merchandising Segmentation
+// ==========================================
+
+enum MetaProductSetStatus {
+  DRAFT
+  READY
+  SYNCING
+  ACTIVE
+  EMPTY
+  BROKEN
+  ARCHIVED
+}
+
+enum MetaProductSetSyncStatus {
+  NOT_SYNCED
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+}
+
+model MetaProductSet {
+  id                   String                   @id @default(cuid())
+  catalogId            String
+  name                 String
+  slug                 String
+  description          String?                  @db.Text
+  status               MetaProductSetStatus     @default(DRAFT)
+  syncStatus           MetaProductSetSyncStatus @default(NOT_SYNCED)
+  providerProductSetId String?                  @unique
+  ruleVersion          Int                      @default(1)
+  ruleJson             Json
+  ruleHash             String
+  membershipHash       String?
+  memberCount          Int                      @default(0)
+  autoSync             Boolean                  @default(false)
+  previewedAt          DateTime?
+  previewExpiresAt     DateTime?
+  lastSyncAt           DateTime?
+  lastSucceededAt      DateTime?
+  lastError            Json?
+  createdById          String
+  updatedById          String
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  versions             MetaProductSetVersion[]
+  previews             MetaProductSetPreview[]
+  memberships          MetaProductSetMembership[]
+
+  @@unique([catalogId, slug])
+  @@index([catalogId, status])
+  @@index([syncStatus, updatedAt])
+  @@index([autoSync, status])
+}
+
+model MetaProductSetVersion {
+  id             String   @id @default(cuid())
+  productSetId   String
+  version        Int
+  ruleJson       Json
+  ruleHash       String
+  membershipHash String?
+  memberCount    Int      @default(0)
+  reason         String?  @db.Text
+  createdById    String
+  createdAt      DateTime @default(now())
+  productSet     MetaProductSet @relation(fields: [productSetId], references: [id], onDelete: Cascade)
+
+  @@unique([productSetId, version])
+  @@index([productSetId, createdAt])
+}
+
+model MetaProductSetPreview {
+  id                String   @id @default(cuid())
+  productSetId      String
+  ruleVersion       Int
+  ruleHash          String
+  membershipHash    String
+  memberCount       Int
+  sampledRetailerIds String[] @default([])
+  createdById       String
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  createdAt         DateTime @default(now())
+  productSet        MetaProductSet @relation(fields: [productSetId], references: [id], onDelete: Cascade)
+
+  @@index([productSetId, expiresAt])
+  @@index([consumedAt])
+}
+
+model MetaProductSetMembership {
+  id           String   @id @default(cuid())
+  productSetId String
+  retailerId   String
+  sourceType   String
+  sourceId     String
+  includedAt   DateTime @default(now())
+  productSet   MetaProductSet @relation(fields: [productSetId], references: [id], onDelete: Cascade)
+
+  @@unique([productSetId, retailerId])
+  @@index([retailerId])
+  @@index([sourceType, sourceId])
+}
+
+// ==========================================
+// Meta Connection / Token / Permission Health
+// ==========================================
+
+// ==========================================
+// Meta Ads Insights / Approval Automation
+// ==========================================
+
+enum MetaAdsInsightLevel {
+  ACCOUNT
+  CAMPAIGN
+  ADSET
+  AD
+}
+
+enum MetaAdsInsightSyncStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum MetaAdsRecommendationType {
+  SCALE_BUDGET
+  REDUCE_BUDGET
+  PAUSE_ENTITY
+  RESUME_ENTITY
+  REVIEW_CREATIVE
+}
+
+enum MetaAdsRecommendationStatus {
+  OPEN
+  APPROVAL_REQUESTED
+  APPLIED
+  DISMISSED
+  EXPIRED
+}
+
+enum MetaAdsMutationStatus {
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  RECONCILIATION_REQUIRED
+}
+
+model MetaAdsInsightSyncRun {
+  id            String                   @id @default(cuid())
+  accountId     String
+  level         MetaAdsInsightLevel
+  dateStart     DateTime
+  dateStop      DateTime
+  status        MetaAdsInsightSyncStatus @default(RUNNING)
+  requestedById String?
+  correlationId String?
+  rowCount      Int                      @default(0)
+  errorData     Json?
+  startedAt     DateTime                 @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  snapshots MetaAdsInsightSnapshot[]
+
+  @@index([accountId, level, startedAt])
+  @@index([status, startedAt])
+  @@index([correlationId])
+}
+
+model MetaAdsInsightSnapshot {
+  id               String               @id @default(cuid())
+  syncRunId        String
+  accountId        String
+  level            MetaAdsInsightLevel
+  entityId         String
+  entityName       String?
+  campaignId       String?
+  campaignName     String?
+  adSetId          String?
+  adSetName        String?
+  adId             String?
+  adName           String?
+  dateStart        DateTime
+  dateStop         DateTime
+  breakdownHash    String
+  breakdown        Json?
+  impressions      BigInt               @default(0)
+  reach            BigInt               @default(0)
+  clicks           BigInt               @default(0)
+  inlineLinkClicks BigInt               @default(0)
+  spend            Decimal              @default(0) @db.Decimal(18, 4)
+  ctr              Decimal              @default(0) @db.Decimal(18, 6)
+  cpc              Decimal              @default(0) @db.Decimal(18, 6)
+  cpm              Decimal              @default(0) @db.Decimal(18, 6)
+  purchases        Decimal              @default(0) @db.Decimal(18, 4)
+  purchaseValue    Decimal              @default(0) @db.Decimal(18, 4)
+  roas             Decimal              @default(0) @db.Decimal(18, 6)
+  frequency        Decimal              @default(0) @db.Decimal(18, 6)
+  actions          Json?
+  actionValues     Json?
+  capturedAt       DateTime             @default(now())
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  syncRun MetaAdsInsightSyncRun @relation(fields: [syncRunId], references: [id], onDelete: Cascade)
+  recommendations MetaAdsRecommendation[]
+
+  @@unique([accountId, level, entityId, dateStart, dateStop, breakdownHash])
+  @@index([syncRunId])
+  @@index([level, dateStart, dateStop])
+  @@index([campaignId, dateStart])
+  @@index([adSetId, dateStart])
+  @@index([adId, dateStart])
+}
+
+model MetaAdsRecommendation {
+  id               String                      @id @default(cuid())
+  recommendationKey String                     @unique
+  snapshotId       String?
+  accountId        String
+  entityType       String
+  entityId         String
+  entityName       String?
+  type             MetaAdsRecommendationType
+  status           MetaAdsRecommendationStatus @default(OPEN)
+  severity         MetaIncidentSeverity        @default(WARNING)
+  rationale        String                      @db.Text
+  proposedMutation Json
+  payloadHash      String
+  expiresAt        DateTime
+  approvalId       String?
+  appliedAt        DateTime?
+  dismissedAt      DateTime?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  snapshot MetaAdsInsightSnapshot? @relation(fields: [snapshotId], references: [id], onDelete: SetNull)
+
+  @@index([status, expiresAt])
+  @@index([entityType, entityId])
+  @@index([type, createdAt])
+}
+
+model MetaAdsMutationExecution {
+  id             String                @id @default(cuid())
+  approvalId     String                @unique
+  operation      String
+  entityType     String
+  entityId       String?
+  payloadHash    String
+  status         MetaAdsMutationStatus @default(EXECUTING)
+  requestedById  String
+  correlationId  String?
+  beforeData     Json?
+  providerResult Json?
+  afterData      Json?
+  errorData      Json?
+  startedAt      DateTime              @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([status, startedAt])
+  @@index([correlationId])
+}
+
+enum MetaPlatformEnvironment {
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+enum MetaAssetType {
+  APP
+  BUSINESS
+  AD_ACCOUNT
+  CATALOG
+  DATASET
+  PIXEL
+  PAGE
+  INSTAGRAM_ACCOUNT
+  LEAD_FORM
+}
+
+enum MetaExternalReferenceSource {
+  RUNTIME
+  BACKFILL
+  RECONCILIATION
+  MANUAL
+}
+
+enum MetaProviderIdentityStatus {
+  UNVERIFIED
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+enum MetaProviderPermissionHealth {
+  UNKNOWN
+  HEALTHY
+  DEGRADED
+  MISSING_PERMISSION
+  BLOCKED
+}
+
+enum MetaProviderIdentityRelationshipType {
+  APP_ASSOCIATED_WITH_BUSINESS
+  BUSINESS_OWNS_PAGE
+  BUSINESS_OWNS_AD_ACCOUNT
+  PAGE_LINKED_INSTAGRAM_ACCOUNT
+  PAGE_CONTAINS_LEAD_FORM
+}
+
+enum MetaProviderIdentityRelationshipStatus {
+  UNVERIFIED
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+model MetaExternalReference {
+  id               String                      @id @default(cuid())
+  environment      MetaPlatformEnvironment
+  connectionKey    String
+  assetType        MetaAssetType
+  assetId          String
+  objectType       String
+  localId          String
+  providerId       String
+  providerParentId String?
+  canonicalKey     String?
+  source           MetaExternalReferenceSource @default(RUNTIME)
+  metadata         Json?
+  identityStatus   MetaProviderIdentityStatus  @default(UNVERIFIED)
+  permissionHealth MetaProviderPermissionHealth @default(UNKNOWN)
+  permissionMetadata Json?
+  lastSeenAt       DateTime?
+  lastVerifiedAt   DateTime?
+  disabledAt       DateTime?
+  revokedAt        DateTime?
+  statusReason     String?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  parentIdentityRelationships MetaProviderIdentityRelationship[] @relation("MetaProviderIdentityParent")
+  childIdentityRelationships  MetaProviderIdentityRelationship[] @relation("MetaProviderIdentityChild")
+  webhookReceipts              MetaSocialWebhookReceipt[]          @relation("MetaSocialWebhookPrimaryIdentity")
+  pageLeads                    MetaLead[]                           @relation("MetaLeadPageIdentity")
+  formLeads                    MetaLead[]                           @relation("MetaLeadFormIdentity")
+  leadAttemptsAsPage           MetaLeadProcessingAttempt[]         @relation("MetaLeadAttemptPageIdentity")
+  leadAttemptsAsForm           MetaLeadProcessingAttempt[]         @relation("MetaLeadAttemptFormIdentity")
+  instagramParticipants        MetaInstagramParticipant[]         @relation("MetaInstagramParticipantAccountIdentity")
+  instagramConversations       MetaConversation[]                  @relation("MetaConversationAccountIdentity")
+  instagramMessages            MetaMessage[]                       @relation("MetaMessageAccountIdentity")
+  instagramReplyAttempts       MetaInstagramReplyAttempt[]         @relation("MetaInstagramReplyAttemptAccountIdentity")
+  instagramPrivateReplies      MetaInstagramPrivateReplyReservation[] @relation("MetaInstagramPrivateReplyAccountIdentity")
+
+  @@unique([environment, connectionKey, assetType, assetId, objectType, localId], map: "MetaExternalReference_local_scope_key")
+  @@unique([environment, connectionKey, assetType, assetId, objectType, providerId], map: "MetaExternalReference_provider_scope_key")
+  @@index([environment, connectionKey, objectType, canonicalKey], map: "MetaExternalReference_canonical_lookup_idx")
+  @@index([providerParentId], map: "MetaExternalReference_provider_parent_idx")
+  @@index([environment, connectionKey, assetType, identityStatus], map: "MetaExternalReference_identity_select_idx")
+  @@index([identityStatus, permissionHealth, lastVerifiedAt], map: "MetaExternalReference_identity_health_idx")
+}
+
+model MetaProviderIdentityRelationship {
+  id               String                                 @id @default(cuid())
+  environment      MetaPlatformEnvironment
+  connectionKey    String
+  relationshipType MetaProviderIdentityRelationshipType
+  parentReferenceId String
+  childReferenceId  String
+  status           MetaProviderIdentityRelationshipStatus @default(UNVERIFIED)
+  source           MetaExternalReferenceSource             @default(RUNTIME)
+  metadata         Json?
+  lastVerifiedAt   DateTime?
+  disabledAt       DateTime?
+  revokedAt        DateTime?
+  statusReason     String?
+  createdAt        DateTime                                @default(now())
+  updatedAt        DateTime                                @updatedAt
+
+  parentReference MetaExternalReference @relation("MetaProviderIdentityParent", fields: [parentReferenceId], references: [id], onDelete: Restrict)
+  childReference  MetaExternalReference @relation("MetaProviderIdentityChild", fields: [childReferenceId], references: [id], onDelete: Restrict)
+
+  @@unique([environment, connectionKey, relationshipType, parentReferenceId, childReferenceId], map: "MetaProviderIdentityRelationship_scope_edge_key")
+  @@index([environment, connectionKey, relationshipType, parentReferenceId], map: "MetaProviderIdentityRelationship_parent_idx")
+  @@index([environment, connectionKey, relationshipType, childReferenceId], map: "MetaProviderIdentityRelationship_child_idx")
+  @@index([status, lastVerifiedAt], map: "MetaProviderIdentityRelationship_health_idx")
+}
+
+enum MetaConnectionStatus {
+  UNCONFIGURED
+  HEALTHY
+  DEGRADED
+  INVALID_TOKEN
+  MISSING_PERMISSION
+  ASSET_NOT_FOUND
+  VERSION_WARNING
+  ERROR
+}
+
+enum MetaVersionRegressionStatus {
+  PENDING
+  PASS
+  FAIL
+  WAIVED
+}
+
+enum MetaCredentialRole {
+  APP
+  BUSINESS_SYSTEM_USER
+  CAPI
+  PAGE
+  INSTAGRAM
+}
+
+model MetaConnection {
+  id                 String               @id @default(cuid())
+  name               String               @unique
+  appId              String?
+  businessId         String?
+  catalogId          String?
+  datasetId          String?
+  pixelId            String?
+  adAccountId        String?
+  pageId             String?
+  instagramAccountId String?
+  tokenRef           String?
+  tokenExpiresAt     DateTime?
+  dataAccessExpiresAt DateTime?
+  graphApiVersion    String
+  sdkVersion         String?
+  status             MetaConnectionStatus @default(UNCONFIGURED)
+  permissions        Json?
+  assets             Json?
+  warnings           Json?
+  lastCheckedAt      DateTime?
+  lastSuccessfulAt   DateTime?
+  lastError          Json?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  checks             MetaConnectionCheck[]
+  credentialMetadata MetaCredentialMetadata[]
+
+  @@index([status])
+  @@index([tokenExpiresAt])
+  @@index([lastCheckedAt])
+}
+
+model MetaCredentialMetadata {
+  id                  String             @id @default(cuid())
+  connectionId        String?
+  connection          MetaConnection?    @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  connectionKey       String
+  role                MetaCredentialRole
+  secretRef           String
+  credentialVersion   String
+  appId               String?
+  permissions         Json?
+  rotatedAt           DateTime?
+  expiresAt           DateTime?
+  dataAccessExpiresAt DateTime?
+  lastVerifiedAt      DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@unique([connectionKey, role], map: "MetaCredentialMetadata_connection_role_key")
+  @@index([connectionId], map: "MetaCredentialMetadata_connection_idx")
+  @@index([expiresAt], map: "MetaCredentialMetadata_expires_idx")
+  @@index([credentialVersion], map: "MetaCredentialMetadata_version_idx")
+}
+
+enum MetaOperationPriority {
+  P0
+  P1
+  P2
+  P3
+  P4
+}
+
+enum MetaOperationStatus {
+  ACCEPTED
+  DISPATCHING
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  RETRYABLE_FAILURE
+  PERMANENT_FAILURE
+  QUARANTINED
+  CANCELLED
+}
+
+enum MetaOperationEventType {
+  OPERATION_ACCEPTED
+  OUTBOX_CREATED
+  OUTBOX_CLAIMED
+  OUTBOX_PUBLISHED
+  OUTBOX_RELEASED
+  EXECUTION_STARTED
+  EXECUTION_SUCCEEDED
+  EXECUTION_FAILED
+  EXECUTION_DEFERRED
+  OPERATION_EXPIRED
+  QUEUE_BACKPRESSURE
+  PAYLOAD_QUARANTINED
+  DUPLICATE_IGNORED
+  OPERATION_CANCELLED
+}
+
+enum MetaOutboxMessageState {
+  PENDING
+  CLAIMED
+  PUBLISHED
+  RETRY_SCHEDULED
+  QUARANTINED
+  DEAD_LETTER
+}
+
+model MetaOperation {
+  id                      String              @id @default(uuid())
+  environment             MetaPlatformEnvironment
+  connectionKey           String
+  capability              String
+  operationType           String
+  idempotencyKey          String
+  correlationId           String
+  actorType                String
+  actorReference           String?
+  assetType                MetaAssetType?
+  assetId                  String?
+  credentialRole           MetaCredentialRole?
+  payloadType              String
+  payloadSchemaVersion     Int
+  payload                   Json
+  payloadDigest             String
+  status                    MetaOperationStatus @default(ACCEPTED)
+  priority                  MetaOperationPriority @default(P2)
+  attempts                  Int                 @default(0)
+  replayOfOperationId       String?
+  replayOfOperation         MetaOperation?       @relation("MetaOperationReplay", fields: [replayOfOperationId], references: [id], onDelete: SetNull)
+  replayOperations          MetaOperation[]      @relation("MetaOperationReplay")
+  result                    Json?
+  lastError                 Json?
+  executionLeaseToken       String?
+  executionLeaseExpiresAt   DateTime?
+  nextEventSequence         Int                 @default(0)
+  expiresAt                 DateTime
+  nextAttemptAt             DateTime?
+  startedAt                 DateTime?
+  completedAt               DateTime?
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  events                    MetaOperationEvent[]
+  outbox                    MetaOutboxMessage?
+  workflow                  MetaWorkflow?
+  reconciliations           MetaReconciliation[]
+  replayRequests            MetaReplay[]          @relation("MetaReplaySource")
+  replayTarget              MetaReplay?            @relation("MetaReplayTarget")
+
+  @@unique([environment, connectionKey, idempotencyKey], map: "MetaOperation_idempotency_scope_key")
+  @@index([status, priority, nextAttemptAt, createdAt], map: "MetaOperation_status_priority_due_idx")
+  @@index([expiresAt], map: "MetaOperation_expiry_idx")
+  @@index([correlationId], map: "MetaOperation_correlation_idx")
+  @@index([environment, connectionKey, capability, operationType], map: "MetaOperation_scope_type_idx")
+  @@index([assetType, assetId], map: "MetaOperation_asset_idx")
+  @@index([executionLeaseExpiresAt], map: "MetaOperation_execution_lease_idx")
+  @@index([replayOfOperationId], map: "MetaOperation_replay_idx")
+}
+
+model MetaOperationEvent {
+  id           String                 @id @default(uuid())
+  operationId  String
+  operation    MetaOperation          @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  sequence     Int
+  eventType    MetaOperationEventType
+  fromStatus   MetaOperationStatus?
+  toStatus     MetaOperationStatus?
+  attempt      Int                    @default(0)
+  safeDetails  Json?
+  createdAt    DateTime               @default(now())
+
+  @@unique([operationId, sequence], map: "MetaOperationEvent_operation_sequence_key")
+  @@index([operationId, createdAt], map: "MetaOperationEvent_operation_created_idx")
+  @@index([eventType, createdAt], map: "MetaOperationEvent_type_created_idx")
+}
+
+model MetaOutboxMessage {
+  id                    String                 @id @default(uuid())
+  operationId           String                 @unique
+  operation             MetaOperation          @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  topic                  String
+  partitionKey           String
+  payloadType            String
+  payloadSchemaVersion   Int
+  payload                Json
+  payloadDigest          String
+  state                  MetaOutboxMessageState @default(PENDING)
+  priority               MetaOperationPriority   @default(P2)
+  attempts               Int                    @default(0)
+  maxAttempts             Int                    @default(10)
+  availableAt             DateTime               @default(now())
+  leaseToken              String?
+  leaseExpiresAt          DateTime?
+  publishedAt             DateTime?
+  lastError               Json?
+  quarantineReason        String?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  @@index([state, priority, availableAt], map: "MetaOutboxMessage_priority_due_idx")
+  @@index([leaseExpiresAt], map: "MetaOutboxMessage_lease_idx")
+  @@index([topic, partitionKey, createdAt], map: "MetaOutboxMessage_partition_idx")
+}
+
+
+enum MetaWorkflowStatus {
+  PENDING
+  RUNNING
+  WAITING_RECONCILIATION
+  COMPENSATING
+  COMPENSATION_FAILED_RETRYABLE
+  SUCCEEDED
+  FAILED
+  COMPENSATED
+  CANCELLED
+}
+
+enum MetaWorkflowStepStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  UNKNOWN
+  COMPENSATING
+  COMPENSATION_FAILED_RETRYABLE
+  COMPENSATED
+  SKIPPED
+}
+
+enum MetaProviderJobPurpose {
+  EXECUTION
+  COMPENSATION
+}
+
+enum MetaProviderJobStatus {
+  PENDING
+  SUBMITTED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  UNKNOWN
+  CANCELLED
+}
+
+enum MetaReconciliationStatus {
+  PENDING
+  RUNNING
+  RESOLVED_SUCCEEDED
+  RESOLVED_FAILED
+  NEEDS_REVIEW
+  EXPIRED
+}
+
+enum MetaReplayStatus {
+  REQUESTED
+  APPROVED
+  CREATED
+  REJECTED
+}
+
+model MetaWorkflow {
+  id                String             @id @default(uuid())
+  operationId       String             @unique
+  operation         MetaOperation      @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  definitionId      String
+  definitionVersion Int
+  status            MetaWorkflowStatus @default(PENDING)
+  currentStepKey    String?
+  priority          MetaOperationPriority @default(P2)
+  context           Json               @default("{}")
+  version           Int                @default(1)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  lastError         Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  steps             MetaWorkflowStep[]
+  providerJobs      MetaProviderJob[]
+  reconciliations   MetaReconciliation[]
+
+  @@index([status, priority, updatedAt], map: "MetaWorkflow_status_priority_idx")
+  @@index([definitionId, definitionVersion], map: "MetaWorkflow_definition_idx")
+}
+
+model MetaWorkflowStep {
+  id           String                 @id @default(uuid())
+  workflowId   String
+  workflow     MetaWorkflow           @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stepKey      String
+  ordinal      Int
+  status       MetaWorkflowStepStatus @default(PENDING)
+  attempt      Int                    @default(0)
+  version      Int                    @default(1)
+  input        Json?
+  output       Json?
+  beforeState  Json?
+  afterState   Json?
+  lastError    Json?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  providerJobs MetaProviderJob[]
+  reconciliations MetaReconciliation[]
+
+  @@unique([workflowId, stepKey], map: "MetaWorkflowStep_workflow_key")
+  @@unique([workflowId, ordinal], map: "MetaWorkflowStep_workflow_ordinal_key")
+  @@index([workflowId, status, ordinal], map: "MetaWorkflowStep_status_idx")
+}
+
+model MetaProviderJob {
+  id                 String                @id @default(uuid())
+  workflowId         String
+  workflow           MetaWorkflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stepId             String
+  step               MetaWorkflowStep      @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  purpose            MetaProviderJobPurpose @default(EXECUTION)
+  capability         String
+  operationType      String
+  requestFingerprint String
+  providerJobType    String?
+  providerJobId      String?
+  providerObjectId   String?
+  status             MetaProviderJobStatus @default(PENDING)
+  requestState       Json?
+  responseState      Json?
+  beforeState        Json?
+  afterState         Json?
+  unknownSince       DateTime?
+  lastCheckedAt      DateTime?
+  version            Int                   @default(1)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  reconciliation     MetaReconciliation?
+
+  @@unique([stepId, purpose, requestFingerprint], map: "MetaProviderJob_step_purpose_fingerprint_key")
+  @@index([workflowId, stepId, status], map: "MetaProviderJob_workflow_step_status_idx")
+  @@index([capability, operationType, requestFingerprint], map: "MetaProviderJob_fingerprint_idx")
+  @@index([providerJobId], map: "MetaProviderJob_provider_job_idx")
+  @@index([providerObjectId], map: "MetaProviderJob_provider_object_idx")
+}
+
+model MetaReconciliation {
+  id             String                   @id @default(uuid())
+  operationId    String
+  operation      MetaOperation            @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  workflowId     String
+  workflow       MetaWorkflow             @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stepId         String
+  step           MetaWorkflowStep         @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  providerJobId  String                   @unique
+  providerJob    MetaProviderJob          @relation(fields: [providerJobId], references: [id], onDelete: Cascade)
+  capability     String
+  operationType  String
+  resolverKey    String
+  status         MetaReconciliationStatus @default(PENDING)
+  attempts       Int                      @default(0)
+  nextCheckAt    DateTime                 @default(now())
+  expiresAt      DateTime
+  evidence       Json?
+  resolution     Json?
+  lastError      Json?
+  version        Int                      @default(1)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([status, nextCheckAt], map: "MetaReconciliation_due_idx")
+  @@index([workflowId, status], map: "MetaReconciliation_workflow_status_idx")
+  @@index([expiresAt], map: "MetaReconciliation_expiry_idx")
+}
+
+model MetaReplay {
+  id                String           @id @default(uuid())
+  sourceOperationId String
+  sourceOperation   MetaOperation    @relation("MetaReplaySource", fields: [sourceOperationId], references: [id], onDelete: Restrict)
+  replayOperationId String?          @unique
+  replayOperation   MetaOperation?   @relation("MetaReplayTarget", fields: [replayOperationId], references: [id], onDelete: SetNull)
+  requestedBy       String
+  approvedBy        String?
+  approvalRole      String?
+  reason            String
+  idempotencyKey    String           @unique
+  requestDigest     String
+  expiresAt         DateTime
+  approvedAt        DateTime?
+  status            MetaReplayStatus @default(REQUESTED)
+  rejectionCode     String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([sourceOperationId, createdAt], map: "MetaReplay_source_created_idx")
+  @@index([status, createdAt], map: "MetaReplay_status_created_idx")
+}
+
+model MetaWorkflowLock {
+  scopeKey      String   @id
+  ownerId       String
+  leaseToken    String   @unique
+  fencingToken  BigInt   @default(0)
+  expiresAt     DateTime
+  updatedAt     DateTime @updatedAt
+
+  @@index([expiresAt], map: "MetaWorkflowLock_expiry_idx")
+}
+
+model MetaConnectionCheck {
+  id                  String               @id @default(cuid())
+  connectionId        String
+  connection          MetaConnection       @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  status              MetaConnectionStatus
+  tokenValid          Boolean?
+  tokenExpiresAt      DateTime?
+  dataAccessExpiresAt DateTime?
+  appIdMatches        Boolean?
+  permissions         Json?
+  assets              Json?
+  versionPolicy       Json?
+  warnings            Json?
+  safeError           Json?
+  checkedAt           DateTime             @default(now())
+
+  @@index([connectionId, checkedAt])
+  @@index([status, checkedAt])
+}
+
+// ==========================================
+// Meta Admin Operations / Approval / Audit
+// ==========================================
+
+enum MetaAdminActionRisk {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MetaAdminApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXECUTING
+  EXECUTED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum MetaAdminAuditOutcome {
+  SUCCEEDED
+  FAILED
+  DENIED
+}
+
+model MetaAdminApproval {
+  id                 String                  @id @default(cuid())
+  actionKey          String
+  risk               MetaAdminActionRisk
+  resourceType       String
+  resourceId         String?
+  payloadHash        String
+  payload            Json
+  reason             String                  @db.Text
+  status             MetaAdminApprovalStatus @default(PENDING)
+  requestedById      String
+  approvedById       String?
+  rejectedById       String?
+  requestedAt        DateTime                @default(now())
+  expiresAt          DateTime
+  reviewedAt         DateTime?
+  executionStartedAt DateTime?
+  executedAt         DateTime?
+  failureData        Json?
+  version            Int                     @default(1)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  requestedBy AdminUser  @relation("MetaAdminApprovalRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  approvedBy  AdminUser? @relation("MetaAdminApprovalApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedBy  AdminUser? @relation("MetaAdminApprovalRejector", fields: [rejectedById], references: [id], onDelete: SetNull)
+  audits      MetaAdminAudit[]
+  socialWebhookReplayReceipts MetaSocialWebhookReceipt[] @relation("MetaSocialWebhookReplayApproval")
+
+  @@index([status, expiresAt])
+  @@index([actionKey, status])
+  @@index([resourceType, resourceId])
+  @@index([requestedById, requestedAt])
+}
+
+model MetaAdminAudit {
+  id            String                @id @default(cuid())
+  actorId       String
+  actionKey     String
+  risk          MetaAdminActionRisk
+  resourceType  String
+  resourceId    String?
+  approvalId    String?
+  outcome       MetaAdminAuditOutcome
+  beforeData    Json?
+  afterData     Json?
+  reason        String?               @db.Text
+  requestId     String?
+  traceId       String?
+  ipHash        String?
+  userAgentHash String?
+  errorData     Json?
+  createdAt     DateTime              @default(now())
+
+  actor    AdminUser          @relation("MetaAdminAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  approval MetaAdminApproval? @relation(fields: [approvalId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([actionKey, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([approvalId])
+  @@index([outcome, createdAt])
+}
+
+enum MetaIncidentType {
+  CATALOG_DIAGNOSTIC
+  CATALOG_BATCH_STUCK
+  CATALOG_FAILURE_SPIKE
+  TOKEN_INVALID
+  GRAPH_VERSION_EXPIRING
+  CAPI_FAILURE_SPIKE
+  PURCHASE_SILENCE
+  WEBHOOK_SILENCE
+  QUEUE_BACKLOG
+  MASS_DELETE_CANDIDATE
+  PRODUCT_SET_EMPTY
+  PRODUCT_SET_BROKEN
+  INSTAGRAM_PERMISSION_FAILURE
+  INSTAGRAM_WEBHOOK_FAILURE
+  INSTAGRAM_REPLY_FAILURE
+}
+
+enum MetaIncidentSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum MetaIncidentStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model MetaIncident {
+  id               String               @id @default(cuid())
+  incidentType     MetaIncidentType
+  severity         MetaIncidentSeverity
+  status           MetaIncidentStatus   @default(OPEN)
+  dedupeKey        String               @unique
+  resourceType     String
+  resourceId       String?
+  summary          String
+  details          Json?
+  correlationId    String?
+  runbookUrl       String?
+  occurrenceCount  Int                  @default(1)
+  firstSeenAt      DateTime             @default(now())
+  lastSeenAt       DateTime             @default(now())
+  cooldownUntil    DateTime?
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  resolvedAt       DateTime?
+  resolvedById     String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  acknowledgedBy AdminUser? @relation("MetaIncidentAcknowledgedBy", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+  resolvedBy     AdminUser? @relation("MetaIncidentResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, severity, lastSeenAt])
+  @@index([incidentType, status])
+  @@index([resourceType, resourceId])
+  @@index([correlationId])
+}
+
+model MetaApiVersionPolicy {
+  id                 String                      @id @default(cuid())
+  graphApiVersion    String                      @unique
+  releaseDate        DateTime?
+  expirationDate     DateTime?
+  warningDate        DateTime?
+  blockDate          DateTime?
+  reviewBy           DateTime?
+  latestOfficial     Boolean                     @default(false)
+  minimumSupported   Boolean                     @default(false)
+  sdkVersion         String?
+  regressionStatus   MetaVersionRegressionStatus @default(PENDING)
+  regressionEvidence Json?
+  sourceUrl          String?
+  lastVerifiedAt     DateTime?
+  approvedBy         String?
+  approvedAt         DateTime?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  @@index([latestOfficial])
+  @@index([regressionStatus])
+  @@index([expirationDate])
+  @@index([reviewBy])
+}
+
+// ==========================================
+// Meta Instagram Messaging / Social CRM
+// ==========================================
+
+enum MetaInstagramWebhookStatus {
+  RECEIVED
+  VERIFIED
+  QUEUED
+  PROCESSING
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+enum MetaInstagramConversationStatus {
+  OPEN
+  PENDING
+  RESOLVED
+  SPAM
+  ARCHIVED
+}
+
+enum MetaInstagramMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MetaInstagramMessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+  STORY_REPLY
+  COMMENT_PRIVATE_REPLY
+  POSTBACK
+  UNKNOWN
+}
+
+enum MetaInstagramMessageStatus {
+  RECEIVED
+  QUEUED
+  PROCESSED
+  SENT
+  FAILED
+  BLOCKED
+}
+
+enum MetaInstagramAttachmentStatus {
+  PENDING
+  READY
+  REJECTED
+  FAILED
+}
+
+enum MetaInstagramConversationKind {
+  DIRECT
+  COMMENT_THREAD
+  STORY_THREAD
+  UNKNOWN
+}
+
+enum MetaInstagramProviderDeliveryStatus {
+  NOT_APPLICABLE
+  PENDING
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  UNKNOWN_OUTCOME
+}
+
+enum MetaInstagramReconciliationStatus {
+  NOT_REQUIRED
+  REQUIRED
+  IN_PROGRESS
+  RESOLVED_SENT
+  RESOLVED_FAILED
+}
+
+enum MetaInstagramPrivateReplyStatus {
+  RESERVED
+  SENDING
+  SENT
+  BLOCKED
+  FAILED_DEFINITIVE
+  UNKNOWN_OUTCOME
+}
+
+enum MetaInstagramAttachmentDecision {
+  PENDING
+  ALLOWED
+  QUARANTINED
+  REJECTED
+  FAILED
+}
+
+enum MetaInstagramLinkType {
+  CUSTOMER
+  LEAD
+  PRODUCT
+  ORDER
+}
+
+enum MetaInstagramReplyEligibility {
+  ELIGIBLE
+  WINDOW_EXPIRED
+  PERMISSION_MISSING
+  ACCOUNT_MISMATCH
+  UNSUPPORTED
+  CONVERSATION_CLOSED
+  PRIVATE_REPLY_ALREADY_SENT
+}
+
+model MetaInstagramWebhookReceipt {
+  id              String                         @id @default(cuid())
+  eventKey        String                         @unique
+  eventType       String
+  objectType      String
+  accountId       String?
+  senderId        String?
+  conversationKey String?
+  platformMessageId String?
+  signatureOk     Boolean
+  payloadDigest   String
+  normalizedEvent Json
+  correlationId   String
+  status          MetaInstagramWebhookStatus     @default(RECEIVED)
+  attemptCount    Int                            @default(0)
+  receivedAt      DateTime                       @default(now())
+  verifiedAt      DateTime?
+  queuedAt        DateTime?
+  processingAt    DateTime?
+  processedAt     DateTime?
+  retentionUntil  DateTime
+  errorData       Json?
+  createdAt       DateTime                       @default(now())
+  updatedAt       DateTime                       @updatedAt
+
+  @@index([status, receivedAt])
+  @@index([accountId, receivedAt])
+  @@index([senderId, receivedAt])
+  @@index([platformMessageId])
+  @@index([correlationId])
+  @@index([retentionUntil])
+}
+
+model MetaInstagramParticipant {
+  id                         String                  @id @default(cuid())
+  environment                MetaPlatformEnvironment
+  connectionKey              String
+  accountIdentityReferenceId String
+  providerParticipantId      String
+  username                   String?
+  displayName                String?
+  avatarUrl                  String?
+  profileDigest              String?
+  firstSeenAt                DateTime                @default(now())
+  lastSeenAt                 DateTime                @default(now())
+  lastVerifiedAt             DateTime?
+  profileFetchedAt           DateTime?
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
+
+  accountIdentity MetaExternalReference @relation("MetaInstagramParticipantAccountIdentity", fields: [accountIdentityReferenceId], references: [id], onDelete: Restrict)
+  conversations   MetaConversation[]
+
+  @@unique([environment, connectionKey, accountIdentityReferenceId, providerParticipantId], map: "MetaInstagramParticipant_scope_provider_key")
+  @@index([accountIdentityReferenceId, lastSeenAt], map: "MetaInstagramParticipant_account_seen_idx")
+}
+
+model MetaConversation {
+  id                            String                           @id @default(cuid())
+  platformId                    String
+  environment                   MetaPlatformEnvironment?
+  connectionKey                 String?
+  accountIdentityReferenceId    String?
+  participantIdentityId         String?
+  providerConversationKey       String?
+  conversationKind              MetaInstagramConversationKind   @default(UNKNOWN)
+  accountId                     String
+  participantId                 String
+  participantUsername           String?
+  participantName               String?
+  participantAvatarUrl          String?
+  assignedToId                  String?
+  status                        MetaInstagramConversationStatus @default(OPEN)
+  tags                          String[]                         @default([])
+  subject                       String?
+  lastMessageAt                 DateTime?
+  lastActivityAt                DateTime?
+  lastActivityProviderMessageId String?
+  lastActivityMessageId         String?
+  lastInboundAt                 DateTime?
+  replyWindowOpenedAt           DateTime?
+  replyWindowExpiresAt          DateTime?
+  replyWindowSourceMessageId    String?
+  orderingVersion               Int                              @default(0)
+  privateReplySentAt            DateTime?
+  policyData                    Json?
+  correlationId                 String?
+  retentionUntil                DateTime
+  createdAt                     DateTime                         @default(now())
+  updatedAt                     DateTime                         @updatedAt
+  accountIdentity               MetaExternalReference?          @relation("MetaConversationAccountIdentity", fields: [accountIdentityReferenceId], references: [id], onDelete: SetNull)
+  participantIdentity           MetaInstagramParticipant?       @relation(fields: [participantIdentityId], references: [id], onDelete: SetNull)
+  messages                      MetaMessage[]
+  links                         MetaConversationLink[]
+  replyAttempts                 MetaInstagramReplyAttempt[]
+  privateReplyReservations      MetaInstagramPrivateReplyReservation[]
+
+  @@unique([environment, connectionKey, accountIdentityReferenceId, providerConversationKey], map: "MetaConversation_scope_provider_key")
+  @@index([platformId], map: "MetaConversation_legacy_platform_idx")
+  @@index([environment, connectionKey, accountIdentityReferenceId, status, lastActivityAt], map: "MetaConversation_scope_activity_idx")
+  @@index([accountId, status, lastMessageAt])
+  @@index([participantId])
+  @@index([participantIdentityId], map: "MetaConversation_participant_identity_idx")
+  @@index([assignedToId, status])
+  @@index([lastInboundAt])
+  @@index([retentionUntil])
+  @@index([correlationId])
+}
+
+model MetaMessage {
+  id                         String                              @id @default(cuid())
+  platformId                 String
+  environment                MetaPlatformEnvironment?
+  connectionKey              String?
+  accountIdentityReferenceId String?
+  providerMessageId          String?
+  localMessageKey            String?                             @unique
+  outboundIdempotencyKey     String?
+  conversationId             String
+  direction                  MetaInstagramMessageDirection
+  messageType                MetaInstagramMessageType
+  status                     MetaInstagramMessageStatus          @default(RECEIVED)
+  providerStatus             MetaInstagramProviderDeliveryStatus @default(NOT_APPLICABLE)
+  text                       String?                              @db.Text
+  replyToMessageId           String?
+  replyToProviderMessageId   String?
+  replyToMessageRecordId     String?
+  storyMediaId               String?
+  commentId                  String?
+  postId                     String?
+  payloadDigest              String?
+  digestMismatchCount        Int                                 @default(0)
+  lastDigestMismatchAt       DateTime?
+  providerOccurredAt         DateTime?
+  receivedAt                 DateTime                             @default(now())
+  sentAt                     DateTime
+  deliveredAt                DateTime?
+  readAt                     DateTime?
+  failedAt                   DateTime?
+  privateReplyExpiresAt      DateTime?
+  correlationId              String?
+  createdAt                  DateTime                             @default(now())
+  updatedAt                  DateTime                             @updatedAt
+  accountIdentity            MetaExternalReference?              @relation("MetaMessageAccountIdentity", fields: [accountIdentityReferenceId], references: [id], onDelete: SetNull)
+  conversation               MetaConversation                    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  replyToMessageRecord       MetaMessage?                        @relation("MetaMessageReplyChain", fields: [replyToMessageRecordId], references: [id], onDelete: SetNull)
+  replies                    MetaMessage[]                       @relation("MetaMessageReplyChain")
+  attachments                MetaMessageAttachment[]
+  replyAttempts              MetaInstagramReplyAttempt[]
+  webhookReceipts            MetaSocialWebhookReceipt[]          @relation("MetaSocialWebhookInstagramMessage")
+  privateReplyReservations   MetaInstagramPrivateReplyReservation[]
+
+  @@unique([environment, connectionKey, accountIdentityReferenceId, providerMessageId], map: "MetaMessage_scope_provider_key")
+  @@unique([environment, connectionKey, accountIdentityReferenceId, outboundIdempotencyKey], map: "MetaMessage_scope_outbound_idempotency_key")
+  @@index([platformId], map: "MetaMessage_legacy_platform_idx")
+  @@index([conversationId, providerOccurredAt, providerMessageId], map: "MetaMessage_conversation_order_idx")
+  @@index([conversationId, sentAt])
+  @@index([direction, status, sentAt])
+  @@index([providerStatus, sentAt], map: "MetaMessage_provider_status_idx")
+  @@index([commentId])
+  @@index([postId])
+  @@index([replyToMessageRecordId], map: "MetaMessage_reply_record_idx")
+  @@index([correlationId])
+}
+
+model MetaMessageAttachment {
+  id                     String                            @id @default(cuid())
+  messageId              String
+  externalId             String?
+  type                   MetaInstagramMessageType
+  status                 MetaInstagramAttachmentStatus    @default(PENDING)
+  mimeType               String?
+  fileName               String?
+  fileSize               Int?
+  sourceUrl              String?
+  sourceUrlDigest        String?
+  sourceUrlExpiresAt     DateTime?
+  contentDigest          String?
+  validationJobReference String?
+  quarantinedAt          DateTime?
+  storageKey             String?
+  storageUrl             String?
+  thumbnailUrl           String?
+  failureCode            String?
+  metadata               Json?
+  createdAt              DateTime                          @default(now())
+  updatedAt              DateTime                          @updatedAt
+  message                MetaMessage                       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  policyDecision         MetaInstagramAttachmentPolicyDecision?
+
+  @@unique([messageId, externalId])
+  @@index([messageId, status])
+  @@index([type, status])
+  @@index([validationJobReference], map: "MetaMessageAttachment_validation_job_idx")
+}
+
+model MetaInstagramAttachmentPolicyDecision {
+  id               String                          @id @default(cuid())
+  attachmentId     String                          @unique
+  decision         MetaInstagramAttachmentDecision @default(PENDING)
+  reasonCode       String?
+  validatorVersion String?
+  contentDigest    String?
+  validationJobRef String?
+  decidedAt        DateTime?
+  createdAt        DateTime                        @default(now())
+  updatedAt        DateTime                        @updatedAt
+  attachment       MetaMessageAttachment           @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+
+  @@index([decision, decidedAt], map: "MetaInstagramAttachmentDecision_status_idx")
+  @@index([validationJobRef], map: "MetaInstagramAttachmentDecision_job_idx")
+}
+
+model MetaConversationLink {
+  id                 String                    @id @default(cuid())
+  conversationId     String
+  linkType           MetaInstagramLinkType
+  targetId           String
+  verificationMethod String
+  evidence           Json?
+  linkedById         String
+  linkedAt           DateTime                  @default(now())
+  unlinkedAt         DateTime?
+  conversation       MetaConversation          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, linkType, targetId])
+  @@index([linkType, targetId])
+  @@index([conversationId, linkedAt])
+}
+
+model MetaInstagramReplyAttempt {
+  id                         String                              @id @default(cuid())
+  idempotencyKey             String
+  environment                MetaPlatformEnvironment?
+  connectionKey              String?
+  accountIdentityReferenceId String?
+  conversationId             String
+  sourceMessageId            String?
+  actorId                    String
+  mode                       String
+  eligibility                MetaInstagramReplyEligibility
+  status                     MetaInstagramMessageStatus
+  providerStatus             MetaInstagramProviderDeliveryStatus @default(PENDING)
+  reconciliationStatus       MetaInstagramReconciliationStatus    @default(NOT_REQUIRED)
+  textHash                   String
+  providerMessageId          String?
+  providerResponseDigest     String?
+  payloadHash                String
+  localMessageKey            String?
+  sourceCommentId            String?
+  sourcePostId               String?
+  correlationId              String
+  failureCode                String?
+  failureCategory            String?
+  failureSummary             String?                             @db.Text
+  failureData                Json?
+  requestedAt                DateTime                            @default(now())
+  queuedAt                   DateTime?
+  sendingAt                  DateTime?
+  attemptedAt                DateTime                            @default(now())
+  completedAt                DateTime?
+  reconciledAt               DateTime?
+  accountIdentity            MetaExternalReference?             @relation("MetaInstagramReplyAttemptAccountIdentity", fields: [accountIdentityReferenceId], references: [id], onDelete: SetNull)
+  conversation               MetaConversation                    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sourceMessage              MetaMessage?                        @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
+  privateReplyReservation    MetaInstagramPrivateReplyReservation?
+
+  @@unique([environment, connectionKey, accountIdentityReferenceId, idempotencyKey], map: "MetaInstagramReplyAttempt_scope_idempotency_key")
+  @@unique([environment, connectionKey, accountIdentityReferenceId, providerMessageId], map: "MetaInstagramReplyAttempt_scope_provider_message_key")
+  @@index([idempotencyKey], map: "MetaInstagramReplyAttempt_legacy_idempotency_idx")
+  @@index([conversationId, attemptedAt])
+  @@index([actorId, attemptedAt])
+  @@index([status, attemptedAt])
+  @@index([providerStatus, reconciliationStatus, attemptedAt], map: "MetaInstagramReplyAttempt_reconcile_idx")
+  @@index([correlationId])
+}
+
+model MetaInstagramPrivateReplyReservation {
+  id                         String                           @id @default(cuid())
+  environment                MetaPlatformEnvironment
+  connectionKey              String
+  accountIdentityReferenceId String
+  sourceCommentId            String
+  sourceMessageId            String
+  conversationId             String
+  replyAttemptId             String?                          @unique
+  status                     MetaInstagramPrivateReplyStatus @default(RESERVED)
+  reservedAt                 DateTime                         @default(now())
+  expiresAt                  DateTime
+  sentAt                     DateTime?
+  providerMessageId          String?
+  failureCode                String?
+  failureSummary             String?                          @db.Text
+  createdAt                  DateTime                         @default(now())
+  updatedAt                  DateTime                         @updatedAt
+  accountIdentity            MetaExternalReference           @relation("MetaInstagramPrivateReplyAccountIdentity", fields: [accountIdentityReferenceId], references: [id], onDelete: Restrict)
+  sourceMessage              MetaMessage                      @relation(fields: [sourceMessageId], references: [id], onDelete: Restrict)
+  conversation               MetaConversation                 @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  replyAttempt               MetaInstagramReplyAttempt?       @relation(fields: [replyAttemptId], references: [id], onDelete: SetNull)
+
+  @@unique([environment, connectionKey, accountIdentityReferenceId, sourceCommentId], map: "MetaInstagramPrivateReply_scope_comment_key")
+  @@index([status, expiresAt], map: "MetaInstagramPrivateReply_status_expiry_idx")
+  @@index([conversationId, reservedAt], map: "MetaInstagramPrivateReply_conversation_idx")
 }

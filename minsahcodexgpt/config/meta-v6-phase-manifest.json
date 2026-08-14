@@ -1,0 +1,911 @@
+{
+  "schemaVersion": "meta_v6_loop_manifest_v1",
+  "project": "Minsah Beauty Ecommerce",
+  "sourceSpec": "docs/spec/MinsahBeauty_Meta_AZ_Final_Spec_v6_FULL.md",
+  "baselineSnapshot": "minsahbeauty.zip",
+  "generatedAt": "2026-07-18",
+  "statusValues": [
+    "NOT_STARTED",
+    "FOUNDATION_ONLY",
+    "PARTIAL",
+    "READY_FOR_GENERATION",
+    "READY_FOR_RUNTIME_QA",
+    "COMPLETE",
+    "BLOCKED"
+  ],
+  "completionPolicy": {
+    "completeRequires": [
+      "All phase acceptance criteria have machine-readable evidence",
+      "Typecheck, lint, tests and phase gates pass",
+      "Required migrations are applied in a disposable environment",
+      "Security/privacy checks pass",
+      "Runtime-only Meta account checks are attached when required",
+      "Rollback and release evidence files exist"
+    ],
+    "forbidden": [
+      "Marking a phase complete based only on file existence",
+      "Using submitted API state as final provider success",
+      "Storing or printing Meta access tokens or raw customer PII",
+      "Combining schema changes from multiple dependent phases in one unreviewable migration"
+    ]
+  },
+  "phases": [
+    {
+      "id": 1,
+      "slug": "canonical-product-identity",
+      "title": "Canonical Product Identity",
+      "priority": "P0.1",
+      "dependsOn": [],
+      "baselineStatus": "PARTIAL",
+      "objective": "Website, storefront state, Pixel, Conversions API এবং Meta Catalog-এর জন্য একটিমাত্র canonical item identity enforce করা। Current project-এ resolver foundation আছে, কিন্তু raw `productId` call-site এবং dual environment source drift এখনো blocker।",
+      "businessOutcome": "- Dynamic/Advantage+ Catalog Ads exact product বা variant match করবে। - ViewContent → AddToCart → Purchase funnel একই SKU namespace বজায় রাখবে। - Variant-specific retargeting, shade/size ads এবং product-level attribution নির্ভুল হবে। - SKU rename accidental audience fragmentation তৈরি করবে না।",
+      "evidencePresent": [
+        "lib/tracking/meta-content-id.ts contains shared SKU/database identity resolver",
+        "lib/meta-business/catalog.ts uses resolveMetaCatalogIdentity"
+      ],
+      "openGaps": [
+        "lib/tracking/events.ts still emits content_ids from raw productId",
+        "app/api/search/clicks/route.ts still emits content_ids from raw productId",
+        "Server META_CATALOG_ID_SOURCE is absent; browser/server drift cannot be enforced",
+        "No boot-time fail-fast identity parity gate",
+        "SKU rename tombstone proof is not covered by a dedicated Phase 1 gate"
+      ],
+      "implementationSequence": [
+        "Split browser-visible identity selection from server-only environment parity validation",
+        "Add META_CATALOG_ID_SOURCE and require exact match with NEXT_PUBLIC_META_CATALOG_ID_SOURCE in production",
+        "Migrate wishlist and search-click Meta payloads to buildMetaCatalogData/resolveMetaCatalogIdentity",
+        "Add repository-wide raw productId regression scanner",
+        "Add fixtures for simple product, selected variant, unselected variant group, and SKU rename"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck",
+        "npm run lint",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "100% commerce events shared resolver ব্যবহার করে।",
+        "Production boot identity drift হলে fail করে।",
+        "Catalog, Pixel ও CAPI sample fixtures exact same ID দেয়।",
+        "SKU rename test old item delete এবং new item create প্রমাণ করে।",
+        "কোনো raw DB ID Meta catalog field-এ যায় না।"
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "COMPLETE",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-01",
+        "startedAt": "2026-07-17T12:48:49Z",
+        "completedAt": "2026-07-17T13:45:00Z",
+        "evidenceFile": "docs/release/meta-v6/phase-01-evidence.md",
+        "notes": "Targeted identity gates and full repository tests pass. Phase 2 Prisma regeneration is a later-phase release artifact."
+      }
+    },
+    {
+      "id": 2,
+      "slug": "catalog-domain-model-field-mapping-lifecycle",
+      "title": "Catalog Domain Model, Field Mapping & Lifecycle",
+      "priority": "P0.2",
+      "dependsOn": [
+        1
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Product/ProductVariant schema থেকে একটি canonical commerce domain item তৈরি করা এবং তারপর adapter-specific Meta payload serialize করা। এই Phase legacy `ProductItem` read field, legacy batch field, feed field এবং `/items_batch` write field mix হওয়া বন্ধ করবে।",
+      "businessOutcome": "- Price, stock, sale, variant, link, image এবং identifiers সঠিক হবে। - Meta Catalog Diagnostics rejection কমবে। - Future sale exact সময়ে চালু হবে এবং expired sale clean হবে। - Deleted/inactive SKU stale ad হিসেবে থাকবে না। - Facebook/Instagram variant swatch data উন্নত হবে।",
+      "evidencePresent": [
+        "Catalog sync, lock, managed item registry, pending batch registry and CSV feed already exist",
+        "Reserved stock, variant-only item emission and stale managed item reconciliation foundations exist"
+      ],
+      "openGaps": [
+        "/items_batch builder still serializes legacy/read-model fields: inventory, url, image_url, retailer_product_group_id",
+        "Price is currently minor-unit integer plus currency instead of formatted money string",
+        "Backorder zero-stock resolves to in stock instead of available for order",
+        "Future sale is omitted instead of sent with sale_price_effective_date",
+        "ProductVariant lacks lifecycle, sale, preorder, identifiers and condition override fields",
+        "No canonical item hash/final per-item status contract",
+        "Catalog Diagnostics ingestion is absent"
+      ],
+      "implementationSequence": [
+        "Introduce canonical commerce item DTO independent of Meta adapters",
+        "Create dedicated items_batch serializer, CSV serializer and read-model adapter",
+        "Add Phase 2 Prisma enums/fields and forward-only migration with backfill rules",
+        "Implement availability state machine and future/active/expired sale window serializer",
+        "Implement variant lifecycle tombstones and canonical payload hashing",
+        "Add semantic parity snapshots between CSV and items_batch"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-catalog-semantic",
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Current legacy fields no longer appear in `/items_batch` request builder.",
+        "Backorder zero-stock item is `available for order`, not `in stock`.",
+        "Future sale includes effective range immediately.",
+        "Expired sale sends base price only.",
+        "Deleted variant creates reconciliation DELETE.",
+        "CSV and Items Batch semantic parity test passes.",
+        "Unknown/manual Meta items are preserved.",
+        "Every submitted item has stable canonical hash and final status."
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": null,
+        "branch": null,
+        "startedAt": "2026-07-17T13:13:20Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-02-evidence.md",
+        "notes": "Code, migration, tests, semantic audits, direct TypeScript and repository suite pass. Prisma client generation/validation is blocked by binaries.prisma.sh DNS in this environment."
+      }
+    },
+    {
+      "id": 3,
+      "slug": "pixel-browser-tracking-contract",
+      "title": "Pixel & Browser Tracking Contract",
+      "priority": "P0.3",
+      "dependsOn": [
+        1
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Storefront browser events-কে canonical identity, consent policy এবং Meta standard event schema অনুযায়ী unify করা।",
+      "businessOutcome": "- Funnel signals consistent হবে। - Dynamic retargeting product match উন্নত হবে। - Duplicate/malformed browser events কমবে। - Campaign optimization-এর জন্য ViewContent, AddToCart, Checkout এবং Purchase signals পরিষ্কার হবে।",
+      "evidencePresent": [
+        "Canonical lib/meta/browser event envelope, payload sanitizer, validator and client dispatcher exist",
+        "Commerce item events use buildMetaCommerceBrowserEvent/buildMetaCommercePayload",
+        "PageView and verified browser Purchase use the shared event-ID contract",
+        "Phase 3 semantic tests and static privacy/dedup audit pass"
+      ],
+      "openGaps": [
+        "Meta Events Manager Test Events runtime evidence is not attached",
+        "Production-domain consent, CSP and Pixel/CAPI pairing smoke test remains required",
+        "The repository-wide master tracking gate still contains unrelated historical release-document failures; the Phase 12 browser/CAPI child audit now passes"
+      ],
+      "implementationSequence": [
+        "Route all item events through one canonical builder",
+        "Enforce content_type rules for product versus product_group",
+        "Keep raw PII out of browser payloads and operational logs",
+        "Add event_id contract fixtures for ViewContent, AddToCart, InitiateCheckout and Purchase",
+        "Run Events Manager Test Events as a runtime release gate"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-gap",
+        "npm run qa:master-tracking",
+        "npm run typecheck",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "`grep`-based audit raw `content_ids: [productId]` খুঁজে পাবে না।",
+        "All item events canonical builder ব্যবহার করবে।",
+        "Paired events same event ID produce করবে।",
+        "Browser payload contains no raw PII।",
+        "Events Manager Test Events-এ core funnel visible হবে।"
+      ],
+      "runtimeEvidenceRequired": true,
+      "state": {
+        "status": "READY_FOR_RUNTIME_QA",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-03",
+        "startedAt": "2026-07-17T13:41:11Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-03-evidence.md",
+        "notes": "Code, privacy sanitizer, event-ID pairing fixtures, Phase 1/2 regressions, direct TypeScript, targeted lint and repository tests pass. COMPLETE remains blocked on Meta Events Manager runtime evidence."
+      }
+    },
+    {
+      "id": 4,
+      "slug": "conversions-api-transactional-outbox-deduplication",
+      "title": "Conversions API Transactional Outbox & Deduplication",
+      "priority": "P0.4",
+      "dependsOn": [
+        1,
+        3
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Server-side Meta events transactional outbox-এর মাধ্যমে reliably persist, dispatch, retry এবং deduplicate করা।",
+      "businessOutcome": "- Meta/Redis outage checkout block করবে না। - DB commit হলেও event হারাবে না। - Duplicate Purchase কমবে। - Event Match Quality inputs এবং diagnostics traceable হবে।",
+      "evidencePresent": [
+        "PostgreSQL MetaEventOutbox and immutable status history schema/migration added",
+        "Online paid, Telegram COD and admin COD Purchase outbox insertions occur inside business-state transactions",
+        "Dedicated SKIP LOCKED dispatcher and provider-specific sender worker added",
+        "Shared website event validation, deterministic event IDs, safe diagnostics and bounded retry policy added",
+        "SUPER_ADMIN safe event monitor and identity-preserving manual replay added",
+        "Phase 4 tests and audit pass; Phase 1-3 regressions remain green"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh is blocked in this environment by binaries.prisma.sh DNS resolution failure",
+        "Disposable PostgreSQL migration-deploy and transaction rollback proof are not yet attached",
+        "Live Redis outage/recovery and Meta Test Events deduplication evidence are not yet attached"
+      ],
+      "implementationSequence": [
+        "Add MetaEventOutbox and status history enums/models",
+        "Insert outbox row in the same DB transaction as order/payment state changes",
+        "Add dispatcher that leases rows and enqueues provider jobs idempotently",
+        "Add DB unique key for event_name + event_id/provider",
+        "Add age validation, source URL normalization and permanent/transient error classification"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase4",
+        "npm run qa:phase12",
+        "node scripts/meta-v6-gap-audit.mjs",
+        "npm run typecheck:ts",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Order commit and outbox insert atomic।",
+        "Redis outage cannot lose committed event।",
+        "Duplicate Purchase DB-level blocked।",
+        "Core website events contain action source and source URL।",
+        "Event age validation passes official requirement।",
+        "Retry and permanent failures visible।"
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-04",
+        "startedAt": "2026-07-17T14:13:40Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-04-evidence.md",
+        "notes": "Transactional outbox code, semantic tests, static audits, direct TypeScript, targeted lint and repository regressions pass. COMPLETE remains blocked on Prisma generation/migration deployment plus Redis/Meta runtime evidence."
+      }
+    },
+    {
+      "id": 5,
+      "slug": "durable-queue-scheduling-rate-control",
+      "title": "Durable Queue, Scheduling & Rate Control",
+      "priority": "P1.1",
+      "dependsOn": [
+        2,
+        4
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Meta catalog, CAPI, leads, diagnostics এবং token checks-এর জন্য durable, isolated এবং observable job infrastructure তৈরি করা।",
+      "businessOutcome": "Provider outage, rate limit বা server restart-এর সময় কাজ হারাবে না; এক feature-এর backlog অন্য feature block করবে না।",
+      "evidencePresent": [
+        "BullMQ queues/workers exist for products, Meta CAPI and courier",
+        "Catalog sync lock and batch polling foundations exist"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh is blocked in this environment by binaries.prisma.sh DNS resolution failure",
+        "Disposable PostgreSQL migration deployment is not yet attached",
+        "Live Redis restart, stalled-job recovery, cooldown and DLQ replay evidence are not yet attached"
+      ],
+      "implementationSequence": [
+        "Separate catalog, CAPI, leads, diagnostics and connection-health queues",
+        "Implement retry schedule immediate, 1m, 5m, 15m, 1h with provider error classification",
+        "Add deterministic job IDs and scheduler dedupe",
+        "Add DLQ/replay records and admin-safe replay action",
+        "Add rate-limit token bucket/cooldown and stalled-job recovery tests"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase5",
+        "npm run qa:tracking-runtime-health",
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck:ts",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Restart after enqueue does not lose work।",
+        "Provider queues isolated।",
+        "Duplicate scheduled jobs suppressed।",
+        "Stalled jobs recovered।",
+        "Rate limit does not create request storm।",
+        "DLQ replay auditable।"
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "loop-engineering",
+        "branch": "meta-v6/phase-05-durable-jobs",
+        "startedAt": "2026-07-17T14:54:05Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-05-evidence.md",
+        "notes": "Provider-isolated queues, DB audit/dedupe, scheduler, DLQ replay, stalled recovery and adaptive rate controls are code-complete. Prisma generation/migration plus live Redis restart/replay proof remain release gates."
+      }
+    },
+    {
+      "id": 6,
+      "slug": "consent-privacy-retention-data-governance",
+      "title": "Consent, Privacy, Retention & Data Governance",
+      "priority": "P1.2",
+      "dependsOn": [
+        3,
+        4
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Meta tracking এবং lead data processing-কে explicit policy, consent state, retention এবং deletion workflow-এর অধীনে আনা।",
+      "businessOutcome": "Privacy risk কমবে, PII leakage বন্ধ হবে এবং tracking behavior auditable হবে।",
+      "evidencePresent": [
+        "Versioned fail-closed consent resolver and policy contract added under lib/privacy",
+        "Order default is false and historical unversioned grants are conservatively reset by a forward migration",
+        "Browser and server Meta event paths attach and enforce policy decision metadata",
+        "Outbox records persist consent state/version, policy version/reason, advanced-matching permission and retention deadline",
+        "Raw PII normalization, SHA-256 hashing, double-hash prevention and recursive operational redaction are covered by tests",
+        "Durable consent, deletion, suppression, retention and PII audit workflows plus SUPER_ADMIN governance API exist",
+        "Privacy disclosure and production consent documentation reflect withdrawal, retention and backup limitations"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh is blocked in this environment by binaries.prisma.sh DNS resolution failure",
+        "Disposable PostgreSQL migration apply and historical backfill verification are not yet attached",
+        "Live Redis deletion recovery, retention cleanup, suppression sync and PII scan evidence are not yet attached",
+        "Business/legal approval of the published retention schedule remains an external governance gate"
+      ],
+      "implementationSequence": [
+        "Create explicit consent state enum/policy evaluator",
+        "Migrate default to false with documented historical-record backfill",
+        "Persist policy decision code/version on restricted processing",
+        "Enforce log redaction and hashed-only queue payloads",
+        "Add withdrawal, retention and deletion worker tests"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase6",
+        "npm run qa:tracking-test-exclusion",
+        "npm run qa:tracking-retention",
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck:ts",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Default non-essential tracking false।",
+        "Every Meta event has policy decision metadata।",
+        "Raw PII absent from operational logs।",
+        "Withdrawal prevents future restricted processing।",
+        "Retention/deletion jobs proven।"
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "loop-engineering",
+        "branch": "meta-v6/phase-06-privacy-governance",
+        "startedAt": "2026-07-17T15:28:00Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-06-evidence.md",
+        "notes": "Versioned fail-closed consent, policy metadata, hashed-only identity handling, durable deletion/retention/suppression/PII audit and governance APIs are code-complete. Prisma generation/migration plus live Redis operational proof and legal retention approval remain release gates."
+      }
+    },
+    {
+      "id": 7,
+      "slug": "meta-connection-api-version-token-permission-health",
+      "title": "Meta Connection, API Version, Token & Permission Health",
+      "priority": "P1.3",
+      "dependsOn": [],
+      "baselineStatus": "PARTIAL",
+      "objective": "Meta App, Business, Catalog, Dataset/Pixel, Page, Ad Account এবং Instagram assets-এর connection health centrally manage করা।",
+      "businessOutcome": "Expired token, wrong asset, permission loss এবং API version expiry campaign/sync outage হওয়ার আগে detect হবে।",
+      "evidencePresent": [
+        "Persisted MetaConnection, MetaConnectionCheck and MetaApiVersionPolicy schema plus forward migration exist",
+        "Canonical connection readiness verifies token/app association, permissions and configured assets through Graph API",
+        "Central Graph client applies bearer authorization, timeout, safe errors and appsecret_proof",
+        "Daily token/permission/asset and weekly version health jobs use secret-free durable payloads",
+        "SUPER_ADMIN connection API/admin card exposes safe health state and recheck without token values",
+        "Version policy gate tracks v24 controlled baseline, v25 target and regression state without inventing official expiry dates",
+        "Phase 7 tests, static audit, version audit and cross-phase regressions pass"
+      ],
+      "openGaps": [
+        "Generated Prisma client and disposable PostgreSQL migration evidence are not attached in this isolated environment",
+        "Live Meta token, permission and every configured asset verification evidence is not attached",
+        "v25 catalog/CAPI/lead/insights regression and production promotion are still pending",
+        "Live Redis scheduler/worker recovery and alert delivery evidence are not attached",
+        "Production tracking environment gate remains blocked without deployment secrets and service URLs"
+      ],
+      "implementationSequence": [
+        "Apply the Phase 7 connection/version schema migration and regenerate Prisma client",
+        "Run canonical readiness with live system-user/page credentials and verify every configured asset",
+        "Capture secret-free daily/weekly health job and alert evidence",
+        "Complete v25 catalog, CAPI, lead, insights and SDK regression in staging",
+        "Promote the supported version under the version gate and attach rollback evidence"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase7",
+        "npm run qa:meta-graph-version-gate",
+        "npm run qa:meta-business-platform",
+        "npm run qa:tracking-env",
+        "npm run qa:meta-v6-gap",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Presence-only readiness removed।",
+        "Every asset verified via API।",
+        "API version upgrade date tracked।",
+        "Token never exposed।",
+        "v25 controlled upgrade completed before v24 expiry or documented supported alternative।"
+      ],
+      "runtimeEvidenceRequired": true,
+      "state": {
+        "status": "READY_FOR_RUNTIME_QA",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-07",
+        "startedAt": "2026-07-17T16:50:20Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-07-evidence.md",
+        "notes": "Connection/version code, Phase 7 tests/audits, cross-phase regressions and syntax integration pass. COMPLETE remains blocked on Prisma migration generation, live Meta asset checks, live Redis health jobs and controlled v25 regression/promotion."
+      }
+    },
+    {
+      "id": 8,
+      "slug": "lead-ads-webhook-retrieval-crm",
+      "title": "Lead Ads Webhook, Retrieval & CRM",
+      "priority": "P1.4",
+      "dependsOn": [
+        5,
+        7
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Lead Ads notification securely receive করে full lead retrieve, normalize, deduplicate, assign এবং CRM lifecycle track করা।",
+      "businessOutcome": "Lead response time কমবে; campaign/ad/form থেকে order conversion measure করা যাবে।",
+      "evidencePresent": [
+        "Canonical signed webhook endpoint validates GET challenge, X-Hub-Signature-256, payload bounds, page ownership and form allowlist",
+        "Verified notifications are persisted as encrypted durable receipts before BullMQ enqueue; Redis failure is recoverable",
+        "Graph lead retrieval preserves campaign, ad set, ad, form and source attribution with freshness and permanent/retryable failure states",
+        "Lead CRM uses typed lifecycle/retrieval/webhook enums, deterministic leadgen/phone/email dedupe, assignment rules, agent capacity and explicit order conversion",
+        "Raw provider payloads are AES-256-GCM encrypted; queue/admin surfaces exclude raw PII and expose masked identity only",
+        "Recovery, SLA and retention jobs plus SUPER_ADMIN CRM/webhook diagnostics are implemented",
+        "Phase 8 executable tests, static audit, full TypeScript, targeted ESLint, cross-phase regressions and repository tests pass"
+      ],
+      "openGaps": [
+        "Prisma schema-engine download is blocked by binaries.prisma.sh DNS in this environment, so client regeneration and disposable migration apply evidence are not attached",
+        "Live Meta Test Lead end-to-end evidence with the production Page token, Page subscription and allowed form is not attached",
+        "Live Redis receipt recovery, SLA alert delivery and retention-worker evidence are not attached",
+        "Operational approval for lead retention duration and encryption-key rotation/recovery is pending"
+      ],
+      "implementationSequence": [
+        "Regenerate Prisma client and apply the Phase 8 forward migration in a disposable PostgreSQL environment",
+        "Configure the production webhook verify token, Page access token, allowed form IDs and dedicated lead encryption key",
+        "Create a Meta Test Lead and capture receipt, Graph retrieval, normalization, dedupe, assignment and CRM lifecycle evidence",
+        "Exercise Redis outage/recovery, SLA alert and retention cleanup with secret-free logs",
+        "Approve retention/key-rotation runbooks and then promote Phase 8 to COMPLETE"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase8",
+        "npm run qa:meta-business-platform",
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck:ts",
+        "npm test",
+        "npm run build"
+      ],
+      "acceptanceCriteria": [
+        "Test Lead appears end-to-end।",
+        "Invalid signature rejected।",
+        "Duplicate lead not created।",
+        "Campaign/ad/form IDs preserved।",
+        "CRM assignment and conversion fields operational।"
+      ],
+      "runtimeEvidenceRequired": true,
+      "state": {
+        "status": "READY_FOR_RUNTIME_QA",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-08",
+        "startedAt": "2026-07-17T17:24:28Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-08-evidence.md",
+        "notes": "Lead Ads webhook/CRM code, Phase 8 tests/audit, full TypeScript, targeted ESLint, cross-phase audits and repository suite pass. COMPLETE remains blocked on Prisma generation/migration plus live Meta Test Lead and Redis worker evidence."
+      }
+    },
+    {
+      "id": 9,
+      "slug": "admin-meta-operations-center",
+      "title": "Admin Meta Operations Center",
+      "priority": "P1.5",
+      "dependsOn": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Catalog, events, leads, connections, jobs, diagnostics এবং attribution এক secure admin control plane-এ আনা।",
+      "businessOutcome": "Developer ছাড়া operations team সমস্যা identify, inspect, retry এবং approve করতে পারবে।",
+      "evidencePresent": [
+        "/admin/meta unified operations dashboard with overview, connection, catalog, events, leads, jobs, approvals, attribution and audit tabs",
+        "Typed MetaAdminApproval and immutable MetaAdminAudit persistence with forward migration",
+        "Exact-payload two-person approval gate for event replay and job replay/cancel",
+        "Permission-separated view, operate, approve and audit capabilities with SUPER_ADMIN execution compatibility",
+        "Recursive secret/PII redaction and human-readable final provider-state diagnostics",
+        "Phase 09 semantic tests and static contract audit"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh and disposable PostgreSQL migration proof remain blocked in this environment by binaries.prisma.sh DNS resolution",
+        "Mutation audit wrapper is integrated for connection recheck, catalog sync, event replay, job replay/cancel and lead lifecycle; remaining Meta Business write routes still need migration to the shared wrapper",
+        "Live browser/API evidence for two-person approval execution and immutable database audit rows is not yet attached",
+        "Catalog Diagnostics ingestion/admin issue detail remains Phase 10 and global A14 scope"
+      ],
+      "implementationSequence": [
+        "Apply the Phase 09 migration and regenerate the Prisma client",
+        "Run the unified operations dashboard against migrated production-like data",
+        "Migrate remaining Meta Business mutation routes to executeMetaAdminAction",
+        "Capture two-person approval, exact-payload mismatch, expiry and concurrent-consumption runtime evidence",
+        "Hand off Catalog Diagnostics detail ingestion to Phase 10"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase9",
+        "npm run qa:admin-api-security",
+        "npm run qa:meta-business-platform",
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck:ts",
+        "npm run build"
+      ],
+      "acceptanceCriteria": [
+        "Non-technical admin failure reason বুঝতে পারে।",
+        "Dangerous action approval ছাড়া চলে না।",
+        "Every mutation audited।",
+        "No secret/PII leak।",
+        "Source-of-truth statuses reflect final Meta result।"
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "PARTIAL",
+        "owner": null,
+        "branch": "artifact/meta-v6-phase-09",
+        "startedAt": "2026-07-18T01:05:00+06:00",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-09-evidence.md",
+        "notes": "Phase 09 foundation implemented and statically verified. Generated client, migration/runtime proof, and remaining write-route audit adoption are release holds."
+      }
+    },
+    {
+      "id": 10,
+      "slug": "observability-diagnostics-alerting",
+      "title": "Observability, Diagnostics & Alerting",
+      "priority": "P2.1",
+      "dependsOn": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Catalog, CAPI, queue, webhook, connection এবং ads operations-এর জন্য structured logs, metrics, traces এবং alerts তৈরি করা।",
+      "businessOutcome": "Revenue-impacting outage customer report-এর আগে detect হবে; root-cause analysis দ্রুত হবে।",
+      "evidencePresent": [
+        "Persisted MetaCatalogDiagnostic and MetaCatalogDiagnosticItem models with active/resolved lifecycle and forward migration",
+        "Meta Catalog Diagnostics Graph importer with sampled retailer IDs, stale issue resolution and redacted provider evidence",
+        "MetaIncident persistence with OPEN/ACKNOWLEDGED/RESOLVED lifecycle, dedupe windows, cooldown and occurrence counts",
+        "Correlation IDs persisted and propagated across CAPI outbox, BullMQ job audit, lead webhook receipts, catalog batches, diagnostics and incidents",
+        "Protected aggregate health, restricted Prometheus metrics, incident, diagnostics and correlation timeline APIs",
+        "/admin/meta Diagnostics, Incident inbox and Trace tabs",
+        "Phase 10 semantic, static, security and Phase 4/5/8/9 regression evidence"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh and disposable PostgreSQL migration proof remain blocked in this environment by binaries.prisma.sh DNS resolution",
+        "Live Meta Catalog Diagnostics API import evidence against an owned production-like catalog is not attached",
+        "Alert delivery/escalation to an external paging destination and measured SLA evidence are not attached",
+        "In-memory metrics need production scrape/runtime proof and multi-instance aggregation validation",
+        "Global blocker A13 lifecycle enum naming/coverage remains open outside the Catalog Diagnostics blocker resolved by this phase"
+      ],
+      "implementationSequence": [
+        "Regenerate Prisma client and apply the Phase 10 migration to a disposable PostgreSQL database",
+        "Run Catalog Diagnostics import against an owned Meta catalog and capture item-level issue/resolution evidence",
+        "Exercise stuck batch, token invalid, failure spike, silence, backlog and mass-delete alerts with runtime fixtures",
+        "Connect incident notifications to the production paging destination and measure alert SLA/cooldown behavior",
+        "Validate protected health/metrics scraping and correlation timelines in a production-like multi-worker deployment"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase10",
+        "npm run qa:admin-api-security",
+        "npm run qa:meta-business-platform",
+        "npm run qa:meta-v6-phase8",
+        "npm run qa:meta-v6-phase9",
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck:ts",
+        "npm run build"
+      ],
+      "acceptanceCriteria": [
+        "Critical failures alert within defined SLA।",
+        "Every batch/event/job traceable।",
+        "Catalog Diagnostics imported।",
+        "Logs contain no secrets/PII।",
+        "Alert noise controlled through dedup/cooldown।"
+      ],
+      "runtimeEvidenceRequired": true,
+      "state": {
+        "status": "PARTIAL",
+        "owner": null,
+        "branch": "artifact/meta-v6-phase-10",
+        "startedAt": "2026-07-18T01:38:00+06:00",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-10-evidence.md",
+        "notes": "Phase 10 engineering foundation and A14 Catalog Diagnostics blocker are implemented and statically verified. Prisma generation/migration, live Meta diagnostics, paging SLA and production runtime evidence remain release holds."
+      }
+    },
+    {
+      "id": 11,
+      "slug": "first-party-attribution-growth-analytics",
+      "title": "First-Party Attribution & Growth Analytics",
+      "priority": "P2.2",
+      "dependsOn": [
+        3,
+        4,
+        6
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "UTM, Meta click/browser identifiers, sessions, leads, orders এবং product funnel-কে first-party attribution model-এ যুক্ত করা।",
+      "businessOutcome": "Campaign/product অনুযায়ী revenue, CAC এবং funnel drop-off বোঝা যাবে; Meta-reported attribution-এর বাইরে internal view পাওয়া যাবে।",
+      "evidencePresent": [
+        "Consent-aware browser session capture posts bounded UTM, fbclid, _fbc and _fbp identifiers to a first-party API",
+        "MarketingAttribution and MarketingAttributionDailyAggregate schemas plus a forward-only migration",
+        "Immutable first-touch, eligible last-touch, transactional order snapshots and lead-to-order inheritance",
+        "Aggregate-only protected attribution report with separately labelled first-party and Meta-reported measurement models",
+        "Coverage/data-quality metrics and Phase 11 semantic/static regression suites",
+        "Global Meta v6 blocker gate now passes A1-A14"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh and disposable PostgreSQL migration proof remain blocked in this environment by binaries.prisma.sh DNS resolution",
+        "The repository-wide master tracking gate still has eight inherited historical report/runtime-proof failures outside the Phase 11 attribution contract",
+        "Production traffic needs runtime coverage baselines, aggregate refresh scheduling and dashboard reconciliation evidence",
+        "The guarded order backfill intentionally requires request-context recovery or an explicit correction audit before mutation"
+      ],
+      "implementationSequence": [
+        "Regenerate Prisma Client and apply the Phase 11 migration to disposable PostgreSQL",
+        "Run consent-granted, direct, paid, cross-session and lead-conversion runtime fixtures",
+        "Schedule daily aggregate and data-quality workers in production",
+        "Reconcile first-party reports against separately labelled Meta Insights without merging models",
+        "Attach coverage baseline and correction/backfill audit evidence"
+      ],
+      "gateCommands": [
+        "npm run qa:tracking-attribution",
+        "npm run qa:master-tracking",
+        "npm run qa:meta-v6-gap",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Order and lead attribution reproducible।",
+        "Meta and first-party reports separately labelled।",
+        "No silent overwrite of first touch।",
+        "Coverage/data-quality metrics visible।"
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-11",
+        "startedAt": "2026-07-17T20:15:51Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-11-evidence.md",
+        "notes": "Phase 11 semantic/static/security/regression gates pass and global A1-A14 blocker gate is green. Prisma generation/migration proof is blocked by binaries.prisma.sh DNS; master tracking retains eight unrelated historical release/runtime evidence failures."
+      }
+    },
+    {
+      "id": 12,
+      "slug": "product-sets-categories-merchandising-segmentation",
+      "title": "Product Sets, Categories & Merchandising Segmentation",
+      "priority": "P2.3",
+      "dependsOn": [
+        2,
+        5
+      ],
+      "baselineStatus": "NOT_STARTED",
+      "objective": "Catalog data quality-এর উপর ভিত্তি করে deterministic product sets এবং optional Shop collections তৈরি করা।",
+      "businessOutcome": "Campaign targeting, catalog ads, merchandising এবং seasonal promotion দ্রুত চালানো যাবে।",
+      "evidencePresent": [
+        "Typed MetaProductSet, MetaProductSetVersion, MetaProductSetPreview and MetaProductSetMembership persistence with a forward migration",
+        "Deterministic allowlisted rule evaluator with canonical rule and exact membership SHA-256 hashes",
+        "Preview-scoped Meta ProductSet create/update integration using official SDK objects",
+        "Permission-scoped audited admin CRUD, approval-gated manual sync and monotonic rollback",
+        "Six-hour reconciliation worker, empty/broken incidents, low-cardinality metrics and Operations Center rule builder"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh, schema validation and disposable PostgreSQL migration proof are blocked in this environment by binaries.prisma.sh DNS resolution",
+        "Live Meta Product Set create/update evidence and provider-side product_count parity have not been attached",
+        "Scheduled reconciliation needs production worker/Redis runtime proof and repeated-run evidence",
+        "Optional Meta Shop collection synchronization is not implemented in this phase slice",
+        "The repository-wide master tracking gate retains eight inherited historical documentation/runtime-proof failures outside Phase 12 product sets"
+      ],
+      "implementationSequence": [
+        "Regenerate Prisma Client and apply/rollback the Phase 12 migration in disposable PostgreSQL",
+        "Run deterministic preview fixtures against production-like canonical catalog data",
+        "Create and update an owned Meta Product Set, then compare provider product_count with the approved local membership snapshot",
+        "Run the six-hour reconciliation worker twice to prove idempotent membership and incident behavior",
+        "Decide whether optional Meta Shop collection synchronization belongs in a later release slice"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase12",
+        "npm run qa:admin-api-security",
+        "npm run qa:meta-business-platform",
+        "npm run qa:meta-v6-phase11",
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck:ts",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Product sets deterministic।",
+        "Membership preview matches synchronized result।",
+        "Empty/broken sets alerted।",
+        "Rule mutations audited।"
+      ],
+      "runtimeEvidenceRequired": false,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-12",
+        "startedAt": "2026-07-17T20:41:25Z",
+        "completedAt": "2026-07-17T20:58:28Z",
+        "evidenceFile": "docs/release/meta-v6/phase-12-evidence.md",
+        "notes": "Phase 12 semantic/static/security/regression gates pass. Prisma binary DNS resolution blocks generated-client and disposable-database proof; live provider product_count parity remains a release hold."
+      }
+    },
+    {
+      "id": 13,
+      "slug": "ads-insights-approval-based-automation",
+      "title": "Ads Insights & Approval-Based Automation",
+      "priority": "P2.4",
+      "dependsOn": [
+        7,
+        9,
+        10
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Marketing API থেকে read-only performance insights ingest করা এবং পরে strictly approval-based ad mutations enable করা।",
+      "businessOutcome": "Spend, CTR, CPC, purchases এবং ROAS এক dashboard-এ দেখা যাবে; optimization suggestions human control-এর অধীনে থাকবে।",
+      "evidencePresent": [
+        "Ads Insights, campaign/adset/creative/ad read/write APIs and safe PAUSED create defaults exist"
+      ],
+      "openGaps": [
+        "Generated Prisma client refresh, schema validation and disposable PostgreSQL migration proof are blocked in this environment by binaries.prisma.sh DNS resolution",
+        "Three consecutive live read-only Ads Insights synchronization runs have not been attached, so the production write gate must remain closed",
+        "Live two-person approval execution against an owned Meta ad account and exact provider before/after evidence are not attached",
+        "Production Redis/worker scheduling, provider partial-failure reconciliation and budget-cap runtime proof remain release holds",
+        "The repository-wide master tracking gate retains eight inherited historical documentation/runtime-proof failures outside Phase 13 ads automation"
+      ],
+      "implementationSequence": [
+        "Regenerate Prisma Client and apply/rollback the Phase 13 migration in disposable PostgreSQL",
+        "Run three consecutive read-only Ads Insights syncs against an owned ad account and prove freshness/stability gating",
+        "Request and approve an exact campaign/ad set/ad mutation with separate operators, then attach immutable before/provider/after evidence",
+        "Exercise absolute and relative budget/bid caps plus provider re-read failure reconciliation in a production-like environment",
+        "Enable the six-hour worker schedule only after live read-only and approval-gated mutation evidence is green"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-phase13",
+        "npm run qa:admin-api-security",
+        "npm run qa:meta-business-platform",
+        "npm run qa:meta-v6-gap",
+        "npm run qa:meta-v6-phase12",
+        "npm run typecheck:ts",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Read-only dashboard stable before writes enabled।",
+        "No mutation without explicit valid approval।",
+        "Budget safety caps enforced।",
+        "Every write has before/after audit।"
+      ],
+      "runtimeEvidenceRequired": true,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-13",
+        "startedAt": "2026-07-17T21:03:21Z",
+        "completedAt": "2026-07-17T21:22:38Z",
+        "evidenceFile": "docs/release/meta-v6/phase-13-evidence.md",
+        "notes": "Phase 13 semantic/static/security/regression gates pass. Prisma binary DNS resolution blocks generated-client and disposable-database proof; live three-run insights stability, separate-approver mutation and provider reconciliation evidence remain release holds."
+      }
+    },
+    {
+      "id": 14,
+      "slug": "instagram-messaging-social-crm-expansion",
+      "title": "Instagram Messaging & Social CRM Expansion",
+      "priority": "P2.5",
+      "dependsOn": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "baselineStatus": "FOUNDATION_ONLY",
+      "objective": "Instagram Professional account messaging, comments/private replies এবং product inquiries-কে secure CRM/support workflow-এ integrate করা।",
+      "businessOutcome": "Social inquiries দ্রুত respond হবে; conversation-to-lead/order conversion track করা যাবে।",
+      "evidencePresent": [
+        "Generic social inbox UI and Instagram labels/types exist",
+        "Meta creative configuration supports an Instagram actor ID"
+      ],
+      "openGaps": [
+        "No verified Instagram Messaging webhook/Graph ingestion path was found",
+        "No Instagram-specific message dedupe, reply policy or permission health flow",
+        "Customer/lead/order linking is not proven for Instagram conversations"
+      ],
+      "implementationSequence": [
+        "Verify professional account linkage and messaging permissions",
+        "Add signed webhook ingestion and dedupe state machine",
+        "Normalize conversations/messages/attachments into social CRM models",
+        "Implement policy-aware replies and private-reply windows",
+        "Link conversation to customer, lead, product and order with audit"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-gap",
+        "npm run typecheck",
+        "npm test"
+      ],
+      "acceptanceCriteria": [
+        "Messages securely ingested and deduplicated।",
+        "Account/permission checks pass।",
+        "Customer/lead linking auditable।",
+        "Replies only when platform policy permits।"
+      ],
+      "runtimeEvidenceRequired": true,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-14",
+        "startedAt": "2026-07-17T21:31:56Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-14-evidence.md",
+        "notes": "Instagram Social CRM engineering gates pass. Prisma generation/migration, App Review, live signed webhook/reply and production worker/storage evidence remain required."
+      }
+    },
+    {
+      "id": 15,
+      "slug": "testing-ci-migration-release-governance",
+      "title": "Testing, CI, Migration & Release Governance",
+      "priority": "P2.6",
+      "dependsOn": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "baselineStatus": "PARTIAL",
+      "objective": "Schema, catalog payload, tracking, CAPI, webhooks, permissions এবং admin actions-এর regressions production deployment-এর আগে block করা।",
+      "businessOutcome": "Campaign outage, stale catalog, duplicate Purchase, privacy leak এবং unsafe ad mutation-এর risk কমবে।",
+      "evidencePresent": [
+        "Large static audit suite, CI workflow, typecheck/build/security/release scripts and runbooks exist"
+      ],
+      "openGaps": [
+        "No v6 phase manifest/gate existed before this update",
+        "Current audits can pass while A1–A14 blockers remain",
+        "No evidence-driven phase completion state and no API version expiry blocker",
+        "Critical catalog/CAPI/lead runtime E2E evidence remains environment-dependent"
+      ],
+      "implementationSequence": [
+        "Use the added v6 manifest, gap audit and loop runner as the controlling layer",
+        "Add phase-specific semantic/unit/integration/E2E tests before marking complete",
+        "Add migration dry-run/rollback and generated-client freshness checks",
+        "Generate release claim only from machine-readable evidence",
+        "Keep runtime-only Meta account checks explicit and never mark them statically complete"
+      ],
+      "gateCommands": [
+        "npm run qa:meta-v6-gate",
+        "npm run qa:predeploy",
+        "npm run build"
+      ],
+      "acceptanceCriteria": [
+        "Typecheck/build/migration checks pass।",
+        "Real adapter semantic snapshots pass।",
+        "Raw productId regression audit pass।",
+        "PII/security tests pass।",
+        "Catalog/CAPI/lead critical E2E pass।",
+        "Version gate warns/blocks before expiry।",
+        "Release claim only generated from test evidence।"
+      ],
+      "runtimeEvidenceRequired": true,
+      "state": {
+        "status": "READY_FOR_GENERATION",
+        "owner": "OpenAI loop engineering pass",
+        "branch": "artifact/meta-v6-phase-15",
+        "startedAt": "2026-07-17T22:07:09Z",
+        "completedAt": null,
+        "evidenceFile": "docs/release/meta-v6/phase-15-evidence.md",
+        "notes": "Release governance source, semantic, migration-hash, evidence-ledger and CI contracts are implemented. Production remains blocked until fresh Prisma generation/migration proof, critical provider E2E, all runtime evidence, and all phase COMPLETE states are attached."
+      }
+    }
+  ]
+}

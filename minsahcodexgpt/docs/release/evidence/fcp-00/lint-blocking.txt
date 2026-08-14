@@ -1,0 +1,4 @@
+
+> minsah-beauty@2.0.0 lint:blocking
+> eslint app/api/admin/site-config/route.ts lib/admin/home-config-validation.ts lib/prisma-json.ts hooks/useAccessibleDialog.ts
+

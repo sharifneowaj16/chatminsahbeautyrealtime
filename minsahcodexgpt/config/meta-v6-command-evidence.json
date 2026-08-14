@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-17T22:57:00.400Z",
+  "maxAgeHours": 24,
+  "records": [
+    {
+      "id": "typecheck",
+      "status": "PASS",
+      "command": "npm",
+      "args": [
+        "run",
+        "typecheck:ts"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-07-17T22:54:02.384Z",
+      "finishedAt": "2026-07-17T22:54:06.749Z",
+      "durationMs": 4365,
+      "summary": "> minsah-beauty@2.0.0 typecheck:ts | > tsc --noEmit --pretty false",
+      "outputSha256": "b11f77dea4cad92b260e6c02c00efb52de7b4ee22c8dd2d5e187ebcb0508c548",
+      "sourceSha256": "459e349cd9b3420727d5571714f704c2dcfb832a01a17842143849f9bd620b30",
+      "logPath": "docs/release/meta-v6/phase-16-command-typecheck.log",
+      "logSha256": "b11f77dea4cad92b260e6c02c00efb52de7b4ee22c8dd2d5e187ebcb0508c548",
+      "evidenceDigest": "f8c5e76cddc2b5225c9e8e6eeae31cf24b61bb530a6a06458600ab4ee1aede4b"
+    },
+    {
+      "id": "lint",
+      "status": "PASS",
+      "command": "npm",
+      "args": [
+        "run",
+        "lint"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-07-17T22:55:56.671Z",
+      "finishedAt": "2026-07-17T22:56:31.178Z",
+      "durationMs": 34507,
+      "summary": "  552:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |  | /mnt/data/phase16_work/minsahbeauty-meta-v6-update/types/tracking.ts |    84:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |   198:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |   242:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any |  | /mnt/data/phase16_work/minsahbeauty-meta-v6-update/utils/formatting.ts |   56:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export |  | ✖ 474 problems (0 errors, 474 warnings) |   0 errors and 2 warnings potentially fixable with the `--fix` option.",
+      "outputSha256": "c964ca2a02d9fbca84682888e2e0f538a8404abb28840330803870d76afaa2ba",
+      "sourceSha256": "459e349cd9b3420727d5571714f704c2dcfb832a01a17842143849f9bd620b30",
+      "logPath": "docs/release/meta-v6/phase-16-command-lint.log",
+      "logSha256": "c964ca2a02d9fbca84682888e2e0f538a8404abb28840330803870d76afaa2ba",
+      "evidenceDigest": "ebe9467883cf8a14ec0d57d6cfbcd6bf5620917bca62bd51314130d08b257213"
+    },
+    {
+      "id": "master-tracking",
+      "status": "PASS",
+      "command": "npm",
+      "args": [
+        "run",
+        "qa:master-tracking"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-07-17T22:56:44.637Z",
+      "finishedAt": "2026-07-17T22:56:45.786Z",
+      "durationMs": 1149,
+      "summary": "      \"exitCode\": 0, |       \"durationMs\": 71 |     }, |     { |       \"script\": \"scripts/phase7-tiktok-tracking-safety-audit.mjs\", |       \"ok\": true, |       \"exitCode\": 0, |       \"durationMs\": 75 |     } |   ], |   \"issues\": [] | }",
+      "outputSha256": "f65156a1a0324ff6be13823b5d10b985ffa36176a9aac998532a84d8d616936d",
+      "sourceSha256": "459e349cd9b3420727d5571714f704c2dcfb832a01a17842143849f9bd620b30",
+      "logPath": "docs/release/meta-v6/phase-16-command-master-tracking.log",
+      "logSha256": "f65156a1a0324ff6be13823b5d10b985ffa36176a9aac998532a84d8d616936d",
+      "evidenceDigest": "a817976419edd81c63301c317df0190d8254d0be1310f0ddc093034a670ff700"
+    },
+    {
+      "id": "build",
+      "status": "FAIL",
+      "command": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "exitCode": 1,
+      "startedAt": "2026-07-17T22:56:59.990Z",
+      "finishedAt": "2026-07-17T22:57:00.390Z",
+      "durationMs": 400,
+      "summary": "> minsah-beauty@2.0.0 build | > node scripts/prisma-client-freshness.mjs && next build --webpack |  | Generated Prisma client is stale for prisma/schema.prisma. Run `npm run db:generate` and commit the refreshed generated/prisma snapshot.",
+      "outputSha256": "d70184588319f85ccde01918859777f8680aa1bf082b7bb0f53854ae1993ee55",
+      "sourceSha256": "459e349cd9b3420727d5571714f704c2dcfb832a01a17842143849f9bd620b30",
+      "logPath": "docs/release/meta-v6/phase-16-command-build.log",
+      "logSha256": "d70184588319f85ccde01918859777f8680aa1bf082b7bb0f53854ae1993ee55",
+      "evidenceDigest": "6cc7d8f051d9a086ed846ec39c60d9fdbca4a9e4ee50482d9abc66fa14178128"
+    }
+  ]
+}

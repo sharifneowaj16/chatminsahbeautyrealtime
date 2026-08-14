@@ -1,0 +1,970 @@
+{
+  "schema_version": 1,
+  "phase": 31,
+  "program": "Meta v6 unified platform implementation",
+  "execution_model": "SEQUENTIAL_ITEM_GATES_WITH_AUTOMATED_WORK_PACKETS",
+  "current_layer": 9,
+  "current_item": "9.8",
+  "standard_item_contract": {
+    "result_path_pattern": "evidence/phase31-meta-social-crm/items/phase31_layer{item}_result.md",
+    "gate_log_pattern": "evidence/phase31-meta-social-crm/logs/phase31_layer{item}_gate.log",
+    "no_item_zip": true,
+    "checkpoint_update_command": "npm run ai:advance-item -- --item {item} --status COMPLETE --evidence <path> --log <path> --apply",
+    "focused_command_names": [
+      "test:meta-v6-phase31-layer{item}",
+      "qa:meta-platform-phase31-layer{item}",
+      "qa:phase31-meta-layer{item}"
+    ],
+    "full_layer_zip_only": true,
+    "item_patch_pattern": "minsahbeauty_phase31_layer{item}.patch",
+    "item_patch_checksum_pattern": "minsahbeauty_phase31_layer{item}.patch.sha256",
+    "item_verification_log_pattern": "phase31_layer{item}_verification.log"
+  },
+  "global_claim_boundaries": [
+    "Do not claim full-project typecheck, lint or production build without executed evidence.",
+    "Do not claim PostgreSQL, Redis/BullMQ, realtime/WebSocket or live Meta PASS without executed evidence.",
+    "Do not fabricate screenshots, provider responses or live evidence.",
+    "Any Prisma schema change requires migration.sql and recovery.sql in the same numbered item."
+  ],
+  "layers": {
+    "6": {
+      "title": "Realtime Bridge Layer",
+      "objective": "Align the realtime service with shared normalized events, durable persistence state, retry/dead-letter ownership, media policy, token health and safe websocket contracts.",
+      "status": "COMPLETE",
+      "evidence": "evidence/phase31-meta-social-crm/08-realtime-bridge.md",
+      "artifacts": [
+        "minsahbeauty_phase31_layer6_complete.zip",
+        "minsahbeauty_phase31_layer6_complete.zip.sha256",
+        "phase31_layer6_verification.log",
+        "evidence/phase31-meta-social-crm/08-realtime-bridge.md"
+      ],
+      "items": [
+        {
+          "id": "6.1",
+          "title": "Realtime Facebook service audit",
+          "mode": "AUDIT",
+          "status": "COMPLETE",
+          "objective": "Audit direct Graph calls, signature verification, inbox processing, outgoing retry, dead-letter, media retry, attachment handling, token health, replay, event payloads, websocket schemas and main-app state mismatches.",
+          "primary_paths": [
+            "realtime-service/src/facebook/",
+            "realtime-service/src/routes/webhook.router.ts",
+            "lib/meta/instagram/realtime.ts"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/08-realtime-facebook-audit.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer6.1_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer6.1_gate.log"
+          ],
+          "acceptance_criteria": [
+            "No unknown realtime Facebook path remains",
+            "Main-app/realtime ownership conflicts are mapped",
+            "Items 6.2-6.5 implementation boundaries are explicit"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer6.1",
+            "audit": "qa:meta-platform-phase31-layer6.1",
+            "gate": "qa:phase31-meta-layer6.1"
+          }
+        },
+        {
+          "id": "6.2",
+          "title": "Realtime normalized event bridge",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Adopt shared normalized event contracts between the main app, realtime service and websocket clients with deterministic duplicate and ordering controls.",
+          "primary_paths": [
+            "realtime-service/src/",
+            "lib/meta-platform/contracts/",
+            "lib/meta-platform/domains/instagram/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer6.2_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer6.2_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Receipt/message/conversation/correlation IDs are preserved",
+            "Duplicate websocket delivery is controlled",
+            "Out-of-order delivery cannot regress state"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer6.2",
+            "audit": "qa:meta-platform-phase31-layer6.2",
+            "gate": "qa:phase31-meta-layer6.2"
+          }
+        },
+        {
+          "id": "6.3",
+          "title": "Realtime Graph client replacement or isolation",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Replace or isolate direct realtime Graph clients behind shared platform transport, error taxonomy, permission health and feature-flagged rollback.",
+          "primary_paths": [
+            "realtime-service/src/facebook/",
+            "lib/meta-platform/transports/",
+            "lib/meta-platform/domains/pages/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer6.3_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer6.3_gate.log"
+          ],
+          "acceptance_criteria": [
+            "New direct Graph access is blocked",
+            "Central error and permission contracts are used",
+            "Legacy fallback is explicit and reversible"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer6.3",
+            "audit": "qa:meta-platform-phase31-layer6.3",
+            "gate": "qa:phase31-meta-layer6.3"
+          }
+        },
+        {
+          "id": "6.4",
+          "title": "Realtime retry/dead-letter alignment",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Align main-app and realtime retry, dead-letter, replay and unknown-write reconciliation so only one runtime owns each retry loop.",
+          "primary_paths": [
+            "realtime-service/src/",
+            "lib/meta-platform/queue/",
+            "workers/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer6.4_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer6.4_gate.log"
+          ],
+          "acceptance_criteria": [
+            "No parallel retry loops remain",
+            "Dead-letter and replay states align",
+            "Possible-success writes require reconciliation"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer6.4",
+            "audit": "qa:meta-platform-phase31-layer6.4",
+            "gate": "qa:phase31-meta-layer6.4"
+          }
+        },
+        {
+          "id": "6.5",
+          "title": "Realtime media and token-health alignment",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Adopt shared attachment policy, media status and provider permission health across realtime and main-app projections.",
+          "primary_paths": [
+            "realtime-service/src/",
+            "lib/meta-platform/domains/instagram/media-policy.ts",
+            "lib/meta-platform/domains/pages/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer6.5_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer6.5_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Unsafe media is never emitted",
+            "Revoked token behavior is deterministic",
+            "Admin/realtime health output is redacted"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer6.5",
+            "audit": "qa:meta-platform-phase31-layer6.5",
+            "gate": "qa:phase31-meta-layer6.5"
+          }
+        },
+        {
+          "id": "6.6",
+          "title": "Realtime independent build and evidence gate",
+          "mode": "LAYER_GATE",
+          "status": "COMPLETE",
+          "objective": "Run the complete Layer 6 contract, regression, focused typecheck/build when dependencies exist, and produce reproducible evidence and packaging.",
+          "primary_paths": [
+            "realtime-service/",
+            "tests/meta-v6/",
+            "scripts/",
+            "evidence/phase31-meta-social-crm/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/08-realtime-bridge.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer6.6_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer6.6_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Websocket contract and duplicate tests pass",
+            "Retry/dead-letter ownership tests pass",
+            "Direct Graph audit and fallback tests pass",
+            "Unexecuted runtime/build evidence is reported as blocked"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer6.6",
+            "audit": "qa:meta-platform-phase31-layer6.6",
+            "gate": "qa:phase31-meta-layer6.6"
+          }
+        }
+      ]
+    },
+    "7": {
+      "title": "Admin and API Presentation Layer",
+      "objective": "Expose unified receipt, queue, domain, permission and reply-policy state through safe authorized admin/API contracts.",
+      "status": "IN_PROGRESS",
+      "evidence": "evidence/phase31-meta-social-crm/09-admin-api.md",
+      "artifacts": [
+        "minsahbeauty_phase31_layer7_complete.zip",
+        "minsahbeauty_phase31_layer7_complete.zip.sha256",
+        "phase31_layer7_verification.log",
+        "evidence/phase31-meta-social-crm/09-admin-api.md"
+      ],
+      "items": [
+        {
+          "id": "7.1",
+          "title": "Admin/API data contract audit",
+          "mode": "AUDIT",
+          "status": "NOT_STARTED",
+          "objective": "Audit existing admin endpoints, response shapes, raw payload exposure, authorization, pagination and legacy model coupling; define shared safe DTOs.",
+          "primary_paths": [
+            "app/api/admin/",
+            "app/admin/",
+            "lib/meta-platform/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/09-admin-api-audit.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.1_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.1_gate.log"
+          ],
+          "acceptance_criteria": [
+            "All relevant admin endpoints are inventoried",
+            "Unsafe exposure and auth gaps are mapped",
+            "Items 7.2-7.7 DTO boundaries are explicit"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.1",
+            "audit": "qa:meta-platform-phase31-layer7.1",
+            "gate": "qa:phase31-meta-layer7.1"
+          }
+        },
+        {
+          "id": "7.2",
+          "title": "Admin inbox platform-backed API",
+          "mode": "IMPLEMENTATION",
+          "status": "NOT_STARTED",
+          "objective": "Implement platform-backed conversation/message APIs with safe participants, attachments, reply eligibility, status, pagination and redaction.",
+          "primary_paths": [
+            "app/api/admin/inbox/",
+            "app/admin/inbox/",
+            "lib/meta-platform/repositories/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.2_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.2_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Inbox reads platform durable state",
+            "Pagination/filtering is bounded",
+            "Sensitive data is redacted"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.2",
+            "audit": "qa:meta-platform-phase31-layer7.2",
+            "gate": "qa:phase31-meta-layer7.2"
+          }
+        },
+        {
+          "id": "7.3",
+          "title": "Instagram admin health and operations API",
+          "mode": "IMPLEMENTATION",
+          "status": "NOT_STARTED",
+          "objective": "Expose webhook, identity, permission, queue, processing, reply-window, private-reply and dead-letter health safely.",
+          "primary_paths": [
+            "app/api/admin/meta/instagram/",
+            "app/admin/meta/instagram/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.3_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.3_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Health traces durable state",
+            "Provider IDs are safe",
+            "No raw payload or token exposure"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.3",
+            "audit": "qa:meta-platform-phase31-layer7.3",
+            "gate": "qa:phase31-meta-layer7.3"
+          }
+        },
+        {
+          "id": "7.4",
+          "title": "Lead Ads admin status API",
+          "mode": "IMPLEMENTATION",
+          "status": "NOT_STARTED",
+          "objective": "Expose receipt, fetch, normalized lead, CRM handoff, duplicate, mapping, test-lead and failure state with safe PII projection.",
+          "primary_paths": [
+            "app/api/admin/meta/leads/",
+            "app/admin/meta-business/leads/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.4_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.4_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Receipt-to-CRM trace works",
+            "Test Lead is visible",
+            "Raw PII is absent"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.4",
+            "audit": "qa:meta-platform-phase31-layer7.4",
+            "gate": "qa:phase31-meta-layer7.4"
+          }
+        },
+        {
+          "id": "7.5",
+          "title": "Provider permission/account health API",
+          "mode": "IMPLEMENTATION",
+          "status": "NOT_STARTED",
+          "objective": "Expose app, business, Page, Instagram, ad account and form permission health with timestamps and safe remediation hints.",
+          "primary_paths": [
+            "app/api/admin/meta/health/",
+            "lib/meta-platform/domains/pages/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.5_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.5_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Scoped identity health is deterministic",
+            "Revoked access is visible",
+            "Remediation output is safe"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.5",
+            "audit": "qa:meta-platform-phase31-layer7.5",
+            "gate": "qa:phase31-meta-layer7.5"
+          }
+        },
+        {
+          "id": "7.6",
+          "title": "Queue, dead-letter and replay visibility",
+          "mode": "IMPLEMENTATION",
+          "status": "NOT_STARTED",
+          "objective": "Expose processing, failed, dead-letter, retry schedule, replay eligibility and audit trail without unsafe payloads.",
+          "primary_paths": [
+            "app/api/admin/meta/jobs/",
+            "app/api/admin/meta/operations/",
+            "lib/meta-platform/queue/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.6_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.6_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Queue states are traceable",
+            "Replay eligibility is policy-backed",
+            "Errors are sanitized"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.6",
+            "audit": "qa:meta-platform-phase31-layer7.6",
+            "gate": "qa:phase31-meta-layer7.6"
+          }
+        },
+        {
+          "id": "7.7",
+          "title": "Admin replay/action controls",
+          "mode": "IMPLEMENTATION",
+          "status": "NOT_STARTED",
+          "objective": "Implement authorized, CSRF-safe, audited replay and operation controls that respect kill switches and dedupe.",
+          "primary_paths": [
+            "app/api/admin/meta/",
+            "lib/meta-platform/queue/",
+            "lib/meta-platform/repositories/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.7_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.7_gate.log"
+          ],
+          "acceptance_criteria": [
+            "RBAC and CSRF checks pass",
+            "No direct provider write from UI route",
+            "Replay cannot bypass dedupe or policy"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.7",
+            "audit": "qa:meta-platform-phase31-layer7.7",
+            "gate": "qa:phase31-meta-layer7.7"
+          }
+        },
+        {
+          "id": "7.8",
+          "title": "Layer 7 admin/API evidence gate",
+          "mode": "LAYER_GATE",
+          "status": "NOT_STARTED",
+          "objective": "Run authorization, redaction, traceability, pagination and replay tests; produce Layer 7 evidence and package.",
+          "primary_paths": [
+            "app/api/admin/",
+            "tests/meta-v6/",
+            "evidence/phase31-meta-social-crm/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/09-admin-api.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer7.8_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer7.8_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Receipt-to-business-record trace passes",
+            "Unauthorized access is rejected",
+            "Sensitive-data scans pass"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer7.8",
+            "audit": "qa:meta-platform-phase31-layer7.8",
+            "gate": "qa:phase31-meta-layer7.8"
+          }
+        }
+      ]
+    },
+    "8": {
+      "title": "Feature Flags, Cutover and Rollback",
+      "objective": "Make Phase 31 migration observable, reversible and safe for provider writes.",
+      "status": "COMPLETE",
+      "evidence": "evidence/phase31-meta-social-crm/10-cutover-rollback.md",
+      "artifacts": [
+        "minsahbeauty_phase31_layer8_complete.zip",
+        "minsahbeauty_phase31_layer8_complete.zip.sha256",
+        "phase31_layer8_verification.log",
+        "evidence/phase31-meta-social-crm/10-cutover-rollback.md"
+      ],
+      "items": [
+        {
+          "id": "8.1",
+          "title": "Feature flag inventory and configuration contract",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Define safe defaults, env validation, runtime visibility and failure behavior for all Phase 31 cutover flags.",
+          "primary_paths": [
+            "config/",
+            "lib/env",
+            ".env.example",
+            "docs/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.1_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.1_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Required flags are validated",
+            "Defaults are production-safe",
+            "Invalid values fail safe"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer8.1",
+            "audit": "qa:meta-platform-phase31-layer8.1",
+            "gate": "qa:phase31-meta-layer8.1"
+          }
+        },
+        {
+          "id": "8.2",
+          "title": "Global outbound-write kill switch",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Block standard replies, private replies, Facebook writes and outbound media at worker execution time.",
+          "primary_paths": [
+            "workers/",
+            "lib/meta-platform/domains/",
+            "app/api/admin/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.2_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.2_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Queued jobs cannot bypass the switch",
+            "Blocked reason is visible",
+            "Re-enable is safe"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer8.2",
+            "audit": "qa:meta-platform-phase31-layer8.2",
+            "gate": "qa:phase31-meta-layer8.2"
+          }
+        },
+        {
+          "id": "8.3",
+          "title": "Lead Ads cutover sequence",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Implement legacy read, shadow comparison, controlled platform processing, rollback proof and legacy-disable criteria for Lead Ads.",
+          "primary_paths": [
+            "lib/meta/leads/",
+            "lib/meta-platform/domains/leads/",
+            "workers/meta-lead.worker.ts"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.3_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.3_gate.log"
+          ],
+          "acceptance_criteria": [
+            "No legacy/platform duplicate handoff",
+            "Shadow parity is measurable",
+            "Rollback is proven"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer8.3",
+            "audit": "qa:meta-platform-phase31-layer8.3",
+            "gate": "qa:phase31-meta-layer8.3"
+          }
+        },
+        {
+          "id": "8.4",
+          "title": "Instagram cutover sequence",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Implement read parity, platform inbox, controlled writes, private replies, rollback and legacy-disable criteria for Instagram.",
+          "primary_paths": [
+            "lib/meta/instagram/",
+            "lib/meta-platform/domains/instagram/",
+            "workers/meta-instagram.worker.ts"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.4_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.4_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Read and policy parity is demonstrated",
+            "Write kill switch is effective",
+            "Rollback preserves durable state"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer8.4",
+            "audit": "qa:meta-platform-phase31-layer8.4",
+            "gate": "qa:phase31-meta-layer8.4"
+          }
+        },
+        {
+          "id": "8.5",
+          "title": "Legacy Facebook and realtime cutover",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Implement shadow platform path, platform-backed sync, realtime bridge, retry ownership, rollback and direct-client disable controls.",
+          "primary_paths": [
+            "lib/facebook/",
+            "lib/meta-platform/domains/facebook/",
+            "realtime-service/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.5_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.5_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Duplicate events are prevented",
+            "Retry ownership is singular",
+            "Legacy fallback is controlled"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer8.5",
+            "audit": "qa:meta-platform-phase31-layer8.5",
+            "gate": "qa:phase31-meta-layer8.5"
+          },
+          "updated_at": "2026-07-27T18:18:08.216Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.5_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.5_gate.log"
+          ],
+          "summary": "Facebook legacy/shadow/platform/rollback authority, signed shadow mirror, singular retry ownership and direct-client isolation completed."
+        },
+        {
+          "id": "8.6",
+          "title": "Rollback proof",
+          "mode": "EVIDENCE",
+          "status": "COMPLETE",
+          "objective": "Demonstrate all platform/read/write/realtime flags can be disabled without duplicate records or data corruption.",
+          "primary_paths": [
+            "tests/meta-v6/",
+            "evidence/phase31-meta-social-crm/",
+            "scripts/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/10-rollback-proof.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.6_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.6_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Every required rollback scenario is captured",
+            "Queue jobs honor current flags",
+            "Audit evidence is redacted"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer8.6",
+            "audit": "qa:meta-platform-phase31-layer8.6",
+            "gate": "qa:phase31-meta-layer8.6"
+          },
+          "updated_at": "2026-07-27T18:33:01.795Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/10-rollback-proof.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.6_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.6_gate.log"
+          ],
+          "summary": "All nine rollback scenarios, execution-time queue authority, data-integrity and redaction proofs PASS."
+        },
+        {
+          "id": "8.7",
+          "title": "Layer 8 cutover gate",
+          "mode": "LAYER_GATE",
+          "status": "COMPLETE",
+          "objective": "Run flag, kill-switch, rollback, duplicate and bypass audits; produce Layer 8 evidence and package.",
+          "primary_paths": [
+            "tests/meta-v6/",
+            "scripts/",
+            "evidence/phase31-meta-social-crm/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/10-cutover-rollback.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.7_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.7_gate.log"
+          ],
+          "acceptance_criteria": [
+            "All flags and defaults are documented",
+            "Kill switch and rollback tests pass",
+            "No direct write bypass remains"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer8.7",
+            "audit": "qa:meta-platform-phase31-layer8.7",
+            "gate": "qa:phase31-meta-layer8.7"
+          },
+          "updated_at": "2026-07-27T18:49:37.327Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/10-cutover-rollback.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer8.7_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer8.7_gate.log"
+          ],
+          "summary": "Layer 8 cumulative flag, kill-switch, cutover, duplicate, rollback and bypass gates PASS."
+        }
+      ]
+    },
+    "9": {
+      "title": "QA, Evidence and Release Gate",
+      "objective": "Prove automated, runtime, migration, live-provider and rollback requirements before Phase 31 is declared complete.",
+      "status": "IN_PROGRESS",
+      "evidence": "evidence/phase31-meta-social-crm/11-final-release-gate.md",
+      "artifacts": [
+        "minsahbeauty_phase31_complete.zip",
+        "minsahbeauty_phase31_complete.zip.sha256",
+        "phase31_final_verification.log",
+        "evidence/phase31-meta-social-crm/11-final-release-gate.md"
+      ],
+      "items": [
+        {
+          "id": "9.1",
+          "title": "Phase 31 automated audit scripts",
+          "mode": "IMPLEMENTATION",
+          "status": "COMPLETE",
+          "objective": "Create deterministic CI-friendly Phase 31 audit commands for webhooks, persistence, leads, Instagram, realtime, admin and cutover.",
+          "primary_paths": [
+            "scripts/",
+            "package.json"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.1_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.1_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Static gates require no live secrets",
+            "Exit codes are deterministic",
+            "Live checks remain separate"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.1",
+            "audit": "qa:meta-platform-phase31-layer9.1",
+            "gate": "qa:phase31-meta-layer9.1"
+          },
+          "updated_at": "2026-07-27T19:37:17.214Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.1_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.1_gate.log"
+          ],
+          "summary": "Added seven deterministic no-secret Phase 31 static audit suites; 102/102 leaf commands PASS; Prisma unchanged."
+        },
+        {
+          "id": "9.2",
+          "title": "Webhook security and receipt tests",
+          "mode": "QA",
+          "status": "COMPLETE",
+          "objective": "Verify signatures, body limits, challenge handling, receipt-first behavior, duplicate handling, outages and ordering.",
+          "primary_paths": [
+            "tests/meta-v6/",
+            "lib/meta-platform/transports/webhook/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.2_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.2_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Security negative tests pass",
+            "Receipt outage behavior is retryable",
+            "Late events are deterministic"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.2",
+            "audit": "qa:meta-platform-phase31-layer9.2",
+            "gate": "qa:phase31-meta-layer9.2"
+          },
+          "updated_at": "2026-07-27T20:13:40.587Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.2_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.2_gate.log"
+          ]
+        },
+        {
+          "id": "9.3",
+          "title": "Persistence and idempotency tests",
+          "mode": "QA",
+          "status": "BLOCKED",
+          "objective": "Verify DB dedupe, crash recovery, leases, transitions, replay audit, redaction and migration drills.",
+          "primary_paths": [
+            "tests/meta-v6/",
+            "prisma/",
+            "scripts/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.3_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.3_gate.log"
+          ],
+          "acceptance_criteria": [
+            "All DB idempotency boundaries are proven",
+            "Migration apply/recovery is evidenced",
+            "Replay audit is durable"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": true,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.3",
+            "audit": "qa:meta-platform-phase31-layer9.3",
+            "gate": "qa:phase31-meta-layer9.3"
+          },
+          "updated_at": "2026-07-27T20:51:37.147Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.3_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.3_gate.log"
+          ]
+        },
+        {
+          "id": "9.4",
+          "title": "Lead Ads domain tests",
+          "mode": "QA",
+          "status": "COMPLETE",
+          "objective": "Verify lead receipt/fetch, duplicate, mapping, access errors, CRM safety, Test Lead, PII and rollback.",
+          "primary_paths": [
+            "tests/meta-v6/",
+            "lib/meta-platform/domains/leads/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.4_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.4_gate.log"
+          ],
+          "acceptance_criteria": [
+            "CRM handoff is replay-safe",
+            "PII logging is safe",
+            "Feature rollback works"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.4",
+            "audit": "qa:meta-platform-phase31-layer9.4",
+            "gate": "qa:phase31-meta-layer9.4"
+          },
+          "updated_at": "2026-07-27T21:46:08.076Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.4_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.4_gate.log"
+          ],
+          "summary": "Lead Ads domain tests 10/10 PASS; official Lead suite 10/10 commands PASS; Prisma unchanged; 9.3 PostgreSQL blocker retained for final release."
+        },
+        {
+          "id": "9.5",
+          "title": "Instagram domain tests",
+          "mode": "QA",
+          "status": "COMPLETE",
+          "objective": "Verify inbound, media, duplicate, ordering, standard/private replies, provider IDs, reconciliation and kill switch.",
+          "primary_paths": [
+            "tests/meta-v6/",
+            "lib/meta-platform/domains/instagram/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.5_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.5_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Reply policies are enforced",
+            "Unknown writes reconcile",
+            "Unsafe media is blocked"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.5",
+            "audit": "qa:meta-platform-phase31-layer9.5",
+            "gate": "qa:phase31-meta-layer9.5"
+          },
+          "updated_at": "2026-07-27T22:08:56.058Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.5_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.5_gate.log"
+          ]
+        },
+        {
+          "id": "9.6",
+          "title": "Realtime and admin tests",
+          "mode": "QA",
+          "status": "COMPLETE",
+          "objective": "Verify realtime build/contracts, duplicate handling, retry alignment, admin trace, authorization and redaction.",
+          "primary_paths": [
+            "realtime-service/",
+            "app/api/admin/",
+            "tests/meta-v6/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.6_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.6_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Realtime contract evidence is explicit",
+            "Admin authorization passes",
+            "Sensitive data is absent"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.6",
+            "audit": "qa:meta-platform-phase31-layer9.6",
+            "gate": "qa:phase31-meta-layer9.6"
+          },
+          "updated_at": "2026-07-27T22:39:17.348Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.6_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.6_gate.log"
+          ]
+        },
+        {
+          "id": "9.7",
+          "title": "Live Meta provider evidence",
+          "mode": "LIVE_EVIDENCE",
+          "status": "BLOCKED",
+          "objective": "Capture redacted live webhook, Lead, Instagram reply, retry, dead-letter, rollback and permission-health evidence without fabrication.",
+          "primary_paths": [
+            "evidence/phase31-meta-social-crm/screenshots/",
+            "evidence/phase31-meta-social-crm/logs/",
+            "evidence/phase31-meta-social-crm/provider-responses/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.7_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.7_gate.log"
+          ],
+          "acceptance_criteria": [
+            "Live evidence is authentic and redacted",
+            "Provider message IDs are captured",
+            "Kill-switch and rollback evidence exists"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": false,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.7",
+            "audit": "qa:meta-platform-phase31-layer9.7",
+            "gate": "qa:phase31-meta-layer9.7"
+          },
+          "updated_at": "2026-07-27T23:17:32.183Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.7_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.7_gate.log"
+          ]
+        },
+        {
+          "id": "9.8",
+          "title": "Final runtime and release gate",
+          "mode": "FINAL_GATE",
+          "status": "BLOCKED",
+          "objective": "Run full main app/realtime builds, database apply/recovery, smoke tests and final release verdict; package Phase 31 only on truthful PASS.",
+          "primary_paths": [
+            "package.json",
+            "realtime-service/",
+            "prisma/",
+            "evidence/phase31-meta-social-crm/"
+          ],
+          "required_outputs": [
+            "evidence/phase31-meta-social-crm/11-final-release-gate.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.8_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.8_gate.log"
+          ],
+          "acceptance_criteria": [
+            "All final release criteria are explicitly PASS",
+            "Remaining blockers are empty",
+            "Final package is fresh-extract reproducible"
+          ],
+          "schema_change_expected": false,
+          "schema_change_possible_only_with_evidence": true,
+          "command_contract": {
+            "test": "test:meta-v6-phase31-layer9.8",
+            "audit": "qa:meta-platform-phase31-layer9.8",
+            "gate": "qa:phase31-meta-layer9.8"
+          },
+          "updated_at": "2026-07-29T04:46:08.079Z",
+          "evidence": [
+            "evidence/phase31-meta-social-crm/11-final-release-gate.md",
+            "evidence/phase31-meta-social-crm/items/phase31_layer9.8_result.md",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.8_gate.log",
+            "evidence/phase31-meta-social-crm/dependency-security-remediation-2026-07-29.md",
+            "evidence/phase31-meta-social-crm/provider-responses/phase31-layer9.8-runtime-release-manifest.json",
+            "evidence/phase31-meta-social-crm/logs/phase31_layer9.8_gate_20260729.log"
+          ],
+          "summary": "Dependency remediation complete; 14 artifacts verified with 8 PASS and 6 BLOCKED; no final package created."
+        }
+      ]
+    }
+  }
+}

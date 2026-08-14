@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { uploadBrandLogo, validateImageUpload } from '@/lib/storage/minio';
+import { requireAdminUploadPermission, CATALOG_MEDIA_UPLOAD_PERMISSIONS } from '@/lib/auth/upload-route-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const guard = await requireAdminUploadPermission(request, CATALOG_MEDIA_UPLOAD_PERMISSIONS);
+  if (guard) return guard;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;

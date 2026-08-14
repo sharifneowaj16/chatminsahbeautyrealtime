@@ -1,5 +1,14 @@
 'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories, type Category, type Subcategory } from '@/contexts/CategoriesContext';
@@ -26,6 +35,7 @@ interface CategoryFormData {
 }
 
 export default function CategoriesPage() {
+  const { pushToast, requestConfirmation } = useToast();
   const { hasPermission } = useAdminAuth();
   const { categories, saveCategories, refreshCategories } = useCategories();
 
@@ -130,7 +140,7 @@ export default function CategoriesPage() {
 
   const handleSaveCategory = async () => {
     if (!formData.name.trim()) {
-      alert('Please enter a category name');
+      pushToast({ tone: 'danger', description: 'Please enter a category name' });
       return;
     }
 
@@ -142,6 +152,7 @@ export default function CategoriesPage() {
 
       const res = await fetch(url, {
         method,
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
@@ -157,10 +168,10 @@ export default function CategoriesPage() {
 
       await refreshCategories();
       closeModal();
-      alert('Category saved successfully!');
+      pushToast({ tone: 'success', description: 'Category saved successfully!' });
     } catch (error) {
       console.error('Error saving category:', error);
-      alert(error instanceof Error ? error.message : 'Failed to save category');
+      pushToast({ tone: 'danger', description: error instanceof Error ? error.message : 'Failed to save category' });
     }
   };
 
@@ -179,22 +190,23 @@ export default function CategoriesPage() {
 
  const handleDeleteCategory = async (categoryId: string) => {
   const category = categories.find(cat => cat.id === categoryId);
-  if (!confirm(`Are you sure you want to delete "${category?.name}"? This will affect all products in this category.`)) {
+  if (!(await requestConfirmation({ title: 'Delete this category?', description: `Deleting “${category?.name ?? 'this category'}” can affect every product assigned to it.`, confirmLabel: 'Delete category', tone: 'danger' }))) {
     return;
   }
 
   try {
     const res = await fetch(`/api/categories/${categoryId}`, {
       method: 'DELETE',
+      credentials: 'include',
     });
 
     if (!res.ok) throw new Error('Failed to delete category');
     
     await refreshCategories();
-    alert('Category deleted successfully!');
+    pushToast({ tone: 'success', description: 'Category deleted successfully!' });
   } catch (error) {
     console.error('Error deleting category:', error);
-    alert('Failed to delete category');
+    pushToast({ tone: 'danger', description: 'Failed to delete category' });
   }
 };
 
@@ -212,13 +224,13 @@ export default function CategoriesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Categories Management</h1>
           <p className="text-gray-600">Manage product categories, subcategories, and items</p>
         </div>
-        <button
+        <Button
           onClick={openAddModal}
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
         >
           <Plus className="w-5 h-5 mr-2" />
           Add Category
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -271,7 +283,7 @@ export default function CategoriesPage() {
       <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
+          <Input
             type="text"
             placeholder="Search categories..."
             value={searchTerm}
@@ -315,7 +327,7 @@ export default function CategoriesPage() {
                     <tr key={category.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <button
+                          <Button
                             onClick={() => toggleExpanded(category.id)}
                             className="mr-2 p-1 hover:bg-gray-100 rounded"
                           >
@@ -324,7 +336,7 @@ export default function CategoriesPage() {
                             ) : (
                               <ChevronRight className="w-4 h-4 text-gray-600" />
                             )}
-                          </button>
+                          </Button>
                           <div>
                             <div className="text-sm font-medium text-gray-900">{category.name}</div>
                             <div className="text-xs text-gray-500">Created: {new Date(category.createdAt).toLocaleDateString()}</div>
@@ -344,20 +356,20 @@ export default function CategoriesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          <button
+                          <Button
                             onClick={() => openEditModal(category)}
                             className="text-blue-600 hover:text-blue-800"
                             title="Edit"
                           >
                             <Edit className="w-4 h-4" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleDeleteCategory(category.id)}
                             className="text-red-600 hover:text-red-800"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -409,27 +421,30 @@ export default function CategoriesPage() {
       </div>
 
       {/* Add/Edit Category Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">
-                {editingCategoryId ? 'Edit Category' : 'Add New Category'}
-              </h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-6">
+      <Modal
+        open={isModalOpen}
+        onClose={closeModal}
+        title={editingCategoryId ? 'Edit Category' : 'Add New Category'}
+        size="xl"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeModal}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCategory}>
+              <Save className="h-4 w-4" aria-hidden="true" />
+              {editingCategoryId ? 'Update Category' : 'Create Category'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-6">
               {/* Category Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Category Name *
                 </label>
-                <input
+                <Input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -443,14 +458,14 @@ export default function CategoriesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
-                <select
+                <Select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
-                </select>
+                </Select>
               </div>
 
               {/* Subcategories */}
@@ -461,7 +476,7 @@ export default function CategoriesPage() {
 
                 {/* Add Subcategory */}
                 <div className="flex gap-2 mb-4">
-                  <input
+                  <Input
                     type="text"
                     value={newSubcategoryName}
                     onChange={(e) => setNewSubcategoryName(e.target.value)}
@@ -469,12 +484,12 @@ export default function CategoriesPage() {
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Subcategory name (e.g., Face, Eyes)"
                   />
-                  <button
+                  <Button
                     onClick={handleAddSubcategory}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
                   >
                     <Plus className="w-5 h-5" />
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Subcategories List */}
@@ -483,18 +498,18 @@ export default function CategoriesPage() {
                     <div key={index} className="border border-gray-300 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-gray-900">{subcat.name}</h4>
-                        <button
+                        <Button
                           onClick={() => handleRemoveSubcategory(index)}
                           className="text-red-600 hover:text-red-800"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Add Item */}
                       {editingSubcategoryIndex === index && (
                         <div className="flex gap-2 mb-3">
-                          <input
+                          <Input
                             type="text"
                             value={newItemName}
                             onChange={(e) => setNewItemName(e.target.value)}
@@ -503,13 +518,13 @@ export default function CategoriesPage() {
                             placeholder="Item name (e.g., Foundation)"
                             autoFocus
                           />
-                          <button
+                          <Button
                             onClick={() => handleAddItem(index)}
                             className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
                           >
                             Add
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => {
                               setEditingSubcategoryIndex(null);
                               setNewItemName('');
@@ -517,18 +532,18 @@ export default function CategoriesPage() {
                             className="px-3 py-1.5 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400"
                           >
                             Cancel
-                          </button>
+                          </Button>
                         </div>
                       )}
 
                       {editingSubcategoryIndex !== index && (
-                        <button
+                        <Button
                           onClick={() => setEditingSubcategoryIndex(index)}
                           className="mb-3 text-sm text-purple-600 hover:text-purple-800 flex items-center"
                         >
                           <Plus className="w-4 h-4 mr-1" />
                           Add Item
-                        </button>
+                        </Button>
                       )}
 
                       {/* Items List */}
@@ -539,12 +554,12 @@ export default function CategoriesPage() {
                             className="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
                           >
                             {item}
-                            <button
+                            <Button
                               onClick={() => handleRemoveItem(index, itemIndex)}
                               className="ml-2 text-purple-600 hover:text-purple-900"
                             >
                               <X className="w-3 h-3" />
-                            </button>
+                            </Button>
                           </span>
                         ))}
                       </div>
@@ -560,27 +575,8 @@ export default function CategoriesPage() {
                   <p className="text-sm text-gray-500 italic">No subcategories yet. Add one above!</p>
                 )}
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-              <button
-                onClick={closeModal}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveCategory}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {editingCategoryId ? 'Update Category' : 'Create Category'}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -17,6 +18,22 @@ export type TelegramAuthResult = TelegramAuthSuccess | TelegramAuthFailure;
 
 export function isProductionRuntime() {
   return process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+}
+
+
+function timingSafeEqualString(left?: string | null, right?: string | null) {
+  const a = Buffer.from(String(left ?? ''), 'utf8');
+  const b = Buffer.from(String(right ?? ''), 'utf8');
+  if (!a.length || !b.length || a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+export function verifyTelegramSecretHeader(request: NextRequest, expectedSecret?: string | null) {
+  return timingSafeEqualString(request.headers.get('x-telegram-bot-api-secret-token'), expectedSecret);
+}
+
+export function verifyTelegramInternalSecretHeader(request: NextRequest, expectedSecret?: string | null) {
+  return timingSafeEqualString(request.headers.get('x-internal-secret'), expectedSecret);
 }
 
 function splitCsv(value?: string | null) {
@@ -93,8 +110,7 @@ export function requireTelegramWebhookAuth(request: NextRequest): TelegramAuthRe
   }
 
   if (validation.config.webhookSecret) {
-    const secretHeader = request.headers.get('x-telegram-bot-api-secret-token');
-    if (secretHeader !== validation.config.webhookSecret) {
+    if (!verifyTelegramSecretHeader(request, validation.config.webhookSecret)) {
       return {
         ok: false,
         response: telegramUnauthorizedResponse(),

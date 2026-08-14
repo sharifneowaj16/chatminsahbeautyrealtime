@@ -1,0 +1,33 @@
+A app/admin/meta/instagram
+A app/api/admin/meta/instagram
+A app/api/webhooks/meta/instagram
+A docs/release/meta-v6/PHASE14_INSTAGRAM_SOCIAL_CRM_SUMMARY.md
+A docs/release/meta-v6/phase-14-evidence.md
+A docs/release/meta-v6/phase-14-master-tracking.log
+A docs/release/meta-v6/phase-14-prisma-validation.log
+A docs/release/meta-v6/phase-14-validation.log
+A lib/meta/instagram
+A prisma/migrations/20260718060000_meta_v6_phase14_instagram_social_crm
+A scripts/meta-v6-phase14-instagram-audit.mjs
+A tests/meta-v6/phase14-instagram-social-crm.test.ts
+A workers/meta-instagram.worker.ts
+M .env.example
+M app/admin/meta/page.tsx
+M config/env.manifest.json
+M docs/implementation/META_V6_LOOP_ENGINEERING_MASTER_PLAN.md
+M docs/release/meta-v6/master-plan.md
+M docs/release/meta-v6/phase-dashboard.json
+M lib/auth/admin-permissions.ts
+M lib/jobs/idempotency.ts
+M lib/jobs/job-types.ts
+M lib/jobs/queues.ts
+M lib/jobs/scheduler.ts
+M lib/jobs/worker.ts
+M lib/meta/admin/policy.ts
+M lib/meta/connection/config.ts
+M lib/observability/incidents.ts
+M lib/observability/metrics.ts
+M package.json
+M prisma/schema.prisma
+Only in /mnt/data/phase14_work/minsahbeauty-meta-v6-update: PHASE14_INSTAGRAM_SOCIAL_CRM_SUMMARY.md
+Only in /mnt/data/phase14_work/minsahbeauty-meta-v6-update: phase-14-evidence.md

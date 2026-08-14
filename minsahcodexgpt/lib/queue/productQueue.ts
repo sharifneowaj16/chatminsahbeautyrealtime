@@ -91,3 +91,71 @@ if (process.env.NODE_ENV !== 'production') {
 export function getProductQueue(): Queue<ProductJobData> {
   return globalForQueue.productQueue ?? createQueue();
 }
+
+
+function makeJobId(action: 'index' | 'delete' | 'reindex', productIdOrStamp: string): string {
+  const random = Math.random().toString(36).slice(2, 10);
+  return `${action}:${productIdOrStamp}:${Date.now()}:${random}`;
+}
+
+/**
+ * Queue a product reindex after an admin create/update/stock/price mutation.
+ *
+ * This intentionally reads the latest product state inside the worker rather than
+ * trusting request payloads. Phase 20 visibility rules then decide whether the
+ * product should be indexed or removed from Elasticsearch.
+ */
+export async function enqueueProductIndex(
+  productId: string,
+  reason = 'product mutation'
+): Promise<boolean> {
+  try {
+    await productQueue.add(
+      'index',
+      { type: 'index', productId },
+      { jobId: makeJobId('index', productId) }
+    );
+    console.log(`[productQueue] queued index for product ${productId} (${reason})`);
+    return true;
+  } catch (error) {
+    console.error(`[productQueue] failed to queue index for product ${productId}:`, error);
+    return false;
+  }
+}
+
+/** Queue product removal from Elasticsearch after hard/soft delete. */
+export async function enqueueProductDelete(
+  productId: string,
+  reason = 'product delete'
+): Promise<boolean> {
+  try {
+    await productQueue.add(
+      'delete',
+      { type: 'delete', productId },
+      { jobId: makeJobId('delete', productId) }
+    );
+    console.log(`[productQueue] queued delete for product ${productId} (${reason})`);
+    return true;
+  } catch (error) {
+    console.error(`[productQueue] failed to queue delete for product ${productId}:`, error);
+    return false;
+  }
+}
+
+/** Queue a full product search reindex. */
+export async function enqueueProductReindex(reason = 'manual reindex'): Promise<boolean> {
+  const requestedAt = new Date().toISOString();
+
+  try {
+    await productQueue.add(
+      'reindex',
+      { type: 'reindex', requestedAt },
+      { jobId: makeJobId('reindex', requestedAt) }
+    );
+    console.log(`[productQueue] queued full reindex (${reason})`);
+    return true;
+  } catch (error) {
+    console.error('[productQueue] failed to queue full reindex:', error);
+    return false;
+  }
+}

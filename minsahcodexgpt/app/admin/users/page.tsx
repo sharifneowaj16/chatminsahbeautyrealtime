@@ -1,5 +1,13 @@
 'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -28,6 +36,7 @@ interface AdminUser {
 }
 
 export default function UsersManagementPage() {
+  const { pushToast, requestConfirmation } = useToast();
   const { hasPermission } = useAdminAuth();
   const [users, setUsers] = useState<AdminUser[]>([
     {
@@ -91,19 +100,19 @@ export default function UsersManagementPage() {
     return matchesSearch && matchesRole;
   });
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     if (userId === '1') {
-      alert('Cannot delete super admin user!');
+      pushToast({ tone: 'danger', description: 'Cannot delete super admin user!' });
       return;
     }
-    if (confirm('Are you sure you want to delete this user?')) {
+    if (await requestConfirmation({ title: 'Delete this user?', description: 'The user will lose access to the admin account.', confirmLabel: 'Delete user', tone: 'danger' })) {
       setUsers(users.filter(u => u.id !== userId));
     }
   };
 
   const handleToggleStatus = (userId: string) => {
     if (userId === '1') {
-      alert('Cannot modify super admin status!');
+      pushToast({ tone: 'danger', description: 'Cannot modify super admin status!' });
       return;
     }
     setUsers(users.map(u =>
@@ -149,10 +158,10 @@ export default function UsersManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600">Manage admin users and their permissions</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Add User
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -209,7 +218,7 @@ export default function UsersManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search users by name or email..."
               value={searchTerm}
@@ -218,7 +227,7 @@ export default function UsersManagementPage() {
             />
           </div>
 
-          <select
+          <Select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -228,7 +237,7 @@ export default function UsersManagementPage() {
             <option value="admin">Admin</option>
             <option value="editor">Editor</option>
             <option value="moderator">Moderator</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -305,14 +314,14 @@ export default function UsersManagementPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <button
+                      <Button
                         className="text-blue-600 hover:text-blue-800"
                         title="Edit"
                         disabled={user.id === '1'}
                       >
                         <Edit className="w-4 h-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => handleToggleStatus(user.id)}
                         className={clsx(
                           'hover:opacity-80',
@@ -326,15 +335,15 @@ export default function UsersManagementPage() {
                         ) : (
                           <Unlock className="w-4 h-4" />
                         )}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => handleDeleteUser(user.id)}
                         className="text-red-600 hover:text-red-800"
                         title="Delete"
                         disabled={user.id === '1'}
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "phase": 31,
+  "item": "8.4",
+  "title": "Phase 31 Instagram cutover contract",
+  "runtimeSelectors": {
+    "inbound": "META_PHASE31_INSTAGRAM_INBOUND_RUNTIME",
+    "outbound": "META_PHASE31_INSTAGRAM_OUTBOUND_RUNTIME",
+    "media": "META_PHASE31_INSTAGRAM_MEDIA_RUNTIME"
+  },
+  "acceptedRuntimeValues": [
+    "LEGACY",
+    "SHADOW",
+    "PLATFORM",
+    "DOMAIN",
+    "LEGACY_ROLLBACK"
+  ],
+  "platformReadPrerequisites": [
+    "META_PLATFORM_INSTAGRAM",
+    "META_PLATFORM_SOCIAL_WEBHOOKS"
+  ],
+  "standardWritePrerequisites": [
+    "META_PLATFORM_INSTAGRAM_WRITES"
+  ],
+  "privateWritePrerequisites": [
+    "META_PLATFORM_INSTAGRAM_WRITES",
+    "META_PLATFORM_INSTAGRAM_PRIVATE_REPLY"
+  ],
+  "mediaDownloadPrerequisites": [
+    "META_PLATFORM_SOCIAL_MEDIA_DOWNLOADS"
+  ],
+  "shadowAuthority": "LEGACY",
+  "platformAuthority": "PLATFORM",
+  "invalidRuntimePolicy": "LEGACY_ROLLBACK",
+  "durableStatePreservedOnRollback": true,
+  "stabilityCriteria": {
+    "minimumShadowSamples": 100,
+    "maximumMismatchRateBasisPoints": 100,
+    "maximumDuplicateMessages": 0,
+    "maximumDuplicateProviderWrites": 0,
+    "maximumProviderMessageIdMismatches": 0,
+    "maximumAttachmentStateMismatches": 0,
+    "minimumObservationMinutes": 1440,
+    "rollbackDrillRequired": true
+  },
+  "comparisonFields": [
+    "eventType",
+    "direction",
+    "messageType",
+    "conversationKeyDigest",
+    "providerMessageIdDigest",
+    "participantScopeDigest",
+    "occurredAt",
+    "hasText",
+    "attachmentCount",
+    "attachmentTypes",
+    "hasReplyReference",
+    "hasStoryReference",
+    "hasCommentReference",
+    "hasPostReference",
+    "payloadDigest"
+  ]
+}

@@ -16,6 +16,10 @@ import {
   mapSteadfastStatusToOrderStatus,
   SteadfastError,
 } from '@/lib/steadfast/client';
+import {
+  calculateCourierSendAccounting,
+  extractCourierResponseCharge,
+} from '@/lib/courier-send-accounting';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +79,10 @@ export async function POST(request: NextRequest) {
         error: 'Order already sent to Steadfast',
         consignmentId: order.steadfastConsignmentId,
         trackingCode: order.steadfastTrackingCode,
+        shippingCost: Number(order.shippingCost),
+        customerDeliveryCharge: Number(order.shippingCost),
+        courierDeliveryCharge: order.courierDeliveryCharge === null ? null : Number(order.courierDeliveryCharge),
+        deliveryDiscountAmount: Number(order.deliveryDiscountAmount),
       },
       { status: 409 }
     );
@@ -136,6 +144,14 @@ export async function POST(request: NextRequest) {
     });
 
     const consignment = result.consignment;
+    const courierResponseCharge =
+      extractCourierResponseCharge(consignment) ?? extractCourierResponseCharge(result);
+    const courierAccounting = calculateCourierSendAccounting({
+      customerShippingCost: order.shippingCost,
+      currentCourierDeliveryCharge: order.courierDeliveryCharge,
+      currentDeliveryDiscountAmount: order.deliveryDiscountAmount,
+      courierResponseCharge,
+    });
 
     // ── Save to DB ────────────────────────────────────────────────────────
     const mappedStatus = mapSteadfastStatusToOrderStatus(consignment.status);
@@ -152,6 +168,14 @@ export async function POST(request: NextRequest) {
         shippingMethod: 'steadfast',
         trackingNumber: consignment.tracking_code,
         shippedAt: new Date(),
+        // Phase 4F safety: never write courier actual fee into shippingCost.
+        // shippingCost remains the customer-facing delivery charge locked at order creation.
+        ...(courierAccounting.hasCourierResponseCharge
+          ? {
+              courierDeliveryCharge: courierAccounting.courierDeliveryCharge,
+              deliveryDiscountAmount: courierAccounting.deliveryDiscountAmount,
+            }
+          : {}),
       },
     });
 
@@ -160,6 +184,10 @@ export async function POST(request: NextRequest) {
       consignmentId: consignment.id,
       trackingCode: consignment.tracking_code,
       deliveryStatus: consignment.status,
+      shippingCost: Number(updatedOrder.shippingCost),
+      customerDeliveryCharge: Number(updatedOrder.shippingCost),
+      courierDeliveryCharge: updatedOrder.courierDeliveryCharge === null ? null : Number(updatedOrder.courierDeliveryCharge),
+      deliveryDiscountAmount: Number(updatedOrder.deliveryDiscountAmount),
       order: {
         id: updatedOrder.id,
         orderNumber: updatedOrder.orderNumber,

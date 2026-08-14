@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import type { BuyNowVariantOption } from './BuyNowModal';
 
 const BuyNowModal = dynamic(() => import('./BuyNowModal'), {
@@ -15,7 +16,10 @@ interface CardBuyNowButtonProps {
   productName: string;
   productImage: string;
   price: number;
+  maxStock?: number;
   variants?: BuyNowVariantOption[];
+  variantCount?: number;
+  variantsFullyLoaded?: boolean;
   disabled?: boolean;
   className?: string;
 }
@@ -25,7 +29,10 @@ export default function CardBuyNowButton({
   productName,
   productImage,
   price,
+  maxStock,
   variants,
+  variantCount,
+  variantsFullyLoaded = true,
   disabled = false,
   className = '',
 }: CardBuyNowButtonProps) {
@@ -33,15 +40,17 @@ export default function CardBuyNowButton({
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="primary"
+        fullWidth
         onClick={() => setIsBuyNowOpen(true)}
         disabled={disabled}
-        className={`flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#3D1F0E] px-4 py-2.5 text-sm font-semibold text-[#F5E6D3] transition-all duration-200 hover:bg-[#2A1509] disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 ${className}`}
+        className={`rounded-2xl bg-minsah-dark px-4 py-2.5 text-sm text-minsah-accent hover:bg-minsah-primary disabled:bg-stone-300 disabled:text-stone-500 ${className}`}
       >
-        <ShoppingBag size={15} />
+        <ShoppingBag size={15} aria-hidden="true" />
         Buy Now
-      </button>
+      </Button>
 
       {isBuyNowOpen && (
         <BuyNowModal
@@ -50,7 +59,10 @@ export default function CardBuyNowButton({
           productName={productName}
           productImage={productImage}
           basePrice={price}
+          baseStock={maxStock}
           variants={variants}
+          variantCount={variantCount}
+          variantsFullyLoaded={variantsFullyLoaded}
           onClose={() => setIsBuyNowOpen(false)}
         />
       )}

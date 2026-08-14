@@ -1,0 +1,52 @@
+
+> minsah-beauty@2.0.0 test
+> node --import tsx --test tests/fcp00/*.test.ts tests/fcp01/*.test.ts
+
+TAP version 13
+# FCP-00 dialog keyboard tests passed.
+# Subtest: tests/fcp00/dialog-keyboard.test.ts
+ok 1 - tests/fcp00/dialog-keyboard.test.ts
+  ---
+  duration_ms: 511.843792
+  type: 'test'
+  ...
+# FCP-00 Prisma JSON converter tests passed.
+# Subtest: tests/fcp00/prisma-json.test.ts
+ok 2 - tests/fcp00/prisma-json.test.ts
+  ---
+  duration_ms: 501.454957
+  type: 'test'
+  ...
+# Subtest: toolchain is pinned exactly
+ok 3 - toolchain is pinned exactly
+  ---
+  duration_ms: 0.823216
+  type: 'test'
+  ...
+# Subtest: all declared dependencies are exact versions
+ok 4 - all declared dependencies are exact versions
+  ---
+  duration_ms: 0.413802
+  type: 'test'
+  ...
+# Subtest: npm test is a real blocking test command
+ok 5 - npm test is a real blocking test command
+  ---
+  duration_ms: 0.237988
+  type: 'test'
+  ...
+# Subtest: Dockerfile does not hardcode Minsah production public URLs
+ok 6 - Dockerfile does not hardcode Minsah production public URLs
+  ---
+  duration_ms: 0.499495
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 524.48269

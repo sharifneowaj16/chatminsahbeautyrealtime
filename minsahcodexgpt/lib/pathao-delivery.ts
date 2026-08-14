@@ -7,6 +7,7 @@ import {
   resolvePathaoStore,
 } from '@/lib/pathao';
 import { Prisma } from '@/generated/prisma/client';
+import { calculateCourierSendAccounting, toJsonInput } from '@/lib/courier-send-accounting';
 
 const DEFAULT_CREATE_ORDER_ENDPOINT = '/aladdin/api/v1/orders';
 
@@ -31,7 +32,11 @@ export type PathaoDeliveryResult =
       pathaoStatus: string | null;
       consignmentId: string | null;
       trackingCode: string | null;
+      /** Backward-compatible alias for the customer-facing delivery charge. */
       shippingCost: number;
+      customerDeliveryCharge: number;
+      courierDeliveryCharge: number | null;
+      deliveryDiscountAmount: number;
     }
   | {
       success: false;
@@ -66,10 +71,6 @@ function extractNumericField(data: unknown, keys: string[]): number | null {
     }
   }
   return null;
-}
-
-function toJsonInput(value: unknown): Prisma.InputJsonValue {
-  return (value ?? {}) as Prisma.InputJsonValue;
 }
 
 function toNumber(value: unknown): number {
@@ -272,6 +273,9 @@ export async function createPathaoDeliveryForOrder(
         consignmentId: order.pathaoConsignmentId,
         trackingCode: order.pathaoTrackingCode ?? order.trackingNumber,
         shippingCost: toNumber(order.shippingCost),
+        customerDeliveryCharge: toNumber(order.shippingCost),
+        courierDeliveryCharge: order.courierDeliveryCharge === null ? null : toNumber(order.courierDeliveryCharge),
+        deliveryDiscountAmount: toNumber(order.deliveryDiscountAmount),
       };
     }
 
@@ -352,6 +356,13 @@ export async function createPathaoDeliveryForOrder(
       extractNumericField(data, ['delivery_fee', 'delivery_charge', 'courier_charge', 'charge']) ??
       extractNumericField(response, ['delivery_fee', 'delivery_charge', 'courier_charge', 'charge']);
 
+    const courierAccounting = calculateCourierSendAccounting({
+      customerShippingCost: order.shippingCost,
+      currentCourierDeliveryCharge: order.courierDeliveryCharge,
+      currentDeliveryDiscountAmount: order.deliveryDiscountAmount,
+      courierResponseCharge: deliveryFee,
+    });
+
     const updateData: Prisma.OrderUpdateInput = {
       shippingMethod: 'pathao',
       pathaoStatus: status,
@@ -360,7 +371,14 @@ export async function createPathaoDeliveryForOrder(
       trackingNumber: trackingCode ?? order.trackingNumber,
       pathaoSentAt: new Date(),
       pathaoResponse: toJsonInput(response),
-      ...(deliveryFee !== null ? { shippingCost: deliveryFee } : {}),
+      // Phase 4F safety: never write courier actual fee into shippingCost.
+      // shippingCost remains the customer-facing delivery charge locked at order creation.
+      ...(courierAccounting.hasCourierResponseCharge
+        ? {
+            courierDeliveryCharge: courierAccounting.courierDeliveryCharge,
+            deliveryDiscountAmount: courierAccounting.deliveryDiscountAmount,
+          }
+        : {}),
     };
 
     if (!options.preserveOrderStatus && (order.status === 'PENDING' || order.status === 'CONFIRMED')) {
@@ -381,6 +399,9 @@ export async function createPathaoDeliveryForOrder(
       consignmentId: updated.pathaoConsignmentId,
       trackingCode: updated.pathaoTrackingCode ?? updated.trackingNumber,
       shippingCost: toNumber(updated.shippingCost),
+      customerDeliveryCharge: toNumber(updated.shippingCost),
+      courierDeliveryCharge: updated.courierDeliveryCharge === null ? null : toNumber(updated.courierDeliveryCharge),
+      deliveryDiscountAmount: toNumber(updated.deliveryDiscountAmount),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Pathao create-order failed';

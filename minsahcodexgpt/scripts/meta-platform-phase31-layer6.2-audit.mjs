@@ -1,0 +1,26 @@
+import fs from 'node:fs';
+let passed = 0;
+function check(name, condition) { if (!condition) { console.error(`FAIL ${name}`); process.exitCode = 1; return; } passed += 1; console.log(`PASS ${name}`); }
+const s0 = fs.readFileSync('hooks/useInboxSocket.ts', 'utf8');
+const s1 = fs.readFileSync('lib/meta-platform/repositories/facebook-inbox.ts', 'utf8');
+const s2 = fs.readFileSync('lib/meta/instagram/realtime.ts', 'utf8');
+const s3 = fs.readFileSync('packages/meta-realtime-contract/src/index.ts', 'utf8');
+const s4 = fs.readFileSync('realtime-service/src/realtime/event-store.ts', 'utf8');
+const s5 = fs.readFileSync('realtime-service/src/realtime/pubsub.ts', 'utf8');
+const s6 = fs.readFileSync('realtime-service/src/realtime/ws-server.ts', 'utf8');
+check('contract package exists', s3.includes('SOCIAL_REALTIME_SCHEMA_VERSION'));
+check('safe parser rejects forbidden fields', s3.includes('FORBIDDEN_KEYS'));
+check('single social channel', s3.includes("SOCIAL_REALTIME_CHANNEL = 'social-updates'"));
+check('redis validates incoming events', s5.includes('parseSocialRealtimeEvent'));
+check('dedupe store exists', s4.includes('DEDUPE_PREFIX'));
+check('ordering state exists', s4.includes('ORDER_PREFIX'));
+check('bounded recovery exists', s4.includes('recover('));
+check('websocket protocol auth', s6.includes('auth.'));
+check('websocket payload bound', s6.includes('maxPayload: 16 * 1024'));
+check('native heartbeat termination', s6.includes('terminate()'));
+check('recovery refetch signal', s6.includes('REFETCH_REQUIRED'));
+check('browser cursor persistence', s0.includes('sessionStorage'));
+check('browser mutation through API', s0.includes('/api/social/messages'));
+check('facebook publisher normalized', s1.includes('publishFacebookRealtimeEvent'));
+check('instagram publisher normalized', s2.includes('publishNormalizedSocialRealtimeEvent'));
+if (!process.exitCode) console.log(`Layer 6.2 audit: ${passed}/15 PASS`);

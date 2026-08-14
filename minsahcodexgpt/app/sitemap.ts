@@ -17,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl('/about'), lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
     { url: absoluteUrl('/contact'), lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
     { url: absoluteUrl('/faq'), lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+    { url: absoluteUrl('/flash-sale'), lastModified: now, changeFrequency: 'daily', priority: 0.8 },
   ];
 
   const [products, categories, brands] = await Promise.all([

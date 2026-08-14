@@ -12,6 +12,7 @@ async function getReviewsData(userId: string) {
       product: {
         select: {
           id: true,
+          slug: true,
           name: true,
           images: {
             take: 1,
@@ -40,6 +41,7 @@ async function getReviewsData(userId: string) {
       product: {
         select: {
           id: true,
+          slug: true,
           name: true,
           images: {
             take: 1,
@@ -53,6 +55,7 @@ async function getReviewsData(userId: string) {
 
   const uniqueReviewableProducts = new Map<string, {
     id: string;
+    slug?: string | null;
     name: string;
     image: string | null;
     orderDate: Date;
@@ -66,6 +69,7 @@ async function getReviewsData(userId: string) {
 
     uniqueReviewableProducts.set(item.productId, {
       id: item.productId,
+      slug: item.product.slug,
       name: item.product.name,
       image: item.product.images[0]?.url ?? null,
       orderDate: item.order.createdAt,
@@ -77,6 +81,7 @@ async function getReviewsData(userId: string) {
     reviews: reviews.map((review) => ({
       id: review.id,
       productId: review.productId,
+      productSlug: review.product.slug,
       productName: review.product.name,
       productImage: review.product.images[0]?.url ?? null,
       rating: review.rating,

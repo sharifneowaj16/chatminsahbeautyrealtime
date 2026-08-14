@@ -1,5 +1,17 @@
 'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Drawer } from '@/components/ui/Drawer';
 import { useState, useEffect, useCallback } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -53,11 +65,6 @@ interface Stats {
   totalRefundAmount: number;
 }
 
-interface ToastState {
-  type: 'success' | 'error';
-  message: string;
-}
-
 interface ConfirmActionState {
   mode: 'single' | 'bulk';
   ids: string[];
@@ -78,6 +85,7 @@ interface TimelineEvent {
 
 export default function ReturnsPage() {
   const { hasPermission } = useAdminAuth();
+  const { pushToast } = useToast();
   const [returns, setReturns] = useState<ReturnRequest[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, approved: 0, totalRefundAmount: 0 });
   const [loading, setLoading] = useState(true);
@@ -91,7 +99,6 @@ export default function ReturnsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkNote, setBulkNote] = useState('');
   const [bulkUpdating, setBulkUpdating] = useState(false);
-  const [toast, setToast] = useState<ToastState | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
 
   const fetchReturns = useCallback(async () => {
@@ -130,15 +137,6 @@ export default function ReturnsPage() {
   useEffect(() => {
     setSelectedIds((prev) => prev.filter((id) => returns.some((item) => item.id === id)));
   }, [returns]);
-
-  useEffect(() => {
-    if (!toast) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => setToast(null), 3000);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
 
   if (!hasPermission(PERMISSIONS.ORDERS_REFUND)) {
     return (
@@ -444,9 +442,9 @@ export default function ReturnsPage() {
     }
 
     if (confirmAction.requireNote && !confirmAction.note.trim()) {
-      setToast({
-        type: 'error',
-        message: 'A note is required for this action.',
+      pushToast({
+        tone: 'danger',
+        description: 'A note is required for this action.',
       });
       return;
     }
@@ -464,9 +462,9 @@ export default function ReturnsPage() {
           confirmAction.status,
           confirmAction.note.trim() || undefined
         );
-        setToast({
-          type: 'success',
-          message: `Return ${confirmAction.ids[0]} marked ${confirmAction.status}.`,
+        pushToast({
+          tone: 'success',
+          description: `Return ${confirmAction.ids[0]} marked ${confirmAction.status}.`,
         });
       } else {
         await executeBulkUpdate(
@@ -474,9 +472,9 @@ export default function ReturnsPage() {
           confirmAction.status,
           confirmAction.note.trim() || undefined
         );
-        setToast({
-          type: 'success',
-          message: `${confirmAction.ids.length} return request${confirmAction.ids.length === 1 ? '' : 's'} marked ${confirmAction.status}.`,
+        pushToast({
+          tone: 'success',
+          description: `${confirmAction.ids.length} return request${confirmAction.ids.length === 1 ? '' : 's'} marked ${confirmAction.status}.`,
         });
       }
 
@@ -488,9 +486,9 @@ export default function ReturnsPage() {
 
       setConfirmAction(null);
     } catch (err) {
-      setToast({
-        type: 'error',
-        message: err instanceof Error ? err.message : 'Failed to update return',
+      pushToast({
+        tone: 'danger',
+        description: err instanceof Error ? err.message : 'Failed to update return',
       });
     } finally {
       setSavingDetail(false);
@@ -500,40 +498,20 @@ export default function ReturnsPage() {
 
   return (
     <div className="p-6">
-      {toast && (
-        <div className="fixed right-4 top-4 z-[60]">
-          <div
-            className={clsx(
-              'flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg',
-              toast.type === 'success'
-                ? 'border-green-200 bg-green-50 text-green-800'
-                : 'border-red-200 bg-red-50 text-red-800'
-            )}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle className="mt-0.5 h-5 w-5" />
-            ) : (
-              <TriangleAlert className="mt-0.5 h-5 w-5" />
-            )}
-            <p className="text-sm font-medium">{toast.message}</p>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Returns &amp; Refunds</h1>
           <p className="text-gray-600">Manage customer return requests and refunds</p>
         </div>
-        <button
+        <Button
           onClick={fetchReturns}
           disabled={loading}
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
         >
           <RefreshCw className={clsx('w-5 h-5 mr-2', loading && 'animate-spin')} />
           Refresh
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -586,7 +564,7 @@ export default function ReturnsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search by return ID, order ID, or customer..."
               value={searchTerm}
@@ -595,7 +573,7 @@ export default function ReturnsPage() {
             />
           </div>
 
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -606,7 +584,7 @@ export default function ReturnsPage() {
             <option value="rejected">Rejected</option>
             <option value="processing">Processing</option>
             <option value="completed">Completed</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -623,7 +601,7 @@ export default function ReturnsPage() {
             </div>
 
             <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[520px]">
-              <input
+              <Input
                 type="text"
                 value={bulkNote}
                 onChange={(event) => setBulkNote(event.target.value)}
@@ -631,46 +609,46 @@ export default function ReturnsPage() {
                 className="w-full rounded-lg border border-purple-200 bg-white px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => openBulkActionModal('approved')}
                   disabled={bulkUpdating}
                   className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-70"
                 >
                   Approve Selected
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => openBulkActionModal('processing')}
                   disabled={bulkUpdating}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-70"
                 >
                   Mark Processing
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => openBulkActionModal('completed')}
                   disabled={bulkUpdating}
                   className="rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 disabled:opacity-70"
                 >
                   Mark Completed
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => openBulkActionModal('rejected')}
                   disabled={bulkUpdating}
                   className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-70"
                 >
                   Reject Selected
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => setSelectedIds([])}
                   disabled={bulkUpdating}
                   className="rounded-lg border border-purple-200 bg-white px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-70"
                 >
                   Clear
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -681,9 +659,9 @@ export default function ReturnsPage() {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p className="text-red-700">{error}</p>
-          <button onClick={fetchReturns} className="mt-2 text-sm text-red-600 underline">
+          <Button onClick={fetchReturns} className="mt-2 text-sm text-red-600 underline">
             Try again
-          </button>
+          </Button>
         </div>
       )}
 
@@ -700,7 +678,7 @@ export default function ReturnsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left">
-                    <input
+                    <Input
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleSelectAll}
@@ -722,7 +700,7 @@ export default function ReturnsPage() {
                 {returns.map((returnRequest) => (
                   <tr key={returnRequest.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <input
+                      <Input
                         type="checkbox"
                         checked={selectedIds.includes(returnRequest.id)}
                         onChange={() => toggleSelected(returnRequest.id)}
@@ -772,29 +750,29 @@ export default function ReturnsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
-                        <button
+                        <Button
                           onClick={() => openReturnDetails(returnRequest)}
                           className="text-purple-600 hover:text-purple-800"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
+                        </Button>
                         {returnRequest.status === 'pending' && (
                           <>
-                            <button
+                            <Button
                               onClick={() => handleApprove(returnRequest.id)}
                               className="text-green-600 hover:text-green-800"
                               title="Approve"
                             >
                               <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               onClick={() => handleReject(returnRequest.id)}
                               className="text-red-600 hover:text-red-800"
                               title="Reject"
                             >
                               <XCircle className="w-4 h-4" />
-                            </button>
+                            </Button>
                           </>
                         )}
                         <a
@@ -821,39 +799,24 @@ export default function ReturnsPage() {
       </div>
 
       {selectedReturn && (
-        <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/30 p-4">
-          <div className="h-full w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 border-b border-gray-200 bg-white px-6 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-bold text-gray-900">{selectedReturn.id}</h2>
-                    <span
-                      className={clsx(
-                        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize',
-                        getStatusColor(selectedReturn.status)
-                      )}
-                    >
-                      {selectedReturn.status}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-600">
-                    Order {selectedReturn.orderId} for {selectedReturn.customer.name}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={closeReturnDetails}
-                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                  aria-label="Close return details"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-6 px-6 py-6">
+        <Drawer
+          open
+          onClose={closeReturnDetails}
+          title={selectedReturn.id}
+          description={`Order ${selectedReturn.orderId} for ${selectedReturn.customer.name}`}
+          size="lg"
+        >
+          <div className="mb-4">
+            <span
+              className={clsx(
+                'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize',
+                getStatusColor(selectedReturn.status),
+              )}
+            >
+              {selectedReturn.status}
+            </span>
+          </div>
+            <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-xl border border-gray-200 p-4">
                   <p className="text-xs uppercase tracking-wide text-gray-500">Customer</p>
@@ -994,7 +957,7 @@ export default function ReturnsPage() {
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Status
                     </label>
-                    <select
+                    <Select
                       value={detailStatus}
                       onChange={(event) =>
                         setDetailStatus(event.target.value as ReturnRequest['status'])
@@ -1006,13 +969,13 @@ export default function ReturnsPage() {
                       <option value="processing">Processing</option>
                       <option value="completed">Completed</option>
                       <option value="rejected">Rejected</option>
-                    </select>
+                    </Select>
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Internal Note / Customer Reply
                     </label>
-                    <textarea
+                    <Textarea
                       rows={4}
                       value={detailNote}
                       onChange={(event) => setDetailNote(event.target.value)}
@@ -1023,7 +986,7 @@ export default function ReturnsPage() {
                 </div>
 
                 <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <button
+                  <Button
                     type="button"
                     onClick={handleSaveDetails}
                     disabled={savingDetail}
@@ -1031,7 +994,7 @@ export default function ReturnsPage() {
                   >
                     {savingDetail && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                     Save Decision
-                  </button>
+                  </Button>
                   <a
                     href={`mailto:${selectedReturn.customer.email}?subject=Update on return ${selectedReturn.id}`}
                     className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -1049,72 +1012,42 @@ export default function ReturnsPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+        </Drawer>
       )}
 
-      {confirmAction && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">{confirmAction.title}</h3>
-                  <p className="mt-1 text-sm text-gray-600">{confirmAction.description}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setConfirmAction(null)}
-                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+        title={confirmAction?.title ?? 'Confirm return update'}
+        description={confirmAction?.description}
+        confirmLabel="Confirm Update"
+        loading={savingDetail || bulkUpdating}
+        disabled={Boolean(confirmAction?.requireNote && !confirmAction.note.trim())}
+      >
+        {confirmAction ? (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-minsah-status-warning-surface px-4 py-3 text-sm text-minsah-status-warning-text">
+              Status will change to <span className="font-semibold capitalize">{confirmAction.status}</span>.
             </div>
-
-            <div className="space-y-4 px-6 py-5">
-              <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Status will change to <span className="font-semibold capitalize">{confirmAction.status}</span>.
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Note {confirmAction.requireNote ? '(Required)' : '(Optional)'}
-                </label>
-                <textarea
-                  rows={4}
-                  value={confirmAction.note}
-                  onChange={(event) =>
-                    setConfirmAction((prev) =>
-                      prev ? { ...prev, note: event.target.value } : prev
-                    )
-                  }
-                  placeholder="Add handling note, rejection reason, or customer-facing context..."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
-              <button
-                type="button"
-                onClick={() => setConfirmAction(null)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAction}
-                disabled={savingDetail || bulkUpdating}
-                className="rounded-lg bg-purple-600 px-5 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-70"
-              >
-                {savingDetail || bulkUpdating ? 'Saving...' : 'Confirm Update'}
-              </button>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+                Note {confirmAction.requireNote ? '(Required)' : '(Optional)'}
+              </label>
+              <Textarea
+                rows={4}
+                value={confirmAction.note}
+                onChange={(event) =>
+                  setConfirmAction((previous) =>
+                    previous ? { ...previous, note: event.target.value } : previous,
+                  )
+                }
+                placeholder="Add handling note, rejection reason, or customer-facing context..."
+              />
             </div>
           </div>
-        </div>
-      )}
+        ) : null}
+      </ConfirmDialog>
     </div>
   );
 }

@@ -1,5 +1,12 @@
 'use client';
 
+
+
+
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Drawer } from '@/components/ui/Drawer';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
@@ -21,6 +28,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { MetricCard } from './MetricCard';
+import { TikTokEventsApiHealth } from './TikTokEventsApiHealth';
 
 type HealthStatus = 'OK' | 'WARN' | 'CRITICAL';
 
@@ -33,7 +42,7 @@ type TrackingIssue = {
   actual?: number;
 };
 
-type TrackingSnapshot = {
+export type TrackingSnapshot = {
   status: HealthStatus;
   windowHours: number;
   since: string;
@@ -43,8 +52,23 @@ type TrackingSnapshot = {
     codPhoneConfirmed: number;
     onlinePaid: number;
     expectedMetaPurchases: number;
+    expectedTikTokPurchases: number;
     metaPurchaseSent: number;
     gaPurchaseSent: number;
+    tiktokEventsApiEnabled: boolean;
+    tiktokPurchaseLiveVerified: boolean;
+    tiktokPurchaseSent: number;
+    pendingTiktokPurchaseOrders: number;
+    tiktokFailures: number;
+    tiktokFinalFailures: number;
+    tiktokTokenInvalidFailures: number;
+    tiktokMatchBaseOrders: number;
+    tiktokClickIdOrders: number;
+    tiktokTtpOrders: number;
+    tiktokIpUaOrders: number;
+    tiktokClickIdCoverage: number;
+    tiktokTtpCoverage: number;
+    tiktokIpUaCoverage: number;
     capiFailures: number;
     capiFinalFailures: number;
     tokenInvalidFailures: number;
@@ -87,6 +111,11 @@ type FailureRow = {
   errorMessage: string | null;
   retryCount: number;
   finalFailed: boolean;
+  failureCategory: string | null;
+  cleanupAfter: string | null;
+  lastRetryAt: string | null;
+  resolvedAt: string | null;
+  safePayload: unknown;
   hasFbp: boolean;
   hasFbc: boolean;
   hasExternalId: boolean;
@@ -106,7 +135,9 @@ type HistoryRow = {
   ordersConfirmed: number;
   metaPurchaseSent: number;
   gaPurchaseSent: number;
+  tiktokPurchaseSent: number;
   capiFailureCount: number;
+  tiktokFailureCount: number;
   notes: string | null;
   createdAt: string;
 };
@@ -212,11 +243,18 @@ type PrivacyCatalogQaSnapshot = {
 
 type ApiResponse = {
   ok: boolean;
+  checkedAt?: string;
   snapshot: TrackingSnapshot;
   failures: FailureRow[];
   history: HistoryRow[];
   ga4Qa?: Ga4QaSnapshot | null;
   privacyCatalogQa?: PrivacyCatalogQaSnapshot | null;
+  retention?: {
+    debugNonCriticalDays: number;
+    finalRetryableDays: number;
+    criticalDays: number;
+    cleanupLimit: number;
+  };
 };
 
 function statusClasses(status: HealthStatus) {
@@ -239,33 +277,6 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-function MetricCard({
-  title,
-  value,
-  subtitle,
-  tone = 'neutral',
-}: {
-  title: string;
-  value: number | string;
-  subtitle?: string;
-  tone?: 'neutral' | 'good' | 'warn' | 'bad';
-}) {
-  const toneClass = {
-    neutral: 'border-gray-200 bg-white',
-    good: 'border-emerald-200 bg-emerald-50',
-    warn: 'border-amber-200 bg-amber-50',
-    bad: 'border-red-200 bg-red-50',
-  }[tone];
-
-  return (
-    <div className={`rounded-xl border p-4 ${toneClass}`}>
-      <p className="text-sm font-medium text-gray-600">{title}</p>
-      <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
-      {subtitle ? <p className="mt-1 text-xs text-gray-500">{subtitle}</p> : null}
-    </div>
-  );
-}
-
 function SignalPill({ label, ok }: { label: string; ok: boolean }) {
   return (
     <span className={`rounded-full px-2 py-1 text-xs font-medium ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -274,16 +285,43 @@ function SignalPill({ label, ok }: { label: string; ok: boolean }) {
   );
 }
 
+function getFailureSignalLabels(failure: FailureRow) {
+  if (failure.provider === 'TIKTOK') {
+    return [
+      { label: 'ttclid', ok: failure.hasFbc },
+      { label: 'ttp', ok: failure.hasFbp },
+      { label: 'ext', ok: failure.hasExternalId },
+      { label: 'em', ok: failure.hasEmailHash },
+      { label: 'ph', ok: failure.hasPhoneHash },
+      { label: 'ip', ok: failure.hasIp },
+      { label: 'ua', ok: failure.hasUa },
+    ];
+  }
+
+  return [
+    { label: 'fbp', ok: failure.hasFbp },
+    { label: 'fbc', ok: failure.hasFbc },
+    { label: 'ext', ok: failure.hasExternalId },
+    { label: 'em', ok: failure.hasEmailHash },
+    { label: 'ph', ok: failure.hasPhoneHash },
+    { label: 'ip', ok: failure.hasIp },
+    { label: 'ua', ok: failure.hasUa },
+  ];
+}
+
 export default function TrackingHealthPage() {
+  const { requestConfirmation } = useToast();
   const { user, isLoading: authLoading } = useAdminAuth();
   const [hours, setHours] = useState(24);
   const [data, setData] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunningCheck, setIsRunningCheck] = useState(false);
   const [retryingFailureId, setRetryingFailureId] = useState<string | null>(null);
+  const [isRunningCleanup, setIsRunningCleanup] = useState(false);
   const [selectedFailure, setSelectedFailure] = useState<FailureRow | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [lastRequestId, setLastRequestId] = useState<string | null>(null);
 
   const canView = user?.role === 'SUPER_ADMIN';
 
@@ -309,9 +347,13 @@ export default function TrackingHealthPage() {
       ]);
 
       if (!healthResponse.ok) {
-        throw new Error(`Failed to load tracking health (${healthResponse.status})`);
+        const requestId = healthResponse.headers.get('x-request-id');
+        setLastRequestId(requestId);
+        throw new Error(`Failed to load tracking health (${healthResponse.status})${requestId ? ` · Request ${requestId}` : ''}`);
       }
 
+      const requestId = healthResponse.headers.get('x-request-id');
+      setLastRequestId(requestId);
       const json = (await healthResponse.json()) as ApiResponse;
       if (ga4QaResponse.ok) {
         const ga4QaJson = (await ga4QaResponse.json()) as { snapshot?: Ga4QaSnapshot };
@@ -359,13 +401,46 @@ export default function TrackingHealthPage() {
     }
   };
 
+  const runFailureCleanup = async (dryRun: boolean) => {
+    const confirmed = dryRun || await requestConfirmation({ title: 'Clean up old tracking failures?', description: 'Eligible old Meta, GA4 and TikTok failure rows will be deleted while fresh, final and critical rows are retained.', confirmLabel: 'Run cleanup', tone: 'danger' });
+    if (!confirmed) return;
+
+    setIsRunningCleanup(true);
+    setNotice(null);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/tracking-health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action: 'cleanup_failures', dryRun }),
+      });
+
+      const json = (await response.json()) as { ok?: boolean; candidateCount?: number; deletedCount?: number; error?: string };
+
+      if (!response.ok || !json.ok) {
+        throw new Error(json.error || `Cleanup failed (${response.status})`);
+      }
+
+      setNotice(dryRun
+        ? `${json.candidateCount ?? 0} failure row(s) are eligible for retention cleanup.`
+        : `${json.deletedCount ?? 0} old failure row(s) cleaned up.`);
+      await loadHealth();
+    } catch (cleanupError) {
+      setError(cleanupError instanceof Error ? cleanupError.message : 'Cleanup failed');
+    } finally {
+      setIsRunningCleanup(false);
+    }
+  };
+
   const retryFailure = async (failure: FailureRow) => {
     if (!failure.orderId) {
       setError('This failure row has no order ID, so it cannot be retried from the dashboard.');
       return;
     }
 
-    const confirmed = window.confirm(`Queue tracking retry for order ${failure.orderId}? This will not mark the order as sent unless Meta/GA4 accepts the event.`);
+    const confirmed = await requestConfirmation({ title: 'Queue tracking retry?', description: `Order ${failure.orderId} will be retried. It will not be marked as sent unless the selected platform accepts the event.`, confirmLabel: 'Queue retry' });
     if (!confirmed) return;
 
     setRetryingFailureId(failure.id);
@@ -406,6 +481,11 @@ export default function TrackingHealthPage() {
     return snapshot.metrics.expectedMetaPurchases - snapshot.metrics.metaPurchaseSent;
   }, [snapshot]);
 
+  const tiktokPurchaseGap = useMemo(() => {
+    if (!snapshot) return 0;
+    return snapshot.metrics.expectedTikTokPurchases - snapshot.metrics.tiktokPurchaseSent;
+  }, [snapshot]);
+
   if (authLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -431,13 +511,16 @@ export default function TrackingHealthPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tracking Health Dashboard</h1>
-          <p className="text-gray-600">Meta CAPI, GA4 purchase, retry queue, and failure monitoring.</p>
+          <p className="text-gray-600">Meta CAPI, GA4, TikTok Events API, retry queue, and failure monitoring.</p>
           <p className="mt-1 inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
             <Lock className="mr-1 h-3 w-3" /> SUPER_ADMIN access only
           </p>
+          {data?.checkedAt ? (
+            <p className="mt-2 text-xs text-gray-500">Dashboard refreshed {formatDateTime(data.checkedAt)}{lastRequestId ? ` · Request ${lastRequestId}` : ''}</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <select
+          <Select
             value={hours}
             onChange={(event) => setHours(Number(event.target.value))}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
@@ -447,23 +530,37 @@ export default function TrackingHealthPage() {
             <option value={72}>Last 3 days</option>
             <option value={168}>Last 7 days</option>
             <option value={720}>Last 30 days</option>
-          </select>
-          <button
+          </Select>
+          <Button
             onClick={() => void loadHealth()}
             disabled={isLoading}
             className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => void runManualCheck()}
             disabled={isRunningCheck}
             className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             <DatabaseZap className={`mr-2 h-4 w-4 ${isRunningCheck ? 'animate-pulse' : ''}`} />
             Run Check
-          </button>
+          </Button>
+          <Button
+            onClick={() => void runFailureCleanup(true)}
+            disabled={isRunningCleanup}
+            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            Dry-run Cleanup
+          </Button>
+          <Button
+            onClick={() => void runFailureCleanup(false)}
+            disabled={isRunningCleanup}
+            className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-60"
+          >
+            Cleanup Old Logs
+          </Button>
         </div>
       </div>
 
@@ -507,10 +604,37 @@ export default function TrackingHealthPage() {
               tone={snapshot.metrics.pendingGaPurchaseOrders > 0 ? 'warn' : 'good'}
             />
             <MetricCard
-              title="CAPI Failures"
+              title="TikTok Purchase Sent"
+              value={snapshot.metrics.tiktokPurchaseSent}
+              subtitle={snapshot.metrics.tiktokEventsApiEnabled ? `${snapshot.metrics.pendingTiktokPurchaseOrders} pending / ${tiktokPurchaseGap} gap` : 'Events API disabled'}
+              tone={!snapshot.metrics.tiktokEventsApiEnabled ? 'neutral' : snapshot.metrics.pendingTiktokPurchaseOrders > 0 ? 'warn' : 'good'}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              title="Meta CAPI Failures"
               value={snapshot.metrics.capiFailures}
               subtitle={`${snapshot.metrics.capiFinalFailures} final / ${snapshot.metrics.tokenInvalidFailures} token-related`}
               tone={snapshot.metrics.capiFinalFailures > 0 ? 'bad' : snapshot.metrics.capiFailures > 0 ? 'warn' : 'good'}
+            />
+            <MetricCard
+              title="GA4 Failures"
+              value={snapshot.metrics.gaFailures}
+              subtitle={`${snapshot.metrics.gaFinalFailures} final`}
+              tone={snapshot.metrics.gaFinalFailures > 0 ? 'bad' : snapshot.metrics.gaFailures > 0 ? 'warn' : 'good'}
+            />
+            <MetricCard
+              title="TikTok Failures"
+              value={snapshot.metrics.tiktokFailures}
+              subtitle={`${snapshot.metrics.tiktokFinalFailures} final / ${snapshot.metrics.tiktokTokenInvalidFailures} auth-related`}
+              tone={snapshot.metrics.tiktokFinalFailures > 0 ? 'bad' : snapshot.metrics.tiktokFailures > 0 ? 'warn' : 'good'}
+            />
+            <MetricCard
+              title="TikTok Events API"
+              value={snapshot.metrics.tiktokEventsApiEnabled ? 'Enabled' : 'Disabled'}
+              subtitle={snapshot.metrics.tiktokPurchaseLiveVerified ? 'Live Purchase verified' : 'Live Purchase fail-closed'}
+              tone={snapshot.metrics.tiktokEventsApiEnabled && snapshot.metrics.tiktokPurchaseLiveVerified ? 'good' : snapshot.metrics.tiktokEventsApiEnabled ? 'warn' : 'neutral'}
             />
           </div>
 
@@ -520,6 +644,8 @@ export default function TrackingHealthPage() {
             <MetricCard title="Online Paid" value={snapshot.metrics.onlinePaid} />
             <MetricCard title="Pending Meta Orders" value={snapshot.metrics.pendingMetaPurchaseOrders} tone={snapshot.metrics.pendingMetaPurchaseOrders > 0 ? 'warn' : 'good'} />
           </div>
+
+          <TikTokEventsApiHealth metrics={snapshot.metrics} />
 
           {data?.ga4Qa ? (
             <div className="rounded-xl border bg-white p-5">
@@ -726,11 +852,23 @@ export default function TrackingHealthPage() {
             </div>
           </div>
 
+          {data?.retention ? (
+            <div className="rounded-xl border bg-white p-5">
+              <h2 className="mb-3 text-lg font-bold text-gray-900">Failure retention policy</h2>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <MetricCard title="Debug logs" value={`${data.retention.debugNonCriticalDays} days`} subtitle="non-final retry/debug failures" />
+                <MetricCard title="Final retryable" value={`${data.retention.finalRetryableDays} days`} subtitle="dead-letter style final rows" tone="warn" />
+                <MetricCard title="Critical config/token" value={`${data.retention.criticalDays} days`} subtitle="token/env/permission failures" tone="bad" />
+                <MetricCard title="Cleanup batch" value={data.retention.cleanupLimit} subtitle="max rows per cron run" />
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-xl border bg-white p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center text-lg font-bold text-gray-900">
                 <ServerCrash className="mr-2 h-5 w-5 text-red-600" />
-                Recent Meta/GA4 Failures
+                Recent Meta/GA4/TikTok Failures
               </h2>
               <span className="text-sm text-gray-500">Latest {data?.failures.length ?? 0}</span>
             </div>
@@ -753,13 +891,13 @@ export default function TrackingHealthPage() {
                       <tr key={failure.id} className="align-top">
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600">{formatDateTime(failure.createdAt)}</td>
                         <td className="px-3 py-3">
-                          <button
+                          <Button
                             type="button"
                             onClick={() => setSelectedFailure(failure)}
                             className="font-medium text-blue-700 hover:text-blue-900"
                           >
                             {failure.provider}:{failure.eventName}
-                          </button>
+                          </Button>
                           <p className="max-w-[220px] truncate text-xs text-gray-500">{failure.eventId || 'No event_id'}</p>
                         </td>
                         <td className="px-3 py-3 text-gray-700">
@@ -779,17 +917,14 @@ export default function TrackingHealthPage() {
                           <span className={`rounded-full px-2 py-1 text-xs font-medium ${failure.finalFailed ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                             {failure.finalFailed ? 'Final failed' : 'Retrying/logged'}
                           </span>
+                          <p className="mt-1 text-xs text-gray-500">{failure.failureCategory || 'uncategorized'}</p>
                           <p className="mt-1 text-xs text-gray-500">HTTP {failure.statusCode ?? '-'} / retry {failure.retryCount}</p>
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex max-w-[260px] flex-wrap gap-1">
-                            <SignalPill label="fbp" ok={failure.hasFbp} />
-                            <SignalPill label="fbc" ok={failure.hasFbc} />
-                            <SignalPill label="ext" ok={failure.hasExternalId} />
-                            <SignalPill label="em" ok={failure.hasEmailHash} />
-                            <SignalPill label="ph" ok={failure.hasPhoneHash} />
-                            <SignalPill label="ip" ok={failure.hasIp} />
-                            <SignalPill label="ua" ok={failure.hasUa} />
+                            {getFailureSignalLabels(failure).map((signal) => (
+                              <SignalPill key={signal.label} label={signal.label} ok={signal.ok} />
+                            ))}
                           </div>
                         </td>
                         <td className="px-3 py-3">
@@ -798,21 +933,21 @@ export default function TrackingHealthPage() {
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex flex-col gap-2">
-                            <button
+                            <Button
                               type="button"
                               onClick={() => setSelectedFailure(failure)}
                               className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                             >
                               Details
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               onClick={() => void retryFailure(failure)}
                               disabled={!failure.orderId || retryingFailureId === failure.id}
                               className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <RotateCcw className={`mr-1 h-3 w-3 ${retryingFailureId === failure.id ? 'animate-spin' : ''}`} />
                               Retry
-                            </button>
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -842,6 +977,7 @@ export default function TrackingHealthPage() {
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Confirmed/Paid</th>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Meta</th>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">GA4</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-600">TikTok</th>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Failures</th>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Notes</th>
                   </tr>
@@ -861,13 +997,14 @@ export default function TrackingHealthPage() {
                         <td className="px-3 py-3 text-gray-700">{row.ordersConfirmed}</td>
                         <td className="px-3 py-3 text-gray-700">{row.metaPurchaseSent}</td>
                         <td className="px-3 py-3 text-gray-700">{row.gaPurchaseSent}</td>
-                        <td className="px-3 py-3 text-gray-700">{row.capiFailureCount}</td>
+                        <td className="px-3 py-3 text-gray-700">{row.tiktokPurchaseSent}</td>
+                        <td className="px-3 py-3 text-gray-700">{row.capiFailureCount + row.tiktokFailureCount}</td>
                         <td className="max-w-[420px] truncate px-3 py-3 text-gray-500">{row.notes || '-'}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="px-3 py-8 text-center text-gray-500">No saved health checks yet. Click Run Check or configure cron.</td>
+                      <td colSpan={9} className="px-3 py-8 text-center text-gray-500">No saved health checks yet. Click Run Check or configure cron.</td>
                     </tr>
                   )}
                 </tbody>
@@ -878,31 +1015,22 @@ export default function TrackingHealthPage() {
       ) : null}
 
       {selectedFailure ? (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setSelectedFailure(null)}>
-          <div
-            className="h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Failure detail</h2>
-                <p className="mt-1 text-sm text-gray-500">Safe debugging summary only. Raw PII/token payloads are not shown.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedFailure(null)}
-                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
+        <Drawer
+          open
+          onClose={() => setSelectedFailure(null)}
+          title="Failure detail"
+          description="Safe debugging summary only. Raw PII/token payloads are not shown."
+          size="lg"
+        >
             <div className="space-y-4 text-sm">
               <div className="rounded-lg border bg-gray-50 p-4">
                 <p className="font-semibold text-gray-900">{selectedFailure.provider}:{selectedFailure.eventName}</p>
                 <p className="mt-1 break-all text-gray-600">Event ID: {selectedFailure.eventId || '-'}</p>
                 <p className="mt-1 text-gray-600">Created: {formatDateTime(selectedFailure.createdAt)}</p>
                 <p className="mt-1 text-gray-600">Updated: {formatDateTime(selectedFailure.updatedAt)}</p>
+                <p className="mt-1 text-gray-600">Category: {selectedFailure.failureCategory || 'uncategorized'}</p>
+                <p className="mt-1 text-gray-600">Cleanup after: {selectedFailure.cleanupAfter ? formatDateTime(selectedFailure.cleanupAfter) : '-'}</p>
+                <p className="mt-1 text-gray-600">Last retry: {selectedFailure.lastRetryAt ? formatDateTime(selectedFailure.lastRetryAt) : '-'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -913,13 +1041,9 @@ export default function TrackingHealthPage() {
               <div className="rounded-lg border p-4">
                 <h3 className="mb-2 font-semibold text-gray-900">Matching signals</h3>
                 <div className="flex flex-wrap gap-2">
-                  <SignalPill label="fbp" ok={selectedFailure.hasFbp} />
-                  <SignalPill label="fbc" ok={selectedFailure.hasFbc} />
-                  <SignalPill label="external_id" ok={selectedFailure.hasExternalId} />
-                  <SignalPill label="email hash" ok={selectedFailure.hasEmailHash} />
-                  <SignalPill label="phone hash" ok={selectedFailure.hasPhoneHash} />
-                  <SignalPill label="ip" ok={selectedFailure.hasIp} />
-                  <SignalPill label="ua" ok={selectedFailure.hasUa} />
+                  {getFailureSignalLabels(selectedFailure).map((signal) => (
+                    <SignalPill key={signal.label} label={signal.label} ok={signal.ok} />
+                  ))}
                 </div>
               </div>
 
@@ -928,6 +1052,13 @@ export default function TrackingHealthPage() {
                 <p className="text-gray-700">Code: {selectedFailure.errorCode || '-'}</p>
                 <p className="text-gray-700">Subcode: {selectedFailure.errorSubcode || '-'}</p>
                 <p className="mt-2 whitespace-pre-wrap break-words text-gray-600">{selectedFailure.errorMessage || 'No message'}</p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <h3 className="mb-2 font-semibold text-gray-900">Safe payload summary</h3>
+                <pre className="max-h-64 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">
+                  {JSON.stringify(selectedFailure.safePayload ?? {}, null, 2) /* failure.safePayload */}
+                </pre>
               </div>
 
               <div className="flex gap-3">
@@ -940,7 +1071,7 @@ export default function TrackingHealthPage() {
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 ) : null}
-                <button
+                <Button
                   type="button"
                   onClick={() => void retryFailure(selectedFailure)}
                   disabled={!selectedFailure.orderId || retryingFailureId === selectedFailure.id}
@@ -948,11 +1079,10 @@ export default function TrackingHealthPage() {
                 >
                   <RotateCcw className={`mr-2 h-4 w-4 ${retryingFailureId === selectedFailure.id ? 'animate-spin' : ''}`} />
                   Queue retry
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Drawer>
       ) : null}
     </div>
   );

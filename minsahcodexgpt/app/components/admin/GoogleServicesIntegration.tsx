@@ -1,5 +1,10 @@
-﻿'use client';
+'use client';
 
+
+
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import GoogleHubDashboard from '@/app/components/google/GoogleHubDashboard';
 import SearchConsoleCard from '@/app/components/google/SearchConsoleCard';
@@ -57,6 +62,7 @@ interface GoogleService {
 }
 
 export default function GoogleServicesIntegration() {
+  const { pushToast, requestConfirmation } = useToast();
   const [googleServices, setGoogleServices] = useState<GoogleService[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'search' | 'merchant' | 'ads' | 'analytics' | 'business' | 'tagmanager' | 'remarketing'>('overview');
@@ -190,7 +196,7 @@ export default function GoogleServicesIntegration() {
           ? { ...service, lastSync: new Date(), status: 'active', error: undefined }
           : service
       ));
-      alert('Service synced successfully!');
+      pushToast({ tone: 'success', description: 'Service synced successfully!' });
     } catch (error) {
       console.error('Error syncing service:', error);
       setGoogleServices(prev => prev.map(service =>
@@ -202,7 +208,7 @@ export default function GoogleServicesIntegration() {
   };
 
   const handleServiceDisconnect = async (serviceId: string) => {
-    if (confirm('Are you sure you want to disconnect this Google service?')) {
+    if (await requestConfirmation({ title: 'Disconnect this Google service?', description: 'Related data syncing will stop until the service is connected again.', confirmLabel: 'Disconnect', tone: 'danger' })) {
       try {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -211,7 +217,7 @@ export default function GoogleServicesIntegration() {
             ? { ...service, connected: false, status: 'inactive', metrics: undefined }
             : service
         ));
-        alert('Service disconnected successfully!');
+        pushToast({ tone: 'success', description: 'Service disconnected successfully!' });
       } catch (error) {
         console.error('Error disconnecting service:', error);
       }
@@ -227,7 +233,7 @@ export default function GoogleServicesIntegration() {
           ? { ...service, connected: true, status: 'active', lastSync: new Date(), error: undefined }
           : service
       ));
-      alert('Service reconnected successfully!');
+      pushToast({ tone: 'success', description: 'Service reconnected successfully!' });
     } catch (error) {
       console.error('Error reconnecting service:', error);
     }
@@ -326,14 +332,14 @@ export default function GoogleServicesIntegration() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+          <Button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
             <RefreshCw className="h-4 w-4" />
             Sync All
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+          </Button>
+          <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
             <Plus className="h-4 w-4" />
             Add Service
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -350,7 +356,7 @@ export default function GoogleServicesIntegration() {
             { id: 'tagmanager', name: 'Tag Manager', icon: Tag },
             { id: 'remarketing', name: 'Remarketing', icon: RefreshCw },
           ].map((tab) => (
-            <button
+            <Button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -363,7 +369,7 @@ export default function GoogleServicesIntegration() {
                 <tab.icon className="h-4 w-4" />
                 {tab.name}
               </div>
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
@@ -492,14 +498,14 @@ export default function GoogleServicesIntegration() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       onClick={() => handleServiceSync(service.id)}
                       disabled={!service.connected}
                       className="flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                     >
                       Sync
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         setSelectedService(service);
                         setShowServiceModal(true);
@@ -507,7 +513,7 @@ export default function GoogleServicesIntegration() {
                       className="p-1 text-gray-400 hover:text-gray-600"
                     >
                       <Settings className="h-3 w-3" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -518,22 +524,22 @@ export default function GoogleServicesIntegration() {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <Button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <RefreshCw className="h-8 w-8 text-blue-600" />
                 <span className="text-sm font-medium text-gray-900">Sync All Services</span>
-              </button>
-              <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              </Button>
+              <Button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <FileText className="h-8 w-8 text-green-600" />
                 <span className="text-sm font-medium text-gray-900">Generate Report</span>
-              </button>
-              <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              </Button>
+              <Button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <Bell className="h-8 w-8 text-orange-600" />
                 <span className="text-sm font-medium text-gray-900">Setup Alerts</span>
-              </button>
-              <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              </Button>
+              <Button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <Plus className="h-8 w-8 text-purple-600" />
                 <span className="text-sm font-medium text-gray-900">Add New Service</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -549,20 +555,15 @@ export default function GoogleServicesIntegration() {
       {activeTab === 'remarketing' && <RemarketingCard dateRange={dateRange} onDateRangeChange={setDateRange} />}
 
       {/* Service Modal */}
-      {showServiceModal && selectedService && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">{selectedService.name}</h3>
-                <button
-                  onClick={() => setShowServiceModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+      {/* Service Details Modal */}
+      {selectedService ? (
+        <Modal
+          open={showServiceModal}
+          onClose={() => setShowServiceModal(false)}
+          title={selectedService.name}
+          description={selectedService.platform}
+          size="lg"
+        >
             <div className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -610,7 +611,7 @@ export default function GoogleServicesIntegration() {
               <div className="flex gap-3 mt-6">
                 {selectedService.connected ? (
                   <>
-                    <button
+                    <Button
                       onClick={() => {
                         handleServiceSync(selectedService.id);
                         setShowServiceModal(false);
@@ -618,8 +619,8 @@ export default function GoogleServicesIntegration() {
                       className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                     >
                       Sync Now
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         handleServiceDisconnect(selectedService.id);
                         setShowServiceModal(false);
@@ -627,10 +628,10 @@ export default function GoogleServicesIntegration() {
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                     >
                       Disconnect
-                    </button>
+                    </Button>
                   </>
                 ) : (
-                  <button
+                  <Button
                     onClick={() => {
                       handleServiceReconnect(selectedService.id);
                       setShowServiceModal(false);
@@ -638,13 +639,12 @@ export default function GoogleServicesIntegration() {
                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
                   >
                     Connect
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+        </Modal>
+      ) : null}
     </div>
   );
 }

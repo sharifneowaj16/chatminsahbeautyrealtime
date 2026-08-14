@@ -53,6 +53,7 @@ async function loadOrdersForWindow(start: Date, end: Date) {
       createdAt: true,
       status: true,
       paymentStatus: true,
+      paymentMethod: true,
       total: true,
       subtotal: true,
       shippingCost: true,
@@ -208,7 +209,7 @@ export async function GET(request: NextRequest) {
     previous,
     series: buildSeries(currentOrders, window.start, window.end),
     formulas: {
-      reportedRoas: 'Confirmed Revenue / Ad Spend',
+      reportedRoas: 'Confirmed conversion revenue / Ad Spend',
       realRoas: 'Delivered Revenue / Ad Spend',
       confirmationRate: 'Confirmed Orders / Created Orders',
       deliveryRate: 'Delivered Orders / Confirmed Orders',

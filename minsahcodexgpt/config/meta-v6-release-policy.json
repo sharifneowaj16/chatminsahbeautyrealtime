@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "project": "Minsah Beauty Meta v6",
+  "releaseModes": [
+    "engineering",
+    "production"
+  ],
+  "requiredEngineeringGates": [
+    "global-blockers",
+    "phase-15-semantic",
+    "phase-15-static",
+    "migration-governance",
+    "evidence-ledger",
+    "admin-api-security",
+    "meta-business-platform",
+    "typecheck",
+    "lint"
+  ],
+  "requiredProductionGates": [
+    "prisma-client-freshness",
+    "prisma-validate",
+    "migration-apply",
+    "migration-rollback-or-forward-fix",
+    "graph-version-release",
+    "command-evidence",
+    "build",
+    "critical-e2e",
+    "runtime-evidence",
+    "master-tracking",
+    "release-claim"
+  ],
+  "forbiddenClaims": [
+    "COMPLETE_WITH_PENDING_RUNTIME_EVIDENCE",
+    "RELEASE_WITH_STALE_PRISMA_CLIENT",
+    "RELEASE_WITH_UNHASHED_MIGRATION",
+    "RELEASE_WITH_EXPIRED_GRAPH_VERSION",
+    "RELEASE_WITHOUT_ROLLBACK_HANDOFF",
+    "RELEASE_FROM_STATIC_FILE_EXISTENCE_ONLY"
+  ],
+  "evidence": {
+    "hash": "sha256",
+    "productionEnvironmentNames": [
+      "staging",
+      "production"
+    ],
+    "syntheticOnlyInCi": true,
+    "rawSecretsForbidden": true,
+    "rawPiiForbidden": true,
+    "commandMaxAgeHours": 24,
+    "commandIds": [
+      "typecheck",
+      "lint",
+      "master-tracking",
+      "build"
+    ]
+  }
+}

@@ -1,14 +1,15 @@
-// app/admin/shortlist/page.tsx
-
 'use client';
 
+// app/admin/shortlist/page.tsx
+
+import { Button } from '@/components/ui/Button';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useEffect } from 'react';
 import { ShortlistProvider, useShortlist } from './ShortlistContext';
 import StatsSection from './components/StatsSection';
 import SearchFilterBar from './components/SearchFilterBar';
 import OrderCard from './components/OrderCard';
-import LoadingSpinner from './components/LoadingSpinner';
-import EmptyState from './components/EmptyState';
 
 function ShortlistContent() {
   const { orders, stats, isLoading, error, filters, fetchOrders, clearError } = useShortlist();
@@ -27,13 +28,16 @@ function ShortlistContent() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               📋 Purchase Shortlist
             </h1>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => fetchOrders()}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Refresh shortlist"
               title="Refresh"
             >
-              🔄
-            </button>
+              <span aria-hidden="true">🔄</span>
+            </Button>
           </div>
           <p className="text-gray-600 text-sm">
             Track products to purchase from suppliers
@@ -48,12 +52,16 @@ function ShortlistContent() {
             <p className="text-red-800 font-medium">Error</p>
             <p className="text-red-700 text-sm">{error}</p>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={clearError}
+            aria-label="Dismiss error"
             className="text-red-600 hover:text-red-800"
           >
-            ✕
-          </button>
+            <span aria-hidden="true">✕</span>
+          </Button>
         </div>
       )}
 
@@ -66,9 +74,13 @@ function ShortlistContent() {
       {/* Main Content */}
       <div className="p-4 sm:p-6 pb-20">
         {isLoading && !orders.length ? (
-          <LoadingSpinner />
+          <LoadingState label="Loading shortlist data…" description="Please wait while we fetch your orders" />
         ) : orders.length === 0 ? (
-          <EmptyState />
+          <EmptyState
+            icon={<span className="text-3xl" aria-hidden="true">📭</span>}
+            title="No Orders to Process"
+            description="All orders are fully sourced! You don't have any pending purchases right now."
+          />
         ) : (
           <div className="space-y-4">
             {/* Pending Orders Section */}

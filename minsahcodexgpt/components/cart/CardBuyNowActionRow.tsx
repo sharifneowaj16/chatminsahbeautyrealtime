@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import type { BuyNowVariantOption } from './BuyNowModal';
 import CartStepper from './CartStepper';
 
@@ -62,15 +63,16 @@ export default function CardBuyNowActionRow({
           circleAdd={circleCart}
         />
 
-        <button
+        <Button
           type="button"
+          variant="primary"
           onClick={() => setIsBuyNowOpen(true)}
           disabled={isDisabled}
-          className={`flex min-w-[104px] items-center justify-center gap-1.5 rounded-2xl bg-[#3D1F0E] px-4 py-3 text-sm font-semibold text-[#F5E6D3] transition-all duration-200 hover:bg-[#2A1509] disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 ${buttonClassName}`}
+          className={`min-w-[104px] rounded-2xl bg-minsah-dark px-4 py-3 text-sm text-minsah-accent hover:bg-minsah-primary disabled:bg-stone-300 disabled:text-stone-500 ${buttonClassName}`}
         >
-          <ShoppingBag size={15} />
+          <ShoppingBag size={15} aria-hidden="true" />
           Buy Now
-        </button>
+        </Button>
       </div>
 
       {isBuyNowOpen && (
@@ -80,6 +82,7 @@ export default function CardBuyNowActionRow({
           productName={productName}
           productImage={productImage}
           basePrice={price}
+          baseStock={maxStock}
           variants={variants}
           onClose={() => setIsBuyNowOpen(false)}
         />

@@ -3,9 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Package, ShoppingBag } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/utils/currency';
+import { productPath } from '@/lib/product-url';
 import CartStepper from '@/components/cart/CartStepper';
-import BuyNowModal from '@/components/cart/BuyNowModal';
+import dynamic from 'next/dynamic';
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+
+const BuyNowModal = dynamic(() => import('@/components/cart/BuyNowModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface ProductCardProps {
   id: string;
@@ -15,6 +23,7 @@ interface ProductCardProps {
   originalPrice?: number;
   image: string;
   category?: string;
+  stock?: number;
 }
 
 export default function ProductCard({
@@ -25,89 +34,94 @@ export default function ProductCard({
   originalPrice,
   image,
   category,
+  stock,
 }: ProductCardProps) {
   const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
-  const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
-  const productHref = `/products/${slug || id}`;
+  const discount = originalPrice && originalPrice > price
+    ? Math.round(((originalPrice - price) / originalPrice) * 100)
+    : 0;
+  const productHref = productPath({ id, slug });
+  const isOutOfStock = stock === 0;
 
   return (
     <>
-      <Link href={productHref} className="group">
-        <div className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden">
-          {/* ── Image ─────────────────────────────────────────────────── */}
-          <div className="relative aspect-square bg-gray-100 overflow-hidden">
-            {image ? (
-              <img
-                src={image}
-                alt={name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
-                <Package className="w-16 h-16 text-pink-400" />
+      <article className="group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="relative">
+          <Link
+            href={productHref}
+            className="relative block aspect-square overflow-hidden bg-minsah-accent/30 outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary focus-visible:ring-offset-2"
+            aria-label={`Open product details for ${name}`}
+          >
+            <CatalogProductImage
+              src={image}
+              alt={name}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="group-hover:scale-105"
+              fallback={<Package className="h-14 w-14" />}
+            />
+            {isOutOfStock && (
+              <div className="absolute inset-0 flex items-center justify-center bg-stone-900/50">
+                <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-stone-800 shadow-sm">
+                  Out of Stock
+                </span>
               </div>
             )}
-
-            {discount > 0 && (
-              <div className="absolute top-2 right-2 bg-pink-600 text-white text-xs font-bold px-2 py-1 rounded">
-                -{discount}%
-              </div>
+            {discount > 0 && !isOutOfStock && (
+              <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+                {discount}% off
+              </span>
             )}
+          </Link>
 
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 transition-opacity" />
-
-            {/* ── Circle cart button — bottom-right ───────────────────── */}
-            <div
-              className="absolute bottom-2.5 right-2.5 z-10"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            >
+          {!isOutOfStock && (
+            <div className="absolute bottom-2.5 right-2.5 z-10" role="group" aria-label={`Add ${name} to cart`}>
               <CartStepper
                 productId={id}
                 productName={name}
                 productImage={image}
                 price={price}
-                circleAdd={true}
+                maxStock={stock}
+                circleAdd
               />
             </div>
-          </div>
-
-          {/* ── Card body ─────────────────────────────────────────────── */}
-          <div className="p-4">
-            {category && <p className="text-xs text-gray-500 mb-1">{category}</p>}
-            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{name}</h3>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg font-bold text-pink-600">{formatPrice(price)}</span>
-              {originalPrice && (
-                <span className="text-sm text-gray-400 line-through">
-                  {formatPrice(originalPrice)}
-                </span>
-              )}
-            </div>
-
-            {/* Buy Now */}
-            <div onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}>
-              <button
-                type="button"
-                onClick={() => setIsBuyNowOpen(true)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#3D1F0E] px-4 py-2.5 text-sm font-semibold text-[#F5E6D3] transition-all duration-200 hover:bg-[#2A1509]"
-              >
-                <ShoppingBag size={15} />
-                Buy Now
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-      </Link>
+
+        <div className="flex flex-1 flex-col p-3 md:p-4">
+          {category && (
+            <p className="mb-1 truncate text-xs font-semibold uppercase tracking-wide text-minsah-secondary">
+              {category}
+            </p>
+          )}
+          <Link
+            href={productHref}
+            className="outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary focus-visible:ring-offset-2"
+          >
+            <h3 className="mb-2 min-h-[2.45rem] line-clamp-2 text-sm font-semibold leading-snug text-minsah-dark transition-colors hover:text-minsah-primary md:text-base">
+              {name}
+            </h3>
+          </Link>
+
+          <div className="mb-3 flex flex-wrap items-baseline gap-2">
+            <span className="text-lg font-bold text-minsah-primary">{formatPrice(price)}</span>
+            {originalPrice && originalPrice > price && (
+              <span className="text-sm text-minsah-secondary line-through">{formatPrice(originalPrice)}</span>
+            )}
+          </div>
+
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            onClick={() => setIsBuyNowOpen(true)}
+            disabled={isOutOfStock}
+            className="mt-auto rounded-2xl bg-minsah-dark px-4 py-2.5 text-sm text-minsah-accent hover:bg-minsah-primary disabled:bg-stone-300 disabled:text-stone-500"
+          >
+            <ShoppingBag size={15} aria-hidden="true" />
+            {isOutOfStock ? 'Out of Stock' : 'Buy Now'}
+          </Button>
+        </div>
+      </article>
 
       <BuyNowModal
         isOpen={isBuyNowOpen}
@@ -115,6 +129,7 @@ export default function ProductCard({
         productName={name}
         productImage={image}
         basePrice={price}
+        baseStock={stock}
         onClose={() => setIsBuyNowOpen(false)}
       />
     </>

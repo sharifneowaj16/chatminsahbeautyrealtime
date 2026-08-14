@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { listAllObjects, deleteFile, uploadMediaFile, validateImageUpload } from '@/lib/storage/minio';
+import { requireAdminUploadPermission, CONTENT_UPLOAD_PERMISSIONS } from '@/lib/auth/upload-route-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // GET /api/media - List all files in MinIO
 export async function GET(request: NextRequest) {
+  const guard = await requireAdminUploadPermission(request, CONTENT_UPLOAD_PERMISSIONS);
+  if (guard) return guard;
+
   try {
     const { searchParams } = new URL(request.url);
     const folder = searchParams.get('folder') || '';
@@ -36,6 +40,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/media - Upload a file to the media folder
 export async function POST(request: NextRequest) {
+  const guard = await requireAdminUploadPermission(request, CONTENT_UPLOAD_PERMISSIONS);
+  if (guard) return guard;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -66,6 +73,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/media - Delete a file from MinIO
 export async function DELETE(request: NextRequest) {
+  const guard = await requireAdminUploadPermission(request, CONTENT_UPLOAD_PERMISSIONS);
+  if (guard) return guard;
+
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');

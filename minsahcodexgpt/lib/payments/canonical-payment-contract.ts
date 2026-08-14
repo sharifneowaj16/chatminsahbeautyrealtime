@@ -1,47 +1,32 @@
 /**
  * Production payment/Purchase contract.
  *
- * This file is intentionally small and dependency-free so API routes and audits can
- * share the same rules. A payment can become a Meta/GA4 Purchase only through:
- * 1) COD phone-confirmed admin/Telegram flow, or
- * 2) verified online gateway flow (/api/payments/verified).
+ * This file remains dependency-free so API routes and audits can share the
+ * same rules. Payment-method normalization and availability come from the
+ * canonical registry in payment-methods.ts.
  */
+import {
+  getCanonicalOnlinePaymentMethods,
+  isCanonicalOnlinePaymentMethod,
+  isCodPaymentMethod,
+  normalizeGatewayName,
+  normalizePaymentMethod,
+} from '@/lib/payments/payment-methods';
+import { isPaidGatewayStatus } from '@/lib/orders/payment-lifecycle';
 
-export const CANONICAL_PAYMENT_FLOW = '/api/orders -> verified payment/COD phone-confirmed -> tracking queue' as const;
+export const CANONICAL_PAYMENT_FLOW =
+  '/api/orders -> verified payment/COD phone-confirmed -> tracking queue' as const;
 
-const COD_METHOD_PATTERNS = ['cod', 'cash', 'cash_on_delivery', 'cash-on-delivery', 'cash on delivery'];
-const CANONICAL_ONLINE_PAYMENT_METHODS = new Set(['bkash', 'nagad']);
-const PAID_STATUSES = new Set(['paid', 'completed', 'complete', 'success', 'successful', 'validated']);
-
-export function normalizePaymentMethod(paymentMethod?: string | null) {
-  return String(paymentMethod ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '_');
-}
-
-export function normalizeGatewayName(gateway?: string | null) {
-  return String(gateway ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '_');
-}
-
-export function isCodPaymentMethod(paymentMethod?: string | null) {
-  const normalized = normalizePaymentMethod(paymentMethod);
-  return COD_METHOD_PATTERNS.some((pattern) => normalized.includes(pattern));
-}
-
-export function isCanonicalOnlinePaymentMethod(paymentMethod?: string | null) {
-  return CANONICAL_ONLINE_PAYMENT_METHODS.has(normalizePaymentMethod(paymentMethod));
-}
+export {
+  getCanonicalOnlinePaymentMethods,
+  isCanonicalOnlinePaymentMethod,
+  isCodPaymentMethod,
+  normalizeGatewayName,
+  normalizePaymentMethod,
+};
 
 export function isPaidLikePaymentStatus(status?: string | null) {
-  return PAID_STATUSES.has(String(status ?? '').trim().toLowerCase());
-}
-
-export function getCanonicalOnlinePaymentMethods() {
-  return [...CANONICAL_ONLINE_PAYMENT_METHODS];
+  return isPaidGatewayStatus(status);
 }
 
 export function validateVerifiedPaymentContract(params: {
@@ -55,7 +40,8 @@ export function validateVerifiedPaymentContract(params: {
     return {
       ok: false as const,
       code: 'PAYMENT_METHOD_MISSING',
-      message: 'Order paymentMethod is missing; verified online payment cannot be recorded.',
+      message:
+        'Order paymentMethod is missing; verified online payment cannot be recorded.',
     };
   }
 
@@ -63,7 +49,8 @@ export function validateVerifiedPaymentContract(params: {
     return {
       ok: false as const,
       code: 'COD_PAYMENT_CANNOT_USE_VERIFIED_ONLINE_FLOW',
-      message: 'COD Purchase must be created only by the phone-confirmed Server CAPI flow.',
+      message:
+        'COD Purchase must be created only by the phone-confirmed Server CAPI flow.',
     };
   }
 

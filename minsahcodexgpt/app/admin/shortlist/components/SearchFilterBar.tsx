@@ -1,7 +1,9 @@
-// app/admin/shortlist/components/SearchFilterBar.tsx
-
 'use client';
 
+// app/admin/shortlist/components/SearchFilterBar.tsx
+
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import React, { useState } from 'react';
 import { useShortlist } from '../ShortlistContext';
 
@@ -34,7 +36,7 @@ export default function SearchFilterBar() {
       <div className="p-4 sm:p-6 space-y-4">
         {/* Search Bar */}
         <div className="relative">
-          <input
+          <Input
             type="text"
             placeholder="🔍 Search by order #, customer name, or phone..."
             value={filters.searchQuery}
@@ -45,13 +47,13 @@ export default function SearchFilterBar() {
         </div>
 
         {/* Filter Toggle Button */}
-        <button
+        <Button
           onClick={() => setShowFilters(!showFilters)}
           className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:shadow-md transition-shadow"
         >
           <span>⚙️ Filters</span>
           <span className="text-lg">{showFilters ? '▼' : '▶'}</span>
-        </button>
+        </Button>
 
         {/* Filters Panel */}
         {showFilters && (
@@ -61,7 +63,7 @@ export default function SearchFilterBar() {
               <p className="text-sm font-semibold text-gray-700 mb-2">Status</p>
               <div className="grid grid-cols-2 gap-2">
                 {['pending', 'completed'].map((status) => (
-                  <button
+                  <Button
                     key={status}
                     onClick={() => handleStatusChange(status as 'pending' | 'completed')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
@@ -71,7 +73,7 @@ export default function SearchFilterBar() {
                     }`}
                   >
                     {status === 'pending' ? '⏳ Pending' : '✅ Completed'}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -81,7 +83,7 @@ export default function SearchFilterBar() {
               <p className="text-sm font-semibold text-gray-700 mb-2">Priority</p>
               <div className="grid grid-cols-2 gap-2">
                 {['ALL', 'URGENT', 'NORMAL', 'LOW_PRIORITY'].map((priority) => (
-                  <button
+                  <Button
                     key={priority}
                     onClick={() => handlePriorityChange(priority)}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
@@ -97,7 +99,7 @@ export default function SearchFilterBar() {
                         : priority === 'LOW_PRIORITY'
                           ? '🟢 Low'
                           : 'All'}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -107,7 +109,7 @@ export default function SearchFilterBar() {
               <p className="text-sm font-semibold text-gray-700 mb-2">Date Range</p>
               <div className="grid grid-cols-3 gap-2">
                 {['today', 'week', 'all'].map((range) => (
-                  <button
+                  <Button
                     key={range}
                     onClick={() => handleDateRangeChange(range as 'today' | 'week' | 'all')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
@@ -117,7 +119,7 @@ export default function SearchFilterBar() {
                     }`}
                   >
                     {range === 'today' ? '📅 Today' : range === 'week' ? '📆 Week' : 'All'}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -127,7 +129,7 @@ export default function SearchFilterBar() {
               <p className="text-sm font-semibold text-gray-700 mb-2">Sort By</p>
               <div className="grid grid-cols-3 gap-2">
                 {['recent', 'urgent', 'progress'].map((sort) => (
-                  <button
+                  <Button
                     key={sort}
                     onClick={() => handleSortChange(sort as 'recent' | 'urgent' | 'progress')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
@@ -141,7 +143,7 @@ export default function SearchFilterBar() {
                       : sort === 'urgent'
                         ? '⚡ Urgent'
                         : '📊 Progress'}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

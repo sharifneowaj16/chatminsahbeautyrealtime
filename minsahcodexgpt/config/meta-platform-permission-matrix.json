@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "capabilities": {
+    "sdk-transport": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "BUSINESS_SYSTEM_USER",
+        "CAPI",
+        "PAGE",
+        "INSTAGRAM"
+      ],
+      "permissionsByRole": {
+        "BUSINESS_SYSTEM_USER": [],
+        "CAPI": [],
+        "PAGE": [],
+        "INSTAGRAM": []
+      },
+      "featureId": "BUSINESS_SDK"
+    },
+    "credentials-versioning": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "APP",
+        "BUSINESS_SYSTEM_USER",
+        "CAPI",
+        "PAGE",
+        "INSTAGRAM"
+      ],
+      "permissionsByRole": {
+        "APP": [],
+        "BUSINESS_SYSTEM_USER": [],
+        "CAPI": [],
+        "PAGE": [],
+        "INSTAGRAM": []
+      },
+      "featureId": "GRAPH_CORE"
+    },
+    "graph-media-boundary": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "BUSINESS_SYSTEM_USER",
+        "PAGE",
+        "INSTAGRAM"
+      ],
+      "permissionsByRole": {
+        "BUSINESS_SYSTEM_USER": [],
+        "PAGE": [],
+        "INSTAGRAM": []
+      },
+      "featureId": "GRAPH_CORE"
+    },
+    "meta-webhooks": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "APP"
+      ],
+      "permissionsByRole": {
+        "APP": []
+      },
+      "featureId": "WEBHOOK_SECURITY"
+    },
+    "meta-operations": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "connection-health": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "APP",
+        "BUSINESS_SYSTEM_USER"
+      ],
+      "permissionsByRole": {
+        "APP": [],
+        "BUSINESS_SYSTEM_USER": []
+      },
+      "featureId": "CONNECTION_HEALTH"
+    },
+    "capi-delivery": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "CAPI"
+      ],
+      "permissionsByRole": {
+        "CAPI": []
+      },
+      "featureId": "CAPI"
+    },
+    "ads-marketing": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "BUSINESS_SYSTEM_USER"
+      ],
+      "permissionsByRole": {
+        "BUSINESS_SYSTEM_USER": [
+          "ads_management",
+          "ads_read",
+          "business_management"
+        ]
+      },
+      "featureId": "ADS_MARKETING"
+    },
+    "catalog-commerce": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "BUSINESS_SYSTEM_USER"
+      ],
+      "permissionsByRole": {
+        "BUSINESS_SYSTEM_USER": [
+          "business_management",
+          "catalog_management"
+        ]
+      },
+      "featureId": "CATALOG_COMMERCE"
+    },
+    "lead-ads-crm": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "PAGE"
+      ],
+      "permissionsByRole": {
+        "PAGE": [
+          "leads_retrieval",
+          "pages_manage_metadata",
+          "pages_read_engagement"
+        ]
+      },
+      "featureId": "LEAD_ADS"
+    },
+    "instagram-crm": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "INSTAGRAM"
+      ],
+      "permissionsByRole": {
+        "INSTAGRAM": [
+          "instagram_basic",
+          "instagram_manage_messages",
+          "pages_read_engagement"
+        ]
+      },
+      "featureId": "INSTAGRAM_MESSAGING"
+    },
+    "social-realtime": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "PAGE"
+      ],
+      "permissionsByRole": {
+        "PAGE": [
+          "pages_manage_metadata",
+          "pages_messaging",
+          "pages_read_engagement"
+        ]
+      },
+      "featureId": "PAGE_MESSAGING"
+    },
+    "legacy-facebook": {
+      "credentialMode": "OPTIONAL",
+      "allowedRoles": [
+        "APP",
+        "PAGE"
+      ],
+      "permissionsByRole": {
+        "APP": [],
+        "PAGE": [
+          "pages_read_engagement"
+        ]
+      },
+      "featureId": "GRAPH_CORE"
+    },
+    "browser-measurement": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "measurement-attribution": {
+      "credentialMode": "OPTIONAL",
+      "allowedRoles": [
+        "BUSINESS_SYSTEM_USER",
+        "CAPI"
+      ],
+      "permissionsByRole": {
+        "BUSINESS_SYSTEM_USER": [
+          "ads_read"
+        ],
+        "CAPI": []
+      },
+      "featureId": "MEASUREMENT"
+    },
+    "privacy-governance": {
+      "credentialMode": "OPTIONAL",
+      "allowedRoles": [
+        "APP"
+      ],
+      "permissionsByRole": {
+        "APP": []
+      },
+      "featureId": "WEBHOOK_SECURITY"
+    },
+    "admin-observability": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "release-governance": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "facebook-oauth": {
+      "credentialMode": "EXPLICIT",
+      "allowedRoles": [
+        "APP"
+      ],
+      "permissionsByRole": {
+        "APP": []
+      },
+      "featureId": "OAUTH"
+    },
+    "meta-data-model": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "shared-meta-support": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "meta-reliability": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "meta-workflows": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    }
+  }
+}

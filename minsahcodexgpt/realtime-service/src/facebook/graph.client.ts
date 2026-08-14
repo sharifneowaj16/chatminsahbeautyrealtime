@@ -1,5 +1,9 @@
 import { getConfig } from '../config'
 import { getCurrentPageToken } from './token-health'
+import {
+  assertFacebookOutboundWriteEnabled,
+  type FacebookOutboundOperation,
+} from './outbound-write-control'
 
 export class GraphApiError extends Error {
   constructor(
@@ -42,7 +46,7 @@ export async function sendMessengerText(
 
   return sendMessengerPayload(FB_PAGE_ACCESS_TOKEN, recipientPsid, {
     message: { text },
-  })
+  }, 'FACEBOOK_PAGE_MESSAGE')
 }
 
 export async function sendMessengerAttachment(
@@ -61,7 +65,7 @@ export async function sendMessengerAttachment(
         },
       },
     },
-  })
+  }, 'FACEBOOK_PAGE_MEDIA')
 }
 
 export async function sendMessengerReply(
@@ -90,8 +94,11 @@ export async function sendMessengerReply(
 async function sendMessengerPayload(
   accessToken: string,
   recipientPsid: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  operation: FacebookOutboundOperation
 ): Promise<SendMessageResult> {
+  // Resolve process.env immediately before the provider call so queued work cannot bypass a newly enabled switch.
+  assertFacebookOutboundWriteEnabled(operation, process.env)
   const response = await fetch(`${getGraphApiBase()}/me/messages`, {
     method: 'POST',
     headers: {
@@ -132,6 +139,7 @@ function normalizeAttachmentType(type: MessengerAttachmentInput['type']): Messen
 
 export async function replyToComment(commentId: string, text: string): Promise<{ id: string }> {
   const FB_PAGE_ACCESS_TOKEN = getCurrentPageToken()
+  assertFacebookOutboundWriteEnabled('FACEBOOK_PAGE_COMMENT_REPLY', process.env)
 
   const response = await fetch(`${getGraphApiBase()}/${commentId}/comments`, {
     method: 'POST',

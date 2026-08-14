@@ -18,6 +18,11 @@ import {
 import { processOutgoingInboxMessage } from './inbox-processor'
 import { scheduleInboxReplayJob } from './replay-queue'
 import { publishInboxEvent } from '../realtime/pubsub'
+import {
+  FacebookOutboundWriteBlockedError,
+  getFacebookOutboundWriteControl,
+  type FacebookOutboundOperation,
+} from './outbound-write-control'
 
 const OUTGOING_RETRY_KEY = 'fb:outgoing:retry'
 
@@ -76,6 +81,10 @@ function getStorageAttachmentUrl(job: {
   return addAttachmentTypeHint(job.attachmentUrl, job.attachmentType)
 }
 
+function getOutgoingOperation(job: Pick<OutgoingRetryJob, 'attachmentUrl'>): FacebookOutboundOperation {
+  return job.attachmentUrl ? 'FACEBOOK_PAGE_MEDIA' : 'FACEBOOK_PAGE_MESSAGE'
+}
+
 async function publishOutgoingStatus(input: {
   job: Pick<
     OutgoingRetryJob,
@@ -115,6 +124,27 @@ async function publishOutgoingStatus(input: {
 
 async function enqueueOutgoingRetry(job: OutgoingRetryJob, delayMs: number): Promise<void> {
   await retryRedis.zadd(OUTGOING_RETRY_KEY, Date.now() + delayMs, JSON.stringify(job))
+}
+
+async function deferOutgoingRetryWhileBlocked(
+  job: OutgoingRetryJob,
+  reasonCode: string
+): Promise<void> {
+  const deferred = { ...job, lastError: reasonCode }
+  await enqueueOutgoingRetry(deferred, getConfig().FB_OUTGOING_RETRY_POLL_MS)
+  await recordOutboxState({
+    outboxMessageId: job.jobId,
+    state: 'QUEUED',
+    attempt: job.attempts,
+    error: reasonCode,
+    metadata: { policyBlocked: true, reasonCode, operation: getOutgoingOperation(job) },
+  })
+  await publishOutgoingStatus({
+    job: deferred,
+    state: 'queued',
+    attempt: job.attempts,
+    error: reasonCode,
+  })
 }
 
 export async function queueOutgoingRetry(
@@ -355,6 +385,16 @@ export async function sendOutgoingNowOrQueue(input: {
       messageId: delivered.messageId,
     }
   } catch (error) {
+    if (error instanceof FacebookOutboundWriteBlockedError) {
+      await recordOutboxState({
+        outboxMessageId: job.jobId,
+        state: 'PENDING',
+        attempt: 0,
+        error: error.code,
+        metadata: { policyBlocked: true, reasonCode: error.code, operation: error.operation },
+      })
+      throw error
+    }
     const detail =
       error instanceof GraphApiError ? error.message : 'Outgoing send failed'
 
@@ -405,6 +445,11 @@ async function claimDueJobs(limit: number): Promise<OutgoingRetryJob[]> {
 }
 
 async function processOutgoingRetryJob(job: OutgoingRetryJob): Promise<void> {
+  const control = getFacebookOutboundWriteControl(getOutgoingOperation(job), process.env)
+  if (!control.enabled) {
+    await deferOutgoingRetryWhileBlocked(job, control.reasonCode)
+    return
+  }
   await recordOutboxState({
     outboxMessageId: job.jobId,
     state: 'RETRYING',
@@ -432,6 +477,10 @@ async function processOutgoingRetryJob(job: OutgoingRetryJob): Promise<void> {
       fbMessageId: delivered.fbMessageId,
     })
   } catch (error) {
+    if (error instanceof FacebookOutboundWriteBlockedError) {
+      await deferOutgoingRetryWhileBlocked(job, error.code)
+      return
+    }
     const detail =
       error instanceof GraphApiError ? error.message : 'Outgoing send failed'
 

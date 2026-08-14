@@ -1,5 +1,13 @@
 'use client';
 
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect, useCallback } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -65,6 +73,7 @@ interface CustomerFilters {
 }
 
 export default function CustomersPage() {
+  const { pushToast } = useToast();
   const { hasPermission } = useAdminAuth();
 
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -135,7 +144,7 @@ export default function CustomersPage() {
         prev.map(c => c.id === customerId ? { ...c, status: newStatus as Customer['status'] } : c)
       );
     } catch (err) {
-      alert('Failed to update customer status. Please try again.');
+      pushToast({ tone: 'danger', description: 'Failed to update customer status. Please try again.' });
     }
   };
 
@@ -175,18 +184,18 @@ export default function CustomersPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button
+          <Button
             onClick={() => fetchCustomers(pagination.page)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition"
           >
             <RefreshCw size={16} />
             Refresh
-          </button>
+          </Button>
           {hasPermission(PERMISSIONS.CUSTOMERS_EDIT) && (
-            <button className="flex items-center gap-2 px-4 py-2 bg-minsah-primary text-white rounded-lg text-sm hover:bg-minsah-dark transition">
+            <Button className="flex items-center gap-2 px-4 py-2 bg-minsah-primary text-white rounded-lg text-sm hover:bg-minsah-dark transition">
               <UserPlus size={16} />
               Add Customer
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -218,7 +227,7 @@ export default function CustomersPage() {
         <div className="flex flex-wrap gap-3 items-center">
           <div className="flex-1 min-w-[200px] relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search by name, email, phone..."
               value={filters.search}
@@ -227,7 +236,7 @@ export default function CustomersPage() {
             />
           </div>
 
-          <select
+          <Select
             value={filters.status}
             onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-minsah-primary"
@@ -237,9 +246,9 @@ export default function CustomersPage() {
             <option value="inactive">Inactive</option>
             <option value="suspended">Suspended</option>
             <option value="banned">Banned</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={filters.sortBy}
             onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-minsah-primary"
@@ -248,7 +257,7 @@ export default function CustomersPage() {
             <option value="lastLoginAt">Last Login</option>
             <option value="loyaltyPoints">Loyalty Points</option>
             <option value="email">Email</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -266,7 +275,7 @@ export default function CustomersPage() {
             {selectedCustomers.length} customer(s) selected
           </span>
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={() => {
                 selectedCustomers.forEach(id => handleStatusUpdate(id, 'suspended'));
                 setSelectedCustomers([]);
@@ -274,8 +283,8 @@ export default function CustomersPage() {
               className="px-3 py-1.5 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition"
             >
               Suspend Selected
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 selectedCustomers.forEach(id => handleStatusUpdate(id, 'active'));
                 setSelectedCustomers([]);
@@ -283,7 +292,7 @@ export default function CustomersPage() {
               className="px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
             >
               Activate Selected
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -305,7 +314,7 @@ export default function CustomersPage() {
               <thead className="bg-minsah-accent border-b border-minsah-secondary/20">
                 <tr>
                   <th className="px-4 py-3 text-left">
-                    <input
+                    <Input
                       type="checkbox"
                       checked={selectedCustomers.length === customers.length && customers.length > 0}
                       onChange={handleSelectAll}
@@ -326,7 +335,7 @@ export default function CustomersPage() {
                 {customers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-minsah-accent/30 transition">
                     <td className="px-4 py-3">
-                      <input
+                      <Input
                         type="checkbox"
                         checked={selectedCustomers.includes(customer.id)}
                         onChange={() => handleSelectCustomer(customer.id)}
@@ -378,7 +387,7 @@ export default function CustomersPage() {
                     {/* Status */}
                     <td className="px-4 py-3">
                       {hasPermission(PERMISSIONS.CUSTOMERS_EDIT) ? (
-                        <select
+                        <Select
                           value={customer.status}
                           onChange={(e) => handleStatusUpdate(customer.id, e.target.value)}
                           className={clsx(
@@ -390,7 +399,7 @@ export default function CustomersPage() {
                           <option value="inactive">Inactive</option>
                           <option value="suspended">Suspended</option>
                           <option value="banned">Banned</option>
-                        </select>
+                        </Select>
                       ) : (
                         <span className={clsx(
                           'text-xs px-2 py-1 rounded-full font-medium capitalize',
@@ -428,33 +437,33 @@ export default function CustomersPage() {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
-                        <button
+                        <Button
                           className="p-1.5 hover:bg-minsah-accent rounded-lg transition"
                           title="View Profile"
                         >
                           <Eye size={15} className="text-minsah-secondary" />
-                        </button>
+                        </Button>
                         {hasPermission(PERMISSIONS.CUSTOMERS_EDIT) && (
-                          <button
+                          <Button
                             className="p-1.5 hover:bg-minsah-accent rounded-lg transition"
                             title="Edit"
                           >
                             <Edit size={15} className="text-minsah-secondary" />
-                          </button>
+                          </Button>
                         )}
-                        <button
+                        <Button
                           className="p-1.5 hover:bg-minsah-accent rounded-lg transition"
                           title="Orders"
                         >
                           <FileText size={15} className="text-minsah-secondary" />
-                        </button>
+                        </Button>
                         {hasPermission(PERMISSIONS.CUSTOMERS_DELETE) && (
-                          <button
+                          <Button
                             className="p-1.5 hover:bg-red-50 rounded-lg transition"
                             title="Delete"
                           >
                             <Trash2 size={15} className="text-red-400" />
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -475,18 +484,18 @@ export default function CustomersPage() {
             {pagination.totalCount} customers
           </p>
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={() => fetchCustomers(pagination.page - 1)}
               disabled={pagination.page <= 1}
               className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-minsah-accent transition"
             >
               Previous
-            </button>
+            </Button>
             {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
               const p = Math.max(1, pagination.page - 2) + i;
               if (p > pagination.totalPages) return null;
               return (
-                <button
+                <Button
                   key={p}
                   onClick={() => fetchCustomers(p)}
                   className={clsx(
@@ -497,16 +506,16 @@ export default function CustomersPage() {
                   )}
                 >
                   {p}
-                </button>
+                </Button>
               );
             })}
-            <button
+            <Button
               onClick={() => fetchCustomers(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
               className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-minsah-accent transition"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}

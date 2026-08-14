@@ -37,7 +37,7 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/categories?activeOnly=false');
+      const res = await fetch('/api/categories?activeOnly=false', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch categories');
       const data = await res.json();
       setCategories(data.categories || []);

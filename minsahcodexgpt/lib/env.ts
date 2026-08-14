@@ -1,164 +1,223 @@
-/**
- * Environment variable validation and type-safe access
- * This module validates required environment variables at startup
- */
+import 'server-only';
 
-type EnvConfig = {
-  // Required in all environments
+import manifestJson from '@/config/env.manifest.json';
+
+type NodeEnvironment = 'development' | 'test' | 'production';
+type EnvSource = NodeJS.ProcessEnv;
+
+type EnvManifest = {
   required: string[];
-  // Required only in production
   productionRequired: string[];
-  // Optional with defaults
-  optional: Record<string, string>;
+  recommendedProduction: string[];
+  urls: string[];
+  booleans: string[];
+  integers: string[];
+  positiveNumbers: string[];
+  secretMinimumLengths: Record<string, number>;
+  placeholderFragments: string[];
 };
 
-const envConfig: EnvConfig = {
-  required: [
-    'DATABASE_URL',
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET',
-  ],
-  productionRequired: [
-    'NEXTAUTH_SECRET',
-    'NEXTAUTH_URL',
-    'REDIS_URL',
-    'MINIO_ENDPOINT',
-    'MINIO_ACCESS_KEY',
-    'MINIO_SECRET_KEY',
-  ],
-  optional: {
-    NODE_ENV: 'development',
-    PORT: '3000',
-    JWT_ACCESS_EXPIRY: '15m',
-    JWT_REFRESH_EXPIRY: '7d',
-    MINIO_PORT: '9000',
-    MINIO_USE_SSL: 'false',
-    MINIO_BUCKET_NAME: 'minsah-beauty',
-  },
+const manifest = manifestJson as EnvManifest;
+
+const optionalDefaults: Readonly<Record<string, string>> = {
+  NODE_ENV: 'development',
+  PORT: '3000',
+  JWT_ACCESS_EXPIRY: '15m',
+  JWT_REFRESH_EXPIRY: '7d',
+  MINIO_PORT: '9000',
+  MINIO_USE_SSL: 'false',
+  MINIO_BUCKET_NAME: 'minsah-beauty',
+  PATHAO_DEFAULT_ITEM_WEIGHT_KG: '0.1',
 };
 
-class EnvValidationError extends Error {
-  constructor(public missingVars: string[]) {
-    super(`Missing required environment variables: ${missingVars.join(', ')}`);
+export class EnvValidationError extends Error {
+  readonly issues: string[];
+
+  constructor(issues: string[]) {
+    super(`Invalid environment configuration: ${issues.join('; ')}`);
     this.name = 'EnvValidationError';
+    this.issues = issues;
   }
 }
 
-let validated = false;
+export type ValidateEnvOptions = {
+  source?: EnvSource;
+  production?: boolean;
+  rejectPlaceholders?: boolean;
+};
 
-/**
- * Validate all required environment variables
- * Call this at application startup
- */
-export function validateEnv(): void {
-  if (validated) return;
+function normalize(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
 
-  const missing: string[] = [];
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  // Check required variables
-  for (const varName of envConfig.required) {
-    if (!process.env[varName]) {
-      missing.push(varName);
-    }
-  }
-
-  // Check production-required variables
-  if (isProduction) {
-    for (const varName of envConfig.productionRequired) {
-      if (!process.env[varName]) {
-        missing.push(varName);
-      }
-    }
-  }
-
-  if (missing.length > 0) {
-    throw new EnvValidationError(missing);
-  }
-
-  validated = true;
+function hasPlaceholder(value: string): boolean {
+  const normalized = value.toLowerCase();
+  return manifest.placeholderFragments.some((fragment) => normalized.includes(fragment));
 }
 
 /**
- * Get environment variable with type safety
+ * Validates the shared runtime contract without changing application behavior.
+ * Integrations remain optional unless they are enabled by their own feature flag.
  */
-export function getEnv(key: string, defaultValue?: string): string {
-  const value = process.env[key];
+export function validateEnv(options: ValidateEnvOptions = {}): void {
+  const source = options.source ?? process.env;
+  const production = options.production ?? source.NODE_ENV === 'production';
+  const rejectPlaceholders = options.rejectPlaceholders ?? production;
+  const issues: string[] = [];
+  const required = production
+    ? [...manifest.required, ...manifest.productionRequired]
+    : manifest.required;
+
+  for (const key of required) {
+    const value = normalize(source[key]);
+    if (!value) {
+      issues.push(`${key} is required${production ? ' in production' : ''}`);
+    } else if (rejectPlaceholders && hasPlaceholder(value)) {
+      issues.push(`${key} contains a placeholder value`);
+    }
+  }
+
+  for (const key of manifest.urls) {
+    const value = normalize(source[key]);
+    if (!value || (rejectPlaceholders && hasPlaceholder(value))) continue;
+    try {
+      const parsed = new URL(value);
+      if (!parsed.protocol || !parsed.hostname) issues.push(`${key} must be an absolute URL`);
+    } catch {
+      issues.push(`${key} must be a valid absolute URL`);
+    }
+  }
+
+  const acceptedBooleans = new Set(['true', 'false', '1', '0', 'yes', 'no']);
+  for (const key of manifest.booleans) {
+    const value = normalize(source[key])?.toLowerCase();
+    if (value && !acceptedBooleans.has(value)) {
+      issues.push(`${key} must be true/false, 1/0, or yes/no`);
+    }
+  }
+
+  for (const key of manifest.integers) {
+    const value = normalize(source[key]);
+    if (value && !/^-?\d+$/.test(value)) issues.push(`${key} must be an integer`);
+  }
+
+  for (const key of manifest.positiveNumbers) {
+    const value = normalize(source[key]);
+    if (!value) continue;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) issues.push(`${key} must be a positive number`);
+  }
+
+  for (const [key, minimumLength] of Object.entries(manifest.secretMinimumLengths)) {
+    const value = normalize(source[key]);
+    if (!value || (rejectPlaceholders && hasPlaceholder(value))) continue;
+    if (value.length < minimumLength) {
+      issues.push(`${key} must be at least ${minimumLength} characters`);
+    }
+  }
+
+  if (issues.length > 0) throw new EnvValidationError([...new Set(issues)]);
+}
+
+export function getOptionalEnv(key: string, source: EnvSource = process.env): string | undefined {
+  return normalize(source[key]);
+}
+
+export function getEnv(
+  key: string,
+  defaultValue?: string,
+  source: EnvSource = process.env,
+): string {
+  const value = getOptionalEnv(key, source);
   if (value !== undefined) return value;
   if (defaultValue !== undefined) return defaultValue;
-  if (envConfig.optional[key] !== undefined) return envConfig.optional[key];
-  throw new Error(`Environment variable ${key} is not set and has no default`);
+  const configuredDefault = optionalDefaults[key];
+  if (configuredDefault !== undefined) return configuredDefault;
+  throw new EnvValidationError([`${key} is not set and has no default`]);
 }
 
-/**
- * Get required environment variable (throws if not set)
- */
-export function getRequiredEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Required environment variable ${key} is not set`);
-  }
+export function getRequiredEnv(key: string, source: EnvSource = process.env): string {
+  const value = getOptionalEnv(key, source);
+  if (!value) throw new EnvValidationError([`${key} is required`]);
   return value;
 }
 
-/**
- * Get environment variable as boolean
- */
-export function getEnvBoolean(key: string, defaultValue: boolean = false): boolean {
-  const value = process.env[key];
+export function getEnvBoolean(
+  key: string,
+  defaultValue = false,
+  source: EnvSource = process.env,
+): boolean {
+  const value = getOptionalEnv(key, source)?.toLowerCase();
   if (value === undefined) return defaultValue;
-  return value === 'true' || value === '1' || value === 'yes';
+  if (['true', '1', 'yes'].includes(value)) return true;
+  if (['false', '0', 'no'].includes(value)) return false;
+  throw new EnvValidationError([`${key} must be true/false, 1/0, or yes/no`]);
 }
 
-/**
- * Get environment variable as number
- */
-export function getEnvNumber(key: string, defaultValue: number): number {
-  const value = process.env[key];
+export function getEnvNumber(
+  key: string,
+  defaultValue: number,
+  source: EnvSource = process.env,
+): number {
+  const value = getOptionalEnv(key, source);
   if (value === undefined) return defaultValue;
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? defaultValue : parsed;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw new EnvValidationError([`${key} must be a number`]);
+  return parsed;
 }
 
-/**
- * Check if running in production
- */
-export function isProduction(): boolean {
-  return process.env.NODE_ENV === 'production';
+export function getEnvUrl(
+  key: string,
+  defaultValue?: string,
+  source: EnvSource = process.env,
+): string {
+  const value = getEnv(key, defaultValue, source);
+  try {
+    return new URL(value).toString().replace(/\/$/, '');
+  } catch {
+    throw new EnvValidationError([`${key} must be a valid absolute URL`]);
+  }
 }
 
-/**
- * Check if running in development
- */
-export function isDevelopment(): boolean {
-  return process.env.NODE_ENV === 'development';
+export function getEnvList(
+  key: string,
+  defaultValue: string[] = [],
+  source: EnvSource = process.env,
+): string[] {
+  const value = getOptionalEnv(key, source);
+  if (!value) return defaultValue;
+  return [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean))];
 }
 
-/**
- * Type-safe environment access
- */
+export function isProduction(source: EnvSource = process.env): boolean {
+  return source.NODE_ENV === 'production';
+}
+
+export function isDevelopment(source: EnvSource = process.env): boolean {
+  return (source.NODE_ENV ?? 'development') === 'development';
+}
+
 export const env = {
-  // App
-  nodeEnv: () => getEnv('NODE_ENV', 'development'),
-  appUrl: () => getEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
+  nodeEnv: (): NodeEnvironment => {
+    const value = getEnv('NODE_ENV', 'development');
+    if (value === 'development' || value === 'test' || value === 'production') return value;
+    throw new EnvValidationError(['NODE_ENV must be development, test, or production']);
+  },
+  appUrl: () => getEnvUrl('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
   port: () => getEnvNumber('PORT', 3000),
 
-  // Auth
   nextAuthSecret: () => getRequiredEnv('NEXTAUTH_SECRET'),
-  nextAuthUrl: () => getEnv('NEXTAUTH_URL', 'http://localhost:3000'),
+  nextAuthUrl: () => getEnvUrl('NEXTAUTH_URL', 'http://localhost:3000'),
   jwtSecret: () => getRequiredEnv('JWT_SECRET'),
   jwtRefreshSecret: () => getRequiredEnv('JWT_REFRESH_SECRET'),
   jwtAccessExpiry: () => getEnv('JWT_ACCESS_EXPIRY', '15m'),
   jwtRefreshExpiry: () => getEnv('JWT_REFRESH_EXPIRY', '7d'),
 
-  // Database
   databaseUrl: () => getRequiredEnv('DATABASE_URL'),
-  directUrl: () => getEnv('DIRECT_URL', getRequiredEnv('DATABASE_URL')),
-
-  // Redis
+  directUrl: () => getOptionalEnv('DIRECT_URL') ?? getRequiredEnv('DATABASE_URL'),
   redisUrl: () => getEnv('REDIS_URL', ''),
 
-  // MinIO
   minioEndpoint: () => getEnv('MINIO_ENDPOINT', 'localhost'),
   minioPort: () => getEnvNumber('MINIO_PORT', 9000),
   minioAccessKey: () => getEnv('MINIO_ACCESS_KEY', ''),
@@ -167,6 +226,5 @@ export const env = {
   minioUseSSL: () => getEnvBoolean('MINIO_USE_SSL', false),
   minioPublicUrl: () => getEnv('NEXT_PUBLIC_MINIO_PUBLIC_URL', ''),
 
-  // CORS
-  allowedOrigins: () => getEnv('ALLOWED_ORIGINS', 'http://localhost:3000').split(','),
+  allowedOrigins: () => getEnvList('ALLOWED_ORIGINS', ['http://localhost:3000']),
 };

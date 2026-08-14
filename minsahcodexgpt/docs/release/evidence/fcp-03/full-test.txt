@@ -1,0 +1,118 @@
+
+> minsah-beauty@2.0.0 test
+> node --import tsx --test tests/fcp00/*.test.ts tests/fcp01/*.test.ts tests/fcp03/*.test.ts
+
+TAP version 13
+# FCP-00 dialog keyboard tests passed.
+# Subtest: tests/fcp00/dialog-keyboard.test.ts
+ok 1 - tests/fcp00/dialog-keyboard.test.ts
+  ---
+  duration_ms: 729.361458
+  type: 'test'
+  ...
+# FCP-00 Prisma JSON converter tests passed.
+# Subtest: tests/fcp00/prisma-json.test.ts
+ok 2 - tests/fcp00/prisma-json.test.ts
+  ---
+  duration_ms: 718.4334
+  type: 'test'
+  ...
+# Subtest: toolchain is pinned exactly
+ok 3 - toolchain is pinned exactly
+  ---
+  duration_ms: 0.942115
+  type: 'test'
+  ...
+# Subtest: all declared dependencies are exact versions
+ok 4 - all declared dependencies are exact versions
+  ---
+  duration_ms: 0.470076
+  type: 'test'
+  ...
+# Subtest: npm test is a real blocking test command
+ok 5 - npm test is a real blocking test command
+  ---
+  duration_ms: 0.169895
+  type: 'test'
+  ...
+# Subtest: Dockerfile does not hardcode Minsah production public URLs
+ok 6 - Dockerfile does not hardcode Minsah production public URLs
+  ---
+  duration_ms: 0.585224
+  type: 'test'
+  ...
+# Subtest: storefront route group and AppShell are active
+ok 7 - storefront route group and AppShell are active
+  ---
+  duration_ms: 2.405968
+  type: 'test'
+  ...
+# Subtest: legacy shell adapters and duplicate navigation owners are deleted
+ok 8 - legacy shell adapters and duplicate navigation owners are deleted
+  ---
+  duration_ms: 0.259169
+  type: 'test'
+  ...
+# Subtest: AppShell is the only storefront owner of header, footer, bottom nav, skip target and main landmark
+ok 9 - AppShell is the only storefront owner of header, footer, bottom nav, skip target and main landmark
+  ---
+  duration_ms: 18.752763
+  type: 'test'
+  ...
+# Subtest: root layout owns providers only and storefront shell owns customer overlays
+ok 10 - root layout owns providers only and storefront shell owns customer overlays
+  ---
+  duration_ms: 0.436425
+  type: 'test'
+  ...
+# Subtest: safe-area and fixed-navigation geometry are centralized
+ok 11 - safe-area and fixed-navigation geometry are centralized
+  ---
+  duration_ms: 0.389315
+  type: 'test'
+  ...
+# Subtest: storefront routes use the unified public shell
+ok 12 - storefront routes use the unified public shell
+  ---
+  duration_ms: 0.802475
+  type: 'test'
+  ...
+# Subtest: product detail owns its product header and sticky CTA without a second mobile nav
+ok 13 - product detail owns its product header and sticky CTA without a second mobile nav
+  ---
+  duration_ms: 0.107492
+  type: 'test'
+  ...
+# Subtest: special route families remain outside the storefront shell
+ok 14 - special route families remain outside the storefront shell
+  ---
+  duration_ms: 0.187061
+  type: 'test'
+  ...
+# Subtest: all documented route families have an explicit owner and shell decision
+ok 15 - all documented route families have an explicit owner and shell decision
+  ---
+  duration_ms: 0.256555
+  type: 'test'
+  ...
+# Subtest: mobile navigation contains at most five unique items
+ok 16 - mobile navigation contains at most five unique items
+  ---
+  duration_ms: 0.145539
+  type: 'test'
+  ...
+# Subtest: navigation active-state rules cover canonical catalog and wishlist aliases
+ok 17 - navigation active-state rules cover canonical catalog and wishlist aliases
+  ---
+  duration_ms: 0.149355
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 744.180172

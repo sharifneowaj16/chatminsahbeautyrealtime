@@ -1,86 +1,51 @@
-import { adminUnauthorizedResponse, getVerifiedAdmin } from '@/app/api/admin/_utils'
-import { NextRequest, NextResponse } from 'next/server'
-
-const REALTIME_SERVICE_URL =
-  process.env.REALTIME_SERVICE_INTERNAL_URL ?? 'http://realtime-service:3001'
-const REPLY_API_SECRET = process.env.REPLY_API_SECRET ?? ''
-
-function getProxyHeaders(): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-    'x-api-secret': REPLY_API_SECRET,
-  }
-}
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminPermission } from '@/app/api/admin/_utils';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { listMetaJobAudits } from '@/lib/jobs/audit-repository';
+import { replayMetaDeadLetter } from '@/lib/jobs/dead-letter';
+import { META_QUEUE_NAMES } from '@/lib/jobs/job-types';
+import { projectMetaJobFailureForAdmin } from '@/lib/meta-platform/queue';
 
 export async function GET(request: NextRequest) {
-  const admin = await getVerifiedAdmin(request)
-  if (!admin) {
-    return adminUnauthorizedResponse()
-  }
-
-  if (!REPLY_API_SECRET) {
-    return NextResponse.json(
-      { error: 'REPLY_API_SECRET is not configured' },
-      { status: 500 }
-    )
-  }
-
-  try {
-    const query = request.nextUrl.searchParams.toString()
-    const response = await fetch(
-      `${REALTIME_SERVICE_URL}/sync/facebook/dead-letter${query ? `?${query}` : ''}`,
-      {
-        headers: getProxyHeaders(),
-      }
-    )
-
-    const data = (await response.json().catch(() => null)) as Record<string, unknown> | null
-    return NextResponse.json(
-      data ?? { error: 'Dead-letter proxy failed' },
-      { status: response.status }
-    )
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Dead-letter proxy failed', detail: String(error) },
-      { status: 502 }
-    )
-  }
+  const { response } = await requireAdminPermission(request, ADMIN_PERMISSIONS.META_SOCIAL_VIEW);
+  if (response) return response;
+  const limit = Math.max(1, Math.min(Number(request.nextUrl.searchParams.get('limit') ?? 50), 200));
+  const jobs = await listMetaJobAudits({
+    status: 'DEAD_LETTER',
+    queueName: META_QUEUE_NAMES.SOCIAL,
+    limit,
+  });
+  return NextResponse.json({
+    count: jobs.length,
+    jobs: jobs.map((job) => ({
+      id: job.id,
+      jobName: job.jobName,
+      status: job.status,
+      attempts: job.attempts,
+      maxAttempts: job.maxAttempts,
+      lastError: projectMetaJobFailureForAdmin(job.lastError),
+      createdAt: job.createdAt.toISOString(),
+      updatedAt: job.updatedAt.toISOString(),
+    })),
+    owner: 'main-app-bullmq',
+  });
 }
 
 export async function POST(request: NextRequest) {
-  const admin = await getVerifiedAdmin(request)
-  if (!admin) {
-    return adminUnauthorizedResponse()
+  const { admin, response } = await requireAdminPermission(request, ADMIN_PERMISSIONS.META_SOCIAL_OPERATE);
+  if (response) return response;
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+  const auditId = typeof body.auditId === 'string' ? body.auditId : '';
+  const approvalId = typeof body.approvalId === 'string' ? body.approvalId : '';
+  const reason = typeof body.reason === 'string' ? body.reason : 'Manual social dead-letter replay';
+  if (!auditId || !approvalId) {
+    return NextResponse.json({ error: 'auditId and approvalId are required' }, { status: 400 });
   }
-
-  if (!REPLY_API_SECRET) {
-    return NextResponse.json(
-      { error: 'REPLY_API_SECRET is not configured' },
-      { status: 500 }
-    )
-  }
-
-  try {
-    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
-    const query = request.nextUrl.searchParams.toString()
-    const response = await fetch(
-      `${REALTIME_SERVICE_URL}/sync/facebook/dead-letter/replay-open${query ? `?${query}` : ''}`,
-      {
-        method: 'POST',
-        headers: getProxyHeaders(),
-        body: JSON.stringify(body),
-      }
-    )
-
-    const data = (await response.json().catch(() => null)) as Record<string, unknown> | null
-    return NextResponse.json(
-      data ?? { error: 'Dead-letter replay failed' },
-      { status: response.status }
-    )
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Dead-letter replay failed', detail: String(error) },
-      { status: 502 }
-    )
-  }
+  const replay = await replayMetaDeadLetter({
+    auditId,
+    approvalId,
+    requestedBy: admin.adminId,
+    reason,
+  });
+  return NextResponse.json(replay, { status: replay.ok ? 202 : 409 });
 }

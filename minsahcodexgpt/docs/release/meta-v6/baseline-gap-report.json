@@ -1,0 +1,142 @@
+{
+  "ok": false,
+  "mode": "report",
+  "passed": 7,
+  "failed": 7,
+  "total": 14,
+  "checks": [
+    {
+      "id": "A1",
+      "phase": [
+        2
+      ],
+      "label": "/items_batch uses adapter-specific current write fields",
+      "ok": true,
+      "evidence": "Expected quantity_to_sell_on_facebook, link, image_link, item_group_id and formatted price; legacy inventory/url/image_url/group fields must leave the write adapter."
+    },
+    {
+      "id": "A2",
+      "phase": [
+        2
+      ],
+      "label": "Zero-stock backorder maps to available for order",
+      "ok": true,
+      "evidence": "Expected explicit availability value 'available for order'."
+    },
+    {
+      "id": "A3",
+      "phase": [
+        2
+      ],
+      "label": "Future sale is emitted with effective date range",
+      "ok": true,
+      "evidence": "Expected future sale_price plus sale_price_effective_date; future start must not be discarded."
+    },
+    {
+      "id": "A4",
+      "phase": [
+        1,
+        3
+      ],
+      "label": "No raw database productId in Meta content_ids",
+      "ok": true,
+      "evidence": "Migrate all item event content_ids through the canonical Meta catalog identity builder."
+    },
+    {
+      "id": "A5",
+      "phase": [
+        1
+      ],
+      "label": "Server/public catalog identity sources are configured and parity-validated",
+      "ok": true,
+      "evidence": "Expected a server-only parity validator and both environment variables."
+    },
+    {
+      "id": "A6",
+      "phase": [
+        7,
+        15
+      ],
+      "label": "Graph API version policy has an upgrade/expiry gate",
+      "ok": false,
+      "evidence": "Expected controlled version policy, warning/block dates and a CI/deploy gate."
+    },
+    {
+      "id": "A7",
+      "phase": [
+        2
+      ],
+      "label": "ProductVariant supports lifecycle, sale, availability and identifiers",
+      "ok": true,
+      "evidence": "ProductVariant must carry independent lifecycle/sale/availability/identifier metadata."
+    },
+    {
+      "id": "A8",
+      "phase": [
+        6
+      ],
+      "label": "Non-essential tracking defaults to false",
+      "ok": false,
+      "evidence": "Schema default must be false with an explicit historical backfill policy."
+    },
+    {
+      "id": "A9",
+      "phase": [
+        4
+      ],
+      "label": "Meta CAPI uses a database transactional outbox",
+      "ok": false,
+      "evidence": "Expected outbox insertion in the same DB transaction as the business event."
+    },
+    {
+      "id": "A10",
+      "phase": [
+        5
+      ],
+      "label": "Meta retry schedule covers immediate, 1m, 5m, 15m and 1h",
+      "ok": false,
+      "evidence": "Expected provider-specific durable retry schedule and DLQ classification."
+    },
+    {
+      "id": "A11",
+      "phase": [
+        4
+      ],
+      "label": "Shared CAPI web contract requires all website fields",
+      "ok": false,
+      "evidence": "Required website fields must be mandatory in one canonical adapter contract."
+    },
+    {
+      "id": "A12",
+      "phase": [
+        2
+      ],
+      "label": "Canonical catalog item includes full presentation and merchandising fields",
+      "ok": true,
+      "evidence": "Expected full canonical presentation fields before adapter serialization."
+    },
+    {
+      "id": "A13",
+      "phase": [
+        2,
+        4,
+        7,
+        8,
+        10,
+        13
+      ],
+      "label": "Meta lifecycle statuses use Prisma enums",
+      "ok": false,
+      "evidence": "Expected explicit enums for jobs, batches, events, leads, connections, webhooks and approvals."
+    },
+    {
+      "id": "A14",
+      "phase": [
+        10
+      ],
+      "label": "Catalog Diagnostics are persisted and exposed",
+      "ok": false,
+      "evidence": "Expected per-item diagnostic ingestion, API and admin visibility."
+    }
+  ]
+}

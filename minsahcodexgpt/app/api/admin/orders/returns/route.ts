@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma } from '@/generated/prisma/client';
 import { enqueueGa4Refund } from '@/lib/queue/metaCapiQueue';
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,7 +165,20 @@ export async function PATCH(request: NextRequest) {
         order: {
           select: {
             id: true,
+            createdAt: true,
+            status: true,
+            paymentStatus: true,
+            paymentMethod: true,
             isTest: true,
+            phoneConfirmedAt: true,
+            paymentPaidAt: true,
+            paidAt: true,
+            deliveredAt: true,
+            cancelledAt: true,
+            returnedAt: true,
+            refundedAt: true,
+            courierDeliveredAt: true,
+            courierReturnedAt: true,
             gaRefundSent: true,
           },
         },
@@ -175,17 +189,35 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No matching return requests found' }, { status: 404 });
     }
 
-    await prisma.return.updateMany({
-      where: {
-        id: { in: existingReturns.map((item) => item.id) },
-      },
-      data: {
-        status: normalizedStatus as Prisma.ReturnUpdateManyMutationInput['status'],
-        ...(adminNote !== undefined ? { adminNote } : {}),
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.return.updateMany({
+        where: {
+          id: { in: existingReturns.map((item) => item.id) },
+        },
+        data: {
+          status: normalizedStatus as Prisma.ReturnUpdateManyMutationInput['status'],
+          ...(adminNote !== undefined ? { adminNote } : {}),
+        },
+      });
+
+      if (normalizedStatus === 'COMPLETED') {
+        const seenOrderIds = new Set<string>();
+        for (const returnRequest of existingReturns) {
+          if (seenOrderIds.has(returnRequest.orderId)) continue;
+          seenOrderIds.add(returnRequest.orderId);
+
+          const updatedOrder = await tx.order.update({
+            where: { id: returnRequest.orderId },
+            data: {
+              returnedAt: returnRequest.order.returnedAt ?? new Date(),
+              refundedAt: returnRequest.order.refundedAt ?? new Date(),
+            },
+          });
+
+          await recordProductLifecycleTransitionInTransaction(tx, returnRequest.order, updatedOrder);
+        }
+      }
     });
-
-
 
     const queuedGa4Refunds: string[] = [];
     if (normalizedStatus === 'COMPLETED') {

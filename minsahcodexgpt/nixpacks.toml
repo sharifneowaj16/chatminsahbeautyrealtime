@@ -7,7 +7,7 @@ cmds = [
   "npm ci",
   # sharp এর Linux x64 prebuilt binary explicitly install করা হচ্ছে
   # কারণ npm ci optional deps skip করে — sharp তখন silent fallback করে
-  "npm install --cpu=x64 --os=linux --libc=glibc @img/sharp-linux-x64@0.33.5 @img/sharp-libvips-linux-x64@1.0.4",
+  "npm install --no-save --cpu=x64 --os=linux --libc=glibc @img/sharp-linux-x64@0.35.3 @img/sharp-libvips-linux-x64@1.3.2",
 ]
 
 [phases.build]

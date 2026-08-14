@@ -1,5 +1,13 @@
 'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -24,6 +32,7 @@ interface FAQ {
 }
 
 export default function FAQManagementPage() {
+  const { requestConfirmation } = useToast();
   const { hasPermission } = useAdminAuth();
   const [faqs, setFaqs] = useState<FAQ[]>([
     {
@@ -84,8 +93,8 @@ export default function FAQManagementPage() {
     return matchesSearch && matchesCategory;
   }).sort((a, b) => a.order - b.order);
 
-  const handleDeleteFaq = (faqId: string) => {
-    if (confirm('Are you sure you want to delete this FAQ?')) {
+  const handleDeleteFaq = async (faqId: string) => {
+    if (await requestConfirmation({ title: 'Delete this FAQ?', description: 'The question and answer will be removed.', confirmLabel: 'Delete FAQ', tone: 'danger' })) {
       setFaqs(faqs.filter(f => f.id !== faqId));
     }
   };
@@ -100,10 +109,10 @@ export default function FAQManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">FAQ Management</h1>
           <p className="text-gray-600">Manage frequently asked questions</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Add FAQ
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -158,7 +167,7 @@ export default function FAQManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search FAQs..."
               value={searchTerm}
@@ -167,7 +176,7 @@ export default function FAQManagementPage() {
             />
           </div>
 
-          <select
+          <Select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -176,7 +185,7 @@ export default function FAQManagementPage() {
             {categories.map(category => (
               <option key={category} value={category}>{category}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -187,7 +196,7 @@ export default function FAQManagementPage() {
             <div key={faq.id} className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <button
+                  <Button
                     onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
                     className="w-full text-left"
                   >
@@ -216,7 +225,7 @@ export default function FAQManagementPage() {
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </Button>
 
                   {expandedFaq === faq.id && (
                     <div className="mt-4 ml-8 text-gray-700 bg-gray-50 p-4 rounded-lg">
@@ -226,16 +235,16 @@ export default function FAQManagementPage() {
                 </div>
 
                 <div className="flex items-center space-x-2 ml-4">
-                  <button className="text-blue-600 hover:text-blue-800" title="Edit">
+                  <Button className="text-blue-600 hover:text-blue-800" title="Edit">
                     <Edit className="w-4 h-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleDeleteFaq(faq.id)}
                     className="text-red-600 hover:text-red-800"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

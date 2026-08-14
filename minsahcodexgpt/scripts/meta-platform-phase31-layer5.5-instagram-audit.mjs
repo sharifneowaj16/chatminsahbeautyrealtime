@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+const evidence=fs.readFileSync('evidence/phase31-meta-social-crm/06-instagram-legacy-audit.md','utf8'); const messages=fs.readFileSync('lib/meta/instagram/messages.ts','utf8'); const worker=fs.readFileSync('workers/meta-instagram.worker.ts','utf8');
+const checks=[]; const check=(n,o)=>{checks.push(!!o);console.log(`[${o?'PASS':'FAIL'}] ${n}`)};
+for(const file of fs.readdirSync('lib/meta/instagram').filter(f=>f.endsWith('.ts'))) check(`mapped ${file}`,evidence.includes(file));
+check('inbound worker path mapped and replaced by domain production entrypoint',evidence.includes('processInstagramWebhookReceipt')&&worker.includes('processInstagramInboundReceiptProduction as processInstagramWebhookReceipt')&&!/from ['"]@\/lib\/meta\/instagram\/messages['"]/.test(worker.match(/import\s*\{[^}]*processInstagramWebhookReceipt[^}]*\}\s*from\s*['"][^'"]+['"]/s)?.[0]??''));
+check('outbound request and execution mapped',evidence.includes('sendInstagramReply')&&evidence.includes('executeInstagramReplyAttempt'));
+check('direct Graph calls mapped',evidence.includes('sendProviderReply')&&messages.includes('createMetaGraphClient'));
+check('reply windows mapped',evidence.includes('24 hours')&&evidence.includes('seven days'));
+check('attachments and realtime mapped',evidence.includes('attachment')&&evidence.includes('realtime'));
+check('5.6-5.9 split frozen',['5.6','5.7','5.8','5.9'].every(x=>evidence.includes(`**${x}:`)));
+check('Prisma schema unchanged',!fs.existsSync('prisma/migrations/phase31_layer5_5'));
+const pass=checks.filter(Boolean).length; console.log(`Layer 5.5 Instagram audit: ${pass}/${checks.length} PASS`); if(pass!==checks.length)process.exitCode=1;

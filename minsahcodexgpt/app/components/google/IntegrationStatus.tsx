@@ -1,5 +1,7 @@
-﻿'use client';
+'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import type { GoogleService } from '@/types/google';
 import { GOOGLE_COLORS, GOOGLE_SERVICE_CONFIGS } from '@/types/google';
@@ -188,31 +190,31 @@ export default function IntegrationStatus({
         <div className="flex items-center gap-2">
           {service.connected ? (
             <>
-              <button
+              <Button
                 onClick={handleSync}
                 disabled={isLoading}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
                 title="Sync Now"
               >
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={handleDisconnect}
                 disabled={isLoading}
                 className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors duration-200 disabled:opacity-50"
               >
                 Disconnect
-              </button>
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               onClick={handleConnect}
               disabled={isLoading}
               className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
             >
               {isLoading ? 'Connecting...' : 'Connect'}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -248,10 +250,10 @@ export default function IntegrationStatus({
               <span>Last sync: {formatLastSync(service.lastSync)}</span>
             </div>
 
-            <button className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1">
+            <Button className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1">
               <Info className="h-3 w-3" />
               View Details
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -1,5 +1,10 @@
 'use client';
 
+
+
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Drawer } from '@/components/ui/Drawer';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -67,7 +72,6 @@ const menuItems: MenuItem[] = [
     href: '/admin/products',
     icon: ShoppingBag,
     permission: PERMISSIONS.PRODUCTS_VIEW,
-    badge: 5,
     children: [
       { title: 'All Products', href: '/admin/products' },
       { title: 'Categories', href: '/admin/categories', permission: PERMISSIONS.CONTENT_MANAGE },
@@ -86,7 +90,6 @@ const menuItems: MenuItem[] = [
     href: '/admin/orders',
     icon: Truck,
     permission: PERMISSIONS.ORDERS_VIEW,
-    badge: 12,
     children: [
       { title: 'All Orders', href: '/admin/orders' },
       { title: 'Create Order', href: '/admin/orders/new', permission: PERMISSIONS.ORDERS_VIEW },
@@ -134,9 +137,10 @@ const menuItems: MenuItem[] = [
     href: '/admin/marketing',
     icon: Megaphone,
     permission: PERMISSIONS.CONTENT_MANAGE,
-    badge: 5,
     children: [
       { title: 'Overview', href: '/admin/marketing' },
+      { title: 'Meta Operations', href: '/admin/meta', icon: ShieldCheck, permission: PERMISSIONS.META_OPS_VIEW },
+      { title: 'Meta Business (legacy)', href: '/admin/meta-business', icon: Megaphone, superAdminOnly: true },
       { title: 'Social Media', href: '/admin/marketing?tab=social', icon: Globe },
       { title: 'WhatsApp Business', href: '/admin/marketing?tab=whatsapp', icon: Smartphone },
       { title: 'Email Marketing', href: '/admin/marketing?tab=email', icon: Mail },
@@ -238,7 +242,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
     const loadInboxUnreadCount = async () => {
       try {
-        const response = await fetch('/api/social/messages?mode=unread_count', {
+        const response = await fetch('/api/admin/inbox/messages?mode=unread_count&platform=facebook', {
           cache: 'no-store',
           credentials: 'include',
         });
@@ -296,7 +300,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div lang="en" className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -330,28 +334,12 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
     return pathname.startsWith(href);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden bg-black/50 transition-opacity"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+  const navSectionId = (title: string) =>
+    `admin-nav-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
-      {/* Sidebar - Metronic Style */}
-      <aside
-        className={clsx(
-          'fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
-          inboxChromeHidden
-            ? 'hidden'
-            : sidebarOpen
-              ? 'block'
-              : 'hidden lg:block'
-        )}
-      >
-        <div className="flex h-full flex-col">
+
+  const renderSidebarContent = (instance: 'desktop' | 'mobile') => (
+    <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-20 items-center justify-between px-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-pink-600">
             <div className="flex items-center space-x-3">
@@ -363,12 +351,14 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                 <p className="text-white/80 text-xs">Admin Panel</p>
               </div>
             </div>
-            <button
+            <Button
+              type="button"
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10"
+              aria-label="Close admin sidebar"
             >
               <X className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
 
           {/* User info */}
@@ -401,6 +391,8 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                 <div key={item.title}>
                   <Link
                     href={item.href}
+                    aria-expanded={hasChildren ? isExpanded : undefined}
+                    aria-controls={hasChildren ? `${navSectionId(item.title)}-${instance}` : undefined}
                     onClick={(e: React.MouseEvent) => {
                       if (hasChildren) {
                         e.preventDefault();
@@ -425,7 +417,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                     </div>
                     <div className="flex items-center gap-2">
                       {item.badge && (
-                        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                        <span
+                          className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold"
+                          aria-label={`${item.badge} unread ${item.title.toLowerCase()} items`}
+                        >
                           {item.badge}
                         </span>
                       )}
@@ -443,7 +438,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
                   {/* Submenu */}
                   {hasChildren && isExpanded && (
-                    <div className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                    <div id={`${navSectionId(item.title)}-${instance}`} className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
                       {item.children
                         ?.filter(child => !child.permission || hasPermission(child.permission))
                         .map((child) => {
@@ -466,7 +461,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                                 <span>{child.title}</span>
                               </div>
                               {child.badge && (
-                                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                <span
+                                  className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
+                                  aria-label={`${child.badge} ${child.title.toLowerCase()} items`}
+                                >
                                   {child.badge}
                                 </span>
                               )}
@@ -482,16 +480,42 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
           {/* Logout */}
           <div className="border-t border-gray-200 p-4">
-            <button
+            <Button
+              type="button"
               onClick={handleLogout}
               className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
             >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>
-            </button>
+            </Button>
           </div>
         </div>
-      </aside>
+  );
+
+  return (
+    <div lang="en" className="min-h-screen bg-gray-100 flex">
+      {!inboxChromeHidden ? (
+        <>
+          <aside
+            aria-label="Admin navigation"
+            className="hidden h-screen w-72 shrink-0 bg-white shadow-2xl lg:block"
+          >
+            {renderSidebarContent('desktop')}
+          </aside>
+          <Drawer
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            side="left"
+            size="sm"
+            ariaLabel="Admin navigation"
+            showCloseButton={false}
+            bodyClassName="p-0 sm:p-0"
+            panelClassName="max-w-72"
+          >
+            {renderSidebarContent('mobile')}
+          </Drawer>
+        </>
+      ) : null}
 
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:ml-0 min-w-0">
@@ -499,18 +523,21 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
         {!inboxChromeHidden && (
           <header className="h-20 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 sticky top-0 z-30">
             <div className="flex items-center space-x-4">
-              <button
+              <Button
+                type="button"
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                aria-label="Open admin sidebar"
               >
                 <Menu className="w-6 h-6" />
-              </button>
+              </Button>
 
               {/* Search */}
               <div className="hidden md:block relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
+                <Input
                   type="text"
+                  aria-label="Search products, orders, customers"
                   placeholder="Search products, orders, customers..."
                   className="w-96 pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -557,14 +584,15 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
       </div>
 
       {isInboxPage && inboxChromeHidden && (
-        <button
+        <Button
+          type="button"
           onClick={() => setInboxChromeHidden(false)}
           className="fixed right-4 top-1/2 z-[60] -translate-y-1/2 rounded-full bg-white/95 border border-gray-200 p-3 text-gray-700 shadow-lg hover:bg-white"
           title="Show admin panel"
           aria-label="Show admin panel"
         >
           <PanelRightOpen className="h-5 w-5" />
-        </button>
+        </Button>
       )}
     </div>
   );

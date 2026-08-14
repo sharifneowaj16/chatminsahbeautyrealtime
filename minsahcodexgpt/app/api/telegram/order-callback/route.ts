@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
-import { enqueueGa4Purchase, enqueueMetaCapiPurchase } from '@/lib/queue/metaCapiQueue';
+import { enqueueGa4Purchase, enqueueTikTokPurchase } from '@/lib/queue/metaCapiQueue';
+import { createMetaPurchaseOutboxInTransaction } from '@/lib/meta/capi/purchase-outbox';
+import { requestMetaOutboxDispatch } from '@/lib/meta/capi/dispatcher';
+import type { MetaOutboxDb } from '@/lib/meta/capi/outbox-repository';
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
 import {
   assertTelegramUserAllowed,
   getTelegramOrderBotConfig,
@@ -11,7 +15,9 @@ import {
 import {
   consumeTelegramActionToken,
   createTelegramActionToken,
+  isTelegramActionTokenContextValid,
   parseTelegramCallbackToken,
+  releaseTelegramActionToken,
   resolveTelegramActionToken,
   TELEGRAM_ORDER_ACTIONS,
   type TelegramOrderAction,
@@ -22,6 +28,7 @@ import {
   canTelegramPhoneConfirm,
   canTelegramPhoneOff,
 } from '@/lib/telegram/order-state';
+import { attributeVerifiedSearchConversionsForOrder } from '@/lib/search/conversion-attribution';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +50,7 @@ type TelegramActionResult = {
   orderNumber?: string;
   shouldQueuePurchase?: boolean;
   isTest?: boolean;
+  metaOutboxId?: string;
 };
 
 function escapeHtml(value: unknown) {
@@ -151,10 +159,13 @@ function orderSelectFields() {
   return {
     id: true,
     orderNumber: true,
+    createdAt: true,
     status: true,
     paymentStatus: true,
     paymentMethod: true,
     phoneConfirmedAt: true,
+    paymentPaidAt: true,
+    paidAt: true,
     metaPurchaseSent: true,
     isTest: true,
     pathaoConsignmentId: true,
@@ -163,7 +174,10 @@ function orderSelectFields() {
     shippedAt: true,
     deliveredAt: true,
     cancelledAt: true,
+    returnedAt: true,
     refundedAt: true,
+    courierDeliveredAt: true,
+    courierReturnedAt: true,
     addressId: true,
   } as const;
 }
@@ -195,13 +209,26 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
     }
 
     if (order.phoneConfirmedAt && !order.metaPurchaseSent) {
+      const outbox = order.isTest
+        ? null
+        : await createMetaPurchaseOutboxInTransaction(
+            tx as unknown as MetaOutboxDb,
+            {
+              purchaseType: 'cod_purchase',
+              orderId: order.id,
+              eventTime: order.phoneConfirmedAt,
+              sourceType: 'COD_PHONE_CONFIRMED_TELEGRAM',
+              sourceId: callback.id,
+            }
+          );
       return {
         ok: true,
         status: 'SUCCESS' as const,
-        message: 'Already phone-confirmed; Purchase queue will be retried if needed.',
+        message: 'Already phone-confirmed; durable Meta Purchase outbox verified.',
         orderNumber: order.orderNumber,
         isTest: order.isTest,
         shouldQueuePurchase: true,
+        metaOutboxId: outbox?.record.id,
       };
     }
 
@@ -214,12 +241,23 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
         confirmedByAdminId: `telegram:${telegramUserId}`,
         metaEventId: eventId,
       },
-      select: {
-        id: true,
-        orderNumber: true,
-        isTest: true,
-      },
+      select: orderSelectFields(),
     });
+
+    await recordProductLifecycleTransitionInTransaction(tx, order, updated);
+
+    const outbox = updated.isTest
+      ? null
+      : await createMetaPurchaseOutboxInTransaction(
+          tx as unknown as MetaOutboxDb,
+          {
+            purchaseType: 'cod_purchase',
+            orderId: updated.id,
+            eventTime: updated.phoneConfirmedAt ?? confirmedAt,
+            sourceType: 'COD_PHONE_CONFIRMED_TELEGRAM',
+            sourceId: callback.id,
+          }
+        );
 
     return {
       ok: true,
@@ -228,6 +266,7 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
       orderNumber: updated.orderNumber,
       isTest: updated.isTest,
       shouldQueuePurchase: true,
+      metaOutboxId: outbox?.record.id,
     };
   });
 
@@ -247,15 +286,30 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
 
   if (result.shouldQueuePurchase && !result.isTest) {
     try {
-      await enqueueMetaCapiPurchase({ type: 'cod_purchase', orderId });
+      await attributeVerifiedSearchConversionsForOrder(orderId, {
+        source: 'cod_phone_confirmed_telegram',
+      });
     } catch (error) {
-      console.error('COD Meta Purchase queue enqueue failed:', error);
+      console.error('Telegram COD search conversion attribution failed:', error);
+    }
+
+    if (result.metaOutboxId) {
+      const dispatch = await requestMetaOutboxDispatch(result.metaOutboxId);
+      if (!dispatch.queued) {
+        console.error('COD Meta outbox immediate dispatch failed; durable row remains pending:', dispatch.error);
+      }
     }
 
     try {
       await enqueueGa4Purchase({ source: 'cod_phone_confirmed', orderId });
     } catch (error) {
       console.error('COD GA4 Purchase queue enqueue failed:', error);
+    }
+
+    try {
+      await enqueueTikTokPurchase({ type: 'tiktok_cod_purchase', orderId });
+    } catch (error) {
+      console.error('COD TikTok Purchase queue enqueue failed:', error);
     }
   }
 
@@ -318,7 +372,7 @@ async function handleCancel(callback: TelegramCallbackQuery, orderId: string): P
       };
     }
 
-    await tx.order.update({
+    const updated = await tx.order.update({
       where: { id: order.id },
       data: {
         status: 'CANCELLED',
@@ -327,7 +381,10 @@ async function handleCancel(callback: TelegramCallbackQuery, orderId: string): P
         confirmationStatus: 'CANCELLED_FROM_TELEGRAM',
         confirmationNote: 'Cancelled from Telegram before phone confirmation/dispatch.',
       },
+      select: orderSelectFields(),
     });
+
+    await recordProductLifecycleTransitionInTransaction(tx, order, updated);
 
     return {
       ok: true,
@@ -468,6 +525,23 @@ export async function POST(req: NextRequest) {
   const action = resolved.token.action;
   const orderId = resolved.token.orderId;
 
+  const tokenContextValid = isTelegramActionTokenContextValid(resolved.token, {
+    telegramChatId: getCallbackChatId(callback),
+    messageId: getCallbackMessageId(callback),
+  });
+
+  if (!tokenContextValid) {
+    await answerCallbackQuery(callback.id, 'This action belongs to another Telegram message. Use the original order message.', true);
+    await createTelegramLog({
+      callback,
+      action: 'TOKEN_CONTEXT_MISMATCH',
+      orderId,
+      status: 'BLOCKED',
+      errorMessage: 'Telegram action token chat/message context mismatch',
+    });
+    return NextResponse.json({ ok: false, error: 'Telegram token context mismatch' }, { status: 409 });
+  }
+
   if (!isTelegramOrderAction(action)) {
     await answerCallbackQuery(callback.id, 'Unknown action', true);
     await createTelegramLog({ callback, action, orderId, status: 'BLOCKED', errorMessage: 'Unknown Telegram action' });
@@ -482,6 +556,20 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await runTelegramOrderAction(callback, action, orderId);
+
+  const shouldReleasePathaoTokenForRetry =
+    action === TELEGRAM_ORDER_ACTIONS.PATHAO_SEND && result.status === 'FAILED';
+
+  if (shouldReleasePathaoTokenForRetry) {
+    const released = await releaseTelegramActionToken(resolved.token.id);
+    if (!released) {
+      console.warn('Telegram Pathao action token could not be released after retryable failure', {
+        orderId,
+        tokenId: resolved.token.id,
+      });
+    }
+  }
+
   await createTelegramLog({
     callback,
     action,
@@ -490,13 +578,23 @@ export async function POST(req: NextRequest) {
     errorMessage: result.ok ? null : result.message,
   });
 
-  const status = result.ok ? 200 : result.status === 'NOT_FOUND' ? 404 : result.status === 'BLOCKED' ? 409 : 500;
+  const status = result.ok
+    ? 200
+    : result.status === 'NOT_FOUND'
+      ? 404
+      : result.status === 'BLOCKED'
+        ? 409
+        : shouldReleasePathaoTokenForRetry
+          ? 200
+          : 500;
+
   return NextResponse.json(
     {
       ok: result.ok,
       status: result.status,
       message: result.message,
       orderNumber: result.orderNumber,
+      retryable: shouldReleasePathaoTokenForRetry || undefined,
     },
     { status }
   );

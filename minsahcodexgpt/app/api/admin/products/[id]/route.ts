@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
 import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
+import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQueue';
+import { normalizeProductCondition } from '@/lib/products/product-condition';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,6 +52,18 @@ const productDetailInclude = {
 type ProductDetail = Prisma.ProductGetPayload<{
   include: typeof productDetailInclude;
 }>;
+
+
+type ProductDeliveryOfferFields = {
+  deliveryOfferEnabled?: boolean | null;
+  deliveryOfferType?: 'DEFAULT' | 'FREE' | 'FIXED' | string | null;
+  deliveryOfferAmount?: Prisma.Decimal | string | number | null;
+  deliveryOfferStartDate?: Date | string | null;
+  deliveryOfferEndDate?: Date | string | null;
+  deliveryOfferBadgeText?: string | null;
+};
+
+type AdminDeliveryOfferType = 'DEFAULT' | 'FREE' | 'FIXED';
 
 function isPlainObject(value: unknown): value is PlainObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -168,6 +182,13 @@ function booleanValue(value: unknown, fallback = false): boolean {
 }
 
 function dateNullable(value: unknown, label: string): Date | null {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new ProductRouteError(`${label} must be a valid date`);
+    }
+    return value;
+  }
+
   const text = getString(value);
   if (!text) return null;
 
@@ -178,6 +199,90 @@ function dateNullable(value: unknown, label: string): Date | null {
 
   return date;
 }
+
+
+function deliveryOfferTypeValue(value: unknown): AdminDeliveryOfferType {
+  const normalized = getString(value).toUpperCase();
+  if (normalized === 'FREE' || normalized === 'FIXED') return normalized;
+  return 'DEFAULT';
+}
+
+function deliveryOfferUpdateData(payload: PlainObject, existing?: ProductDeliveryOfferFields) {
+  const hasDeliveryOfferPayload = [
+    'deliveryOfferEnabled',
+    'deliveryOfferType',
+    'deliveryOfferAmount',
+    'deliveryOfferStartDate',
+    'deliveryOfferEndDate',
+    'deliveryOfferBadgeText',
+  ].some((key) => hasOwn(payload, key));
+
+  if (!hasDeliveryOfferPayload) return {};
+
+  const requestedType = hasOwn(payload, 'deliveryOfferType')
+    ? deliveryOfferTypeValue(payload.deliveryOfferType)
+    : deliveryOfferTypeValue(existing?.deliveryOfferType);
+  const requestedEnabled = hasOwn(payload, 'deliveryOfferEnabled')
+    ? booleanValue(payload.deliveryOfferEnabled, Boolean(existing?.deliveryOfferEnabled))
+    : Boolean(existing?.deliveryOfferEnabled);
+  const deliveryOfferEnabled = requestedEnabled && requestedType !== 'DEFAULT';
+
+  if (!deliveryOfferEnabled) {
+    return {
+      deliveryOfferEnabled: false,
+      deliveryOfferType: 'DEFAULT' as AdminDeliveryOfferType,
+      deliveryOfferAmount: null,
+      deliveryOfferStartDate: null,
+      deliveryOfferEndDate: null,
+      deliveryOfferBadgeText: null,
+    };
+  }
+
+  const amountSource = hasOwn(payload, 'deliveryOfferAmount')
+    ? payload.deliveryOfferAmount
+    : existing?.deliveryOfferAmount != null
+      ? String(existing.deliveryOfferAmount)
+      : undefined;
+  const deliveryOfferAmount = requestedType === 'FIXED'
+    ? decimalNullable(amountSource, 'Fixed delivery offer amount')
+    : null;
+
+  if (requestedType === 'FIXED' && deliveryOfferAmount === null) {
+    throw new ProductRouteError('Fixed delivery offer amount is required');
+  }
+  if (deliveryOfferAmount !== null && Number(deliveryOfferAmount) < 0) {
+    throw new ProductRouteError('Fixed delivery offer amount cannot be negative');
+  }
+
+  const deliveryOfferStartDate = hasOwn(payload, 'deliveryOfferStartDate')
+    ? dateNullable(payload.deliveryOfferStartDate, 'Delivery offer start date')
+    : existing?.deliveryOfferStartDate
+      ? dateNullable(existing.deliveryOfferStartDate, 'Delivery offer start date')
+      : null;
+  const deliveryOfferEndDate = hasOwn(payload, 'deliveryOfferEndDate')
+    ? dateNullable(payload.deliveryOfferEndDate, 'Delivery offer end date')
+    : existing?.deliveryOfferEndDate
+      ? dateNullable(existing.deliveryOfferEndDate, 'Delivery offer end date')
+      : null;
+
+  if (deliveryOfferStartDate && deliveryOfferEndDate && deliveryOfferStartDate > deliveryOfferEndDate) {
+    throw new ProductRouteError('Delivery offer start date must be before delivery offer end date');
+  }
+
+  const badgeSource = hasOwn(payload, 'deliveryOfferBadgeText')
+    ? payload.deliveryOfferBadgeText
+    : existing?.deliveryOfferBadgeText;
+
+  return {
+    deliveryOfferEnabled: true,
+    deliveryOfferType: requestedType,
+    deliveryOfferAmount,
+    deliveryOfferStartDate,
+    deliveryOfferEndDate,
+    deliveryOfferBadgeText: nullableString(badgeSource),
+  };
+}
+
 
 function stringArray(value: unknown): string[] {
   const rawValues = Array.isArray(value)
@@ -358,6 +463,7 @@ function jsonOrObject(value: Prisma.JsonValue | null | undefined): Prisma.JsonVa
 function formatProductDetail(product: ProductDetail) {
   const { subcategory, item } = splitStoredSubcategory(product.subcategory);
   const mainImage = product.images.find((image) => image.isDefault) || product.images[0];
+  const deliveryOffer = product as ProductDetail & ProductDeliveryOfferFields;
 
   return {
     id: product.id,
@@ -479,6 +585,17 @@ function formatProductDetail(product: ProductDetail) {
 
     shippingWeight: product.shippingWeight || '',
     isFragile: product.isFragile || false,
+
+    deliveryOfferEnabled: Boolean(deliveryOffer.deliveryOfferEnabled),
+    deliveryOfferType: deliveryOffer.deliveryOfferType || 'DEFAULT',
+    deliveryOfferAmount: deliveryOffer.deliveryOfferAmount != null ? String(deliveryOffer.deliveryOfferAmount) : '',
+    deliveryOfferStartDate: deliveryOffer.deliveryOfferStartDate
+      ? new Date(deliveryOffer.deliveryOfferStartDate).toISOString().slice(0, 16)
+      : '',
+    deliveryOfferEndDate: deliveryOffer.deliveryOfferEndDate
+      ? new Date(deliveryOffer.deliveryOfferEndDate).toISOString().slice(0, 16)
+      : '',
+    deliveryOfferBadgeText: deliveryOffer.deliveryOfferBadgeText || '',
 
     discountPercentage: decimalToString(product.discountPercentage),
     salePrice: decimalToString(product.salePrice),
@@ -853,6 +970,8 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     shippingWeight: hasOwn(payload, 'shippingWeight') ? nullableString(payload.shippingWeight) : undefined,
     isFragile: hasOwn(payload, 'isFragile') ? booleanValue(payload.isFragile, existing.isFragile) : undefined,
 
+    ...deliveryOfferUpdateData(payload, existing as ProductDetail & ProductDeliveryOfferFields),
+
     discountPercentage: hasOwn(payload, 'discountPercentage')
       ? decimalNullable(payload.discountPercentage, 'Discount percentage')
       : undefined,
@@ -875,7 +994,7 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     barcode: hasOwn(payload, 'barcode') ? nullableString(payload.barcode) : undefined,
     relatedProducts: hasOwn(payload, 'relatedProducts') ? normalizeRelatedProducts(payload.relatedProducts) : undefined,
 
-    condition: hasOwn(payload, 'condition') ? nullableString(payload.condition) || 'NEW' : undefined,
+    condition: hasOwn(payload, 'condition') ? normalizeProductCondition(payload.condition) : undefined,
     gtin: hasOwn(payload, 'gtin') ? nullableString(payload.gtin) : undefined,
     averageRating: hasOwn(payload, 'averageRating') ? decimalNullable(payload.averageRating, 'Average rating') : undefined,
     reviewCount: hasOwn(payload, 'reviewCount') ? nonNegativeInt(payload.reviewCount, 'Review count', 0) : undefined,
@@ -1023,6 +1142,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
+    const searchSyncQueued = await enqueueProductIndex(product.id, 'admin product update');
+
     return NextResponse.json({
       success: true,
       product: {
@@ -1030,6 +1151,7 @@ export async function PUT(
         slug: product.slug,
         name: product.name,
       },
+      searchSyncQueued,
     });
   } catch (error) {
     if (error instanceof ProductRouteError) {
@@ -1093,7 +1215,9 @@ export async function DELETE(
         }),
       ]);
 
-      return NextResponse.json({ success: true, archived: true });
+      const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product soft-delete');
+
+      return NextResponse.json({ success: true, archived: true, searchSyncQueued });
     }
 
     await prisma.$transaction([
@@ -1102,7 +1226,9 @@ export async function DELETE(
       prisma.product.delete({ where: { id: existing.id } }),
     ]);
 
-    return NextResponse.json({ success: true, archived: false });
+    const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product hard-delete');
+
+    return NextResponse.json({ success: true, archived: false, searchSyncQueued });
   } catch (error) {
     if (getPrismaErrorCode(error) === 'P2002') {
       return NextResponse.json(

@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bkash from '@/lib/payments/bkash';
 import type { Prisma } from '@/generated/prisma/client';
+import {
+  authorizePaymentCreate,
+  claimPaymentCreate,
+  logPaymentCreateAudit,
+  releasePaymentCreateClaim,
+} from '@/lib/payments/payment-create-security';
 
 function decimalToNumber(value: unknown) {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -17,6 +23,9 @@ function decimalToNumber(value: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  let claimedOrder: { orderId: string; userId: string } | null = null;
+  let gatewaySessionCreated = false;
+
   try {
     const body = await request.json();
     const orderId = typeof body.orderId === 'string' ? body.orderId.trim() : '';
@@ -29,34 +38,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: {
-        id: true,
-        orderNumber: true,
-        paymentMethod: true,
-        paymentStatus: true,
-        total: true,
-      },
-    });
-
-    if (!order) {
-      return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
+    const guard = await authorizePaymentCreate(request, { orderId, gateway: 'bkash' });
+    if (!guard.ok) {
+      return NextResponse.json(guard.body, {
+        status: guard.status,
+        headers: guard.headers,
+      });
     }
 
-    if ((order.paymentMethod ?? '').toLowerCase() !== 'bkash') {
-      return NextResponse.json(
-        { success: false, message: 'Order is not configured for bKash payment' },
-        { status: 400 }
-      );
-    }
-
-    if (String(order.paymentStatus).toUpperCase() === 'COMPLETED') {
-      return NextResponse.json(
-        { success: false, message: 'Order is already paid' },
-        { status: 409 }
-      );
-    }
+    const { order, userId, ip } = guard;
 
     const amount = decimalToNumber(order.total);
     if (amount <= 0) {
@@ -65,6 +55,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const claimed = await claimPaymentCreate({ orderId: order.id, userId });
+    if (!claimed) {
+      logPaymentCreateAudit({
+        orderId: order.id,
+        userId,
+        gateway: 'bkash',
+        previousStatus: String(order.paymentStatus),
+        ip,
+        outcome: 'blocked',
+        reason: 'PAYMENT_ALREADY_CLAIMED',
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PAYMENT_ALREADY_PROCESSING',
+          message: 'A payment attempt is already in progress for this order.',
+        },
+        { status: 409 },
+      );
+    }
+    claimedOrder = { orderId: order.id, userId };
 
     const callbackURL = new URL('/api/payments/bkash/callback', request.nextUrl.origin);
     callbackURL.searchParams.set('orderId', order.id);
@@ -75,6 +87,7 @@ export async function POST(request: NextRequest) {
       intent: 'sale',
       callbackURL: callbackURL.toString(),
     });
+    gatewaySessionCreated = true;
     const gatewayResponse = payment as unknown as Prisma.InputJsonValue;
 
     await prisma.$transaction(async (tx) => {
@@ -109,10 +122,31 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      await tx.order.update({
-        where: { id: order.id },
+      const updatedOrder = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          userId,
+          status: 'PENDING_PAYMENT',
+          paymentStatus: 'PROCESSING',
+        },
         data: { paymentStatus: 'PROCESSING' },
       });
+
+      if (updatedOrder.count !== 1) {
+        throw new Error('PAYMENT_ORDER_OWNER_UPDATE_FAILED');
+      }
+    });
+
+    claimedOrder = null;
+
+    logPaymentCreateAudit({
+      orderId: order.id,
+      userId,
+      gateway: 'bkash',
+      previousStatus: String(order.paymentStatus),
+      newStatus: 'PROCESSING',
+      ip,
+      outcome: 'initiated',
     });
 
     return NextResponse.json({
@@ -125,6 +159,12 @@ export async function POST(request: NextRequest) {
       message: 'bKash payment initiated successfully',
     });
   } catch (error) {
+    if (claimedOrder && !gatewaySessionCreated) {
+      await releasePaymentCreateClaim(claimedOrder).catch((releaseError) => {
+        console.error('bkash payment claim release failed:', releaseError);
+      });
+    }
+
     console.error('bKash payment API error:', error);
     return NextResponse.json(
       {

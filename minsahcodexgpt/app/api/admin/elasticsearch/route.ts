@@ -9,6 +9,7 @@ import {
 } from '@/lib/elasticsearch/indexing';
 import { testConnection, indexExists, PRODUCT_INDEX } from '@/lib/elasticsearch';
 import prisma from '@/lib/prisma';
+import { ACTIVE_PRODUCT_PRISMA_WHERE } from '@/lib/search/activeProductFilter';
 import { requireSuperAdmin } from '@/app/api/admin/_utils';
 
 // GET - Check Elasticsearch status
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       }
       
       const dbProductCount = await prisma.product.count({
-        where: { isActive: true }
+        where: ACTIVE_PRODUCT_PRISMA_WHERE,
       });
 
       return NextResponse.json({

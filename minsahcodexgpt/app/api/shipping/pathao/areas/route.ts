@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractPathaoArray, getPathaoBaseUrl, pathaoRequest } from '@/lib/pathao';
+import { normalizePathaoAvailabilityFlag } from '@/lib/pathao-availability-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,8 +25,8 @@ function normalizeArea(item: unknown) {
   return {
     id,
     name,
-    homeDeliveryAvailable: Boolean(source.home_delivery_available),
-    pickupAvailable: Boolean(source.pickup_available),
+    homeDeliveryAvailable: normalizePathaoAvailabilityFlag(source.home_delivery_available),
+    pickupAvailable: normalizePathaoAvailabilityFlag(source.pickup_available),
   };
 }
 

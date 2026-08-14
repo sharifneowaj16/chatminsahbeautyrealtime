@@ -1,3 +1,5 @@
+import { isCanonicalOnlinePaymentMethod, isCodPaymentMethod } from '@/lib/payments/canonical-payment-contract';
+
 export type DateRangeKey = '7d' | '30d' | '90d';
 
 export const DATE_RANGE_DAYS: Record<DateRangeKey, number> = {
@@ -78,6 +80,7 @@ export function roas(revenue: number, adSpend: number | null): number | null {
 export type MinimalOrderSignal = {
   status: string;
   paymentStatus: string;
+  paymentMethod?: string | null;
   phoneConfirmedAt: Date | null;
   paymentPaidAt: Date | null;
   paidAt: Date | null;
@@ -89,16 +92,26 @@ export type MinimalOrderSignal = {
 };
 
 export function isConfirmedOrder(order: MinimalOrderSignal): boolean {
-  return Boolean(
-    order.phoneConfirmedAt ||
-      order.paymentPaidAt ||
-      order.paidAt ||
-      order.paymentStatus === 'COMPLETED' ||
-      order.status === 'CONFIRMED' ||
-      order.status === 'PROCESSING' ||
-      order.status === 'SHIPPED' ||
-      order.status === 'DELIVERED'
-  );
+  if (isCancelledOrder(order) || isReturnedOrder(order)) return false;
+  if (isDeliveredOrder(order)) return true;
+
+  if (order.phoneConfirmedAt) return true;
+  if (order.paymentPaidAt || order.paidAt) return true;
+
+  const normalizedPaymentStatus = String(order.paymentStatus ?? '').trim().toUpperCase();
+  if (normalizedPaymentStatus !== 'COMPLETED') return false;
+
+  const paymentMethod = order.paymentMethod ?? null;
+
+  if (!paymentMethod) {
+    return true;
+  }
+
+  if (isCodPaymentMethod(paymentMethod)) {
+    return Boolean(order.phoneConfirmedAt || order.paymentPaidAt || order.paidAt);
+  }
+
+  return isCanonicalOnlinePaymentMethod(paymentMethod);
 }
 
 export function isDeliveredOrder(order: MinimalOrderSignal): boolean {
@@ -117,6 +130,14 @@ export function isReturnedOrder(order: MinimalOrderSignal): boolean {
   return Boolean(
     order.returnedAt ||
       order.courierReturnedAt ||
+      order.status === 'REFUNDED' ||
+      order.paymentStatus === 'REFUNDED'
+  );
+}
+
+export function isRefundedOrder(order: MinimalOrderSignal & { refundedAt?: Date | null }): boolean {
+  return Boolean(
+    order.refundedAt ||
       order.status === 'REFUNDED' ||
       order.paymentStatus === 'REFUNDED'
   );

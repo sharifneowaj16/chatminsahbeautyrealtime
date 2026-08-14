@@ -1,7 +1,8 @@
-// app/admin/shortlist/components/OrderCard.tsx
-
 'use client';
 
+// app/admin/shortlist/components/OrderCard.tsx
+
+import { Button } from '@/components/ui/Button';
 import React, { useState } from 'react';
 import { useShortlist } from '../ShortlistContext';
 import ProductRow from './ProductRow';
@@ -87,7 +88,7 @@ export default function OrderCard({ order }: { order: Order }) {
                 {order.isCompleted ? '✅ Completed' : '⏳ Pending'}
               </span>
             </div>
-            <button
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
@@ -95,7 +96,7 @@ export default function OrderCard({ order }: { order: Order }) {
               className="text-xl transition-transform"
             >
               {isExpanded ? '▼' : '▶'}
-            </button>
+            </Button>
           </div>
 
           {/* Customer Info */}
@@ -115,16 +116,12 @@ export default function OrderCard({ order }: { order: Order }) {
               </span>
               <span className="text-xs font-bold text-gray-900">{order.progress}%</span>
             </div>
-            <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${
-                  order.isCompleted
-                    ? 'bg-green-500'
-                    : 'bg-orange-500'
-                }`}
-                style={{ width: `${order.progress}%` }}
-              ></div>
-            </div>
+            <progress
+              className="h-2 w-full accent-minsah-action-primary"
+              max={100}
+              value={order.progress}
+              aria-label={`${order.customer.name} progress`}
+            />
           </div>
 
           {/* Summary */}

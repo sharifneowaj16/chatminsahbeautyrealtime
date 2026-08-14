@@ -4,816 +4,429 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
-  Gift, Heart, ShoppingBag, ArrowLeft, MapPin,
-  Zap, Check, User, Phone,
+  ArrowLeft,
+  Check,
+  Gift,
+  Heart,
+  MapPin,
+  Phone,
+  ShoppingBag,
+  User,
+  Zap,
 } from 'lucide-react';
 
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+import { Alert } from '@/components/ui/Alert';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/Spinner';
+import { SuccessState } from '@/components/ui/SuccessState';
+import { Textarea } from '@/components/ui/Textarea';
+
 interface DeliveryAddress {
-  name:  string;
+  name: string;
   phone: string;
   street: string;
-  city:  string;
+  city: string;
   note?: string;
 }
 
 interface GiftData {
   gift: {
-    token:            string;
-    giftType:         'SEND_GIFT' | 'GET_GIFT';
-    senderName:       string;
-    recipientName:    string;
-    message:          string | null;
-    status:           string;
-    expiresAt:        string;
+    token: string;
+    giftType: 'SEND_GIFT' | 'GET_GIFT';
+    senderName: string;
+    recipientName: string;
+    message: string | null;
+    status: string;
+    expiresAt: string;
     requesterAddress?: DeliveryAddress | null;
-    requesterPhone?:   string | null;
+    requesterPhone?: string | null;
   };
   product: {
-    id:             string;
-    name:           string;
-    price:          number;
+    id: string;
+    name: string;
+    price: number;
     compareAtPrice: number | null;
-    image:          string;
-    brand:          string;
-    inStock:        boolean;
+    image: string;
+    brand: string;
+    inStock: boolean;
   };
 }
 
 const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8801700000000';
-
-const DISTRICTS = [
-  'ঢাকা','চট্টগ্রাম','সিলেট','রাজশাহী',
-  'খুলনা','বরিশাল','রংপুর','ময়মনসিংহ',
-];
+const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'রংপুর', 'ময়মনসিংহ'];
 
 export default function GiftPageClient({ data }: { data: GiftData }) {
   const { gift, product } = data;
   const { data: session } = useSession();
   const isSendGift = gift.giftType === 'SEND_GIFT';
 
-  const [step, setStep]       = useState<'reveal' | 'checkout'>('reveal');
-  const [done, setDone]       = useState(false);
+  const [step, setStep] = useState<'reveal' | 'checkout'>('reveal');
+  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
-
-  // SEND_GIFT — recipient fills delivery address
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<DeliveryAddress & { note: string }>({
-    name: '', phone: '', street: '', city: 'ঢাকা', note: '',
+    name: '',
+    phone: '',
+    street: '',
+    city: 'ঢাকা',
+    note: '',
   });
-
-  // Guest payer info (if not logged in) for GET_GIFT
   const [guestPayer, setGuestPayer] = useState({ name: '', phone: '' });
 
+  const prefilledAddress = gift.requesterAddress;
   const discountPct =
     product.compareAtPrice && product.compareAtPrice > product.price
       ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
       : null;
 
-  const prefilledAddress = gift.requesterAddress;
-
-  // ── Order handler ────────────────────────────────────────────────────────────
   const handleOrder = async () => {
     setError(null);
 
-    // Validate
-    if (isSendGift) {
-      if (!form.name.trim() || !form.phone.trim() || !form.street.trim()) {
-        setError('নাম, ফোন ও ঠিকানা দিন');
-        return;
-      }
-    } else {
-      // GET_GIFT — if not logged in, need payer name
-      if (!session?.user && !guestPayer.name.trim()) {
-        setError('তোমার নাম দিন');
-        return;
-      }
+    if (isSendGift && (!form.name.trim() || !form.phone.trim() || !form.street.trim())) {
+      setError('নাম, ফোন নম্বর ও সম্পূর্ণ ঠিকানা দিন।');
+      return;
+    }
+
+    if (!isSendGift && !prefilledAddress) {
+      setError('ডেলিভারির ঠিকানা পাওয়া যায়নি। অনুগ্রহ করে নতুন গিফট লিংক নিন।');
+      return;
+    }
+
+    if (!isSendGift && !session?.user && !guestPayer.name.trim()) {
+      setError('আপনার নাম দিন।');
+      return;
     }
 
     setLoading(true);
     try {
-      // 1. Create order via API
       const payload: Record<string, string | undefined> = {
-        payerName:  session?.user?.name ?? guestPayer.name,
+        payerName: session?.user?.name ?? guestPayer.name,
         payerPhone: guestPayer.phone || undefined,
       };
 
       if (isSendGift) {
-        payload.name   = form.name;
-        payload.phone  = form.phone;
+        payload.name = form.name;
+        payload.phone = form.phone;
         payload.street = form.street;
-        payload.city   = form.city;
-        payload.note   = form.note;
+        payload.city = form.city;
+        payload.note = form.note;
       }
 
-      const res = await fetch(`/api/gift/${gift.token}/order`, {
-        method:  'POST',
+      const response = await fetch(`/api/gift/${gift.token}/order`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
+        body: JSON.stringify(payload),
       });
+      const responseData = await response.json();
 
-      const resData = await res.json();
-
-      if (!res.ok) {
-        setError(resData.error || 'Order create করতে পারিনি');
+      if (!response.ok) {
+        setError(responseData.error || 'অর্ডার তৈরি করা যায়নি। আবার চেষ্টা করুন।');
         return;
       }
 
-      // 2. WhatsApp message (open in new tab)
-      const deliveryAddr = isSendGift
+      const deliveryAddress = isSendGift
         ? { name: form.name, phone: form.phone, street: form.street, city: form.city }
-        : prefilledAddress!;
+        : prefilledAddress;
+      if (!deliveryAddress) return;
 
       const payerLabel = session?.user?.name ?? guestPayer.name;
-
-      const msg = encodeURIComponent(
+      const message = encodeURIComponent(
         isSendGift
-          ? `🎁 GIFT ORDER (Send Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nপ্রাপক: ${deliveryAddr.name}\nফোন: ${deliveryAddr.phone}\nঠিকানা: ${deliveryAddr.street}, ${deliveryAddr.city}\n\nউপহার: ${gift.senderName} এর পক্ষ থেকে\nOrder: #${resData.orderNumber}\nGift Token: ${gift.token}`
-          : `🎁 GIFT ORDER (Get Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nPayer: ${payerLabel}\nDelivery to: ${deliveryAddr!.name}\nফোন: ${deliveryAddr!.phone}\nঠিকানা: ${deliveryAddr!.street}, ${deliveryAddr!.city}\n\nOrder: #${resData.orderNumber}\nGift Token: ${gift.token}`
+          ? `🎁 GIFT ORDER (Send Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nপ্রাপক: ${deliveryAddress.name}\nফোন: ${deliveryAddress.phone}\nঠিকানা: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nউপহার: ${gift.senderName} এর পক্ষ থেকে\nOrder: #${responseData.orderNumber}\nGift Token: ${gift.token}`
+          : `🎁 GIFT ORDER (Get Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nPayer: ${payerLabel}\nDelivery to: ${deliveryAddress.name}\nফোন: ${deliveryAddress.phone}\nঠিকানা: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nOrder: #${responseData.orderNumber}\nGift Token: ${gift.token}`,
       );
 
-      window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank');
-
+      window.open(`https://wa.me/${WHATSAPP}?text=${message}`, '_blank', 'noopener,noreferrer');
       setDone(true);
     } catch {
-      setError('Network error। আবার try করুন।');
+      setError('নেটওয়ার্কে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Done ──────────────────────────────────────────────────────────────────────
   if (done) {
     return (
-      <div className="min-h-screen bg-[#FDF8F3] flex flex-col items-center justify-center px-5 text-center">
-        <div className="w-20 h-20 bg-[#F5E9DC] rounded-full flex items-center justify-center mb-5">
-          <Heart size={36} className="text-[#3D1F0E] fill-[#3D1F0E]" />
-        </div>
-        <h1 className="text-2xl font-semibold text-[#1A0D06] mb-2">অর্ডার নিশ্চিত হয়েছে!</h1>
-        <p className="text-sm text-[#8B5E3C] mb-1">আমরা শীঘ্রই WhatsApp-এ যোগাযোগ করব।</p>
-        {isSendGift ? (
-          <p className="text-xs text-[#A0856A]">{gift.senderName} জানতে পারবে তুমি গিফটটি গ্রহণ করেছ ❤️</p>
-        ) : (
-          <p className="text-xs text-[#A0856A]">{gift.senderName} কে ধন্যবাদ এই সুন্দর গিফটের জন্য ❤️</p>
-        )}
-        <Link href="/shop" className="mt-8 text-sm text-[#3D1F0E] underline underline-offset-2">
-          আরো পণ্য দেখো
-        </Link>
-      </div>
+      <main className="flex min-h-screen items-center justify-center bg-minsah-surface-page px-5" lang="bn-BD">
+        <SuccessState
+          title="অর্ডার নিশ্চিত হয়েছে"
+          description={
+            <>
+              <p>আমরা শিগগিরই WhatsApp-এ যোগাযোগ করব।</p>
+              <p className="mt-1">
+                {isSendGift
+                  ? `${gift.senderName} জানতে পারবেন যে আপনি উপহারটি গ্রহণ করেছেন।`
+                  : `${gift.senderName}-কে এই সুন্দর উপহারের জন্য ধন্যবাদ।`}
+              </p>
+            </>
+          }
+          icon={<Heart className="h-8 w-8 fill-current" />}
+          action={
+            <Link
+              href="/shop"
+              className="minsah-touch-target inline-flex items-center rounded-xl font-bold text-minsah-text-link hover:underline"
+            >
+              আরও পণ্য দেখুন
+            </Link>
+          }
+          className="w-full max-w-md"
+        />
+      </main>
     );
   }
 
-  // ── Reveal screen ─────────────────────────────────────────────────────────────
   if (step === 'reveal') {
     return (
-      <div className="min-h-screen bg-[#FDF8F3] flex flex-col">
-        <div className="bg-[#3D1F0E] px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="text-[#F5E6D3]"><ArrowLeft size={18} /></Link>
-          <span className="text-[#F5E6D3] text-sm font-semibold tracking-widest uppercase">Minsah Beauty</span>
-          <div className="w-5" />
-        </div>
+      <main className="min-h-screen bg-minsah-surface-page" lang="bn-BD">
+        <header className="flex items-center justify-between bg-minsah-surface-inverse px-4 py-2 text-minsah-text-inverse">
+          <Link href="/" className="minsah-icon-control inline-flex items-center justify-center rounded-full" aria-label="হোমে ফিরুন">
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </Link>
+          <span className="text-sm font-black uppercase tracking-[0.18em]">Minsah Beauty</span>
+          <span className="h-11 w-11" aria-hidden="true" />
+        </header>
 
-        <div className="flex-1 flex flex-col items-center px-5 pt-8 pb-32 max-w-md mx-auto w-full">
-
-          {/* Icon */}
+        <div className="mx-auto flex w-full max-w-md flex-col items-center px-5 pb-12 pt-8">
           <div className="relative mb-6">
-            <div className="w-24 h-24 bg-[#F5E9DC] rounded-full flex items-center justify-center shadow-lg">
-              {isSendGift
-                ? <Gift size={40} className="text-[#3D1F0E]" />
-                : <ShoppingBag size={40} className="text-[#3D1F0E]" />}
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-minsah-surface-soft text-minsah-action-primary shadow-[var(--shadow-elevated)]">
+              {isSendGift ? <Gift className="h-10 w-10" /> : <ShoppingBag className="h-10 w-10" />}
             </div>
-            <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-              <Heart size={14} className="text-white fill-white" />
+            <div className="absolute -right-1 -top-1 flex h-9 w-9 items-center justify-center rounded-full bg-minsah-status-danger-text text-minsah-text-inverse">
+              <Heart className="h-4 w-4 fill-current" aria-hidden="true" />
             </div>
           </div>
 
-          {/* Heading */}
-          {isSendGift ? (
-            <>
-              <p className="text-sm text-[#8B5E3C] mb-1">তোমার জন্য বিশেষ উপহার!</p>
-              <h1 className="text-2xl font-semibold text-[#1A0D06] text-center mb-1">{gift.recipientName}</h1>
-              <p className="text-sm text-[#6B4226] mb-6 text-center">
-                <span className="font-semibold text-[#3D1F0E]">{gift.senderName}</span> তোমাকে gift করতে চায়
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-[#8B5E3C] mb-1">একটি gift request এসেছে!</p>
-              <h1 className="text-2xl font-semibold text-[#1A0D06] text-center mb-1">{gift.recipientName}</h1>
-              <p className="text-sm text-[#6B4226] mb-6 text-center">
-                <span className="font-semibold text-[#3D1F0E]">{gift.senderName}</span> তোমার কাছে এই product চাইছে
-              </p>
-            </>
-          )}
+          <p className="text-sm font-semibold text-minsah-text-muted">
+            {isSendGift ? 'আপনার জন্য বিশেষ উপহার' : 'আপনার কাছে একটি উপহারের অনুরোধ এসেছে'}
+          </p>
+          <h1 className="mt-1 text-center text-2xl font-black text-minsah-text-primary">{gift.recipientName}</h1>
+          <p className="mb-6 mt-1 text-center text-sm leading-6 text-minsah-text-muted">
+            <strong className="text-minsah-text-primary">{gift.senderName}</strong>{' '}
+            {isSendGift ? 'আপনাকে এই উপহারটি দিতে চান।' : 'আপনার কাছে এই পণ্যটি চেয়েছেন।'}
+          </p>
 
-          {/* Personal message */}
-          {gift.message && (
-            <div className="w-full bg-[#F5E9DC] rounded-2xl px-4 py-3 mb-6 border-l-4 border-[#C4956A]">
-              <p className="text-sm text-[#4A2C1A] italic leading-relaxed">"{gift.message}"</p>
-            </div>
-          )}
+          {gift.message ? (
+            <blockquote className="mb-6 w-full rounded-2xl border-l-4 border-minsah-border-strong bg-minsah-surface-soft px-4 py-3 text-sm italic leading-6 text-minsah-text-primary">
+              “{gift.message}”
+            </blockquote>
+          ) : null}
 
-          {/* GET_GIFT — show prefilled address */}
-          {!isSendGift && prefilledAddress && (
-            <div className="w-full bg-[#F5E9DC] rounded-2xl p-4 mb-6">
-              <p className="text-xs font-semibold text-[#3D1F0E] uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                <MapPin size={12} /> পাঠানোর ঠিকানা
-              </p>
-              <p className="text-sm font-medium text-[#1A0D06]">{prefilledAddress.name}</p>
-              <p className="text-xs text-[#6B4226]">{prefilledAddress.phone}</p>
-              <p className="text-xs text-[#6B4226]">{prefilledAddress.street}, {prefilledAddress.city}</p>
-            </div>
-          )}
+          {!isSendGift && prefilledAddress ? (
+            <section className="mb-6 w-full rounded-2xl bg-minsah-surface-soft p-4">
+              <h2 className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-minsah-text-primary">
+                <MapPin className="h-4 w-4" aria-hidden="true" /> পাঠানোর ঠিকানা
+              </h2>
+              <p className="text-sm font-bold text-minsah-text-primary">{prefilledAddress.name}</p>
+              <p className="text-xs text-minsah-text-muted">{prefilledAddress.phone}</p>
+              <p className="text-xs text-minsah-text-muted">{prefilledAddress.street}, {prefilledAddress.city}</p>
+            </section>
+          ) : null}
 
-          {/* Product card */}
-          <div className="w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E8D5C0] mb-6">
-            <div className="aspect-[4/3] bg-[#F5E9DC] relative">
-              <img
+          <article className="minsah-panel mb-6 w-full overflow-hidden">
+            <div className="relative aspect-[4/3] bg-minsah-surface-soft">
+              <CatalogProductImage
                 src={product.image}
                 alt={product.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    'https://placehold.co/400x300/F5E9DC/8B5E3C?text=Product';
-                }}
+                sizes="(max-width: 768px) 100vw, 560px"
+                priority
+                quality={80}
               />
-              {discountPct && (
-                <span className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  -{discountPct}%
-                </span>
-              )}
+              {discountPct ? (
+                <Badge tone="danger" className="absolute right-3 top-3">-{discountPct}%</Badge>
+              ) : null}
             </div>
             <div className="p-4">
-              {product.brand && (
-                <span className="text-xs bg-[#F5E9DC] text-[#6B4226] px-2 py-0.5 rounded-full font-medium">
-                  {product.brand}
-                </span>
-              )}
-              <h2 className="text-base font-semibold text-[#1A0D06] mt-2">{product.name}</h2>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-lg font-semibold text-[#1A0D06]">
-                  ৳{product.price.toLocaleString('bn-BD')}
-                </span>
-                {product.compareAtPrice && (
-                  <span className="text-sm text-[#A0856A] line-through">
-                    ৳{product.compareAtPrice.toLocaleString('bn-BD')}
-                  </span>
-                )}
+              {product.brand ? <Badge tone="neutral">{product.brand}</Badge> : null}
+              <h2 className="mt-2 text-base font-black text-minsah-text-primary">{product.name}</h2>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-lg font-black text-minsah-text-primary">৳{product.price.toLocaleString('bn-BD')}</span>
+                {product.compareAtPrice ? (
+                  <span className="text-sm text-minsah-text-subtle line-through">৳{product.compareAtPrice.toLocaleString('bn-BD')}</span>
+                ) : null}
               </div>
-              {isSendGift ? (
-                <p className="text-xs text-[#8B5E3C] mt-1">{gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবে</p>
-              ) : (
-                <p className="text-xs text-[#8B5E3C] mt-1">তুমি payment করবে, {gift.senderName} এর কাছে পৌঁছাবে</p>
-              )}
+              <p className="mt-1 text-xs text-minsah-text-muted">
+                {isSendGift
+                  ? `${gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবেন।`
+                  : `আপনি মূল্য পরিশোধ করবেন, পণ্যটি ${gift.senderName}-এর কাছে পৌঁছাবে।`}
+              </p>
             </div>
-          </div>
+          </article>
 
-          {/* CTA */}
-          <button
-            onClick={() => setStep('checkout')}
-            className="w-full bg-[#3D1F0E] text-[#F5E6D3] py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
-          >
-            {isSendGift
-              ? <><Gift size={18} /> গিফটটি গ্রহণ করো</>
-              : <><ShoppingBag size={18} /> Gift করতে চাই</>}
-          </button>
+          <Button type="button" fullWidth size="lg" onClick={() => setStep('checkout')}>
+            {isSendGift ? <Gift className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}
+            {isSendGift ? 'উপহারটি গ্রহণ করুন' : 'উপহারটি দিতে চাই'}
+          </Button>
 
-          <p className="text-xs text-[#A0856A] mt-3 text-center">
-            Link মেয়াদ: {new Date(gift.expiresAt).toLocaleDateString('bn-BD')} পর্যন্ত
+          <p className="mt-3 text-center text-xs text-minsah-text-subtle">
+            লিংকটি {new Date(gift.expiresAt).toLocaleDateString('bn-BD')} পর্যন্ত কার্যকর।
           </p>
         </div>
-      </div>
+      </main>
     );
   }
 
-  // ── Checkout screen ───────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#FDF8F3]">
-      <div className="bg-[#3D1F0E] px-4 py-3 flex items-center gap-3">
-        <button onClick={() => setStep('reveal')} className="text-[#F5E6D3]">
-          <ArrowLeft size={18} />
-        </button>
-        <span className="text-[#F5E6D3] text-sm font-semibold">
-          {isSendGift ? 'তোমার ডেলিভারি তথ্য দাও' : 'Payment করে Gift দাও'}
-        </span>
-      </div>
+    <main className="min-h-screen bg-minsah-surface-page pb-32" lang="bn-BD">
+      <header className="flex items-center gap-3 bg-minsah-surface-inverse px-4 py-2 text-minsah-text-inverse">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setStep('reveal')}
+          aria-label="আগের ধাপে ফিরুন"
+          className="text-minsah-text-inverse hover:bg-minsah-surface-panel/10 hover:text-minsah-text-inverse"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-sm font-black">
+          {isSendGift ? 'ডেলিভারির তথ্য দিন' : 'মূল্য পরিশোধ করে উপহার দিন'}
+        </h1>
+      </header>
 
-      <div className="max-w-md mx-auto px-4 pt-5 pb-32 space-y-4">
-
-        {/* Mini product recap */}
-        <div className="flex gap-3 bg-white rounded-2xl p-3 border border-[#E8D5C0]">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-14 h-14 rounded-xl object-cover bg-[#F5E9DC]"
-            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
-          />
-          <div>
-            <p className="text-xs text-[#8B5E3C]">
-              {isSendGift
-                ? `Gift: ${gift.senderName} এর পক্ষ থেকে`
-                : `Request: ${gift.senderName} এর জন্য`}
+      <div className="mx-auto w-full max-w-md space-y-4 px-4 pt-5">
+        <section className="minsah-panel flex gap-3 p-3">
+          <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-minsah-surface-soft">
+            <CatalogProductImage src={product.image} alt={product.name} sizes="56px" padding="sm" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs text-minsah-text-muted">
+              {isSendGift ? `${gift.senderName}-এর পক্ষ থেকে উপহার` : `${gift.senderName}-এর অনুরোধ`}
             </p>
-            <p className="text-sm font-semibold text-[#1A0D06] leading-snug">{product.name}</p>
-            <p className="text-sm font-semibold text-[#3D1F0E]">৳{product.price.toLocaleString('bn-BD')}</p>
+            <p className="text-sm font-black leading-snug text-minsah-text-primary">{product.name}</p>
+            <p className="text-sm font-black text-minsah-action-primary">৳{product.price.toLocaleString('bn-BD')}</p>
           </div>
-        </div>
+        </section>
 
-        {/* SEND_GIFT — recipient fills address */}
-        {isSendGift && (
-          <div className="bg-white rounded-2xl p-4 border border-[#E8D5C0] space-y-3">
-            <p className="text-xs font-semibold text-[#3D1F0E] uppercase tracking-wide flex items-center gap-1.5">
-              <MapPin size={12} /> তোমার ঠিকানা
-            </p>
-            {([
-              { key: 'name',   label: 'তোমার নাম *',       placeholder: 'পুরো নাম',         type: 'text' },
-              { key: 'phone',  label: 'ফোন নম্বর *',        placeholder: '01XXXXXXXXX',      type: 'tel'  },
-              { key: 'street', label: 'বাড়ির ঠিকানা *',    placeholder: 'বাড়ি/রাস্তা',     type: 'text' },
-              { key: 'note',   label: 'বিশেষ নির্দেশনা',   placeholder: 'যেমন: সন্ধ্যায় দিও', type: 'text' },
-            ] as const).map(({ key, label, placeholder, type }) => (
-              <div key={key}>
-                <label className="block text-xs font-medium text-[#6B4226] mb-1">{label}</label>
-                <input
-                  type={type}
-                  value={form[key]}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  placeholder={placeholder}
-                  className="w-full px-3 py-2.5 border border-[#D4B896] rounded-xl text-sm focus:outline-none focus:border-[#3D1F0E] bg-[#FDF8F3]"
-                />
-              </div>
-            ))}
-            <div>
-              <label className="block text-xs font-medium text-[#6B4226] mb-1">জেলা</label>
-              <select
-                value={form.city}
-                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-[#D4B896] rounded-xl text-sm bg-[#FDF8F3]"
-              >
-                {DISTRICTS.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* GET_GIFT — prefilled address shown, payer identity collected */}
-        {!isSendGift && (
+        {isSendGift ? (
+          <section className="minsah-panel space-y-4 p-4">
+            <h2 className="flex items-center gap-2 text-sm font-black text-minsah-text-primary">
+              <MapPin className="h-4 w-4" /> আপনার ঠিকানা
+            </h2>
+            <Input
+              id="gift-recipient-name"
+              label="আপনার নাম"
+              required
+              value={form.name}
+              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              placeholder="পুরো নাম"
+              leading={<User className="h-5 w-5" />}
+            />
+            <Input
+              id="gift-recipient-phone"
+              type="tel"
+              inputMode="tel"
+              label="ফোন নম্বর"
+              required
+              value={form.phone}
+              onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+              placeholder="01XXXXXXXXX"
+              leading={<Phone className="h-5 w-5" />}
+            />
+            <Input
+              id="gift-recipient-street"
+              label="বাড়ি ও রাস্তার ঠিকানা"
+              required
+              value={form.street}
+              onChange={(event) => setForm((current) => ({ ...current, street: event.target.value }))}
+              placeholder="বাড়ি, রাস্তা ও এলাকার নাম"
+              leading={<MapPin className="h-5 w-5" />}
+            />
+            <Select
+              id="gift-recipient-city"
+              label="জেলা"
+              value={form.city}
+              onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
+            >
+              {DISTRICTS.map((district) => <option key={district} value={district}>{district}</option>)}
+            </Select>
+            <Textarea
+              id="gift-recipient-note"
+              label="বিশেষ নির্দেশনা"
+              value={form.note}
+              onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
+              placeholder="যেমন: সন্ধ্যার পরে পৌঁছে দিন"
+              rows={3}
+            />
+          </section>
+        ) : (
           <>
-            {/* Prefilled address display */}
-            {prefilledAddress && (
-              <div className="bg-white rounded-2xl p-4 border border-[#E8D5C0]">
-                <p className="text-xs font-semibold text-[#3D1F0E] uppercase tracking-wide flex items-center gap-1.5 mb-3">
-                  <MapPin size={12} /> ডেলিভারি যাবে
-                </p>
-                <div className="bg-[#F5E9DC] rounded-xl p-3">
-                  <p className="text-sm font-semibold text-[#1A0D06]">{prefilledAddress.name}</p>
-                  <p className="text-xs text-[#6B4226]">{prefilledAddress.phone}</p>
-                  <p className="text-xs text-[#6B4226]">{prefilledAddress.street}, {prefilledAddress.city}</p>
+            {prefilledAddress ? (
+              <section className="minsah-panel p-4">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-black text-minsah-text-primary">
+                  <MapPin className="h-4 w-4" /> ডেলিভারির ঠিকানা
+                </h2>
+                <div className="rounded-xl bg-minsah-surface-soft p-3">
+                  <p className="text-sm font-black text-minsah-text-primary">{prefilledAddress.name}</p>
+                  <p className="text-xs text-minsah-text-muted">{prefilledAddress.phone}</p>
+                  <p className="text-xs text-minsah-text-muted">{prefilledAddress.street}, {prefilledAddress.city}</p>
                 </div>
-                <p className="text-xs text-[#8B5E3C] mt-2 flex items-center gap-1">
-                  <Check size={11} className="text-green-500" />
-                  ঠিকানা {gift.senderName} আগেই দিয়ে রেখেছে
+                <p className="mt-2 flex items-center gap-2 text-xs text-minsah-status-success-text">
+                  <Check className="h-4 w-4" /> {gift.senderName} ঠিকানাটি আগে দিয়েছেন।
                 </p>
-              </div>
-            )}
+              </section>
+            ) : null}
 
-            {/* Payer identity — skip if logged in */}
-            {!session?.user && (
-              <div className="bg-white rounded-2xl p-4 border border-[#E8D5C0] space-y-3">
-                <p className="text-xs font-semibold text-[#3D1F0E] uppercase tracking-wide flex items-center gap-1.5">
-                  <User size={12} /> তোমার পরিচয়
-                </p>
-                <div>
-                  <label className="block text-xs font-medium text-[#6B4226] mb-1">তোমার নাম *</label>
-                  <input
-                    type="text"
-                    value={guestPayer.name}
-                    onChange={(e) => setGuestPayer((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="পুরো নাম"
-                    className="w-full px-3 py-2.5 border border-[#D4B896] rounded-xl text-sm focus:outline-none focus:border-[#3D1F0E] bg-[#FDF8F3]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#6B4226] mb-1">ফোন নম্বর</label>
-                  <input
-                    type="tel"
-                    value={guestPayer.phone}
-                    onChange={(e) => setGuestPayer((p) => ({ ...p, phone: e.target.value }))}
-                    placeholder="01XXXXXXXXX"
-                    className="w-full px-3 py-2.5 border border-[#D4B896] rounded-xl text-sm focus:outline-none focus:border-[#3D1F0E] bg-[#FDF8F3]"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Logged in — show their name */}
-            {session?.user && (
-              <div className="bg-[#F5E9DC] rounded-2xl p-3 border border-[#E8D5C0] flex items-center gap-2">
-                <Check size={14} className="text-green-600" />
-                <p className="text-xs text-[#4A2C1A]">
-                  তুমি <span className="font-semibold">{session.user.name}</span> হিসেবে payment করবে
-                </p>
-              </div>
+            {!session?.user ? (
+              <section className="minsah-panel space-y-4 p-4">
+                <h2 className="flex items-center gap-2 text-sm font-black text-minsah-text-primary">
+                  <User className="h-4 w-4" /> আপনার পরিচয়
+                </h2>
+                <Input
+                  id="gift-payer-name"
+                  label="আপনার নাম"
+                  required
+                  value={guestPayer.name}
+                  onChange={(event) => setGuestPayer((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="পুরো নাম"
+                  leading={<User className="h-5 w-5" />}
+                />
+                <Input
+                  id="gift-payer-phone"
+                  type="tel"
+                  inputMode="tel"
+                  label="ফোন নম্বর"
+                  value={guestPayer.phone}
+                  onChange={(event) => setGuestPayer((current) => ({ ...current, phone: event.target.value }))}
+                  placeholder="01XXXXXXXXX"
+                  leading={<Phone className="h-5 w-5" />}
+                />
+              </section>
+            ) : (
+              <Alert tone="success" icon={<Check className="h-5 w-5" />}>
+                আপনি <strong>{session.user.name}</strong> হিসেবে মূল্য পরিশোধ করবেন।
+              </Alert>
             )}
           </>
         )}
 
-        {/* Error */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
+        {error ? (
+          <Alert tone="danger" announcement="assertive">
+            {error}
+          </Alert>
+        ) : null}
       </div>
 
-      {/* Sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E8D5C0] px-4 py-3 max-w-md mx-auto">
-        <button
-          onClick={handleOrder}
-          disabled={loading}
-          className={`w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-95 ${
-            loading
-              ? 'bg-[#C4A882] text-white cursor-not-allowed'
-              : 'bg-[#3D1F0E] text-[#F5E6D3]'
-          }`}
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              অর্ডার হচ্ছে...
-            </span>
-          ) : (
-            <>
-              <Zap size={15} />
-              {isSendGift
-                ? 'Gift Order নিশ্চিত করো'
-                : `Gift করো — ৳${product.price.toLocaleString()}`}
-            </>
-          )}
-        </button>
-        <p className="text-xs text-center text-[#A0856A] mt-1.5">
-          {isSendGift
-            ? `${gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবে`
-            : `Payment তুমি করবে, delivery যাবে ${gift.senderName}-এর কাছে`}
-        </p>
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-minsah-border-subtle bg-minsah-surface-elevated px-4 pt-3 shadow-[var(--shadow-elevated)]">
+        <div className="minsah-sticky-action-safe mx-auto max-w-md">
+          <Button type="button" fullWidth size="lg" onClick={handleOrder} disabled={loading} aria-busy={loading || undefined}>
+            {loading ? <Spinner size="sm" decorative /> : <Zap className="h-5 w-5" />}
+            {loading
+              ? 'অর্ডার তৈরি হচ্ছে…'
+              : isSendGift
+                ? 'উপহারের অর্ডার নিশ্চিত করুন'
+                : `উপহার দিন — ৳${product.price.toLocaleString('bn-BD')}`}
+          </Button>
+          <p className="mt-1.5 text-center text-xs text-minsah-text-subtle">
+            {isSendGift
+              ? `${gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবেন।`
+              : `আপনি মূল্য পরিশোধ করবেন; পণ্যটি ${gift.senderName}-এর কাছে যাবে।`}
+          </p>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
-// 'use client';
-
-// import { useState } from 'react';
-// import Link from 'next/link';
-// import { Gift, Heart, ShoppingBag, ArrowLeft, MapPin, Zap, Check } from 'lucide-react';
-
-// interface DeliveryAddress {
-//   name: string;
-//   phone: string;
-//   street: string;
-//   city: string;
-//   note?: string;
-// }
-
-// interface GiftData {
-//   gift: {
-//     token: string;
-//     giftType: 'SEND_GIFT' | 'GET_GIFT';
-//     senderName: string;
-//     recipientName: string;
-//     message: string | null;
-//     status: string;
-//     expiresAt: string;
-//     requesterAddress?: DeliveryAddress | null;
-//     requesterPhone?: string | null;
-//   };
-//   product: {
-//     id: string;
-//     name: string;
-//     price: number;
-//     compareAtPrice: number | null;
-//     image: string;
-//     brand: string;
-//     inStock: boolean;
-//   };
-// }
-
-// const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8801700000000';
-
-// export default function GiftPageClient({ data }: { data: GiftData }) {
-//   const { gift, product } = data;
-//   const isSendGift = gift.giftType === 'SEND_GIFT';
-
-//   const [step, setStep] = useState<'reveal' | 'checkout'>('reveal');
-//   const [done, setDone] = useState(false);
-//   const [loading, setLoading] = useState(false);
-
-//   // For SEND_GIFT — recipient fills address
-//   const [form, setForm] = useState<DeliveryAddress & { note: string }>({
-//     name: '',
-//     phone: '',
-//     street: '',
-//     city: 'ঢাকা',
-//     note: '',
-//   });
-
-//   const discountPct =
-//     product.compareAtPrice && product.compareAtPrice > product.price
-//       ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
-//       : null;
-
-//   // For GET_GIFT — address pre-filled from requester
-//   const prefilledAddress = gift.requesterAddress;
-
-//   const handleOrder = async () => {
-//     if (isSendGift) {
-//       if (!form.name.trim() || !form.phone.trim() || !form.street.trim()) {
-//         alert('নাম, ফোন ও ঠিকানা দিন');
-//         return;
-//       }
-//     }
-
-//     setLoading(true);
-//     try {
-//       const deliveryAddress: DeliveryAddress = isSendGift
-//         ? { name: form.name, phone: form.phone, street: form.street, city: form.city, note: form.note }
-//         : prefilledAddress!;
-
-//       const msg = encodeURIComponent(
-//         isSendGift
-//           ? `🎁 GIFT ORDER (Send Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nপ্রাপক: ${deliveryAddress.name}\nফোন: ${deliveryAddress.phone}\nঠিকানা: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nউপহার: ${gift.senderName} এর পক্ষ থেকে\nGift Token: ${gift.token}`
-//           : `🎁 GIFT ORDER (Get Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nPayer: ${gift.recipientName}\nDelivery to: ${deliveryAddress.name}\nফোন: ${deliveryAddress.phone}\nঠিকানা: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nGift Token: ${gift.token}`
-//       );
-
-//       window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank');
-//       await fetch(`/api/gift/${gift.token}/order`, { method: 'POST' }).catch(() => {});
-//       setDone(true);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // ── Done ──────────────────────────────────────────────────────
-//   if (done) {
-//     return (
-//       <div className="min-h-screen bg-[#FDF8F3] flex flex-col items-center justify-center px-5 text-center">
-//         <div className="w-20 h-20 bg-[#F5E9DC] rounded-full flex items-center justify-center mb-5">
-//           <Heart size={36} className="text-[#3D1F0E] fill-[#3D1F0E]" />
-//         </div>
-//         <h1 className="text-2xl font-semibold text-[#1A0D06] mb-2">অর্ডার নিশ্চিত হয়েছে!</h1>
-//         <p className="text-sm text-[#8B5E3C] mb-1">আমরা শীঘ্রই WhatsApp-এ যোগাযোগ করব।</p>
-//         {isSendGift ? (
-//           <p className="text-xs text-[#A0856A]">{gift.senderName} জানতে পারবে তুমি গিফটটি গ্রহণ করেছ ❤️</p>
-//         ) : (
-//           <p className="text-xs text-[#A0856A]">{gift.senderName} কে ধন্যবাদ এই সুন্দর গিফটের জন্য ❤️</p>
-//         )}
-//         <Link href="/shop" className="mt-8 text-sm text-[#3D1F0E] underline underline-offset-2">
-//           আরো পণ্য দেখো
-//         </Link>
-//       </div>
-//     );
-//   }
-
-//   // ── Reveal screen ─────────────────────────────────────────────
-//   if (step === 'reveal') {
-//     return (
-//       <div className="min-h-screen bg-[#FDF8F3] flex flex-col">
-//         <div className="bg-[#3D1F0E] px-4 py-3 flex items-center justify-between">
-//           <Link href="/" className="text-[#F5E6D3]"><ArrowLeft size={18} /></Link>
-//           <span className="text-[#F5E6D3] text-sm font-semibold tracking-widest uppercase">Minsah Beauty</span>
-//           <div className="w-5" />
-//         </div>
-
-//         <div className="flex-1 flex flex-col items-center px-5 pt-8 pb-32 max-w-md mx-auto w-full">
-
-//           {/* Icon */}
-//           <div className="relative mb-6">
-//             <div className="w-24 h-24 bg-[#F5E9DC] rounded-full flex items-center justify-center shadow-lg">
-//               {isSendGift
-//                 ? <Gift size={40} className="text-[#3D1F0E]" />
-//                 : <ShoppingBag size={40} className="text-[#3D1F0E]" />
-//               }
-//             </div>
-//             <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-//               <Heart size={14} className="text-white fill-white" />
-//             </div>
-//           </div>
-
-//           {/* Heading */}
-//           {isSendGift ? (
-//             <>
-//               <p className="text-sm text-[#8B5E3C] mb-1">তোমার জন্য বিশেষ উপহার!</p>
-//               <h1 className="text-2xl font-semibold text-[#1A0D06] text-center mb-1">{gift.recipientName}</h1>
-//               <p className="text-sm text-[#6B4226] mb-6 text-center">
-//                 <span className="font-semibold text-[#3D1F0E]">{gift.senderName}</span> তোমাকে gift করতে চায়
-//               </p>
-//             </>
-//           ) : (
-//             <>
-//               <p className="text-sm text-[#8B5E3C] mb-1">একটি gift request এসেছে!</p>
-//               <h1 className="text-2xl font-semibold text-[#1A0D06] text-center mb-1">{gift.recipientName}</h1>
-//               <p className="text-sm text-[#6B4226] mb-6 text-center">
-//                 <span className="font-semibold text-[#3D1F0E]">{gift.senderName}</span> তোমার কাছে এই product চাইছে
-//               </p>
-//             </>
-//           )}
-
-//           {/* Personal message */}
-//           {gift.message && (
-//             <div className="w-full bg-[#F5E9DC] rounded-2xl px-4 py-3 mb-6 border-l-4 border-[#C4956A]">
-//               <p className="text-sm text-[#4A2C1A] italic leading-relaxed">"{gift.message}"</p>
-//             </div>
-//           )}
-
-//           {/* GET_GIFT — show delivery address */}
-//           {!isSendGift && prefilledAddress && (
-//             <div className="w-full bg-[#F5E9DC] rounded-2xl p-4 mb-6">
-//               <p className="text-xs font-semibold text-[#3D1F0E] uppercase tracking-wide flex items-center gap-1.5 mb-2">
-//                 <MapPin size={12} /> পাঠানোর ঠিকানা
-//               </p>
-//               <p className="text-sm font-medium text-[#1A0D06]">{prefilledAddress.name}</p>
-//               <p className="text-xs text-[#6B4226]">{prefilledAddress.phone}</p>
-//               <p className="text-xs text-[#6B4226]">{prefilledAddress.street}, {prefilledAddress.city}</p>
-//             </div>
-//           )}
-
-//           {/* Product card */}
-//           <div className="w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E8D5C0] mb-6">
-//             <div className="aspect-[4/3] bg-[#F5E9DC] relative">
-//               <img
-//                 src={product.image}
-//                 alt={product.name}
-//                 className="w-full h-full object-cover"
-//                 onError={(e) => {
-//                   (e.target as HTMLImageElement).src = 'https://placehold.co/400x300/F5E9DC/8B5E3C?text=Product';
-//                 }}
-//               />
-//               {discountPct && (
-//                 <span className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-//                   -{discountPct}%
-//                 </span>
-//               )}
-//             </div>
-//             <div className="p-4">
-//               {product.brand && (
-//                 <span className="text-xs bg-[#F5E9DC] text-[#6B4226] px-2 py-0.5 rounded-full font-medium">
-//                   {product.brand}
-//                 </span>
-//               )}
-//               <h2 className="text-base font-semibold text-[#1A0D06] mt-2">{product.name}</h2>
-//               <div className="flex items-baseline gap-2 mt-1">
-//                 <span className="text-lg font-semibold text-[#1A0D06]">
-//                   ৳{product.price.toLocaleString('bn-BD')}
-//                 </span>
-//                 {product.compareAtPrice && (
-//                   <span className="text-sm text-[#A0856A] line-through">
-//                     ৳{product.compareAtPrice.toLocaleString('bn-BD')}
-//                   </span>
-//                 )}
-//               </div>
-//               {isSendGift ? (
-//                 <p className="text-xs text-[#8B5E3C] mt-1">{gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবে</p>
-//               ) : (
-//                 <p className="text-xs text-[#8B5E3C] mt-1">তুমি payment করবে, {gift.senderName} এর কাছে পৌঁছাবে</p>
-//               )}
-//             </div>
-//           </div>
-
-//           {/* CTA */}
-//           <button
-//             onClick={() => setStep('checkout')}
-//             className="w-full bg-[#3D1F0E] text-[#F5E6D3] py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
-//           >
-//             {isSendGift
-//               ? <><Gift size={18} /> গিফটটি গ্রহণ করো</>
-//               : <><ShoppingBag size={18} /> Gift করতে চাই</>
-//             }
-//           </button>
-
-//           <p className="text-xs text-[#A0856A] mt-3 text-center">
-//             Link মেয়াদ: {new Date(gift.expiresAt).toLocaleDateString('bn-BD')} পর্যন্ত
-//           </p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   // ── Checkout screen ───────────────────────────────────────────
-//   return (
-//     <div className="min-h-screen bg-[#FDF8F3]">
-//       <div className="bg-[#3D1F0E] px-4 py-3 flex items-center gap-3">
-//         <button onClick={() => setStep('reveal')} className="text-[#F5E6D3]">
-//           <ArrowLeft size={18} />
-//         </button>
-//         <span className="text-[#F5E6D3] text-sm font-semibold">
-//           {isSendGift ? 'তোমার ডেলিভারি তথ্য দাও' : 'Payment করে Gift দাও'}
-//         </span>
-//       </div>
-
-//       <div className="max-w-md mx-auto px-4 pt-5 pb-32 space-y-4">
-
-//         {/* Mini product recap */}
-//         <div className="flex gap-3 bg-white rounded-2xl p-3 border border-[#E8D5C0]">
-//           <img
-//             src={product.image}
-//             alt={product.name}
-//             className="w-14 h-14 rounded-xl object-cover bg-[#F5E9DC]"
-//             onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
-//           />
-//           <div>
-//             <p className="text-xs text-[#8B5E3C]">
-//               {isSendGift
-//                 ? `Gift: ${gift.senderName} এর পক্ষ থেকে`
-//                 : `Request: ${gift.senderName} এর জন্য`
-//               }
-//             </p>
-//             <p className="text-sm font-semibold text-[#1A0D06] leading-snug">{product.name}</p>
-//             <p className="text-sm font-semibold text-[#3D1F0E]">৳{product.price.toLocaleString('bn-BD')}</p>
-//           </div>
-//         </div>
-
-//         {/* SEND_GIFT — recipient fills address */}
-//         {isSendGift && (
-//           <div className="bg-white rounded-2xl p-4 border border-[#E8D5C0] space-y-3">
-//             <p className="text-xs font-semibold text-[#3D1F0E] uppercase tracking-wide flex items-center gap-1.5">
-//               <MapPin size={12} /> তোমার ঠিকানা
-//             </p>
-//             {([
-//               { key: 'name',   label: 'তোমার নাম *',       placeholder: 'পুরো নাম',        type: 'text' },
-//               { key: 'phone',  label: 'ফোন নম্বর *',        placeholder: '01XXXXXXXXX',     type: 'tel'  },
-//               { key: 'street', label: 'বাড়ির ঠিকানা *',    placeholder: 'বাড়ি/রাস্তা',    type: 'text' },
-//               { key: 'note',   label: 'বিশেষ নির্দেশনা',   placeholder: 'যেমন: সন্ধ্যায় দিও', type: 'text' },
-//             ] as const).map(({ key, label, placeholder, type }) => (
-//               <div key={key}>
-//                 <label className="block text-xs font-medium text-[#6B4226] mb-1">{label}</label>
-//                 <input
-//                   type={type}
-//                   value={form[key]}
-//                   onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-//                   placeholder={placeholder}
-//                   className="w-full px-3 py-2.5 border border-[#D4B896] rounded-xl text-sm focus:outline-none focus:border-[#3D1F0E] bg-[#FDF8F3]"
-//                 />
-//               </div>
-//             ))}
-//             <div>
-//               <label className="block text-xs font-medium text-[#6B4226] mb-1">জেলা</label>
-//               <select
-//                 value={form.city}
-//                 onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-//                 className="w-full px-3 py-2.5 border border-[#D4B896] rounded-xl text-sm bg-[#FDF8F3]"
-//               >
-//                 {['ঢাকা','চট্টগ্রাম','সিলেট','রাজশাহী','খুলনা','বরিশাল','রংপুর','ময়মনসিংহ'].map((c) => (
-//                   <option key={c} value={c}>{c}</option>
-//                 ))}
-//               </select>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* GET_GIFT — address pre-filled, just confirm */}
-//         {!isSendGift && prefilledAddress && (
-//           <div className="bg-white rounded-2xl p-4 border border-[#E8D5C0]">
-//             <p className="text-xs font-semibold text-[#3D1F0E] uppercase tracking-wide flex items-center gap-1.5 mb-3">
-//               <MapPin size={12} /> ডেলিভারি যাবে
-//             </p>
-//             <div className="bg-[#F5E9DC] rounded-xl p-3">
-//               <p className="text-sm font-semibold text-[#1A0D06]">{prefilledAddress.name}</p>
-//               <p className="text-xs text-[#6B4226]">{prefilledAddress.phone}</p>
-//               <p className="text-xs text-[#6B4226]">{prefilledAddress.street}, {prefilledAddress.city}</p>
-//             </div>
-//             <p className="text-xs text-[#8B5E3C] mt-2 flex items-center gap-1">
-//               <Check size={11} className="text-green-500" />
-//               ঠিকানা {gift.senderName} আগেই দিয়ে রেখেছে
-//             </p>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Sticky CTA */}
-//       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E8D5C0] px-4 py-3 max-w-md mx-auto">
-//         <button
-//           onClick={handleOrder}
-//           disabled={loading}
-//           className={`w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-95 ${
-//             loading ? 'bg-[#C4A882] text-white cursor-not-allowed' : 'bg-[#3D1F0E] text-[#F5E6D3]'
-//           }`}
-//         >
-//           {loading ? (
-//             <span className="flex items-center gap-2">
-//               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-//               অর্ডার হচ্ছে...
-//             </span>
-//           ) : (
-//             <>
-//               <Zap size={15} />
-//               {isSendGift ? 'Gift Order নিশ্চিত করো' : `Gift করো — ৳${product.price.toLocaleString()}`}
-//             </>
-//           )}
-//         </button>
-//         <p className="text-xs text-center text-[#A0856A] mt-1.5">
-//           {isSendGift
-//             ? `${gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবে`
-//             : `Payment তুমি করবে, delivery যাবে ${gift.senderName}-এর কাছে`
-//           }
-//         </p>
-//       </div>
-//     </div>
-//   );
-// }

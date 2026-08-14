@@ -1,5 +1,7 @@
 import prisma from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma/client';
+import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQueue';
+import { normalizeProductCondition } from '@/lib/products/product-condition';
 
 export class AdminProductError extends Error {
   status: number;
@@ -72,6 +74,28 @@ export type AdminProductListProduct = Prisma.ProductGetPayload<{
 export type AdminProductDetailProduct = Prisma.ProductGetPayload<{
   include: typeof adminProductDetailInclude;
 }>;
+
+
+type ProductDeliveryOfferFields = {
+  deliveryOfferEnabled?: boolean | null;
+  deliveryOfferType?: 'DEFAULT' | 'FREE' | 'FIXED' | string | null;
+  deliveryOfferAmount?: Prisma.Decimal | string | number | null;
+  deliveryOfferStartDate?: Date | string | null;
+  deliveryOfferEndDate?: Date | string | null;
+  deliveryOfferBadgeText?: string | null;
+};
+
+function deliveryOfferAmountToNumber(value: ProductDeliveryOfferFields['deliveryOfferAmount']): number | null {
+  if (value == null) return null;
+  const parsed = Number(value.toString());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function deliveryOfferDateToIso(value: ProductDeliveryOfferFields['deliveryOfferStartDate']): string | null {
+  if (!value) return null;
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
 
 const allowedSkinTypes = new Map(
   [
@@ -685,6 +709,7 @@ export function buildAdminProductOrderBy(searchParams: URLSearchParams): Prisma.
 
 export function formatAdminProductListItem(product: AdminProductListProduct) {
   const mainImage = product.images.find((image) => image.isDefault) || product.images[0];
+  const deliveryOffer = product as AdminProductListProduct & ProductDeliveryOfferFields;
 
   return {
     id: product.id,
@@ -740,6 +765,12 @@ export function formatAdminProductListItem(product: AdminProductListProduct) {
     originCountry: product.originCountry || 'Bangladesh (Local)',
     shippingWeight: product.shippingWeight || '',
     isFragile: product.isFragile,
+    deliveryOfferEnabled: Boolean(deliveryOffer.deliveryOfferEnabled),
+    deliveryOfferType: deliveryOffer.deliveryOfferType || 'DEFAULT',
+    deliveryOfferAmount: deliveryOfferAmountToNumber(deliveryOffer.deliveryOfferAmount),
+    deliveryOfferStartDate: deliveryOfferDateToIso(deliveryOffer.deliveryOfferStartDate),
+    deliveryOfferEndDate: deliveryOfferDateToIso(deliveryOffer.deliveryOfferEndDate),
+    deliveryOfferBadgeText: deliveryOffer.deliveryOfferBadgeText || '',
     relatedProducts: product.relatedProducts || '',
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
@@ -976,7 +1007,7 @@ export async function createAdminProduct(input: unknown) {
       preOrderOption: getBoolean(payload.preOrderOption, false),
       barcode: getPayloadString(payload, 'barcode') || null,
       relatedProducts: normalizeRelatedProducts(payload.relatedProducts, null),
-      condition: getPayloadString(payload, 'condition') || 'NEW',
+      condition: normalizeProductCondition(getPayloadString(payload, 'condition')),
       gtin: getPayloadString(payload, 'gtin') || null,
       averageRating: toOptionalNumber(payload.averageRating),
       reviewCount: Math.max(0, Math.trunc(toOptionalNumber(payload.reviewCount) ?? 0)),
@@ -1010,6 +1041,8 @@ export async function createAdminProduct(input: unknown) {
       }),
     });
   }
+
+  await enqueueProductIndex(product.id, 'admin product create helper');
 
   return product;
 }
@@ -1189,7 +1222,9 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
       preOrderOption: hasOwn(payload, 'preOrderOption') ? getBoolean(payload.preOrderOption, existing.preOrderOption) : existing.preOrderOption,
       barcode: hasOwn(payload, 'barcode') ? getPayloadString(payload, 'barcode') || null : existing.barcode,
       relatedProducts: normalizeRelatedProducts(payload.relatedProducts, existing.relatedProducts),
-      condition: hasOwn(payload, 'condition') ? getPayloadString(payload, 'condition') || 'NEW' : existing.condition,
+      condition: hasOwn(payload, 'condition')
+        ? normalizeProductCondition(getPayloadString(payload, 'condition'), normalizeProductCondition(existing.condition))
+        : normalizeProductCondition(existing.condition),
       gtin: hasOwn(payload, 'gtin') ? getPayloadString(payload, 'gtin') || null : existing.gtin,
       averageRating: hasOwn(payload, 'averageRating') ? toOptionalNumber(payload.averageRating) : existing.averageRating,
       reviewCount: hasOwn(payload, 'reviewCount')
@@ -1277,6 +1312,8 @@ export async function updateAdminProduct(idOrSlug: string, input: unknown) {
     });
   }
 
+  await enqueueProductIndex(updated.id, 'admin product update helper');
+
   return updated;
 }
 
@@ -1301,9 +1338,12 @@ export async function deleteAdminProduct(idOrSlug: string): Promise<{ archived: 
       }),
     ]);
 
+    await enqueueProductDelete(existing.id, 'admin product soft-delete helper');
+
     return { archived: true };
   }
 
   await prisma.product.delete({ where: { id: existing.id } });
+  await enqueueProductDelete(existing.id, 'admin product hard-delete helper');
   return { archived: false };
 }

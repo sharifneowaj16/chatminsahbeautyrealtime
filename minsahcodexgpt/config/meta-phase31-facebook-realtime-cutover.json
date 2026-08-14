@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "phase": 31,
+  "item": "8.5",
+  "title": "Phase 31 legacy Facebook and realtime cutover contract",
+  "runtimeSelector": "META_PHASE31_FACEBOOK_INBOX_RUNTIME",
+  "acceptedRuntimeValues": ["LEGACY", "SHADOW", "PLATFORM", "DOMAIN", "LEGACY_ROLLBACK"],
+  "compatibilitySelectors": {
+    "realtimeMode": "REALTIME_FACEBOOK_MODE",
+    "runtimeFlavor": "REALTIME_RUNTIME_FLAVOR",
+    "legacyRollbackEnable": "REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED"
+  },
+  "legacyPrerequisites": [
+    "META_PLATFORM_LEGACY_FACEBOOK",
+    "REALTIME_FACEBOOK_MODE=legacy",
+    "REALTIME_RUNTIME_FLAVOR=legacy",
+    "REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED=true"
+  ],
+  "platformPrerequisites": [
+    "META_PLATFORM_LEGACY_FACEBOOK=false",
+    "META_PLATFORM_SOCIAL_REALTIME=true",
+    "META_PLATFORM_SOCIAL_WEBHOOKS=true",
+    "REALTIME_FACEBOOK_MODE=bridge",
+    "REALTIME_RUNTIME_FLAVOR=bridge"
+  ],
+  "shadowAuthority": "LEGACY",
+  "platformAuthority": "PLATFORM",
+  "invalidConfigurationPolicy": "BLOCKED",
+  "duplicateEventBoundary": "RAW_BODY_SHA256_AND_PAGE_ID",
+  "retryOwners": {
+    "legacy": "REALTIME_LEGACY",
+    "platform": "MAIN_APP_BULLMQ"
+  },
+  "directClientPolicy": "Realtime legacy Graph modules are dynamically loaded only when explicit legacy authority is active; platform mode uses the main-app MetaPlatform transport and disables legacy routes/workers.",
+  "stabilityCriteria": {
+    "minimumShadowSamples": 100,
+    "maximumMismatchRateBasisPoints": 100,
+    "maximumDuplicateEvents": 0,
+    "maximumParallelRetryOwners": 0,
+    "maximumLegacyDirectClientCallsInPlatformMode": 0,
+    "minimumObservationMinutes": 1440,
+    "rollbackDrillRequired": true
+  }
+}

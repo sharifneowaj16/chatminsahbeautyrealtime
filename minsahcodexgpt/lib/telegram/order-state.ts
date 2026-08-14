@@ -23,6 +23,13 @@ function normalize(value?: string | null) {
   return String(value ?? '').trim().toUpperCase();
 }
 
+function isPhoneConfirmed(order: TelegramOrderState) {
+  // `status: CONFIRMED` is also used for freshly placed orders in the
+  // storefront/admin UI. For COD tracking and Telegram destructive actions,
+  // the phone-confirmation source of truth is the dedicated timestamp.
+  return Boolean(order.phoneConfirmedAt);
+}
+
 function isFinalOrUnsafe(order: TelegramOrderState) {
   const status = normalize(order.status);
   return (
@@ -62,8 +69,8 @@ export function canTelegramPhoneConfirm(order: TelegramOrderState) {
 }
 
 export function canTelegramPhoneOff(order: TelegramOrderState) {
-  if (order.phoneConfirmedAt || normalize(order.status) === 'CONFIRMED') {
-    return { ok: false as const, reason: 'Already confirmed orders cannot be marked Phone Off.' };
+  if (isPhoneConfirmed(order)) {
+    return { ok: false as const, reason: 'Phone-confirmed orders cannot be marked Phone Off.' };
   }
   if (isFinalOrUnsafe(order)) {
     return { ok: false as const, reason: 'This order state cannot be marked Phone Off.' };
@@ -75,7 +82,7 @@ export function canTelegramCancel(order: TelegramOrderState) {
   if (isPaidOnline(order)) {
     return { ok: false as const, reason: 'Paid online orders cannot be cancelled from Telegram.' };
   }
-  if (order.phoneConfirmedAt || normalize(order.status) === 'CONFIRMED') {
+  if (isPhoneConfirmed(order)) {
     return { ok: false as const, reason: 'Phone-confirmed orders must be cancelled from the admin panel with review.' };
   }
   if (isFinalOrUnsafe(order)) {

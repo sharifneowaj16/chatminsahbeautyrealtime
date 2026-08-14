@@ -12,6 +12,7 @@ async function getWishlistItems(userId: string) {
       product: {
         select: {
           id: true,
+          slug: true,
           name: true,
           price: true,
           salePrice: true,
@@ -46,6 +47,7 @@ async function getWishlistItems(userId: string) {
     return {
       id: item.id,
       productId: item.productId,
+      productSlug: item.product.slug,
       productName: item.product.name,
       productImage: item.product.images[0]?.url ?? null,
       price: activePrice,

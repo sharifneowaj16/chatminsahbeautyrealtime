@@ -1,5 +1,13 @@
 'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
@@ -75,6 +83,12 @@ interface ApiProduct {
   originCountry: string;
   shippingWeight: string;
   isFragile: boolean;
+  deliveryOfferEnabled: boolean;
+  deliveryOfferType: 'DEFAULT' | 'FREE' | 'FIXED' | string;
+  deliveryOfferAmount: number | null;
+  deliveryOfferStartDate: string | null;
+  deliveryOfferEndDate: string | null;
+  deliveryOfferBadgeText: string;
   relatedProducts: string;
   variants: Array<{
     id: string;
@@ -128,6 +142,7 @@ const sortOptions = [
 ];
 
 export default function ProductsPage() {
+  const { pushToast, requestConfirmation } = useToast();
   const { hasPermission } = useAdminAuth();
 
   const [products, setProducts] = useState<ApiProduct[]>([]);
@@ -202,7 +217,7 @@ export default function ProductsPage() {
       setSelectedProducts((prev) => prev.filter((id) => id !== productId));
     } catch (err) {
       console.error('Error deleting product:', err);
-      alert(err instanceof Error ? err.message : 'Failed to delete product');
+      pushToast({ tone: 'danger', description: err instanceof Error ? err.message : 'Failed to delete product' });
     }
   };
 
@@ -227,7 +242,7 @@ export default function ProductsPage() {
 
   const handleBulkDelete = async () => {
     if (selectedProducts.length === 0) return;
-    if (!confirm(`Are you sure you want to delete ${selectedProducts.length} product(s)?`)) return;
+    if (!(await requestConfirmation({ title: 'Delete selected products?', description: `This will delete ${selectedProducts.length} product(s).`, confirmLabel: 'Delete products', tone: 'danger' }))) return;
     try {
       for (const productId of selectedProducts) {
         await deleteProductById(productId);
@@ -236,7 +251,7 @@ export default function ProductsPage() {
       await fetchProducts();
     } catch (err) {
       console.error('Error deleting products:', err);
-      alert(err instanceof Error ? err.message : 'Failed to delete selected products');
+      pushToast({ tone: 'danger', description: err instanceof Error ? err.message : 'Failed to delete selected products' });
     }
   };
 
@@ -267,6 +282,12 @@ export default function ProductsPage() {
   };
 
   const productUrlKey = (product: ApiProduct) => product.slug || product.id;
+  const hasDeliveryOffer = (product: ApiProduct) => product.deliveryOfferEnabled && product.deliveryOfferType !== 'DEFAULT';
+  const getDeliveryOfferLabel = (product: ApiProduct) => {
+    if (product.deliveryOfferType === 'FREE') return product.deliveryOfferBadgeText || 'Free Delivery';
+    if (product.deliveryOfferType === 'FIXED') return product.deliveryOfferBadgeText || `Fixed Delivery ${formatPrice(product.deliveryOfferAmount || 0)}`;
+    return '';
+  };
 
   return (
     <div className="p-6">
@@ -302,7 +323,7 @@ export default function ProductsPage() {
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
+              <Input
                 type="text"
                 placeholder="Search products..."
                 value={filters.search}
@@ -312,16 +333,16 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <button
+          <Button
             onClick={() => setShowFilters(!showFilters)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
           >
             <Filter className="w-5 h-5 mr-2" />
             Filters
             {showFilters && <Layers className="w-4 h-4 ml-2 text-purple-600" />}
-          </button>
+          </Button>
 
-          <select
+          <Select
             value={filters.sortBy}
             onChange={(e) => updateFilter('sortBy', e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -329,14 +350,14 @@ export default function ProductsPage() {
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {showFilters && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
+              <Select
                 value={filters.category}
                 onChange={(e) => updateFilter('category', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -344,11 +365,11 @@ export default function ProductsPage() {
                 {categories.map((category) => (
                   <option key={category} value={category}>{category}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
+              <Select
                 value={filters.status}
                 onChange={(e) => updateFilter('status', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -357,7 +378,7 @@ export default function ProductsPage() {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="out_of_stock">Out of Stock</option>
-              </select>
+              </Select>
             </div>
           </div>
         )}
@@ -371,17 +392,17 @@ export default function ProductsPage() {
               {selectedProducts.length} product{selectedProducts.length > 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center space-x-3">
-              <button onClick={() => setSelectedProducts([])} className="text-blue-600 hover:text-blue-800">
+              <Button onClick={() => setSelectedProducts([])} className="text-blue-600 hover:text-blue-800">
                 Clear selection
-              </button>
+              </Button>
               {hasPermission(PERMISSIONS.PRODUCTS_DELETE) && (
-                <button
+                <Button
                   onClick={handleBulkDelete}
                   className="inline-flex items-center px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-200"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   Delete Selected
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -400,12 +421,12 @@ export default function ProductsPage() {
                 <span className="font-medium">Failed to load products:</span> {fetchError}
               </p>
             </div>
-            <button
+            <Button
               onClick={() => fetchProducts()}
               className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors duration-200"
             >
               Retry
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -422,7 +443,7 @@ export default function ProductsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left">
-                    <input
+                    <Input
                       type="checkbox"
                       checked={selectedProducts.length === products.length && products.length > 0}
                       onChange={(e) => handleSelectAll(e.target.checked)}
@@ -442,7 +463,7 @@ export default function ProductsPage() {
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <input
+                      <Input
                         type="checkbox"
                         checked={selectedProducts.includes(product.id)}
                         onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
@@ -478,6 +499,11 @@ export default function ProductsPage() {
                           </div>
                           <div className="text-xs text-gray-500 font-mono">SKU: {product.sku}</div>
                           <div className="text-xs text-gray-400 font-mono">{product.slug || product.id}</div>
+                          {hasDeliveryOffer(product) && (
+                            <span className="mt-1 inline-flex w-fit items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                              {getDeliveryOfferLabel(product)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -547,17 +573,18 @@ export default function ProductsPage() {
                           </Link>
                         )}
                         {hasPermission(PERMISSIONS.PRODUCTS_DELETE) && (
-                          <button
-                            onClick={() => {
-                              if (confirm(`Are you sure you want to delete ${product.name}?`)) {
-                                handleDeleteProduct(product.id);
+                          <Button
+                            onClick={async () => {
+                              const confirmed = await requestConfirmation({ title: 'Delete this product?', description: `${product.name} will be permanently deleted.`, confirmLabel: 'Delete product', tone: 'danger' });
+                              if (confirmed) {
+                                await handleDeleteProduct(product.id);
                               }
                             }}
                             className="text-red-600 hover:text-red-800"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -580,7 +607,7 @@ export default function ProductsPage() {
               Showing {firstVisibleProduct}-{lastVisibleProduct} of {pagination.totalCount} products
             </div>
             <div className="flex items-center gap-3">
-              <select
+              <Select
                 value={pagination.limit}
                 onChange={(event) => {
                   setPagination((prev) => ({
@@ -595,9 +622,9 @@ export default function ProductsPage() {
                 <option value={25}>25 / page</option>
                 <option value={50}>50 / page</option>
                 <option value={100}>100 / page</option>
-              </select>
+              </Select>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   type="button"
                   disabled={pagination.page <= 1}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
@@ -605,11 +632,11 @@ export default function ProductsPage() {
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" />
                   Previous
-                </button>
+                </Button>
                 <span className="text-sm text-gray-600">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
-                <button
+                <Button
                   type="button"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
@@ -617,7 +644,7 @@ export default function ProductsPage() {
                 >
                   Next
                   <ChevronRight className="ml-1 h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </div>
           </div>

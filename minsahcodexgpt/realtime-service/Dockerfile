@@ -1,45 +1,49 @@
 # ── Stage 1: Build ──────────────────────────────────────────────
 FROM node:20-alpine AS builder
-WORKDIR /app
+WORKDIR /workspace/realtime-service
 
-COPY package*.json ./
+COPY realtime-service/package*.json ./
 RUN npm ci
 
 # prisma schema + config (generate এর জন্য দরকার)
-COPY prisma.config.ts ./
-COPY prisma ./prisma
+COPY realtime-service/prisma.config.ts ./
+COPY realtime-service/prisma ./prisma
 
 # Prisma client generate → prisma/generated/prisma এ যাবে (schema তে output দেখে)
 RUN npx prisma generate --schema prisma/schema.prisma
 
 # TypeScript build
-COPY tsconfig.json ./
-COPY src ./src
+COPY realtime-service/tsconfig*.json ./
+COPY realtime-service/types ./types
+COPY realtime-service/scripts ./scripts
+COPY realtime-service/src ./src
+COPY packages/meta-realtime-contract /workspace/packages/meta-realtime-contract
+COPY packages/meta-facebook-cutover-contract /workspace/packages/meta-facebook-cutover-contract
 RUN npm run build
 
 # ── Stage 2: Production image ───────────────────────────────────
 FROM node:20-alpine AS runner
-WORKDIR /app
+WORKDIR /app/realtime-service
 
 ENV NODE_ENV=production
 
-COPY package*.json ./
+COPY realtime-service/package*.json ./
 RUN npm ci --omit=dev
 
 # compiled JS
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /workspace/realtime-service/dist ./dist
 
 # Prisma generated client (schema তে output = "./generated/prisma" তাই এই path)
-COPY --from=builder /app/prisma/generated ./prisma/generated
+COPY --from=builder /workspace/realtime-service/prisma/generated ./prisma/generated
 
 # prisma schema + migrations (migrate deploy এর জন্য দরকার)
-COPY prisma ./prisma
+COPY realtime-service/prisma ./prisma
 
 # prisma.config.ts (migrate deploy এ দরকার হয়)
-COPY prisma.config.ts ./
+COPY realtime-service/prisma.config.ts ./
 
 # entrypoint script
-COPY docker-entrypoint.sh ./
+COPY realtime-service/docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 3001

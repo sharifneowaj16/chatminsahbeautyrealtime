@@ -1,4 +1,5 @@
 import { extractPathaoArray, pathaoRequest } from '@/lib/pathao';
+import { normalizePathaoAvailabilityFlag } from '@/lib/pathao-availability-flags';
 
 export interface PathaoCity {
   id: number;
@@ -67,8 +68,8 @@ function normalizeArea(item: unknown): PathaoArea | null {
     ? {
         id,
         name,
-        homeDeliveryAvailable: Boolean(source.home_delivery_available),
-        pickupAvailable: Boolean(source.pickup_available),
+        homeDeliveryAvailable: normalizePathaoAvailabilityFlag(source.home_delivery_available),
+        pickupAvailable: normalizePathaoAvailabilityFlag(source.pickup_available),
       }
     : null;
 }

@@ -1,5 +1,9 @@
 'use client'
 
+
+
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext'
@@ -97,7 +101,7 @@ export default function SteadfastWebhooksPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select
+            <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
@@ -106,8 +110,8 @@ export default function SteadfastWebhooksPage() {
               <option value="PROCESSED">Processed</option>
               <option value="NO_ORDER_FOUND">No order match</option>
               <option value="RECEIVED">Received</option>
-            </select>
-            <button
+            </Select>
+            <Button
               type="button"
               onClick={() => void loadPage({ append: false })}
               disabled={loading}
@@ -115,7 +119,7 @@ export default function SteadfastWebhooksPage() {
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -212,14 +216,14 @@ export default function SteadfastWebhooksPage() {
 
         {nextCursor && (
           <div className="flex justify-center">
-            <button
+            <Button
               type="button"
               disabled={loading}
               onClick={() => void loadPage({ append: true, cursor: nextCursor })}
               className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
             >
               Load more
-            </button>
+            </Button>
           </div>
         )}
 

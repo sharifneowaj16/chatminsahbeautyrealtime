@@ -1,11 +1,30 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Loader2, Minus, Plus, ShoppingBag, X } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { formatPrice } from '@/utils/currency';
-import SocialLoginModal from '@/app/products/[id]/components/SocialLoginModal';
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatPrice } from "@/utils/currency";
+import dynamic from "next/dynamic";
+import { trackInitiateCheckout } from "@/lib/tracking/ecommerce";
+import type { DeliveryQuoteResponse } from "@/types/delivery-quote";
+import { getCachedProductDetail } from "./productDetailCache";
+import CatalogProductImage from "@/components/catalog/CatalogProductImage";
+import { Alert } from "@/components/ui/Alert";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
+import { Spinner } from "@/components/ui/Spinner";
+import { SuccessState } from "@/components/ui/SuccessState";
+import { Textarea } from "@/components/ui/Textarea";
+
+const SocialLoginModal = dynamic(
+  () => import("@/app/(storefront)/products/[id]/components/SocialLoginModal"),
+  { ssr: false, loading: () => null },
+);
 
 export interface BuyNowVariantOption {
   id: string;
@@ -15,6 +34,7 @@ export interface BuyNowVariantOption {
   image?: string | null;
   attributes: Record<string, string>;
   weight?: number | null;
+  sku?: string | null;
 }
 
 interface BuyNowModalProps {
@@ -24,29 +44,13 @@ interface BuyNowModalProps {
   productImage: string;
   basePrice: number;
   baseWeightKg?: number | null;
+  baseStock?: number | null;
   variants?: BuyNowVariantOption[];
+  variantCount?: number;
+  variantsFullyLoaded?: boolean;
   initialVariantId?: string | null;
   initialQuantity?: number;
   onClose: () => void;
-}
-
-interface ProductResponse {
-  product: {
-    id: string;
-    name: string;
-    image: string;
-    price: number;
-    weight: number | null;
-    variants: Array<{
-      id: string;
-      name: string;
-      price: number;
-      stock: number;
-      image?: string;
-      weight?: number | null;
-      attributes?: Record<string, string>;
-    }>;
-  };
 }
 
 interface ShippingFormState {
@@ -58,6 +62,7 @@ interface ShippingFormState {
   pathao_city_id: number | null;
   pathao_zone_id: number | null;
   pathao_area_id: number | null;
+  streetAddress: string;
 }
 
 type DeliveryOption = {
@@ -70,7 +75,28 @@ type DeliveryAreaOption = DeliveryOption & {
   pickupAvailable?: boolean;
 };
 
-type ModalStage = 'select' | 'summary' | 'success';
+type ModalStage = "select" | "summary" | "success";
+
+function formatCustomerDeliveryCharge(amount: number) {
+  return amount <= 0 ? "Free" : formatPrice(amount);
+}
+
+function getDeliveryOfferMessage(quote: DeliveryQuoteResponse | null) {
+  if (!quote) return null;
+  const discountAmount = Number(quote.deliveryDiscountAmount ?? 0);
+  const badgeText =
+    quote.deliveryOfferBadgeText || quote.appliedDeliveryOffer?.badgeText;
+
+  if (discountAmount > 0) {
+    return `${badgeText || "Delivery offer applied"} · You saved ${formatPrice(discountAmount)}`;
+  }
+
+  if (quote.deliveryPricingSource === "PRODUCT_OFFER" && badgeText) {
+    return badgeText;
+  }
+
+  return null;
+}
 
 function getAttributeValue(attributes: Record<string, string>, keys: string[]) {
   for (const key of keys) {
@@ -87,17 +113,26 @@ function getAttributeValue(attributes: Record<string, string>, keys: string[]) {
 }
 
 function toVariantLabel(variant: BuyNowVariantOption) {
-  const size = getAttributeValue(variant.attributes, ['size', 'Size']);
-  const color = getAttributeValue(variant.attributes, ['color', 'Color', 'shade', 'Shade']);
-  return [size, color].filter(Boolean).join(' / ') || variant.name;
+  const size = getAttributeValue(variant.attributes, ["size", "Size"]);
+  const color = getAttributeValue(variant.attributes, [
+    "color",
+    "Color",
+    "shade",
+    "Shade",
+  ]);
+  return [size, color].filter(Boolean).join(" / ") || variant.name;
 }
 
 function formatWeight(weightKg: number) {
-  return `${weightKg.toFixed(3).replace(/\.?0+$/, '')}kg`;
+  return `${weightKg.toFixed(3).replace(/\.?0+$/, "")}kg`;
 }
 
-function clampQuantity(nextQuantity: number, stock: number) {
-  return Math.max(0, Math.min(stock, nextQuantity));
+function clampQuantity(nextQuantity: number, stock?: number | null) {
+  const normalizedStock =
+    typeof stock === "number" && Number.isFinite(stock)
+      ? Math.max(0, stock)
+      : 99;
+  return Math.max(0, Math.min(normalizedStock, nextQuantity));
 }
 
 function normalizeDeliveryOptions(value: unknown): DeliveryOption[] {
@@ -105,10 +140,11 @@ function normalizeDeliveryOptions(value: unknown): DeliveryOption[] {
 
   return value
     .map((option) => {
-      if (!option || typeof option !== 'object') return null;
+      if (!option || typeof option !== "object") return null;
       const candidate = option as { id?: unknown; name?: unknown };
       const id = Number(candidate.id);
-      const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+      const name =
+        typeof candidate.name === "string" ? candidate.name.trim() : "";
       return Number.isFinite(id) && name ? { id, name } : null;
     })
     .filter((option): option is DeliveryOption => Boolean(option));
@@ -119,7 +155,7 @@ function normalizeDeliveryAreas(value: unknown): DeliveryAreaOption[] {
 
   const areas: DeliveryAreaOption[] = [];
   for (const option of value) {
-    if (!option || typeof option !== 'object') continue;
+    if (!option || typeof option !== "object") continue;
     const candidate = option as {
       id?: unknown;
       name?: unknown;
@@ -127,7 +163,8 @@ function normalizeDeliveryAreas(value: unknown): DeliveryAreaOption[] {
       pickupAvailable?: unknown;
     };
     const id = Number(candidate.id);
-    const name = typeof candidate.name === 'string' ? candidate.name.trim() : '';
+    const name =
+      typeof candidate.name === "string" ? candidate.name.trim() : "";
     if (!Number.isFinite(id) || !name) continue;
     areas.push({
       id,
@@ -146,64 +183,85 @@ export default function BuyNowModal({
   productImage,
   basePrice,
   baseWeightKg = null,
+  baseStock = null,
   variants,
+  variantCount,
+  variantsFullyLoaded = true,
   initialVariantId,
   initialQuantity = 1,
   onClose,
 }: BuyNowModalProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const [stage, setStage] = useState<ModalStage>('select');
+  const [stage, setStage] = useState<ModalStage>("select");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [resolvedProductName, setResolvedProductName] = useState(productName);
-  const [resolvedProductImage, setResolvedProductImage] = useState(productImage);
+  const [resolvedProductImage, setResolvedProductImage] =
+    useState(productImage);
   const [resolvedBasePrice, setResolvedBasePrice] = useState(basePrice);
-  const [resolvedBaseWeightKg, setResolvedBaseWeightKg] = useState(baseWeightKg);
-  const [resolvedVariants, setResolvedVariants] = useState<BuyNowVariantOption[]>(variants ?? []);
-  const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({});
+  const [resolvedBaseWeightKg, setResolvedBaseWeightKg] =
+    useState(baseWeightKg);
+  const [resolvedBaseStock, setResolvedBaseStock] = useState<number | null>(
+    baseStock,
+  );
+  const [resolvedBaseSku, setResolvedBaseSku] = useState<string | null>(null);
+  const [resolvedVariants, setResolvedVariants] = useState<
+    BuyNowVariantOption[]
+  >(variants ?? []);
+  const [selectedQuantities, setSelectedQuantities] = useState<
+    Record<string, number>
+  >({});
   const [shippingForm, setShippingForm] = useState<ShippingFormState>({
-    name: '',
-    phone: '',
-    city: '',
-    zone: '',
-    area: '',
+    name: "",
+    phone: "",
+    city: "",
+    zone: "",
+    area: "",
     pathao_city_id: null,
     pathao_zone_id: null,
     pathao_area_id: null,
+    streetAddress: "",
   });
   const [cities, setCities] = useState<DeliveryOption[]>([]);
   const [zones, setZones] = useState<DeliveryOption[]>([]);
   const [areas, setAreas] = useState<DeliveryAreaOption[]>([]);
-  const [locationLoading, setLocationLoading] = useState<'cities' | 'zones' | 'areas' | null>(null);
+  const [locationLoading, setLocationLoading] = useState<
+    "cities" | "zones" | "areas" | null
+  >(null);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [deliveryState, setDeliveryState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [deliveryState, setDeliveryState] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [deliveryCharge, setDeliveryCharge] = useState<number | null>(null);
+  const [deliveryQuote, setDeliveryQuote] =
+    useState<DeliveryQuoteResponse | null>(null);
   const [deliveryMessage, setDeliveryMessage] = useState<string | null>(null);
-  const [successPayload, setSuccessPayload] = useState<{ orderNumber: string; estimatedDelivery: string } | null>(null);
+  const [successPayload, setSuccessPayload] = useState<{
+    orderNumber: string;
+    estimatedDelivery: string;
+    redirectURL?: string;
+  } | null>(null);
 
   const hasVariants = resolvedVariants.length > 0;
+  const simpleStock =
+    typeof resolvedBaseStock === "number" && Number.isFinite(resolvedBaseStock)
+      ? Math.max(0, resolvedBaseStock)
+      : 99;
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
 
-    setStage('select');
+    setStage("select");
     setError(null);
     setSubmitting(false);
-    setDeliveryState('idle');
+    setDeliveryState("idle");
     setDeliveryCharge(null);
+    setDeliveryQuote(null);
     setDeliveryMessage(null);
     setSuccessPayload(null);
     setShowLoginModal(false);
@@ -214,59 +272,114 @@ export default function BuyNowModal({
     setResolvedProductImage(productImage);
     setResolvedBasePrice(basePrice);
     setResolvedBaseWeightKg(baseWeightKg);
-    setResolvedVariants(variants ?? []);
+    setResolvedBaseStock(baseStock);
+    setResolvedBaseSku(null);
     setShippingForm({
-      name: user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : '',
-      phone: user?.phone ?? '',
-      city: '',
-      zone: '',
-      area: '',
+      name: user
+        ? [user.firstName, user.lastName].filter(Boolean).join(" ")
+        : "",
+      phone: user?.phone ?? "",
+      city: "",
+      zone: "",
+      area: "",
       pathao_city_id: null,
       pathao_zone_id: null,
       pathao_area_id: null,
+      streetAddress: "",
     });
 
-    if (variants?.length) {
+    const prefetchedVariantCount = variants?.length ?? 0;
+    const needsFullVariants =
+      variantsFullyLoaded === false ||
+      (typeof variantCount === "number" &&
+        variantCount > prefetchedVariantCount);
+
+    // Do not render a partial shade list while the complete product details are loading.
+    setResolvedVariants(needsFullVariants ? [] : (variants ?? []));
+    setLoading(needsFullVariants);
+
+    if (!needsFullVariants && variants?.length) {
       const preferredVariant =
-        (initialVariantId && variants.find((variant) => variant.id === initialVariantId)) ||
+        (initialVariantId &&
+          variants.find((variant) => variant.id === initialVariantId)) ||
         (variants.length === 1 ? variants[0] : null);
-      setSelectedQuantities(preferredVariant ? { [preferredVariant.id]: Math.max(1, initialQuantity) } : {});
+      setSelectedQuantities(
+        preferredVariant
+          ? {
+              [preferredVariant.id]: clampQuantity(
+                Math.max(1, initialQuantity),
+                preferredVariant.stock,
+              ),
+            }
+          : {},
+      );
+    } else if (!needsFullVariants) {
+      setSelectedQuantities({
+        simple: clampQuantity(Math.max(1, initialQuantity), baseStock),
+      });
     } else {
-      setSelectedQuantities({ simple: Math.max(1, initialQuantity) });
+      setSelectedQuantities({});
     }
 
     const loadProduct = async () => {
-      if (variants?.length) return;
+      if (prefetchedVariantCount > 0 && !needsFullVariants) return;
       setLoading(true);
       try {
-        const response = await fetch(`/api/products/${productId}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error('Failed to load product details');
-        const data = (await response.json()) as ProductResponse;
+        const productDetail = await getCachedProductDetail(productId);
         if (!active) return;
-        setResolvedProductName(data.product.name);
-        setResolvedProductImage(data.product.image);
-        setResolvedBasePrice(data.product.price);
-        setResolvedBaseWeightKg(data.product.weight);
-        const fetchedVariants = data.product.variants.map((variant) => ({
+        setResolvedProductName(productDetail.name || productName);
+        setResolvedProductImage(productDetail.image || productImage);
+        setResolvedBasePrice(productDetail.price || basePrice);
+        setResolvedBaseWeightKg(productDetail.weight ?? baseWeightKg ?? null);
+        setResolvedBaseStock(
+          Number.isFinite(Number(productDetail.stock))
+            ? Math.max(0, Number(productDetail.stock))
+            : baseStock,
+        );
+        setResolvedBaseSku(productDetail.sku ?? null);
+        const fetchedVariants = productDetail.variants.map((variant) => ({
           id: variant.id,
           name: variant.name,
           price: variant.price,
           stock: variant.stock,
           image: variant.image ?? null,
-          weight: variant.weight ?? data.product.weight,
-          attributes: (variant.attributes ?? {}) as Record<string, string>,
+          weight: variant.weight ?? productDetail.weight ?? null,
+          attributes: variant.attributes,
+          sku: variant.sku ?? null,
         }));
         setResolvedVariants(fetchedVariants);
         if (fetchedVariants.length) {
           const preferredVariant =
-            (initialVariantId && fetchedVariants.find((variant) => variant.id === initialVariantId)) ||
+            (initialVariantId &&
+              fetchedVariants.find(
+                (variant) => variant.id === initialVariantId,
+              )) ||
             (fetchedVariants.length === 1 ? fetchedVariants[0] : null);
-          setSelectedQuantities(preferredVariant ? { [preferredVariant.id]: Math.max(1, initialQuantity) } : {});
+          setSelectedQuantities(
+            preferredVariant
+              ? {
+                  [preferredVariant.id]: clampQuantity(
+                    Math.max(1, initialQuantity),
+                    preferredVariant.stock,
+                  ),
+                }
+              : {},
+          );
         } else {
-          setSelectedQuantities({ simple: Math.max(1, initialQuantity) });
+          setSelectedQuantities({
+            simple: clampQuantity(
+              Math.max(1, initialQuantity),
+              productDetail.stock,
+            ),
+          });
         }
       } catch (fetchError) {
-        if (active) setError(fetchError instanceof Error ? fetchError.message : 'Failed to load product');
+        if (active)
+          setError(
+            fetchError instanceof Error
+              ? fetchError.message
+              : "Failed to load product",
+          );
       } finally {
         if (active) setLoading(false);
       }
@@ -277,7 +390,21 @@ export default function BuyNowModal({
     return () => {
       active = false;
     };
-  }, [basePrice, baseWeightKg, initialQuantity, initialVariantId, isOpen, productId, productImage, productName, user, variants]);
+  }, [
+    basePrice,
+    baseStock,
+    baseWeightKg,
+    initialQuantity,
+    initialVariantId,
+    isOpen,
+    productId,
+    productImage,
+    productName,
+    user,
+    variantCount,
+    variants,
+    variantsFullyLoaded,
+  ]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -285,20 +412,20 @@ export default function BuyNowModal({
     const controller = new AbortController();
 
     const loadCities = async () => {
-      setLocationLoading('cities');
+      setLocationLoading("cities");
       setLocationError(null);
       try {
-        const response = await fetch('/api/shipping/pathao/cities', {
-          cache: 'no-store',
+        const response = await fetch("/api/shipping/pathao/cities", {
+          cache: "no-store",
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error('Could not load cities');
+        if (!response.ok) throw new Error("Could not load cities");
         const data = await response.json();
         if (active) setCities(normalizeDeliveryOptions(data));
       } catch {
         if (active && !controller.signal.aborted) {
           setCities([]);
-          setLocationError('Could not load delivery cities. Please try again.');
+          setLocationError("Could not load delivery cities. Please try again.");
         }
       } finally {
         if (active) setLocationLoading(null);
@@ -323,20 +450,25 @@ export default function BuyNowModal({
     const controller = new AbortController();
 
     const loadZones = async () => {
-      setLocationLoading('zones');
+      setLocationLoading("zones");
       setLocationError(null);
       try {
-        const response = await fetch(`/api/shipping/pathao/zones?city_id=${shippingForm.pathao_city_id}`, {
-          cache: 'no-store',
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error('Could not load zones');
+        const response = await fetch(
+          `/api/shipping/pathao/zones?city_id=${shippingForm.pathao_city_id}`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+        if (!response.ok) throw new Error("Could not load zones");
         const data = await response.json();
         if (active) setZones(normalizeDeliveryOptions(data));
       } catch {
         if (active && !controller.signal.aborted) {
           setZones([]);
-          setLocationError('Could not load zones for this city. Please try again.');
+          setLocationError(
+            "Could not load zones for this city. Please try again.",
+          );
         }
       } finally {
         if (active) setLocationLoading(null);
@@ -360,20 +492,25 @@ export default function BuyNowModal({
     const controller = new AbortController();
 
     const loadAreas = async () => {
-      setLocationLoading('areas');
+      setLocationLoading("areas");
       setLocationError(null);
       try {
-        const response = await fetch(`/api/shipping/pathao/areas?zone_id=${shippingForm.pathao_zone_id}`, {
-          cache: 'no-store',
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error('Could not load areas');
+        const response = await fetch(
+          `/api/shipping/pathao/areas?zone_id=${shippingForm.pathao_zone_id}`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+        if (!response.ok) throw new Error("Could not load areas");
         const data = await response.json();
         if (active) setAreas(normalizeDeliveryAreas(data));
       } catch {
         if (active && !controller.signal.aborted) {
           setAreas([]);
-          setLocationError('Could not load areas for this zone. Please try again.');
+          setLocationError(
+            "Could not load areas for this zone. Please try again.",
+          );
         }
       } finally {
         if (active) setLocationLoading(null);
@@ -405,6 +542,14 @@ export default function BuyNowModal({
             unitWeightKg,
             totalWeightKg: unitWeightKg * quantity,
             image: variant.image || resolvedProductImage,
+            sku: variant.sku ?? null,
+            size: getAttributeValue(variant.attributes, ["size", "Size"]),
+            color: getAttributeValue(variant.attributes, [
+              "color",
+              "Color",
+              "shade",
+              "Shade",
+            ]),
           };
         });
     }
@@ -412,21 +557,38 @@ export default function BuyNowModal({
     const quantity = selectedQuantities.simple ?? 0;
     if (quantity <= 0) return [];
     const unitWeightKg = resolvedBaseWeightKg ?? 0.1;
-    return [{
-      key: 'simple',
-      productId,
-      variantId: null,
-      label: resolvedProductName,
-      quantity,
-      unitPrice: resolvedBasePrice,
-      subtotal: resolvedBasePrice * quantity,
-      unitWeightKg,
-      totalWeightKg: unitWeightKg * quantity,
-      image: resolvedProductImage,
-    }];
-  }, [hasVariants, productId, resolvedBasePrice, resolvedBaseWeightKg, resolvedProductImage, resolvedProductName, resolvedVariants, selectedQuantities]);
+    return [
+      {
+        key: "simple",
+        productId,
+        variantId: null,
+        label: resolvedProductName,
+        quantity,
+        unitPrice: resolvedBasePrice,
+        subtotal: resolvedBasePrice * quantity,
+        unitWeightKg,
+        totalWeightKg: unitWeightKg * quantity,
+        image: resolvedProductImage,
+        sku: resolvedBaseSku,
+        size: null,
+        color: null,
+      },
+    ];
+  }, [
+    hasVariants,
+    productId,
+    resolvedBasePrice,
+    resolvedBaseSku,
+    resolvedBaseWeightKg,
+    resolvedProductImage,
+    resolvedProductName,
+    resolvedVariants,
+    selectedQuantities,
+  ]);
 
-  const subtotal = Number(selectedItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2));
+  const subtotal = Number(
+    selectedItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2),
+  );
   const grandTotal = Number((subtotal + (deliveryCharge ?? 0)).toFixed(2));
   const canContinue = selectedItems.length > 0;
   const hasRequiredShippingFields = Boolean(
@@ -435,18 +597,26 @@ export default function BuyNowModal({
     shippingForm.city.trim() &&
     shippingForm.zone.trim() &&
     shippingForm.area.trim() &&
+    shippingForm.streetAddress.trim() &&
     shippingForm.pathao_city_id &&
     shippingForm.pathao_zone_id &&
-    shippingForm.pathao_area_id
+    shippingForm.pathao_area_id,
   );
-  const selectedParcelWeightKg = Number(selectedItems.reduce((sum, item) => sum + item.totalWeightKg, 0).toFixed(3));
-  const canPlaceOrder = canContinue && hasRequiredShippingFields && !submitting && deliveryState === 'success';
+  const selectedParcelWeightKg = Number(
+    selectedItems.reduce((sum, item) => sum + item.totalWeightKg, 0).toFixed(3),
+  );
+  const canPlaceOrder =
+    canContinue &&
+    hasRequiredShippingFields &&
+    !submitting &&
+    deliveryState === "success";
 
   useEffect(() => {
-    if (!isOpen || stage !== 'summary' || !canContinue) return;
+    if (!isOpen || stage !== "summary" || !canContinue) return;
     if (!hasRequiredShippingFields) {
-      setDeliveryState('idle');
+      setDeliveryState("idle");
       setDeliveryCharge(null);
+      setDeliveryQuote(null);
       setDeliveryMessage(null);
       return;
     }
@@ -454,12 +624,13 @@ export default function BuyNowModal({
     let active = true;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
-      setDeliveryState('loading');
+      setDeliveryState("loading");
+      setDeliveryQuote(null);
       setDeliveryMessage(null);
       try {
-        const response = await fetch('/api/shipping/pathao/price', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/shipping/pathao/price", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             items: selectedItems.map((item) => ({
               productId: item.productId,
@@ -470,23 +641,32 @@ export default function BuyNowModal({
             address: {
               pathao_city_id: shippingForm.pathao_city_id,
               pathao_zone_id: shippingForm.pathao_zone_id,
+              pathao_area_id: shippingForm.pathao_area_id,
             },
           }),
           signal: controller.signal,
         });
-        const data = (await response.json()) as { shippingCharge?: number; error?: string };
+        const data = (await response.json()) as DeliveryQuoteResponse;
         if (!active) return;
-        if (!response.ok || typeof data.shippingCharge !== 'number') {
-          throw new Error(data.error || 'Could not calculate delivery charge');
+        const customerDeliveryCharge =
+          data.customerDeliveryCharge ?? data.shippingCharge;
+        if (!response.ok || typeof customerDeliveryCharge !== "number") {
+          throw new Error(data.error || "Could not calculate delivery charge");
         }
-        setDeliveryCharge(data.shippingCharge);
-        setDeliveryState('success');
-        setDeliveryMessage(null);
+        setDeliveryCharge(customerDeliveryCharge);
+        setDeliveryQuote(data);
+        setDeliveryState("success");
+        setDeliveryMessage(getDeliveryOfferMessage(data));
       } catch (deliveryError) {
         if (!active || controller.signal.aborted) return;
         setDeliveryCharge(0);
-        setDeliveryState('error');
-        setDeliveryMessage(deliveryError instanceof Error ? deliveryError.message : 'Could not calculate delivery charge');
+        setDeliveryQuote(null);
+        setDeliveryState("error");
+        setDeliveryMessage(
+          deliveryError instanceof Error
+            ? deliveryError.message
+            : "Could not calculate delivery charge",
+        );
       }
     }, 350);
 
@@ -503,20 +683,30 @@ export default function BuyNowModal({
     selectedParcelWeightKg,
     shippingForm.pathao_city_id,
     shippingForm.pathao_zone_id,
+    shippingForm.pathao_area_id,
     stage,
   ]);
 
   useEffect(() => {
-    if (!isOpen || stage !== 'success' || !successPayload) return;
+    if (!isOpen || stage !== "success" || !successPayload) return;
     const timer = window.setTimeout(() => {
       onClose();
-    }, 3500);
+      router.push(
+        successPayload.redirectURL ||
+          `/checkout/order-confirmed?orderNumber=${encodeURIComponent(successPayload.orderNumber)}`,
+      );
+    }, 2200);
     return () => {
       window.clearTimeout(timer);
     };
-  }, [isOpen, onClose, stage, successPayload]);
+  }, [isOpen, onClose, router, stage, successPayload]);
 
-  const updateVariantQuantity = (key: string, nextQuantity: number, stock: number) => {
+
+  const updateVariantQuantity = (
+    key: string,
+    nextQuantity: number,
+    stock: number,
+  ) => {
     setSelectedQuantities((current) => ({
       ...current,
       [key]: clampQuantity(nextQuantity, stock),
@@ -525,7 +715,22 @@ export default function BuyNowModal({
 
   const handleContinue = () => {
     if (canContinue) {
-      setStage('summary');
+      trackInitiateCheckout(
+        selectedItems.map((item) => ({
+          id: item.key,
+          productId: item.productId,
+          variantId: item.variantId,
+          name: item.label,
+          price: item.unitPrice,
+          quantity: item.quantity,
+          variantName: item.variantId ? item.label : undefined,
+          sku: item.sku ?? undefined,
+          size: item.size ?? undefined,
+          color: item.color ?? undefined,
+        })),
+        subtotal,
+      );
+      setStage("summary");
     }
   };
 
@@ -540,10 +745,10 @@ export default function BuyNowModal({
     setError(null);
 
     try {
-      const response = await fetch('/api/buy-now/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const response = await fetch("/api/buy-now/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           items: selectedItems.map((item) => ({
             productId: item.productId,
@@ -554,7 +759,7 @@ export default function BuyNowModal({
           shippingAddress: {
             name: shippingForm.name.trim(),
             phone: shippingForm.phone.trim(),
-            address: shippingForm.area.trim(),
+            address: shippingForm.streetAddress.trim(),
             city: shippingForm.city.trim(),
             zone: shippingForm.zone.trim(),
             area: shippingForm.area.trim(),
@@ -563,9 +768,18 @@ export default function BuyNowModal({
             pathao_area_id: shippingForm.pathao_area_id,
           },
           deliveryCharge: deliveryCharge ?? 0,
+          customerDeliveryCharge:
+            deliveryQuote?.customerDeliveryCharge ?? deliveryCharge ?? 0,
+          courierDeliveryCharge: deliveryQuote?.courierDeliveryCharge ?? null,
+          deliveryDiscountAmount: deliveryQuote?.deliveryDiscountAmount ?? 0,
+          deliveryPricingSource:
+            deliveryQuote?.deliveryPricingSource ?? "PATHAO",
+          deliveryOfferType: deliveryQuote?.deliveryOfferType ?? "DEFAULT",
+          deliveryOfferProductId: deliveryQuote?.deliveryOfferProductId ?? null,
+          deliveryOfferBadgeText: deliveryQuote?.deliveryOfferBadgeText ?? null,
           subtotal,
           grandTotal,
-          paymentMethod: 'COD',
+          paymentMethod: "COD",
           deliveryPendingConfirmation: false,
         }),
       });
@@ -583,18 +797,21 @@ export default function BuyNowModal({
       }
 
       if (!response.ok || !data.orderNumber) {
-        throw new Error(data.error || 'Failed to place order');
+        throw new Error(data.error || "Failed to place order");
       }
-
-      router.push(data.redirectURL || `/checkout/order-confirmed?orderNumber=${encodeURIComponent(data.orderNumber)}`);
 
       setSuccessPayload({
         orderNumber: data.orderNumber,
-        estimatedDelivery: data.estimatedDelivery || '2-3 days',
+        estimatedDelivery: data.estimatedDelivery || "2-3 days",
+        redirectURL: data.redirectURL,
       });
-      setStage('success');
+      setStage("success");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Failed to place order');
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to place order",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -608,9 +825,9 @@ export default function BuyNowModal({
     const selectedCity = cities.find((city) => String(city.id) === cityId);
     setShippingForm((current) => ({
       ...current,
-      city: selectedCity?.name ?? '',
-      zone: '',
-      area: '',
+      city: selectedCity?.name ?? "",
+      zone: "",
+      area: "",
       pathao_city_id: selectedCity?.id ?? null,
       pathao_zone_id: null,
       pathao_area_id: null,
@@ -623,8 +840,8 @@ export default function BuyNowModal({
     const selectedZone = zones.find((zone) => String(zone.id) === zoneId);
     setShippingForm((current) => ({
       ...current,
-      zone: selectedZone?.name ?? '',
-      area: '',
+      zone: selectedZone?.name ?? "",
+      area: "",
       pathao_zone_id: selectedZone?.id ?? null,
       pathao_area_id: null,
     }));
@@ -635,195 +852,437 @@ export default function BuyNowModal({
     const selectedArea = areas.find((area) => String(area.id) === areaId);
     setShippingForm((current) => ({
       ...current,
-      area: selectedArea?.name ?? '',
+      area: selectedArea?.name ?? "",
       pathao_area_id: selectedArea?.id ?? null,
     }));
   };
 
   if (!isOpen) return null;
 
+  const modalTitle =
+    stage === "select" ? "Buy Now" : stage === "summary" ? "Order Summary" : "Order Placed";
+
+  const footer =
+    stage === "success" ? undefined : stage === "select" ? (
+      <Button
+        type="button"
+        onClick={handleContinue}
+        disabled={!canContinue || submitting}
+        fullWidth
+        size="lg"
+      >
+        <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+        Confirm
+      </Button>
+    ) : (
+      <div className="flex w-full flex-col-reverse gap-3 sm:flex-row">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setStage("select")}
+          className="flex-1"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back
+        </Button>
+        <Button
+          type="button"
+          onClick={() => void placeOrder()}
+          disabled={!canPlaceOrder}
+          className="flex-1"
+          aria-busy={submitting || undefined}
+        >
+          {submitting ? (
+            <Spinner size="sm" decorative />
+          ) : (
+            <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+          )}
+          {user ? "Place Order" : "Login to place order"}
+        </Button>
+      </div>
+    );
+
   return (
     <>
-      <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/55 px-4 py-6 sm:items-center">
-        <div className="w-full max-w-2xl overflow-hidden rounded-[30px] bg-white shadow-2xl">
-          <div className="flex items-start justify-between border-b border-stone-200 px-5 py-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
-                {stage === 'select' ? 'Buy Now' : stage === 'summary' ? 'Order Summary' : 'Order Placed'}
-              </p>
-              <h2 className="mt-1 text-lg font-semibold text-stone-900">{resolvedProductName}</h2>
-            </div>
-            <button type="button" onClick={onClose} className="rounded-full p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900" aria-label="Close buy now modal">
-              <X size={18} />
-            </button>
-          </div>
+      <Modal
+        open={isOpen}
+        onClose={onClose}
+        title={modalTitle}
+        description={resolvedProductName}
+        size="lg"
+        dismissible={!submitting}
+        closeLabel="Close buy now modal"
+        bodyClassName="max-h-[72dvh]"
+        footer={footer}
+      >
+        {loading ? (
+          <LoadingState
+            label="Loading product options…"
+            description="Available variants and delivery details are being prepared."
+          />
+        ) : stage === "select" ? (
+          <div className="space-y-4">
+            <Alert tone="info">
+              Select the variant and quantity you want for this instant order. Your main cart stays untouched.
+            </Alert>
 
-          <div className="max-h-[78vh] overflow-y-auto px-5 py-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-20 text-stone-500">
-                <Loader2 size={22} className="animate-spin" />
-              </div>
-            ) : stage === 'select' ? (
-              <div className="space-y-4">
-                <div className="rounded-3xl bg-[#F7F2EC] p-4 text-sm text-stone-700">
-                  Select the variant and quantity you want for this instant order. Your main cart stays untouched.
-                </div>
+            {hasVariants ? (
+              <div className="space-y-3">
+                {resolvedVariants.map((variant) => {
+                  const quantity = selectedQuantities[variant.id] ?? 0;
+                  const isCurrent = variant.id === initialVariantId;
+                  const isOutOfStock = variant.stock <= 0;
 
-                {hasVariants ? (
-                  <div className="space-y-3">
-                    {resolvedVariants.map((variant) => {
-                      const quantity = selectedQuantities[variant.id] ?? 0;
-                      const isCurrent = variant.id === initialVariantId;
-                      const isOutOfStock = variant.stock <= 0;
-                      return (
-                        <div key={variant.id} className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${isCurrent ? 'border-[#3D1F0E] bg-[#F5E9DC]' : 'border-stone-200'}`}>
-                          <div className="h-14 w-14 overflow-hidden rounded-2xl bg-stone-100">
-                            {(variant.image || resolvedProductImage) ? <img src={variant.image || resolvedProductImage} alt={resolvedProductName} className="h-full w-full object-cover" /> : null}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-semibold text-stone-900">{toVariantLabel(variant)}</p>
-                              {isCurrent ? <span className="rounded-full bg-[#3D1F0E] px-2 py-0.5 text-[10px] font-semibold text-white">Selected</span> : null}
-                            </div>
-                            <p className="mt-1 text-xs text-stone-500">{formatPrice(variant.price)} · {variant.stock > 0 ? `${variant.stock} available` : 'Out of stock'}</p>
-                          </div>
-                          <div className="flex items-center rounded-full border border-[#D6C0A9] bg-white">
-                            <button type="button" onClick={() => updateVariantQuantity(variant.id, quantity - 1, variant.stock)} disabled={quantity <= 0 || submitting} className="flex h-9 w-9 items-center justify-center rounded-l-full text-[#3D1F0E] disabled:cursor-not-allowed disabled:opacity-35">
-                              <Minus size={14} />
-                            </button>
-                            <span className="min-w-8 text-center text-sm font-semibold text-stone-900">{quantity}</span>
-                            <button type="button" onClick={() => updateVariantQuantity(variant.id, quantity + 1, variant.stock)} disabled={isOutOfStock || quantity >= variant.stock || submitting} className="flex h-9 w-9 items-center justify-center rounded-r-full text-[#3D1F0E] disabled:cursor-not-allowed disabled:opacity-35">
-                              <Plus size={14} />
-                            </button>
-                          </div>
+                  return (
+                    <section
+                      key={variant.id}
+                      aria-label={toVariantLabel(variant)}
+                      className={`rounded-2xl border p-4 ${
+                        isCurrent
+                          ? "border-minsah-action-primary bg-minsah-surface-accent"
+                          : "border-minsah-border-default bg-minsah-surface-panel"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-minsah-surface-subtle">
+                          {variant.image || resolvedProductImage ? (
+                            <CatalogProductImage
+                              src={variant.image || resolvedProductImage}
+                              alt={toVariantLabel(variant)}
+                              sizes="56px"
+                              padding="sm"
+                            />
+                          ) : null}
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-stone-200 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-14 w-14 overflow-hidden rounded-2xl bg-stone-100">
-                        {resolvedProductImage ? <img src={resolvedProductImage} alt={resolvedProductName} className="h-full w-full object-cover" /> : null}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-stone-900">{resolvedProductName}</p>
-                        <p className="mt-1 text-xs text-stone-500">{formatPrice(resolvedBasePrice)}</p>
-                      </div>
-                      <div className="flex items-center rounded-full border border-[#D6C0A9] bg-white">
-                        <button type="button" onClick={() => setSelectedQuantities((current) => ({ ...current, simple: Math.max(0, (current.simple ?? 0) - 1) }))} disabled={(selectedQuantities.simple ?? 0) <= 0 || submitting} className="flex h-9 w-9 items-center justify-center rounded-l-full text-[#3D1F0E] disabled:cursor-not-allowed disabled:opacity-35">
-                          <Minus size={14} />
-                        </button>
-                        <span className="min-w-8 text-center text-sm font-semibold text-stone-900">{selectedQuantities.simple ?? 0}</span>
-                        <button type="button" onClick={() => setSelectedQuantities((current) => ({ ...current, simple: (current.simple ?? 0) + 1 }))} disabled={submitting} className="flex h-9 w-9 items-center justify-center rounded-r-full text-[#3D1F0E] disabled:cursor-not-allowed disabled:opacity-35">
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
-                  <div className="flex items-center justify-between text-sm"><span className="text-stone-600">Selected Items</span><span className="font-semibold text-stone-900">{selectedItems.reduce((sum, item) => sum + item.quantity, 0)}</span></div>
-                  <div className="mt-2 flex items-center justify-between text-sm"><span className="text-stone-600">Subtotal</span><span className="font-semibold text-stone-900">{formatPrice(subtotal)}</span></div>
-                </div>
-              </div>
-            ) : stage === 'summary' ? (
-              <div className="space-y-5">
-                <div className="rounded-3xl bg-[#F7F2EC] p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Selected Items</h3>
-                    <button type="button" onClick={() => setStage('select')} className="inline-flex items-center gap-1 text-sm font-medium text-[#3D1F0E]"><ArrowLeft size={14} />Back</button>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {selectedItems.map((item) => (
-                      <div key={item.key} className="flex items-center gap-3">
-                        <div className="h-14 w-14 overflow-hidden rounded-2xl bg-stone-100">{item.image ? <img src={item.image} alt={item.label} className="h-full w-full object-cover" /> : null}</div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-stone-900">{item.label}</p>
-                          <p className="mt-1 text-xs text-stone-500">x{item.quantity} · {formatWeight(item.totalWeightKg)}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="truncate text-sm font-bold text-minsah-text-primary">
+                              {toVariantLabel(variant)}
+                            </h3>
+                            {isCurrent ? <Badge tone="info">Initial choice</Badge> : null}
+                          </div>
+                          <p className="mt-1 text-xs text-minsah-text-muted">
+                            {formatPrice(variant.price)} · {variant.stock > 0 ? `${variant.stock} available` : "Out of stock"}
+                          </p>
                         </div>
-                        <p className="text-sm font-semibold text-stone-900">{formatPrice(item.subtotal)}</p>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="rounded-3xl border border-stone-200 p-4">
-                  <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Delivery Location</h3>{locationLoading ? <Loader2 size={14} className="animate-spin text-stone-500" /> : null}</div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <input value={shippingForm.name} onChange={(event) => setShippingForm((current) => ({ ...current, name: event.target.value }))} placeholder="Name" className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]" />
-                    <input value={shippingForm.phone} onChange={(event) => setShippingForm((current) => ({ ...current, phone: event.target.value }))} placeholder="Phone" className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]" />
-                    <select value={shippingForm.pathao_city_id ?? ''} onChange={(event) => handleCityChange(event.target.value)} className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E]">
-                      <option value="">{locationLoading === 'cities' ? 'Loading cities...' : 'City'}</option>
-                      {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
-                    </select>
-                    <select value={shippingForm.pathao_zone_id ?? ''} onChange={(event) => handleZoneChange(event.target.value)} disabled={!shippingForm.pathao_city_id || locationLoading === 'zones'} className="rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E] disabled:cursor-not-allowed disabled:bg-stone-100">
-                      <option value="">{locationLoading === 'zones' ? 'Loading zones...' : 'Zone'}</option>
-                      {zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
-                    </select>
-                    <select value={shippingForm.pathao_area_id ?? ''} onChange={(event) => handleAreaChange(event.target.value)} disabled={!shippingForm.pathao_zone_id || locationLoading === 'areas'} className="sm:col-span-2 rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-[#3D1F0E] disabled:cursor-not-allowed disabled:bg-stone-100">
-                      <option value="">{locationLoading === 'areas' ? 'Loading areas...' : 'Area'}</option>
-                      {areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}
-                    </select>
-                  </div>
-                  {locationError ? <p className="mt-2 text-xs text-red-600">{locationError}</p> : null}
-                </div>
-
-                <div className="rounded-3xl border border-stone-200 p-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Payment</h3>
-                  <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#F7F2EC] px-4 py-3"><span className="h-3 w-3 rounded-full bg-[#3D1F0E]" /><div><p className="text-sm font-semibold text-stone-900">COD</p><p className="text-xs text-stone-500">Cash on Delivery</p></div></div>
-                </div>
-
-                <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">Total</h3>
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Subtotal</span><span className="font-semibold text-stone-900">{formatPrice(subtotal)}</span></div>
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Package Weight</span><span className="font-semibold text-stone-900">{formatWeight(selectedParcelWeightKg)}</span></div>
-                    <div className="flex items-center justify-between"><span className="text-stone-600">Delivery Charge</span><span className="font-semibold text-stone-900">{deliveryState === 'loading' ? 'Calculating...' : deliveryState === 'success' ? formatPrice(deliveryCharge ?? 0) : 'Select city, zone and area'}</span></div>
-                    <div className="flex items-center justify-between border-t border-stone-200 pt-3"><span className="font-semibold text-stone-900">Grand Total</span><span className="text-lg font-bold text-[#3D1F0E]">{formatPrice(grandTotal)}</span></div>
-                    {deliveryMessage ? <p className="text-xs text-amber-700">{deliveryMessage}</p> : null}
-                  </div>
-                </div>
-
-                {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+                      <div className="mt-3 flex justify-end">
+                        <div className="flex items-center gap-1 rounded-full border border-minsah-border-default bg-minsah-surface-panel p-1">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            aria-label={`Decrease ${toVariantLabel(variant)} quantity`}
+                            onClick={() => updateVariantQuantity(variant.id, quantity - 1, variant.stock)}
+                            disabled={quantity <= 0 || submitting}
+                          >
+                            <Minus className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                          <output className="min-w-8 text-center text-sm font-bold text-minsah-text-primary">
+                            {quantity}
+                          </output>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            aria-label={`Increase ${toVariantLabel(variant)} quantity`}
+                            onClick={() => updateVariantQuantity(variant.id, quantity + 1, variant.stock)}
+                            disabled={isOutOfStock || quantity >= variant.stock || submitting}
+                          >
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                        </div>
+                      </div>
+                    </section>
+                  );
+                })}
               </div>
             ) : (
-              <div className="py-10 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700"><CheckCircle2 size={28} /></div>
-                <h3 className="mt-4 text-xl font-semibold text-stone-900">Order Placed!</h3>
-                <p className="mt-2 text-sm text-stone-600">Order ID: #{successPayload?.orderNumber}</p>
-                <p className="mt-1 text-sm text-stone-600">Est. Delivery: {successPayload?.estimatedDelivery}</p>
-              </div>
-            )}
-          </div>
-
-          {stage !== 'success' ? (
-            <div className="border-t border-stone-200 px-5 py-4">
-              {stage === 'select' ? (
-                <button type="button" onClick={handleContinue} disabled={!canContinue || submitting} className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${canContinue ? 'bg-[#3D1F0E] text-[#F5E6D3] hover:bg-[#2A1509]' : 'cursor-not-allowed bg-stone-200 text-stone-500'}`}>
-                  <ShoppingBag size={16} />Confirm
-                </button>
-              ) : (
-                <div className="flex gap-3">
-                  <button type="button" onClick={() => setStage('select')} className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-stone-300 px-4 py-3 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"><ArrowLeft size={15} />Back</button>
-                  <button type="button" onClick={() => void placeOrder()} disabled={!canPlaceOrder} className={`flex flex-1 items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${canPlaceOrder ? 'bg-[#3D1F0E] text-[#F5E6D3] hover:bg-[#2A1509]' : 'cursor-not-allowed bg-stone-200 text-stone-500'}`}>
-                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <ShoppingBag size={16} />}Place Order
-                  </button>
+              <section className="rounded-2xl border border-minsah-border-default bg-minsah-surface-panel p-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-minsah-surface-subtle">
+                    {resolvedProductImage ? (
+                      <CatalogProductImage
+                        src={resolvedProductImage}
+                        alt={resolvedProductName}
+                        sizes="56px"
+                        padding="sm"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-minsah-text-primary">{resolvedProductName}</h3>
+                    <p className="mt-1 text-xs text-minsah-text-muted">
+                      {formatPrice(resolvedBasePrice)} · {simpleStock > 0 ? `${simpleStock} available` : "Out of stock"}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
-          ) : null}
-        </div>
-      </div>
+                <div className="mt-3 flex justify-end">
+                  <div className="flex items-center gap-1 rounded-full border border-minsah-border-default bg-minsah-surface-panel p-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Decrease ${resolvedProductName} quantity`}
+                      onClick={() =>
+                        setSelectedQuantities((current) => ({
+                          ...current,
+                          simple: clampQuantity((current.simple ?? 0) - 1, simpleStock),
+                        }))
+                      }
+                      disabled={(selectedQuantities.simple ?? 0) <= 0 || submitting}
+                    >
+                      <Minus className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <output className="min-w-8 text-center text-sm font-bold text-minsah-text-primary">
+                      {selectedQuantities.simple ?? 0}
+                    </output>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Increase ${resolvedProductName} quantity`}
+                      onClick={() =>
+                        setSelectedQuantities((current) => ({
+                          ...current,
+                          simple: clampQuantity((current.simple ?? 0) + 1, simpleStock),
+                        }))
+                      }
+                      disabled={submitting || simpleStock <= 0 || (selectedQuantities.simple ?? 0) >= simpleStock}
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            )}
 
-      {showLoginModal ? (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-            <SocialLoginModal purpose="checkout" onSuccess={() => void handleLoginSuccess()} onClose={() => setShowLoginModal(false)} />
+            <dl className="rounded-2xl border border-minsah-border-default bg-minsah-surface-subtle p-4 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-minsah-text-muted">Selected Items</dt>
+                <dd className="font-bold text-minsah-text-primary">
+                  {selectedItems.reduce((sum, item) => sum + item.quantity, 0)}
+                </dd>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <dt className="text-minsah-text-muted">Subtotal</dt>
+                <dd className="font-bold text-minsah-text-primary">{formatPrice(subtotal)}</dd>
+              </div>
+            </dl>
+
+            {error ? <Alert tone="danger" announcement="assertive">{error}</Alert> : null}
           </div>
-        </div>
-      ) : null}
+        ) : stage === "summary" ? (
+          <div className="space-y-5">
+            <section className="rounded-3xl bg-minsah-surface-subtle p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-minsah-text-muted">
+                  Selected Items
+                </h3>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setStage("select")}>
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  Back
+                </Button>
+              </div>
+              <div className="mt-4 space-y-3">
+                {selectedItems.map((item) => (
+                  <div key={item.key} className="flex items-center gap-3">
+                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-minsah-surface-panel">
+                      {item.image ? (
+                        <CatalogProductImage src={item.image} alt={item.label} sizes="56px" padding="sm" />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-minsah-text-primary">{item.label}</p>
+                      <p className="mt-1 text-xs text-minsah-text-muted">
+                        ×{item.quantity} · {formatWeight(item.totalWeightKg)}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold text-minsah-text-primary">{formatPrice(item.subtotal)}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-minsah-border-default bg-minsah-surface-panel p-4">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-minsah-text-muted">
+                  Delivery Location
+                </h3>
+                {locationLoading ? <Spinner size="sm" label="Loading delivery locations" /> : null}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  id="buy-now-name"
+                  label="Full name"
+                  value={shippingForm.name}
+                  onChange={(event) =>
+                    setShippingForm((current) => ({ ...current, name: event.target.value }))
+                  }
+                  placeholder="Your full name"
+                  required
+                />
+                <Input
+                  id="buy-now-phone"
+                  label="Phone number"
+                  type="tel"
+                  inputMode="tel"
+                  value={shippingForm.phone}
+                  onChange={(event) =>
+                    setShippingForm((current) => ({ ...current, phone: event.target.value }))
+                  }
+                  placeholder="01XXXXXXXXX"
+                  required
+                />
+                <Select
+                  id="buy-now-city"
+                  label="City"
+                  value={shippingForm.pathao_city_id ?? ""}
+                  onChange={(event) => handleCityChange(event.target.value)}
+                  required
+                >
+                  <option value="">
+                    {locationLoading === "cities" ? "Loading cities..." : "Select city"}
+                  </option>
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.id}>{city.name}</option>
+                  ))}
+                </Select>
+                <Select
+                  id="buy-now-zone"
+                  label="Zone"
+                  value={shippingForm.pathao_zone_id ?? ""}
+                  onChange={(event) => handleZoneChange(event.target.value)}
+                  disabled={!shippingForm.pathao_city_id || locationLoading === "zones"}
+                  required
+                >
+                  <option value="">
+                    {locationLoading === "zones" ? "Loading zones..." : "Select zone"}
+                  </option>
+                  {zones.map((zone) => (
+                    <option key={zone.id} value={zone.id}>{zone.name}</option>
+                  ))}
+                </Select>
+                <Select
+                  id="buy-now-area"
+                  label="Area"
+                  value={shippingForm.pathao_area_id ?? ""}
+                  onChange={(event) => handleAreaChange(event.target.value)}
+                  disabled={!shippingForm.pathao_zone_id || locationLoading === "areas"}
+                  containerClassName="sm:col-span-2"
+                  required
+                >
+                  <option value="">
+                    {locationLoading === "areas" ? "Loading areas..." : "Select area"}
+                  </option>
+                  {areas.map((area) => (
+                    <option key={area.id} value={area.id}>{area.name}</option>
+                  ))}
+                </Select>
+                <Textarea
+                  id="buy-now-street-address"
+                  label="Street address"
+                  value={shippingForm.streetAddress}
+                  onChange={(event) =>
+                    setShippingForm((current) => ({ ...current, streetAddress: event.target.value }))
+                  }
+                  placeholder="House, road, block, landmark"
+                  rows={3}
+                  containerClassName="sm:col-span-2"
+                  required
+                />
+              </div>
+
+              {locationError ? (
+                <Alert tone="danger" className="mt-3" announcement="polite">{locationError}</Alert>
+              ) : null}
+            </section>
+
+            {!user ? (
+              <Alert tone="warning">
+                You can review everything here. Sign in on the final button to place this order.
+              </Alert>
+            ) : null}
+
+            <section className="rounded-3xl border border-minsah-border-default bg-minsah-surface-panel p-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-minsah-text-muted">Payment</h3>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl bg-minsah-surface-subtle px-4 py-3">
+                <span className="h-3 w-3 rounded-full bg-minsah-action-primary" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-bold text-minsah-text-primary">COD</p>
+                  <p className="text-xs text-minsah-text-muted">Cash on Delivery</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-minsah-border-default bg-minsah-surface-subtle p-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-minsah-text-muted">Total</h3>
+              <dl className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-minsah-text-muted">Subtotal</dt>
+                  <dd className="font-bold text-minsah-text-primary">{formatPrice(subtotal)}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-minsah-text-muted">Package Weight</dt>
+                  <dd className="font-bold text-minsah-text-primary">{formatWeight(selectedParcelWeightKg)}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-minsah-text-muted">Delivery Charge</dt>
+                  <dd className="font-bold text-minsah-text-primary">
+                    {deliveryState === "loading"
+                      ? "Calculating..."
+                      : deliveryState === "success"
+                        ? formatCustomerDeliveryCharge(deliveryCharge ?? 0)
+                        : "Select city, zone and area"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between border-t border-minsah-border-default pt-3">
+                  <dt className="font-bold text-minsah-text-primary">Grand Total</dt>
+                  <dd className="text-lg font-black text-minsah-action-primary">{formatPrice(grandTotal)}</dd>
+                </div>
+              </dl>
+              {deliveryMessage ? (
+                <Alert
+                  tone={deliveryState === "error" ? "danger" : "success"}
+                  className="mt-3"
+                  announcement="polite"
+                >
+                  {deliveryMessage}
+                </Alert>
+              ) : null}
+            </section>
+
+            {error ? <Alert tone="danger" announcement="assertive">{error}</Alert> : null}
+          </div>
+        ) : (
+          <SuccessState
+            title="Order Placed!"
+            description={
+              <div className="space-y-1">
+                <p>Order ID: #{successPayload?.orderNumber}</p>
+                <p>Est. Delivery: {successPayload?.estimatedDelivery}</p>
+              </div>
+            }
+          />
+        )}
+      </Modal>
+
+      <Modal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        title="Sign in to place your order"
+        description="Choose a secure login method to continue checkout."
+        size="sm"
+        dismissible={!submitting}
+      >
+        <SocialLoginModal
+          purpose="checkout"
+          onSuccess={() => void handleLoginSuccess()}
+          onClose={() => setShowLoginModal(false)}
+        />
+      </Modal>
     </>
   );
 }

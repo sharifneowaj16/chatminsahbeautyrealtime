@@ -3,6 +3,13 @@ import prisma from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { createHash } from 'node:crypto';
 import { getPathaoWebhookIntegrationSecret } from '@/lib/pathao-webhook';
+import { secureCompareText } from '@/lib/security/request-secret';
+import { isPrismaUniqueConstraintError } from '@/lib/prisma-errors';
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
+import {
+  calculateCourierSendAccounting,
+  extractCourierResponseCharge,
+} from '@/lib/courier-send-accounting';
 
 export const dynamic = 'force-dynamic';
 
@@ -143,7 +150,23 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
     where: { OR: whereConditions },
     select: {
       id: true,
+      createdAt: true,
       status: true,
+      paymentStatus: true,
+      paymentMethod: true,
+      isTest: true,
+      phoneConfirmedAt: true,
+      paymentPaidAt: true,
+      paidAt: true,
+      deliveredAt: true,
+      cancelledAt: true,
+      returnedAt: true,
+      refundedAt: true,
+      courierDeliveredAt: true,
+      courierReturnedAt: true,
+      shippingCost: true,
+      courierDeliveryCharge: true,
+      deliveryDiscountAmount: true,
       trackingNumber: true,
       pathaoStatus: true,
       pathaoTrackingCode: true,
@@ -172,6 +195,21 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
     pathaoSentAt: now,
   };
 
+  const webhookCourierCharge = extractCourierResponseCharge(data) ?? extractCourierResponseCharge(payload);
+  if (webhookCourierCharge !== null) {
+    const courierAccounting = calculateCourierSendAccounting({
+      customerShippingCost: order.shippingCost,
+      currentCourierDeliveryCharge: order.courierDeliveryCharge,
+      currentDeliveryDiscountAmount: order.deliveryDiscountAmount,
+      courierResponseCharge: webhookCourierCharge,
+    });
+
+    if (courierAccounting.courierDeliveryCharge !== null) {
+      updateData.courierDeliveryCharge = courierAccounting.courierDeliveryCharge;
+      updateData.deliveryDiscountAmount = courierAccounting.deliveryDiscountAmount;
+    }
+  }
+
   if (trackingCode && trackingCode !== order.trackingNumber) {
     updateData.trackingNumber = trackingCode;
   }
@@ -194,20 +232,23 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
     }
   }
 
-  await prisma.$transaction([
-    prisma.order.update({
+  await prisma.$transaction(async (tx) => {
+    const updatedOrder = await tx.order.update({
       where: { id: order.id },
       data: updateData,
-    }),
-    prisma.pathaoWebhookEvent.update({
+    });
+
+    await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+
+    await tx.pathaoWebhookEvent.update({
       where: { id: eventId },
       data: {
         orderId: order.id,
         processingStatus: 'PROCESSED',
         processedAt: new Date(),
       },
-    }),
-  ]);
+    });
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -240,7 +281,7 @@ export async function POST(request: NextRequest) {
 
   const incomingSignature = signature;
   const expectedSignature = process.env.PATHAO_WEBHOOK_SECRET?.trim();
-  if (!incomingSignature || !expectedSignature || incomingSignature !== expectedSignature) {
+  if (!secureCompareText(incomingSignature, expectedSignature)) {
     return NextResponse.json({ error: 'Unauthorized webhook request.' }, { status: 401 });
   }
 
@@ -275,22 +316,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ accepted: true, duplicate: true }, { status: 202 });
   }
 
-  const event = await prisma.pathaoWebhookEvent.create({
-    data: {
-      eventKey,
-      eventType: extractString(payload, ['event', 'event_name', 'status']) ?? 'unknown',
-      orderRef:
-        extractString(data, ['order_id', 'merchant_order_id', 'invoice']) ??
-        extractString(payload, ['order_id', 'merchant_order_id', 'invoice']),
-      consignmentId:
-        extractString(data, ['consignment_id', 'tracking_number', 'tracking_no']) ??
-        extractString(payload, ['consignment_id', 'tracking_number', 'tracking_no']),
-      signature: incomingSignature,
-      payload: toJsonInput(payload),
-      processingStatus: 'RECEIVED',
-    },
-    select: { id: true },
-  });
+  let event: { id: string };
+  try {
+    event = await prisma.pathaoWebhookEvent.create({
+      data: {
+        eventKey,
+        eventType: extractString(payload, ['event', 'event_name', 'status']) ?? 'unknown',
+        orderRef:
+          extractString(data, ['order_id', 'merchant_order_id', 'invoice']) ??
+          extractString(payload, ['order_id', 'merchant_order_id', 'invoice']),
+        consignmentId:
+          extractString(data, ['consignment_id', 'tracking_number', 'tracking_no']) ??
+          extractString(payload, ['consignment_id', 'tracking_number', 'tracking_no']),
+        signature: incomingSignature,
+        payload: toJsonInput(payload),
+        processingStatus: 'RECEIVED',
+      },
+      select: { id: true },
+    });
+  } catch (error) {
+    if (isPrismaUniqueConstraintError(error)) {
+      return NextResponse.json({ accepted: true, duplicate: true }, { status: 202 });
+    }
+    throw error;
+  }
 
   void processPathaoEvent(payload, event.id).catch(async (error) => {
     console.error('Pathao webhook async processing failed:', error);

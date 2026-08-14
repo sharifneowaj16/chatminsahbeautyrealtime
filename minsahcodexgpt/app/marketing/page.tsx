@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import SocialDashboard from '@/app/components/marketing/SocialDashboard';
+import { Button } from '@/components/ui/Button';
 
 const navigation = [
   { name: 'Dashboard', href: '/marketing/social', icon: Home, current: true },
@@ -41,12 +42,16 @@ export default function MarketingPage() {
         <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-bold text-gray-900">Marketing Hub</h2>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setSidebarOpen(false)}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
+              aria-label="Close menu"
+              className="text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             >
-              <X className="h-5 w-5" />
-            </button>
+              <X className="h-5 w-5" aria-hidden="true" />
+            </Button>
           </div>
           <nav className="flex-1 px-4 py-6 space-y-1">
             {navigation.map((item) => {
@@ -132,12 +137,16 @@ export default function MarketingPage() {
         <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
+                aria-label="Open menu"
+                className="text-gray-600 hover:bg-gray-100 hover:text-gray-900 lg:hidden"
               >
-                <Menu className="h-5 w-5" />
-              </button>
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Social Media Management</h1>
                 <p className="text-sm text-gray-600">Manage your social presence across all platforms</p>
@@ -145,10 +154,16 @@ export default function MarketingPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Notifications"
+                className="relative text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              >
+                <Bell className="h-5 w-5" aria-hidden="true" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
+              </Button>
 
               <div className="flex items-center gap-3">
                 <div className="text-right">

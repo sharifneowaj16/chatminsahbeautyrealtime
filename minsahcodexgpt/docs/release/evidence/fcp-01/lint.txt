@@ -1,0 +1,895 @@
+
+> minsah-beauty@2.0.0 lint
+> eslint .
+
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/account/page.tsx
+  9:53  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/AdminLayoutWrapper.tsx
+  198:7  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/AdminLayoutWrapper.tsx:198:7
+  196 |   useEffect(() => {
+  197 |     if (isInboxPage) {
+> 198 |       setInboxChromeHidden(true);
+      |       ^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  199 |       setSidebarOpen(false);
+  200 |       return;
+  201 |     }          react-hooks/set-state-in-effect
+  225:7  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/AdminLayoutWrapper.tsx:225:7
+  223 |     });
+  224 |     if (activeItem && activeItem.children) {
+> 225 |       setExpandedItems([activeItem.title]);
+      |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  226 |     }
+  227 |   }, [pathname, user, isLoading]);
+  228 |  react-hooks/set-state-in-effect
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/banners/page.tsx
+  3:10  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+  5:16  warning  'Edit' is defined but never used      @typescript-eslint/no-unused-vars
+  5:22  warning  'Trash2' is defined but never used    @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/blog/page.tsx
+  84:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/campaign-targeting/page.tsx
+   18:10  warning  'bangladeshLocations' is defined but never used                  @typescript-eslint/no-unused-vars
+   18:48  warning  'getDistrictsByDivision' is defined but never used               @typescript-eslint/no-unused-vars
+   18:72  warning  'getThanasByDistrict' is defined but never used                  @typescript-eslint/no-unused-vars
+   24:29  warning  'setSelectedDistricts' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   25:26  warning  'setSelectedThanas' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  111:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/categories/page.tsx
+  11:3   warning  'Eye' is defined but never used                                  @typescript-eslint/no-unused-vars
+  30:23  warning  'saveCategories' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  48:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  53:9   warning  'generateSlug' is assigned a value but never used                @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/contact/page.tsx
+  3:10  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+  5:10  warning  'Search' is defined but never used    @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/coupons/page.tsx
+  16:3   warning  'ShoppingBag' is defined but never used                          @typescript-eslint/no-unused-vars
+  91:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/customers/page.tsx
+    7:3   warning  'Filter' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   15:3   warning  'Layers' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   88:10  warning  'showFilters' is assigned a value but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   88:23  warning  'setShowFilters' is assigned a value but never used                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  137:14  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  342:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/faq/page.tsx
+  74:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/home-sections/categories/page.tsx
+   5:27  warning  'Edit' is defined but never used                         @typescript-eslint/no-unused-vars
+  11:10  warning  'editingCategory' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  11:27  warning  'setEditingCategory' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/home-sections/page.tsx
+  583:30  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  583:39  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/orders/new/OrderProductSection.tsx
+    9:3   warning  'ChevronDown' is defined but never used                          @typescript-eslint/no-unused-vars
+   10:3   warning  'ChevronUp' is defined but never used                            @typescript-eslint/no-unused-vars
+  362:59  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  362:67  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/orders/new/page.tsx
+  781:65  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  781:80  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/orders/page.tsx
+    21:3   warning  'XCircle' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+    30:3   warning  'Printer' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+    32:3   warning  'ArrowUpDown' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+    33:3   warning  'Calendar' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+    37:3   warning  'MoreHorizontal' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+    38:3   warning  'Edit3' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    41:3   warning  'ChevronUp' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    42:3   warning  'Hash' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    44:3   warning  'Star' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  1002:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1145:10  warning  'detailLoading' is assigned a value but never used                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/orders/returns/page.tsx
+  928:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/pages/page.tsx
+  3:10  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+  5:30  warning  'FileText' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/products/[id]/edit/page.tsx
+  1044:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1074:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1156:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1395:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/products/import/page.tsx
+  324:9  warning  'seo' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/products/new/page.tsx
+  1019:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1041:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1396:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/products/page.tsx
+  468:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/promotions/page.tsx
+  3:10  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+  5:10  warning  'Search' is defined but never used    @typescript-eslint/no-unused-vars
+  5:24  warning  'Edit' is defined but never used      @typescript-eslint/no-unused-vars
+  5:30  warning  'Trash2' is defined but never used    @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/retargeting/page.tsx
+   10:3   warning  'Clock' is defined but never used                                @typescript-eslint/no-unused-vars
+   21:3   warning  'Filter' is defined but never used                               @typescript-eslint/no-unused-vars
+  151:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/reviews/page.tsx
+  28:19  warning  'setReviews' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/sales-by-region/page.tsx
+   11:3   warning  'Target' is defined but never used                               @typescript-eslint/no-unused-vars
+   12:3   warning  'Filter' is defined but never used                               @typescript-eslint/no-unused-vars
+   17:10  warning  'bangladeshLocations' is defined but never used                  @typescript-eslint/no-unused-vars
+  149:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  326:45  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/shortlist/components/EmptyState.tsx
+  15:46  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/shortlist/components/ProductRow.tsx
+  31:9  warning  'totalRevenue' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/top-customers/page.tsx
+   15:3   warning  'Calendar' is defined but never used                             @typescript-eslint/no-unused-vars
+   16:3   warning  'Star' is defined but never used                                 @typescript-eslint/no-unused-vars
+   18:3   warning  'Filter' is defined but never used                               @typescript-eslint/no-unused-vars
+   29:10  warning  'showGiftModal' is assigned a value but never used               @typescript-eslint/no-unused-vars
+   30:10  warning  'selectedCustomer' is assigned a value but never used            @typescript-eslint/no-unused-vars
+   30:60  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  205:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  229:9   warning  'totalOrders' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/tracking/page.tsx
+   11:3   warning  'Target' is defined but never used                               @typescript-eslint/no-unused-vars
+   12:3   warning  'BarChart3' is defined but never used                            @typescript-eslint/no-unused-vars
+   13:3   warning  'PieChart' is defined but never used                             @typescript-eslint/no-unused-vars
+   14:3   warning  'MousePointer' is defined but never used                         @typescript-eslint/no-unused-vars
+   15:3   warning  'Eye' is defined but never used                                  @typescript-eslint/no-unused-vars
+   16:3   warning  'Clock' is defined but never used                                @typescript-eslint/no-unused-vars
+   17:3   warning  'Globe' is defined but never used                                @typescript-eslint/no-unused-vars
+   21:3   warning  'Facebook' is defined but never used                             @typescript-eslint/no-unused-vars
+   22:3   warning  'Instagram' is defined but never used                            @typescript-eslint/no-unused-vars
+   23:3   warning  'Mail' is defined but never used                                 @typescript-eslint/no-unused-vars
+   24:3   warning  'Search' is defined but never used                               @typescript-eslint/no-unused-vars
+  121:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/admin/users/page.tsx
+  81:45  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/admin/elasticsearch/route.ts
+   56:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/admin/products/search/route.ts
+  6:7  warning  'Decimal' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/admin/products/unlisted/route.ts
+  26:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  30:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/admin/shortlist/[id]/route.ts
+  54:11  warning  'allPurchased' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/admin/shortlist/route.ts
+  116:11  warning  'existingKeys' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/auth/login/route.ts
+  147:27  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/auth/register/route.ts
+  17:7  warning  'PASSWORD_REGEX' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/search/clicks/route.ts
+  125:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  250:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/search/route.ts
+  262:10  warning  'buildExactKeywordFilter' is defined but never used  @typescript-eslint/no-unused-vars
+  385:17  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  387:19  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  389:19  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  464:25  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  492:33  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  532:24  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  551:20  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  598:23  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  715:29  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  769:16  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  804:16  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  955:19  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  996:29  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/api/search/trending/route.ts
+  33:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  54:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/checkout/add-address/page.tsx
+  146:6  warning  React Hook useEffect has a missing dependency: 'parsePathaoOptions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  203:6  warning  React Hook useEffect has a missing dependency: 'parsePathaoOptions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  261:6  warning  React Hook useEffect has a missing dependency: 'parsePathaoOptions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/checkout/payment/bkash/page.tsx
+  397:29  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  397:44  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/checkout/payment/nagad/page.tsx
+  397:29  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  397:44  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/AdvancedSearch.tsx
+    6:8   warning  'Link' is defined but never used                                    @typescript-eslint/no-unused-vars
+   10:3   warning  'Product' is defined but never used                                 @typescript-eslint/no-unused-vars
+   15:3   warning  'Category' is defined but never used                                @typescript-eslint/no-unused-vars
+   23:3   warning  'ChevronDown' is defined but never used                             @typescript-eslint/no-unused-vars
+   24:3   warning  'ChevronUp' is defined but never used                               @typescript-eslint/no-unused-vars
+   34:3   warning  'ChevronRight' is defined but never used                            @typescript-eslint/no-unused-vars
+   35:3   warning  'ChevronLeft' is defined but never used                             @typescript-eslint/no-unused-vars
+   61:3   warning  'products' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+   79:33  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  187:66  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  301:21  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  359:42  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  368:44  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  375:37  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  389:14  warning  'error' is defined but never used                                   @typescript-eslint/no-unused-vars
+  407:64  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  512:13  warning  The attribute aria-expanded is not supported by the role searchbox  jsx-a11y/role-supports-aria-props
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/AutocompleteSearch.tsx
+    5:3   warning  'Brush' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+   10:3   warning  'Flower' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   15:3   warning  'PenTool' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   16:3   warning  'Target' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   18:3   warning  'Sun' is defined but never used                                                                                         @typescript-eslint/no-unused-vars
+   19:3   warning  'Zap' is defined but never used                                                                                         @typescript-eslint/no-unused-vars
+   20:3   warning  'Shield' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   21:3   warning  'Smile' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+   22:3   warning  'Leaf' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   23:3   warning  'Moon' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   25:3   warning  'Wrench' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   26:3   warning  'Paintbrush' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+   27:3   warning  'Square' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+  241:6   warning  React Hook useCallback has a missing dependency: 'mapApiSuggestions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  472:71  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                         react/no-unescaped-entities
+  472:84  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                         react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/HomeCountdownTimer.tsx
+  55:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/HomeCountdownTimer.tsx:55:5
+  53 |
+  54 |   useEffect(() => {
+> 55 |     setTimeLeft(getTimeLeft(targetTime));
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  56 |
+  57 |     if (!targetTime) return undefined;
+  58 |  react-hooks/set-state-in-effect
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/HomeProductSections.tsx
+  268:31  warning  'index' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/InstantSearch.tsx
+   56:74  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  242:35  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  242:49  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  255:37  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  255:51  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/MegaMenu.tsx
+  123:51  warning  'index' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/AdminLayout.tsx
+  714:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  733:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/CustomerManagement.tsx
+   13:3   warning  'MapPin' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   15:3   warning  'CreditCard' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   16:3   warning  'BarChart' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   24:3   warning  'Trash2' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   29:3   warning  'MessageCircle' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   31:18  warning  'StarIconSolid' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   45:10  warning  'showBulkActions' is assigned a value but never used                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   45:27  warning  'setShowBulkActions' is assigned a value but never used                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   55:6   warning  React Hook useEffect has a missing dependency: 'filterAndSortCustomers'. Either include it or remove the dependency array                                                                                                                                                                react-hooks/exhaustive-deps
+  503:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  598:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  697:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/GoogleServicesIntegration.tsx
+    4:8   warning  'GoogleHubDashboard' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   14:3   warning  'Search' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   16:3   warning  'AlertTriangle' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   17:3   warning  'Clock' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   18:3   warning  'TrendingUp' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   30:3   warning  'Eye' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   31:3   warning  'Trash2' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   32:3   warning  'Edit' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+   44:29  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+   69:6   warning  React Hook useEffect has a missing dependency: 'loadGoogleServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  284:49  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  288:57  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  355:53  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/MarketingHub.tsx
+     8:3   warning  'Filter' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+    10:3   warning  'Clock' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+    14:3   warning  'RefreshCw' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+    15:3   warning  'Share' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+    19:3   warning  'FileText' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+    20:3   warning  'Flame' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+    25:3   warning  'Mail' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+    26:3   warning  'Smartphone' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+    31:3   warning  'CheckCircle' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+    32:3   warning  'AlertTriangle' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+    34:3   warning  'TrendingDown' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+    49:10  warning  'selectedPost' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+    50:10  warning  'selectedCampaign' is assigned a value but never used                                                                 @typescript-eslint/no-unused-vars
+    56:6   warning  React Hook useEffect has a missing dependency: 'loadMarketingData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   548:39  warning  Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   549:31  warning  Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   579:35  warning  Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   692:53  warning  Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   806:23  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images           jsx-a11y/alt-text
+   901:23  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images           jsx-a11y/alt-text
+  1149:21  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images           jsx-a11y/alt-text
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/OrderManagement.tsx
+    7:3   warning  'Plus' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   11:3   warning  'DollarSign' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   13:3   warning  'AlertTriangle' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   20:3   warning  'Archive' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   34:10  warning  'showBulkActions' is assigned a value but never used                                                             @typescript-eslint/no-unused-vars
+   34:27  warning  'setShowBulkActions' is assigned a value but never used                                                          @typescript-eslint/no-unused-vars
+   35:10  warning  'selectedOrders' is assigned a value but never used                                                              @typescript-eslint/no-unused-vars
+   35:26  warning  'setSelectedOrders' is assigned a value but never used                                                           @typescript-eslint/no-unused-vars
+   39:6   warning  React Hook useEffect has a missing dependency: 'loadOrders'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+   43:6   warning  React Hook useEffect has a missing dependency: 'filterOrders'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  291:25  warning  'order' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+  296:9   warning  'printShippingLabel' is assigned a value but never used                                                          @typescript-eslint/no-unused-vars
+  296:31  warning  'order' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/ProductManagement.tsx
+    4:29  warning  'AdminCategory' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   17:3   warning  'TrendingUp' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   18:3   warning  'TrendingDown' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+   22:3   warning  'Tag' is defined but never used                                                                                           @typescript-eslint/no-unused-vars
+   23:3   warning  'DollarSign' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   24:3   warning  'Archive' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+   27:3   warning  'ChevronDown' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   42:10  warning  'showBulkActions' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+   53:6   warning  React Hook useEffect has a missing dependency: 'filterAndSortProducts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  381:19  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images               jsx-a11y/alt-text
+  449:19  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images               jsx-a11y/alt-text
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/SocialMediaInbox.tsx
+   362:9   warning  'eventSource' is never reassigned. Use 'const' instead                                                                                                                                                                                                                                   prefer-const
+   363:9   warning  'fallbackTimer' is never reassigned. Use 'const' instead                                                                                                                                                                                                                                 prefer-const
+   364:9   warning  'retryTimeout' is never reassigned. Use 'const' instead                                                                                                                                                                                                                                  prefer-const
+   499:9   warning  'selectedParticipantMessage' is assigned a value but never used                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   523:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+   786:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   836:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   894:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   945:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1009:9   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/SocialMediaInboxChat.tsx
+    46:3   warning  'Wifi' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    47:3   warning  'WifiOff' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   586:9   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   673:10  warning  'clientProfile' is assigned a value but never used                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  2044:31  warning  'auto' is assigned a value but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  2768:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  2944:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  3330:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  3402:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  3660:9   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/admin/WhatsAppIntegration.tsx
+   8:3  warning  'Clock' is defined but never used       @typescript-eslint/no-unused-vars
+  10:3  warning  'Smartphone' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/AnalyticsDashboard.tsx
+   5:31  warning  'GOOGLE_COLORS' is defined but never used                @typescript-eslint/no-unused-vars
+   8:3   warning  'BarChart' is defined but never used                     @typescript-eslint/no-unused-vars
+  13:3   warning  'Clock' is defined but never used                        @typescript-eslint/no-unused-vars
+  20:3   warning  'Calendar' is defined but never used                     @typescript-eslint/no-unused-vars
+  23:3   warning  'Tag' is defined but never used                          @typescript-eslint/no-unused-vars
+  82:9   warning  'getChangeIndicator' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/BusinessProfileCard.tsx
+    5:43  warning  'GOOGLE_COLORS' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   19:3   warning  'CheckCircle' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   22:3   warning  'Search' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   23:3   warning  'Calendar' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  245:53  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  321:53  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+  387:68  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  510:87  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  603:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  622:15  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/GoogleAdsManager.tsx
+    5:42  warning  'GOOGLE_COLORS' is defined but never used                  @typescript-eslint/no-unused-vars
+   17:3   warning  'User' is defined but never used                           @typescript-eslint/no-unused-vars
+   18:3   warning  'Clock' is defined but never used                          @typescript-eslint/no-unused-vars
+   19:3   warning  'CheckCircle' is defined but never used                    @typescript-eslint/no-unused-vars
+   39:10  warning  'showCreateCampaign' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  163:9   warning  'handleCreateCampaign' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  242:9   warning  'getChangeIndicator' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/GoogleHubDashboard.tsx
+    5:38  warning  'GOOGLE_SERVICE_CONFIGS' is defined but never used       @typescript-eslint/no-unused-vars
+   10:3   warning  'Home' is defined but never used                         @typescript-eslint/no-unused-vars
+   17:3   warning  'TrendingDown' is defined but never used                 @typescript-eslint/no-unused-vars
+   20:3   warning  'Eye' is defined but never used                          @typescript-eslint/no-unused-vars
+   21:3   warning  'ThumbsUp' is defined but never used                     @typescript-eslint/no-unused-vars
+   22:3   warning  'DollarSign' is defined but never used                   @typescript-eslint/no-unused-vars
+   37:10  warning  'selectedService' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   37:27  warning  'setSelectedService' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  151:9   warning  'getStatusIcon' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  164:9   warning  'getStatusText' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  177:9   warning  'getStatusColor' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  205:9   warning  'calculateChange' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/IntegrationStatus.tsx
+    5:10  warning  'GOOGLE_COLORS' is defined but never used           @typescript-eslint/no-unused-vars
+  117:9   warning  'details' is never reassigned. Use 'const' instead  prefer-const
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/MerchantCenterCard.tsx
+    5:40  warning  'GOOGLE_COLORS' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   17:3   warning  'BarChart' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   35:10  warning  'showAddProduct' is assigned a value but never used                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  371:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  504:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  520:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/QuickActions.tsx
+    5:34  warning  'GOOGLE_COLORS' is defined but never used                        @typescript-eslint/no-unused-vars
+   10:3   warning  'Settings' is defined but never used                             @typescript-eslint/no-unused-vars
+  205:28  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  205:44  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/RemarketingCard.tsx
+    5:39  warning  'GOOGLE_COLORS' is defined but never used              @typescript-eslint/no-unused-vars
+   17:3   warning  'CheckCircle' is defined but never used                @typescript-eslint/no-unused-vars
+   20:3   warning  'Clock' is defined but never used                      @typescript-eslint/no-unused-vars
+   21:3   warning  'Search' is defined but never used                     @typescript-eslint/no-unused-vars
+   42:10  warning  'selectedAudience' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   43:10  warning  'selectedCampaign' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  251:53  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  315:50  warning  'index' is defined but never used                      @typescript-eslint/no-unused-vars
+  382:95  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  495:95  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/SearchConsoleCard.tsx
+  5:41  warning  'GOOGLE_COLORS' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/google/TagManagerCard.tsx
+    5:38  warning  'GOOGLE_COLORS' is defined but never used         @typescript-eslint/no-unused-vars
+    8:3   warning  'Code' is defined but never used                  @typescript-eslint/no-unused-vars
+   22:3   warning  'Settings' is defined but never used              @typescript-eslint/no-unused-vars
+   43:10  warning  'selectedTag' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  253:53  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  370:85  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/marketing/ContentCalendar.tsx
+    4:15  warning  'CalendarPost' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+    4:44  warning  'Platform' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   10:3   warning  'Calendar' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   14:3   warning  'MoreVertical' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   17:3   warning  'Eye' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   28:10  warning  'selectedDate' is assigned a value but never used                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  123:9   warning  'deletePost' is assigned a value but never used                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  447:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/marketing/PlatformCard.tsx
+   4:8  warning  'Image' is defined but never used     @typescript-eslint/no-unused-vars
+  13:3  warning  'Edit' is defined but never used      @typescript-eslint/no-unused-vars
+  14:3  warning  'Calendar' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/marketing/PostScheduler.tsx
+    3:28  warning  'useEffect' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    4:40  warning  'PostData' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   13:3   warning  'Clock' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   15:3   warning  'FileText' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   16:3   warning  'Eye' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   33:20  warning  'setMentions' is assigned a value but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  254:23  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+  276:31  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  293:23  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+  372:31  warning  'percentage' is assigned a value but never used                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  490:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  495:65  warning  'index' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  500:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/marketing/SocialDashboard.tsx
+  5:10  warning  'PLATFORM_CONFIGS' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/components/shop/ShopMerchandisingSections.tsx
+  213:92  warning  React Hook useMemo has a missing dependency: 'excludeProductIds'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  226:41  warning  Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/forgot-password/page.tsx
+  35:14  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/gift/[token]/GiftPageClient.tsx
+    8:21  warning  'Phone' is defined but never used                                @typescript-eslint/no-unused-vars
+  212:76  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  212:91  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/marketing/google/page.tsx
+  40:9  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/marketing/page.tsx
+  32:9  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/not-found.tsx
+  16:25  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  16:46  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/products/[id]/components/GiftShareButtons.tsx
+  292:42  warning  'productName' is defined but never used   @typescript-eslint/no-unused-vars
+  301:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/products/[id]/components/ProductClient.tsx
+  1014:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/products/[id]/components/ProductClient.tsx:1014:5
+  1012 |
+  1013 |   useEffect(() => {
+> 1014 |     setSelectedBundleProductIds((previousIds) => {
+       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  1015 |       const selectableIds = new Set(
+  1016 |         selectableBundleProducts.map((bundleProduct) => bundleProduct.id),
+  1017 |       );             react-hooks/set-state-in-effect
+  1130:6  warning  React Hook useCallback has missing dependencies: 'activeStock', 'product.allowBackorder', and 'product.weight'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 react-hooks/exhaustive-deps
+  1236:7  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/products/[id]/components/ProductClient.tsx:1236:7
+  1234 |         : [];
+  1235 |       const filtered = parsed.filter((item) => item.id !== product.id);
+> 1236 |       setRecentlyViewed(filtered.slice(0, 8));
+       |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  1237 |
+  1238 |       const currentProduct: RecentlyViewedProduct = {
+  1239 |         id: product.id,  react-hooks/set-state-in-effect
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/app/track/page.tsx
+  26:3  warning  'ShoppingBag' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/account/account-layout-client.tsx
+  7:11  warning  'UserIcon' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/account/loyalty-client.tsx
+   28:16  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   30:17  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   31:12  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  217:39  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  272:40  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  275:23  warning  'colors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/account/order-detail-client.tsx
+   15:3   warning  'MapPin' is defined but never used                               @typescript-eslint/no-unused-vars
+   23:10  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  130:58  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  130:79  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  194:36  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  314:41  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/account/orders-client.tsx
+  22:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  42:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/account/referrals-client.tsx
+  48:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/account/reviews-client.tsx
+  10:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/account/settings-client.tsx
+  401:101  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/admin/admin-login-client.tsx
+  25:7   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/admin/admin-login-client.tsx:25:7
+  23 |   useEffect(() => {
+  24 |     if (!authLoading && user) {
+> 25 |       setIsLoggedIn(true);
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |       setTimeout(() => {
+  27 |         router.push(redirectTo);
+  28 |       }, 500);  react-hooks/set-state-in-effect
+  48:14  warning  'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/catalog/CatalogProductImage.tsx
+  84:7  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/navigation/MobileBottomNav.tsx
+  7:41  warning  '_props' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/reset-password-client.tsx
+  56:14  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/components/verify-otp-client.tsx
+   94:14  warning  'err' is defined but never used                                  @typescript-eslint/no-unused-vars
+  122:14  warning  'err' is defined but never used                                  @typescript-eslint/no-unused-vars
+  212:20  warning  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/contexts/CartContext.tsx
+  387:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/adminFetch.ts
+  12:17  warning  'redirectOnUnauthorized' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  12:41  warning  'retryOnUnauthorized' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/auth/nextauth.ts
+    1:46  warning  'User' is defined but never used     @typescript-eslint/no-unused-vars
+  120:35  warning  'profile' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/elasticsearch/filterBuilder.ts
+   29:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   89:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   93:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/elasticsearch/indexing.ts
+   53:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  294:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  295:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  336:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/encoding/core.ts
+  51:52  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  71:16  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  90:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/encoding/interceptor.ts
+  23:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/facebook/inboxSync.ts
+  73:16  warning  'fetchAllPages' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/facebook/pixel.tsx
+  454:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/payments/bkash.ts
+  154:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  193:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  225:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/payments/nagad.ts
+   17:11  warning  'NagadInitPaymentResponse' is defined but never used  @typescript-eslint/no-unused-vars
+   87:15  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  172:60  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/payments/sslcommerz.ts
+  114:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/search/activeProductFilter.ts
+  17:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/search/db-fallback.ts
+  490:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  494:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  497:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  501:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  503:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  567:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/search/productTransformer.ts
+  15:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  16:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  46:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/behavior.ts
+  52:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/manager.ts
+   15:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   17:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   18:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   21:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   25:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   26:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   27:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   29:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   30:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   31:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   32:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  576:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  743:47  warning  'data' is defined but never used          @typescript-eslint/no-unused-vars
+  936:30  warning  'event' is defined but never used         @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/FacebookPixel.tsx
+  216:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/HotjarPixel.tsx
+  3:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/LinkedInPixel.tsx
+   3:10  warning  'useEffect' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  44:9   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/MicrosoftPixel.tsx
+  3:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/MixpanelPixel.tsx
+  3:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/PinterestPixel.tsx
+   3:10  warning  'useEffect' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  34:9   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/RedditPixel.tsx
+  3:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/SnapchatPixel.tsx
+  3:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/TrackingConsentManager.tsx
+  54:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/TrackingConsentManager.tsx:54:5
+  52 |
+  53 |   useEffect(() => {
+> 54 |     setConsent(getClientTrackingConsent());
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  55 |
+  56 |     const handler = () => setConsent(getClientTrackingConsent());
+  57 |     window.addEventListener(TRACKING_CONSENT_EVENT, handler);  react-hooks/set-state-in-effect
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/tracking/pixels/TwitterPixel.tsx
+  3:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/lib/workers/steadfastWorker.ts
+  35:9  warning  'sevenDaysAgo' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/prisma/seed.ts
+    2:70  warning  'OrderStatus' is defined but never used            @typescript-eslint/no-unused-vars
+    2:83  warning  'PaymentStatus' is defined but never used          @typescript-eslint/no-unused-vars
+   20:9   warning  'superAdmin' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   32:9   warning  'manager' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  172:9   warning  'haircare' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  185:9   warning  'fragrances' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  198:9   warning  'bathBody' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  211:9   warning  'nailCare' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  224:9   warning  'toolsBrushes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  237:9   warning  'giftSets' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  323:9   warning  'product2' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  348:9   warning  'product3' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  416:9   warning  'lipstick2' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  539:9   warning  'garnier2' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/proxy.ts
+  43:10  warning  'generateNonce' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/final-rc-deployment-readiness-audit.mjs
+  17:12  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/migrate-to-v9.ts
+  87:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/search-filter-audit.mjs
+  19:10  warning  'hasAny' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/shop-cro-analytics-audit.mjs
+  13:10  warning  'exists' is defined but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/shop-merchandising-audit.mjs
+  30:7  warning  'compText' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  31:7  warning  'libText' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/shop-polish-audit.mjs
+  11:7  warning  'regex' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/shop-trust-parity-audit.mjs
+  13:7  warning  'search' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/scripts/test-elasticsearch.ts
+   70:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  117:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  166:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  169:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/types/admin.ts
+  352:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  552:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/types/tracking.ts
+   84:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  242:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/mnt/data/fcp01_work/minsah_new_repo_phase9/utils/formatting.ts
+  56:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+✖ 514 problems (0 errors, 514 warnings)
+  0 errors and 6 warnings potentially fixable with the `--fix` option.
+

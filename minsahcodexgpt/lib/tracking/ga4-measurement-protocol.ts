@@ -1,7 +1,9 @@
 import 'server-only';
 import prisma from '@/lib/prisma';
-import { buildMetaCatalogContents, getMetaContentId } from '@/lib/tracking/meta-content-id';
+import { buildGa4CatalogContents, getGa4ItemId } from '@/lib/tracking/ga4-item-id';
 import { classifyStoredOrderTraffic } from '@/lib/tracking/traffic-filter';
+import { TRACKING_SCHEMA_VERSION } from '@/lib/tracking/meta-schema';
+import { getTrackingFailureLogRetentionMetadata } from '@/lib/tracking/failure-retention';
 
 const GA4_MEASUREMENT_ID =
   process.env.GA4_MEASUREMENT_ID ??
@@ -13,7 +15,6 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
   'https://minsahbeauty.cloud';
-const TRACKING_SCHEMA_VERSION = 'mb_tracking_v1';
 const GA4_PURCHASE_CLAIM_STALE_MS = 15 * 60 * 1000;
 
 type Ga4PurchaseSource = 'cod_phone_confirmed' | 'online_paid';
@@ -62,13 +63,57 @@ function getGaSessionId(gaSessionId?: string | null) {
 }
 
 function getItemId(item: { productId?: string | null; variantId?: string | null; sku?: string | null; id: string }) {
-  return getMetaContentId(item);
+  return getGa4ItemId(item);
+}
+
+type Ga4AttributionOrder = {
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  campaignId?: string | null;
+  adsetId?: string | null;
+  adId?: string | null;
+  placement?: string | null;
+  offerVersion?: string | null;
+  abVariant?: string | null;
+  attributionCouponCode?: string | null;
+  couponCode?: string | null;
+  freeDeliveryThreshold?: unknown;
+  landingOffer?: string | null;
+  campaignSourceUrl?: string | null;
+};
+
+function buildGa4AttributionParams(order: Ga4AttributionOrder) {
+  const freeDeliveryThreshold = decimalToNumber(order.freeDeliveryThreshold);
+
+  return {
+    ...(order.utmSource && { utm_source: order.utmSource, source: order.utmSource }),
+    ...(order.utmMedium && { utm_medium: order.utmMedium, medium: order.utmMedium }),
+    ...(order.utmCampaign && { utm_campaign: order.utmCampaign, campaign: order.utmCampaign }),
+    ...(order.utmContent && { utm_content: order.utmContent, content: order.utmContent }),
+    ...(order.utmTerm && { utm_term: order.utmTerm, term: order.utmTerm }),
+    ...(order.campaignId && { campaign_id: order.campaignId }),
+    ...(order.adsetId && { adset_id: order.adsetId }),
+    ...(order.adId && { ad_id: order.adId }),
+    ...(order.placement && { placement: order.placement }),
+    ...(order.offerVersion && { offer_version: order.offerVersion }),
+    ...(order.abVariant && { ab_variant: order.abVariant }),
+    ...(order.couponCode && { applied_coupon_code: order.couponCode }),
+    ...(order.attributionCouponCode && { attribution_coupon_code: order.attributionCouponCode }),
+    ...(freeDeliveryThreshold > 0 && { free_delivery_threshold: freeDeliveryThreshold }),
+    ...(order.landingOffer && { landing_offer: order.landingOffer }),
+    ...(order.campaignSourceUrl && { campaign_source_url: order.campaignSourceUrl }),
+  };
 }
 
 async function loadOrderForGa4(orderId: string) {
   return prisma.order.findUnique({
     where: { id: orderId },
     include: {
+      user: true,
+      shippingAddress: { select: { phone: true } },
       items: { include: { product: true, variant: true } },
       payments: {
         where: {
@@ -89,6 +134,8 @@ async function loadOrderForGa4Refund(orderId: string) {
   return prisma.order.findUnique({
     where: { id: orderId },
     include: {
+      user: true,
+      shippingAddress: { select: { phone: true } },
       items: { include: { product: true, variant: true } },
       payments: {
         where: {
@@ -161,6 +208,14 @@ async function logGa4Failure(params: {
   safePayload?: Record<string, unknown>;
   responsePayload?: unknown;
 }) {
+  const retention = getTrackingFailureLogRetentionMetadata({
+    provider: 'GA4',
+    statusCode: params.statusCode,
+    errorCode: params.errorCode,
+    errorMessage: params.errorMessage,
+    finalFailed: params.finalFailed ?? false,
+  });
+
   await prisma.metaCapiFailure.create({
     data: {
       orderId: params.orderId,
@@ -173,6 +228,8 @@ async function logGa4Failure(params: {
       errorMessage: params.errorMessage,
       retryCount: params.retryCount ?? 0,
       finalFailed: params.finalFailed ?? false,
+      failureCategory: retention.failureCategory,
+      cleanupAfter: retention.cleanupAfter,
       safePayload: toPrismaJson(params.safePayload),
       responsePayload: toPrismaJson(params.responsePayload),
       hasExternalId: Boolean(params.safePayload?.has_ga_client_id),
@@ -215,6 +272,7 @@ function buildSafePayload(order: NonNullable<OrderForGa4>, source: Ga4PurchaseSo
     value: decimalToNumber(order.total),
     currency: 'BDT',
     item_count: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    attribution_keys: Object.keys(buildGa4AttributionParams(order)).sort(),
     has_ga_client_id: Boolean(order.gaClientId),
     has_ga_session_id: Boolean(order.gaSessionId),
   };
@@ -371,7 +429,7 @@ export async function sendGa4Purchase(params: {
     ...item,
     price: decimalToNumber(item.price),
   }));
-  const catalogContents = buildMetaCatalogContents(catalogItems);
+  const catalogContents = buildGa4CatalogContents(catalogItems);
   const items = order.items.map((item, index) => {
     const catalogContent = catalogContents[index];
 
@@ -409,6 +467,7 @@ export async function sendGa4Purchase(params: {
           page_location: `${SITE_URL.replace(/\/$/, '')}/checkout/${source === 'online_paid' ? 'payment-complete' : 'phone-confirmed'}`,
           order_number: order.orderNumber,
           ga_purchase_source: source,
+          ...buildGa4AttributionParams(order),
           ...(sessionId ? { session_id: sessionId } : {}),
         },
       },
@@ -516,7 +575,7 @@ function buildRefundItems(order: NonNullable<OrderForGa4Refund>) {
 
   if (returnItems.length > 0) {
     return returnItems.map((item) => ({
-      item_id: item.productId ? getMetaContentId({ productId: item.productId, variantId: null, sku: null, id: item.id }) : item.id,
+      item_id: item.productId ? getGa4ItemId({ productId: item.productId, variantId: null, sku: null, id: item.id }) : item.id,
       item_name: item.name,
       price: decimalToNumber(item.price),
       quantity: item.quantity,
@@ -527,7 +586,7 @@ function buildRefundItems(order: NonNullable<OrderForGa4Refund>) {
     ...item,
     price: decimalToNumber(item.price),
   }));
-  const catalogContents = buildMetaCatalogContents(catalogItems);
+  const catalogContents = buildGa4CatalogContents(catalogItems);
 
   return order.items.map((item, index) => {
     const catalogContent = catalogContents[index];

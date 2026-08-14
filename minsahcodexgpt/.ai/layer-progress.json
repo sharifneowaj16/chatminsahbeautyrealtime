@@ -1,0 +1,128 @@
+{
+  "schema_version": 2,
+  "phase": 31,
+  "layer": 9,
+  "title": "QA, Evidence and Release Gate",
+  "status": "BLOCKED",
+  "current_item": "9.8",
+  "execution_policy": {
+    "mode": "SEQUENTIAL_ITEM_GATES",
+    "allow_same_session_continuation": true,
+    "skip_items": false,
+    "package_frequency": "PER_COMPLETED_LAYER"
+  },
+  "items": [
+    {
+      "id": "9.1",
+      "title": "Phase 31 automated audit scripts",
+      "status": "COMPLETE",
+      "updated_at": "2026-07-27T19:37:17.214Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.1_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.1_gate.log"
+      ],
+      "summary": "Added seven deterministic no-secret Phase 31 static audit suites; 102/102 leaf commands PASS; Prisma unchanged."
+    },
+    {
+      "id": "9.2",
+      "title": "Webhook security and receipt tests",
+      "status": "COMPLETE",
+      "updated_at": "2026-07-27T20:13:40.587Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.2_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.2_gate.log"
+      ]
+    },
+    {
+      "id": "9.3",
+      "title": "Persistence and idempotency tests",
+      "status": "BLOCKED",
+      "updated_at": "2026-07-27T20:51:37.147Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.3_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.3_gate.log"
+      ]
+    },
+    {
+      "id": "9.4",
+      "title": "Lead Ads domain tests",
+      "status": "COMPLETE",
+      "updated_at": "2026-07-27T21:46:08.076Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.4_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.4_gate.log"
+      ],
+      "summary": "Lead Ads domain tests 10/10 PASS; official Lead suite 10/10 commands PASS; Prisma unchanged; 9.3 PostgreSQL blocker retained for final release."
+    },
+    {
+      "id": "9.5",
+      "title": "Instagram domain tests",
+      "status": "COMPLETE",
+      "updated_at": "2026-07-27T22:08:56.058Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.5_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.5_gate.log"
+      ]
+    },
+    {
+      "id": "9.6",
+      "title": "Realtime and admin tests",
+      "status": "COMPLETE",
+      "updated_at": "2026-07-27T22:39:17.348Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.6_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.6_gate.log"
+      ]
+    },
+    {
+      "id": "9.7",
+      "title": "Live Meta provider evidence",
+      "status": "BLOCKED",
+      "updated_at": "2026-07-27T23:17:32.183Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.7_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.7_gate.log"
+      ]
+    },
+    {
+      "id": "9.8",
+      "title": "Final runtime and release gate",
+      "status": "BLOCKED",
+      "updated_at": "2026-07-29T04:46:08.079Z",
+      "evidence": [
+        "evidence/phase31-meta-social-crm/11-final-release-gate.md",
+        "evidence/phase31-meta-social-crm/items/phase31_layer9.8_result.md",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.8_gate.log",
+        "evidence/phase31-meta-social-crm/dependency-security-remediation-2026-07-29.md",
+        "evidence/phase31-meta-social-crm/provider-responses/phase31-layer9.8-runtime-release-manifest.json",
+        "evidence/phase31-meta-social-crm/logs/phase31_layer9.8_gate_20260729.log"
+      ],
+      "summary": "Dependency remediation complete; 14 artifacts verified with 8 PASS and 6 BLOCKED; no final package created."
+    }
+  ],
+  "completed_previous_layer": {
+    "layer": 8,
+    "status": "COMPLETE",
+    "completed_through": "8.7",
+    "verification_log": "phase31_layer8_verification.log",
+    "verified_archive": "minsahbeauty_phase31_layer8_complete.zip"
+  },
+  "layer_artifacts": [
+    "minsahbeauty_phase31_complete.zip",
+    "minsahbeauty_phase31_complete.zip.sha256",
+    "phase31_final_verification.log",
+    "evidence/phase31-meta-social-crm/11-final-release-gate.md"
+  ],
+  "deferred_blockers": [
+    {
+      "item": "9.3",
+      "status": "BLOCKED",
+      "reason": "Disposable PostgreSQL runtime gate deferred by explicit user instruction; final release remains blocked until cleared."
+    },
+    {
+      "item": "9.7",
+      "status": "BLOCKED",
+      "reason": "Live Meta evidence deferred by explicit user instruction; final release remains blocked until cleared."
+    }
+  ]
+}

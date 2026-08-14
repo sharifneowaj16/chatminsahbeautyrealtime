@@ -14,6 +14,10 @@ import {
   SteadfastError,
   type SteadfastCreateOrderPayload,
 } from '@/lib/steadfast/client';
+import {
+  calculateCourierSendAccounting,
+  extractCourierResponseCharge,
+} from '@/lib/courier-send-accounting';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,33 +126,57 @@ export async function POST(request: NextRequest) {
       payloads.map((p) => p.payload)
     );
 
-    // Map invoice → DB order id
-    const invoiceToOrderId = new Map(
-      payloads.map((p) => [p.payload.invoice, p.orderId])
+    // Map invoice → DB order/accounting data
+    const invoiceToOrder = new Map(
+      payloads.map((p) => {
+        const sourceOrder = orders.find((order) => order.id === p.orderId);
+        return [p.payload.invoice, sourceOrder];
+      })
     );
 
     // ── Update DB for successful consignments ──────────────────────────────
-    const updatePromises = result.data.success.map((consignment) => {
-      const dbOrderId = invoiceToOrderId.get(consignment.invoice);
-      if (!dbOrderId) return Promise.resolve();
+    const updatedOrders = await Promise.all(
+      result.data.success.map((consignment) => {
+        const sourceOrder = invoiceToOrder.get(consignment.invoice);
+        if (!sourceOrder) return Promise.resolve(null);
 
-      const mappedStatus = mapSteadfastStatusToOrderStatus(consignment.status);
-      return prisma.order.update({
-        where: { id: dbOrderId },
-        data: {
-          steadfastConsignmentId: String(consignment.id),
-          steadfastTrackingCode: consignment.tracking_code,
-          steadfastStatus: consignment.status,
-          steadfastSentAt: new Date(),
-          status: mappedStatus ?? 'SHIPPED',
-          shippingMethod: 'steadfast',
-          trackingNumber: consignment.tracking_code,
-          shippedAt: new Date(),
-        },
-      });
-    });
+        const courierResponseCharge =
+          extractCourierResponseCharge(consignment) ?? extractCourierResponseCharge(result);
+        const courierAccounting = calculateCourierSendAccounting({
+          customerShippingCost: sourceOrder.shippingCost,
+          currentCourierDeliveryCharge: sourceOrder.courierDeliveryCharge,
+          currentDeliveryDiscountAmount: sourceOrder.deliveryDiscountAmount,
+          courierResponseCharge,
+        });
 
-    await Promise.all(updatePromises);
+        const mappedStatus = mapSteadfastStatusToOrderStatus(consignment.status);
+        return prisma.order.update({
+          where: { id: sourceOrder.id },
+          data: {
+            steadfastConsignmentId: String(consignment.id),
+            steadfastTrackingCode: consignment.tracking_code,
+            steadfastStatus: consignment.status,
+            steadfastSentAt: new Date(),
+            status: mappedStatus ?? 'SHIPPED',
+            shippingMethod: 'steadfast',
+            trackingNumber: consignment.tracking_code,
+            shippedAt: new Date(),
+            // Phase 4F safety: never write courier actual fee into shippingCost.
+            // shippingCost remains the customer-facing delivery charge locked at order creation.
+            ...(courierAccounting.hasCourierResponseCharge
+              ? {
+                  courierDeliveryCharge: courierAccounting.courierDeliveryCharge,
+                  deliveryDiscountAmount: courierAccounting.deliveryDiscountAmount,
+                }
+              : {}),
+          },
+        });
+      })
+    );
+
+    const orderAccountingByInvoice = new Map(
+      result.data.success.map((consignment, index) => [consignment.invoice, updatedOrders[index]])
+    );
 
     return NextResponse.json({
       success: true,
@@ -156,11 +184,20 @@ export async function POST(request: NextRequest) {
       failed: result.data.failed.length,
       skipped: skipped.length,
       details: {
-        success: result.data.success.map((c) => ({
-          invoice: c.invoice,
-          consignmentId: c.id,
-          trackingCode: c.tracking_code,
-        })),
+        success: result.data.success.map((c) => {
+          const updatedOrder = orderAccountingByInvoice.get(c.invoice);
+          return {
+            invoice: c.invoice,
+            consignmentId: c.id,
+            trackingCode: c.tracking_code,
+            shippingCost: updatedOrder ? Number(updatedOrder.shippingCost) : undefined,
+            customerDeliveryCharge: updatedOrder ? Number(updatedOrder.shippingCost) : undefined,
+            courierDeliveryCharge: updatedOrder?.courierDeliveryCharge === null || updatedOrder?.courierDeliveryCharge === undefined
+              ? null
+              : Number(updatedOrder.courierDeliveryCharge),
+            deliveryDiscountAmount: updatedOrder ? Number(updatedOrder.deliveryDiscountAmount) : undefined,
+          };
+        }),
         failed: result.data.failed,
         skipped,
       },

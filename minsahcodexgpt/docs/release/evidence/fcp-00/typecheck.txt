@@ -1,0 +1,9 @@
+
+> minsah-beauty@2.0.0 typecheck
+> node scripts/prisma-client-freshness.mjs && npm run typecheck:ts
+
+Generated Prisma client matches schema bd017fc75668.
+
+> minsah-beauty@2.0.0 typecheck:ts
+> tsc --noEmit --pretty false
+

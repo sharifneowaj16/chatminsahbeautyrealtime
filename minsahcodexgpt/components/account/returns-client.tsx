@@ -4,6 +4,10 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RotateCcw, Search, ChevronRight, Package, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { useToast } from '@/components/ui/ToastProvider';
 import { formatPrice } from '@/utils/currency';
 
 interface ReturnItem {
@@ -32,6 +36,7 @@ interface ReturnsClientProps {
 
 export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
   const router = useRouter();
+  const { requestConfirmation } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [feedbackMessage, setFeedbackMessage] = useState('');
@@ -71,9 +76,13 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
   };
 
   const handleCancelReturn = async (returnRequest: ReturnRecord) => {
-    const confirmed = window.confirm(
-      `Cancel return request ${returnRequest.id}? You can submit a new request later if needed.`
-    );
+    const confirmed = await requestConfirmation({
+      title: 'Cancel this return request?',
+      description: `Cancel return request ${returnRequest.id}? You can submit a new request later if needed.`,
+      confirmLabel: 'Cancel request',
+      cancelLabel: 'Keep request',
+      tone: 'danger',
+    });
 
     if (!confirmed) {
       return;
@@ -124,20 +133,24 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
       )}
 
       <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search by return number, order number, or reason..."
-            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-        <select
+        <Input
+          type="text"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Search by return number, order number, or reason..."
+          label="Search returns"
+          hideLabel
+          leading={<Search className="w-4 h-4" aria-hidden="true" />}
+          containerClassName="flex-1"
+          className="focus:ring-purple-500"
+        />
+        <Select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+          label="Filter by status"
+          hideLabel
+          containerClassName="sm:w-56"
+          className="focus:ring-purple-500"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -145,7 +158,7 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
           <option value="processing">Processing</option>
           <option value="completed">Completed</option>
           <option value="rejected">Rejected</option>
-        </select>
+        </Select>
       </div>
 
       {filteredReturns.length === 0 ? (
@@ -242,17 +255,19 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
                       <ChevronRight className="h-4 w-4" />
                     </Link>
                     {returnRequest.status === 'pending' && (
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        fullWidth
                         onClick={() => handleCancelReturn(returnRequest)}
                         disabled={cancelingReturnId === returnRequest.returnId}
-                        className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
+                        className="border-red-200 text-red-700 hover:bg-red-50"
                       >
                         {cancelingReturnId === returnRequest.returnId && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                         )}
                         Cancel Request
-                      </button>
+                      </Button>
                     )}
                   </div>
 

@@ -2,7 +2,7 @@
 set -e
 
 echo "Starting realtime service..."
-exec node dist/index.js
+exec node dist/realtime-service/src/index.js
 
 # #!/bin/sh
 # set -e
@@ -11,4 +11,4 @@ exec node dist/index.js
 # npx prisma migrate deploy --schema prisma/schema.prisma
 # echo "[entrypoint] Migrations complete. Starting server..."
 
-# exec node dist/index.js
+# exec node dist/realtime-service/src/index.js

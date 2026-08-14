@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,26 +11,51 @@ function toSlug(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+async function requireCategoryAdmin(request: NextRequest): Promise<NextResponse | null> {
+  const admin = await getVerifiedAdmin(request);
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!adminHasPermission(admin, ADMIN_PERMISSIONS.CONTENT_MANAGE)) {
+    return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+  }
+
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const activeOnly = searchParams.get('activeOnly') !== 'false';
+    const requestedInactiveCategories = searchParams.get('activeOnly') === 'false';
 
+    if (requestedInactiveCategories) {
+      const adminResponse = await requireCategoryAdmin(request);
+      if (adminResponse) return adminResponse;
+    }
+
+    const activeOnly = !requestedInactiveCategories;
     const where = activeOnly ? { isActive: true, parentId: null } : { parentId: null };
+    const nestedWhere = activeOnly ? { isActive: true } : undefined;
 
     const categories = await prisma.category.findMany({
       where,
       include: {
         children: {
+          ...(nestedWhere ? { where: nestedWhere } : {}),
           include: {
-            children: true, // subcategory items
+            children: {
+              ...(nestedWhere ? { where: nestedWhere } : {}),
+              orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+            },
           },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
         },
         _count: {
           select: { products: true },
         },
       },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
 
     const formatted = categories.map(cat => ({
@@ -55,6 +82,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const adminResponse = await requireCategoryAdmin(request);
+    if (adminResponse) return adminResponse;
+
     const body = await request.json();
 
     if (!body.name?.trim()) {
@@ -77,9 +107,11 @@ export async function POST(request: NextRequest) {
     // Create subcategories and items
     if (body.subcategories && Array.isArray(body.subcategories)) {
       for (const subcat of body.subcategories) {
+        if (!subcat?.name?.trim()) continue;
+
         const subcategory = await prisma.category.create({
           data: {
-            name: subcat.name,
+            name: subcat.name.trim(),
             slug: toSlug(subcat.name),
             parentId: category.id,
             isActive: status,
@@ -89,10 +121,12 @@ export async function POST(request: NextRequest) {
         // Create items under subcategory
         if (subcat.items && Array.isArray(subcat.items)) {
           for (const item of subcat.items) {
+            if (!String(item).trim()) continue;
+
             await prisma.category.create({
               data: {
-                name: item,
-                slug: toSlug(item),
+                name: String(item).trim(),
+                slug: toSlug(String(item)),
                 parentId: subcategory.id,
                 isActive: status,
               },

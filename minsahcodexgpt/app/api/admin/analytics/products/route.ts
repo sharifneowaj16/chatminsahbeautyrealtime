@@ -13,6 +13,7 @@ import {
   isConfirmedOrder,
   isDeliveredOrder,
   isReturnedOrder,
+  isRefundedOrder,
   parseDateRange,
   productGrade,
   roundMoney,
@@ -29,22 +30,28 @@ type ProductBucket = {
   views: number;
   uniqueViews: number;
   addToCarts: number;
+  viewCarts: number;
   checkoutStarts: number;
+  checkoutShippingInfos: number;
+  checkoutPaymentInfos: number;
   unitsSold: number;
   confirmedUnits: number;
   deliveredUnits: number;
   cancelledUnits: number;
   returnedUnits: number;
+  refundedUnits: number;
   orders: Set<string>;
   confirmedOrders: Set<string>;
   deliveredOrders: Set<string>;
   cancelledOrders: Set<string>;
   returnedOrders: Set<string>;
+  refundedOrders: Set<string>;
   totalRevenue: number;
   confirmedRevenue: number;
   deliveredRevenue: number;
   cancelledRevenue: number;
   returnedRevenue: number;
+  refundedRevenue: number;
   estimatedGrossProfit: number | null;
   costKnown: boolean;
   stockLeft: number | null;
@@ -75,22 +82,28 @@ function createBucket(key: string, name: string, productId: string | null, sku: 
     views: 0,
     uniqueViews: 0,
     addToCarts: 0,
+    viewCarts: 0,
     checkoutStarts: 0,
+    checkoutShippingInfos: 0,
+    checkoutPaymentInfos: 0,
     unitsSold: 0,
     confirmedUnits: 0,
     deliveredUnits: 0,
     cancelledUnits: 0,
     returnedUnits: 0,
+    refundedUnits: 0,
     orders: new Set<string>(),
     confirmedOrders: new Set<string>(),
     deliveredOrders: new Set<string>(),
     cancelledOrders: new Set<string>(),
     returnedOrders: new Set<string>(),
+    refundedOrders: new Set<string>(),
     totalRevenue: 0,
     confirmedRevenue: 0,
     deliveredRevenue: 0,
     cancelledRevenue: 0,
     returnedRevenue: 0,
+    refundedRevenue: 0,
     estimatedGrossProfit: null,
     costKnown: false,
     stockLeft: null,
@@ -125,12 +138,14 @@ export async function GET(request: NextRequest) {
           id: true,
           status: true,
           paymentStatus: true,
+          paymentMethod: true,
           phoneConfirmedAt: true,
           paymentPaidAt: true,
           paidAt: true,
           deliveredAt: true,
           cancelledAt: true,
           returnedAt: true,
+          refundedAt: true,
           courierDeliveredAt: true,
           courierReturnedAt: true,
         },
@@ -145,7 +160,10 @@ export async function GET(request: NextRequest) {
           viewCount: true,
           uniqueViewCount: true,
           addToCartCount: true,
+          viewCartCount: true,
           checkoutStartCount: true,
+          checkoutShippingInfoCount: true,
+          checkoutPaymentInfoCount: true,
           productDailyMetrics: {
             where: {
               metricDate: { gte: window.start, lt: window.end },
@@ -154,7 +172,23 @@ export async function GET(request: NextRequest) {
               views: true,
               uniqueViews: true,
               addToCarts: true,
+              viewCarts: true,
               checkoutStarts: true,
+              checkoutShippingInfos: true,
+              checkoutPaymentInfos: true,
+              orders: true,
+              confirmedOrders: true,
+              deliveredOrders: true,
+              cancelledOrders: true,
+              returnedOrders: true,
+              refundedOrders: true,
+              revenue: true,
+              confirmedRevenue: true,
+              deliveredRevenue: true,
+              cancelledRevenue: true,
+              returnedRevenue: true,
+              refundedRevenue: true,
+              estimatedProfit: true,
             },
           },
         },
@@ -169,7 +203,10 @@ export async function GET(request: NextRequest) {
         { productDailyMetrics: { some: { metricDate: { gte: window.start, lt: window.end } } } },
         { viewCount: { gt: 0 } },
         { addToCartCount: { gt: 0 } },
+        { viewCartCount: { gt: 0 } },
         { checkoutStartCount: { gt: 0 } },
+        { checkoutShippingInfoCount: { gt: 0 } },
+        { checkoutPaymentInfoCount: { gt: 0 } },
       ],
     },
     select: {
@@ -180,7 +217,10 @@ export async function GET(request: NextRequest) {
       viewCount: true,
       uniqueViewCount: true,
       addToCartCount: true,
+      viewCartCount: true,
       checkoutStartCount: true,
+      checkoutShippingInfoCount: true,
+      checkoutPaymentInfoCount: true,
       productDailyMetrics: {
         where: {
           metricDate: { gte: window.start, lt: window.end },
@@ -189,7 +229,10 @@ export async function GET(request: NextRequest) {
           views: true,
           uniqueViews: true,
           addToCarts: true,
+          viewCarts: true,
           checkoutStarts: true,
+          checkoutShippingInfos: true,
+          checkoutPaymentInfos: true,
         },
       },
     },
@@ -206,15 +249,21 @@ export async function GET(request: NextRequest) {
         views: acc.views + metric.views,
         uniqueViews: acc.uniqueViews + metric.uniqueViews,
         addToCarts: acc.addToCarts + metric.addToCarts,
+        viewCarts: acc.viewCarts + metric.viewCarts,
         checkoutStarts: acc.checkoutStarts + metric.checkoutStarts,
+        checkoutShippingInfos: acc.checkoutShippingInfos + metric.checkoutShippingInfos,
+        checkoutPaymentInfos: acc.checkoutPaymentInfos + metric.checkoutPaymentInfos,
       }),
-      { views: 0, uniqueViews: 0, addToCarts: 0, checkoutStarts: 0 }
+      { views: 0, uniqueViews: 0, addToCarts: 0, viewCarts: 0, checkoutStarts: 0, checkoutShippingInfos: 0, checkoutPaymentInfos: 0 }
     );
 
     bucket.views = metricTotals.views || product.viewCount;
     bucket.uniqueViews = metricTotals.uniqueViews || product.uniqueViewCount;
     bucket.addToCarts = metricTotals.addToCarts || product.addToCartCount;
+    bucket.viewCarts = metricTotals.viewCarts || product.viewCartCount;
     bucket.checkoutStarts = metricTotals.checkoutStarts || product.checkoutStartCount;
+    bucket.checkoutShippingInfos = metricTotals.checkoutShippingInfos || product.checkoutShippingInfoCount;
+    bucket.checkoutPaymentInfos = metricTotals.checkoutPaymentInfos || product.checkoutPaymentInfoCount;
     bucket.stockLeft = product.quantity;
     buckets.set(product.id, bucket);
   }
@@ -233,15 +282,21 @@ export async function GET(request: NextRequest) {
             views: acc.views + metric.views,
             uniqueViews: acc.uniqueViews + metric.uniqueViews,
             addToCarts: acc.addToCarts + metric.addToCarts,
+            viewCarts: acc.viewCarts + metric.viewCarts,
             checkoutStarts: acc.checkoutStarts + metric.checkoutStarts,
+            checkoutShippingInfos: acc.checkoutShippingInfos + metric.checkoutShippingInfos,
+            checkoutPaymentInfos: acc.checkoutPaymentInfos + metric.checkoutPaymentInfos,
           }),
-          { views: 0, uniqueViews: 0, addToCarts: 0, checkoutStarts: 0 }
+          { views: 0, uniqueViews: 0, addToCarts: 0, viewCarts: 0, checkoutStarts: 0, checkoutShippingInfos: 0, checkoutPaymentInfos: 0 }
         );
 
         bucket.views = metricTotals.views || item.product.viewCount;
         bucket.uniqueViews = metricTotals.uniqueViews || item.product.uniqueViewCount;
         bucket.addToCarts = metricTotals.addToCarts || item.product.addToCartCount;
+        bucket.viewCarts = metricTotals.viewCarts || item.product.viewCartCount;
         bucket.checkoutStarts = metricTotals.checkoutStarts || item.product.checkoutStartCount;
+        bucket.checkoutShippingInfos = metricTotals.checkoutShippingInfos || item.product.checkoutShippingInfoCount;
+        bucket.checkoutPaymentInfos = metricTotals.checkoutPaymentInfos || item.product.checkoutPaymentInfoCount;
         bucket.stockLeft = item.product.quantity;
       }
       buckets.set(key, bucket);
@@ -286,6 +341,12 @@ export async function GET(request: NextRequest) {
       bucket.returnedOrders.add(item.order.id);
       bucket.returnedRevenue += itemTotal;
     }
+
+    if (isRefundedOrder(item.order)) {
+      bucket.refundedUnits += quantity;
+      bucket.refundedOrders.add(item.order.id);
+      bucket.refundedRevenue += itemTotal;
+    }
   }
 
   const products = Array.from(buckets.values())
@@ -294,6 +355,7 @@ export async function GET(request: NextRequest) {
       const deliveredOrders = bucket.deliveredOrders.size;
       const cancelledOrders = bucket.cancelledOrders.size;
       const returnedOrders = bucket.returnedOrders.size;
+      const refundedOrders = bucket.refundedOrders.size;
       const estimatedGrossProfit = bucket.costKnown ? roundMoney(bucket.estimatedGrossProfit ?? 0) : null;
       const grade = productGrade({
         confirmedOrders,
@@ -313,31 +375,41 @@ export async function GET(request: NextRequest) {
         views: bucket.views,
         uniqueViews: bucket.uniqueViews,
         addToCarts: bucket.addToCarts,
+        viewCarts: bucket.viewCarts,
         checkoutStarts: bucket.checkoutStarts,
+        checkoutShippingInfos: bucket.checkoutShippingInfos,
+        checkoutPaymentInfos: bucket.checkoutPaymentInfos,
         unitsSold: bucket.unitsSold,
         confirmedUnits: bucket.confirmedUnits,
         deliveredUnits: bucket.deliveredUnits,
         cancelledUnits: bucket.cancelledUnits,
         returnedUnits: bucket.returnedUnits,
+        refundedUnits: bucket.refundedUnits,
         orders: bucket.orders.size,
         confirmedOrders,
         deliveredOrders,
         cancelledOrders,
         returnedOrders,
+        refundedOrders,
         totalRevenue: roundMoney(bucket.totalRevenue),
         confirmedRevenue: roundMoney(bucket.confirmedRevenue),
         deliveredRevenue: roundMoney(bucket.deliveredRevenue),
         cancelledRevenue: roundMoney(bucket.cancelledRevenue),
         returnedRevenue: roundMoney(bucket.returnedRevenue),
+        refundedRevenue: roundMoney(bucket.refundedRevenue),
         estimatedGrossProfit,
         stockLeft: bucket.stockLeft,
         addToCartRate: safePercent(bucket.addToCarts, bucket.views),
+        viewCartRate: safePercent(bucket.viewCarts, bucket.addToCarts),
         checkoutRate: safePercent(bucket.checkoutStarts, bucket.addToCarts),
+        shippingInfoRate: safePercent(bucket.checkoutShippingInfos, bucket.checkoutStarts),
+        paymentInfoRate: safePercent(bucket.checkoutPaymentInfos, bucket.checkoutShippingInfos),
         purchaseRate: safePercent(confirmedOrders, bucket.views),
         confirmationRate: safePercent(confirmedOrders, bucket.orders.size),
         deliveryRate: safePercent(deliveredOrders, confirmedOrders),
         cancelRate: safePercent(cancelledOrders, bucket.orders.size),
         returnRate: safePercent(returnedOrders, deliveredOrders),
+        refundRate: safePercent(refundedOrders, confirmedOrders),
       };
     })
     .sort((a, b) => b.deliveredRevenue - a.deliveredRevenue || b.confirmedRevenue - a.confirmedRevenue)
@@ -358,7 +430,7 @@ export async function GET(request: NextRequest) {
       gradeC: products.filter((product) => product.grade === 'C').length,
       gradeD: products.filter((product) => product.grade === 'D').length,
       metricsNote:
-        'Product funnel counters use ProductDailyMetric for the selected range when available; otherwise they fall back to product lifetime counters.',
+        'Product funnel counters now include add-to-cart, view-cart, checkout-start, shipping-info, and payment-info actions from ProductDailyMetric for the selected range; lifecycle hooks persist status transitions, while this endpoint keeps order-item fallback for older rows and item-level units.',
     },
   });
 }

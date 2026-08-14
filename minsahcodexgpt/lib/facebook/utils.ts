@@ -141,8 +141,19 @@ export function validatePixelId(pixelId: string | undefined): boolean {
  */
 export function validateAccessToken(token: string | undefined): boolean {
   if (!token) return false;
-  // Access tokens are typically 100+ characters alphanumeric with special chars
-  return token.length > 50 && /^[A-Za-z0-9_-]+$/.test(token);
+
+  const normalized = token.trim();
+  if (normalized.length < 30) return false;
+
+  // Avoid false-blocking valid Meta system-user tokens. Meta tokens can include
+  // punctuation such as dots/pipes/colons depending on token family, while real
+  // validation still happens at Graph API send time. Keep this as a local
+  // placeholder/shape guard only.
+  if (/^(test|demo|placeholder|changeme|your[_-]?token|replace[_-]?me)$/i.test(normalized)) {
+    return false;
+  }
+
+  return /^[A-Za-z0-9._|:-]+$/.test(normalized);
 }
 
 /**

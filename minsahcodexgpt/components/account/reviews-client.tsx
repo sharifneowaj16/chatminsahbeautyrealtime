@@ -4,31 +4,32 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Star, Edit, Trash2, Search, Plus, Eye, Heart, MessageCircle, Check, X, ShoppingBag, Package } from 'lucide-react';
 import { Star as StarSolid } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { useToast } from '@/components/ui/ToastProvider';
+import { productPath } from '@/lib/product-url';
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
 
-// ✅ Smart image renderer — string path → <img>, anything else → fallback icon
 function ProductImage({ src, name }: { src: any; name: string }) {
-  if (typeof src === 'string' && (src.startsWith('/') || src.startsWith('http'))) {
+  if (typeof src === 'string' && src.trim()) {
     return (
-      <img
+      <CatalogProductImage
         src={src}
-        alt={name}
-        className="w-full h-full object-cover rounded-lg"
-        onError={(e) => {
-          // If image fails to load, show fallback
-          (e.target as HTMLImageElement).style.display = 'none';
-          (e.target as HTMLImageElement).nextElementSibling?.removeAttribute('style');
-        }}
+        alt={name ? `${name} product image` : 'Product image'}
+        sizes="64px"
+        padding="sm"
       />
     );
   }
-  // React element (icon) or emoji
   if (src && typeof src === 'object') return src;
-  return <Package className="w-8 h-8 text-purple-400" />;
+  return <Package className="h-8 w-8 text-minsah-secondary" aria-hidden="true" />;
 }
 
 interface ReviewItem {
   id: string;
   productId: string;
+  productSlug?: string | null;
   productName: string;
   productImage: string | null;
   rating: number;
@@ -42,6 +43,7 @@ interface ReviewItem {
 
 interface ReviewableProduct {
   id: string;
+  slug?: string | null;
   name: string;
   image: string | null;
   orderDate: string | Date;
@@ -55,6 +57,7 @@ interface ReviewsClientProps {
 
 export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: ReviewsClientProps) {
   const router = useRouter();
+  const { requestConfirmation } = useToast();
   const [reviews, setReviews] = useState(initialReviews);
   const [searchTerm, setSearchTerm] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
@@ -86,7 +89,14 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
   }, [reviews, searchTerm, ratingFilter]);
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!confirm('Are you sure you want to delete this review?')) {
+    const confirmed = await requestConfirmation({
+      title: 'Delete this review?',
+      description: 'Are you sure you want to delete this review?',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      tone: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -138,10 +148,12 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
         <div className="border-b">
           <nav className="flex -mb-px">
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
+                type="button"
+                variant="ghost"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center px-6 py-3 border-b-2 font-medium text-sm transition ${
+                className={`rounded-none border-b-2 px-6 py-3 ${
                   activeTab === tab.id
                     ? 'border-purple-500 text-purple-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -153,7 +165,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                     {tab.count}
                   </span>
                 )}
-              </button>
+              </Button>
             ))}
           </nav>
         </div>
@@ -164,26 +176,30 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
         <div className="space-y-4">
           {/* Filters */}
           <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search reviews..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <select
+            <Input
+              type="text"
+              placeholder="Search reviews..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              label="Search reviews"
+              hideLabel
+              leading={<Search className="w-4 h-4" aria-hidden="true" />}
+              containerClassName="flex-1"
+              className="focus:ring-purple-500"
+            />
+            <Select
               value={ratingFilter}
               onChange={(e) => setRatingFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              label="Filter by rating"
+              hideLabel
+              containerClassName="sm:w-40"
+              className="focus:ring-purple-500"
             >
               <option value="all">All Ratings</option>
               {[5, 4, 3, 2, 1].map((r) => (
                 <option key={r} value={r}>{r} Stars</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {filteredReviews.length === 0 ? (
@@ -191,13 +207,15 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
               <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No reviews found</h3>
               <p className="text-gray-600 mb-6">You haven&apos;t written any reviews yet</p>
-              <button
+              <Button
+                type="button"
+                variant="primary"
                 onClick={() => setActiveTab('write-review')}
-                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="bg-purple-600 px-6 py-3 hover:bg-purple-700"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" aria-hidden="true" />
                 Write Your First Review
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -210,12 +228,12 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                         <ProductImage src={review.productImage} name={review.productName} />
                         {/* Hidden fallback span */}
                         <span style={{ display: 'none' }}>
-                          <Package className="w-8 h-8 text-purple-400" />
+                          <Package className="w-8 h-8 text-purple-400" aria-hidden="true" />
                         </span>
                       </div>
                       <div>
                         <Link
-                          href={`/products/${review.productId}`}
+                          href={productPath({ id: review.productId, slug: review.productSlug })}
                           className="text-lg font-medium hover:text-purple-600"
                         >
                           {review.productName}
@@ -238,16 +256,21 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                       <Link
                         href={`/account/reviews/write?reviewId=${review.id}`}
                         className="p-2 text-gray-400 hover:text-purple-600 rounded-lg transition"
+                        aria-label={`Edit review for ${review.productName}`}
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-4 h-4" aria-hidden="true" />
                       </Link>
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDeleteReview(review.id)}
                         disabled={deletingReviewId === review.id}
-                        className="p-2 text-gray-400 hover:text-red-600 rounded-lg transition"
+                        className="h-auto min-h-0 w-auto min-w-0 p-2 text-gray-400 hover:text-red-600"
+                        aria-label={`Delete review for ${review.productName}`}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                      </Button>
                     </div>
                   </div>
 

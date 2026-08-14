@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 // Use 12 rounds for secure password hashing
@@ -98,48 +99,51 @@ export function validatePassword(password: string): PasswordValidationResult {
 /**
  * Generate a secure random password
  */
+function randomChar(chars: string): string {
+  return chars[crypto.randomInt(0, chars.length)];
+}
+
+/**
+ * Generate a secure random password
+ */
 export function generateSecurePassword(length: number = 16): string {
+  const safeLength = Math.max(length, 8);
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const numbers = '0123456789';
   const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-
   const allChars = lowercase + uppercase + numbers + special;
 
-  // Ensure at least one of each type
-  let password = '';
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += special[Math.floor(Math.random() * special.length)];
+  const chars: string[] = [
+    randomChar(lowercase),
+    randomChar(uppercase),
+    randomChar(numbers),
+    randomChar(special),
+  ];
 
-  // Fill the rest randomly
-  for (let i = 4; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+  for (let i = chars.length; i < safeLength; i++) {
+    chars.push(randomChar(allChars));
   }
 
-  // Shuffle the password
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('');
+  // Fisher-Yates shuffle with crypto-backed indexes.
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+
+  return chars.join('');
 }
 
 /**
- * Generate a password reset token (simple random string)
+ * Generate a password reset token (high-entropy URL-safe string)
  */
 export function generateResetToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 64; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
+  return crypto.randomBytes(32).toString('base64url');
 }
 
 /**
  * Generate a verification code (6 digits)
  */
 export function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 }

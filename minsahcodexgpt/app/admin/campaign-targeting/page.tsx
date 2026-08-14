@@ -1,5 +1,10 @@
 'use client';
 
+
+
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -143,13 +148,13 @@ export default function CampaignTargetingPage() {
           <h1 className="text-2xl font-bold text-gray-900">Location-Based Campaign Targeting</h1>
           <p className="text-gray-600">Create targeted campaigns for specific regions in Bangladesh</p>
         </div>
-        <button
+        <Button
           onClick={() => setShowCreateModal(true)}
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
         >
           <Plus className="w-5 h-5 mr-2" />
           Create Campaign
-        </button>
+        </Button>
       </div>
 
       {/* Overview Stats */}
@@ -273,12 +278,12 @@ export default function CampaignTargetingPage() {
                     <div className="text-sm">
                       <p className="font-medium text-gray-900">৳{campaign.budget.toLocaleString()}</p>
                       <p className="text-xs text-gray-500">Spent: ৳{campaign.spent.toLocaleString()}</p>
-                      <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
-                        <div
-                          className="bg-purple-600 h-1 rounded-full"
-                          style={{ width: `${(campaign.spent / campaign.budget) * 100}%` }}
-                        />
-                      </div>
+                      <progress
+                        className="mt-1 h-2 w-full accent-minsah-action-primary"
+                        max={Math.max(campaign.budget, 1)}
+                        value={campaign.spent}
+                        aria-label={`${campaign.name} budget spent`}
+                      />
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -299,24 +304,24 @@ export default function CampaignTargetingPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <button className="text-purple-600 hover:text-purple-900">
+                      <Button className="text-purple-600 hover:text-purple-900">
                         <Edit className="w-4 h-4" />
-                      </button>
+                      </Button>
                       {campaign.status === 'active' ? (
-                        <button className="text-yellow-600 hover:text-yellow-900">
+                        <Button className="text-yellow-600 hover:text-yellow-900">
                           <Pause className="w-4 h-4" />
-                        </button>
+                        </Button>
                       ) : (
-                        <button className="text-green-600 hover:text-green-900">
+                        <Button className="text-green-600 hover:text-green-900">
                           <Play className="w-4 h-4" />
-                        </button>
+                        </Button>
                       )}
-                      <button className="text-blue-600 hover:text-blue-900">
+                      <Button className="text-blue-600 hover:text-blue-900">
                         <Copy className="w-4 h-4" />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      </Button>
+                      <Button className="text-red-600 hover:text-red-900">
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -326,18 +331,26 @@ export default function CampaignTargetingPage() {
         </div>
       </div>
 
-      {/* Create Campaign Modal Preview */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Create Location-Based Campaign</h2>
-            </div>
-            <div className="p-6 space-y-6">
+      {/* Create Campaign Modal */}
+      <Modal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create Location-Based Campaign"
+        size="xl"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setShowCreateModal(false)}>Create Campaign</Button>
+          </>
+        }
+      >
+        <div className="space-y-6">
               {/* Campaign Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Name</label>
-                <input
+                <Input
                   type="text"
                   value={campaignName}
                   onChange={(e) => setCampaignName(e.target.value)}
@@ -352,7 +365,7 @@ export default function CampaignTargetingPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {getAllDivisions().map(division => (
                     <label key={division} className="flex items-center space-x-2">
-                      <input
+                      <Input
                         type="checkbox"
                         checked={selectedDivisions.includes(division)}
                         onChange={() => handleDivisionToggle(division)}
@@ -367,7 +380,7 @@ export default function CampaignTargetingPage() {
               {/* Budget */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Budget (BDT)</label>
-                <input
+                <Input
                   type="number"
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
@@ -389,27 +402,8 @@ export default function CampaignTargetingPage() {
                   <Target className="w-12 h-12 text-purple-400" />
                 </div>
               </div>
-            </div>
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  // Handle campaign creation
-                  setShowCreateModal(false);
-                }}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-              >
-                Create Campaign
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

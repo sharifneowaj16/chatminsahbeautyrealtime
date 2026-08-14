@@ -1,3 +1,5 @@
+import { digestFacebookInboxShape } from '@/lib/meta-platform/domains/facebook/inbox-sync';
+import { createLegacyMetaGraphClient } from '@/lib/meta-platform/transports/graph-http';
 import { persistSocialMessage, type SocialAttachmentInput } from '@/lib/social/socialMessageIngest';
 import { getFacebookProfile } from '@/lib/facebook/profile';
 
@@ -51,22 +53,12 @@ export interface FacebookInboxSyncProgress {
   currentPage?: number;
 }
 
-function buildFacebookGraphUrl(path: string, token: string, params: Record<string, string>) {
-  const url = new URL(`https://graph.facebook.com/${FACEBOOK_GRAPH_API_VERSION}/${path}`);
-  for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
-  }
-  url.searchParams.set('access_token', token);
-  return url.toString();
-}
-
 async function fetchFacebookGraph<T>(path: string, token: string, params: Record<string, string>) {
-  const response = await fetch(buildFacebookGraphUrl(path, token, params), { cache: 'no-store' });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Facebook Graph API error ${response.status}: ${body}`);
-  }
-  return (await response.json()) as T;
+  const client = createLegacyMetaGraphClient({
+    accessToken: token,
+    graphApiVersion: FACEBOOK_GRAPH_API_VERSION,
+  });
+  return client.get<T>(path, params);
 }
 
 // Fetch ALL pages of a paginated endpoint
@@ -133,7 +125,7 @@ function buildMessageText(message: FacebookConversationMessage) {
   return `[${attachmentTypes.join(', ')} attachment${attachmentTypes.length > 1 ? 's' : ''}]`;
 }
 
-export async function syncRecentFacebookInbox({
+export async function syncRecentFacebookInboxLegacy({
   accessToken,
   pageId,
   // conversationLimit = 0 means UNLIMITED
@@ -273,4 +265,35 @@ export async function syncRecentFacebookInbox({
   });
 
   return { processedConversations: conversations.length, processedMessages, processedAttachments };
+}
+
+
+export function summarizeLegacyFacebookInboxSnapshot(snapshot: import('@/lib/meta-platform/domains/facebook/inbox-sync').FacebookInboxSnapshot) {
+  const seen = new Set<string>();
+  const stable: string[] = [];
+  let messages = 0;
+  let attachments = 0;
+  let skippedMessages = 0;
+  let duplicateProviderMessages = 0;
+  for (const conversation of snapshot.conversations) {
+    for (const message of conversation.messages?.data ?? []) {
+      const id = typeof message.id === 'string' && /^[A-Za-z0-9._:-]{1,255}$/.test(message.id.trim()) ? message.id.trim() : null;
+      if (!id) { skippedMessages += 1; continue; }
+      if (seen.has(id)) { duplicateProviderMessages += 1; continue; }
+      seen.add(id);
+      const fromId = typeof message.from?.id === 'string' ? message.from.id.trim() : '';
+      const count = normalizeFacebookAttachments(message.attachments?.data as FacebookAttachment[] | undefined).length;
+      stable.push(`${id}:${conversation.id}:${fromId !== snapshot.pageId ? 'I' : 'O'}:${count}`);
+      messages += 1;
+      attachments += count;
+    }
+  }
+  return Object.freeze({
+    conversations: snapshot.conversations.length,
+    messages,
+    attachments,
+    skippedMessages,
+    duplicateProviderMessages,
+    safeDigest: digestFacebookInboxShape(stable),
+  });
 }

@@ -1,5 +1,13 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import type { SearchConsoleData } from '@/types/google';
 import { generateMockSearchConsoleData, GOOGLE_COLORS } from '@/types/google';
@@ -26,6 +34,7 @@ export default function SearchConsoleCard({
   onDateRangeChange,
   className = ''
 }: SearchConsoleCardProps) {
+  const { pushToast } = useToast();
   const [data, setData] = useState<SearchConsoleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +73,7 @@ export default function SearchConsoleCard({
 
       // In real app, this would trigger URL inspection
       console.log('Inspecting URL:', inspectionUrl);
-      alert(`URL Inspection for: ${inspectionUrl}\nStatus: Indexed\nLast crawl: 2 days ago\nGoogle selected canonical: ${inspectionUrl}`);
+      pushToast({ tone: 'info', description: `URL Inspection for: ${inspectionUrl}\nStatus: Indexed\nLast crawl: 2 days ago\nGoogle selected canonical: ${inspectionUrl}` });
     } catch (err) {
       console.error('Error inspecting URL:', err);
     } finally {
@@ -139,7 +148,7 @@ export default function SearchConsoleCard({
             </div>
           </div>
 
-          <select
+          <Select
             value={dateRange}
             onChange={(e) => onDateRangeChange?.(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -148,7 +157,7 @@ export default function SearchConsoleCard({
             <option value="28days">Last 28 days</option>
             <option value="90days">Last 90 days</option>
             <option value="custom">Custom range</option>
-          </select>
+          </Select>
         </div>
 
         {/* Performance Metrics */}
@@ -203,7 +212,7 @@ export default function SearchConsoleCard({
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
+              <Input
                 type="url"
                 value={inspectionUrl}
                 onChange={(e) => setInspectionUrl(e.target.value)}
@@ -211,13 +220,13 @@ export default function SearchConsoleCard({
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
-            <button
+            <Button
               onClick={handleUrlInspection}
               disabled={!inspectionUrl.trim() || isInspecting}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               {isInspecting ? 'Inspecting...' : 'Inspect URL'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -312,9 +321,9 @@ export default function SearchConsoleCard({
               <p className="text-sm text-red-800">
                 <strong>⚠️ Action Required:</strong> {data.coverageIssues.errors} pages have indexing errors that need to be fixed.
               </p>
-              <button className="mt-2 text-sm font-medium text-red-700 hover:text-red-900 underline">
+              <Button className="mt-2 text-sm font-medium text-red-700 hover:text-red-900 underline">
                 View Details →
-              </button>
+              </Button>
             </div>
           )}
         </div>

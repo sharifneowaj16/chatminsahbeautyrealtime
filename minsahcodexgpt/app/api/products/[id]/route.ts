@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
 import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
+import { getDeliveryOfferBadgeText, isDeliveryOfferActive } from '@/lib/delivery-pricing';
+import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQueue';
+import { normalizeProductCondition } from '@/lib/products/product-condition';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +38,11 @@ function buildStoredSubcategory(subcategory: unknown, item: unknown): string | n
     : normalizedSubcategory;
 }
 
+const PUBLIC_PRODUCT_FILTER = {
+  deletedAt: null,
+  isActive: true,
+} as const;
+
 // ── GET /api/products/[id] ─────────────────────────────────────────────────
 export async function GET(
   _req: NextRequest,
@@ -49,7 +57,7 @@ export async function GET(
     };
 
     const product = await prisma.product.findFirst({
-      where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },
+      where: { AND: [{ OR: [{ id }, { slug: id }] }, PUBLIC_PRODUCT_FILTER] },
       include: {
         images:   { orderBy: { sortOrder: 'asc' } },
         variants: { orderBy: { id: 'asc' } },
@@ -89,6 +97,7 @@ export async function GET(
         AND source_order."status" IN ('SHIPPED', 'DELIVERED')
         AND source_order."paymentStatus" IN ('PROCESSING', 'COMPLETED')
         AND companion_product."isActive" = true
+        AND companion_product."deletedAt" IS NULL
       GROUP BY companion."productId"
       ORDER BY "orderCount" DESC, "totalUnits" DESC
       LIMIT 4
@@ -98,7 +107,7 @@ export async function GET(
       ? await prisma.product.findMany({
           where: {
             id: { in: frequentlyBoughtRows.map((row) => row.productId) },
-            isActive: true,
+            ...PUBLIC_PRODUCT_FILTER,
           },
           include: {
             images: { where: { isDefault: true }, take: 1 },
@@ -113,7 +122,7 @@ export async function GET(
 
     const relatedProducts = product.categoryId
       ? await prisma.product.findMany({
-          where: { categoryId: product.categoryId, id: { not: product.id }, isActive: true },
+          where: { categoryId: product.categoryId, id: { not: product.id }, ...PUBLIC_PRODUCT_FILTER },
           take: 4,
           include: {
             images: { where: { isDefault: true }, take: 1 },
@@ -134,6 +143,28 @@ export async function GET(
 
     const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     reviews.forEach((r) => { distribution[r.rating] = (distribution[r.rating] || 0) + 1; });
+
+    const deliveryOfferAmount = product.deliveryOfferAmount ? product.deliveryOfferAmount.toNumber() : null;
+    const deliveryOfferInput = {
+      id: product.id,
+      name: product.name,
+      deliveryOfferEnabled: product.deliveryOfferEnabled,
+      deliveryOfferType: product.deliveryOfferType,
+      deliveryOfferAmount,
+      deliveryOfferStartDate: product.deliveryOfferStartDate,
+      deliveryOfferEndDate: product.deliveryOfferEndDate,
+      deliveryOfferBadgeText: product.deliveryOfferBadgeText,
+    };
+    const hasActiveDeliveryOffer = isDeliveryOfferActive(deliveryOfferInput);
+    const activeDeliveryOffer = hasActiveDeliveryOffer
+      ? {
+          type: product.deliveryOfferType,
+          amount: deliveryOfferAmount,
+          badgeText: getDeliveryOfferBadgeText(deliveryOfferInput),
+          startDate: product.deliveryOfferStartDate ? product.deliveryOfferStartDate.toISOString() : null,
+          endDate: product.deliveryOfferEndDate ? product.deliveryOfferEndDate.toISOString() : null,
+        }
+      : null;
 
     return NextResponse.json({
       product: {
@@ -231,6 +262,13 @@ export async function GET(
         salePrice: product.salePrice ? product.salePrice.toNumber() : null,
         offerStartDate: product.offerStartDate ? product.offerStartDate.toISOString() : null,
         offerEndDate: product.offerEndDate ? product.offerEndDate.toISOString() : null,
+        deliveryOfferEnabled: product.deliveryOfferEnabled,
+        deliveryOfferType: product.deliveryOfferType,
+        deliveryOfferAmount,
+        deliveryOfferStartDate: product.deliveryOfferStartDate ? product.deliveryOfferStartDate.toISOString() : null,
+        deliveryOfferEndDate: product.deliveryOfferEndDate ? product.deliveryOfferEndDate.toISOString() : null,
+        deliveryOfferBadgeText: product.deliveryOfferBadgeText || '',
+        activeDeliveryOffer,
         flashSaleEligible: product.flashSaleEligible,
         trackInventory: product.trackInventory,
         allowBackorder: product.allowBackorder,
@@ -288,6 +326,7 @@ export async function GET(
 
           return {
             id: relatedProduct.id,
+            sku: relatedProduct.sku,
             name: relatedProduct.name,
             slug: relatedProduct.slug,
             price: relatedProduct.price.toNumber(),
@@ -475,7 +514,7 @@ export async function PUT(
       preOrderOption:  body.preOrderOption  ?? existing.preOrderOption,
       barcode:         body.barcode         ?? existing.barcode,
       relatedProducts: body.relatedProducts ?? existing.relatedProducts,
-      condition:     body.condition     ?? existing.condition,
+      condition:     normalizeProductCondition(body.condition, normalizeProductCondition(existing.condition)),
       gtin:          body.gtin          ?? existing.gtin,
       averageRating: body.averageRating != null ? Number(body.averageRating) : existing.averageRating,
       reviewCount:   body.reviewCount   != null ? Number(body.reviewCount)   : existing.reviewCount,
@@ -565,7 +604,13 @@ export async function PUT(
       await prisma.product.update({ where: { id: existing.id }, data: { quantity: totalStock } });
     }
 
-    return NextResponse.json({ success: true, product: { id: updated.id, slug: updated.slug, name: updated.name } });
+    const searchSyncQueued = await enqueueProductIndex(updated.id, 'admin product update legacy route');
+
+    return NextResponse.json({
+      success: true,
+      product: { id: updated.id, slug: updated.slug, name: updated.name },
+      searchSyncQueued,
+    });
   } catch (error) {
     console.error('PUT /api/products/[id] error:', error);
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
@@ -605,11 +650,14 @@ export async function DELETE(
         }),
       ]);
 
-      return NextResponse.json({ success: true, archived: true });
+      const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product soft-delete legacy route');
+
+      return NextResponse.json({ success: true, archived: true, searchSyncQueued });
     }
 
     await prisma.product.delete({ where: { id: existing.id } });
-    return NextResponse.json({ success: true });
+    const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product hard-delete legacy route');
+    return NextResponse.json({ success: true, searchSyncQueued });
   } catch (error) {
     console.error('DELETE /api/products/[id] error:', error);
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });

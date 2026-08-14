@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "phase": 31,
+  "item": "8.3",
+  "title": "Phase 31 Lead Ads cutover contract",
+  "runtimeSelector": "META_PHASE31_LEAD_RUNTIME",
+  "acceptedRuntimeValues": [
+    "LEGACY",
+    "SHADOW",
+    "PLATFORM",
+    "DOMAIN",
+    "LEGACY_ROLLBACK"
+  ],
+  "platformPrerequisites": [
+    "META_PLATFORM_LEADS",
+    "META_PLATFORM_SOCIAL_WEBHOOKS"
+  ],
+  "shadowAuthority": "LEGACY",
+  "platformAuthority": "PLATFORM",
+  "invalidRuntimePolicy": "LEGACY_ROLLBACK",
+  "stabilityCriteria": {
+    "minimumShadowSamples": 100,
+    "maximumMismatchRateBasisPoints": 100,
+    "maximumDuplicateHandoffs": 0,
+    "maximumUnresolvedPermanentFailures": 0,
+    "minimumObservationMinutes": 1440,
+    "rollbackDrillRequired": true
+  },
+  "comparisonFields": [
+    "providerLeadId",
+    "formId",
+    "isTestLead",
+    "hasFullName",
+    "hasPhone",
+    "hasEmail",
+    "hasCity",
+    "hasArea",
+    "hasCountry",
+    "hasProductInterest",
+    "providerFieldCount"
+  ]
+}

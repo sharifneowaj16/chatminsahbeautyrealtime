@@ -20,6 +20,11 @@ function buildAdminRequestInit(init: AdminFetchInit = {}): RequestInit {
     }
   }
 
+  const method = (requestInit.method ?? 'GET').toUpperCase();
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !headers.has('X-Admin-Request')) {
+    headers.set('X-Admin-Request', '1');
+  }
+
   return {
     ...requestInit,
     headers,

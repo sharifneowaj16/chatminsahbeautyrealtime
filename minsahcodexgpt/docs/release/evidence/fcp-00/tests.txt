@@ -1,0 +1,6 @@
+
+> minsah-beauty@2.0.0 test:fcp00
+> tsx tests/fcp00/prisma-json.test.ts && tsx tests/fcp00/dialog-keyboard.test.ts
+
+FCP-00 Prisma JSON converter tests passed.
+FCP-00 dialog keyboard tests passed.

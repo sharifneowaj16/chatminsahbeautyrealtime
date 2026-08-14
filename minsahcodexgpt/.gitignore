@@ -1,66 +1,37 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+node_modules/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
+# Local environment and credentials
+.env
+.env.*
 !.env.example
-
-# Sensitive files - NEVER commit these
-ADMIN_LOGIN_CREDENTIALS.md
 *.pem
 *.key
 credentials.json
 secrets.json
 
-# vercel
-.vercel
+# Framework and build output
+.next/
+out/
+build/
+dist/
+coverage/
+playwright-report/
+test-results/
+generated/prisma/
+realtime-service/prisma/generated/
 
-# typescript
+# Local caches and diagnostics
 *.tsbuildinfo
-next-env.d.ts
-
-# Build files
-tsconfig.tsbuildinfo
-
-# Claude files
+.eslintcache
+*.log
+*.zip
+.DS_Store
+.vercel/
 .claude/
+.cursor/
+.git-push-staging/
 
-# Installation docs
-CLAUDE_CODE_INSTALLATION_CHECKLIST.md
-USERROLES.md
-
-/generated/prisma
-
-# Realtime service build artifacts
-/realtime-service/node_modules
-/realtime-service/dist
-/realtime-service/prisma/generated
+# Generated repository and runtime discovery reports
+meta-webhook-search.txt
+phase31-*.txt
+next-env.d.ts

@@ -1,5 +1,10 @@
-﻿'use client';
+'use client';
 
+
+
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import type { MerchantProduct } from '@/types/google';
 import { generateMockMerchantProducts, GOOGLE_COLORS } from '@/types/google';
@@ -28,6 +33,7 @@ interface MerchantCenterCardProps {
 }
 
 export default function MerchantCenterCard({ className = '' }: MerchantCenterCardProps) {
+  const { pushToast, requestConfirmation } = useToast();
   const [products, setProducts] = useState<MerchantProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,7 +127,7 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
       if (file) {
         console.log('Uploading CSV:', file.name);
         // Handle actual upload logic here
-        alert(`Uploading ${file.name}...`);
+        pushToast({ tone: 'info', description: `Uploading ${file.name}...` });
       }
     };
     input.click();
@@ -138,7 +144,7 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (await requestConfirmation({ title: 'Delete this product?', description: 'The product will be removed from this Merchant Center view.', confirmLabel: 'Delete product', tone: 'danger' })) {
       setProducts(prev => prev.filter(p => p.id !== productId));
       setSelectedProduct(null);
     }
@@ -214,14 +220,14 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
             </div>
           </div>
 
-          <button
+          <Button
             onClick={handleSyncFeed}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
           >
             <Box className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Sync Feed
-          </button>
+          </Button>
         </div>
 
         {/* Product Summary */}
@@ -265,29 +271,29 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mt-4">
-          <button
+          <Button
             onClick={() => setShowAddProduct(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
           >
             <Plus className="h-4 w-4" />
             Add Product
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleBulkUpload}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
           >
             <Upload className="h-4 w-4" />
             Bulk Upload
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleExportProducts}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
           >
             <FileText className="h-4 w-4" />
             Export CSV
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -432,23 +438,23 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
 
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
                         onClick={() => setSelectedProduct(product)}
                         className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                       >
                         <Eye className="h-4 w-4" />
-                      </button>
+                      </Button>
 
-                      <button className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                      <Button className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
                         <Edit className="h-4 w-4" />
-                      </button>
+                      </Button>
 
-                      <button
+                      <Button
                         onClick={() => handleDeleteProduct(product.id)}
                         className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors duration-200"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -469,9 +475,9 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
                 <p className="text-sm text-red-700 mt-1">
                   These products have been disapproved and need to be fixed before they can appear in free listings.
                 </p>
-                <button className="mt-2 text-sm font-medium text-red-700 hover:text-red-900 underline">
+                <Button className="mt-2 text-sm font-medium text-red-700 hover:text-red-900 underline">
                   Fix Issues <ChevronRight className="w-4 h-4 inline" />
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -479,23 +485,9 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
       </div>
 
       {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSelectedProduct(null)}></div>
-
-            <div className="relative bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Product Details</h3>
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-300"
-                >
-                  <XCircle className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+      {selectedProduct ? (
+        <Modal open onClose={() => setSelectedProduct(null)} title="Product Details" size="lg">
+              <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Product Image */}
                   <div>
@@ -607,10 +599,10 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-6 pt-4 border-t border-gray-200">
-                  <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                  <Button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
                     Edit Product
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       handleDeleteProduct(selectedProduct.id);
                       setSelectedProduct(null);
@@ -618,13 +610,11 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
                     className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors duration-200"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+        </Modal>
+      ) : null}
     </div>
   );
 }

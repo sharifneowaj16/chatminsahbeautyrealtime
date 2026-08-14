@@ -1,5 +1,16 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import type { AdminProduct, AdminCategory } from '@/types/admin';
 import { generateMockProducts } from '@/types/admin';
@@ -30,6 +41,7 @@ import {
 } from 'lucide-react';
 
 export default function ProductManagement() {
+  const { requestConfirmation } = useToast();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,7 +144,7 @@ export default function ProductManagement() {
   };
 
   const handleBulkDelete = async () => {
-    if (confirm(`Delete ${selectedProducts.length} products?`)) {
+    if (await requestConfirmation({ title: 'Delete selected products?', description: `This will delete ${selectedProducts.length} products.`, confirmLabel: 'Delete products', tone: 'danger' })) {
       // Simulate API call
       setProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
       setSelectedProducts([]);
@@ -203,27 +215,27 @@ export default function ProductManagement() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={() => setShowBulkUpload(true)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
           >
             <Upload className="h-4 w-4" />
             Bulk Upload
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
           >
             <Download className="h-4 w-4" />
             Export CSV
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setShowAddProduct(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
           >
             <Plus className="h-4 w-4" />
             Add Product
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -270,7 +282,7 @@ export default function ProductManagement() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -279,7 +291,7 @@ export default function ProductManagement() {
             />
           </div>
 
-          <select
+          <Select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -289,9 +301,9 @@ export default function ProductManagement() {
             <option value="CAT-2">Makeup</option>
             <option value="CAT-3">Hair Care</option>
             <option value="CAT-4">Body Care</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -300,9 +312,9 @@ export default function ProductManagement() {
             <option value="active">Active</option>
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -312,21 +324,21 @@ export default function ProductManagement() {
             <option value="stock">Sort by Stock</option>
             <option value="sales">Sort by Sales</option>
             <option value="created">Sort by Date</option>
-          </select>
+          </Select>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <Grid3x3 className="h-5 w-5" />
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setViewMode('list')}
               className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <Filter className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -337,26 +349,26 @@ export default function ProductManagement() {
               <span className="text-sm text-gray-600">
                 {selectedProducts.length} products selected
               </span>
-              <button
+              <Button
                 onClick={handleSelectAll}
                 className="text-sm text-blue-600 hover:text-blue-700"
               >
                 {selectedProducts.length === filteredProducts.length ? 'Deselect all' : 'Select all'}
-              </button>
+              </Button>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={handleBulkEdit}
                 className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 Bulk Edit
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleBulkDelete}
                 className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
               >
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -371,14 +383,14 @@ export default function ProductManagement() {
           return viewMode === 'grid' ? (
             <div key={product.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
               <div className="relative">
-                <input
+                <Input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => handleSelectProduct(product.id)}
                   className="absolute top-2 left-2 z-10 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <div className="h-48 bg-gray-200 flex items-center justify-center">
-                  <Image className="h-12 w-12 text-gray-400" />
+                  <Image className="h-12 w-12 text-gray-400" aria-hidden="true" />
                 </div>
                 <span className={`absolute top-2 right-2 px-2 py-1 text-xs rounded-full ${stockStatus.color}`}>
                   {stockStatus.text}
@@ -420,18 +432,18 @@ export default function ProductManagement() {
                     {product.status}
                   </span>
                   <div className="flex items-center gap-1">
-                    <button
+                    <Button
                       onClick={() => setEditingProduct(product)}
                       className="p-1 text-gray-400 hover:text-gray-600"
                     >
                       <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
+                    </Button>
+                    <Button className="p-1 text-gray-400 hover:text-gray-600">
                       <Eye className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-red-600">
+                    </Button>
+                    <Button className="p-1 text-gray-400 hover:text-red-600">
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -439,14 +451,14 @@ export default function ProductManagement() {
           ) : (
             <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-start gap-4">
-                <input
+                <Input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => handleSelectProduct(product.id)}
                   className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Image className="h-8 w-8 text-gray-400" />
+                  <Image className="h-8 w-8 text-gray-400" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
@@ -488,18 +500,18 @@ export default function ProductManagement() {
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                     <p className="text-sm text-gray-600 line-clamp-1">{product.description}</p>
                     <div className="flex items-center gap-1">
-                      <button
+                      <Button
                         onClick={() => setEditingProduct(product)}
                         className="p-1 text-gray-400 hover:text-gray-600"
                       >
                         <Edit className="h-4 w-4" />
-                      </button>
-                      <button className="p-1 text-gray-400 hover:text-gray-600">
+                      </Button>
+                      <Button className="p-1 text-gray-400 hover:text-gray-600">
                         <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-1 text-gray-400 hover:text-red-600">
+                      </Button>
+                      <Button className="p-1 text-gray-400 hover:text-red-600">
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -514,12 +526,12 @@ export default function ProductManagement() {
           <PlusSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
           <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
-          <button
+          <Button
             onClick={() => setShowAddProduct(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Add Your First Product
-          </button>
+          </Button>
         </div>
       )}
 
@@ -530,168 +542,120 @@ export default function ProductManagement() {
             Showing {filteredProducts.length} of {products.length} products
           </p>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+            <Button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
               Previous
-            </button>
-            <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">
+            </Button>
+            <Button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">
               1
-            </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+            </Button>
+            <Button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
               2
-            </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+            </Button>
+            <Button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Bulk Upload Modal */}
-      {showBulkUpload && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Bulk Upload Products</h3>
-            <p className="text-gray-600 mb-4">
-              Upload a CSV file with your product data. Download the template below for the required format.
-            </p>
-            <div className="space-y-4">
-              <button className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm flex items-center justify-center gap-2">
-                <FileDown className="h-4 w-4" />
-                Download CSV Template
-              </button>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-2">Drop your CSV file here or click to browse</p>
-                <input type="file" accept=".csv" className="hidden" />
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                  Choose File
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowBulkUpload(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-              >
-                Cancel
-              </button>
-              <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                Upload Products
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={showBulkUpload}
+        onClose={() => setShowBulkUpload(false)}
+        title="Bulk Upload Products"
+        description="Upload a CSV file with your product data. Use the template for the required format."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowBulkUpload(false)}>
+              Cancel
+            </Button>
+            <Button>Upload Products</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Button variant="secondary" className="w-full">
+            <FileDown className="h-4 w-4" aria-hidden="true" />
+            Download CSV Template
+          </Button>
+          <label className="block cursor-pointer rounded-[var(--radius-control)] border-2 border-dashed border-minsah-border-default p-6 text-center">
+            <Upload className="mx-auto mb-2 h-8 w-8 text-minsah-text-muted" aria-hidden="true" />
+            <span className="block text-sm text-minsah-text-muted">
+              Drop your CSV file here or select a file
+            </span>
+            <input type="file" accept=".csv" className="sr-only" />
+          </label>
         </div>
-      )}
+      </Modal>
 
       {/* Add/Edit Product Modal */}
-      {(showAddProduct || editingProduct) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingProduct ? 'Edit Product' : 'Add New Product'}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                <input
-                  type="text"
-                  defaultValue={editingProduct?.name}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter product name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-                <input
-                  type="text"
-                  defaultValue={editingProduct?.sku}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter SKU"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price (BDT ৳)</label>
-                <input
-                  type="number"
-                  defaultValue={editingProduct?.price}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Compare Price (BDT ৳)</label>
-                <input
-                  type="number"
-                  defaultValue={editingProduct?.comparePrice}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>Skincare</option>
-                  <option>Makeup</option>
-                  <option>Hair Care</option>
-                  <option>Body Care</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                <input
-                  type="text"
-                  defaultValue={editingProduct?.brand}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter brand"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
-                <input
-                  type="number"
-                  defaultValue={editingProduct?.inventory.quantity}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Low Stock Threshold</label>
-                <input
-                  type="number"
-                  defaultValue={editingProduct?.inventory.lowStockThreshold}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="10"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  rows={4}
-                  defaultValue={editingProduct?.description}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter product description"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowAddProduct(false);
-                  setEditingProduct(null);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-              >
-                Cancel
-              </button>
-              <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                {editingProduct ? 'Save Changes' : 'Add Product'}
-              </button>
-            </div>
+      <Modal
+        open={showAddProduct || Boolean(editingProduct)}
+        onClose={() => {
+          setShowAddProduct(false);
+          setEditingProduct(null);
+        }}
+        title={editingProduct ? 'Edit Product' : 'Add New Product'}
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowAddProduct(false);
+                setEditingProduct(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button>{editingProduct ? 'Save Changes' : 'Add Product'}</Button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Product Name</label>
+            <Input type="text" defaultValue={editingProduct?.name} placeholder="Enter product name" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">SKU</label>
+            <Input type="text" defaultValue={editingProduct?.sku} placeholder="Enter SKU" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Price (BDT ৳)</label>
+            <Input type="number" defaultValue={editingProduct?.price} placeholder="0.00" step="0.01" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Compare Price (BDT ৳)</label>
+            <Input type="number" defaultValue={editingProduct?.comparePrice} placeholder="0.00" step="0.01" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Category</label>
+            <Select defaultValue={editingProduct?.category.name || 'Skincare'}>
+              <option>Skincare</option>
+              <option>Makeup</option>
+              <option>Hair Care</option>
+              <option>Body Care</option>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Brand</label>
+            <Input type="text" defaultValue={editingProduct?.brand} placeholder="Enter brand" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Stock Quantity</label>
+            <Input type="number" defaultValue={editingProduct?.inventory.quantity} placeholder="0" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Low Stock Threshold</label>
+            <Input type="number" defaultValue={editingProduct?.inventory.lowStockThreshold} placeholder="10" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-minsah-text-muted">Description</label>
+            <Textarea rows={4} defaultValue={editingProduct?.description} placeholder="Enter product description" />
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

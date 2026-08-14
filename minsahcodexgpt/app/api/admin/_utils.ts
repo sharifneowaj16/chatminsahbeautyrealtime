@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { AdminPermission } from '@/lib/auth/admin-permissions';
+import { evaluateAdminCsrf } from '@/lib/auth/admin-csrf';
 import {
   adminHasPermission,
   getVerifiedAdmin as getVerifiedAdminFromRequest,
@@ -19,6 +20,10 @@ export function adminUnauthorizedResponse(message = 'Invalid or expired admin to
 
 export function adminForbiddenResponse(message = 'Admin permission denied') {
   return NextResponse.json({ error: message }, { status: 403 });
+}
+
+export function adminCsrfResponse(message = 'Admin request origin validation failed') {
+  return NextResponse.json({ error: message, code: 'ADMIN_CSRF_REJECTED' }, { status: 403 });
 }
 
 export type AdminGuardResult =
@@ -92,3 +97,27 @@ export function parseMoney(value: unknown, label: string) {
 export function escapeLikeInput(value: string) {
   return value.replace(/[%_]/g, '\\$&');
 }
+
+export async function requireAdminMutationPermission(
+  request: NextRequest,
+  permission: AdminPermission,
+  options: { allowSuperAdmin?: boolean; message?: string } = {}
+): Promise<AdminGuardResult> {
+  const csrf = evaluateAdminCsrf(request);
+  if (!csrf.allowed) {
+    return { admin: null, response: adminCsrfResponse(csrf.reasonCode) };
+  }
+  return requireAdminPermission(request, permission, options);
+}
+
+export async function requireSuperAdminMutation(
+  request: NextRequest,
+  message = 'This admin action is restricted to SUPER_ADMIN users.'
+): Promise<AdminGuardResult> {
+  const csrf = evaluateAdminCsrf(request);
+  if (!csrf.allowed) {
+    return { admin: null, response: adminCsrfResponse(csrf.reasonCode) };
+  }
+  return requireSuperAdmin(request, message);
+}
+

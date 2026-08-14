@@ -115,6 +115,9 @@ export interface Product {
   flashSaleEligible?: boolean;
   returnEligible?: boolean;
   codAvailable?: boolean;
+  authenticityBadge?: boolean;
+  deliveryBadge?: string | null;
+  badges?: string[];
   preOrderOption?: boolean;
   barcode?: string;
   condition?: string;

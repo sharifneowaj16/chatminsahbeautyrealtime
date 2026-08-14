@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,15 +11,31 @@ function toSlug(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+async function requireCategoryAdmin(request: NextRequest): Promise<NextResponse | null> {
+  const admin = await getVerifiedAdmin(request);
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!adminHasPermission(admin, ADMIN_PERMISSIONS.CONTENT_MANAGE)) {
+    return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+  }
+
+  return null;
+}
+
 // DELETE /api/categories/[id]
 // Deletes a category and all its children (subcategories + items).
 // Products linked to any of these categories have their categoryId set to null first
 // to avoid FK constraint violations (no onDelete cascade in schema).
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const adminResponse = await requireCategoryAdmin(request);
+    if (adminResponse) return adminResponse;
+
     const { id } = await params;
 
     // Fetch the category with its full hierarchy (2 levels deep)
@@ -84,6 +102,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const adminResponse = await requireCategoryAdmin(request);
+    if (adminResponse) return adminResponse;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -116,9 +137,19 @@ export async function PUT(
         oldItemIds.push(item.id);
       }
     }
+    const oldDescendantIds = [...oldSubcategoryIds, ...oldItemIds];
 
     // Rebuild hierarchy in a transaction
     await prisma.$transaction(async (tx) => {
+      // Unlink products from removed descendants to avoid FK constraint failures.
+      // The root category remains and is updated in place.
+      if (oldDescendantIds.length > 0) {
+        await tx.product.updateMany({
+          where: { categoryId: { in: oldDescendantIds } },
+          data: { categoryId: null },
+        });
+      }
+
       // Delete old grandchildren and children
       if (oldItemIds.length > 0) {
         await tx.category.deleteMany({ where: { id: { in: oldItemIds } } });
@@ -136,9 +167,11 @@ export async function PUT(
       // Recreate subcategories and items
       if (body.subcategories && Array.isArray(body.subcategories)) {
         for (const subcat of body.subcategories) {
+          if (!subcat?.name?.trim()) continue;
+
           const newSub = await tx.category.create({
             data: {
-              name: subcat.name,
+              name: subcat.name.trim(),
               slug: toSlug(subcat.name),
               parentId: id,
               isActive,
@@ -147,10 +180,12 @@ export async function PUT(
 
           if (subcat.items && Array.isArray(subcat.items)) {
             for (const item of subcat.items) {
+              if (!String(item).trim()) continue;
+
               await tx.category.create({
                 data: {
-                  name: item,
-                  slug: toSlug(item),
+                  name: String(item).trim(),
+                  slug: toSlug(String(item)),
                   parentId: newSub.id,
                   isActive,
                 },

@@ -1,5 +1,7 @@
-﻿'use client';
+'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import Image from 'next/image';
 import type { Platform } from '@/types/social';
@@ -47,10 +49,7 @@ export default function PlatformCard({ platform, onConnect, onDisconnect, onQuic
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div
-            className="w-12 h-12 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: `${platform.color}15`, color: platform.color }}
-          >
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-minsah-surface-accent text-minsah-text-link">
             {getPlatformIcon(platform.icon)}
           </div>
           <div>
@@ -151,22 +150,22 @@ export default function PlatformCard({ platform, onConnect, onDisconnect, onQuic
       <div className="flex gap-2">
         {platform.connected ? (
           <>
-            <button
+            <Button
               onClick={onQuickPost}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-300"
             >
               <Plus className="h-4 w-4" />
               Quick Post
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={onDisconnect}
               className="px-3 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors duration-300"
             >
               <XCircle className="h-4 w-4" />
-            </button>
+            </Button>
           </>
         ) : (
-          <button
+          <Button
             onClick={handleConnect}
             disabled={isConnecting}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-300"
@@ -182,7 +181,7 @@ export default function PlatformCard({ platform, onConnect, onDisconnect, onQuic
                 Connect
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
     </div>

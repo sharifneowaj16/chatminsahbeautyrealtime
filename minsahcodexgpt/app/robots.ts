@@ -23,7 +23,6 @@ export default function robots(): MetadataRoute.Robots {
           '/verify-otp/',
           '/wishlist/',
           '/favourites/',
-          '/_next/',
         ],
       },
     ],

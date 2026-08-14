@@ -12,11 +12,14 @@ export type FacebookPixelEvent =
   | 'ViewContent'
   | 'AddToCart'
   | 'AddToWishlist'
+  | 'ViewCart'
   | 'InitiateCheckout'
+  | 'AddShippingInfo'
   | 'AddPaymentInfo'
   | 'Purchase'
   | 'Search'
-  | 'CompleteRegistration';
+  | 'CompleteRegistration'
+  | 'Contact';
 
 export interface FacebookPixelParams {
   content_ids?: string[];
@@ -85,7 +88,14 @@ export interface FacebookCustomData {
   }>;
   num_items?: number;
   order_id?: string;
+  search_string?: string;
+  status?: string;
+  method?: string;
+  shipping_tier?: string;
+  checkout_step?: string;
+  schema_version?: string;
 }
+
 
 export interface FacebookConversionAPIRequest {
   data: FacebookConversionAPIEvent[];
@@ -144,6 +154,18 @@ export interface TrackingPayload {
   }>;
   numItems?: number;
   orderId?: string;
+  searchString?: string;
+  status?: string;
+  method?: string;
+  shippingTier?: string;
+  checkoutStep?: string;
+
+  // Versioned privacy-policy metadata (server re-resolves authoritatively)
+  policyVersion?: string;
+  policyReason?: string;
+  consentState?: string;
+  consentVersion?: string | null;
+  retentionUntil?: string;
 
   // Browser data
   userAgent?: string;

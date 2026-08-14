@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": [
+      "ES2022"
+    ],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "..",
+    "noEmit": true,
+    "types": [
+      "external"
+    ],
+    "typeRoots": [
+      "./types"
+    ]
+  },
+  "include": [
+    "types/external/index.d.ts",
+    "src/config.ts",
+    "src/app.ts",
+    "src/index.ts",
+    "src/routes/bridge-webhook.router.ts",
+    "src/realtime/event-window.ts",
+    "src/realtime/event-store.ts",
+    "src/realtime/internal-auth.ts",
+    "src/realtime/pubsub.ts",
+    "src/realtime/ws-auth.ts",
+    "src/realtime/ws-server.ts",
+    "../packages/meta-realtime-contract/src/index.ts",
+    "src/facebook/cutover.ts",
+    "src/realtime/main-app-facebook-handoff.ts",
+    "../packages/meta-facebook-cutover-contract/src/**/*"
+  ]
+}

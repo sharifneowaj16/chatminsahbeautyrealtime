@@ -1,8 +1,13 @@
 'use client';
 
+
+
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { Upload, Image as ImageIcon, Trash2, Copy, Check, RefreshCw, X } from 'lucide-react';
+import { adminFetch } from '@/lib/adminFetch';
 
 interface MediaFile {
   name: string;
@@ -19,6 +24,7 @@ interface MediaStats {
 }
 
 export default function MediaLibraryPage() {
+  const { requestConfirmation } = useToast();
   const { hasPermission } = useAdminAuth();
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [stats, setStats] = useState<MediaStats>({ total: 0, images: 0, totalSize: 0, totalSizeMB: '0.00' });
@@ -34,7 +40,7 @@ export default function MediaLibraryPage() {
     setError(null);
     try {
       const params = folder ? `?folder=${encodeURIComponent(folder)}` : '';
-      const res = await fetch(`/api/media${params}`);
+      const res = await adminFetch(`/api/media${params}`);
       const data = await res.json();
       if (data.success) {
         setFiles(data.files);
@@ -65,7 +71,7 @@ export default function MediaLibraryPage() {
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/media', { method: 'POST', body: formData });
+        const res = await adminFetch('/api/media', { method: 'POST', body: formData });
         const data = await res.json();
         if (!data.success) {
           setError(data.error || 'Upload failed');
@@ -81,9 +87,9 @@ export default function MediaLibraryPage() {
   }
 
   async function handleDelete(key: string) {
-    if (!confirm('Delete this file?')) return;
+    if (!(await requestConfirmation({ title: 'Delete this file?', description: 'This media file will be removed permanently.', confirmLabel: 'Delete file', tone: 'danger' }))) return;
     try {
-      const res = await fetch(`/api/media?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+      const res = await adminFetch(`/api/media?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         await fetchFiles();
@@ -128,22 +134,22 @@ export default function MediaLibraryPage() {
           <p className="text-gray-600 text-sm mt-1">Manage images and files in MinIO storage</p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={fetchFiles}
             className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
           >
             <Upload className="w-5 h-5 mr-2" />
             {uploading ? 'Uploading...' : 'Upload Files'}
-          </button>
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
@@ -159,9 +165,9 @@ export default function MediaLibraryPage() {
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
           <p className="text-red-700 text-sm">{error}</p>
-          <button onClick={() => setError(null)}>
+          <Button onClick={() => setError(null)}>
             <X className="w-4 h-4 text-red-500" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -184,7 +190,7 @@ export default function MediaLibraryPage() {
       {/* Folder filter */}
       <div className="mb-4 flex gap-2 flex-wrap">
         {['', 'products', 'categories', 'brands', 'avatars', 'banners', 'blog', 'media', 'uploads'].map((f) => (
-          <button
+          <Button
             key={f || 'all'}
             onClick={() => setFolder(f)}
             className={`px-3 py-1 rounded-full text-sm border ${
@@ -194,7 +200,7 @@ export default function MediaLibraryPage() {
             }`}
           >
             {f || 'All'}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -211,12 +217,12 @@ export default function MediaLibraryPage() {
           <p className="text-gray-600 mb-6">
             {folder ? `No files in "${folder}" folder` : 'Upload your first files to get started'}
           </p>
-          <button
+          <Button
             onClick={() => fileInputRef.current?.click()}
             className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
             Upload Files
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -249,7 +255,7 @@ export default function MediaLibraryPage() {
 
               {/* Actions overlay */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <button
+                <Button
                   onClick={() => handleCopyUrl(file.url)}
                   title="Copy URL"
                   className="p-2 bg-white rounded-full hover:bg-gray-100"
@@ -259,14 +265,14 @@ export default function MediaLibraryPage() {
                   ) : (
                     <Copy className="w-4 h-4 text-gray-700" />
                   )}
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleDelete(file.name)}
                   title="Delete"
                   className="p-2 bg-white rounded-full hover:bg-gray-100"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
+                </Button>
               </div>
             </div>
           ))}

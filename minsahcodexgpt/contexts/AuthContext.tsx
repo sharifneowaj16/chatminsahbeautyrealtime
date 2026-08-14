@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { SessionProvider, useSession, signIn, signOut } from 'next-auth/react';
+import { trackCompleteRegistrationEvent } from '@/lib/tracking/events';
 
 interface User {
   id: string;
@@ -270,6 +271,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
       const data = await response.json();
 
       if (response.ok) {
+        trackCompleteRegistrationEvent({ method: 'email', status: 'success' });
         const profileLoaded = await fetchUserProfile();
         if (!profileLoaded) {
           setUser(data.user);

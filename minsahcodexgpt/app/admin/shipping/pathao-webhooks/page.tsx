@@ -1,5 +1,9 @@
 'use client';
 
+
+
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, CheckCircle2, Copy, Loader2, Package, RefreshCw } from 'lucide-react';
@@ -172,7 +176,7 @@ export default function PathaoWebhooksPage() {
             <p className="mt-1 text-sm text-gray-600">Webhook setup requirements and recent Pathao callback events.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select
+            <Select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
@@ -184,8 +188,8 @@ export default function PathaoWebhooksPage() {
               <option value="FAILED">Failed</option>
               <option value="IGNORED">Ignored</option>
               <option value="RECEIVED">Received</option>
-            </select>
-            <button
+            </Select>
+            <Button
               type="button"
               onClick={() => void loadPage({ append: false })}
               disabled={loading}
@@ -193,7 +197,7 @@ export default function PathaoWebhooksPage() {
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -205,14 +209,14 @@ export default function PathaoWebhooksPage() {
                 <p className="font-medium text-gray-800">Callback URL</p>
                 <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
                   <code className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-800">{configStatus?.callbackUrl ?? callbackUrl}</code>
-                  <button
+                  <Button
                     type="button"
                     onClick={copyCallback}
                     className="inline-flex items-center justify-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700"
                   >
                     <Copy className="h-3.5 w-3.5" />
                     {copied ? 'Copied' : 'Copy'}
-                  </button>
+                  </Button>
                 </div>
               </div>
               <p>Webhook secret in Pathao merchant panel must match server env <code className="rounded bg-gray-100 px-1">PATHAO_WEBHOOK_SECRET</code>.</p>
@@ -222,7 +226,7 @@ export default function PathaoWebhooksPage() {
               ) : (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">Set <code>PATHAO_WEBHOOK_INTEGRATION_SECRET</code> before running the merchant integration test.</p>
               )}
-              <button
+              <Button
                 type="button"
                 onClick={runIntegrationTest}
                 disabled={testing}
@@ -230,7 +234,7 @@ export default function PathaoWebhooksPage() {
               >
                 {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                 Test Webhook Integration
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -333,14 +337,14 @@ export default function PathaoWebhooksPage() {
 
         {nextCursor && (
           <div className="flex justify-center">
-            <button
+            <Button
               type="button"
               disabled={loading}
               onClick={() => void loadPage({ append: true, cursor: nextCursor })}
               className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
             >
               Load more
-            </button>
+            </Button>
           </div>
         )}
       </div>

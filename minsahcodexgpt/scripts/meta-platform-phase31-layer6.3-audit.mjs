@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+let passed = 0;
+function check(name, condition) { if (!condition) { console.error(`FAIL ${name}`); process.exitCode = 1; return; } passed += 1; console.log(`PASS ${name}`); }
+const s0 = fs.readFileSync('app/api/webhook/facebook/route.ts', 'utf8');
+const s1 = fs.readFileSync('lib/meta-platform/domains/facebook/legacy-bridge.ts', 'utf8');
+const s2 = fs.readFileSync('realtime-service/src/app.ts', 'utf8');
+const s3 = fs.readFileSync('realtime-service/src/config.ts', 'utf8');
+const s4 = fs.readFileSync('realtime-service/src/index.ts', 'utf8');
+const s5 = fs.readFileSync('realtime-service/src/routes/bridge-webhook.router.ts', 'utf8');
+const s6 = fs.readFileSync('realtime-service/src/realtime/main-app-facebook-handoff.ts', 'utf8');
+check('bridge is default', s3.includes("default('bridge')"));
+check('rollback is opt-in', s3.includes('REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED'));
+check('legacy imports are dynamic', s4.includes("./facebook/token-health"));
+check('bridge webhook router exists', s5.includes('forwardFacebookWebhookToMainApp') && s6.includes('forwardFacebookWebhookToMainApp') && s6.includes('signInternalBridgeRequest'));
+check('main app HMAC verification', s0.includes('verifyInternalRealtimeBridgeRequest'));
+check('main app Meta signature verification', s0.includes('verifyMetaWebhookSignature'));
+check('main app queue handoff', s0.includes('requestFacebookInboxSyncProduction'));
+check('shared graph transport', s1.includes('createMetaGraphClient'));
+check('central page health', s1.includes('assertMetaPageHealthReady'));
+check('bridge ops disabled', s2.includes('LEGACY_REALTIME_OPERATION_DISABLED'));
+if (!process.exitCode) console.log(`Layer 6.3 audit: ${passed}/10 PASS`);

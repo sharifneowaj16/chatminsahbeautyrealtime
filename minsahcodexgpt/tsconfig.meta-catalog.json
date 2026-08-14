@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "incremental": false
+  },
+  "files": [
+    "lib/meta-business/catalog-mapping.ts",
+    "lib/meta-business/catalog.ts",
+    "lib/meta-business/logging.ts",
+    "lib/meta-business/sync-lock.ts",
+    "lib/meta-business/preferences.ts",
+    "lib/meta-business/config.ts",
+    "lib/tracking/privacy-catalog-qa.ts",
+    "app/api/admin/meta/catalogs/sync/route.ts",
+    "app/api/internal/meta/catalog-sync/route.ts",
+    "app/api/admin/meta/catalogs/feed/route.ts",
+    "app/api/admin/meta/settings/route.ts",
+    "app/api/admin/meta/_shared/response.ts",
+    "scripts/meta-catalog-semantic-audit.ts"
+  ]
+}

@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import { Truck, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface SteadfastBulkDispatchProps {
   selectedIds: Set<string>;         // order dbIds or orderNumbers
@@ -66,20 +67,24 @@ export default function SteadfastBulkDispatch({
 
   return (
     <div className="flex items-center gap-2">
-      <button
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
         onClick={handleBulkDispatch}
         disabled={loading || selectedIds.size === 0}
-        className="flex items-center gap-2 text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium"
+        aria-busy={loading || undefined}
+        className="border-transparent bg-white/20 text-xs text-white hover:bg-white/30"
       >
         {loading ? (
-          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
         ) : (
-          <Truck className="w-3.5 h-3.5" />
+          <Truck className="w-3.5 h-3.5" aria-hidden="true" />
         )}
         {loading
           ? `Dispatching ${selectedIds.size}...`
           : `Dispatch ${selectedIds.size} via Steadfast`}
-      </button>
+      </Button>
 
       {result && (
         <div className="flex items-center gap-1 text-xs text-white/90">

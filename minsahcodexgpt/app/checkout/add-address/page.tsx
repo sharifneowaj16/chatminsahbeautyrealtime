@@ -5,10 +5,15 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { useToast } from '@/components/ui/ToastProvider';
 
 function AddAddressContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { pushToast } = useToast();
   const { addAddress, updateAddress } = useCart();
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [isLoadingZones, setIsLoadingZones] = useState(false);
@@ -268,7 +273,10 @@ function AddAddressContent() {
       !formData.pathao_city_id ||
       !formData.pathao_zone_id
     ) {
-      alert('Please fill in all required fields');
+      pushToast({
+        title: 'Please fill in all required fields',
+        tone: 'danger',
+      });
       return;
     }
 
@@ -308,144 +316,122 @@ function AddAddressContent() {
         {/* Form Fields */}
         <div className="bg-white rounded-2xl p-4 shadow-sm space-y-4 mb-6">
           {/* Phone Number */}
-          <div>
-            <label className="block text-sm font-semibold text-minsah-dark mb-2">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleInputChange}
-              placeholder="+880 1234 567890"
-              required
-              className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-            />
-          </div>
+          <Input
+            type="tel"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleInputChange}
+            placeholder="+880 1234 567890"
+            required
+            label="Phone Number"
+            labelClassName="text-sm font-semibold text-minsah-dark"
+            className="rounded-xl border-minsah-accent py-3 focus:ring-2 focus:ring-minsah-primary"
+          />
 
           {/* Full Name */}
-          <div>
-            <label className="block text-sm font-semibold text-minsah-dark mb-2">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleInputChange}
-              placeholder="John Doe"
-              required
-              className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-            />
-          </div>
+          <Input
+            type="text"
+            name="fullName"
+            value={formData.fullName}
+            onChange={handleInputChange}
+            placeholder="John Doe"
+            required
+            label="Full Name"
+            labelClassName="text-sm font-semibold text-minsah-dark"
+            className="rounded-xl border-minsah-accent py-3 focus:ring-2 focus:ring-minsah-primary"
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-minsah-dark mb-2">
-                Pathao City *
-              </label>
-              <select
-                value={formData.pathao_city_id ?? ''}
-                onChange={(e) =>
-                  setFormData((prev) => {
-                    const nextCityId = e.target.value ? Number(e.target.value) : null;
-                    return {
-                      ...prev,
-                      pathao_city_id: nextCityId,
-                      pathao_zone_id: null,
-                      pathao_area_id: null,
-                    };
-                  })
-                }
-                className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-                required
-              >
-                <option value="">
-                  {isLoadingCities ? 'Loading Pathao cities...' : 'Select Pathao city'}
-                </option>
-                {pathaoCities.map((city) => (
-                  <option key={city.id} value={city.id}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
-              {citiesError && (
-                <p className="mt-2 text-sm text-red-600">{citiesError}</p>
-              )}
-              {!isLoadingCities && !citiesError && pathaoCities.length === 0 && (
-                <p className="mt-2 text-sm text-red-600">
-                  Pathao cities could not be loaded. Please try again.
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-minsah-dark mb-2">
-                Pathao Zone *
-              </label>
-              <select
-                value={formData.pathao_zone_id ?? ''}
-                onChange={(e) =>
-                  setFormData((prev) => ({
+            <Select
+              value={formData.pathao_city_id ?? ''}
+              onChange={(e) =>
+                setFormData((prev) => {
+                  const nextCityId = e.target.value ? Number(e.target.value) : null;
+                  return {
                     ...prev,
-                    pathao_zone_id: e.target.value ? Number(e.target.value) : null,
+                    pathao_city_id: nextCityId,
+                    pathao_zone_id: null,
                     pathao_area_id: null,
-                  }))
-                }
-                className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-                disabled={!formData.pathao_city_id || isLoadingZones}
-                required
-              >
-                <option value="">
-                  {!formData.pathao_city_id
-                    ? 'Select Pathao city first'
-                    : isLoadingZones
-                      ? 'Loading Pathao zones...'
-                      : 'Select Pathao zone'}
+                  };
+                })
+              }
+              required
+              label="Pathao City"
+              labelClassName="text-sm font-semibold text-minsah-dark"
+              className="rounded-xl border-minsah-accent py-3 focus:ring-2 focus:ring-minsah-primary"
+              placeholder={isLoadingCities ? 'Loading Pathao cities...' : 'Select Pathao city'}
+              error={
+                citiesError
+                  ? citiesError
+                  : !isLoadingCities && pathaoCities.length === 0
+                    ? 'Pathao cities could not be loaded. Please try again.'
+                    : undefined
+              }
+            >
+              {pathaoCities.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
                 </option>
-                {pathaoZones.map((zone) => (
-                  <option key={zone.id} value={zone.id}>
-                    {zone.name}
-                  </option>
-                ))}
-              </select>
-              {zonesError && (
-                <p className="mt-2 text-sm text-red-600">{zonesError}</p>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-minsah-dark mb-2">
-              Pathao Area
-            </label>
-            <select
-              value={formData.pathao_area_id ?? ''}
+              ))}
+            </Select>
+            <Select
+              value={formData.pathao_zone_id ?? ''}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  pathao_area_id: e.target.value ? Number(e.target.value) : null,
+                  pathao_zone_id: e.target.value ? Number(e.target.value) : null,
+                  pathao_area_id: null,
                 }))
               }
-              className="w-full px-4 py-3 border border-minsah-accent rounded-xl focus:outline-none focus:ring-2 focus:ring-minsah-primary"
-              disabled={!formData.pathao_zone_id || isLoadingAreas}
+              disabled={!formData.pathao_city_id || isLoadingZones}
+              required
+              label="Pathao Zone"
+              labelClassName="text-sm font-semibold text-minsah-dark"
+              className="rounded-xl border-minsah-accent py-3 focus:ring-2 focus:ring-minsah-primary"
+              placeholder={
+                !formData.pathao_city_id
+                  ? 'Select Pathao city first'
+                  : isLoadingZones
+                    ? 'Loading Pathao zones...'
+                    : 'Select Pathao zone'
+              }
+              error={zonesError ?? undefined}
             >
-              <option value="">
-                {!formData.pathao_zone_id
-                  ? 'Select Pathao zone first'
-                  : isLoadingAreas
-                    ? 'Loading Pathao areas...'
-                    : 'Select Pathao area'}
-              </option>
-              {pathaoAreas.map((area) => (
-                <option key={area.id} value={area.id}>
-                  {area.name}
+              {pathaoZones.map((zone) => (
+                <option key={zone.id} value={zone.id}>
+                  {zone.name}
                 </option>
               ))}
-            </select>
-            {areasError && (
-              <p className="mt-2 text-sm text-red-600">{areasError}</p>
-            )}
+            </Select>
           </div>
+
+          <Select
+            value={formData.pathao_area_id ?? ''}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                pathao_area_id: e.target.value ? Number(e.target.value) : null,
+              }))
+            }
+            disabled={!formData.pathao_zone_id || isLoadingAreas}
+            label="Pathao Area"
+            labelClassName="text-sm font-semibold text-minsah-dark"
+            className="rounded-xl border-minsah-accent py-3 focus:ring-2 focus:ring-minsah-primary"
+            placeholder={
+              !formData.pathao_zone_id
+                ? 'Select Pathao zone first'
+                : isLoadingAreas
+                  ? 'Loading Pathao areas...'
+                  : 'Select Pathao area'
+            }
+            error={areasError ?? undefined}
+          >
+            {pathaoAreas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.name}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Action Buttons */}
@@ -456,12 +442,14 @@ function AddAddressContent() {
           >
             Cancel
           </Link>
-          <button
+          <Button
             type="submit"
-            className="flex-1 py-4 rounded-xl font-bold bg-minsah-primary text-minsah-light hover:bg-minsah-dark transition shadow-lg"
+            variant="primary"
+            fullWidth
+            className="rounded-xl bg-minsah-primary py-4 text-minsah-light shadow-lg hover:bg-minsah-dark"
           >
             SAVE
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -1,12 +1,14 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import type { VariantOption } from '@/components/cart/VariantModal';
+import type { BuyNowVariantOption } from '@/components/cart/BuyNowModal';
 
 const CartStepper = dynamic(() => import('@/components/cart/CartStepper'), {
   ssr: false,
   loading: () => (
     <span
-      className="block h-8 w-8 rounded-full bg-[#FACC15]/60 shadow-[0_4px_14px_rgba(250,204,21,0.20)]"
+      className="block h-8 w-8 rounded-full bg-minsah-surface-accent shadow-[var(--shadow-small)]"
       aria-hidden="true"
     />
   ),
@@ -16,7 +18,7 @@ const CardBuyNowButton = dynamic(() => import('@/components/cart/CardBuyNowButto
   ssr: false,
   loading: () => (
     <span
-      className="block h-10 w-full rounded-2xl bg-[#3D1F0E]/15"
+      className="block h-11 w-full rounded-2xl bg-minsah-dark/15"
       aria-hidden="true"
     />
   ),
@@ -29,6 +31,22 @@ interface HomeProductActionProps {
   price: number;
   stock: number;
   hasVariants: boolean;
+  variantCount?: number;
+  variantsFullyLoaded?: boolean;
+  variants?: VariantOption[];
+}
+
+function toBuyNowVariants(variants?: VariantOption[]): BuyNowVariantOption[] | undefined {
+  if (!variants?.length) return undefined;
+  return variants.map((variant) => ({
+    id: variant.id,
+    name: variant.name,
+    price: variant.price,
+    stock: variant.stock,
+    image: variant.image ?? null,
+    sku: variant.sku ?? null,
+    attributes: variant.attributes ?? {},
+  }));
 }
 
 export function HomeOverlayCartAction({
@@ -38,28 +56,55 @@ export function HomeOverlayCartAction({
   price,
   stock,
   hasVariants,
+  variantCount,
+  variantsFullyLoaded,
+  variants,
 }: HomeProductActionProps) {
-  if (stock === 0) return null;
+  if (stock <= 0) return null;
 
   return (
-    <div
-      className="absolute bottom-2.5 right-2.5 z-10"
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-    >
-      <CartStepper
-        productId={productId}
-        productName={productName}
-        productImage={productImage}
-        price={price}
-        maxStock={stock}
-        hasRequiredVariants={hasVariants}
-        disabled={stock === 0}
-        circleAdd
-      />
-    </div>
+    <CartStepper
+      productId={productId}
+      productName={productName}
+      productImage={productImage}
+      price={price}
+      maxStock={stock}
+      hasRequiredVariants={hasVariants}
+      variantCount={variantCount}
+      variantsFullyLoaded={variantsFullyLoaded}
+      variants={variants}
+      disabled={stock <= 0}
+      circleAdd
+    />
+  );
+}
+
+export function HomePrimaryCartAction({
+  productId,
+  productName,
+  productImage,
+  price,
+  stock,
+  hasVariants,
+  variantCount,
+  variantsFullyLoaded,
+  variants,
+  className,
+}: HomeProductActionProps & { className?: string }) {
+  return (
+    <CartStepper
+      productId={productId}
+      productName={productName}
+      productImage={productImage}
+      price={price}
+      maxStock={stock}
+      hasRequiredVariants={hasVariants}
+      variantCount={variantCount}
+      variantsFullyLoaded={variantsFullyLoaded}
+      variants={variants}
+      disabled={stock <= 0}
+      className={className}
+    />
   );
 }
 
@@ -69,6 +114,9 @@ export function HomeBuyNowAction({
   productImage,
   price,
   stock,
+  variantCount,
+  variantsFullyLoaded,
+  variants,
   className,
 }: HomeProductActionProps & { className: string }) {
   return (
@@ -77,7 +125,11 @@ export function HomeBuyNowAction({
       productName={productName}
       productImage={productImage}
       price={price}
-      disabled={stock === 0}
+      maxStock={stock}
+      variants={toBuyNowVariants(variants)}
+      variantCount={variantCount}
+      variantsFullyLoaded={variantsFullyLoaded}
+      disabled={stock <= 0}
       className={className}
     />
   );

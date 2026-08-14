@@ -2,18 +2,21 @@
 
 import { track } from '@/lib/tracking/manager';
 import {
-  buildMetaCatalogContentIds,
-  buildMetaCatalogContents,
-  getMetaCatalogContentType,
-} from '@/lib/tracking/meta-content-id';
+  buildMetaCommerceBrowserEvent,
+  buildMetaCommercePayload,
+  type MetaBrowserCommerceItem,
+} from '@/lib/meta/browser/commerce';
+import { metaBrowserDebug } from '@/lib/meta/browser/diagnostics';
 import type { TrackingEventData } from '@/types/tracking';
 import { canRunClientTracking } from '@/lib/tracking/client-traffic-filter';
 
-type TrackableCartItem = {
+type TrackableCartItem = MetaBrowserCommerceItem & {
   id: string;
   productId?: string;
   variantId?: string | null;
   sku?: string | null;
+  productSku?: string | null;
+  variantSku?: string | null;
   name: string;
   price: number;
   quantity: number;
@@ -22,16 +25,33 @@ type TrackableCartItem = {
   color?: string | null;
 };
 
+type TrackableProductVariant = {
+  id: string;
+  sku?: string | null;
+  name?: string | null;
+  price?: number | null;
+  attributes?: Record<string, string> | null;
+};
+
 type TrackableProduct = {
   id: string;
-  sku?: string;
+  sku?: string | null;
   name: string;
   price: number;
   salePrice?: number | null;
   category?: string | null;
   brand?: string | null;
-  variants?: Array<{ id: string }>;
+  variants?: TrackableProductVariant[];
+  selectedVariantId?: string | null;
 };
+
+type CommerceEventName =
+  | 'AddToCart'
+  | 'ViewCart'
+  | 'InitiateCheckout'
+  | 'AddShippingInfo'
+  | 'AddPaymentInfo'
+  | 'ViewContent';
 
 function toMoney(value: number | undefined | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
@@ -42,15 +62,27 @@ function compactStrings(values: Array<string | null | undefined>) {
   return values.filter((value): value is string => Boolean(value));
 }
 
+function getAttributeValue(attributes: Record<string, string> | null | undefined, keys: string[]) {
+  if (!attributes) return null;
+
+  for (const key of keys) {
+    const exact = attributes[key];
+    if (exact) return exact;
+  }
+
+  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
+  for (const [key, value] of Object.entries(attributes)) {
+    if (normalizedKeys.has(key.toLowerCase()) && value) return value;
+  }
+
+  return null;
+}
 
 function postProductAnalytics(payload: Record<string, unknown>) {
-  if (typeof window === 'undefined') return;
-  if (!canRunClientTracking()) return;
+  if (typeof window === 'undefined' || !canRunClientTracking()) return;
 
   try {
     const body = JSON.stringify(payload);
-    // Product analytics is non-critical and must never block shopping.
-    // keepalive lets product-view/add-to-cart/checkout counters survive quick navigation.
     fetch('/api/product-analytics', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,9 +104,30 @@ function toProductAnalyticsItems(items: TrackableCartItem[]) {
     .filter((item) => Boolean(item.productId));
 }
 
-function trackSafely(event: 'AddToCart' | 'InitiateCheckout' | 'ViewContent', data: TrackingEventData) {
+function trackCommerceItems(
+  eventName: CommerceEventName,
+  items: TrackableCartItem[],
+  options: {
+    value?: number;
+    viewContentHasVariants?: boolean;
+    extra?: TrackingEventData;
+  } = {}
+) {
+  const metaEvent = buildMetaCommerceBrowserEvent({
+    eventName,
+    items,
+    value: options.value,
+    currency: 'BDT',
+    viewContentHasVariants: options.viewContentHasVariants,
+    extra: options.extra,
+  });
+
+  if (!metaEvent.validation.valid) {
+    metaBrowserDebug('warn', 'Commerce event failed browser contract validation', metaEvent);
+  }
+
   try {
-    track(event, data);
+    track(eventName, metaEvent.payload, { metaEventId: metaEvent.eventId });
   } catch {
     // Tracking must never block shopping flows.
   }
@@ -84,37 +137,25 @@ export function buildCartTrackingData(
   items: TrackableCartItem[],
   value = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 ): TrackingEventData {
-  const contentIds = buildMetaCatalogContentIds(items);
-  const contents = buildMetaCatalogContents(items);
-
-  return {
-    content_ids: contentIds,
-    content_type: getMetaCatalogContentType(items),
-    contents,
-    value: toMoney(value),
+  return buildMetaCommercePayload({
+    eventName: 'InitiateCheckout',
+    items,
+    value,
     currency: 'BDT',
-    num_items: items.reduce((sum, item) => sum + item.quantity, 0),
-  };
+  });
 }
 
 export function trackAddToCart(item: TrackableCartItem, quantity = item.quantity) {
   const trackedQuantity = Math.max(1, quantity);
   const trackingItem = { ...item, quantity: trackedQuantity, item_price: item.price };
-  const contents = buildMetaCatalogContents([trackingItem]);
-  const contentIds = buildMetaCatalogContentIds([trackingItem]);
 
-  trackSafely('AddToCart', {
-    content_ids: contentIds,
-    content_name: item.name,
-    content_type: getMetaCatalogContentType([trackingItem]),
-    contents,
-    value: toMoney(item.price * trackedQuantity),
-    currency: 'BDT',
-    num_items: trackedQuantity,
-    product_id: item.productId ?? item.id,
-    variant_id: item.variantId ?? undefined,
-    variant_name: item.variantName ?? undefined,
-    variant_attributes: compactStrings([item.size, item.color]).join(' / ') || undefined,
+  trackCommerceItems('AddToCart', [trackingItem], {
+    value: item.price * trackedQuantity,
+    extra: {
+      content_name: item.name,
+      variant_name: item.variantName ?? undefined,
+      variant_attributes: compactStrings([item.size, item.color]).join(' / ') || undefined,
+    },
   });
 
   postProductAnalytics({
@@ -123,11 +164,55 @@ export function trackAddToCart(item: TrackableCartItem, quantity = item.quantity
   });
 }
 
+export function trackAddToCartBundle(items: TrackableCartItem[], contentName = 'Product bundle') {
+  if (items.length === 0) return;
+
+  const trackingItems = items.map((item) => ({
+    ...item,
+    quantity: Math.max(1, item.quantity),
+    item_price: item.price,
+  }));
+  const value = trackingItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  trackCommerceItems('AddToCart', trackingItems, {
+    value,
+    extra: {
+      content_name: contentName,
+      bundle_item_count: trackingItems.length,
+    },
+  });
+
+  postProductAnalytics({
+    action: 'add_to_cart',
+    items: toProductAnalyticsItems(trackingItems),
+  });
+}
+
+export function trackViewCart(items: TrackableCartItem[], value?: number) {
+  if (items.length === 0) return;
+  const data = buildCartTrackingData(items, value);
+  if (!data.value || data.value <= 0) return;
+
+  trackCommerceItems('ViewCart', items, {
+    value: data.value,
+    extra: { checkout_step: 'cart_review' },
+  });
+
+  postProductAnalytics({
+    action: 'view_cart',
+    items: toProductAnalyticsItems(items),
+  });
+}
+
 export function trackInitiateCheckout(items: TrackableCartItem[], value?: number) {
   if (items.length === 0) return;
   const data = buildCartTrackingData(items, value);
   if (!data.value || data.value <= 0) return;
-  trackSafely('InitiateCheckout', data);
+
+  trackCommerceItems('InitiateCheckout', items, {
+    value: data.value,
+    extra: { checkout_step: 'begin_checkout' },
+  });
 
   postProductAnalytics({
     action: 'checkout_start',
@@ -135,31 +220,93 @@ export function trackInitiateCheckout(items: TrackableCartItem[], value?: number
   });
 }
 
+export function trackAddShippingInfo(
+  items: TrackableCartItem[],
+  value: number | undefined,
+  shippingTier?: string
+) {
+  if (items.length === 0) return;
+  const data = buildCartTrackingData(items, value);
+  if (!data.value || data.value <= 0) return;
+
+  trackCommerceItems('AddShippingInfo', items, {
+    value: data.value,
+    extra: {
+      checkout_step: 'shipping_info',
+      shipping_tier: shippingTier || 'Pathao Home Delivery',
+    },
+  });
+
+  postProductAnalytics({
+    action: 'checkout_shipping_info',
+    items: toProductAnalyticsItems(items),
+  });
+}
+
+export function trackAddPaymentInfo(
+  items: TrackableCartItem[],
+  value: number | undefined,
+  paymentType?: string
+) {
+  if (items.length === 0) return;
+  const data = buildCartTrackingData(items, value);
+  if (!data.value || data.value <= 0) return;
+
+  trackCommerceItems('AddPaymentInfo', items, {
+    value: data.value,
+    extra: {
+      checkout_step: 'payment_info',
+      payment_type: paymentType,
+    },
+  });
+
+  postProductAnalytics({
+    action: 'checkout_payment_info',
+    items: toProductAnalyticsItems(items),
+  });
+}
+
 export function trackProductView(product: TrackableProduct) {
-  const price = toMoney(product.salePrice && product.salePrice > 0 ? product.salePrice : product.price);
+  const selectedVariant = product.selectedVariantId
+    ? product.variants?.find((variant) => variant.id === product.selectedVariantId) ?? null
+    : null;
+  const selectedVariantPrice = toMoney(selectedVariant?.price);
+  const basePrice = toMoney(product.salePrice && product.salePrice > 0 ? product.salePrice : product.price);
+  const price = selectedVariantPrice && selectedVariantPrice > 0 ? selectedVariantPrice : basePrice;
   if (!price || price <= 0) return;
 
   const hasVariants = Boolean(product.variants?.length);
-  const contentItem = {
-    id: product.id,
+  const variantSize = getAttributeValue(selectedVariant?.attributes, ['size', 'Size']);
+  const variantColor = getAttributeValue(selectedVariant?.attributes, ['color', 'Color', 'shade', 'Shade']);
+  const variantName = selectedVariant
+    ? compactStrings([variantSize, variantColor]).join(' / ') || selectedVariant.name || undefined
+    : undefined;
+  const contentItem: TrackableCartItem = {
+    id: selectedVariant?.id ?? product.id,
     productId: product.id,
-    sku: product.sku,
+    productSku: product.sku,
+    variantId: selectedVariant?.id ?? null,
+    variantSku: selectedVariant?.sku ?? null,
+    sku: selectedVariant?.sku ?? product.sku,
+    variantName,
+    size: variantSize,
+    color: variantColor,
     quantity: 1,
     price,
+    name: product.name,
   };
 
-  trackSafely('ViewContent', {
-    content_ids: buildMetaCatalogContentIds([contentItem]),
-    content_name: product.name,
-    content_category: product.category ?? undefined,
-    content_type: hasVariants ? 'product_group' : 'product',
-    contents: buildMetaCatalogContents([contentItem]),
+  trackCommerceItems('ViewContent', [contentItem], {
     value: price,
-    currency: 'BDT',
-    num_items: 1,
-    product_id: product.id,
-    sku: product.sku,
-    brand: product.brand ?? undefined,
+    viewContentHasVariants: hasVariants,
+    extra: {
+      content_name: product.name,
+      content_category: product.category ?? undefined,
+      variant_name: variantName,
+      variant_attributes: compactStrings([variantSize, variantColor]).join(' / ') || undefined,
+      sku: selectedVariant?.sku ?? product.sku ?? undefined,
+      brand: product.brand ?? undefined,
+    },
   });
 
   postProductAnalytics({

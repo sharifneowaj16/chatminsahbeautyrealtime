@@ -1,5 +1,7 @@
 'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -235,17 +237,17 @@ export default function ProductionQaPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {[24, 168, 720].map((hours) => (
-            <button
+            <Button
               key={hours}
               onClick={() => setRange(hours)}
               className={`rounded-lg border px-3 py-2 text-sm font-semibold ${range === hours ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-700'}`}
             >
               {hours === 24 ? '24h' : hours === 168 ? '7d' : '30d'}
-            </button>
+            </Button>
           ))}
-          <button onClick={() => void load()} disabled={loading} className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          <Button onClick={() => void load()} disabled={loading} className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-          </button>
+          </Button>
         </div>
       </div>
 

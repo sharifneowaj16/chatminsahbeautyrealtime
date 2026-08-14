@@ -6,6 +6,7 @@ import {
   parseWeightToKg,
   resolvePackagingWeightKg,
 } from '@/lib/buy-now';
+import { calculateDeliveryPricing, type DeliveryOfferProductInput } from '@/lib/delivery-pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as PriceRequestBody;
     let totalWeightKg = Number(body.totalWeightKg ?? 0);
+    let deliveryOfferProducts: DeliveryOfferProductInput[] = [];
     const recipientCity = Number(body.address?.pathao_city_id);
     const recipientZone = Number(body.address?.pathao_zone_id);
 
@@ -82,7 +84,18 @@ export async function POST(request: NextRequest) {
       const [products, variants, configs] = await Promise.all([
         prisma.product.findMany({
           where: { id: { in: productIds }, isActive: true },
-          select: { id: true, weight: true, shippingWeight: true },
+          select: {
+            id: true,
+            name: true,
+            weight: true,
+            shippingWeight: true,
+            deliveryOfferEnabled: true,
+            deliveryOfferType: true,
+            deliveryOfferAmount: true,
+            deliveryOfferStartDate: true,
+            deliveryOfferEndDate: true,
+            deliveryOfferBadgeText: true,
+          },
         }),
         variantIds.length
           ? prisma.productVariant.findMany({
@@ -95,6 +108,17 @@ export async function POST(request: NextRequest) {
           select: { value: true },
         }),
       ]);
+
+      deliveryOfferProducts = products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        deliveryOfferEnabled: product.deliveryOfferEnabled,
+        deliveryOfferType: product.deliveryOfferType,
+        deliveryOfferAmount: product.deliveryOfferAmount,
+        deliveryOfferStartDate: product.deliveryOfferStartDate,
+        deliveryOfferEndDate: product.deliveryOfferEndDate,
+        deliveryOfferBadgeText: product.deliveryOfferBadgeText,
+      }));
 
       const productMap = new Map(products.map((product) => [product.id, product]));
       const variantMap = new Map(variants.map((variant) => [variant.id, variant]));
@@ -195,11 +219,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const deliveryPricing = calculateDeliveryPricing({
+      courierDeliveryCharge: shippingCharge,
+      courierPricingSource: 'PATHAO',
+      products: deliveryOfferProducts,
+    });
+
     return NextResponse.json({
-      shippingCharge,
+      // Backward-compatible customer-facing delivery charge.
+      // Order.shippingCost should use this value, not the raw courier quote.
+      shippingCharge: deliveryPricing.customerDeliveryCharge,
+      customerDeliveryCharge: deliveryPricing.customerDeliveryCharge,
+      courierDeliveryCharge: deliveryPricing.courierDeliveryCharge,
+      deliveryDiscountAmount: deliveryPricing.deliveryDiscountAmount,
+      deliveryPricingSource: deliveryPricing.deliveryPricingSource,
+      deliveryOfferType: deliveryPricing.deliveryOfferType,
+      deliveryOfferProductId: deliveryPricing.deliveryOfferProductId,
+      deliveryOfferBadgeText: deliveryPricing.deliveryOfferBadgeText,
+      appliedDeliveryOffer: deliveryPricing.appliedOffer,
       pathao: {
         request: pathaoPayload,
         response: priceData,
+        courierCharge: shippingCharge,
       },
       store: {
         storeId: storeInfo.storeId,

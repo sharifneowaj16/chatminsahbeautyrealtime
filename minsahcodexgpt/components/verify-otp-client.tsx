@@ -1,97 +1,94 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react';
 import { useRouter } from 'next/navigation';
+
+import { AuthShell } from '@/components/auth/AuthShell';
+import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
+import { Spinner } from '@/components/ui/Spinner';
+import { useToast } from '@/components/ui/ToastProvider';
 
 interface VerifyOTPClientProps {
   email: string;
 }
 
+const EMPTY_OTP = ['', '', '', '', '', ''];
+
 export function VerifyOTPClient({ email }: VerifyOTPClientProps) {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(EMPTY_OTP);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resending, setResending] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
+  const { pushToast } = useToast();
 
   useEffect(() => {
-    // Focus first input on mount
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
+    inputRefs.current[0]?.focus();
   }, []);
 
   const handleChange = (index: number, value: string) => {
-    // Only allow numbers
     if (value && !/^\d$/.test(value)) return;
 
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
+    setOtp((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
 
-    // Auto-focus next input
-    if (value && index < 5 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      // Focus previous input on backspace if current is empty
+  const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, 6);
-    if (!/^\d+$/.test(pastedData)) return;
+  const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const pastedData = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pastedData) return;
 
-    const newOtp = [...otp];
-    pastedData.split('').forEach((char, index) => {
-      if (index < 6) {
-        newOtp[index] = char;
-      }
+    const next = [...EMPTY_OTP];
+    pastedData.split('').forEach((character, index) => {
+      next[index] = character;
     });
-    setOtp(newOtp);
-
-    // Focus the last filled input or the next empty one
-    const nextIndex = Math.min(pastedData.length, 5);
-    inputRefs.current[nextIndex]?.focus();
+    setOtp(next);
+    inputRefs.current[Math.min(pastedData.length, 5)]?.focus();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     const otpCode = otp.join('');
 
     if (otpCode.length !== 6) {
-      setError('Please enter all 6 digits');
+      setError('Please enter all six digits.');
       return;
     }
 
     setLoading(true);
     setError('');
-
     try {
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp: otpCode }),
       });
-
       const data = await response.json();
 
-      if (response.ok) {
-        // Redirect to reset password page with token
-        router.push(`/reset-password?token=${data.token}`);
-      } else {
-        setError(data.error || 'Invalid OTP');
-      }
-    } catch (err) {
+      if (response.ok) router.push(`/reset-password?token=${data.token}`);
+      else setError(data.error || 'The verification code is invalid.');
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -101,147 +98,95 @@ export function VerifyOTPClient({ email }: VerifyOTPClientProps) {
   const handleResendOTP = async () => {
     setResending(true);
     setError('');
-
     try {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
       if (response.ok) {
-        // Clear OTP inputs
-        setOtp(['', '', '', '', '', '']);
+        setOtp(EMPTY_OTP);
         inputRefs.current[0]?.focus();
-        // You could show a success message here
+        pushToast({
+          tone: 'success',
+          title: 'Verification code sent',
+          description: `A new code was sent to ${email}.`,
+        });
       } else {
-        setError('Failed to resend OTP');
+        setError('Unable to resend the verification code.');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setResending(false);
     }
   };
 
+  const otpCode = otp.join('');
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#FFE6D2' }}>
-      <div className="w-full max-w-md">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Link href="/forgot-password" className="inline-flex items-center text-sm font-medium hover:underline" style={{ color: '#64320D' }}>
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </Link>
-        </div>
+    <AuthShell
+      title="Verify your email"
+      description={
+        <>
+          Enter the six-digit code sent to{' '}
+          <strong className="text-minsah-text-primary">{email || 'your email'}</strong>.
+        </>
+      }
+      backHref="/forgot-password"
+      backLabel="Back"
+    >
+      {error ? (
+        <Alert tone="danger" announcement="assertive" className="mb-5">
+          {error}
+        </Alert>
+      ) : null}
 
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <svg className="w-12 h-12" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M24 4L8 14v20l16 10 16-10V14L24 4z" fill="#64320D"/>
-                  <path d="M24 8L12 16v16l12 8 12-8V16L24 8z" fill="#8E6545"/>
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold" style={{ color: '#64320D' }}>Minsah Beauty</h2>
-              <p className="text-sm" style={{ color: '#8E6545' }}>Toxin Free & Natural</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Form Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-3" style={{ color: '#421C00' }}>Forgot Password</h1>
-          <p className="text-sm px-4" style={{ color: '#8E6545' }}>
-            We sent an OTP to <span className="font-semibold" style={{ color: '#64320D' }}>{email || 'your email'}</span>. Please enter that 6 digit code mentioned in the email
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* OTP Input Boxes */}
-          <div className="flex justify-center gap-2">
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+        <Field
+          controlId="otp-0"
+          label="Verification code"
+          description="Paste the full code or type one digit in each box."
+          error={error || undefined}
+        >
+          <div className="grid grid-cols-6 gap-2" role="group" aria-label="Six-digit verification code">
             {otp.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => {
-                  inputRefs.current[index] = el;
+                id={`otp-${index}`}
+                ref={(element) => {
+                  inputRefs.current[index] = element;
                 }}
                 type="text"
                 inputMode="numeric"
+                autoComplete={index === 0 ? 'one-time-code' : 'off'}
                 maxLength={1}
                 value={digit}
-                onChange={(e) => handleChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
+                onChange={(event) => handleChange(index, event.target.value)}
+                onKeyDown={(event) => handleKeyDown(index, event)}
                 onPaste={index === 0 ? handlePaste : undefined}
-                className="w-12 h-14 text-center text-xl font-semibold border-2 rounded-lg focus:outline-none focus:ring-2 transition-all"
-                style={{
-                  borderColor: digit ? '#64320D' : '#8E6545',
-                  backgroundColor: '#FFF',
-                  color: '#421C00',
-                  boxShadow: digit ? '0 0 0 1px #64320D' : 'none'
-                }}
+                disabled={loading}
+                aria-label={`Digit ${index + 1}`}
+                className="minsah-field h-14 min-w-0 rounded-xl px-0 text-center text-xl font-black"
               />
             ))}
           </div>
+        </Field>
 
-          {/* Verify OTP Button */}
-          <button
-            type="submit"
-            disabled={loading || otp.join('').length !== 6}
-            className="w-full py-3 px-4 rounded-full font-medium text-white transition-all duration-200 disabled:opacity-50 hover:opacity-90"
-            style={{ backgroundColor: '#64320D' }}
-          >
-            {loading ? 'Verifying...' : 'Verify OTP'}
-          </button>
+        <Button type="submit" fullWidth size="lg" disabled={loading || otpCode.length !== 6} aria-busy={loading || undefined}>
+          {loading ? <Spinner size="sm" decorative /> : null}
+          {loading ? 'Verifying…' : 'Verify code'}
+        </Button>
 
-          {/* Resend OTP */}
-          <div className="text-center">
-            <p className="text-sm" style={{ color: '#8E6545' }}>
-              Haven't got the email yet?{' '}
-              <button
-                type="button"
-                onClick={handleResendOTP}
-                disabled={resending}
-                className="font-semibold hover:underline disabled:opacity-50"
-                style={{ color: '#64320D' }}
-              >
-                {resending ? 'Resending...' : 'Resend OTP'}
-              </button>
-            </p>
-          </div>
-        </form>
-
-        {/* Navigation Icons (Bottom) */}
-        <div className="mt-12 flex justify-center gap-12">
-          <Link href="/" className="flex flex-col items-center" style={{ color: '#8E6545' }}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </Link>
-          <Link href="/wishlist" className="flex flex-col items-center" style={{ color: '#8E6545' }}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </Link>
-          <Link href="/login" className="flex flex-col items-center" style={{ color: '#8E6545' }}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </Link>
+        <div className="text-center text-sm text-minsah-text-muted">
+          Did not receive the email?{' '}
+          <Button type="button" variant="ghost" size="sm" onClick={handleResendOTP} disabled={resending || loading}>
+            {resending ? <Spinner size="sm" decorative /> : null}
+            {resending ? 'Resending…' : 'Resend code'}
+          </Button>
         </div>
-      </div>
-    </div>
+      </form>
+    </AuthShell>
   );
 }

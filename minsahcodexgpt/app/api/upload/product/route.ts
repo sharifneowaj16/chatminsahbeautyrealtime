@@ -6,11 +6,15 @@ import {
   validateImageUpload,
   ensureBucketInitialized,
 } from '@/lib/storage/minio';
+import { requireAdminUploadPermission, PRODUCT_UPLOAD_PERMISSIONS } from '@/lib/auth/upload-route-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const guard = await requireAdminUploadPermission(request, PRODUCT_UPLOAD_PERMISSIONS);
+  if (guard) return guard;
+
   try {
     await ensureBucketInitialized();
 

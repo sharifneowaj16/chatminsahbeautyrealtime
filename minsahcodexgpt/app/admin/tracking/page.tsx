@@ -1,5 +1,9 @@
 'use client';
 
+
+
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -31,6 +35,9 @@ export default function TrackingAnalyticsPage() {
   const { hasPermission } = useAdminAuth();
   const [dateRange, setDateRange] = useState('7d');
   const [isLoading, setIsLoading] = useState(false);
+  const tiktokBrowserPixelEnabled =
+    process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ENABLED === 'true' &&
+    !!process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
 
   // Mock analytics data - Replace with real data from API
   const analytics = {
@@ -57,7 +64,6 @@ export default function TrackingAnalyticsPage() {
         { source: 'Facebook', sessions: 3456, users: 2345, conversions: 156, revenue: 45678, percentage: 27.7 },
         { source: 'Direct', sessions: 2345, users: 1876, conversions: 45, revenue: 12345, percentage: 18.8 },
         { source: 'Instagram', sessions: 1234, users: 987, conversions: 12, revenue: 5678, percentage: 9.9 },
-        { source: 'TikTok', sessions: 854, users: 654, conversions: 9, revenue: 3456, percentage: 6.9 },
       ],
       mediums: [
         { medium: 'organic', sessions: 5678, users: 4321, conversions: 267, revenue: 89456 },
@@ -98,7 +104,16 @@ export default function TrackingAnalyticsPage() {
     platforms: {
       facebook: { enabled: true, events: 12345, conversions: 234, revenue: 67890, roas: 4.5 },
       google: { enabled: true, events: 15678, conversions: 345, revenue: 89012, roas: 5.2 },
-      tiktok: { enabled: true, events: 5678, conversions: 89, revenue: 23456, roas: 3.8 },
+      tiktok: {
+        enabled: tiktokBrowserPixelEnabled,
+        events: 0,
+        conversions: 0,
+        revenue: 0,
+        roas: 0,
+        status: tiktokBrowserPixelEnabled
+          ? 'Browser Pixel active; server Events API status lives in Tracking Health. ROAS hidden until verified.'
+          : 'Not configured',
+      },
       snapchat: { enabled: false, events: 0, conversions: 0, revenue: 0, roas: 0 },
       pinterest: { enabled: false, events: 0, conversions: 0, revenue: 0, roas: 0 },
     },
@@ -126,7 +141,7 @@ export default function TrackingAnalyticsPage() {
           <p className="text-gray-600">Comprehensive tracking across all platforms</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          <select
+          <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg"
@@ -135,14 +150,14 @@ export default function TrackingAnalyticsPage() {
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
             <option value="90d">Last 90 Days</option>
-          </select>
-          <button
+          </Select>
+          <Button
             onClick={handleRefresh}
             className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
             <RefreshCw className={clsx('w-5 h-5 mr-2', isLoading && 'animate-spin')} />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -247,12 +262,12 @@ export default function TrackingAnalyticsPage() {
                     <span className="text-sm font-medium text-gray-900">{source.source}</span>
                     <span className="text-sm text-gray-600">{source.sessions.toLocaleString()} sessions</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-purple-600 h-2 rounded-full"
-                      style={{ width: `${source.percentage}%` }}
-                    />
-                  </div>
+                  <progress
+                    className="h-2 w-full accent-minsah-action-primary"
+                    max={100}
+                    value={source.percentage}
+                    aria-label={`${source.source} traffic percentage`}
+                  />
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-gray-500">
                       {source.conversions} conversions &bull; {formatPrice(convertUSDtoBDT(source.revenue))}
@@ -343,15 +358,29 @@ export default function TrackingAnalyticsPage() {
                 </div>
                 {data.enabled ? (
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">
-                      {formatPrice(convertUSDtoBDT(data.revenue))}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {data.conversions} conv &bull; {data.roas.toFixed(1)}x ROAS
-                    </p>
+                    {platform === 'tiktok' ? (
+                      <>
+                        <p className="text-sm font-bold text-gray-900">ROAS hidden</p>
+                        <p className="text-xs text-gray-500">Use Tracking Health for verified Purchase status</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-bold text-gray-900">
+                          {formatPrice(convertUSDtoBDT(data.revenue))}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {data.conversions} conv &bull; {data.roas.toFixed(1)}x ROAS
+                        </p>
+                      </>
+                    )}
+                    {'status' in data && data.status ? (
+                      <p className="text-xs text-amber-600 max-w-56">{data.status}</p>
+                    ) : null}
                   </div>
                 ) : (
-                  <span className="text-xs text-gray-500">Not configured</span>
+                  <span className="text-xs text-gray-500">
+                    {'status' in data && data.status ? data.status : 'Not configured'}
+                  </span>
                 )}
               </div>
             ))}
@@ -369,17 +398,18 @@ export default function TrackingAnalyticsPage() {
                 <span className="text-sm font-medium text-gray-900">{step.step}</span>
                 <span className="text-sm text-gray-600">{step.users.toLocaleString()} users</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-8 relative overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-8 rounded-full flex items-center justify-end pr-3"
-                  style={{ width: `${(step.users / analytics.funnel[0].users) * 100}%` }}
-                >
-                  {step.dropoff > 0 && (
-                    <span className="text-xs font-medium text-white">
-                      -{step.dropoff.toFixed(1)}% dropoff
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center gap-3">
+                <progress
+                  className="h-3 w-full accent-minsah-action-primary"
+                  max={Math.max(analytics.funnel[0].users, 1)}
+                  value={step.users}
+                  aria-label={`${step.step} funnel users`}
+                />
+                {step.dropoff > 0 ? (
+                  <span className="whitespace-nowrap text-xs font-semibold text-minsah-text-muted">
+                    -{step.dropoff.toFixed(1)}%
+                  </span>
+                ) : null}
               </div>
             </div>
           ))}

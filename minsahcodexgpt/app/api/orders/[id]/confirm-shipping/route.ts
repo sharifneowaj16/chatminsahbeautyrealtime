@@ -1,17 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
+import { verifyTelegramInternalSecretHeader } from '@/lib/telegram/auth';
+import { canTelegramCancel, canTelegramPathaoSend } from '@/lib/telegram/order-state';
 
 export const dynamic = 'force-dynamic';
 
-const INTERNAL_SECRET = process.env.TELEGRAM_BOT_INTERNAL_SECRET;
+function orderSelectFields() {
+  return {
+    id: true,
+    orderNumber: true,
+    shippingMethod: true,
+    status: true,
+    paymentStatus: true,
+    paymentMethod: true,
+    phoneConfirmedAt: true,
+    metaPurchaseSent: true,
+    isTest: true,
+    pathaoConsignmentId: true,
+    pathaoTrackingCode: true,
+    pathaoSentAt: true,
+    shippedAt: true,
+    deliveredAt: true,
+    cancelledAt: true,
+    returnedAt: true,
+    refundedAt: true,
+    courierDeliveredAt: true,
+    courierReturnedAt: true,
+    addressId: true,
+  } as const;
+}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const secret = request.headers.get('x-internal-secret');
-  if (!INTERNAL_SECRET || secret !== INTERNAL_SECRET) {
+  const internalSecret = process.env.TELEGRAM_BOT_INTERNAL_SECRET?.trim() || '';
+  if (!verifyTelegramInternalSecretHeader(request, internalSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -25,7 +51,7 @@ export async function POST(
 
   const order = await prisma.order.findUnique({
     where: { id },
-    select: { id: true, orderNumber: true, shippingMethod: true, status: true },
+    select: orderSelectFields(),
   });
 
   if (!order) {
@@ -33,21 +59,61 @@ export async function POST(
   }
 
   if (action === 'cancel') {
-    await prisma.order.update({
-      where: { id },
-      data: { status: 'CANCELLED' },
+    const allowed = canTelegramCancel(order);
+    if (!allowed.ok) {
+      return NextResponse.json(
+        { error: allowed.reason, orderNumber: order.orderNumber },
+        { status: 409 }
+      );
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const before = await tx.order.findUnique({ where: { id }, select: orderSelectFields() });
+      if (!before) return null;
+
+      const allowedInsideTransaction = canTelegramCancel(before);
+      if (!allowedInsideTransaction.ok) {
+        return { blocked: true as const, reason: allowedInsideTransaction.reason, orderNumber: before.orderNumber };
+      }
+
+      const updated = await tx.order.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED',
+          paymentStatus: before.paymentStatus === 'COMPLETED' ? before.paymentStatus : 'CANCELLED',
+          cancelledAt: new Date(),
+          confirmationStatus: 'CANCELLED_FROM_TELEGRAM_LEGACY',
+          confirmationNote: 'Cancelled from legacy Telegram internal endpoint after state guard.',
+        },
+        select: orderSelectFields(),
+      });
+
+      await recordProductLifecycleTransitionInTransaction(tx, before, updated);
+      return { blocked: false as const, orderNumber: updated.orderNumber };
     });
+
+    if (!result) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    if (result.blocked) {
+      return NextResponse.json(
+        { error: result.reason, orderNumber: result.orderNumber },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       action: 'cancelled',
-      orderNumber: order.orderNumber,
+      orderNumber: result.orderNumber,
     });
   }
 
-  if (order.status === 'CANCELLED' || order.status === 'REFUNDED') {
+  const allowed = canTelegramPathaoSend(order);
+  if (!allowed.ok) {
     return NextResponse.json(
-      { error: `Order is already ${order.status.toLowerCase()}`, orderNumber: order.orderNumber },
+      { error: allowed.reason, orderNumber: order.orderNumber },
       { status: 409 }
     );
   }

@@ -1,5 +1,7 @@
-﻿'use client';
+'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import type { Platform, ScheduledPost } from '@/types/social';
 import { PLATFORM_CONFIGS, generateMockPlatforms, generateMockScheduledPosts } from '@/types/social';
@@ -137,19 +139,19 @@ export default function SocialDashboard({ className = '' }: SocialDashboardProps
             <p className="text-gray-600">Manage all your social media platforms in one place</p>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300">
+            <Button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300">
               <Bell className="h-5 w-5" />
-            </button>
-            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300">
+            </Button>
+            <Button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300">
               <Settings className="h-5 w-5" />
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setShowScheduler(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
             >
               <Plus className="h-5 w-5" />
               Create Post
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -240,7 +242,7 @@ export default function SocialDashboard({ className = '' }: SocialDashboardProps
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
+            <Button
               onClick={() => setShowScheduler(true)}
               className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300"
             >
@@ -251,9 +253,9 @@ export default function SocialDashboard({ className = '' }: SocialDashboardProps
                 <p className="font-medium text-gray-900">Create New Post</p>
                 <p className="text-sm text-gray-600">Schedule content for multiple platforms</p>
               </div>
-            </button>
+            </Button>
 
-            <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300">
+            <Button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300">
               <div className="p-2 bg-green-100 rounded-lg">
                 <Calendar className="h-5 w-5 text-green-600" />
               </div>
@@ -261,9 +263,9 @@ export default function SocialDashboard({ className = '' }: SocialDashboardProps
                 <p className="font-medium text-gray-900">View Calendar</p>
                 <p className="text-sm text-gray-600">See all scheduled content</p>
               </div>
-            </button>
+            </Button>
 
-            <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300">
+            <Button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <BarChart className="h-5 w-5 text-purple-600" />
               </div>
@@ -271,7 +273,7 @@ export default function SocialDashboard({ className = '' }: SocialDashboardProps
                 <p className="font-medium text-gray-900">Analytics</p>
                 <p className="text-sm text-gray-600">View performance insights</p>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

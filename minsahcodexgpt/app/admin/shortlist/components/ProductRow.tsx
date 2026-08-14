@@ -1,7 +1,8 @@
-// app/admin/shortlist/components/ProductRow.tsx
-
 'use client';
 
+// app/admin/shortlist/components/ProductRow.tsx
+
+import { Input } from '@/components/ui/Input';
 import React from 'react';
 
 interface ShortlistItem {
@@ -72,7 +73,7 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
       <div className="flex items-start gap-3 mb-2">
         {/* Checkbox */}
         <label className="flex items-center cursor-pointer pt-0.5">
-          <input
+          <Input
             type="checkbox"
             checked={item.purchased}
             onChange={onCheckboxChange}

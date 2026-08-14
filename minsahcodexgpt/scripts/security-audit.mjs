@@ -344,29 +344,25 @@ function assertPhase3MetaCatalogMapping(files, issues) {
 
   const helperText = fs.readFileSync(path.join(root, helperPath), 'utf8');
   for (const required of [
-    'buildMetaCatalogContentIds',
-    'buildMetaCatalogContents',
-    'getMetaCatalogContentType',
-    'getMetaParentProductId',
-    "return items.some(hasMetaVariantSelection) ? 'product_group' : 'product'",
-    'Production rule for Minsah Beauty',
+    'NEXT_PUBLIC_META_CATALOG_ID_SOURCE',
+    'resolveMetaCatalogIdentity',
+    'buildMetaCatalogData',
+    'buildMetaViewContentCatalogData',
+    "content_type: 'product'",
+    "content_type: 'product_group'",
+    'return null',
   ]) {
     if (!helperText.includes(required)) {
-      issues.push(`Phase 3 Meta catalog helper missing required contract (${required}): ${helperPath}`);
+      issues.push(`Phase 3 Meta catalog helper missing required exact/fail-closed contract (${required}): ${helperPath}`);
     }
   }
 
-  const productPriorityIndex = helperText.indexOf('getMetaParentProductId(item)');
-  const variantPriorityIndex = helperText.indexOf('getMetaVariantId(item)');
-  if (productPriorityIndex === -1 || variantPriorityIndex === -1 || productPriorityIndex > variantPriorityIndex) {
-    issues.push(`Phase 3 content ID priority must prefer parent Product.id before variant ID: ${helperPath}`);
-  }
-
   const requiredConsumers = {
-    'lib/tracking/ecommerce.ts': ['buildMetaCatalogContentIds', 'buildMetaCatalogContents', 'getMetaCatalogContentType'],
-    'lib/tracking/meta-capi-cod-purchase.ts': ['buildMetaCatalogContentIds', 'buildMetaCatalogContents', 'getMetaCatalogContentType'],
-    'app/api/tracking/meta/online-purchase/route.ts': ['buildMetaCatalogContentIds', 'buildMetaCatalogContents', 'getMetaCatalogContentType'],
-    'lib/tracking/ga4-measurement-protocol.ts': ['buildMetaCatalogContents', 'getMetaContentId'],
+    'lib/tracking/ecommerce.ts': ['buildMetaCatalogData', 'buildMetaViewContentCatalogData'],
+    'lib/tracking/meta-capi-cod-purchase.ts': ['buildMetaCatalogData'],
+    'app/api/tracking/meta/online-purchase/route.ts': ['buildMetaCatalogData'],
+    'lib/tracking/ga4-measurement-protocol.ts': ['buildGa4CatalogContents', 'getGa4ItemId'],
+    'lib/tracking/tiktok-events-api-purchase.ts': ['buildTikTokContentIds', 'getTikTokContentId'],
   };
 
   for (const [relative, requiredTokens] of Object.entries(requiredConsumers)) {
@@ -377,19 +373,16 @@ function assertPhase3MetaCatalogMapping(files, issues) {
     const text = fs.readFileSync(path.join(root, relative), 'utf8');
     for (const token of requiredTokens) {
       if (!text.includes(token)) {
-        issues.push(`Phase 3 ${relative} does not use canonical catalog mapping helper (${token}).`);
+        issues.push(`Phase 3 ${relative} does not use the platform-specific identity contract (${token}).`);
       }
     }
   }
 
-  for (const relative of ['lib/tracking/ecommerce.ts', 'lib/tracking/meta-capi-cod-purchase.ts', 'app/api/tracking/meta/online-purchase/route.ts']) {
+  for (const relative of ['lib/tracking/ga4-measurement-protocol.ts', 'lib/tracking/tiktok-events-api-purchase.ts']) {
     if (!relativeFileSet.has(relative)) continue;
     const text = fs.readFileSync(path.join(root, relative), 'utf8');
-    if (/content_type:\s*['"]product['"]/.test(text)) {
-      issues.push(`Phase 3 tracking payload still hardcodes content_type product instead of canonical product/product_group helper: ${relative}`);
-    }
-    if (/content_ids:\s*contents\.map\(\(item\)\s*=>\s*item\.id\)/.test(text)) {
-      issues.push(`Phase 3 tracking payload derives content_ids from contents instead of canonical catalog IDs: ${relative}`);
+    if (text.includes("@/lib/tracking/meta-content-id")) {
+      issues.push(`Phase 3 platform separation failed; ${relative} still imports Meta catalog identity.`);
     }
   }
 
@@ -406,8 +399,10 @@ function assertPhase3MetaCatalogMapping(files, issues) {
   const cartContextPath = 'contexts/CartContext.tsx';
   if (relativeFileSet.has(cartContextPath)) {
     const text = fs.readFileSync(path.join(root, cartContextPath), 'utf8');
-    if (!text.includes('apiItem.variant?.sku ?? apiItem.product.sku')) {
-      issues.push(`Phase 3 cart context must preserve variant/product SKU for tracking diagnostics: ${cartContextPath}`);
+    for (const token of ['productSku', 'variantSku', 'apiItem.product.sku', 'apiItem.variant?.sku']) {
+      if (!text.includes(token)) {
+        issues.push(`Phase 3 cart context must preserve explicit product/variant identity (${token}): ${cartContextPath}`);
+      }
     }
   }
 }
@@ -574,9 +569,13 @@ function assertPhase5ProductAnalyticsCounters(files, issues) {
     for (const required of [
       'recordProductView',
       'recordProductMetricAction',
-      "action === 'view'",
-      "action === 'add_to_cart'",
-      "action === 'checkout_start'",
+      'PRODUCT_ANALYTICS_ACTIONS',
+      "'add_to_cart'",
+      "'view_cart'",
+      "'checkout_start'",
+      "'checkout_shipping_info'",
+      "'checkout_payment_info'",
+      'recordProductMetricAction(action, items)',
     ]) {
       if (!text.includes(required)) {
         issues.push(`Phase 5 product analytics API missing action handler (${required}): ${apiPath}`);
@@ -592,6 +591,9 @@ function assertPhase5ProductAnalyticsCounters(files, issues) {
       "action: 'view'",
       "action: 'add_to_cart'",
       "action: 'checkout_start'",
+      "action: 'view_cart'",
+      "action: 'checkout_shipping_info'",
+      "action: 'checkout_payment_info'",
       'keepalive',
     ]) {
       if (!text.includes(required)) {
@@ -603,7 +605,7 @@ function assertPhase5ProductAnalyticsCounters(files, issues) {
   const orderRoute = 'app/api/orders/route.ts';
   if (relativeFileSet.has(orderRoute)) {
     const text = fs.readFileSync(path.join(root, orderRoute), 'utf8');
-    if (!text.includes('recordProductOrderCreatedInTransaction(tx, orderItems)')) {
+    if (!text.includes('recordProductOrderCreatedInTransaction(tx, orderItems')) {
       issues.push(`Phase 5 order route does not update product order/revenue counters in the order transaction: ${orderRoute}`);
     }
   }
@@ -611,7 +613,14 @@ function assertPhase5ProductAnalyticsCounters(files, issues) {
   const productAnalyticsRoute = 'app/api/admin/analytics/products/route.ts';
   if (relativeFileSet.has(productAnalyticsRoute)) {
     const text = fs.readFileSync(path.join(root, productAnalyticsRoute), 'utf8');
-    for (const required of ['const metricProducts = await prisma.product.findMany', 'productDailyMetrics', 'bucket.views = metricTotals.views || product.viewCount']) {
+    for (const required of [
+      'const metricProducts = await prisma.product.findMany',
+      'productDailyMetrics',
+      'bucket.views = metricTotals.views || product.viewCount',
+      'viewCarts: bucket.viewCarts',
+      'checkoutShippingInfos: bucket.checkoutShippingInfos',
+      'checkoutPaymentInfos: bucket.checkoutPaymentInfos',
+    ]) {
       if (!text.includes(required)) {
         issues.push(`Phase 5 admin product analytics does not include products with counters but no orders (${required}): ${productAnalyticsRoute}`);
       }
@@ -630,7 +639,7 @@ function assertPhase6ConsentAndTrafficFilters(files, issues) {
     'lib/tracking/pixels/TrackingConsentManager.tsx',
     'lib/tracking/pixels/AllPixels.tsx',
     'lib/tracking/pixels/ClarityPixel.tsx',
-    'app/privacy-policy/page.tsx',
+    'app/(storefront)/privacy-policy/page.tsx',
     'ENVIRONMENT_VARIABLES_PRODUCTION.md',
   ];
 
@@ -645,7 +654,7 @@ function assertPhase6ConsentAndTrafficFilters(files, issues) {
     const text = fs.readFileSync(path.join(root, schemaPath), 'utf8');
     for (const required of [
       'trackingConsent       String?',
-      'nonEssentialTrackingAllowed Boolean @default(true)',
+      'nonEssentialTrackingAllowed Boolean @default(false)',
       'trackingFilteredReason String?',
       '@@index([trackingConsent])',
       '@@index([nonEssentialTrackingAllowed])',
@@ -667,10 +676,11 @@ function assertPhase6ConsentAndTrafficFilters(files, issues) {
     for (const required of [
       'TRACKING_CONSENT_COOKIE',
       'getServerTrackingConsentFromCookie',
-      'canLoadNonEssentialTracking',
+      'resolveTrackingDecision',
       'trackingConsent,',
+      'trackingConsentVersion,',
+      'trackingPolicyReason: trackingDecision.reason',
       'nonEssentialTrackingAllowed,',
-      "trackingFilteredReason: nonEssentialTrackingAllowed ? undefined : 'CONSENT_DENIED'",
     ]) {
       if (!text.includes(required)) {
         issues.push(`Phase 6 order attribution does not persist checkout-time consent (${required}): ${attributionPath}`);
@@ -741,7 +751,8 @@ function assertPhase6ConsentAndTrafficFilters(files, issues) {
       'TrackingConsentModeScript',
       'TrackingConsentBanner',
       "gtag('consent', 'default'",
-      "gtag('consent', 'update'",
+      'syncClientTrackingConsentSignals',
+      "/api/privacy/consent",
       "updateConsent('denied')",
       "updateConsent('granted')",
     ]) {
@@ -825,7 +836,7 @@ function assertPhase6ConsentAndTrafficFilters(files, issues) {
     }
   }
 
-  const privacyPolicyPath = 'app/privacy-policy/page.tsx';
+  const privacyPolicyPath = 'app/(storefront)/privacy-policy/page.tsx';
   if (relativeFileSet.has(privacyPolicyPath)) {
     const text = fs.readFileSync(path.join(root, privacyPolicyPath), 'utf8');
     for (const required of ['Meta Pixel', 'Meta Conversions API', 'Google Analytics 4', 'Microsoft', 'If you decline', 'Staff, test, internal, and obvious bot traffic']) {
@@ -835,7 +846,7 @@ function assertPhase6ConsentAndTrafficFilters(files, issues) {
     }
   }
 
-  const privacyAliasPath = 'app/privacy/page.tsx';
+  const privacyAliasPath = 'app/(storefront)/privacy/page.tsx';
   if (relativeFileSet.has(privacyAliasPath)) {
     const text = fs.readFileSync(path.join(root, privacyAliasPath), 'utf8');
     if (!text.includes("redirect('/privacy-policy')") && !text.includes('redirect("/privacy-policy")')) {
@@ -1087,7 +1098,10 @@ function assertPhase8FullQaRegressionLocks(files, issues) {
     const scripts = pkg.scripts ?? {};
     const expectedScripts = {
       'qa:phase8-static': 'node scripts/phase8-static-contract-check.mjs',
-      'qa:predeploy': 'npm run audit:security && npm run qa:phase8-static && npm run qa:admin-api-security && npm run qa:telegram-security && npm run typecheck && npm run build && npm run qa:production',
+      'qa:phase8-production-runtime': 'node scripts/phase8-production-runtime-readiness-audit.mjs',
+      'qa:phase9-build-deploy-proof': 'node scripts/phase9-build-typecheck-deploy-proof-audit.mjs',
+      'qa:phase10-seo-postdeploy': 'node scripts/phase10-seo-post-deploy-proof-audit.mjs',
+      'qa:predeploy': 'npm run audit:security && npm run qa:phase9-build-deploy-proof && npm run qa:phase10-seo-postdeploy && npm run lint && npm run qa:phase8-static && npm run qa:phase12 && npm run qa:phase13 && npm run qa:phase14 && npm run qa:phase15 && npm run qa:phase16 && npm run qa:phase17 && npm run qa:phase8-production-runtime && npm run qa:tracking-deploy-gate && npm run qa:admin-api-security && npm run qa:search && npm run qa:telegram-security && npm run typecheck && npm run build && npm run qa:production',
     };
     for (const [name, expected] of Object.entries(expectedScripts)) {
       if (scripts[name] !== expected) {

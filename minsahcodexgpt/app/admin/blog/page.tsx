@@ -1,5 +1,13 @@
 'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
@@ -32,6 +40,7 @@ interface BlogPost {
 }
 
 export default function BlogManagementPage() {
+  const { requestConfirmation } = useToast();
   const { hasPermission } = useAdminAuth();
   const [posts, setPosts] = useState<BlogPost[]>([
     {
@@ -95,8 +104,8 @@ export default function BlogManagementPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleDeletePost = (postId: string) => {
-    if (confirm('Are you sure you want to delete this blog post?')) {
+  const handleDeletePost = async (postId: string) => {
+    if (await requestConfirmation({ title: 'Delete this blog post?', description: 'The post will be removed from the blog list.', confirmLabel: 'Delete post', tone: 'danger' })) {
       setPosts(posts.filter(p => p.id !== postId));
     }
   };
@@ -122,10 +131,10 @@ export default function BlogManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">Blog Posts</h1>
           <p className="text-gray-600">Create and manage blog content</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           New Post
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -182,7 +191,7 @@ export default function BlogManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search blog posts..."
               value={searchTerm}
@@ -191,7 +200,7 @@ export default function BlogManagementPage() {
             />
           </div>
 
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -200,7 +209,7 @@ export default function BlogManagementPage() {
             <option value="published">Published</option>
             <option value="draft">Draft</option>
             <option value="scheduled">Scheduled</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -289,16 +298,16 @@ export default function BlogManagementPage() {
                       >
                         <Eye className="w-4 h-4" />
                       </Link>
-                      <button className="text-blue-600 hover:text-blue-800" title="Edit">
+                      <Button className="text-blue-600 hover:text-blue-800" title="Edit">
                         <Edit className="w-4 h-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => handleDeletePost(post.id)}
                         className="text-red-600 hover:text-red-800"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

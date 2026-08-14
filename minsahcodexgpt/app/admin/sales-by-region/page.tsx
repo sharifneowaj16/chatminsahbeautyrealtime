@@ -1,5 +1,9 @@
 'use client';
 
+
+
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -177,10 +181,10 @@ export default function SalesByRegionPage() {
           <h1 className="text-2xl font-bold text-gray-900">Sales by Region - Bangladesh</h1>
           <p className="text-gray-600">Track sales performance across divisions, districts, thanas, and areas</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
           <Download className="w-5 h-5 mr-2" />
           Export Report
-        </button>
+        </Button>
       </div>
 
       {/* Overview Stats */}
@@ -237,7 +241,7 @@ export default function SalesByRegionPage() {
       {/* Filters */}
       <div className="bg-white rounded-lg border p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <select
+          <Select
             value={viewType}
             onChange={(e) => {
               setViewType(e.target.value as 'division' | 'district' | 'thana');
@@ -249,10 +253,10 @@ export default function SalesByRegionPage() {
             <option value="division">View by Division</option>
             <option value="district">View by District</option>
             <option value="thana">View by Thana</option>
-          </select>
+          </Select>
 
           {(viewType === 'district' || viewType === 'thana') && (
-            <select
+            <Select
               value={selectedDivision}
               onChange={(e) => {
                 setSelectedDivision(e.target.value);
@@ -264,11 +268,11 @@ export default function SalesByRegionPage() {
               {getAllDivisions().map(div => (
                 <option key={div} value={div}>{div}</option>
               ))}
-            </select>
+            </Select>
           )}
 
           {viewType === 'thana' && selectedDivision !== 'all' && (
-            <select
+            <Select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -277,10 +281,10 @@ export default function SalesByRegionPage() {
               {getDistrictsByDivision(selectedDivision).map(dist => (
                 <option key={dist} value={dist}>{dist}</option>
               ))}
-            </select>
+            </Select>
           )}
 
-          <select
+          <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -289,7 +293,7 @@ export default function SalesByRegionPage() {
             <option value="30d">Last 30 Days</option>
             <option value="90d">Last 90 Days</option>
             <option value="1y">Last Year</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -360,7 +364,7 @@ export default function SalesByRegionPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button
+                    <Button
                       onClick={() => {
                         if (viewType === 'division') {
                           setViewType('district');
@@ -374,7 +378,7 @@ export default function SalesByRegionPage() {
                     >
                       <ChevronRight className="w-5 h-5" />
                       <span className="text-sm">View Details</span>
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

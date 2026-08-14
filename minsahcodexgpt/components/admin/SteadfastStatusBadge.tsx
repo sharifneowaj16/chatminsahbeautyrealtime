@@ -9,6 +9,7 @@
 
 import { Truck, Package, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { normalizeSteadfastDeliveryStatus } from '@/lib/steadfast/client';
+import { Badge, type BadgeTone } from '@/components/ui/Badge';
 
 interface SteadfastStatusBadgeProps {
   status?: string | null;
@@ -18,49 +19,42 @@ interface SteadfastStatusBadgeProps {
 
 const STATUS_MAP: Record<
   string,
-  { label: string; bg: string; text: string; icon: React.ReactNode }
+  { label: string; tone: BadgeTone; icon: React.ReactNode }
 > = {
   pending: {
     label: 'Pending',
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    icon: <Clock className="w-3 h-3" />,
+    tone: 'warning',
+    icon: <Clock className="w-3 h-3" aria-hidden="true" />,
   },
   hold: {
     label: 'On Hold',
-    bg: 'bg-orange-50',
-    text: 'text-orange-700',
-    icon: <AlertTriangle className="w-3 h-3" />,
+    tone: 'warning',
+    icon: <AlertTriangle className="w-3 h-3" aria-hidden="true" />,
   },
   in_review: {
     label: 'In Review',
-    bg: 'bg-sky-50',
-    text: 'text-sky-700',
-    icon: <Package className="w-3 h-3" />,
+    tone: 'info',
+    icon: <Package className="w-3 h-3" aria-hidden="true" />,
   },
   partial_delivered: {
     label: 'Partial',
-    bg: 'bg-purple-50',
-    text: 'text-purple-700',
-    icon: <Truck className="w-3 h-3" />,
+    tone: 'info',
+    icon: <Truck className="w-3 h-3" aria-hidden="true" />,
   },
   delivered: {
     label: 'Delivered',
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-700',
-    icon: <CheckCircle className="w-3 h-3" />,
+    tone: 'success',
+    icon: <CheckCircle className="w-3 h-3" aria-hidden="true" />,
   },
   cancelled: {
     label: 'Cancelled',
-    bg: 'bg-red-50',
-    text: 'text-red-600',
-    icon: <XCircle className="w-3 h-3" />,
+    tone: 'danger',
+    icon: <XCircle className="w-3 h-3" aria-hidden="true" />,
   },
   unknown: {
     label: 'Unknown',
-    bg: 'bg-gray-50',
-    text: 'text-gray-600',
-    icon: <Package className="w-3 h-3" />,
+    tone: 'neutral',
+    icon: <Package className="w-3 h-3" aria-hidden="true" />,
   },
 };
 
@@ -74,13 +68,9 @@ export default function SteadfastStatusBadge({
   if (!status && trackingCode) {
     // Has tracking code but no status yet — show as dispatched
     return (
-      <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-violet-50 text-violet-700 ${className}`}
-        title={trackingCode}
-      >
-        <Truck className="w-3 h-3" />
+      <Badge tone="info" leadingVisual={<Truck className="w-3 h-3" aria-hidden="true" />} title={trackingCode} className={className}>
         Dispatched
-      </span>
+      </Badge>
     );
   }
 
@@ -89,22 +79,15 @@ export default function SteadfastStatusBadge({
 
   if (!cfg) {
     return (
-      <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-gray-50 text-gray-600 ${className}`}
-      >
-        <Package className="w-3 h-3" />
+      <Badge tone="neutral" leadingVisual={<Package className="w-3 h-3" aria-hidden="true" />} className={className}>
         {status}
-      </span>
+      </Badge>
     );
   }
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${cfg.bg} ${cfg.text} ${className}`}
-      title={trackingCode ?? undefined}
-    >
-      {cfg.icon}
+    <Badge tone={cfg.tone} leadingVisual={cfg.icon} title={trackingCode ?? undefined} className={className}>
       {cfg.label}
-    </span>
+    </Badge>
   );
 }

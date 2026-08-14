@@ -31,6 +31,7 @@ export interface PersistSocialMessageInput {
   timestamp?: Date;
   attachments?: SocialAttachmentInput[];
   attachmentAccessToken?: string | null;
+  deferAttachmentDownload?: boolean;
 }
 
 function sanitizeSegment(value: string) {
@@ -202,7 +203,7 @@ export async function persistSocialMessage(input: PersistSocialMessageInput) {
       fileSize: attachment.fileSize ?? existing?.fileSize ?? null,
     };
 
-    if (!existing?.storageUrl && attachment.externalUrl) {
+    if (!input.deferAttachmentDownload && !existing?.storageUrl && attachment.externalUrl) {
       try {
         mediaData = await downloadAndStoreAttachment(
           attachment,

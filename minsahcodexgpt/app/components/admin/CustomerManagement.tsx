@@ -1,5 +1,14 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { useState, useEffect } from 'react';
 import type { AdminCustomer } from '@/types/admin';
 import { generateMockCustomers } from '@/types/admin';
@@ -31,6 +40,7 @@ import {
 import { Star as StarIconSolid } from 'lucide-react';
 
 export default function CustomerManagement() {
+  const { pushToast } = useToast();
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<AdminCustomer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,7 +199,7 @@ export default function CustomerManagement() {
   const handleBulkEmail = () => {
     if (selectedCustomers.length > 0) {
       // Simulate bulk email action
-      alert(`Sending email to ${selectedCustomers.length} customers`);
+      pushToast({ tone: 'info', description: `Sending email to ${selectedCustomers.length} customers` });
       setSelectedCustomers([]);
     }
   };
@@ -226,7 +236,7 @@ export default function CustomerManagement() {
   const sendNotification = async (customerId: string, type: string) => {
     // Simulate notification API call
     console.log(`Sending ${type} notification to customer ${customerId}`);
-    alert(`${type} notification sent successfully!`);
+    pushToast({ tone: 'success', description: `${type} notification sent successfully!` });
   };
 
   if (loading) {
@@ -263,31 +273,31 @@ export default function CustomerManagement() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={() => setShowSegmentManager(true)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
           >
             <Users className="h-4 w-4" />
             Manage Segments
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setShowVipManager(true)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
           >
             <Crown className="h-4 w-4" />
             VIP Customers
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
           >
             <Download className="h-4 w-4" />
             Export CSV
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+          </Button>
+          <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
             <Plus className="h-4 w-4" />
             Add Customer
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -381,7 +391,7 @@ export default function CustomerManagement() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -390,7 +400,7 @@ export default function CustomerManagement() {
             />
           </div>
 
-          <select
+          <Select
             value={selectedSegment}
             onChange={(e) => setSelectedSegment(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -401,9 +411,9 @@ export default function CustomerManagement() {
             <option value="at-risk">At Risk</option>
             <option value="lost">Lost</option>
             <option value="new">New</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -412,9 +422,9 @@ export default function CustomerManagement() {
             <option value="vip">VIP Only</option>
             <option value="active">Active (90 days)</option>
             <option value="inactive">Inactive (90+ days)</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -424,10 +434,10 @@ export default function CustomerManagement() {
             <option value="spent">Sort by Total Spent</option>
             <option value="recency">Sort by Last Order</option>
             <option value="rfm">Sort by RFM Score</option>
-          </select>
+          </Select>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
@@ -437,13 +447,13 @@ export default function CustomerManagement() {
                 <div className="w-1 h-1 bg-current rounded-full"></div>
                 <div className="w-1 h-1 bg-current rounded-full"></div>
               </div>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setViewMode('list')}
               className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <Filter className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -454,29 +464,29 @@ export default function CustomerManagement() {
               <span className="text-sm text-gray-600">
                 {selectedCustomers.length} customers selected
               </span>
-              <button
+              <Button
                 onClick={handleSelectAll}
                 className="text-sm text-blue-600 hover:text-blue-700"
               >
                 {selectedCustomers.length === filteredCustomers.length ? 'Deselect all' : 'Select all'}
-              </button>
+              </Button>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={handleBulkEmail}
                 className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 <Mail className="h-4 w-4" />
                 Send Email
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
+              </Button>
+              <Button className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
                 <Tag className="h-4 w-4" />
                 Add Tags
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+              </Button>
+              <Button className="flex items-center gap-2 px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
                 <Gift className="h-4 w-4" />
                 Send Coupon
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -492,7 +502,7 @@ export default function CustomerManagement() {
             <div key={customer.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => handleSelectCustomer(customer.id)}
@@ -543,33 +553,33 @@ export default function CustomerManagement() {
               <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                 <div className="flex items-center gap-1">
                   {customer.preferences.email && (
-                    <button
+                    <Button
                       onClick={() => sendNotification(customer.id, 'email')}
                       className="p-1 text-blue-600 hover:text-blue-700"
                       title="Send Email"
                     >
                       <Mail className="h-4 w-4" />
-                    </button>
+                    </Button>
                   )}
                   {customer.preferences.sms && (
-                    <button
+                    <Button
                       onClick={() => sendNotification(customer.id, 'sms')}
                       className="p-1 text-green-600 hover:text-green-700"
                       title="Send SMS"
                     >
                       <Phone className="h-4 w-4" />
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
                     onClick={() => sendNotification(customer.id, 'push')}
                     className="p-1 text-purple-600 hover:text-purple-700"
                     title="Send Push"
                   >
                     <Bell className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
+                  <Button
                     onClick={() => {
                       setSelectedCustomer(customer);
                       setShowCustomerDetails(true);
@@ -577,17 +587,17 @@ export default function CustomerManagement() {
                     className="p-1 text-gray-400 hover:text-gray-600"
                   >
                     <Eye className="h-4 w-4" />
-                  </button>
-                  <button className="p-1 text-gray-400 hover:text-gray-600">
+                  </Button>
+                  <Button className="p-1 text-gray-400 hover:text-gray-600">
                     <Edit className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
           ) : (
             <div key={customer.id} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-center gap-4">
-                <input
+                <Input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => handleSelectCustomer(customer.id)}
@@ -640,24 +650,24 @@ export default function CustomerManagement() {
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-1">
                     {customer.preferences.email && (
-                      <button
+                      <Button
                         onClick={() => sendNotification(customer.id, 'email')}
                         className="p-1 text-blue-600 hover:text-blue-700"
                         title="Send Email"
                       >
                         <Mail className="h-4 w-4" />
-                      </button>
+                      </Button>
                     )}
                     {customer.preferences.sms && (
-                      <button
+                      <Button
                         onClick={() => sendNotification(customer.id, 'sms')}
                         className="p-1 text-green-600 hover:text-green-700"
                         title="Send SMS"
                       >
                         <Phone className="h-4 w-4" />
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
                       onClick={() => {
                         setSelectedCustomer(customer);
                         setShowCustomerDetails(true);
@@ -665,10 +675,10 @@ export default function CustomerManagement() {
                       className="p-1 text-gray-400 hover:text-gray-600"
                     >
                       <Eye className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
+                    </Button>
+                    <Button className="p-1 text-gray-400 hover:text-gray-600">
                       <Edit className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -686,42 +696,14 @@ export default function CustomerManagement() {
       )}
 
       {/* Customer Details Modal */}
-      {showCustomerDetails && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-                    {selectedCustomer.avatar ? (
-                      <img src={selectedCustomer.avatar} alt={selectedCustomer.name} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <span className="text-gray-600 font-medium text-2xl">{selectedCustomer.name.charAt(0)}</span>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      {selectedCustomer.name}
-                      {selectedCustomer.isVip && <Crown className="h-5 w-5 text-yellow-500" />}
-                    </h3>
-                    <p className="text-gray-600">{selectedCustomer.email}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-1 text-xs rounded-full border ${getSegmentColor(selectedCustomer.rfm.score)}`}>
-                        {selectedCustomer.rfm.score.toUpperCase()}
-                      </span>
-                      <span className="text-sm text-gray-500">RFM Score: {calculateRFMScore(selectedCustomer)}</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowCustomerDetails(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
+      {selectedCustomer ? (
+        <Modal
+          open={showCustomerDetails}
+          onClose={() => setShowCustomerDetails(false)}
+          title={selectedCustomer.name}
+          description={selectedCustomer.email}
+          size="xl"
+        >
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Customer Info */}
@@ -805,7 +787,7 @@ export default function CustomerManagement() {
                 <h4 className="font-medium text-gray-900 mb-3">Communication Preferences</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="flex items-center gap-2">
-                    <input
+                    <Input
                       type="checkbox"
                       checked={selectedCustomer.preferences.email}
                       readOnly
@@ -814,7 +796,7 @@ export default function CustomerManagement() {
                     <span className="text-sm text-gray-700">Email</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input
+                    <Input
                       type="checkbox"
                       checked={selectedCustomer.preferences.sms}
                       readOnly
@@ -823,7 +805,7 @@ export default function CustomerManagement() {
                     <span className="text-sm text-gray-700">SMS</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input
+                    <Input
                       type="checkbox"
                       checked={selectedCustomer.preferences.marketing}
                       readOnly
@@ -848,56 +830,47 @@ export default function CustomerManagement() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                   <Mail className="h-4 w-4" />
                   Send Email
-                </button>
+                </Button>
                 {selectedCustomer.phone && (
-                  <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
+                  <Button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
                     <Phone className="h-4 w-4" />
                     Send SMS
-                  </button>
+                  </Button>
                 )}
-                <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+                <Button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
                   <Gift className="h-4 w-4" />
                   Send Coupon
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm">
+                </Button>
+                <Button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm">
                   <Tag className="h-4 w-4" />
                   Add Tag
-                </button>
+                </Button>
                 {selectedCustomer.isVip ? (
-                  <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
+                  <Button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
                     <Crown className="h-4 w-4" />
                     Remove VIP
-                  </button>
+                  </Button>
                 ) : (
-                  <button className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm">
+                  <Button className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm">
                     <Crown className="h-4 w-4" />
                     Make VIP
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+        </Modal>
+      ) : null}
 
       {/* Segment Manager Modal */}
-      {showSegmentManager && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Customer Segments</h3>
-                <button
-                  onClick={() => setShowSegmentManager(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showSegmentManager}
+        onClose={() => setShowSegmentManager(false)}
+        title="Customer Segments"
+        size="lg"
+      >
             <div className="p-6">
               <div className="space-y-4">
                 <p className="text-gray-600">Manage your customer segmentation rules and targeting strategies.</p>
@@ -917,36 +890,26 @@ export default function CustomerManagement() {
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                <Button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                   Create Campaign
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setShowSegmentManager(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                 >
                   Close
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* VIP Manager Modal */}
-      {showVipManager && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">VIP Customer Management</h3>
-                <button
-                  onClick={() => setShowVipManager(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showVipManager}
+        onClose={() => setShowVipManager(false)}
+        title="VIP Customer Management"
+        size="lg"
+      >
             <div className="p-6">
               <div className="space-y-4">
                 <p className="text-gray-600">Manage your VIP customers and exclusive benefits.</p>
@@ -979,20 +942,18 @@ export default function CustomerManagement() {
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <button className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+                <Button className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
                   Manage VIP Rules
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setShowVipManager(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                 >
                   Close
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

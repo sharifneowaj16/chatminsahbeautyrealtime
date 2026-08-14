@@ -15,6 +15,7 @@ import {
   mapSteadfastStatusToOrderStatus,
   SteadfastError,
 } from '@/lib/steadfast/client';
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      await prisma.order.update({ where: { id: order.id }, data: updates });
+      await prisma.$transaction(async (tx) => {
+        const updatedOrder = await tx.order.update({ where: { id: order.id }, data: updates });
+        await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+      });
 
       return NextResponse.json({
         success: true,
@@ -94,7 +98,20 @@ export async function POST(request: NextRequest) {
     select: {
       id: true,
       orderNumber: true,
+      createdAt: true,
       status: true,
+      paymentStatus: true,
+      paymentMethod: true,
+      isTest: true,
+      phoneConfirmedAt: true,
+      paymentPaidAt: true,
+      paidAt: true,
+      deliveredAt: true,
+      cancelledAt: true,
+      returnedAt: true,
+      refundedAt: true,
+      courierDeliveredAt: true,
+      courierReturnedAt: true,
       steadfastConsignmentId: true,
     },
     take: 100, // Safety cap
@@ -121,7 +138,10 @@ export async function POST(request: NextRequest) {
         if (mappedStatus === 'CANCELLED') updates.cancelledAt = new Date();
       }
 
-      await prisma.order.update({ where: { id: order.id }, data: updates });
+      await prisma.$transaction(async (tx) => {
+        const updatedOrder = await tx.order.update({ where: { id: order.id }, data: updates });
+        await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+      });
       updated++;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -1,0 +1,26 @@
+
+> minsah-beauty@2.0.0 check:fast
+> npm run env:check && npm run lint:blocking && npm run typecheck
+
+
+> minsah-beauty@2.0.0 env:check
+> node scripts/validate-env.mjs --example .env.example
+
+WARN: NEXT_PUBLIC_FACEBOOK_URL is recommended for production but is not configured.
+WARN: NEXT_PUBLIC_INSTAGRAM_URL is recommended for production but is not configured.
+WARN: NEXT_PUBLIC_YOUTUBE_URL is recommended for production but is not configured.
+WARN: NEXT_PUBLIC_TELEGRAM_URL is recommended for production but is not configured.
+Environment validation passed for .env.example (production contract).
+
+> minsah-beauty@2.0.0 lint:blocking
+> eslint app/api/admin/site-config/route.ts lib/admin/home-config-validation.ts lib/prisma-json.ts hooks/useAccessibleDialog.ts lib/accessibility/dialog-keyboard.ts tests/fcp00
+
+
+> minsah-beauty@2.0.0 typecheck
+> node scripts/prisma-client-freshness.mjs && npm run typecheck:ts
+
+Generated Prisma client matches schema bd017fc75668.
+
+> minsah-beauty@2.0.0 typecheck:ts
+> tsc --noEmit --pretty false
+

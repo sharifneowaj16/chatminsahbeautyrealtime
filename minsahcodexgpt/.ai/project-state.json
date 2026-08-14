@@ -1,0 +1,228 @@
+{
+  "schema_version": 2,
+  "updated_at": "2026-07-29T04:46:08.083Z",
+  "timezone": "Asia/Dhaka",
+  "project": {
+    "name": "Minsah Beauty",
+    "repository_role": "Main e-commerce, operations, growth and unified Meta platform project",
+    "current_main_program": "Meta v6 unified platform implementation",
+    "program_phases": "19-33",
+    "active_phase": 31,
+    "active_phase_title": "Pages, Lead Ads, Instagram, webhooks and realtime/social CRM migration",
+    "phase_status": "IN_PROGRESS"
+  },
+  "checkpoint": {
+    "verified_archive": "minsahbeauty_phase31_layer8_complete.zip",
+    "completed_through": "Phase 31 Layer 8",
+    "layer_status": "PASS",
+    "implementation_scope": "Phase 31 Layer 8 feature flags, execution-time outbound kill switches, Lead Ads and Instagram cutover, Facebook/realtime authority isolation, duplicate prevention and source/offline rollback proof are complete. Live PostgreSQL, Redis/BullMQ process interruption, production observation windows and Meta provider evidence remain Layer 9 work.",
+    "runtime_provider_evidence": "PARTIAL_LAYER_9_BLOCKED",
+    "verification_log": "phase31_layer8_verification.log",
+    "verification_summary": {
+      "layer_4_1": "10/10 tests + 30/30 audit PASS",
+      "layer_4_2": "13/13 tests + 18/18 audit PASS",
+      "layer_4_3": "12/12 tests + 23/23 audit PASS",
+      "layer_4_4": "14/14 tests + 26/26 audit PASS",
+      "layer_4_5": "19/19 tests + 36/36 audit PASS",
+      "layer_4_6": "12/12 tests + 24/24 audit PASS",
+      "layer_4_7": "12/12 tests + 24/24 audit PASS",
+      "layer_4_8": "10/10 tests + 16/16 audit PASS",
+      "source_inventory": "50/50 PASS",
+      "migration_governance": "427/427 PASS",
+      "layer_5_1": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.1-lead-audit.log",
+      "layer_5_2": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.2-lead-domain.log",
+      "layer_5_3": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.3-lead-processing.log",
+      "layer_5_4": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.4-test-lead.log",
+      "layer_5_5": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.5-instagram-audit.log",
+      "layer_5_6": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.6-instagram-inbound.log",
+      "layer_5_7": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.7-instagram-standard-reply.log",
+      "layer_5_8": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.8-instagram-private-reply.log",
+      "layer_5_9": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.9-instagram-media.log",
+      "layer_5_10": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.10-facebook-page-domain.log",
+      "layer_5_11": "PASS â€” evidence/phase31-meta-social-crm/logs/layer5.11-facebook-inbox-bridge.log",
+      "layer_5_12": "PASS â€” phase31_layer5_verification.log",
+      "layer_5": "COMPLETE â€” sequential items 5.1-5.12 PASS; strict focused TypeScript PASS; Layer 4 regression PASS",
+      "layer_6_1": "PASS â€” 6/6 focused tests + 14/14 immutable historical evidence audit",
+      "layer_6_2": "PASS â€” 5/5 tests + 15/15 audit",
+      "layer_6_3": "PASS â€” 3/3 tests + 10/10 audit",
+      "layer_6_4": "PASS â€” 4/4 tests + 12/12 audit",
+      "layer_6_5": "PASS â€” 4/4 tests + 12/12 audit",
+      "layer_6_6": "PASS â€” offline normalized-runtime typecheck/build + 7/7 release tests + 22/22 release audit",
+      "layer_6": "SOURCE/OFFLINE GATE PASS â€” Layer 5 regression PASS; Redis import lifecycle fixed; Second Brain v4 restored; dependency-backed/live runtime evidence pending",
+      "layer_7_1": "PASS â€” admin/API inventory and shared presentation safety contracts",
+      "layer_7_2": "PASS â€” platform-backed Facebook inbox, safe processing/failure state, fail-closed 24-hour reply controls",
+      "layer_7_3": "PASS â€” Instagram health/operations UI with account-health-backed standard/private eligibility",
+      "layer_7_4": "PASS â€” Lead receipt/fetch/handoff/duplicate trace rendered with safe failure contract",
+      "layer_7_5": "PASS â€” provider app/business/page/Instagram/ad-account/form health rendered",
+      "layer_7_6": "PASS â€” durable job counts, retry schedule, dead-letter, replay/cancel eligibility rendered",
+      "layer_7_7": "PASS â€” approval-backed replay/cancel execution, CSRF/RBAC and kill switches",
+      "layer_7_8": "PASS â€” cumulative original gates plus 7/7 remediation tests",
+      "layer_7": "SOURCE GATE PASS — full UI/API contract remediation complete; live/runtime evidence was deferred to Layer 9 at the Layer 7 checkpoint",
+      "layer_8_1": "PASS â€” 7/7 focused tests + static audit",
+      "layer_8_2": "PASS â€” 9/9 focused tests + execution-time provider-write audit",
+      "layer_8_3": "PASS â€” 9/9 Lead cutover tests + static audit",
+      "layer_8_4": "PASS â€” 10/10 Instagram cutover tests + static audit",
+      "layer_8_5": "PASS â€” 9/9 Facebook/realtime cutover tests + static audit",
+      "layer_8_6": "PASS â€” 11/11 rollback proof tests + static audit",
+      "layer_8_7": "PASS â€” 8/8 cumulative gate tests + static audit",
+      "layer_8": "SOURCE/OFFLINE GATE PASS â€” flags, kill switches, cutover, rollback and bypass audits complete; live runtime/provider evidence pending Layer 9",
+      "dependency_security_2026_07_29": "Main/realtime compatible updates complete; clean installs PASS; Prisma generation PASS; lint PASS; realtime audit/typecheck/build PASS; main full audit retains 9 dev-only lint-chain records",
+      "layer_9_8": "14/14 artifacts verified; 8 PASS, 6 BLOCKED; main source typecheck/build plus PostgreSQL, Redis/BullMQ, live Meta and package reproduction remain blocked"
+    },
+    "implementation_archive": "minsahbeauty_phase31_layer8_complete.zip",
+    "implementation_verification_log": "phase31_layer8_verification.log",
+    "package_reverification_log": "phase31_layer8_verification.log"
+  },
+  "next_item": {
+    "id": "9.8",
+    "title": "Final runtime and release gate",
+    "execution_mode": "FINAL_GATE_WITH_RETAINED_BLOCKERS",
+    "expected_schema_change": false,
+    "expected_migration": false,
+    "objective": "Run full main app/realtime builds, database apply/recovery, smoke tests and final release verdict; package Phase 31 only on truthful PASS.",
+    "required_primary_paths": [
+      "package.json",
+      "realtime-service/",
+      "prisma/",
+      "evidence/phase31-meta-social-crm/"
+    ],
+    "required_output": "evidence/phase31-meta-social-crm/11-final-release-gate.md",
+    "package_after_item": false,
+    "package_after_layer_gate": true
+  },
+  "non_negotiable_rules": [
+    "Do not restart or reimplement Layers 1-4.",
+    "Complete numbered roadmap items in strict sequence; do not begin the next item until the current item gate is verified.",
+    "Do not edit prisma/schema.prisma unless the active item has an exact documented need.",
+    "Any Prisma schema change requires migration.sql and recovery.sql in the same item.",
+    "Do not claim full typecheck, lint, build, live Redis, PostgreSQL or Meta provider PASS without executing and preserving evidence.",
+    "Do not delete legacy paths before cutover and rollback evidence.",
+    "Update .ai/project-state.json, .ai/layer-progress.json, AI_CONTEXT.md, CURRENT_LAYER.md, CURRENT_TASK.md, phases.md and memory.md whenever an item or layer checkpoint changes.",
+    "Create full-project ZIP/checksum/log/evidence only after the completed layer gate, not after every numbered item."
+  ],
+  "known_blockers": [
+    "Main-app full typecheck and production build remain BLOCKED by existing source TypeScript errors; the Next webpack compilation completes before the type gate fails.",
+    "Main full install audit retains 9 high dev-only ESLint/Next lint-chain records through minimatch 3 and brace-expansion 1; the local --omit=dev tree for that residual chain is empty, and no incompatible force fix was applied.",
+    "Layer 9.3 live PostgreSQL gate remains BLOCKED: the prior disposable endpoint refused TCP connections before authentication and this runner has no psql client; no migration/idempotency runtime PASS is claimed.",
+    "Live Redis/BullMQ outage, retry, worker-kill and recovery evidence is pending.",
+    "Authentic redacted live Meta evidence is unavailable for all mandatory provider categories; no live-provider PASS is claimed.",
+    "Live ClamAV/MinIO media pipeline evidence is pending.",
+    "Phase 31 final package reproduction remains BLOCKED until every mandatory runtime/provider check passes."
+  ],
+  "source_of_truth_order": [
+    "Current source code and Prisma schema",
+    "Passing executable tests and command artifacts from the same source",
+    "Machine-readable manifests including .ai/project-state.json",
+    "PRD.md, architecture.md, rules.md, phases.md and roadmap",
+    "AI_CONTEXT.md, CURRENT_TASK.md and memory.md",
+    "Historical summaries and chat transcripts"
+  ],
+  "required_read_order": [
+    "AGENTS.md",
+    ".ai/project-state.json",
+    ".ai/context-manifest.json",
+    "SECOND_BRAIN.md",
+    "AI_CONTEXT.md",
+    "CURRENT_LAYER.md",
+    "CURRENT_TASK.md",
+    "PRD.md",
+    "architecture.md",
+    "rules.md",
+    "phases.md",
+    "docs/roadmaps/phase31-fast-execution-policy.md",
+    "docs/roadmaps/phase31-layers-3-to-9-implementation-roadmap.md",
+    "memory.md",
+    "phase-specific evidence and affected source/tests/schema/migrations"
+  ],
+  "second_brain": {
+    "version": "4.0",
+    "operating_model": "MANIFEST_DRIVEN_SEQUENTIAL_ITEM_GATES_WITH_PER_LAYER_PACKAGING",
+    "human_index": "SECOND_BRAIN.md",
+    "fast_workflow": ".ai/FAST_WORKFLOW.md",
+    "execution_manifest": ".ai/phase31-execution-manifest.json",
+    "context_manifest": ".ai/context-manifest.json",
+    "layer_progress": ".ai/layer-progress.json",
+    "startup_command": "npm run ai:fast-start",
+    "work_packet_command": "npm run ai:work-packet",
+    "checkpoint_command": "npm run ai:advance-item"
+  },
+  "repository_access": {
+    "expected_repository_root": "minsahbeauty-meta-v6-update",
+    "minimum_repository_file_count": 1500,
+    "preflight_command": "npm run ai:preflight",
+    "required_paths": [
+      "AGENTS.md",
+      ".ai/project-state.json",
+      "SECOND_BRAIN.md",
+      "CURRENT_LAYER.md",
+      "CURRENT_TASK.md",
+      "package.json",
+      "prisma/schema.prisma",
+      "lib/meta/leads",
+      "lib/meta-platform/contracts/leads.ts",
+      "lib/meta-platform/queue/lead-processing-job.ts",
+      "app/api/webhooks/meta/leadgen/route.ts",
+      "workers/meta-lead.worker.ts",
+      "tests",
+      "realtime-service"
+    ],
+    "failure_behavior": "STOP_AND_REPORT_ARCHIVE_EXTRACTION_OR_FILESYSTEM_LIMITATION"
+  },
+  "execution_policy": {
+    "active_layer": 9,
+    "current_item": "9.8",
+    "item_order": "STRICT_SEQUENTIAL",
+    "item_gate_required_before_next": true,
+    "allow_same_session_continuation": true,
+    "allow_item_skipping": false,
+    "package_frequency": "PER_COMPLETED_LAYER",
+    "item_outputs": [
+      "working implementation or required audit artifact",
+      "focused test/audit evidence",
+      "concise item result",
+      "updated checkpoint and progress surfaces"
+    ],
+    "layer_outputs": [
+      "complete project ZIP",
+      "SHA-256 checksum",
+      "layer verification log",
+      "layer evidence report"
+    ],
+    "phase_outputs": [
+      "complete Phase 31 ZIP",
+      "SHA-256 checksum",
+      "final verification log",
+      "final release-gate evidence"
+    ],
+    "workflow_source": ".ai/phase31-execution-manifest.json",
+    "startup_command": "npm run ai:fast-start",
+    "work_packet_command": "npm run ai:work-packet",
+    "sync_command": "npm run ai:sync-context",
+    "advance_command": "npm run ai:advance-item",
+    "manual_checkpoint_surfaces": [
+      ".ai/project-state.json",
+      ".ai/layer-progress.json"
+    ],
+    "generated_checkpoint_surfaces": [
+      "AI_CONTEXT.md",
+      "CURRENT_LAYER.md",
+      "CURRENT_TASK.md",
+      "memory.md",
+      "Phase 31 status line in phases.md"
+    ]
+  },
+  "deferred_runtime_gates": [
+    {
+      "item": "9.3",
+      "status": "BLOCKED",
+      "waiver": "USER_DIRECTED_CONTINUATION",
+      "impact": "Phase 31 final release cannot PASS until the PostgreSQL gate is completed."
+    },
+    {
+      "item": "9.7",
+      "status": "BLOCKED",
+      "waiver": "USER_DIRECTED_CONTINUATION",
+      "impact": "Phase 31 final release cannot PASS until authentic live Meta evidence is completed."
+    }
+  ]
+}

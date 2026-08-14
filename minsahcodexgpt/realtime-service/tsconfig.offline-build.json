@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "external"
+    ],
+    "typeRoots": [
+      "./types"
+    ],
+    "noEmit": false
+  },
+  "include": [
+    "types/external/index.d.ts",
+    "src/index.ts",
+    "src/app.ts",
+    "src/config.ts",
+    "src/routes/bridge-webhook.router.ts",
+    "src/realtime/event-store.ts",
+    "src/realtime/event-window.ts",
+    "src/realtime/internal-auth.ts",
+    "src/realtime/pubsub.ts",
+    "src/realtime/ws-auth.ts",
+    "src/realtime/ws-server.ts",
+    "src/facebook/types.ts",
+    "../packages/meta-realtime-contract/src/**/*",
+    "src/facebook/cutover.ts",
+    "src/realtime/main-app-facebook-handoff.ts",
+    "../packages/meta-facebook-cutover-contract/src/**/*"
+  ]
+}

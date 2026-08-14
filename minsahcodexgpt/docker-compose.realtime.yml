@@ -1,8 +1,8 @@
 services:
   realtime-service:
     build:
-      context: ./realtime-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: realtime-service/Dockerfile
     restart: unless-stopped
     environment:
       PORT: "3001"
@@ -28,6 +28,15 @@ services:
       WS_AUTH_SECRET: ${WS_AUTH_SECRET}
       REPLY_API_SECRET: ${REPLY_API_SECRET}
       NEXTJS_INTERNAL_URL: http://nextjs-app:3000
+      META_PLATFORM_LEGACY_FACEBOOK: ${META_PLATFORM_LEGACY_FACEBOOK:-true}
+      META_PLATFORM_SOCIAL_REALTIME: ${META_PLATFORM_SOCIAL_REALTIME:-false}
+      META_PLATFORM_SOCIAL_WEBHOOKS: ${META_PLATFORM_SOCIAL_WEBHOOKS:-false}
+      META_PHASE31_FACEBOOK_INBOX_RUNTIME: ${META_PHASE31_FACEBOOK_INBOX_RUNTIME:-LEGACY}
+      REALTIME_RUNTIME_FLAVOR: ${REALTIME_RUNTIME_FLAVOR:-bridge}
+      REALTIME_FACEBOOK_MODE: ${REALTIME_FACEBOOK_MODE:-bridge}
+      REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED: ${REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED:-false}
+      REALTIME_BRIDGE_SECRET: ${REALTIME_BRIDGE_SECRET:-}
+      REALTIME_INTERNAL_TIMEOUT_MS: ${REALTIME_INTERNAL_TIMEOUT_MS:-10000}
     volumes:
       - realtime_media:/app/data
     labels:

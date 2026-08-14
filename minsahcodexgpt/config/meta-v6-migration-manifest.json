@@ -1,0 +1,763 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-01T23:21:58.669Z",
+  "scope": "all committed Prisma migrations",
+  "migrations": [
+    {
+      "migration": "20260206231151_init",
+      "path": "prisma/migrations/20260206231151_init/migration.sql",
+      "sha256": "d82509bad1525b9333bd5dbb2708330be85261820e2f76eb94a07adad099a211",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260212000000_add_site_config",
+      "path": "prisma/migrations/20260212000000_add_site_config/migration.sql",
+      "sha256": "ed1df4b67d09f50bae36a4b4cdee3f7948172641d0f7155b48be578c790932db",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260212100000_add_customer_behavior",
+      "path": "prisma/migrations/20260212100000_add_customer_behavior/migration.sql",
+      "sha256": "c8b4a40b3c92bffe6edb68459fa9328f5181ff6e23616016a9757c4b495194d6",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260212110000_add_search_history",
+      "path": "prisma/migrations/20260212110000_add_search_history/migration.sql",
+      "sha256": "d53684bd1a1fef514862492f60c332e192aa83d7d29e94beadeed042a9d1af5a",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260212120000_add_campaign_attribution",
+      "path": "prisma/migrations/20260212120000_add_campaign_attribution/migration.sql",
+      "sha256": "4bfb2baae67b616c73f86c33b2ce4965cc899a9745f5316d4b12379b28f83525",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260212130000_add_tracking_device",
+      "path": "prisma/migrations/20260212130000_add_tracking_device/migration.sql",
+      "sha256": "e5beb0423518c7eeabbee0dfdb4ea1b10e5fc8612eed68d2e66638ad00e537ad",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260213000000_add_returns",
+      "path": "prisma/migrations/20260213000000_add_returns/migration.sql",
+      "sha256": "39800e67839a7de2ad6c9f289173bb582cb58f42a6a0a3d475c8a830b3f8ec3a",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260216000000_add_search_click_tracking",
+      "path": "prisma/migrations/20260216000000_add_search_click_tracking/migration.sql",
+      "sha256": "aa182dbcabd053c3178290f8cbbc86c3cbc1e50a6255042bc555924678ea155c",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260219000000_add_seo_fields",
+      "path": "prisma/migrations/20260219000000_add_seo_fields/migration.sql",
+      "sha256": "78dc8161cead2630b53c8ad4a53a3e630057c154f264c3b5d0adfabf13e80a90",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260221094858_add_product_fields",
+      "path": "prisma/migrations/20260221094858_add_product_fields/migration.sql",
+      "sha256": "657d692933c8dba08838bcf27e9b0e5971eefb240829f86fefb6dc95f782fbc0",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260225160326_add_social_message",
+      "path": "prisma/migrations/20260225160326_add_social_message/migration.sql",
+      "sha256": "c98f2cca9e04d9a4733a1a46c5a529fc00cab05f01d1883ff9ef9d1d925b0e19",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260322000000_add_gift_requests",
+      "path": "prisma/migrations/20260322000000_add_gift_requests/migration.sql",
+      "sha256": "b01d871b3dd5a446600389a6022635b6c3989e50ba86700b3c25ddbd59585ddd",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260322000001_add_gift_type",
+      "path": "prisma/migrations/20260322000001_add_gift_type/migration.sql",
+      "sha256": "2c8ad31160ca8c7d748404d6343e7812d51eecfbbbe06dfa8d68145ae1b16205",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260322000002_add_gift_sender_id",
+      "path": "prisma/migrations/20260322000002_add_gift_sender_id/migration.sql",
+      "sha256": "12e40744fbfec214c15a127edeac9b6495e9e97559d7a2251a055d9e67ffbc7d",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260322000003_add_gift_sender_phone",
+      "path": "prisma/migrations/20260322000003_add_gift_sender_phone/migration.sql",
+      "sha256": "91a4ffa8797605aa32d799d8635bb08c62a99dcc6381bd3f25c375dcd0ac4155",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260324000000_add_gift_order_fields",
+      "path": "prisma/migrations/20260324000000_add_gift_order_fields/migration.sql",
+      "sha256": "9b39fd1fb9c1862c5f7459553bc51ecfff7ba1bb02045cdc2757466a9d2414ea",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260324000001_add_admin_notifications",
+      "path": "prisma/migrations/20260324000001_add_admin_notifications/migration.sql",
+      "sha256": "798b12f9c72e709bc1d048a41a34cdf49b76395a15419e3c9f72e792a1fc68e0",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260404000000_add_procurement_inventory",
+      "path": "prisma/migrations/20260404000000_add_procurement_inventory/migration.sql",
+      "sha256": "c9b1004d34be42ac2fa7bc90c3dc8bbf10b6ff5e695a063347efa8836430c10f",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260409000000_add_social_message_attachments",
+      "path": "prisma/migrations/20260409000000_add_social_message_attachments/migration.sql",
+      "sha256": "d54a562509814e04a2f96b84250a991ea9614bab7378421ad2b8f9b83d14ab15",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260411000000_add_fb_conversation_messages",
+      "path": "prisma/migrations/20260411000000_add_fb_conversation_messages/migration.sql",
+      "sha256": "4d2cf06d721c0dd0dfadc38b3dbbdc5803e2103dd466c2b90006290d89b9bd02",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260415043000_fb_enterprise_outbox_audit",
+      "path": "prisma/migrations/20260415043000_fb_enterprise_outbox_audit/migration.sql",
+      "sha256": "69ca3db2687625f14e55cef7ec85e5b34d7c773c2e1dc9bcd01a9047700b98ea",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260415052000_fb_dead_letter_jobs",
+      "path": "prisma/migrations/20260415052000_fb_dead_letter_jobs/migration.sql",
+      "sha256": "290dc49540c7fd2ef592895295f17b84228d6394b4a9d3c43610ee87daaad7f6",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260424000000_fb_inbox_profile_and_attachment_meta",
+      "path": "prisma/migrations/20260424000000_fb_inbox_profile_and_attachment_meta/migration.sql",
+      "sha256": "8ffa208324afa7ef28e8c81008e5061ee8d69c05ad3e95ddbbb4fb911f9fcffa",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260424004000_add_steadfast_webhook_events",
+      "path": "prisma/migrations/20260424004000_add_steadfast_webhook_events/migration.sql",
+      "sha256": "023a1b03c8aa4a1cea701c3b58fb8acc6da0c2c76b0cf1475b5768c028a6580f",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260428163000_add_pathao_address_fields",
+      "path": "prisma/migrations/20260428163000_add_pathao_address_fields/migration.sql",
+      "sha256": "b78dd2d2c78c1d6fe6e1046f6ba0d9977cf9f02f751de71d2f081b914548a361",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260428164000_add_pathao_status_to_order",
+      "path": "prisma/migrations/20260428164000_add_pathao_status_to_order/migration.sql",
+      "sha256": "3df8f9930ab30577a2fb6f3963e26c54906bf43871731d6483259b3a5ba6a6d5",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260428171000_add_pathao_webhook_and_consignment_fields",
+      "path": "prisma/migrations/20260428171000_add_pathao_webhook_and_consignment_fields/migration.sql",
+      "sha256": "f2c1b7e922a7a8ea49c391b2fbfcdeda97d2c17f8d9a0cc28d0a3754e81a2942",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260429101500_add_pathao_response_to_order",
+      "path": "prisma/migrations/20260429101500_add_pathao_response_to_order/migration.sql",
+      "sha256": "e697d4bc09f2f0ef7e0cc9e0042e6f7c291f04d4cb7113c1766c91bf1b480c0d",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260429123000_repair_pathao_shipping_objects",
+      "path": "prisma/migrations/20260429123000_repair_pathao_shipping_objects/migration.sql",
+      "sha256": "5ee7678ef6f25909403e3b160989a4c34b83c7233f50e414e4a2d1ccad4134b2",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260505120000_add_product_deleted_at",
+      "path": "prisma/migrations/20260505120000_add_product_deleted_at/migration.sql",
+      "sha256": "10d7da4c41a192a7e4d98bcc79ab9b1bb424730ad9ef95af4feca3e70581bd18",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260528000000_add_product_faqs",
+      "path": "prisma/migrations/20260528000000_add_product_faqs/migration.sql",
+      "sha256": "2a7bc836e516abf07e5b5c245d6cbf476e9227954af0db12ed2bd3c0a296aa26",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260530000000_add_secondary_seo_fields",
+      "path": "prisma/migrations/20260530000000_add_secondary_seo_fields/migration.sql",
+      "sha256": "e0a0ebec5b9a58147356db2ac900695896a8f3807c67340ca8ebab8316b5f89b",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260605000000_add_purchase_shortlist",
+      "path": "prisma/migrations/20260605000000_add_purchase_shortlist/migration.sql",
+      "sha256": "703ffa9868652572f72698683611382b3e50b2bec8ac77a463140590f4ac57f2",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260606000000_make_orderitem_product_optional",
+      "path": "prisma/migrations/20260606000000_make_orderitem_product_optional/migration.sql",
+      "sha256": "c6e681cb64a61419b116c0402ae2bf2bfa053f032c6b3d823c7ab0183cf29b4f",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260610000000_allow_null_productId_for_custom_products",
+      "path": "prisma/migrations/20260610000000_allow_null_productId_for_custom_products/migration.sql",
+      "sha256": "c7f65847530d9c21c399e156ce2de772dab8c9ae2ffdd700f4ac6e1861a8aa3c",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260610000001_add_unlisted_products",
+      "path": "prisma/migrations/20260610000001_add_unlisted_products/migration.sql",
+      "sha256": "f90f34b9f3d92641e7e3fd249ce8525ff50202b43a5a4c491d4061146381305b",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "202606100002_add_product_semantic_seo_fields",
+      "path": "prisma/migrations/202606100002_add_product_semantic_seo_fields/migration.sql",
+      "sha256": "dd2144731545cfd94c7a1a654e20e309d259cae159e3fe2d53430a24192aa9a3",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "202606100003_add_Product_SEO_1_22_rendering_fields",
+      "path": "prisma/migrations/202606100003_add_Product_SEO_1_22_rendering_fields/migration.sql",
+      "sha256": "73cc32f2daf09d29c2ef7ab2d31da6b37829d7a2b6718e3beb69707f53c62a5c",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260628000000_add_tracking_fields",
+      "path": "prisma/migrations/20260628000000_add_tracking_fields/migration.sql",
+      "sha256": "627dfb10d01a4ba12d4f91459d68992f6c8f4041d44f7f34d8b58ccc77212b60",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260629000000_add_meta_purchase_processing_at",
+      "path": "prisma/migrations/20260629000000_add_meta_purchase_processing_at/migration.sql",
+      "sha256": "9e7af3081548405093d3fa4d87db73f93e0e22a9700799b9dd7a8ca344c45aec",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260629010000_add_meta_browser_purchase_sent",
+      "path": "prisma/migrations/20260629010000_add_meta_browser_purchase_sent/migration.sql",
+      "sha256": "b4aacdc382b31e8a34d5dce85fdd30a354075089e22ae6e6932c7d75137bbc43",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260629020000_add_ga4_purchase_processing",
+      "path": "prisma/migrations/20260629020000_add_ga4_purchase_processing/migration.sql",
+      "sha256": "4f119cae75a15ce846aed0bdeb09265e11528a804644596ae07180d2d49084b8",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260629030000_rename_meta_browser_purchase_sent_to_claimed",
+      "path": "prisma/migrations/20260629030000_rename_meta_browser_purchase_sent_to_claimed/migration.sql",
+      "sha256": "0125e3f01b78a09e6c8260c10ecb9fecc119f407d57ac96057362220ce49cdef",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260630000000_add_product_view_dedup",
+      "path": "prisma/migrations/20260630000000_add_product_view_dedup/migration.sql",
+      "sha256": "1e803301e1f1861f9712533057caba3ea9fca05c308324ba2466b461e45dd153",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260701000000_add_order_tracking_consent",
+      "path": "prisma/migrations/20260701000000_add_order_tracking_consent/migration.sql",
+      "sha256": "4237490d5d45e8d07e880adbc600f73b677d9e15776415992bf05d583e1f1a64",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260701010000_add_telegram_action_security",
+      "path": "prisma/migrations/20260701010000_add_telegram_action_security/migration.sql",
+      "sha256": "c5e7d20606f1837e25cd0bcd45302697a3ddd7d84f9997608d8e0297cf6437a8",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260705000000_add_delivery_offer_pricing_foundation",
+      "path": "prisma/migrations/20260705000000_add_delivery_offer_pricing_foundation/migration.sql",
+      "sha256": "0b2445ab9cc8e8876d6833dfe78371d6fe04feb385d6bbf5b5139c2e514df55d",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260705010000_phase13_attribution_enrichment",
+      "path": "prisma/migrations/20260705010000_phase13_attribution_enrichment/migration.sql",
+      "sha256": "ad3597e4042b6c8e06f8d45bc8995c303f7cb29115524457e3fbb18f249d49e7",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260705030000_phase15_product_lifecycle_metrics",
+      "path": "prisma/migrations/20260705030000_phase15_product_lifecycle_metrics/migration.sql",
+      "sha256": "db500efbf2f87f430ea708b3d52879309610a496d8a0c8e560e61eb4a0c78d15",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260705040000_phase16_tracking_failure_retention",
+      "path": "prisma/migrations/20260705040000_phase16_tracking_failure_retention/migration.sql",
+      "sha256": "70b00086bc0498fe4dc3c85b657fc2dd488def0a1d50461d65f32bab03e7c583",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260707152000_phase8_shop_cro_tracking_events",
+      "path": "prisma/migrations/20260707152000_phase8_shop_cro_tracking_events/migration.sql",
+      "sha256": "c272be91740b19c7bc7336c25d3b5156eacd05c9ed5f406c65f919e896828aff",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260708000000_add_checkout_order_idempotency",
+      "path": "prisma/migrations/20260708000000_add_checkout_order_idempotency/migration.sql",
+      "sha256": "bedf8487a892742ef657b089f2d8f2a39c35e735d1a14b761c9b935d3fb2a19b",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260708010000_phase7_online_payment_lifecycle_stock_reservation",
+      "path": "prisma/migrations/20260708010000_phase7_online_payment_lifecycle_stock_reservation/migration.sql",
+      "sha256": "e753f471c9f3267b2a2b1749b2c45ce987b85cb24dbaca3eacec4ef6dce4c041",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260709000000_phase5_product_analytics_funnel_actions",
+      "path": "prisma/migrations/20260709000000_phase5_product_analytics_funnel_actions/migration.sql",
+      "sha256": "8b2bfefc94180f93b94b4d867b43dc4caaa4c051abe8bd90f96f03f5a84a16e3",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260709010000_phase31c_tiktok_attribution_capture",
+      "path": "prisma/migrations/20260709010000_phase31c_tiktok_attribution_capture/migration.sql",
+      "sha256": "588f0715ffded61a5e91b978d050810a81c5b75950163137d30e60e839227f10",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260709020000_phase31e_tiktok_tracking_health_dashboard",
+      "path": "prisma/migrations/20260709020000_phase31e_tiktok_tracking_health_dashboard/migration.sql",
+      "sha256": "bd46f404fa08b87d8da10689d42300ea8021d42f14e2191a82c37847bffa8237",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260716000100_add_meta_business_platform",
+      "path": "prisma/migrations/20260716000100_add_meta_business_platform/migration.sql",
+      "sha256": "4707a3be2e9652e166007039265ce4a50ccb94943c9ab2358d7f4a8f4cfae4d7",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260716000200_add_meta_business_sync_lock",
+      "path": "prisma/migrations/20260716000200_add_meta_business_sync_lock/migration.sql",
+      "sha256": "9ad73e7921523948a10956b4607766c233c326d0790484a9a2473e78bbe58004",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260716000300_add_meta_catalog_batch_status",
+      "path": "prisma/migrations/20260716000300_add_meta_catalog_batch_status/migration.sql",
+      "sha256": "9033c5cbff64db2217228589e17ad065e36099d5c5ef0b9d0714af1dc881c4e8",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260717010000_meta_v6_phase2_catalog_domain",
+      "path": "prisma/migrations/20260717010000_meta_v6_phase2_catalog_domain/migration.sql",
+      "sha256": "1b7f423b886d6aa94ceecd9c28ed57a33bcbf2e6fad9241594c49fd685c6fbc3",
+      "phase": 2,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260717020000_meta_v6_phase4_capi_outbox",
+      "path": "prisma/migrations/20260717020000_meta_v6_phase4_capi_outbox/migration.sql",
+      "sha256": "0f7b84b9c421e46bff3792f9ce9659ff0a486d1f7e99ffde7976d0d3b1a624be",
+      "phase": 4,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260717030000_meta_v6_phase5_durable_jobs",
+      "path": "prisma/migrations/20260717030000_meta_v6_phase5_durable_jobs/migration.sql",
+      "sha256": "ca9f660e466af528c711c152d236525b51bfacfe9ae04fd2952ae6f282234590",
+      "phase": 5,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260717040000_meta_v6_phase6_privacy_governance",
+      "path": "prisma/migrations/20260717040000_meta_v6_phase6_privacy_governance/migration.sql",
+      "sha256": "437c32de05c1493a3afd03a92806922a442921e0751eff417956ff276b80ffa9",
+      "phase": 6,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260717050000_meta_v6_phase7_connection_health",
+      "path": "prisma/migrations/20260717050000_meta_v6_phase7_connection_health/migration.sql",
+      "sha256": "bbf963414bf0100d3bc163af464a5bcb5c7e1aa4d22fb62997b52f31d8720fc2",
+      "phase": 7,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260717060000_meta_v6_phase8_lead_crm",
+      "path": "prisma/migrations/20260717060000_meta_v6_phase8_lead_crm/migration.sql",
+      "sha256": "24dfdaba2c309633c354fa948c3e5255aa3e9762a6f2abe69020b0e559edac05",
+      "phase": 8,
+      "destructive": true,
+      "rollbackStrategy": "reviewed forward-fix migration with backup/restore handoff after production data dependency",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260718010000_meta_v6_phase9_admin_operations",
+      "path": "prisma/migrations/20260718010000_meta_v6_phase9_admin_operations/migration.sql",
+      "sha256": "8fa68ec6802435c8dc56233f56ff2962cfdc2b76a7df677e3c8842c48a0d09a5",
+      "phase": 9,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260718020000_meta_v6_phase10_observability",
+      "path": "prisma/migrations/20260718020000_meta_v6_phase10_observability/migration.sql",
+      "sha256": "3c223603d2031a826ce19fac748bdfceb58a02d65c57c8b2d95048e0e6cc8662",
+      "phase": 10,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260718030000_meta_v6_phase11_attribution",
+      "path": "prisma/migrations/20260718030000_meta_v6_phase11_attribution/migration.sql",
+      "sha256": "7aa03f8610f2fb77749ac3dd74261e2f78b09dfb004221278fe1bce29ec6169d",
+      "phase": 11,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260718040000_meta_v6_phase12_product_sets",
+      "path": "prisma/migrations/20260718040000_meta_v6_phase12_product_sets/migration.sql",
+      "sha256": "ca82435a222e0f85ed2984b8d227c525ba638013a6334f579531849e274126ea",
+      "phase": 12,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260718050000_meta_v6_phase13_ads_automation",
+      "path": "prisma/migrations/20260718050000_meta_v6_phase13_ads_automation/migration.sql",
+      "sha256": "5c4d804500e41b3a89b08549baccb4024df84d8c12817c7bea4b3c318287f5ee",
+      "phase": 13,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260718060000_meta_v6_phase14_instagram_social_crm",
+      "path": "prisma/migrations/20260718060000_meta_v6_phase14_instagram_social_crm/migration.sql",
+      "sha256": "32d5293bbf36bf32d5aea0945c3c3e39193bea19f984204080f8136698cb1009",
+      "phase": 14,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260721233500_add_meta_external_reference",
+      "path": "prisma/migrations/20260721233500_add_meta_external_reference/migration.sql",
+      "sha256": "418e0c0d8c701f21e1df315611e7c8f7fb638e17095aa834e485345235f5164e",
+      "phase": 21,
+      "destructive": false,
+      "rollbackStrategy": "Before consumer enablement, apply the reviewed recovery SQL; after data dependency, preserve mappings and ship a forward-fix migration.",
+      "verification": "Apply and recover on disposable PostgreSQL, inspect enum/table/index parity, run uniqueness tests, then execute an explicit environment-scoped backfill dry run."
+    },
+    {
+      "migration": "20260722193000_add_meta_credential_metadata",
+      "path": "prisma/migrations/20260722193000_add_meta_credential_metadata/migration.sql",
+      "sha256": "b3be2dedda26fba51c28ddccccfa786ba44e439e6a022f4bca15c76df3cf1831",
+      "phase": 22,
+      "destructive": false,
+      "rollbackStrategy": "Before credential metadata consumers are enabled, apply the reviewed recovery SQL; after dependency, preserve metadata and ship a forward-fix migration.",
+      "verification": "Apply and recover on disposable PostgreSQL, inspect enum/table/index/foreign-key parity, verify no raw secret column exists, then reapply."
+    },
+    {
+      "migration": "20260722220500_add_meta_operation_ledger_outbox",
+      "path": "prisma/migrations/20260722220500_add_meta_operation_ledger_outbox/migration.sql",
+      "sha256": "19850ad53de5b5ea9196057b23df3032f7c76c1f75e113fcb8e9a2920dff8880",
+      "phase": 25,
+      "destructive": false,
+      "rollbackStrategy": "Before operation-ledger consumers are enabled, apply the reviewed recovery SQL; after durable records exist, preserve history and ship a forward-fix migration.",
+      "verification": "Apply and recover on disposable PostgreSQL; inspect enums, constraints, immutable/append-only triggers, SKIP LOCKED leasing, transaction rollback and concurrent claim behavior."
+    },
+    {
+      "migration": "20260722233000_add_meta_reliability_governance",
+      "path": "prisma/migrations/20260722233000_add_meta_reliability_governance/migration.sql",
+      "sha256": "62e306358a724385e7219e8ec99441ed30a1b00c3f9f9d5d041a059735f48eae",
+      "phase": 26,
+      "destructive": false,
+      "rollbackStrategy": "Before Phase 26 reliability fields are used by production workers, apply the reviewed recovery SQL; after governed priority/expiry data exists, preserve records and ship a forward-fix migration.",
+      "verification": "Apply and recover on disposable PostgreSQL; inspect enum ordering, immutable priority/expiry triggers, operation expiry transitions, priority SKIP LOCKED claims and concurrent worker behavior."
+    },
+    {
+      "migration": "20260723013000_add_meta_workflow_reconciliation_replay",
+      "path": "prisma/migrations/20260723013000_add_meta_workflow_reconciliation_replay/migration.sql",
+      "sha256": "4de3d645e0073aedaf052c4d0889d7c70f573a310cea6bdfa97ec7bf8652b735",
+      "phase": 27,
+      "destructive": false,
+      "rollbackStrategy": "Before Phase 27 workflow consumers are enabled, apply the reviewed recovery SQL; after durable workflow/reconciliation/replay records exist, preserve them and ship a forward-fix migration.",
+      "verification": "Apply and recover on disposable PostgreSQL; inspect enums, constraints, immutable triggers, optimistic version conflicts, lock fencing takeover, reconciliation due indexes and replay uniqueness."
+    },
+    {
+      "migration": "20260723033000_harden_meta_phase27_workflows",
+      "path": "prisma/migrations/20260723033000_harden_meta_phase27_workflows/migration.sql",
+      "sha256": "a857d09764f35788234550a6226631081a597707924835ace983ae0645ae9537",
+      "phase": 27,
+      "destructive": false,
+      "rollbackStrategy": "Before Phase 27 workflow consumers are enabled, apply the reviewed recovery SQL; PostgreSQL enum values remain by design, and after durable records exist use a reviewed forward-fix.",
+      "verification": "Generate Prisma Client, apply on disposable PostgreSQL, inspect purpose/replay constraints and immutable triggers, run execution/compensation crash and fencing drills, apply reviewed recovery before data dependency, then reapply."
+    },
+    {
+      "migration": "20260723163000_meta_v6_phase30_catalog_commerce",
+      "path": "prisma/migrations/20260723163000_meta_v6_phase30_catalog_commerce/migration.sql",
+      "sha256": "3278a5640ee3f984f54e4328c57a9ca948e0f5c99f4afa7d69e03b9cac2ae749",
+      "phase": 30,
+      "destructive": false,
+      "rollbackStrategy": "Before Phase 30 catalog delete-plan consumers are enabled, apply the reviewed recovery SQL; after durable plan or retry evidence exists, preserve it and ship a forward-fix migration.",
+      "verification": "Generate Prisma Client; apply on disposable PostgreSQL; inspect enum, constraints, indexes, relation and immutable trigger; execute recovery before data dependency, then reapply and run catalog safety tests."
+    },
+    {
+      "migration": "20260724233000_phase31_unified_webhook_receipts",
+      "path": "prisma/migrations/20260724233000_phase31_unified_webhook_receipts/migration.sql",
+      "sha256": "fd1d0b4da322b01414571fb3adaa1d137acbfe5ac56459183ddca8fee2f82cb6",
+      "phase": 31,
+      "destructive": false,
+      "rollbackStrategy": "Before Phase 31 unified receipt consumers rely on canonical rows, apply the reviewed destructive recovery SQL; after receipt evidence exists, preserve it and ship a reviewed forward-fix migration.",
+      "verification": "Generate Prisma Client; apply on disposable PostgreSQL; verify scoped dedupe, digest mismatch counters, safe metadata checks, replay self-reference and legacy compatibility links; recover before data dependency, then reapply and run Layer 3 persistence tests."
+    },
+    {
+      "migration": "20260725003000_phase31_webhook_receipt_transitions",
+      "path": "prisma/migrations/20260725003000_phase31_webhook_receipt_transitions/migration.sql",
+      "sha256": "331b168f7eeb0b26f949af7e8c2d19758bc60954938bf6682333040760cfaafa",
+      "phase": 31,
+      "destructive": false,
+      "rollbackStrategy": "Before Layer 3.3 lifecycle consumers hold active leases, apply the reviewed recovery SQL; after durable transition evidence exists, preserve it and ship a reviewed forward-fix migration.",
+      "verification": "Generate Prisma Client; apply on disposable PostgreSQL; verify guarded transitions, concurrent claim fencing, lease expiry/reclaim, recovery preconditions and controlled replay; recover before data dependency, then reapply and run Layer 3.3 lifecycle tests."
+    },
+    {
+      "migration": "20260725033000_phase31_provider_identity_mapping",
+      "path": "prisma/migrations/20260725033000_phase31_provider_identity_mapping/migration.sql",
+      "sha256": "580df0e9c95105fd21b50cb060868f641fa26257dcb3bbbaebe7dd4e99f59871",
+      "phase": 31,
+      "destructive": false,
+      "rollbackStrategy": "Before Layer 3.4 provider-identity consumers depend on typed relationships or receipt identity links, apply the reviewed recovery SQL; after durable identity evidence exists, preserve it and ship a reviewed forward-fix migration.",
+      "verification": "Generate Prisma Client; apply on disposable PostgreSQL; verify scoped identity uniqueness, typed relationship constraints, receipt identity foreign keys, soft-disable/revocation behavior and safe metadata; recover before data dependency, then reapply and run Layer 3.4 identity tests."
+    },
+    {
+      "migration": "20260725063000_phase31_lead_normalized_storage",
+      "path": "prisma/migrations/20260725063000_phase31_lead_normalized_storage/migration.sql",
+      "sha256": "e44947a1aac419c06816c1443500e9ddd68d45e3ea821d9ecfc4eb90f7e078fe",
+      "phase": 31,
+      "destructive": false,
+      "rollbackStrategy": "Before Layer 3.5 Lead receipt, processing-attempt, fingerprint, and handoff consumers depend on the new trace data, apply the reviewed recovery SQL; after durable Lead evidence exists, preserve it and ship a reviewed forward-fix migration.",
+      "verification": "Generate Prisma Client; apply on disposable PostgreSQL; verify receipt-to-Lead foreign keys, provider-ID uniqueness, attempt/handoff idempotency, scoped identity references, deterministic backfill and PII-safe fingerprints; recover before data dependency, then reapply and run Layer 3.5 Lead storage tests."
+    },
+    {
+      "migration": "20260725093000_phase31_instagram_message_persistence",
+      "path": "prisma/migrations/20260725093000_phase31_instagram_message_persistence/migration.sql",
+      "sha256": "ca26e4e06d8c8bff906faf8ce3e80625ab6b96966cfe63b3e99ff278dd42c0cf",
+      "phase": 31,
+      "destructive": false,
+      "rollbackStrategy": "Before Layer 3.6 scoped Instagram message, outbound, private-reply and attachment-policy consumers depend on the new trace data, apply the reviewed recovery SQL; after durable social CRM evidence exists, preserve it and ship a reviewed forward-fix migration.",
+      "verification": "Generate Prisma Client; apply on disposable PostgreSQL; verify scoped conversation/message uniqueness, receipt trace, monotonic ordering, outbound idempotency, unknown-write reconciliation, private-reply one-shot and attachment policy relations; recover before data dependency, then reapply and run Layer 3.6 tests."
+    },
+    {
+      "migration": "20260725123000_phase31_payload_retention_replay_metadata",
+      "path": "prisma/migrations/20260725123000_phase31_payload_retention_replay_metadata/migration.sql",
+      "sha256": "0ab7bd8a73543e8188f572f1bd85077e9a4d07240c0c543c5291c9cc2d72cc07",
+      "phase": 31,
+      "destructive": false,
+      "rollbackStrategy": "Before Layer 3.7 retention, replay eligibility, approval and audit consumers depend on the new metadata, apply the reviewed recovery SQL; after replay evidence exists, preserve it and ship a reviewed forward-fix migration.",
+      "verification": "Generate Prisma Client; apply on disposable PostgreSQL; verify deterministic retention backfill, dedupe-tombstone preservation, source eligibility, unknown-outcome blocking, MetaAdminApproval linkage, replay child trace and sensitive-data absence; recover before dependency, then reapply and run Layer 3.7 tests."
+    }
+  ]
+}

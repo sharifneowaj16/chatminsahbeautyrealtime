@@ -1,48 +1,153 @@
-import { Product, ShopFilters, SortOption, ActiveFilter } from '@/types/product';
+import type { Product, ShopFilters, SortOption, ActiveFilter } from '@/types/product';
 
-// URL State Management
-export function parseSearchParams(searchParams: URLSearchParams): ShopFilters {
+export const SHOP_LEGACY_QUERY_PARAM_MAP = {
+  mfCategory: 'category',
+  mfBrand: 'brand',
+  mfMinPrice: 'minPrice',
+  mfMaxPrice: 'maxPrice',
+  mfSort: 'sort',
+  search: 'q',
+  inStockOnly: 'inStock',
+} as const;
+
+type ShopQueryParamRecord = Record<string, string | string[] | undefined>;
+type ShopQueryParamLike = {
+  get: (key: string) => string | null;
+  entries: () => Iterable<[string, string]>;
+};
+type ShopQueryParamInput = ShopQueryParamLike | ShopQueryParamRecord;
+
+function isSearchParamLike(input: ShopQueryParamInput): input is ShopQueryParamLike {
+  return typeof (input as ShopQueryParamLike).get === 'function' && typeof (input as ShopQueryParamLike).entries === 'function';
+}
+
+const SHOP_MULTI_VALUE_KEYS = new Set(['brand', 'skinType', 'skinConcern', 'tags']);
+
+function splitCsv(value: string | null | undefined): string[] | undefined {
+  if (!value) return undefined;
+  const values = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return values.length > 0 ? values : undefined;
+}
+
+function firstRecordValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value.find((item) => item != null && item !== '');
+  return value || undefined;
+}
+
+function readParam(input: ShopQueryParamInput, key: string): string | undefined {
+  if (isSearchParamLike(input)) {
+    return input.get(key) || undefined;
+  }
+  return firstRecordValue(input[key]);
+}
+
+function appendParam(params: URLSearchParams, key: string, value: string | string[] | undefined): void {
+  if (value == null) return;
+  const normalizedValue = Array.isArray(value) ? value.join(',') : value;
+  const trimmed = normalizedValue.trim();
+  if (!trimmed) return;
+
+  const existing = params.get(key);
+  if (existing && SHOP_MULTI_VALUE_KEYS.has(key)) {
+    const merged = Array.from(new Set([...existing.split(','), ...trimmed.split(',')].map((item) => item.trim()).filter(Boolean)));
+    params.set(key, merged.join(','));
+    return;
+  }
+
+  if (!existing) params.set(key, trimmed);
+}
+
+export function hasLegacyShopQueryParams(input: ShopQueryParamInput): boolean {
+  return Object.keys(SHOP_LEGACY_QUERY_PARAM_MAP).some((key) => Boolean(readParam(input, key)));
+}
+
+export function normalizeShopSearchParams(input: ShopQueryParamInput): URLSearchParams {
+  const params = new URLSearchParams();
+
+  const entries = isSearchParamLike(input)
+    ? Array.from(input.entries())
+    : Object.entries(input).flatMap(([key, value]) => {
+        if (Array.isArray(value)) return value.map((item) => [key, item] as [string, string]);
+        return value == null ? [] : [[key, value] as [string, string]];
+      });
+
+  const legacyKeys = new Set(Object.keys(SHOP_LEGACY_QUERY_PARAM_MAP));
+  const standardEntries = entries.filter(([rawKey]) => !legacyKeys.has(rawKey));
+  const legacyEntries = entries.filter(([rawKey]) => legacyKeys.has(rawKey));
+
+  standardEntries.forEach(([rawKey, value]) => appendParam(params, rawKey, value));
+
+  // Standard keys win if both old and new params are present.
+  legacyEntries.forEach(([rawKey, value]) => {
+    const canonicalKey = SHOP_LEGACY_QUERY_PARAM_MAP[rawKey as keyof typeof SHOP_LEGACY_QUERY_PARAM_MAP];
+    if (!params.has(canonicalKey)) appendParam(params, canonicalKey, value);
+  });
+
+  return params;
+}
+
+export function buildCanonicalShopPath(input: ShopQueryParamInput, pathname = '/shop'): string {
+  const params = normalizeShopSearchParams(input);
+  const query = params.toString();
+  return `${pathname}${query ? `?${query}` : ''}`;
+}
+
+// URL State Management. Read deprecated mf* URLs, but expose only standard filters.
+export function parseSearchParams(searchParams: ShopQueryParamInput): ShopFilters {
+  const params = normalizeShopSearchParams(searchParams);
+  const minPrice = params.get('minPrice');
+  const maxPrice = params.get('maxPrice');
+  const rating = params.get('rating');
+  const page = params.get('page');
+
   return {
-    category: searchParams.get('category') || undefined,
-    subcategory: searchParams.get('subcategory') || undefined,
-    brand: searchParams.get('brand')?.split(',') || undefined,
-    minPrice: searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined,
-    maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,
-    skinType: searchParams.get('skinType')?.split(',') || undefined,
-    skinConcern: searchParams.get('skinConcern')?.split(',') || undefined,
-    rating: searchParams.get('rating') ? Number(searchParams.get('rating')) : undefined,
-    tags: searchParams.get('tags')?.split(',') || undefined,
-    inStockOnly: searchParams.get('inStockOnly') === 'true',
-    saleOnly: searchParams.get('saleOnly') === 'true',
-    search: searchParams.get('search') || undefined,
-    sort: (searchParams.get('sort') as SortOption) || 'featured',
-    page: searchParams.get('page') ? Number(searchParams.get('page')) : 1,
+    category: params.get('category') || undefined,
+    subcategory: params.get('subcategory') || undefined,
+    brand: splitCsv(params.get('brand')),
+    minPrice: minPrice ? Number(minPrice) : undefined,
+    maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    skinType: splitCsv(params.get('skinType')),
+    skinConcern: splitCsv(params.get('skinConcern')),
+    rating: rating ? Number(rating) : undefined,
+    tags: splitCsv(params.get('tags')),
+    inStockOnly: params.get('inStock') === 'true',
+    saleOnly: params.get('saleOnly') === 'true',
+    search: params.get('q') || undefined,
+    sort: (params.get('sort') as SortOption) || 'featured',
+    page: page ? Number(page) : 1,
   };
 }
 
 export function buildSearchParams(filters: Partial<ShopFilters>): string {
   const params = new URLSearchParams();
 
-  if (filters.category) params.set('category', filters.category.toString());
-  if (filters.subcategory) params.set('subcategory', filters.subcategory.toString());
-  if (filters.brand && Array.isArray(filters.brand) && filters.brand.length > 0) {
-    params.set('brand', filters.brand.join(','));
+  if (filters.category) params.set('category', Array.isArray(filters.category) ? filters.category.join(',') : filters.category.toString());
+  if (filters.subcategory) params.set('subcategory', Array.isArray(filters.subcategory) ? filters.subcategory.join(',') : filters.subcategory.toString());
+  if (filters.brand) {
+    const brands = Array.isArray(filters.brand) ? filters.brand : [filters.brand];
+    if (brands.length > 0) params.set('brand', brands.join(','));
   }
   if (filters.minPrice !== undefined) params.set('minPrice', filters.minPrice.toString());
   if (filters.maxPrice !== undefined) params.set('maxPrice', filters.maxPrice.toString());
-  if (filters.skinType && Array.isArray(filters.skinType) && filters.skinType.length > 0) {
-    params.set('skinType', filters.skinType.join(','));
+  if (filters.skinType) {
+    const skinTypes = Array.isArray(filters.skinType) ? filters.skinType : [filters.skinType];
+    if (skinTypes.length > 0) params.set('skinType', skinTypes.join(','));
   }
-  if (filters.skinConcern && Array.isArray(filters.skinConcern) && filters.skinConcern.length > 0) {
-    params.set('skinConcern', filters.skinConcern.join(','));
+  if (filters.skinConcern) {
+    const skinConcerns = Array.isArray(filters.skinConcern) ? filters.skinConcern : [filters.skinConcern];
+    if (skinConcerns.length > 0) params.set('skinConcern', skinConcerns.join(','));
   }
   if (filters.rating) params.set('rating', filters.rating.toString());
-  if (filters.tags && Array.isArray(filters.tags) && filters.tags.length > 0) {
-    params.set('tags', filters.tags.join(','));
+  if (filters.tags) {
+    const tags = Array.isArray(filters.tags) ? filters.tags : [filters.tags];
+    if (tags.length > 0) params.set('tags', tags.join(','));
   }
-  if (filters.inStockOnly) params.set('inStockOnly', 'true');
+  if (filters.inStockOnly) params.set('inStock', 'true');
   if (filters.saleOnly) params.set('saleOnly', 'true');
-  if (filters.search) params.set('search', filters.search);
+  if (filters.search) params.set('q', filters.search);
   if (filters.sort && filters.sort !== 'featured') params.set('sort', filters.sort);
   if (filters.page && filters.page > 1) params.set('page', filters.page.toString());
 
@@ -238,7 +343,7 @@ export function getActiveFilters(filters: ShopFilters): ActiveFilter[] {
   if (filters.rating) {
     active.push({
       type: 'rating',
-      label: `${filters.rating} & above`,
+      label: `${filters.rating}★ & above`,
       value: filters.rating.toString(),
       param: 'rating',
     });
@@ -304,15 +409,21 @@ export function generatePageTitle(filters: ShopFilters): string {
   }
 
   if (parts.length === 0) {
-    return 'Shop Beauty Products | Buy Cosmetics Online | Minsah Beauty';
+    return 'Shop Beauty Products | Buy Cosmetics Online';
   }
 
-  return `${parts.join(' ')} Products | Buy ${parts.join(' ')} Online | Minsah Beauty`;
+  return `${parts.join(' ')} Products | Buy ${parts.join(' ')} Online`;
 }
 
 // Generate meta description
-export function generateMetaDescription(filters: ShopFilters, totalProducts: number): string {
-  const parts: string[] = [`Shop ${totalProducts}`];
+export function generateMetaDescription(filters: ShopFilters, totalProducts?: number): string {
+  const parts: string[] = [];
+
+  if (totalProducts && totalProducts > 0) {
+    parts.push(`Shop ${totalProducts}`);
+  } else {
+    parts.push('Shop authentic');
+  }
 
   if (filters.brand && Array.isArray(filters.brand) && filters.brand.length > 0) {
     parts.push(filters.brand.join(', '));
@@ -326,13 +437,13 @@ export function generateMetaDescription(filters: ShopFilters, totalProducts: num
     parts.push(sub);
   }
 
-  parts.push('products');
+  parts.push('beauty, skincare, makeup and personal care products');
 
   if (filters.minPrice && filters.maxPrice) {
     parts.push(`under ৳${formatPrice(filters.maxPrice)}`);
   }
 
-  parts.push('in Bangladesh. Free shipping, Cash on Delivery, Easy Returns | Minsah Beauty');
+  parts.push('in Bangladesh. Cash on Delivery, bKash/Nagad payment and fast delivery available.');
 
   return parts.join(' ');
 }

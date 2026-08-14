@@ -1,5 +1,6 @@
 import type { Product as AdminProduct } from '@/contexts/ProductsContext';
 import type { Product as ShopProduct } from '@/types/product';
+import { resolveProductTrustBadges } from '@/lib/shopTrust';
 
 function toSlug(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -9,11 +10,30 @@ export function adminProductToShopProduct(p: AdminProduct): ShopProduct {
   const slug = p.urlSlug || toSlug(p.name);
   const createdAt = p.createdAt ? new Date(p.createdAt) : new Date();
   const isNew = p.isNew ?? Date.now() - createdAt.getTime() < 30 * 24 * 60 * 60 * 1000;
+  const metrics = p as AdminProduct & {
+    viewCount?: number;
+    views?: number;
+    orderCount?: number;
+    confirmedOrderCount?: number;
+    deliveredOrderCount?: number;
+  };
 
   const discount =
     p.originalPrice != null && p.originalPrice > p.price
       ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
       : undefined;
+  const trustBadges = resolveProductTrustBadges({
+    ...(p as AdminProduct & {
+      deliveryOfferEnabled?: boolean;
+      deliveryOfferType?: string;
+      deliveryOfferAmount?: number | string | null;
+      deliveryOfferStartDate?: string | Date | null;
+      deliveryOfferEndDate?: string | Date | null;
+      deliveryOfferBadgeText?: string | null;
+    }),
+    stock: p.stock,
+    price: p.price,
+  });
 
   return {
     id: p.id,
@@ -60,13 +80,17 @@ export function adminProductToShopProduct(p: AdminProduct): ShopProduct {
       sku: variant.sku,
       image: variant.image,
     })),
-    isCODAvailable: p.codAvailable ?? true,
+    isCODAvailable: trustBadges.isCODAvailable,
     isSameDayDelivery: false,
-    freeShippingEligible: p.freeShippingEligible ?? !p.isFragile,
+    freeShippingEligible: trustBadges.freeShippingEligible,
+    returnEligible: trustBadges.returnEligible,
+    authenticityBadge: trustBadges.authenticityBadge,
+    deliveryBadge: trustBadges.deliveryBadge,
+    badges: trustBadges.badges,
     deliveryDays: 3,
     isEMIAvailable: false,
-    views: 0,
-    salesCount: 0,
+    views: metrics.viewCount ?? metrics.views ?? 0,
+    salesCount: metrics.deliveredOrderCount ?? metrics.confirmedOrderCount ?? metrics.orderCount ?? p.soldCount ?? 0,
     createdAt,
     updatedAt: createdAt,
   };

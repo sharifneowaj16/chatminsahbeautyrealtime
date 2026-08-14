@@ -1,7 +1,10 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { NextResponse } from 'next/server';
 import { buildPublicUrl } from '@/lib/privacy-policy';
-import { anonymizeUserDataForMetaRequest } from '@/lib/user-data-deletion';
+import { findUserIdForMetaRequest } from '@/lib/user-data-deletion';
+import { createDataDeletionRequest } from '@/lib/privacy/deletion';
+import { enqueuePrivacyJob, PRIVACY_JOB_NAMES } from '@/lib/privacy/jobs';
+import { hashNormalizedPii } from '@/lib/privacy/pii-hash';
 
 export const runtime = 'nodejs';
 
@@ -122,15 +125,30 @@ export async function POST(request: Request) {
       null;
     const email = !requireSignedRequest ? parsedBody.email ?? null : null;
 
-    await anonymizeUserDataForMetaRequest({ facebookUserId, email });
-
+    const userId = await findUserIdForMetaRequest({ facebookUserId, email });
     const confirmationCode = createConfirmationCode();
+    const deletionRequest = await createDataDeletionRequest({
+      userId,
+      externalRef: hashNormalizedPii(facebookUserId ? `meta:${facebookUserId}` : email ? `email:${email.toLowerCase()}` : undefined),
+      source: 'META_CALLBACK',
+      confirmationCode,
+    });
+    try {
+      await enqueuePrivacyJob({
+        type: PRIVACY_JOB_NAMES.DELETION_PROCESSOR,
+        idempotencyKey: `deletion:${deletionRequest.id}`,
+        requestId: deletionRequest.id,
+      });
+    } catch {
+      // The durable DB request remains RECEIVED and can be recovered by the scheduler.
+    }
     const statusUrl = buildPublicUrl(`/delete-data/status/${confirmationCode}`);
 
     return NextResponse.json({
       url: statusUrl,
       confirmation_code: confirmationCode,
-    });
+      status: deletionRequest.status,
+    }, { status: 202 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to process deletion request';
     return NextResponse.json({ error: message }, { status: 400 });

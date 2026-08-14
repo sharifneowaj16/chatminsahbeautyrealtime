@@ -30,6 +30,8 @@ requireTokens('lib/telegram/auth.ts', [
   'telegramMisconfiguredResponse',
   'x-telegram-bot-api-secret-token',
   'isProductionRuntime',
+  'crypto.timingSafeEqual',
+  'verifyTelegramInternalSecretHeader',
 ]);
 
 requireTokens('lib/telegram/action-tokens.ts', [
@@ -39,6 +41,9 @@ requireTokens('lib/telegram/action-tokens.ts', [
   'parseTelegramCallbackToken',
   'resolveTelegramActionToken',
   'consumeTelegramActionToken',
+  'isTelegramActionTokenContextValid',
+  'attachTelegramActionTokenContext',
+  'cleanupExpiredTelegramActionTokens',
   'tokenHash',
   'sha256',
 ]);
@@ -65,6 +70,8 @@ requireTokens('app/api/telegram/order-callback/route.ts', [
   'canTelegramPathaoSend',
   'enqueueMetaCapiPurchase',
   'enqueueGa4Purchase',
+  'isTelegramActionTokenContextValid',
+  'TOKEN_CONTEXT_MISMATCH',
 ]);
 
 requireTokens('lib/telegram-notify.ts', [
@@ -73,6 +80,11 @@ requireTokens('lib/telegram-notify.ts', [
   'TELEGRAM_ORDER_ACTIONS.PHONE_OFF',
   'TELEGRAM_ORDER_ACTIONS.CANCEL',
   'callback_data: phoneConfirm.callbackData',
+  'buildCustomerCallUrl',
+  'text: "Call Customer"',
+  'url: callCustomerUrl',
+  'attachTelegramActionTokenContext',
+  'extractTelegramSentMessageContext',
 ]);
 
 requireTokens('prisma/schema.prisma', [
@@ -83,11 +95,26 @@ requireTokens('prisma/schema.prisma', [
   'callbackQueryId  String?  @unique',
 ]);
 
+
+requireTokens('app/api/orders/[id]/confirm-shipping/route.ts', [
+  'verifyTelegramInternalSecretHeader',
+  'canTelegramCancel',
+  'canTelegramPathaoSend',
+  'recordProductLifecycleTransitionInTransaction',
+  'CANCELLED_FROM_TELEGRAM_LEGACY',
+]);
+
+requireTokens('app/api/cron/tracking-cleanup/route.ts', [
+  'cleanupExpiredTelegramActionTokens',
+  'deletedActionTokens',
+]);
+
 requireTokens('ENVIRONMENT_VARIABLES_PRODUCTION.md', [
   'TELEGRAM_ORDER_BOT_TOKEN',
   'TELEGRAM_ORDER_CHAT_ID',
   'TELEGRAM_WEBHOOK_SECRET',
   'TELEGRAM_ADMIN_USER_IDS',
+  'TELEGRAM_BOT_INTERNAL_SECRET',
   'QA_TELEGRAM_BOT_HARDENING_VERIFIED',
 ]);
 
@@ -119,6 +146,14 @@ if (!giftRoute.includes('escapeTelegramHtml')) {
   issues.push('Gift order Telegram notification must escape HTML.');
 }
 
+const legacyRoute = read('app/api/orders/[id]/confirm-shipping/route.ts');
+if (legacyRoute.includes("data: { status: 'CANCELLED' }")) {
+  issues.push('Legacy Telegram confirm-shipping route can still cancel without lifecycle/state guard.');
+}
+if (legacyRoute.includes('const INTERNAL_SECRET = process.env.TELEGRAM_BOT_INTERNAL_SECRET')) {
+  issues.push('Legacy Telegram confirm-shipping route still captures internal secret at module load.');
+}
+
 const packageJson = JSON.parse(read('package.json') || '{}');
 const scripts = packageJson.scripts ?? {};
 if (scripts['qa:telegram-security'] !== 'node scripts/telegram-security-audit.mjs') {
@@ -133,4 +168,4 @@ if (issues.length) {
   process.exit(1);
 }
 
-console.log(JSON.stringify({ ok: true, checks: 12 }, null, 2));
+console.log(JSON.stringify({ ok: true, checks: 21 }, null, 2));

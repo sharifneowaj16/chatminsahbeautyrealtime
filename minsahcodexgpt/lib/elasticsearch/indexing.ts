@@ -10,7 +10,8 @@
  */
 
 import { esClient, PRODUCT_INDEX, productIndexMapping, indexExists } from '../elasticsearch';
-import { transformProductToES } from '../search/productTransformer';
+import { isSellableSearchProduct, transformProductToES } from '../search/productTransformer';
+import { ACTIVE_PRODUCT_PRISMA_WHERE, buildActiveProductESFilters } from '../search/activeProductFilter';
 import prisma from '../prisma';
 
 // ─── Prisma include for full product data ──────────────────────────────
@@ -51,6 +52,11 @@ export async function createProductIndex(): Promise<boolean> {
 
 export async function indexProduct(product: any): Promise<boolean> {
   try {
+    // Phase 20: inactive or soft-deleted products must never remain searchable.
+    if (!isSellableSearchProduct(product)) {
+      return await deleteProduct(product.id);
+    }
+
     const doc = transformProductToES(product);
 
     await esClient.index({
@@ -75,6 +81,18 @@ export async function updateProduct(
   updates: Record<string, unknown>
 ): Promise<boolean> {
   try {
+    // Phase 20: if a partial update makes the product non-sellable, remove it from ES.
+    if (
+      updates.isActive === false ||
+      updates.deletedAt != null ||
+      updates.status === 'inactive' ||
+      updates.status === 'deleted' ||
+      updates.status === 'draft' ||
+      updates.visibility === 'hidden'
+    ) {
+      return await deleteProduct(productId);
+    }
+
     await esClient.update({
       index: PRODUCT_INDEX,
       id: productId,
@@ -122,9 +140,11 @@ export async function bulkIndexProducts(
   products: any[]
 ): Promise<boolean> {
   try {
-    if (products.length === 0) return true;
+    const sellableProducts = products.filter(isSellableSearchProduct);
 
-    const operations = products.flatMap((product) => {
+    if (sellableProducts.length === 0) return true;
+
+    const operations = sellableProducts.flatMap((product) => {
       const doc = transformProductToES(product);
       return [
         { index: { _index: PRODUCT_INDEX, _id: product.id } },
@@ -145,7 +165,7 @@ export async function bulkIndexProducts(
       return false;
     }
 
-    console.log(`✅ Bulk indexed ${products.length} products`);
+    console.log(`✅ Bulk indexed ${sellableProducts.length} active products`);
     return true;
   } catch (error) {
     console.error('❌ Error bulk indexing products:', error);
@@ -159,8 +179,10 @@ export async function indexAllProducts(): Promise<boolean> {
   const BATCH_SIZE = 500;
 
   try {
-    const total = await prisma.product.count();
-    console.log(`📊 Total products in database: ${total}`);
+    const total = await prisma.product.count({
+      where: ACTIVE_PRODUCT_PRISMA_WHERE,
+    });
+    console.log(`📊 Total active products eligible for search indexing: ${total}`);
 
     if (total === 0) {
       console.log('ℹ️  No products to index');
@@ -172,6 +194,7 @@ export async function indexAllProducts(): Promise<boolean> {
 
     while (skip < total) {
       const products = await prisma.product.findMany({
+        where: ACTIVE_PRODUCT_PRISMA_WHERE,
         skip,
         take: BATCH_SIZE,
         include: productInclude,
@@ -269,7 +292,7 @@ export async function searchProducts(
   } = options;
 
   const must: any[] = [];
-  const filter: any[] = [];
+  const filter: any[] = buildActiveProductESFilters();
 
   if (query.trim()) {
     must.push({
@@ -312,10 +335,11 @@ export async function searchProducts(
 
   let sortOrder: any[] = [{ _score: 'desc' }];
   switch (sort) {
-    case 'price_asc':  sortOrder = [{ price: 'asc' }, { _score: 'desc' }]; break;
-    case 'price_desc': sortOrder = [{ price: 'desc' }, { _score: 'desc' }]; break;
-    case 'newest':     sortOrder = [{ createdAt: 'desc' }, { _score: 'desc' }]; break;
-    case 'rating':     sortOrder = [{ rating: 'desc' }, { _score: 'desc' }]; break;
+    case 'price_asc':     sortOrder = [{ price: 'asc' }, { _score: 'desc' }]; break;
+    case 'price_desc':    sortOrder = [{ price: 'desc' }, { _score: 'desc' }]; break;
+    case 'newest':        sortOrder = [{ createdAt: 'desc' }, { _score: 'desc' }]; break;
+    case 'rating':        sortOrder = [{ rating: 'desc' }, { _score: 'desc' }]; break;
+    case 'discount_desc': sortOrder = [{ discount: 'desc' }, { _score: 'desc' }, { createdAt: 'desc' }]; break;
   }
 
   const response = await esClient.search({
@@ -324,7 +348,13 @@ export async function searchProducts(
     size: limit,
     query: { bool: { must, filter } },
     sort: sortOrder,
-    highlight: { fields: { name: {}, description: {} } },
+    highlight: {
+      // Phase 26: prevent source field HTML from being returned unescaped in highlight snippets.
+      encoder: 'html',
+      fields: { name: {}, description: {} },
+      pre_tags: ['<mark>'],
+      post_tags: ['</mark>'],
+    },
   });
 
   const hits = response.hits.hits;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminUnauthorizedResponse, getVerifiedAdmin } from '@/app/api/admin/_utils'
 import prisma from '@/lib/prisma'
+import { createAndPublishSocialRealtimeEvent } from '@/lib/meta-platform/realtime/social-events'
+import { getFacebookInboxRuntimeMode } from '@/lib/meta-platform/domains/facebook/feature-flags'
 
 type InboxMessageRecord = {
   id: string
@@ -283,6 +285,180 @@ function mapFacebookConversationRecord(conversation: {
   }
 }
 
+
+
+type NormalizedSocialMessageRow = {
+  id: string
+  platform: string
+  type: string
+  externalId: string | null
+  conversationId: string | null
+  senderId: string | null
+  senderName: string | null
+  senderAvatar: string | null
+  content: string
+  isRead: boolean
+  timestamp: Date
+  isIncoming: boolean
+  attachments: Array<{
+    id: string
+    type: string
+    mimeType: string | null
+    fileName: string | null
+    storageUrl: string | null
+    externalUrl: string | null
+    thumbnailUrl: string | null
+  }>
+}
+
+function mapNormalizedSocialMessage(message: NormalizedSocialMessageRow): InboxMessageRecord {
+  return {
+    id: message.id,
+    platform: message.platform as InboxMessageRecord['platform'],
+    type: message.type as InboxMessageRecord['type'],
+    externalId: message.externalId,
+    conversationId: message.conversationId,
+    senderId: message.senderId,
+    senderName: message.senderName,
+    senderAvatar: message.senderAvatar,
+    content: message.content,
+    isRead: message.isRead,
+    timestamp: message.timestamp.toISOString(),
+    isIncoming: message.isIncoming,
+    attachments: message.attachments.map((attachment) => ({
+      id: attachment.id,
+      type: attachment.type,
+      mimeType: attachment.mimeType,
+      fileName: attachment.fileName,
+      storageUrl: attachment.storageUrl,
+      externalUrl: attachment.externalUrl,
+      thumbnailUrl: attachment.thumbnailUrl,
+    })),
+  }
+}
+
+async function getNormalizedFacebookConversationThread(
+  conversationId: string,
+  unreadOnly: boolean,
+  messageLimit: number,
+  cursor: MessageCursor | null,
+  includeUnreadSummary: boolean
+) {
+  const rows = await prisma.socialMessage.findMany({
+    where: {
+      platform: 'facebook',
+      conversationId,
+      ...(unreadOnly ? { isRead: false, isIncoming: true } : {}),
+      ...(cursor ? {
+        OR: [
+          { timestamp: { lt: new Date(cursor.timestamp) } },
+          { timestamp: new Date(cursor.timestamp), id: { lt: cursor.id } },
+        ],
+      } : {}),
+    },
+    orderBy: [{ timestamp: 'desc' }, { id: 'desc' }],
+    take: messageLimit + 1,
+    include: { attachments: { orderBy: { createdAt: 'asc' } } },
+  })
+  const hasMoreMessages = rows.length > messageLimit
+  const pageRows = rows.slice(0, messageLimit)
+  const oldest = hasMoreMessages ? pageRows[pageRows.length - 1] : null
+  const participant = [...pageRows].find((message) => message.isIncoming) ?? pageRows[pageRows.length - 1] ?? null
+  const latest = pageRows[0] ?? null
+  const unreadCount = includeUnreadSummary
+    ? await prisma.socialMessage.count({ where: { platform: 'facebook', isIncoming: true, isRead: false } })
+    : 0
+  return {
+    messages: [...pageRows].reverse().map((message) => mapNormalizedSocialMessage(message as NormalizedSocialMessageRow)),
+    unreadCount,
+    conversation: latest ? {
+      conversationId,
+      platform: 'facebook' as const,
+      participant: {
+        id: participant?.senderId ?? conversationId,
+        name: participant?.senderName ?? participant?.senderId ?? conversationId,
+        avatar: participant?.senderAvatar ?? null,
+      },
+      latestMessage: mapNormalizedSocialMessage(latest as NormalizedSocialMessageRow),
+      unreadCount: await prisma.socialMessage.count({ where: { platform: 'facebook', conversationId, isIncoming: true, isRead: false } }),
+      searchText: `${participant?.senderName ?? ''} ${latest.content}`.toLowerCase(),
+    } : null,
+    pageInfo: {
+      nextMessageCursor: oldest ? encodeMessageCursor({ id: oldest.id, timestamp: oldest.timestamp.toISOString() }) : null,
+      hasMoreMessages,
+    },
+  }
+}
+
+async function getNormalizedFacebookConversations(
+  conversationLimit: number,
+  unreadOnly: boolean,
+  cursor: ConversationCursor | null
+) {
+  const unreadGroups = await prisma.socialMessage.groupBy({
+    by: ['conversationId'],
+    where: { platform: 'facebook', conversationId: { not: null }, isIncoming: true, isRead: false },
+    _count: { _all: true },
+  })
+  const unreadByConversation = new Map(unreadGroups.flatMap((row) => row.conversationId ? [[row.conversationId, row._count._all] as const] : []))
+  const unreadConversationIds = [...unreadByConversation.keys()]
+  const latestRows = await prisma.socialMessage.findMany({
+    where: {
+      platform: 'facebook',
+      conversationId: { not: null },
+      ...(unreadOnly ? { conversationId: { in: unreadConversationIds } } : {}),
+      ...(cursor ? {
+        OR: [
+          { timestamp: { lt: new Date(cursor.lastMessageAt) } },
+          { timestamp: new Date(cursor.lastMessageAt), id: { lt: cursor.id } },
+        ],
+      } : {}),
+    },
+    distinct: ['conversationId'],
+    orderBy: [{ timestamp: 'desc' }, { id: 'desc' }],
+    take: conversationLimit + 1,
+    include: { attachments: { orderBy: { createdAt: 'asc' } } },
+  })
+  const hasMoreConversations = latestRows.length > conversationLimit
+  const pageRows = latestRows.slice(0, conversationLimit)
+  const ids = pageRows.flatMap((row) => row.conversationId ? [row.conversationId] : [])
+  const participantRows = ids.length ? await prisma.socialMessage.findMany({
+    where: { platform: 'facebook', conversationId: { in: ids }, isIncoming: true },
+    distinct: ['conversationId'],
+    orderBy: [{ timestamp: 'desc' }, { id: 'desc' }],
+  }) : []
+  const participantByConversation = new Map(participantRows.flatMap((row) => row.conversationId ? [[row.conversationId, row] as const] : []))
+  const conversations: InboxConversationRecord[] = pageRows.flatMap((row) => {
+    if (!row.conversationId) return []
+    const participant = participantByConversation.get(row.conversationId) ?? row
+    const latestMessage = mapNormalizedSocialMessage(row as NormalizedSocialMessageRow)
+    return [{
+      conversationId: row.conversationId,
+      platform: 'facebook' as const,
+      participant: {
+        id: participant.senderId ?? row.conversationId,
+        name: participant.senderName ?? participant.senderId ?? row.conversationId,
+        avatar: participant.senderAvatar ?? null,
+      },
+      latestMessage,
+      unreadCount: unreadByConversation.get(row.conversationId) ?? 0,
+      searchText: `${participant.senderName ?? ''} ${row.content}`.toLowerCase(),
+    }]
+  })
+  const last = pageRows[pageRows.length - 1]
+  return {
+    messages: [],
+    conversations,
+    unreadCount: unreadGroups.reduce((sum, row) => sum + row._count._all, 0),
+    pageInfo: {
+      nextConversationCursor: hasMoreConversations && last
+        ? encodeConversationCursor({ id: last.id, lastMessageAt: last.timestamp.toISOString() })
+        : null,
+      hasMoreConversations,
+    },
+  }
+}
+
 async function getFacebookConversationThread(
   conversationId: string,
   unreadOnly: boolean,
@@ -553,63 +729,46 @@ async function getLegacyMessages(
   })
 
   return {
-    messages: messages.map<InboxMessageRecord>((message) => ({
-      id: message.id,
-      platform: message.platform as InboxMessageRecord['platform'],
-      type: message.type as InboxMessageRecord['type'],
-      externalId: message.externalId,
-      conversationId: message.conversationId,
-      senderId: message.senderId,
-      senderName: message.senderName,
-      senderAvatar: message.senderAvatar,
-      content: message.content,
-      isRead: message.isRead,
-      timestamp: message.timestamp.toISOString(),
-      isIncoming: message.isIncoming,
-      attachments: message.attachments.map((attachment) => ({
-        id: attachment.id,
-        type: attachment.type,
-        mimeType: attachment.mimeType,
-        fileName: attachment.fileName,
-        storageUrl: attachment.storageUrl,
-        externalUrl: attachment.externalUrl,
-        thumbnailUrl: attachment.thumbnailUrl,
-      })),
-    })),
+    messages: messages.map((message) => mapNormalizedSocialMessage(message as NormalizedSocialMessageRow)),
     unreadCount,
   }
 }
 
-async function getUnreadCountSummary(platform: string | null) {
+async function getUnreadCountSummary(platform: string | null, useLegacyFacebook: boolean) {
+  if (!useLegacyFacebook) {
+    return {
+      unreadCount: await prisma.socialMessage.count({
+        where: {
+          ...(platform && platform !== 'all' ? { platform } : {}),
+          isRead: false,
+          isIncoming: true,
+        },
+      }),
+    }
+  }
+
   const pageId = getFacebookPageId()
   const includeFacebook = !platform || platform === 'all' || platform === 'facebook'
-  const includeLegacy = !platform || platform === 'all' || platform !== 'facebook'
-  const [facebookUnread, legacyUnread] = await Promise.all([
+  const includeNormalized = !platform || platform === 'all' || platform !== 'facebook'
+  const [facebookUnread, normalizedUnread] = await Promise.all([
     prisma.fbConversation.aggregate({
       where: {
         ...(includeFacebook ? {} : { id: '__none__' }),
         ...(pageId ? { pageId } : {}),
       },
-      _sum: {
-        unreadCount: true,
-      },
+      _sum: { unreadCount: true },
     }),
     prisma.socialMessage.count({
       where: {
-        ...(includeLegacy
-          ? platform && platform !== 'all' && platform !== 'facebook'
-            ? { platform }
-            : {}
+        ...(includeNormalized
+          ? platform && platform !== 'all' && platform !== 'facebook' ? { platform } : { platform: { not: 'facebook' } }
           : { platform: '__none__' }),
         isRead: false,
         isIncoming: true,
       },
     }),
   ])
-
-  return {
-    unreadCount: (facebookUnread._sum.unreadCount ?? 0) + legacyUnread,
-  }
+  return { unreadCount: (facebookUnread._sum.unreadCount ?? 0) + normalizedUnread }
 }
 
 export async function GET(request: NextRequest) {
@@ -632,17 +791,16 @@ export async function GET(request: NextRequest) {
       searchParams.get('conversationCursor')
     )
     const messageCursor = decodeMessageCursor(searchParams.get('messageCursor'))
+    const useLegacyFacebook = getFacebookInboxRuntimeMode(process.env) === 'LEGACY_ROLLBACK'
 
     if (mode === 'unread_count') {
-      return NextResponse.json(await getUnreadCountSummary(platform))
+      return NextResponse.json(await getUnreadCountSummary(platform, useLegacyFacebook))
     }
 
     if (mode === 'conversations') {
-      const data = await getFacebookConversations(
-        conversationLimit,
-        unreadOnly,
-        conversationCursor
-      )
+      const data = useLegacyFacebook
+        ? await getFacebookConversations(conversationLimit, unreadOnly, conversationCursor)
+        : await getNormalizedFacebookConversations(conversationLimit, unreadOnly, conversationCursor)
       return NextResponse.json({
         conversations: data.conversations,
         unreadCount: data.unreadCount,
@@ -651,13 +809,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (conversationId && (!platform || platform === 'facebook')) {
-      const data = await getFacebookConversationThread(
-        conversationId,
-        unreadOnly,
-        messageLimit,
-        messageCursor,
-        includeUnreadSummary
-      )
+      const data = useLegacyFacebook
+        ? await getFacebookConversationThread(conversationId, unreadOnly, messageLimit, messageCursor, includeUnreadSummary)
+        : await getNormalizedFacebookConversationThread(conversationId, unreadOnly, messageLimit, messageCursor, includeUnreadSummary)
       return NextResponse.json({
         messages: data.messages,
         unreadCount: data.unreadCount,
@@ -668,18 +822,12 @@ export async function GET(request: NextRequest) {
 
     if (platform === 'facebook') {
       const data = conversationId
-        ? await getFacebookConversationThread(
-            conversationId,
-            unreadOnly,
-            messageLimit,
-            messageCursor,
-            includeUnreadSummary
-          )
-        : await getFacebookConversations(
-            conversationLimit,
-            unreadOnly,
-            conversationCursor
-          )
+        ? (useLegacyFacebook
+            ? await getFacebookConversationThread(conversationId, unreadOnly, messageLimit, messageCursor, includeUnreadSummary)
+            : await getNormalizedFacebookConversationThread(conversationId, unreadOnly, messageLimit, messageCursor, includeUnreadSummary))
+        : (useLegacyFacebook
+            ? await getFacebookConversations(conversationLimit, unreadOnly, conversationCursor)
+            : await getNormalizedFacebookConversations(conversationLimit, unreadOnly, conversationCursor))
       return NextResponse.json(data)
     }
 
@@ -688,22 +836,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data)
     }
 
-    const [facebookData, legacyData] = await Promise.all([
+    if (!useLegacyFacebook) {
+      const data = await getLegacyMessages(null, unreadOnly, limit)
+      return NextResponse.json(data)
+    }
+
+    const [facebookData, normalizedData] = await Promise.all([
       getFacebookMessages(limit, unreadOnly),
       getLegacyMessages(null, unreadOnly, limit),
     ])
-
-    const combinedMessages = [...facebookData.messages, ...legacyData.messages]
-      .sort(
-        (left, right) =>
-          new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime()
-      )
-      .slice(0, limit)
-
+    const nonFacebook = normalizedData.messages.filter((message) => message.platform !== 'facebook')
     return NextResponse.json({
-      messages: combinedMessages,
-      unreadCount: facebookData.unreadCount + legacyData.unreadCount,
+      messages: [...facebookData.messages, ...nonFacebook]
+        .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
+        .slice(0, limit),
+      unreadCount: facebookData.unreadCount + normalizedData.unreadCount,
     })
+
   } catch (error) {
     console.error('[social/messages] GET failed', error)
     return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
@@ -713,60 +862,72 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const admin = await getVerifiedAdmin(request)
-    if (!admin) {
-      return adminUnauthorizedResponse()
-    }
+    if (!admin) return adminUnauthorizedResponse()
 
-    const { id, conversationId, platform, markAll } = await request.json()
+    const body = await request.json() as {
+      id?: string
+      conversationId?: string
+      platform?: string
+      markAll?: boolean
+    }
+    const { id, conversationId, platform, markAll } = body
     const pageId = getFacebookPageId()
+    let eventConversationId: string | null = conversationId ?? null
+    let eventMessageId: string | null = id ?? null
+    let eventPlatform: 'facebook' | 'instagram' = platform === 'instagram' ? 'instagram' : 'facebook'
 
     if (markAll) {
-      if (!platform || platform === 'all' || platform === 'facebook') {
+      if ((!platform || platform === 'all' || platform === 'facebook')
+        && getFacebookInboxRuntimeMode(process.env) === 'LEGACY_ROLLBACK') {
         await prisma.fbConversation.updateMany({
-          where: {
-            ...(pageId ? { pageId } : {}),
-          },
+          where: { ...(pageId ? { pageId } : {}) },
           data: { unreadCount: 0 },
         })
       }
-
-      if (!platform || platform === 'all' || platform !== 'facebook') {
-        await prisma.socialMessage.updateMany({
-          where: {
-            ...(platform && platform !== 'all' && platform !== 'facebook'
-              ? { platform }
-              : {}),
-            isRead: false,
-            isIncoming: true,
-          },
-          data: { isRead: true },
-        })
-      }
-    } else if (conversationId) {
-      if (!platform || platform === 'facebook') {
-        await prisma.fbConversation.updateMany({
-          where: { id: conversationId },
-          data: { unreadCount: 0 },
-        })
-      }
-
-      if (!platform || platform !== 'facebook') {
-        await prisma.socialMessage.updateMany({
-          where: {
-            conversationId,
-            ...(platform && platform !== 'facebook' ? { platform } : {}),
-            isRead: false,
-            isIncoming: true,
-          },
-          data: { isRead: true },
-        })
-      }
-    } else if (id) {
-      await prisma.socialMessage.update({
-        where: { id },
+      await prisma.socialMessage.updateMany({
+        where: {
+          ...(platform && platform !== 'all' ? { platform } : {}),
+          isRead: false,
+          isIncoming: true,
+        },
         data: { isRead: true },
       })
+      eventConversationId = null
+      eventMessageId = null
+    } else if (conversationId) {
+      if ((!platform || platform === 'facebook')
+        && getFacebookInboxRuntimeMode(process.env) === 'LEGACY_ROLLBACK') {
+        await prisma.fbConversation.updateMany({ where: { id: conversationId }, data: { unreadCount: 0 } })
+      }
+      await prisma.socialMessage.updateMany({
+        where: {
+          conversationId,
+          ...(platform && platform !== 'all' ? { platform } : {}),
+          isRead: false,
+          isIncoming: true,
+        },
+        data: { isRead: true },
+      })
+    } else if (id) {
+      const updated = await prisma.socialMessage.update({
+        where: { id },
+        data: { isRead: true },
+        select: { id: true, conversationId: true, platform: true },
+      })
+      eventConversationId = updated.conversationId
+      eventMessageId = updated.id
+      eventPlatform = updated.platform === 'instagram' ? 'instagram' : 'facebook'
     }
+
+    await createAndPublishSocialRealtimeEvent({
+      type: 'SOCIAL_CONVERSATION_READ',
+      platform: eventPlatform,
+      correlationId: `social-read:${admin.adminId}:${Date.now()}`,
+      orderingKey: eventConversationId ?? `social-read:${eventPlatform}:all`,
+      conversationId: eventConversationId,
+      messageId: eventMessageId,
+      state: markAll ? 'ALL_READ' : 'READ',
+    }).catch((error) => console.error('[social/messages] realtime publish failed', error))
 
     return NextResponse.json({ success: true })
   } catch (error) {

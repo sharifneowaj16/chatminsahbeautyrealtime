@@ -1,5 +1,10 @@
-﻿'use client';
+'use client';
 
+
+
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Drawer } from '@/components/ui/Drawer';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -79,7 +84,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     const loadInboxUnreadCount = async () => {
       try {
-        const response = await fetch('/api/social/messages?mode=unread_count', {
+        const response = await fetch('/api/admin/inbox/messages?mode=unread_count&platform=facebook', {
           cache: 'no-store',
           credentials: 'include',
         });
@@ -358,7 +363,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       id: 2,
       type: 'order',
       title: 'New Order',
-      message: 'Order #12345 requires attention',
+      message: 'Order 12345 requires attention',
       time: '15 minutes ago',
       read: false,
     },
@@ -405,32 +410,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar */}
-      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-50" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">MB</span>
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">Minsah Beauty</h2>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
+      {/* Mobile navigation drawer */}
+      <Drawer
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        side="left"
+        size="sm"
+        title="Minsah Beauty"
+        description="Admin navigation"
+        bodyClassName="p-0 sm:p-0"
+      >
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {navigation.map((item) => (
               <div key={item.name}>
                 {item.children ? (
                   <div>
-                    <button
+                    <Button
                       onClick={() => toggleExpanded(item.name)}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                         item.current
@@ -450,7 +446,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           expandedItems.includes(item.name) ? 'rotate-180' : ''
                         }`}
                       />
-                    </button>
+                    </Button>
                     {expandedItems.includes(item.name) && (
                       <div className="ml-4 mt-1 space-y-1">
                         {item.children.map((child) => (
@@ -507,8 +503,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               ))}
             </div>
           </nav>
-        </div>
-      </div>
+      </Drawer>
 
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
@@ -529,7 +524,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <div key={item.name}>
                   {item.children ? (
                     <div>
-                      <button
+                      <Button
                         onClick={() => toggleExpanded(item.name)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                           item.current
@@ -549,7 +544,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             expandedItems.includes(item.name) ? 'rotate-180' : ''
                           }`}
                         />
-                      </button>
+                      </Button>
                       {expandedItems.includes(item.name) && (
                         <div className="ml-4 mt-1 space-y-1">
                           {item.children.map((child) => (
@@ -616,17 +611,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <button
+              <Button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
               >
                 <Menu className="h-5 w-5" />
-              </button>
+              </Button>
 
               {/* Search Bar */}
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
+                <Input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -639,10 +634,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex items-center gap-4">
               {/* Quick Actions */}
               <div className="hidden md:flex items-center gap-2">
-                <button className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full hover:bg-green-200 transition-colors">
+                <Button className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full hover:bg-green-200 transition-colors">
                   <CheckCircle className="h-3 w-3 inline mr-1" />
                   All Systems Operational
-                </button>
+                </Button>
                 <span className="text-sm text-gray-500">
                   Last sync: 2 minutes ago
                 </span>
@@ -650,7 +645,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
               {/* Notifications */}
               <div className="relative">
-                <button
+                <Button
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
                 >
@@ -658,7 +653,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   {adminUser.notifications && adminUser.notifications > 0 && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                   )}
-                </button>
+                </Button>
 
                 {/* Notifications Dropdown */}
                 {showNotifications && (
@@ -695,9 +690,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       ))}
                     </div>
                     <div className="p-3 border-t border-gray-200">
-                      <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                      <Button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                         View all notifications →
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -705,7 +700,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
               {/* User Menu */}
               <div className="relative">
-                <button
+                <Button
                   onClick={() => setShowProfile(!showProfile)}
                   className="flex items-center gap-3 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
                 >
@@ -721,7 +716,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <p className="text-xs text-gray-500">{adminUser.role}</p>
                   </div>
                   <ChevronDown className="h-4 w-4" />
-                </button>
+                </Button>
 
                 {/* Profile Dropdown */}
                 {showProfile && (
@@ -759,13 +754,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       <div className="px-3 py-2 text-sm text-gray-500">
                         Last login: {adminUser.lastLogin ? formatRelativeTime(adminUser.lastLogin) : 'Never'}
                       </div>
-                      <button
+                      <Button
                         onClick={handleLogout}
                         className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
                       >
                         <LogOut className="h-4 w-4" />
                         Logout
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}

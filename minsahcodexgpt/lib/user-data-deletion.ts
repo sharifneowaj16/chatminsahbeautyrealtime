@@ -83,7 +83,7 @@ export async function anonymizeUserDataById(userId: string) {
   });
 }
 
-export async function anonymizeUserDataForMetaRequest(input: {
+export async function findUserIdForMetaRequest(input: {
   facebookUserId?: string | null;
   email?: string | null;
 }) {
@@ -91,32 +91,26 @@ export async function anonymizeUserDataForMetaRequest(input: {
   const email = input.email?.trim().toLowerCase() || null;
 
   let userId: string | null = null;
-
   if (facebookUserId) {
     const account = await prisma.account.findFirst({
-      where: {
-        provider: 'facebook',
-        providerAccountId: facebookUserId,
-      },
+      where: { provider: 'facebook', providerAccountId: facebookUserId },
       select: { userId: true },
     });
-
     userId = account?.userId ?? null;
   }
-
   if (!userId && email) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-
+    const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
     userId = user?.id ?? null;
   }
+  return userId;
+}
 
-  if (!userId) {
-    return { found: false as const };
-  }
-
+export async function anonymizeUserDataForMetaRequest(input: {
+  facebookUserId?: string | null;
+  email?: string | null;
+}) {
+  const userId = await findUserIdForMetaRequest(input);
+  if (!userId) return { found: false as const };
   await anonymizeUserDataById(userId);
   return { found: true as const, userId };
 }

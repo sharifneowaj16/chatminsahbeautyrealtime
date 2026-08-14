@@ -1,5 +1,11 @@
 'use client';
 
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -76,7 +82,10 @@ type ProductWinner = {
   views: number;
   uniqueViews: number;
   addToCarts: number;
+  viewCarts: number;
   checkoutStarts: number;
+  checkoutShippingInfos: number;
+  checkoutPaymentInfos: number;
   unitsSold: number;
   confirmedUnits: number;
   deliveredUnits: number;
@@ -93,7 +102,10 @@ type ProductWinner = {
   estimatedGrossProfit: number | null;
   stockLeft: number | null;
   addToCartRate: number;
+  viewCartRate: number;
   checkoutRate: number;
+  shippingInfoRate: number;
+  paymentInfoRate: number;
   purchaseRate: number;
   confirmationRate: number;
   deliveryRate: number;
@@ -206,19 +218,14 @@ function TrendBars({ series }: { series: RevenueResponse['series'] }) {
   const compactSeries = series.length > 45 ? series.filter((_, index) => index % 3 === 0) : series;
 
   return (
-    <div className="flex h-48 items-end gap-1 rounded-xl border border-gray-200 bg-white p-4">
-      {compactSeries.map((item) => {
-        const height = Math.max(4, (item.deliveredRevenue / maxDelivered) * 100);
-        return (
-          <div key={item.date} className="group flex flex-1 flex-col items-center justify-end">
-            <div
-              className="w-full rounded-t bg-purple-500 transition-all group-hover:bg-purple-700"
-              style={{ height: `${height}%` }}
-              title={`${item.date}: ${formatPrice(item.deliveredRevenue)} delivered / ${item.orders} orders`}
-            />
-          </div>
-        );
-      })}
+    <div className="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-minsah-border-subtle bg-minsah-surface-panel p-4">
+      {compactSeries.map((item) => (
+        <div key={item.date} className="grid grid-cols-[5rem_1fr_auto] items-center gap-3 text-xs">
+          <span className="text-minsah-text-muted">{item.date}</span>
+          <progress className="h-2 w-full accent-minsah-action-primary" max={maxDelivered} value={item.deliveredRevenue} aria-label={`${item.date} delivered revenue`} />
+          <span className="font-semibold text-minsah-text-primary">{formatPrice(item.deliveredRevenue)}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -309,12 +316,12 @@ export default function AnalyticsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Revenue & Product Winner Analytics</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Backend-verified confirmed revenue, delivered revenue, real ROAS, and product scaling signals. No customer PII is shown.
+            Backend-verified conversion revenue, delivered revenue, real ROAS, and product scaling signals. No customer PII is shown.
           </p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <select
+          <Select
             value={dateRange}
             onChange={(event) => setDateRange(event.target.value as DateRange)}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
@@ -322,22 +329,22 @@ export default function AnalyticsPage() {
             {dateRanges.map((range) => (
               <option key={range.value} value={range.value}>{range.label}</option>
             ))}
-          </select>
-          <input
+          </Select>
+          <Input
             value={adSpendInput}
             onChange={(event) => setAdSpendInput(event.target.value)}
             inputMode="decimal"
             placeholder="Ad spend BDT optional"
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
           />
-          <button
+          <Button
             onClick={() => void loadAnalytics()}
             disabled={isLoading}
             className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             <RefreshCw className={clsx('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -420,7 +427,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard title="Reported ROAS" value={formatRoas(summary.reportedRoas)} subtitle="Confirmed revenue / ad spend" icon={TrendingUp} tone="neutral" />
+            <MetricCard title="Confirmed ROAS" value={formatRoas(summary.reportedRoas)} subtitle="Phone-confirmed/paid revenue / ad spend" icon={TrendingUp} tone="neutral" />
             <MetricCard title="Cancelled Revenue" value={formatPrice(summary.cancelledRevenue)} subtitle={`${formatNumber(summary.cancelledOrders)} cancelled orders`} icon={TrendingDown} tone="bad" />
             <MetricCard title="Returned Revenue" value={formatPrice(summary.returnedRevenue)} subtitle={`${formatNumber(summary.returnedOrders)} returned orders`} icon={RefreshCw} tone="warn" />
             <MetricCard title="Average Order Value" value={formatPrice(summary.averageOrderValue)} subtitle="Created orders average" icon={ShoppingBag} tone="neutral" />
@@ -456,6 +463,8 @@ export default function AnalyticsPage() {
                   <th className="px-5 py-3 text-right">Delivery Rate</th>
                   <th className="px-5 py-3 text-right">Return Rate</th>
                   <th className="px-5 py-3 text-right">ATC Rate</th>
+                  <th className="px-5 py-3 text-right">Checkout Rate</th>
+                  <th className="px-5 py-3 text-right">Payment Rate</th>
                   <th className="px-5 py-3 text-right">Stock</th>
                 </tr>
               </thead>
@@ -468,6 +477,9 @@ export default function AnalyticsPage() {
                         <Boxes className="h-3.5 w-3.5" />
                         {product.sku || 'No SKU'}
                       </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        Views {formatNumber(product.views)} · Cart {formatNumber(product.viewCarts)} · Ship {formatNumber(product.checkoutShippingInfos)} · Pay {formatNumber(product.checkoutPaymentInfos)}
+                      </div>
                     </td>
                     <td className="px-5 py-4"><GradeBadge grade={product.grade} /></td>
                     <td className="px-5 py-4 text-right font-semibold text-gray-900">{formatPrice(product.deliveredRevenue)}</td>
@@ -479,6 +491,8 @@ export default function AnalyticsPage() {
                     <td className="px-5 py-4 text-right">{formatPercent(product.deliveryRate)}</td>
                     <td className={clsx('px-5 py-4 text-right', product.returnRate >= 20 ? 'font-semibold text-red-600' : '')}>{formatPercent(product.returnRate)}</td>
                     <td className="px-5 py-4 text-right">{formatPercent(product.addToCartRate)}</td>
+                    <td className="px-5 py-4 text-right">{formatPercent(product.checkoutRate)}</td>
+                    <td className="px-5 py-4 text-right">{formatPercent(product.paymentInfoRate)}</td>
                     <td className="px-5 py-4 text-right">{product.stockLeft === null ? 'N/A' : formatNumber(product.stockLeft)}</td>
                   </tr>
                 ))}

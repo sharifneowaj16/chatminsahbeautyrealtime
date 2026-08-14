@@ -17,7 +17,8 @@ import {
   type IndexJobData,
   type DeleteJobData,
 } from '@/lib/queue/productQueue';
-import { transformProductToES } from '@/lib/search/productTransformer';
+import { isSellableSearchProduct, transformProductToES } from '@/lib/search/productTransformer';
+import { ACTIVE_PRODUCT_PRISMA_WHERE } from '@/lib/search/activeProductFilter';
 import { esClient, PRODUCT_INDEX } from '@/lib/elasticsearch';
 import prisma from '@/lib/prisma';
 
@@ -42,6 +43,13 @@ async function handleIndex(productId: string): Promise<void> {
 
   if (!product) {
     console.warn(`[worker] Product ${productId} not found in DB — skipping`);
+    await handleDelete(productId);
+    return;
+  }
+
+  if (!isSellableSearchProduct(product)) {
+    console.warn(`[worker] Product ${productId} is inactive/deleted — removing from ES`);
+    await handleDelete(productId);
     return;
   }
 
@@ -82,6 +90,7 @@ async function handleReindex(): Promise<void> {
 
   for (;;) {
     const products = await prisma.product.findMany({
+      where: ACTIVE_PRODUCT_PRISMA_WHERE,
       skip,
       take: BATCH_SIZE,
       include: productInclude,

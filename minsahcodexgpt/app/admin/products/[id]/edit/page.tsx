@@ -1,5 +1,15 @@
 'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -7,11 +17,14 @@ import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
 import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
 import { adminFetchJson } from '@/lib/adminFetch';
+import { DEFAULT_SITE_URL } from '@/lib/seo';
 import {
   ArrowLeft, Save, X, Upload, Plus, Trash2,
   Image as ImageIcon, Package, Tag, Search,
   TruckIcon, Percent, AlertCircle, Settings, Loader2,
 } from 'lucide-react';
+
+const ADMIN_SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_SITE_URL).replace(/\/$/, '');
 
 interface ProductVariant {
   id: string;
@@ -33,6 +46,8 @@ interface ProductImage {
   existingUrl?: string;
   _alt?: string;
 }
+
+type DeliveryOfferType = 'DEFAULT' | 'FREE' | 'FIXED';
 
 interface ProductFormData {
   name: string;
@@ -108,6 +123,12 @@ interface ProductFormData {
   shippingWeight: string;
   dimensions: { length: string; width: string; height: string };
   isFragile: boolean;
+  deliveryOfferEnabled: boolean;
+  deliveryOfferType: DeliveryOfferType;
+  deliveryOfferAmount: string;
+  deliveryOfferStartDate: string;
+  deliveryOfferEndDate: string;
+  deliveryOfferBadgeText: string;
   // Offers
   discountPercentage: string;
   salePrice: string;
@@ -217,6 +238,12 @@ interface LoadedAdminProduct {
   ogImageUrl?: string;
   shippingWeight?: string;
   isFragile?: boolean;
+  deliveryOfferEnabled?: boolean;
+  deliveryOfferType?: DeliveryOfferType | string;
+  deliveryOfferAmount?: number | string | null;
+  deliveryOfferStartDate?: string;
+  deliveryOfferEndDate?: string;
+  deliveryOfferBadgeText?: string;
   discountPercentage?: number | string | null;
   salePrice?: number | string | null;
   offerStartDate?: string;
@@ -263,12 +290,15 @@ const defaultFormData: ProductFormData = {
   shippingWeight: '',
   dimensions: { length: '', width: '', height: '' },
   isFragile: false,
+  deliveryOfferEnabled: false, deliveryOfferType: 'DEFAULT', deliveryOfferAmount: '',
+  deliveryOfferStartDate: '', deliveryOfferEndDate: '', deliveryOfferBadgeText: '',
   discountPercentage: '', salePrice: '', offerStartDate: '', offerEndDate: '',
   flashSaleEligible: false, lowStockThreshold: '10', barcode: '',
   returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '', faqs: [],
 };
 
 export default function EditProductPage() {
+  const { pushToast } = useToast();
   const router    = useRouter();
   const params    = useParams();
   const productId = params.id as string;
@@ -411,6 +441,12 @@ export default function EditProductPage() {
             height: dims.height || '',
           },
           isFragile:            p.isFragile            || false,
+          deliveryOfferEnabled: Boolean(p.deliveryOfferEnabled),
+          deliveryOfferType: (p.deliveryOfferType === 'FREE' || p.deliveryOfferType === 'FIXED') ? p.deliveryOfferType : 'DEFAULT',
+          deliveryOfferAmount: p.deliveryOfferAmount != null ? String(p.deliveryOfferAmount) : '',
+          deliveryOfferStartDate: p.deliveryOfferStartDate || '',
+          deliveryOfferEndDate: p.deliveryOfferEndDate || '',
+          deliveryOfferBadgeText: p.deliveryOfferBadgeText || '',
           discountPercentage: p.discountPercentage != null ? String(p.discountPercentage) : '',
           salePrice:          p.salePrice          != null ? String(p.salePrice)          : '',
           offerStartDate:     p.offerStartDate     || '',
@@ -475,6 +511,27 @@ export default function EditProductPage() {
     setFormData((prev) => ({ ...prev, dimensions: { ...prev.dimensions, [field]: value } }));
   };
 
+  const handleDeliveryOfferToggle = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliveryOfferEnabled: checked,
+      deliveryOfferType: checked && prev.deliveryOfferType === 'DEFAULT' ? 'FREE' : prev.deliveryOfferType,
+      deliveryOfferAmount: checked ? prev.deliveryOfferAmount : '',
+      deliveryOfferStartDate: checked ? prev.deliveryOfferStartDate : '',
+      deliveryOfferEndDate: checked ? prev.deliveryOfferEndDate : '',
+      deliveryOfferBadgeText: checked ? prev.deliveryOfferBadgeText : '',
+    }));
+  };
+
+  const handleDeliveryOfferTypeChange = (type: DeliveryOfferType) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliveryOfferType: type,
+      deliveryOfferEnabled: type !== 'DEFAULT',
+      deliveryOfferAmount: type === 'FIXED' ? prev.deliveryOfferAmount : '',
+    }));
+  };
+
   const handleSkinTypeToggle = (type: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -489,8 +546,8 @@ export default function EditProductPage() {
     if (!files || files.length === 0) return;
     const newImages: ProductImage[] = Array.from(files)
       .filter((file) => {
-        if (!file.type.startsWith('image/')) { alert(`${file.name} is not an image`); return false; }
-        if (file.size > 10 * 1024 * 1024) { alert(`${file.name} exceeds 10MB`); return false; }
+        if (!file.type.startsWith('image/')) { pushToast({ tone: 'danger', description: `${file.name} is not an image` }); return false; }
+        if (file.size > 10 * 1024 * 1024) { pushToast({ tone: 'danger', description: `${file.name} exceeds 10MB` }); return false; }
         return true;
       })
       .map((file, idx) => ({
@@ -538,8 +595,8 @@ export default function EditProductPage() {
   const handleOgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('OG Image must be under 5MB'); return; }
+    if (!file.type.startsWith('image/')) { pushToast({ tone: 'danger', description: 'Please select an image file' }); return; }
+    if (file.size > 5 * 1024 * 1024) { pushToast({ tone: 'danger', description: 'OG Image must be under 5MB' }); return; }
     setFormData((prev) => ({ ...prev, ogImageFile: file, ogImagePreview: URL.createObjectURL(file) }));
   };
 
@@ -553,8 +610,8 @@ export default function EditProductPage() {
   const handleVariantImageUpload = (variantId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    if (!file.type.startsWith('image/')) { pushToast({ tone: 'danger', description: 'Please select an image file' }); return; }
+    if (file.size > 5 * 1024 * 1024) { pushToast({ tone: 'danger', description: 'Image must be under 5MB' }); return; }
     const preview = URL.createObjectURL(file);
     setFormData((prev) => ({
       ...prev,
@@ -581,7 +638,7 @@ export default function EditProductPage() {
   };
 
   const handleRemoveVariant = (variantId: string) => {
-    if (formData.variants.length <= 1) { alert('At least one variant is required'); return; }
+    if (formData.variants.length <= 1) { pushToast({ tone: 'danger', description: 'At least one variant is required' }); return; }
     setFormData((prev) => ({ ...prev, variants: prev.variants.filter((v) => v.id !== variantId) }));
   };
 
@@ -602,10 +659,25 @@ export default function EditProductPage() {
   // ── Submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidOptionalNumber(formData.weight)) { alert('Weight must be a valid number'); return; }
-    if (!isValidOptionalNumber(formData.dimensions.length)) { alert('Length must be a valid number'); return; }
-    if (!isValidOptionalNumber(formData.dimensions.width))  { alert('Width must be a valid number'); return; }
-    if (!isValidOptionalNumber(formData.dimensions.height)) { alert('Height must be a valid number'); return; }
+    if (!isValidOptionalNumber(formData.weight)) { pushToast({ tone: 'danger', description: 'Weight must be a valid number' }); return; }
+    if (!isValidOptionalNumber(formData.dimensions.length)) { pushToast({ tone: 'danger', description: 'Length must be a valid number' }); return; }
+    if (!isValidOptionalNumber(formData.dimensions.width))  { pushToast({ tone: 'danger', description: 'Width must be a valid number' }); return; }
+    if (!isValidOptionalNumber(formData.dimensions.height)) { pushToast({ tone: 'danger', description: 'Height must be a valid number' }); return; }
+    if (formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED') {
+      const amount = Number(formData.deliveryOfferAmount);
+      if (!formData.deliveryOfferAmount.trim() || !Number.isFinite(amount) || amount < 0) {
+        pushToast({ tone: 'danger', description: 'Fixed delivery charge must be 0 or greater' });
+        return;
+      }
+    }
+    if (formData.deliveryOfferStartDate && formData.deliveryOfferEndDate) {
+      const start = new Date(formData.deliveryOfferStartDate);
+      const end = new Date(formData.deliveryOfferEndDate);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start > end) {
+        pushToast({ tone: 'danger', description: 'Delivery offer end must be after start' });
+        return;
+      }
+    }
 
     setIsSubmitting(true);
     try {
@@ -779,6 +851,12 @@ export default function EditProductPage() {
           ? { length: formData.dimensions.length, width: formData.dimensions.width, height: formData.dimensions.height }
           : undefined,
         isFragile: formData.isFragile || undefined,
+        deliveryOfferEnabled: formData.deliveryOfferEnabled && formData.deliveryOfferType !== 'DEFAULT',
+        deliveryOfferType: formData.deliveryOfferEnabled ? formData.deliveryOfferType : 'DEFAULT',
+        deliveryOfferAmount: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? formData.deliveryOfferAmount : undefined,
+        deliveryOfferStartDate: formData.deliveryOfferEnabled ? formData.deliveryOfferStartDate || undefined : undefined,
+        deliveryOfferEndDate: formData.deliveryOfferEnabled ? formData.deliveryOfferEndDate || undefined : undefined,
+        deliveryOfferBadgeText: formData.deliveryOfferEnabled ? formData.deliveryOfferBadgeText || undefined : undefined,
 
         discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : undefined,
         salePrice:          formData.salePrice          ? parseFloat(formData.salePrice)          : undefined,
@@ -804,7 +882,7 @@ export default function EditProductPage() {
       router.push('/admin/products');
     } catch (error) {
       console.error('Error updating product:', error);
-      alert(error instanceof Error ? error.message : 'Failed to update product. Please try again.');
+      pushToast({ tone: 'danger', description: error instanceof Error ? error.message : 'Failed to update product. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -869,7 +947,7 @@ export default function EditProductPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-              <input type="text" name="name" value={formData.name} onChange={handleChange}
+              <Input type="text" name="name" value={formData.name} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="e.g., Hydrating Face Serum" />
             </div>
@@ -877,66 +955,66 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                <select name="category" value={formData.category}
+                <Select name="category" value={formData.category}
                   onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value, subcategory: '', item: '' }))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   <option value="">Select category</option>
                   {categoriesData.map((cat) => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
-                <select name="subcategory" value={formData.subcategory}
+                <Select name="subcategory" value={formData.subcategory}
                   onChange={(e) => setFormData((prev) => ({ ...prev, subcategory: e.target.value, item: '' }))}
                   disabled={!formData.category}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
                   <option value="">Select subcategory</option>
                   {subcategories.map((s: { name: string }) => <option key={s.name} value={s.name}>{s.name}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Type/Item</label>
-                <select name="item" value={formData.item} onChange={handleChange}
+                <Select name="item" value={formData.item} onChange={handleChange}
                   disabled={!formData.subcategory || items.length === 0}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
                   <option value="">Select item</option>
                   {items.map((item: string) => <option key={item} value={item}>{item}</option>)}
-                </select>
+                </Select>
                 {formData.subcategory && items.length === 0 && (
                   <p className="mt-1 text-xs text-gray-400">No items defined for this subcategory</p>
                 )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Brand *</label>
-                <input type="text" name="brand" value={formData.brand} onChange={handleChange}
+                <Input type="text" name="brand" value={formData.brand} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter brand name" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Origin Country</label>
-                <select name="originCountry" value={formData.originCountry} onChange={handleChange}
+                <Select name="originCountry" value={formData.originCountry} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                <select name="status" value={formData.status} onChange={handleChange}
+                <Select name="status" value={formData.status} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="out_of_stock">Out of Stock</option>
-                </select>
+                </Select>
               </div>
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
-                  <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
+                  <Input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
                     className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Featured Product</span>
                 </label>
@@ -945,7 +1023,7 @@ export default function EditProductPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Description *</label>
-              <textarea name="description" value={formData.description} onChange={handleChange} rows={5}
+              <Textarea name="description" value={formData.description} onChange={handleChange} rows={5}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Detailed product description..." />
             </div>
@@ -962,10 +1040,10 @@ export default function EditProductPage() {
           <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
 
           <div className="space-y-4">
-            <button type="button" onClick={() => fileInputRef.current?.click()}
+            <Button type="button" onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
               <Upload className="w-5 h-5 mr-2" /> Upload Images
-            </button>
+            </Button>
 
             {formData.images.length > 0 && (
               <div>
@@ -984,15 +1062,15 @@ export default function EditProductPage() {
                       )}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                         {!image.isMain && (
-                          <button type="button" onClick={() => handleSetMainImage(image.id)}
+                          <Button type="button" aria-label={`Set image ${index + 1} as main image`} onClick={() => handleSetMainImage(image.id)}
                             className="p-2 bg-white rounded-full hover:bg-gray-100 shadow-lg">
                             <ImageIcon className="w-4 h-4 text-gray-700" />
-                          </button>
+                          </Button>
                         )}
-                        <button type="button" onClick={() => handleRemoveImage(image.id)}
+                        <Button type="button" aria-label={`Remove image ${index + 1}`} onClick={() => handleRemoveImage(image.id)}
                           className="p-2 bg-red-500 rounded-full hover:bg-red-600 shadow-lg">
                           <Trash2 className="w-4 h-4 text-white" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -1004,12 +1082,12 @@ export default function EditProductPage() {
                   <div className="space-y-3">
                     {formData.images.map((image, index) => (
                       <div key={image.id} className="flex gap-3">
-                        <img src={image.preview} alt="" className="w-16 h-16 object-cover rounded border border-gray-200 flex-shrink-0" />
+                        <img src={image.preview} alt={`Product image preview ${index + 1}`} className="w-16 h-16 object-cover rounded border border-gray-200 flex-shrink-0" />
                         <div className="flex-1">
                           <label className="block text-xs font-medium text-gray-700 mb-1">
                             Image {index + 1} {image.isMain && '(Main)'}
                           </label>
-                          <input type="text" value={formData.imageAltTexts[index] || ''}
+                          <Input type="text" value={formData.imageAltTexts[index] || ''}
                             onChange={(e) => handleImageAltTextChange(index, e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
                             placeholder="e.g., Hydrating face serum bottle Bangladesh" />
@@ -1033,10 +1111,10 @@ export default function EditProductPage() {
                 <p className="text-sm text-gray-600">Add sizes, colors with individual images</p>
               </div>
             </div>
-            <button type="button" onClick={handleAddVariant}
+            <Button type="button" onClick={handleAddVariant}
               className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
               <Plus className="w-4 h-4 mr-1" /> Add Variant
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-5">
@@ -1045,36 +1123,36 @@ export default function EditProductPage() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-900">Variant #{index + 1}</h3>
                   {formData.variants.length > 1 && (
-                    <button type="button" onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
+                    <Button type="button" aria-label={`Remove variant ${index + 1}`} onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Size/Volume</label>
-                    <input type="text" value={variant.size || ''} onChange={(e) => handleVariantChange(variant.id, 'size', e.target.value)}
+                    <Input type="text" value={variant.size || ''} onChange={(e) => handleVariantChange(variant.id, 'size', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="e.g., 30ml" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Color/Shade</label>
-                    <input type="text" value={variant.color || ''} onChange={(e) => handleVariantChange(variant.id, 'color', e.target.value)}
+                    <Input type="text" value={variant.color || ''} onChange={(e) => handleVariantChange(variant.id, 'color', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="e.g., Ribbon" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Price (BDT ৳) *</label>
-                    <input type="number" value={variant.price} onChange={(e) => handleVariantChange(variant.id, 'price', e.target.value)}
+                    <Input type="number" value={variant.price} onChange={(e) => handleVariantChange(variant.id, 'price', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="0.00" step="0.01" min="0" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Stock *</label>
-                    <input type="number" value={variant.stock} onChange={(e) => handleVariantChange(variant.id, 'stock', e.target.value)}
+                    <Input type="number" value={variant.stock} onChange={(e) => handleVariantChange(variant.id, 'stock', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="0" min="0" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">SKU *</label>
-                    <input type="text" value={variant.sku} onChange={(e) => handleVariantChange(variant.id, 'sku', e.target.value)}
+                    <Input type="text" value={variant.sku} onChange={(e) => handleVariantChange(variant.id, 'sku', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="SKU-001" />
                   </div>
                 </div>
@@ -1088,10 +1166,10 @@ export default function EditProductPage() {
                       <div className="relative">
                         <img src={variant.imagePreview || variant.image} alt={`Variant ${index + 1}`}
                           className="w-20 h-20 object-cover rounded-lg border-2 border-purple-300" />
-                        <button type="button" onClick={() => handleRemoveVariantImage(variant.id)}
+                        <Button type="button" aria-label={`Remove image from variant ${index + 1}`} onClick={() => handleRemoveVariantImage(variant.id)}
                           className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                           <X className="w-3 h-3 text-white" />
-                        </button>
+                        </Button>
                       </div>
                     )}
                     <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-purple-400 rounded-lg cursor-pointer hover:bg-purple-50 text-xs text-purple-700 font-medium">
@@ -1118,18 +1196,18 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume (numeric)</label>
-                <input type="text" name="weight" value={formData.weight} onChange={handleChange}
+                <Input type="text" name="weight" value={formData.weight} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 50" />
                 <p className="mt-1 text-xs text-gray-500">Numeric only — no unit.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
-                <input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
+                <Input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 24 months / 12 months after opening" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
+                <Input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
@@ -1138,14 +1216,14 @@ export default function EditProductPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Suitable for Skin Type</label>
               <div className="flex flex-wrap gap-2">
                 {skinTypes.map((type) => (
-                  <button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
+                  <Button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
                     className={`px-4 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
                       formData.skinType.includes(type)
                         ? 'bg-purple-600 border-purple-600 text-white'
                         : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400'
                     }`}>
                     {type}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -1153,16 +1231,16 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Condition</label>
-                <select name="productCondition" value={formData.productCondition} onChange={handleChange}
+                <Select name="productCondition" value={formData.productCondition} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   <option value="NEW">New</option>
                   <option value="USED">Used</option>
                   <option value="REFURBISHED">Refurbished</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">GTIN/EAN/UPC</label>
-                <input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
+                <Input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="1234567890123" />
               </div>
             </div>
@@ -1170,20 +1248,20 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Average Rating (0–5)</label>
-                <input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
+                <Input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
                   min="0" max="5" step="0.1"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Review Count</label>
-                <input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
+                <Input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
                   min="0" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients List</label>
-              <textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
+              <Textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Aqua, Glycerin, Hyaluronic Acid..." />
             </div>
@@ -1201,7 +1279,7 @@ export default function EditProductPage() {
             {/* Meta Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
-              <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
+              <Input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="SEO title — include focus keyword" />
               <p className="text-xs text-gray-500 mt-1 text-right">{formData.metaTitle.length}/60</p>
@@ -1210,7 +1288,7 @@ export default function EditProductPage() {
             {/* Meta Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
-              <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
+              <Textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder='150–160 chars. Include "Cash on Delivery" or price signal.' />
               <p className="text-xs text-gray-500 mt-1 text-right">{formData.metaDescription.length}/160</p>
@@ -1219,14 +1297,14 @@ export default function EditProductPage() {
             {/* Bengali Product Name + Focus Keyword */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Product Name</label>
-                <input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Product Name</label>
+                <Input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="বাংলা নাম" />
+                  placeholder="বাংলা নাম" lang="bn-BD" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
-                <input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
+                <Input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="e.g., beauty glazed lip oil bangladesh" />
                 <p className="text-xs text-gray-400 mt-1">Must appear in Meta Title, description first 100 words, and URL Slug</p>
@@ -1239,7 +1317,7 @@ export default function EditProductPage() {
                 Secondary Keywords
                 <span className="ml-2 text-xs font-normal text-gray-400">comma-separated, 3–5 long-tail terms</span>
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.secondaryKeywords.join(', ')}
                 onChange={(e) => handleSecondaryKeywordsChange(e.target.value)}
@@ -1251,8 +1329,9 @@ export default function EditProductPage() {
                   {formData.secondaryKeywords.map((kw, i) => (
                     <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs text-purple-700">
                       {kw}
-                      <button
+                      <Button
                         type="button"
+                        aria-label={`Remove secondary keyword ${kw}`}
                         onClick={() => setFormData((prev) => ({
                           ...prev,
                           secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
@@ -1260,7 +1339,7 @@ export default function EditProductPage() {
                         className="text-purple-400 hover:text-purple-700"
                       >
                         <X className="w-3 h-3" />
-                      </button>
+                      </Button>
                     </span>
                   ))}
                 </div>
@@ -1271,16 +1350,17 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  বাংলা Focus Keyword
+                  Bangla Focus Keyword
                   <span className="ml-2 text-xs font-normal text-gray-400">Bengali script only</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="bengaliFocusKeyword"
                   value={formData.bengaliFocusKeyword}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="লিপ অয়েল দাম বাংলাদেশ"
+                  lang="bn-BD"
                 />
               </div>
 
@@ -1290,7 +1370,7 @@ export default function EditProductPage() {
                   OG Description
                   <span className="ml-2 text-xs font-normal text-gray-400">Facebook/WhatsApp share — 100–130 chars</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="ogDescription"
                   value={formData.ogDescription}
@@ -1305,17 +1385,17 @@ export default function EditProductPage() {
               </div>
             </div>
 
-            {/* বাংলা Meta Description */}
+            {/* Bangla Meta Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Meta Description</label>
-              <textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} rows={2}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Meta Description</label>
+              <Textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} rows={2}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
             </div>
 
             {/* OG Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
-              <input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
+              <Input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Leave blank to use Meta Title" />
             </div>
@@ -1335,7 +1415,7 @@ export default function EditProductPage() {
             {/* URL Slug */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
-              <input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
+              <Input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="product-url-slug" />
               <p className="mt-1 text-xs text-gray-500">URL: /products/<strong>{formData.urlSlug || 'product-url-slug'}</strong> — max 50 chars, include focus keyword</p>
@@ -1345,14 +1425,14 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Canonical URL</label>
-                <input type="text" name="canonicalUrl" value={formData.canonicalUrl} onChange={handleChange}
+                <Input type="text" name="canonicalUrl" value={formData.canonicalUrl} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="https://minsahbeauty.com/products/product-url-slug" />
+                  placeholder={`${ADMIN_SITE_URL}/products/product-url-slug`} />
                 <p className="mt-1 text-xs text-gray-500">Owner fill: final live product URL. Leave blank to let frontend use slug URL.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Page H1</label>
-                <input type="text" name="pageH1" value={formData.pageH1} onChange={handleChange}
+                <Input type="text" name="pageH1" value={formData.pageH1} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="Sunsilk Power Shot Hair Treatment Price in Bangladesh" />
                 <p className="mt-1 text-xs text-gray-500">Visible product page H1. Leave blank to use product name.</p>
@@ -1361,7 +1441,7 @@ export default function EditProductPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">SEO Intro / Top Visible Intro</label>
-              <textarea name="seoIntro" value={formData.seoIntro} onChange={handleChange} rows={3}
+              <Textarea name="seoIntro" value={formData.seoIntro} onChange={handleChange} rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Short visible intro with product, price, size, variant and Bangladesh buying intent." />
               <p className="mt-1 text-xs text-gray-500">This should render near the top of the product page.</p>
@@ -1373,7 +1453,7 @@ export default function EditProductPage() {
                 Tags/Keywords
                 <span className="ml-2 text-xs font-normal text-gray-400">15–20 tags, priority order: focusKeyword first</span>
               </label>
-              <input type="text" name="tags" value={formData.tags} onChange={handleChange}
+              <Input type="text" name="tags" value={formData.tags} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="beauty glazed lip oil bangladesh, lip oil bd, লিপ অয়েল, ..." />
             </div>
@@ -1389,14 +1469,14 @@ export default function EditProductPage() {
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
+              <Input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Search intent" />
-              <input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
+              <Input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Primary concern" />
-              <input type="text" name="gender" value={formData.gender} onChange={handleChange}
+              <Input type="text" name="gender" value={formData.gender} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Gender" />
             </div>
-            <textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
+            <Textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
               placeholder="Target audience" />
             {[
@@ -1412,7 +1492,7 @@ export default function EditProductPage() {
             ].map(([field, label]) => (
               <div key={field}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                <textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
+                <Textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
                   onChange={(e) => handleArrayFieldChange(field as keyof ProductFormData, e.target.value)}
                   rows={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" />
@@ -1427,7 +1507,7 @@ export default function EditProductPage() {
               ].map(([field, label]) => (
                 <div key={field}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                  <textarea name={field} value={formData[field as keyof ProductFormData] as string}
+                  <Textarea name={field} value={formData[field as keyof ProductFormData] as string}
                     onChange={handleChange} rows={7}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono" />
                 </div>
@@ -1436,13 +1516,13 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">FAQ Schema Note</label>
-                <textarea name="faqSchemaNote" value={formData.faqSchemaNote} onChange={handleChange} rows={3}
+                <Textarea name="faqSchemaNote" value={formData.faqSchemaNote} onChange={handleChange} rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
                   placeholder="FAQ content is for users. Product/Merchant listing schema is SEO priority." />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Authenticity Note</label>
-                <textarea name="authenticityNote" value={formData.authenticityNote} onChange={handleChange} rows={3}
+                <Textarea name="authenticityNote" value={formData.authenticityNote} onChange={handleChange} rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
                   placeholder="Imported Thailand product. Check packaging, expiry and batch/barcode after receiving." />
               </div>
@@ -1451,13 +1531,13 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Ingredient Verification Status</label>
-                <input type="text" name="ingredientVerificationStatus" value={formData.ingredientVerificationStatus} onChange={handleChange}
+                <Input type="text" name="ingredientVerificationStatus" value={formData.ingredientVerificationStatus} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="Pending physical packaging verification" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SEO Validation Checklist</label>
-                <textarea value={formData.seoValidationChecklist.join(', ')}
+                <Textarea value={formData.seoValidationChecklist.join(', ')}
                   onChange={(e) => handleArrayFieldChange('seoValidationChecklist', e.target.value)}
                   rows={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
@@ -1482,7 +1562,7 @@ export default function EditProductPage() {
                 ].map(([field, label]) => (
                   <div key={field}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                    <textarea name={field} value={formData[field as keyof ProductFormData] as string}
+                    <Textarea name={field} value={formData[field as keyof ProductFormData] as string}
                       onChange={handleChange} rows={7}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono" />
                   </div>
@@ -1491,7 +1571,7 @@ export default function EditProductPage() {
             </div>
 
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
+              <Input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
                 className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
               <span className="text-sm text-gray-700">FAQ schema ready</span>
             </label>
@@ -1513,39 +1593,120 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Weight (grams, numeric)</label>
-                <input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
+                <Input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., 50" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Dimensions (L × W × H cm)</label>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <input type="text" value={formData.dimensions.length}
+                    <Input type="text" value={formData.dimensions.length}
                       onChange={(e) => handleDimensionChange('length', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="Length" />
-                    <p className="text-[10px] text-gray-400 mt-0.5 text-center">L (cm)</p>
+                    <p className="text-xs text-gray-400 mt-0.5 text-center">L (cm)</p>
                   </div>
                   <div>
-                    <input type="text" value={formData.dimensions.width}
+                    <Input type="text" value={formData.dimensions.width}
                       onChange={(e) => handleDimensionChange('width', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="Width" />
-                    <p className="text-[10px] text-gray-400 mt-0.5 text-center">W (cm)</p>
+                    <p className="text-xs text-gray-400 mt-0.5 text-center">W (cm)</p>
                   </div>
                   <div>
-                    <input type="text" value={formData.dimensions.height}
+                    <Input type="text" value={formData.dimensions.height}
                       onChange={(e) => handleDimensionChange('height', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" placeholder="Height" />
-                    <p className="text-[10px] text-gray-400 mt-0.5 text-center">H (cm)</p>
+                    <p className="text-xs text-gray-400 mt-0.5 text-center">H (cm)</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center">
-                <input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
+                <Input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
                   className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                 <span className="ml-2 text-sm text-gray-700">Fragile Item</span>
               </label>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-emerald-900">Product Delivery Offer</h3>
+                  <p className="mt-1 text-xs text-emerald-700">
+                    Customer-facing offer only. Courier actual charge will still be calculated later in checkout/order phases.
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-emerald-900 shadow-sm">
+                  <Input
+                    type="checkbox"
+                    checked={formData.deliveryOfferEnabled}
+                    onChange={(e) => handleDeliveryOfferToggle(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded"
+                  />
+                  Enable delivery offer
+                </label>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Offer Type</label>
+                  <Select
+                    value={formData.deliveryOfferEnabled ? formData.deliveryOfferType : 'DEFAULT'}
+                    onChange={(e) => handleDeliveryOfferTypeChange(e.target.value as DeliveryOfferType)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+                  >
+                    <option value="DEFAULT">Courier calculated / No product offer</option>
+                    <option value="FREE">Free delivery for full order</option>
+                    <option value="FIXED">Fixed delivery charge</option>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fixed Delivery Amount (৳)</label>
+                  <Input
+                    type="number"
+                    name="deliveryOfferAmount"
+                    value={formData.deliveryOfferAmount}
+                    onChange={handleChange}
+                    disabled={!formData.deliveryOfferEnabled || formData.deliveryOfferType !== 'FIXED'}
+                    min="0"
+                    step="1"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100 disabled:text-gray-400"
+                    placeholder="e.g., 60"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Offer Start</label>
+                  <Input type="datetime-local" name="deliveryOfferStartDate" value={formData.deliveryOfferStartDate} onChange={handleChange}
+                    disabled={!formData.deliveryOfferEnabled}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Offer End</label>
+                  <Input type="datetime-local" name="deliveryOfferEndDate" value={formData.deliveryOfferEndDate} onChange={handleChange}
+                    disabled={!formData.deliveryOfferEnabled}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100" />
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Badge Text</label>
+                <Input
+                  type="text"
+                  name="deliveryOfferBadgeText"
+                  value={formData.deliveryOfferBadgeText}
+                  onChange={handleChange}
+                  disabled={!formData.deliveryOfferEnabled}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100"
+                  placeholder="এই পণ্যে ফ্রি ডেলিভারি"
+                  lang="bn-BD"
+                />
+                <p className="mt-2 text-xs text-emerald-700">
+                  If a free-delivery product is in the cart, delivery becomes free for the entire order.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1560,20 +1721,20 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Discount %</label>
-                <input type="number" value={formData.discountPercentage}
+                <Input type="number" value={formData.discountPercentage}
                   onChange={(e) => handleDiscountChange(e.target.value)}
                   min="0" max="100" step="0.01"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sale Price (৳)</label>
-                <input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
+                <Input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
                   step="0.01" min="0"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="0.00" />
               </div>
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
-                  <input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
+                  <Input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
                     className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Flash Sale Eligible</span>
                 </label>
@@ -1582,12 +1743,12 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer Start</label>
-                <input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
+                <Input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer End</label>
-                <input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
+                <Input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
@@ -1603,12 +1764,12 @@ export default function EditProductPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Low Stock Alert Threshold</label>
-              <input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
+              <Input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="10" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Barcode/UPC</label>
-              <input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
+              <Input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Enter barcode" />
             </div>
           </div>
@@ -1628,7 +1789,7 @@ export default function EditProductPage() {
                 { name: 'preOrderOption', label: 'Pre-order Option' },
               ].map((opt) => (
                 <label key={opt.name} className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" name={opt.name}
+                  <Input type="checkbox" name={opt.name}
                     checked={formData[opt.name as keyof ProductFormData] as boolean}
                     onChange={handleChange}
                     className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
@@ -1638,7 +1799,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Related Products</label>
-              <input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
+              <Input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Product IDs separated by commas" />
             </div>
@@ -1651,12 +1812,12 @@ export default function EditProductPage() {
             className="inline-flex items-center px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
             <X className="w-5 h-5 mr-2" /> Cancel
           </Link>
-          <button type="submit" disabled={isSubmitting}
+          <Button type="submit" disabled={isSubmitting}
             className="inline-flex items-center px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium shadow-lg">
             {isSubmitting
               ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Saving...</>
               : <><Save className="w-5 h-5 mr-2" /> Save Changes</>}
-          </button>
+          </Button>
         </div>
 
       </form>

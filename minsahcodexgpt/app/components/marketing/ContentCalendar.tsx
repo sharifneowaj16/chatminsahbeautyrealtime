@@ -1,5 +1,10 @@
-﻿'use client';
+'use client';
 
+
+
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { useState, useEffect } from 'react';
 import type { CalendarPost, ScheduledPost, Platform } from '@/types/social';
 import { PLATFORM_CONFIGS, generateMockScheduledPosts } from '@/types/social';
@@ -106,10 +111,6 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
     });
   };
 
-  const getPlatformColor = (platformId: string) => {
-    return PLATFORM_CONFIGS[platformId as keyof typeof PLATFORM_CONFIGS]?.color || '#666';
-  };
-
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
     if (direction === 'prev') {
@@ -162,7 +163,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               {(['month', 'week', 'day'] as const).map((mode) => (
-                <button
+                <Button
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-300 ${
@@ -172,7 +173,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                   }`}
                 >
                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -181,7 +182,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
+              <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -191,7 +192,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
             </div>
 
             {/* Filters */}
-            <button
+            <Button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300 text-sm"
             >
@@ -202,12 +203,12 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                   {filterPlatforms.length + filterStatus.length}
                 </span>
               )}
-            </button>
+            </Button>
 
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 text-sm">
+            <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 text-sm">
               <Plus className="h-4 w-4" />
               New Post
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -221,7 +222,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                 <div className="space-y-2">
                   {connectedPlatforms.map((platform) => (
                     <label key={platform.id} className="flex items-center gap-2">
-                      <input
+                      <Input
                         type="checkbox"
                         checked={filterPlatforms.includes(platform.id)}
                         onChange={(e) => {
@@ -245,7 +246,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                 <div className="space-y-2">
                   {['scheduled', 'published', 'draft', 'failed'].map((status) => (
                     <label key={status} className="flex items-center gap-2">
-                      <input
+                      <Input
                         type="checkbox"
                         checked={filterStatus.includes(status)}
                         onChange={(e) => {
@@ -265,7 +266,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
 
               {/* Clear Filters */}
               <div className="flex items-end">
-                <button
+                <Button
                   onClick={() => {
                     setFilterPlatforms([]);
                     setFilterStatus([]);
@@ -274,7 +275,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                   className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
                 >
                   Clear All Filters
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -284,23 +285,23 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
       {/* Calendar Navigation */}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <button
+          <Button
             onClick={() => navigateMonth('prev')}
             className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
           >
             <ChevronLeft className="h-5 w-5" />
-          </button>
+          </Button>
 
           <h3 className="text-lg font-semibold text-gray-900">
             {formatMonthYear(currentDate)}
           </h3>
 
-          <button
+          <Button
             onClick={() => navigateMonth('next')}
             className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
           >
             <ChevronRight className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -356,13 +357,9 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                             e.stopPropagation();
                             setSelectedPost(post);
                           }}
-                          className="flex items-center gap-1 text-xs p-1 rounded cursor-pointer hover:bg-white hover:shadow-sm transition-all duration-300"
-                          style={{ backgroundColor: `${getPlatformColor(post.platforms[0])}20` }}
+                          className="flex items-center gap-1 rounded bg-minsah-surface-subtle p-1 text-xs transition-all duration-300 hover:bg-minsah-surface-panel hover:shadow-sm"
                         >
-                          <div
-                            className="w-2 h-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: getPlatformColor(post.platforms[0]) }}
-                          />
+                          <div className="h-2 w-2 flex-shrink-0 rounded-full bg-minsah-action-secondary" />
                           <span className="truncate text-gray-700">{post.content.slice(0, 20)}</span>
                         </div>
                       ))}
@@ -393,22 +390,8 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
       </div>
 
       {/* Post Detail Modal */}
-      {selectedPost && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSelectedPost(null)}></div>
-
-            <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Post Details</h3>
-                <button
-                  onClick={() => setSelectedPost(null)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-300"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              </div>
-
+      {selectedPost ? (
+        <Modal open onClose={() => setSelectedPost(null)} title="Post Details" size="md">
               <div className="space-y-4">
                 {/* Platforms */}
                 <div className="flex flex-wrap gap-2">
@@ -417,8 +400,7 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                     return (
                       <span
                         key={platformId}
-                        className="flex items-center gap-1 px-3 py-1 rounded-full text-sm text-white"
-                        style={{ backgroundColor: platform?.color }}
+                        className="flex items-center gap-1 rounded-full border border-minsah-border-default bg-minsah-surface-accent px-3 py-1 text-sm font-semibold text-minsah-text-link"
                       >
                         <span className="flex items-center gap-1">{getPlatformIcon(platform?.icon)} {platform?.name}</span>
                       </span>
@@ -439,12 +421,12 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
                 {/* Media */}
                 {selectedPost.media.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
-                    {selectedPost.media.map((item) => (
+                    {selectedPost.media.map((item, index) => (
                       <div key={item.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                         {item.type === 'video' ? (
-                          <video src={item.url} className="w-full h-full object-cover" />
+                          <video src={item.url} aria-label={`Scheduled video preview ${index + 1}`} className="w-full h-full object-cover" />
                         ) : (
-                          <img src={item.url} alt="" className="w-full h-full object-cover" />
+                          <img src={item.url} alt={`Scheduled media preview ${index + 1}`} className="w-full h-full object-cover" />
                         )}
                       </div>
                     ))}
@@ -480,20 +462,18 @@ export default function ContentCalendar({ className = '' }: ContentCalendarProps
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-4 border-t border-gray-200">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors duration-300">
+                  <Button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors duration-300">
                     <Edit className="h-4 w-4" />
                     Edit
-                  </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors duration-300">
+                  </Button>
+                  <Button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors duration-300">
                     <Trash2 className="h-4 w-4" />
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+        </Modal>
+      ) : null}
 
       {/* Summary */}
       <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">

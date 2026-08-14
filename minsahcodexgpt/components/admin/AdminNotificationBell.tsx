@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Gift, ShoppingBag, X, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
 
 interface Notification {
   id:        string;
@@ -17,11 +18,11 @@ interface Notification {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return 'এইমাত্র';
-  if (mins < 60) return `${mins} মিনিট আগে`;
+  if (mins < 1)  return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs} ঘণ্টা আগে`;
-  return `${Math.floor(hrs / 24)} দিন আগে`;
+  if (hrs < 24)  return `${hrs} hr ago`;
+  return `${Math.floor(hrs / 24)} day${Math.floor(hrs / 24) === 1 ? '' : 's'} ago`;
 }
 
 export default function AdminNotificationBell() {
@@ -102,39 +103,56 @@ export default function AdminNotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell button */}
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-controls="admin-notifications-panel"
         onClick={() => { setOpen((o) => !o); if (!open) fetchNotifications(); }}
-        className="relative p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+        className="relative text-gray-500 hover:bg-gray-100 hover:text-gray-700"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-5 h-5" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center" aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+        <div id="admin-notifications-panel" role="region" aria-label="Notifications" className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
 
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={markAllRead}
                   disabled={loading}
-                  className="text-xs text-violet-600 hover:text-violet-800 flex items-center gap-1"
+                  className="px-2 text-xs text-violet-600 hover:bg-transparent hover:text-violet-800"
                 >
-                  <Check className="w-3 h-3" />
-                  সব পড়েছি
-                </button>
+                  <Check className="w-3 h-3" aria-hidden="true" />
+                  Mark all read
+                </Button>
               )}
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-4 h-4" />
-              </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Close notifications"
+                onClick={() => setOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </Button>
             </div>
           </div>
 
@@ -142,15 +160,18 @@ export default function AdminNotificationBell() {
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="py-10 text-center text-gray-400">
-                <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">কোনো notification নেই</p>
+                <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" aria-hidden="true" />
+                <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               notifications.map((n) => (
-                <button
+                <Button
                   key={n.id}
+                  type="button"
+                  variant="ghost"
+                  fullWidth
                   onClick={() => handleNotificationClick(n)}
-                  className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors flex gap-3 ${
+                  className={`min-h-0 justify-start rounded-none border-b border-gray-50 px-4 py-3 text-left font-normal ${
                     !n.isRead ? 'bg-violet-50/50' : ''
                   }`}
                 >
@@ -161,8 +182,8 @@ export default function AdminNotificationBell() {
                       : 'bg-violet-100'
                   }`}>
                     {n.type === 'GIFT_ORDER'
-                      ? <Gift className="w-4 h-4 text-pink-600" />
-                      : <ShoppingBag className="w-4 h-4 text-violet-600" />
+                      ? <Gift className="w-4 h-4 text-pink-600" aria-hidden="true" />
+                      : <ShoppingBag className="w-4 h-4 text-violet-600" aria-hidden="true" />
                     }
                   </div>
 
@@ -184,7 +205,7 @@ export default function AdminNotificationBell() {
                   {!n.isRead && (
                     <div className="w-2 h-2 bg-violet-500 rounded-full mt-1 flex-shrink-0" />
                   )}
-                </button>
+                </Button>
               ))
             )}
           </div>
@@ -192,12 +213,15 @@ export default function AdminNotificationBell() {
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="px-4 py-2.5 border-t border-gray-100 text-center">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => { router.push('/admin/orders'); setOpen(false); }}
-                className="text-xs text-violet-600 hover:text-violet-800 font-medium"
+                className="px-2 text-xs font-medium text-violet-600 hover:bg-transparent hover:text-violet-800"
               >
-                সব orders দেখো →
-              </button>
+                View all orders →
+              </Button>
             </div>
           )}
         </div>

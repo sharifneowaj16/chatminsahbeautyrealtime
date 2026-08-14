@@ -64,6 +64,10 @@ export function createRedisSubscriber(): Redis {
 
 export const SOCIAL_UPDATES_CHANNEL = 'social-updates' as const;
 
+export async function publishSocialUpdate<T extends object>(payload: T): Promise<number> {
+  return getPublisher().publish(SOCIAL_UPDATES_CHANNEL, JSON.stringify(payload));
+}
+
 export interface SocialUpdatePayload {
   type: 'social-update';
   platform: string;

@@ -108,12 +108,7 @@ export default function StatsSection({ stats }: { stats: Stats }) {
           <p className="text-sm font-semibold text-gray-700">Overall Completion</p>
           <span className="text-lg font-bold text-blue-600">{stats.completionRate}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-          <div
-            className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full transition-all duration-500 ease-out"
-            style={{ width: `${stats.completionRate}%` }}
-          ></div>
-        </div>
+        <progress className="h-2 w-full accent-minsah-action-primary" max={100} value={stats.completionRate} aria-label="Overall shortlist completion" />
         <p className="text-xs text-gray-600 mt-2">
           {stats.productsPurchased} of {stats.productsPurchased + stats.productsRemaining} products purchased
         </p>

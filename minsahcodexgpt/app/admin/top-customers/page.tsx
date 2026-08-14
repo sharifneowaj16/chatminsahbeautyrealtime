@@ -1,5 +1,9 @@
 'use client';
 
+
+
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -238,14 +242,14 @@ export default function TopCustomersPage() {
           <p className="text-gray-600">Identify and reward your most valuable customers</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          <button className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          <Button className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
             <Gift className="w-5 h-5 mr-2" />
             Award Yearly Gifts
-          </button>
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white rounded-lg hover:bg-gray-50">
+          </Button>
+          <Button className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white rounded-lg hover:bg-gray-50">
             <Download className="w-5 h-5 mr-2" />
             Export
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -303,7 +307,7 @@ export default function TopCustomersPage() {
       {/* Filters */}
       <div className="bg-white rounded-lg border p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <select
+          <Select
             value={filterDivision}
             onChange={(e) => setFilterDivision(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -312,9 +316,9 @@ export default function TopCustomersPage() {
             {getAllDivisions().map(div => (
               <option key={div} value={div}>{div}</option>
             ))}
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={filterTier}
             onChange={(e) => setFilterTier(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -325,9 +329,9 @@ export default function TopCustomersPage() {
             <option value="gold">Gold</option>
             <option value="silver">Silver</option>
             <option value="bronze">Bronze</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -335,7 +339,7 @@ export default function TopCustomersPage() {
             <option value="2024">2024 Gifts</option>
             <option value="2023">2023 Gifts</option>
             <option value="2022">2022 Gifts</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -450,7 +454,7 @@ export default function TopCustomersPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         {customer.yearlyGiftEligible && !customer.yearlyGiftAwarded && (
-                          <button
+                          <Button
                             onClick={() => {
                               setSelectedCustomer(customer);
                               setShowGiftModal(true);
@@ -458,11 +462,11 @@ export default function TopCustomersPage() {
                             className="text-purple-600 hover:text-purple-900"
                           >
                             <Gift className="w-5 h-5" />
-                          </button>
+                          </Button>
                         )}
-                        <button className="text-blue-600 hover:text-blue-900">
+                        <Button className="text-blue-600 hover:text-blue-900">
                           <Send className="w-5 h-5" />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

@@ -1,8 +1,11 @@
+import { noindexMetadata } from '@/lib/metadata/noindex';
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth';
 import prisma from '@/lib/prisma';
 import { AccountLayoutClient } from '@/components/account/account-layout-client';
+
+export const metadata = noindexMetadata;
 
 // Fetch full user from DB using NextAuth session userId
 async function getUserFromSession(userId: string) {

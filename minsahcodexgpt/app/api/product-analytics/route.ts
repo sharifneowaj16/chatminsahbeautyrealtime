@@ -8,10 +8,19 @@ import { shouldSkipProductAnalyticsRequest } from '@/lib/tracking/traffic-filter
 
 export const dynamic = 'force-dynamic';
 
-type ProductAnalyticsAction = 'view' | 'add_to_cart' | 'checkout_start';
+const PRODUCT_ANALYTICS_ACTIONS = [
+  'view',
+  'add_to_cart',
+  'view_cart',
+  'checkout_start',
+  'checkout_shipping_info',
+  'checkout_payment_info',
+] as const;
+
+type ProductAnalyticsAction = (typeof PRODUCT_ANALYTICS_ACTIONS)[number];
 
 function isAction(value: unknown): value is ProductAnalyticsAction {
-  return value === 'view' || value === 'add_to_cart' || value === 'checkout_start';
+  return typeof value === 'string' && PRODUCT_ANALYTICS_ACTIONS.includes(value as ProductAnalyticsAction);
 }
 
 export async function POST(request: NextRequest) {
@@ -43,17 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'NO_VALID_PRODUCT_ITEMS' }, { status: 400 });
     }
 
-    if (action === 'add_to_cart') {
-      const result = await recordProductMetricAction('add_to_cart', items);
-      return NextResponse.json(result);
-    }
-
-    if (action === 'checkout_start') {
-      const result = await recordProductMetricAction('checkout_start', items);
-      return NextResponse.json(result);
-    }
-
-    return NextResponse.json({ ok: false, error: 'UNHANDLED_PRODUCT_ANALYTICS_ACTION' }, { status: 400 });
+    const result = await recordProductMetricAction(action, items);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('[product-analytics] Failed to record product metric:', error instanceof Error ? error.message : error);
     return NextResponse.json({ ok: false, error: 'PRODUCT_ANALYTICS_WRITE_FAILED' }, { status: 500 });

@@ -8,6 +8,8 @@ import {
   buildAdminProductWhere,
   formatAdminProductListItem,
 } from '@/lib/admin-products';
+import { enqueueProductIndex } from '@/lib/queue/productQueue';
+import { normalizeProductCondition } from '@/lib/products/product-condition';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -108,6 +110,70 @@ function dateValue(value: unknown): Date | undefined {
 
   const date = new Date(text);
   return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+
+type AdminDeliveryOfferType = 'DEFAULT' | 'FREE' | 'FIXED';
+
+function deliveryOfferTypeValue(value: unknown): AdminDeliveryOfferType {
+  const normalized = getString(value).toUpperCase();
+  if (normalized === 'FREE' || normalized === 'FIXED') return normalized;
+  return 'DEFAULT';
+}
+
+function requiredDateValue(value: unknown, label: string): Date | undefined {
+  const text = getString(value);
+  if (!text) return undefined;
+
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) {
+    throw new ProductRouteError(`${label} must be a valid date`);
+  }
+
+  return date;
+}
+
+function buildDeliveryOfferData(body: PlainObject) {
+  const requestedType = deliveryOfferTypeValue(body.deliveryOfferType);
+  const deliveryOfferEnabled = booleanValue(body.deliveryOfferEnabled, false) && requestedType !== 'DEFAULT';
+
+  if (!deliveryOfferEnabled) {
+    return {
+      deliveryOfferEnabled: false,
+      deliveryOfferType: 'DEFAULT' as AdminDeliveryOfferType,
+      deliveryOfferAmount: null,
+      deliveryOfferStartDate: null,
+      deliveryOfferEndDate: null,
+      deliveryOfferBadgeText: null,
+    };
+  }
+
+  const deliveryOfferAmount = requestedType === 'FIXED'
+    ? decimalValue(body.deliveryOfferAmount)
+    : undefined;
+
+  if (requestedType === 'FIXED' && deliveryOfferAmount === undefined) {
+    throw new ProductRouteError('Fixed delivery offer amount is required');
+  }
+  if (deliveryOfferAmount !== undefined && Number(deliveryOfferAmount) < 0) {
+    throw new ProductRouteError('Fixed delivery offer amount cannot be negative');
+  }
+
+  const deliveryOfferStartDate = requiredDateValue(body.deliveryOfferStartDate, 'Delivery offer start date');
+  const deliveryOfferEndDate = requiredDateValue(body.deliveryOfferEndDate, 'Delivery offer end date');
+
+  if (deliveryOfferStartDate && deliveryOfferEndDate && deliveryOfferStartDate > deliveryOfferEndDate) {
+    throw new ProductRouteError('Delivery offer start date must be before delivery offer end date');
+  }
+
+  return {
+    deliveryOfferEnabled: true,
+    deliveryOfferType: requestedType,
+    deliveryOfferAmount: requestedType === 'FIXED' ? deliveryOfferAmount : null,
+    deliveryOfferStartDate: deliveryOfferStartDate ?? null,
+    deliveryOfferEndDate: deliveryOfferEndDate ?? null,
+    deliveryOfferBadgeText: optionalString(body.deliveryOfferBadgeText) || null,
+  };
 }
 
 function stringArray(value: unknown): string[] {
@@ -386,6 +452,8 @@ async function createProductFromPayload(body: PlainObject) {
     shippingWeight: optionalString(body.shippingWeight),
     isFragile: booleanValue(body.isFragile, false),
 
+    ...buildDeliveryOfferData(body),
+
     discountPercentage: decimalValue(body.discountPercentage),
     salePrice: decimalValue(body.salePrice),
     offerStartDate: dateValue(body.offerStartDate),
@@ -398,7 +466,7 @@ async function createProductFromPayload(body: PlainObject) {
     barcode: optionalString(body.barcode),
     relatedProducts: optionalString(body.relatedProducts),
 
-    condition: optionalString(body.condition) || 'NEW',
+    condition: normalizeProductCondition(body.condition),
     gtin: optionalString(body.gtin),
     averageRating: decimalValue(body.averageRating) || '0',
     reviewCount: intValue(body.reviewCount, 0),
@@ -513,11 +581,13 @@ export async function POST(request: NextRequest) {
     }
 
     const product = await createProductFromPayload(body);
+    const searchSyncQueued = await enqueueProductIndex(product.id, 'admin product create');
 
     return NextResponse.json(
       {
         success: true,
         product,
+        searchSyncQueued,
       },
       { status: 201 }
     );

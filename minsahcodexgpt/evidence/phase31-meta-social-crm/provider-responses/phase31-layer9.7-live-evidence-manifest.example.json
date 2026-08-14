@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "phase": 31,
+  "item": "9.7",
+  "evidenceMode": "LIVE_PROVIDER",
+  "environment": "LIVE_TEST",
+  "operatorReference": "replace-with-redacted-ticket-reference",
+  "contractFixture": true,
+  "records": []
+}

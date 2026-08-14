@@ -25,6 +25,20 @@ No Telegram action can change an order unless:
 - Tokens expire and are consumed with an atomic update.
 - Every action attempt is recorded in `TelegramActionLog`.
 - Phone Confirmed, Phone Off, Cancel, and Pathao Send each use explicit order-state guards.
+- New order notifications include a **Call Customer** URL button when a valid customer phone is present.
+- The call button is a `tel:` link only; it does not mutate order state, consume action tokens, or trigger tracking events.
+
+
+## Additional Telegram Focus Hardening
+
+After the tracking Phase 17 pass, Telegram operations received an extra focused hardening pass:
+
+- Order action tokens are now bound back to the Telegram `chat.id` and `message_id` after `sendMessage` succeeds.
+- Callback processing rejects a valid token if it is replayed from a different Telegram message context.
+- Webhook and legacy internal Telegram secrets use timing-safe comparison.
+- The legacy `/api/orders/[id]/confirm-shipping` endpoint no longer performs raw cancel/confirm writes. It now reuses Telegram state guards and lifecycle metric wiring.
+- Legacy cancel is blocked for paid-online, phone-confirmed, shipped, delivered, refunded, or Pathao-dispatched orders.
+- Tracking cleanup also removes expired/consumed Telegram action tokens after a grace period.
 
 ## State Rules
 
@@ -101,6 +115,7 @@ Manual tests:
 | Valid secret but non-allowlisted user | 403 |
 | Raw `phone_confirm_{orderId}` callback | rejected |
 | Valid token + Phone Confirmed COD | order confirmed + CAPI/GA4 queued once |
+| Call Customer button | opens the customer phone dialer only; no order status/tracking change |
 | Repeated tap | no duplicate Purchase |
 | Phone Off after confirmed | blocked |
 | Cancel after paid/shipped/Pathao-dispatched | blocked |

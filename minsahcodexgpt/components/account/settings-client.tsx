@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   User as UserIcon,
@@ -15,6 +15,10 @@ import {
   CheckCircle,
   AlertTriangle
 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
 
 const EMPTY_PREFERENCES = {
@@ -27,6 +31,7 @@ const EMPTY_PREFERENCES = {
 
 export function SettingsClient() {
   const router = useRouter();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const {
     user,
     loading,
@@ -65,6 +70,13 @@ export function SettingsClient() {
     { id: 'preferences', name: 'Preferences', icon: Bell },
     { id: 'security', name: 'Security', icon: ShieldCheck }
   ];
+
+  useEffect(() => {
+    const requestedSection = new URLSearchParams(window.location.search).get('section');
+    if (requestedSection === 'profile' || requestedSection === 'preferences' || requestedSection === 'security') {
+      setActiveTab(requestedSection);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -251,18 +263,20 @@ export function SettingsClient() {
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px">
               {tabs.map((tab) => (
-                <button
+                <Button
                   key={tab.id}
+                  type="button"
+                  variant="ghost"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-6 py-3 border-b-2 font-medium text-sm transition-colors ${
+                  className={`rounded-none border-b-2 px-6 py-3 ${
                     activeTab === tab.id
                       ? 'border-purple-500 text-purple-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
-                  <tab.icon className="w-5 h-5 mr-2" />
+                  <tab.icon className="w-5 h-5" aria-hidden="true" />
                   {tab.name}
-                </button>
+                </Button>
               ))}
             </nav>
           </div>
@@ -281,16 +295,25 @@ export function SettingsClient() {
                   <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-3xl font-bold">
                     {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
                   </div>
-                  <label className="absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full cursor-pointer hover:bg-purple-700 transition">
-                    <Camera className="w-4 h-4" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      disabled={savingSection === 'avatar'}
-                      className="hidden"
-                    />
-                  </label>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="icon"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={savingSection === 'avatar'}
+                    className="absolute bottom-0 right-0 h-auto min-h-0 w-auto min-w-0 rounded-full bg-purple-600 p-2 hover:bg-purple-700"
+                    aria-label="Upload a new profile photo"
+                  >
+                    <Camera className="w-4 h-4" aria-hidden="true" />
+                  </Button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={savingSection === 'avatar'}
+                    className="hidden"
+                  />
                 </div>
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">{user.firstName} {user.lastName}</h3>
@@ -317,99 +340,74 @@ export function SettingsClient() {
               {/* Profile Form */}
               <form onSubmit={handleProfileSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.firstName}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.lastName}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
+                  <Input
+                    type="text"
+                    value={profileData.firstName}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
+                    label="First Name"
+                    className="focus:ring-purple-500"
+                  />
+                  <Input
+                    type="text"
+                    value={profileData.lastName}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+                    label="Last Name"
+                    className="focus:ring-purple-500"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="email"
-                        value={user.email}
-                        disabled
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                      />
-                      <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    </div>
+                    <Input
+                      type="email"
+                      value={user.email}
+                      disabled
+                      label="Email Address"
+                      trailing={<Mail className="w-5 h-5" aria-hidden="true" />}
+                      className="bg-gray-50 text-gray-500"
+                    />
                     <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      />
-                      <Phone className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    </div>
-                  </div>
+                  <Input
+                    type="tel"
+                    value={profileData.phone}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                    label="Phone Number"
+                    trailing={<Phone className="w-5 h-5" aria-hidden="true" />}
+                    className="focus:ring-purple-500"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date of Birth
-                    </label>
-                    <input
-                      type="date"
-                      value={profileData.dateOfBirth}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Gender
-                    </label>
-                    <select
-                      value={profileData.gender}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, gender: e.target.value as any }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
+                  <Input
+                    type="date"
+                    value={profileData.dateOfBirth}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                    label="Date of Birth"
+                    className="focus:ring-purple-500"
+                  />
+                  <Select
+                    value={profileData.gender}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, gender: e.target.value as any }))}
+                    label="Gender"
+                    placeholder="Select Gender"
+                    className="focus:ring-purple-500"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </Select>
                 </div>
 
                 <div className="flex justify-end">
-                  <button
+                  <Button
                     type="submit"
+                    variant="primary"
                     disabled={savingSection === 'profile'}
-                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-purple-600 px-6 py-2 hover:bg-purple-700"
                   >
                     {savingSection === 'profile' ? 'Saving...' : 'Save Changes'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -417,86 +415,57 @@ export function SettingsClient() {
 
           {/* Preferences Tab */}
           {activeTab === 'preferences' && (
-            <div>
+            <div id="communication-preferences" className="scroll-mt-28">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Communication Preferences</h2>
 
               <form onSubmit={handlePreferencesSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900">Email Notifications</h3>
 
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={preferences.newsletter}
-                      onChange={(e) => setPreferences(prev => ({ ...prev, newsletter: e.target.checked }))}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <span className="ml-3 text-gray-700">
-                      Newsletter and product updates
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={preferences.newsletter}
+                    onChange={(e) => setPreferences(prev => ({ ...prev, newsletter: e.target.checked }))}
+                    label="Newsletter and product updates"
+                  />
 
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={preferences.promotions}
-                      onChange={(e) => setPreferences(prev => ({ ...prev, promotions: e.target.checked }))}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <span className="ml-3 text-gray-700">
-                      Promotions and special offers
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={preferences.promotions}
+                    onChange={(e) => setPreferences(prev => ({ ...prev, promotions: e.target.checked }))}
+                    label="Promotions and special offers"
+                  />
 
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={preferences.newProducts}
-                      onChange={(e) => setPreferences(prev => ({ ...prev, newProducts: e.target.checked }))}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <span className="ml-3 text-gray-700">
-                      New product announcements
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={preferences.newProducts}
+                    onChange={(e) => setPreferences(prev => ({ ...prev, newProducts: e.target.checked }))}
+                    label="New product announcements"
+                  />
 
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={preferences.orderUpdates}
-                      onChange={(e) => setPreferences(prev => ({ ...prev, orderUpdates: e.target.checked }))}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <span className="ml-3 text-gray-700">
-                      Order status updates
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={preferences.orderUpdates}
+                    onChange={(e) => setPreferences(prev => ({ ...prev, orderUpdates: e.target.checked }))}
+                    label="Order status updates"
+                  />
                 </div>
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900">SMS Notifications</h3>
 
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={preferences.smsNotifications}
-                      onChange={(e) => setPreferences(prev => ({ ...prev, smsNotifications: e.target.checked }))}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <span className="ml-3 text-gray-700">
-                      SMS notifications for order updates
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={preferences.smsNotifications}
+                    onChange={(e) => setPreferences(prev => ({ ...prev, smsNotifications: e.target.checked }))}
+                    label="SMS notifications for order updates"
+                  />
                 </div>
 
                 <div className="flex justify-end">
-                  <button
+                  <Button
                     type="submit"
+                    variant="primary"
                     disabled={savingSection === 'preferences'}
-                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-purple-600 px-6 py-2 hover:bg-purple-700"
                   >
                     {savingSection === 'preferences' ? 'Saving...' : 'Save Preferences'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -516,101 +485,100 @@ export function SettingsClient() {
                       <p className="text-sm text-gray-600">Last changed 3 months ago</p>
                     </div>
                     {!showPasswordForm && (
-                      <button
+                      <Button
+                        type="button"
+                        variant="secondary"
                         onClick={() => setShowPasswordForm(true)}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                       >
-                        <Key className="w-4 h-4 mr-2" />
+                        <Key className="w-4 h-4" aria-hidden="true" />
                         Change Password
-                      </button>
+                      </Button>
                     )}
                   </div>
 
                   {showPasswordForm && (
                     <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Current Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showCurrentPassword ? 'text' : 'password'}
-                            value={passwordData.currentPassword}
-                            onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                            required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          />
-                          <button
+                      <Input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        required
+                        label="Current Password"
+                        className="focus:ring-purple-500"
+                        trailing={
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="h-auto min-h-0 w-auto min-w-0 p-0 text-gray-400 hover:text-gray-600"
+                            aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
                           >
                             {showCurrentPassword ? (
-                              <EyeOff className="w-5 h-5" />
+                              <EyeOff className="w-5 h-5" aria-hidden="true" />
                             ) : (
-                              <Eye className="w-5 h-5" />
+                              <Eye className="w-5 h-5" aria-hidden="true" />
                             )}
-                          </button>
-                        </div>
-                      </div>
+                          </Button>
+                        }
+                      />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          New Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showNewPassword ? 'text' : 'password'}
-                            value={passwordData.newPassword}
-                            onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                            required
-                            minLength={8}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          />
-                          <button
+                      <Input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        required
+                        minLength={8}
+                        label="New Password"
+                        className="focus:ring-purple-500"
+                        trailing={
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => setShowNewPassword(!showNewPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="h-auto min-h-0 w-auto min-w-0 p-0 text-gray-400 hover:text-gray-600"
+                            aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
                           >
                             {showNewPassword ? (
-                              <EyeOff className="w-5 h-5" />
+                              <EyeOff className="w-5 h-5" aria-hidden="true" />
                             ) : (
-                              <Eye className="w-5 h-5" />
+                              <Eye className="w-5 h-5" aria-hidden="true" />
                             )}
-                          </button>
-                        </div>
-                      </div>
+                          </Button>
+                        }
+                      />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Confirm New Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            value={passwordData.confirmPassword}
-                            onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                            required
-                            minLength={8}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          />
-                          <button
+                      <Input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        required
+                        minLength={8}
+                        label="Confirm New Password"
+                        className="focus:ring-purple-500"
+                        trailing={
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="h-auto min-h-0 w-auto min-w-0 p-0 text-gray-400 hover:text-gray-600"
+                            aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                           >
                             {showConfirmPassword ? (
-                              <EyeOff className="w-5 h-5" />
+                              <EyeOff className="w-5 h-5" aria-hidden="true" />
                             ) : (
-                              <Eye className="w-5 h-5" />
+                              <Eye className="w-5 h-5" aria-hidden="true" />
                             )}
-                          </button>
-                        </div>
-                      </div>
+                          </Button>
+                        }
+                      />
 
                       <div className="flex justify-end space-x-3">
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
                           onClick={() => {
                             setShowPasswordForm(false);
                             setPasswordData({
@@ -619,17 +587,17 @@ export function SettingsClient() {
                               confirmPassword: ''
                             });
                           }}
-                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                         >
                           Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="submit"
+                          variant="primary"
                           disabled={savingSection === 'password'}
-                          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="bg-purple-600 hover:bg-purple-700"
                         >
                           {savingSection === 'password' ? 'Updating...' : 'Update Password'}
-                        </button>
+                        </Button>
                       </div>
                     </form>
                   )}
@@ -646,9 +614,9 @@ export function SettingsClient() {
                           Add an extra layer of security to your account
                         </p>
                       </div>
-                      <button className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
+                      <Button type="button" variant="primary" className="bg-yellow-600 hover:bg-yellow-700">
                         Enable
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>

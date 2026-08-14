@@ -1,0 +1,113 @@
+{
+    "schemaVersion":  1,
+    "phase":  31,
+    "item":  "9.8",
+    "evidenceMode":  "EXECUTED_FINAL_GATE",
+    "phase31Status":  "BLOCKED",
+    "releaseDecision":  "BLOCKED",
+    "checks":  [
+                   {
+                       "check":  "STATIC_SOURCE_QA",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_CUMULATIVE_SOURCE_QA_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-static-source-qa.log",
+                       "artifactSha256":  "665990bc039fa5830a80f270ed693a807f127053e797467d9cd5e62b874d3a5c"
+                   },
+                   {
+                       "check":  "MAIN_APP_NPM_CI",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_PINNED_CLEAN_INSTALL_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-main-npm-ci.log",
+                       "artifactSha256":  "fa92b25711d0103a33415d9c62ab24971295b943ba92d00595123164eaf08a98"
+                   },
+                   {
+                       "check":  "PRISMA_GENERATE",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_GENERATE_AND_FRESHNESS_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-prisma-generate.log",
+                       "artifactSha256":  "8085f8a5f0a26bd930727c679811538fd1e52a7b902a98df8ce61f9ce8133ab7"
+                   },
+                   {
+                       "check":  "MAIN_APP_TYPECHECK",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_CURRENT_TYPECHECK_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-main-typecheck-PASS.log",
+                       "artifactSha256":  "d9d861aadd17d193e9c4809ca36776e56a05263b5513479d50cdd32b81717a13"
+                   },
+                   {
+                       "check":  "MAIN_APP_LINT",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_LINT_PASS_WITH_WARNINGS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-main-lint.log",
+                       "artifactSha256":  "5bbfc95757af5fd1f277825d5ba491684e172266121e8322be49a0b6eb7d154d"
+                   },
+                   {
+                       "check":  "MAIN_APP_BUILD",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_CURRENT_BUILD_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-main-build-PASS.log",
+                       "artifactSha256":  "387bcd64a0a5c5b6f7b352f09a90eceecb0108799a05686251682fceab8ba2e4"
+                   },
+                   {
+                       "check":  "REALTIME_NPM_CI",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_PINNED_CLEAN_INSTALL_AUDIT_ZERO",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-realtime-npm-ci.log",
+                       "artifactSha256":  "bba0fabb5f01246b804b7a5064a4bea20cc87304716b3ab5abef0ac4440cce21"
+                   },
+                   {
+                       "check":  "REALTIME_TYPECHECK",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_DEPENDENCY_BACKED_TYPECHECK_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-realtime-typecheck.log",
+                       "artifactSha256":  "07402896842b0b83df28b1822176adbaeff1be9a16b04e1d56a7860994d79e4f"
+                   },
+                   {
+                       "check":  "REALTIME_BUILD",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_DEPENDENCY_BACKED_BUILD_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-realtime-build.log",
+                       "artifactSha256":  "ed7bf37f10e20f494a47f6c78274219be5c429cf5166ac5730a5ef77528adfd9"
+                   },
+                   {
+                       "check":  "POSTGRESQL_MIGRATION_IDEMPOTENCY",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_LAYER9_3_POSTGRESQL_IDEMPOTENCY_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31_layer9.3_db_PASS.log",
+                       "artifactSha256":  "5731ae6b112c84f59663eed33fe861adad2d53d04ef761b6d3aa6ccf6f664e75"
+                   },
+                   {
+                       "check":  "REDIS_BULLMQ_RUNTIME",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_LIVE_REDIS_BULLMQ_RUNTIME_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-redis-bullmq-PASS.log",
+                       "artifactSha256":  "c1a9d82e6405e1c8e66a44c5aa173ddc05da6b753f91202ef2e8ac0313618131"
+                   },
+                   {
+                       "check":  "LIVE_META_PROVIDER",
+                       "status":  "BLOCKED",
+                       "reasonCode":  "AUTHENTIC_LIVE_META_EVIDENCE_MISSING",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-live-meta.log",
+                       "artifactSha256":  "14556a9f222c09134e0a370f9be7c77e4638ff25f24c3fc9c52d7e42488d8b17"
+                   },
+                   {
+                       "check":  "SECURITY_MEDIA_IDEMPOTENCY",
+                       "status":  "PASS",
+                       "reasonCode":  "EXECUTED_FOCUSED_SOURCE_SCOPE_PASS",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-security-media-idempotency.log",
+                       "artifactSha256":  "fca516d79a237cfb2ba44780000c5af314a90858b83b9445d45c97396247e43b"
+                   },
+                   {
+                       "check":  "FRESH_PACKAGE_REPRODUCIBILITY",
+                       "status":  "BLOCKED",
+                       "reasonCode":  "RELEASE_BLOCKED_PACKAGE_NOT_CREATED",
+                       "artifactPath":  "evidence/phase31-meta-social-crm/logs/phase31-layer9.8-20260729-package-reproducibility.log",
+                       "artifactSha256":  "4b8e474c64d6cd646e7a53492e92fbaaac3ba303bd3b88eec33d7aafa6947ee1"
+                   }
+               ],
+    "remainingBlockers":  [
+                              "The main full install audit retains 9 high dev-only ESLint/Next lint-chain records; the locally inspected production tree for that residual chain is empty and no incompatible force fix was applied.",
+                              "Authentic live Meta provider evidence remains missing for all mandatory categories.",
+                              "Fresh final package reproducibility is not run because release criteria remain blocked."
+                          ]
+}

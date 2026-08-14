@@ -1,5 +1,15 @@
 'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -7,6 +17,7 @@ import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
 import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
 import { adminFetchJson } from '@/lib/adminFetch';
+import { DEFAULT_SITE_URL } from '@/lib/seo';
 import {
   ArrowLeft,
   ClipboardPaste,
@@ -30,10 +41,11 @@ import {
 } from 'lucide-react';
 
 // CHANGE THIS ONLY IF YOUR LIVE PRODUCT URL BASE IS DIFFERENT.
-const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://minsahbeauty.cloud').replace(/\/$/, '');
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_SITE_URL).replace(/\/$/, '');
 const DEFAULT_PRODUCT_BASE_URL = `${SITE_URL}/products`;
 
 type JsonRecord = Record<string, unknown>;
+type DeliveryOfferType = 'DEFAULT' | 'FREE' | 'FIXED';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ImportVariant {
@@ -130,6 +142,12 @@ interface ImportData {
   shippingWeight: string;
   dimensions: { length: string; width: string; height: string };
   isFragile: boolean;
+  deliveryOfferEnabled: boolean;
+  deliveryOfferType: DeliveryOfferType;
+  deliveryOfferAmount: string;
+  deliveryOfferStartDate: string;
+  deliveryOfferEndDate: string;
+  deliveryOfferBadgeText: string;
 
   // Options
   flashSaleEligible: boolean;
@@ -185,7 +203,7 @@ function parseImportData(raw: string): ParseResult {
     if (!cleaned.startsWith('{')) {
       return {
         data: null,
-        error: '[IMPORT_DATA] block অথবা valid JSON পাওয়া যায়নি। [IMPORT_DATA]...[/IMPORT_DATA] block paste করো অথবা raw JSON paste করো।',
+        error: 'No [IMPORT_DATA] block or valid JSON was found. Paste an [IMPORT_DATA]...[/IMPORT_DATA] block or raw JSON.',
       };
     }
 
@@ -256,6 +274,13 @@ function asStringArray(value: unknown): string[] {
   }
 
   return [];
+}
+
+
+function normalizeDeliveryOfferType(value: unknown): DeliveryOfferType {
+  const normalized = asString(value).trim().toUpperCase();
+  if (normalized === 'FREE' || normalized === 'FIXED') return normalized;
+  return 'DEFAULT';
 }
 
 function asBoolean(value: unknown, fallback = false): boolean {
@@ -341,6 +366,12 @@ function normalizeImportData(raw: JsonRecord): ImportData {
   }));
 
   const seoValidationChecklist = asStringArray(readPath(raw, ['seoValidationChecklist']));
+  const normalizedDeliveryOfferType = normalizeDeliveryOfferType(
+    readPath(raw, ['deliveryOfferType', 'deliveryOffer.type', 'shippingAndDelivery.deliveryOfferType', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferType'])
+  );
+  const deliveryOfferEnabled =
+    asBoolean(readPath(raw, ['deliveryOfferEnabled', 'deliveryOffer.enabled', 'shippingAndDelivery.deliveryOfferEnabled', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferEnabled']), false) ||
+    normalizedDeliveryOfferType !== 'DEFAULT';
 
   return {
     name: asString(readPath(raw, ['name', 'productCore.name', 'prismaImportData.productCreatePayloadForPrisma.name'])),
@@ -423,6 +454,12 @@ function normalizeImportData(raw: JsonRecord): ImportData {
       height: asString(readPath(raw, ['dimensions.height', 'prismaImportData.productCreatePayloadForPrisma.dimensions.height'])),
     },
     isFragile: asBoolean(readPath(raw, ['isFragile', 'shippingAndDelivery.isFragile', 'prismaImportData.productCreatePayloadForPrisma.isFragile']), false),
+    deliveryOfferEnabled,
+    deliveryOfferType: normalizedDeliveryOfferType,
+    deliveryOfferAmount: asString(readPath(raw, ['deliveryOfferAmount', 'deliveryOffer.amount', 'shippingAndDelivery.deliveryOfferAmount', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferAmount'])),
+    deliveryOfferStartDate: asString(readPath(raw, ['deliveryOfferStartDate', 'deliveryOffer.startDate', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferStartDate'])),
+    deliveryOfferEndDate: asString(readPath(raw, ['deliveryOfferEndDate', 'deliveryOffer.endDate', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferEndDate'])),
+    deliveryOfferBadgeText: asString(readPath(raw, ['deliveryOfferBadgeText', 'deliveryOffer.badgeText', 'shippingAndDelivery.deliveryOfferBadgeText', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferBadgeText'])),
 
     flashSaleEligible: asBoolean(readPath(raw, ['flashSaleEligible', 'prismaImportData.productCreatePayloadForPrisma.flashSaleEligible']), false),
     lowStockThreshold: asString(readPath(raw, ['lowStockThreshold', 'prismaImportData.productCreatePayloadForPrisma.lowStockThreshold']), '10'),
@@ -612,6 +649,7 @@ function safeJsonParse<T>(value: string, fallback: T): T {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ImportProductPage() {
+  const { pushToast } = useToast();
   const router = useRouter();
   const { hasPermission } = useAdminAuth();
   const { getActiveCategories } = useCategories();
@@ -635,6 +673,7 @@ export default function ImportProductPage() {
     content: false,
     techSeo: false,
     shipping: false,
+    deliveryOffer: false,
     options: false,
     faqs: false,
   });
@@ -655,7 +694,7 @@ export default function ImportProductPage() {
 
   const handleParse = () => {
     if (!pasteText.trim()) {
-      setParseError('Claude/ChatGPT output paste করো।');
+      setParseError('Paste the Claude or ChatGPT output.');
       return;
     }
 
@@ -718,6 +757,20 @@ export default function ImportProductPage() {
       if (!variant.sku.trim()) errors.push(`Variant ${index + 1}: SKU required`);
     });
 
+    if (importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED') {
+      const amount = Number(importData.deliveryOfferAmount);
+      if (!importData.deliveryOfferAmount.trim() || !Number.isFinite(amount) || amount < 0) {
+        errors.push('Fixed delivery offer amount must be 0 or greater');
+      }
+    }
+    if (importData.deliveryOfferStartDate && importData.deliveryOfferEndDate) {
+      const start = new Date(importData.deliveryOfferStartDate);
+      const end = new Date(importData.deliveryOfferEndDate);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start > end) {
+        errors.push('Delivery offer end date must be after start date');
+      }
+    }
+
     return errors;
   };
 
@@ -726,7 +779,7 @@ export default function ImportProductPage() {
 
     const errors = validate();
     if (errors.length > 0) {
-      alert('Fix these before saving:\n• ' + errors.join('\n• '));
+      pushToast({ tone: 'danger', description: 'Fix these before saving:\n• ' + errors.join('\n• ') });
       return;
     }
 
@@ -839,6 +892,12 @@ export default function ImportProductPage() {
               ? importData.dimensions
               : undefined,
           isFragile: importData.isFragile,
+          deliveryOfferEnabled: importData.deliveryOfferEnabled && importData.deliveryOfferType !== 'DEFAULT',
+          deliveryOfferType: importData.deliveryOfferEnabled ? importData.deliveryOfferType : 'DEFAULT',
+          deliveryOfferAmount: importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED' ? importData.deliveryOfferAmount : undefined,
+          deliveryOfferStartDate: importData.deliveryOfferEnabled ? importData.deliveryOfferStartDate || undefined : undefined,
+          deliveryOfferEndDate: importData.deliveryOfferEnabled ? importData.deliveryOfferEndDate || undefined : undefined,
+          deliveryOfferBadgeText: importData.deliveryOfferEnabled ? importData.deliveryOfferBadgeText || undefined : undefined,
           flashSaleEligible: importData.flashSaleEligible,
           lowStockThreshold: importData.lowStockThreshold || undefined,
           returnEligible: importData.returnEligible,
@@ -850,7 +909,7 @@ export default function ImportProductPage() {
 
       router.push('/admin/products?imported=1');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create product');
+      pushToast({ tone: 'danger', description: err instanceof Error ? err.message : 'Failed to create product' });
     } finally {
       setIsSubmitting(false);
     }
@@ -864,7 +923,7 @@ export default function ImportProductPage() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Product Import — SEO 1-22 Ready</h1>
         <p className="text-gray-500 text-sm mt-1">
-          [IMPORT_DATA] block, flat JSON, অথবা full final SEO JSON paste করলে form auto-fill হবে।
+          Paste an [IMPORT_DATA] block, flat JSON, or the complete final SEO JSON to auto-fill the form.
         </p>
       </div>
 
@@ -872,10 +931,10 @@ export default function ImportProductPage() {
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-800 space-y-1">
-            <p className="font-semibold">কীভাবে করবে:</p>
-            <p>1. Final JSON অথবা <code className="bg-blue-100 px-1.5 py-0.5 rounded font-mono">[IMPORT_DATA]...[/IMPORT_DATA]</code> block paste করো।</p>
-            <p>2. Parse করো → owner fill section check করো → stock/URL/image verify করো → Save করো।</p>
-            <p>3. Backend API route অবশ্যই new SEO fields save করতে হবে; না হলে payload ignore হবে।</p>
+            <p className="font-semibold">How to use this importer:</p>
+            <p>1. Paste the final JSON or <code className="bg-blue-100 px-1.5 py-0.5 rounded font-mono">[IMPORT_DATA]...[/IMPORT_DATA]</code> block.</p>
+            <p>2. Parse it → review the owner-fill section → verify stock, URLs, and images → save.</p>
+            <p>3. The backend API route must save the new SEO fields; otherwise those payload fields will be ignored.</p>
           </div>
         </div>
       </div>
@@ -884,10 +943,10 @@ export default function ImportProductPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <ClipboardPaste className="w-5 h-5 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Import JSON Paste করো</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Paste import JSON</h2>
           </div>
 
-          <textarea
+          <Textarea
             value={pasteText}
             onChange={(e) => {
               setPasteText(e.target.value);
@@ -895,7 +954,7 @@ export default function ImportProductPage() {
             }}
             rows={16}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-mono text-sm resize-y"
-            placeholder={`এখানে paste করো:\n\n[IMPORT_DATA]\n{\n  "name": "Sunsilk Power Shot Hair Treatment",\n  "category": "Hair care",\n  "brand": "Sunsilk",\n  "pageH1": "Sunsilk Power Shot Hair Treatment Price in Bangladesh"\n}\n[/IMPORT_DATA]\n\nঅথবা full final SEO JSON paste করো।`}
+            placeholder={`Paste here:\n\n[IMPORT_DATA]\n{\n  "name": "Sunsilk Power Shot Hair Treatment",\n  "category": "Hair care",\n  "brand": "Sunsilk",\n  "pageH1": "Sunsilk Power Shot Hair Treatment Price in Bangladesh"\n}\n[/IMPORT_DATA]\n\nOr paste the complete final SEO JSON.`}
           />
 
           {parseError && (
@@ -906,21 +965,21 @@ export default function ImportProductPage() {
           )}
 
           <div className="mt-4 flex gap-3">
-            <button
+            <Button
               type="button"
               onClick={handleParse}
               disabled={!pasteText.trim()}
               className="inline-flex items-center px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
             >
-              <Sparkles className="w-4 h-4 mr-2" /> Parse করো
-            </button>
-            <button
+              <Sparkles className="w-4 h-4 mr-2" /> Parse JSON
+            </Button>
+            <Button
               type="button"
               onClick={() => setPasteText('')}
               className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
             >
               <X className="w-4 h-4 mr-1" /> Clear
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -930,7 +989,7 @@ export default function ImportProductPage() {
           <div className="bg-green-50 border border-green-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              <p className="font-semibold text-green-800">Data parse হয়েছে — review করো, owner-fill update করো, তারপর save করো</p>
+              <p className="font-semibold text-green-800">Data parsed — review it, update owner-fill fields, then save</p>
             </div>
             {importData.marketPriceNote && (
               <p className="text-sm text-green-700 ml-7">
@@ -949,7 +1008,7 @@ export default function ImportProductPage() {
           >
             <div className="space-y-4">
               <p className="text-sm text-amber-800">
-                এগুলো import করার আগে/পরে তোমার নিজে verify/fill করা দরকার। JSON comment invalid হয়, তাই এগুলো আলাদা review field হিসেবে দেখানো হচ্ছে।
+                Verify or complete these fields before or after import. JSON comments are invalid, so they are shown as separate review fields.
               </p>
               <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
                 {importData.ownerFillRequired.map((item, index) => (
@@ -990,7 +1049,7 @@ export default function ImportProductPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                  <select
+                  <Select
                     value={importData.category}
                     onChange={(e) => updateField('category', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -1002,7 +1061,7 @@ export default function ImportProductPage() {
                     {importData.category && !categoriesData.some((category) => category.name === importData.category) && (
                       <option value={importData.category}>{importData.category}</option>
                     )}
-                  </select>
+                  </Select>
                   <p className="text-xs text-gray-400 mt-1">Category name database-er exact name-er sathe match korte hobe.</p>
                 </div>
                 <TextInput label="Brand *" value={importData.brand} onChange={(value) => updateField('brand', value)} />
@@ -1013,7 +1072,7 @@ export default function ImportProductPage() {
                 <TextInput label="Item / Product Type" value={importData.item} onChange={(value) => updateField('item', value)} />
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Origin Country</label>
-                  <select
+                  <Select
                     value={importData.originCountry}
                     onChange={(e) => updateField('originCountry', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -1024,12 +1083,12 @@ export default function ImportProductPage() {
                     {importData.originCountry && !countries.includes(importData.originCountry) && (
                       <option value={importData.originCountry}>{importData.originCountry}</option>
                     )}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
+                <Input
                   type="checkbox"
                   checked={importData.featured}
                   onChange={(e) => updateField('featured', e.target.checked)}
@@ -1049,7 +1108,7 @@ export default function ImportProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Skin / Hair Type</label>
                 <div className="flex flex-wrap gap-2">
                   {skinTypes.map((type) => (
-                    <button
+                    <Button
                       key={type}
                       type="button"
                       onClick={() => toggleSkinType(type)}
@@ -1060,7 +1119,7 @@ export default function ImportProductPage() {
                       }`}
                     >
                       {type}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -1079,7 +1138,7 @@ export default function ImportProductPage() {
           >
             <div className="space-y-3">
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-                Price, stock, SKU অবশ্যই check করো। Stock 0 হলে product schema/rendering OutOfStock রাখবে।
+                Always verify price, stock, and SKU. A stock value of 0 keeps the product schema and storefront status as OutOfStock.
               </div>
               {importData.variants.map((variant, index) => (
                 <div key={`${variant.sku}-${index}`} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -1202,7 +1261,7 @@ export default function ImportProductPage() {
               </div>
 
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
+                <Input
                   type="checkbox"
                   checked={importData.faqSchemaReady}
                   onChange={(e) => updateField('faqSchemaReady', e.target.checked)}
@@ -1222,7 +1281,7 @@ export default function ImportProductPage() {
           >
             <div className="space-y-4">
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
-                এগুলো DB-te save হবে। Frontend product page-e render/update না করলে SEO benefit fully আসবে না।
+                These fields are saved to the database. The storefront product page must render them correctly to receive the full SEO benefit.
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <JsonEditor label="Structured Data JSON-LD" value={importData.structuredDataJsonLd || {}} onBlur={(value) => updateJsonField('structuredDataJsonLd', value, importData.structuredDataJsonLd)} rows={10} />
@@ -1244,7 +1303,7 @@ export default function ImportProductPage() {
           >
             <div className="space-y-4">
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
-                Placeholder image URL automatically বাদ দেওয়া হয়েছে। Real CDN/live image URL থাকলে JSON editor-e add করো, না হলে save করার পর edit page থেকে upload করো।
+                Placeholder image URLs were removed automatically. Add real CDN or live image URLs in the JSON editor, or upload images from the edit page after saving.
               </div>
               <JsonEditor label="Images JSON" value={importData.images} onBlur={(value) => updateJsonField('images', value, importData.images)} rows={10} />
             </div>
@@ -1263,7 +1322,7 @@ export default function ImportProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions (L × W × H cm)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['length', 'width', 'height'] as const).map((dimension) => (
-                    <input
+                    <Input
                       key={dimension}
                       type="text"
                       value={importData.dimensions[dimension]}
@@ -1276,7 +1335,7 @@ export default function ImportProductPage() {
               </div>
             </div>
             <label className="flex items-center gap-2 mt-3 cursor-pointer">
-              <input
+              <Input
                 type="checkbox"
                 checked={importData.isFragile}
                 onChange={(e) => updateField('isFragile', e.target.checked)}
@@ -1284,6 +1343,86 @@ export default function ImportProductPage() {
               />
               <span className="text-sm text-gray-700">Fragile Item</span>
             </label>
+          </Section>
+
+          <Section
+            icon={<TruckIcon className="w-5 h-5 text-emerald-600" />}
+            title="Delivery Offer"
+            sectionKey="deliveryOffer"
+            expanded={expandedSections.deliveryOffer}
+            onToggle={() => toggleSection('deliveryOffer')}
+          >
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 mb-4">
+              Configure a product-specific free or fixed delivery offer. A free-delivery product makes delivery free for the entire order.
+            </div>
+            <label className="flex items-center gap-2 mb-4 cursor-pointer">
+              <Input
+                type="checkbox"
+                checked={importData.deliveryOfferEnabled}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  updateField('deliveryOfferEnabled', checked);
+                  if (checked && importData.deliveryOfferType === 'DEFAULT') updateField('deliveryOfferType', 'FREE');
+                  if (!checked) {
+                    updateField('deliveryOfferType', 'DEFAULT');
+                    updateField('deliveryOfferAmount', '');
+                    updateField('deliveryOfferStartDate', '');
+                    updateField('deliveryOfferEndDate', '');
+                    updateField('deliveryOfferBadgeText', '');
+                  }
+                }}
+                className="w-4 h-4 text-emerald-600 rounded"
+              />
+              <span className="text-sm font-medium text-gray-700">Enable delivery offer</span>
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Offer Type</label>
+                <Select
+                  value={importData.deliveryOfferEnabled ? importData.deliveryOfferType : 'DEFAULT'}
+                  onChange={(e) => {
+                    const type = e.target.value as DeliveryOfferType;
+                    updateField('deliveryOfferType', type);
+                    updateField('deliveryOfferEnabled', type !== 'DEFAULT');
+                    if (type !== 'FIXED') updateField('deliveryOfferAmount', '');
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 bg-white"
+                >
+                  <option value="DEFAULT">Courier calculated / No product offer</option>
+                  <option value="FREE">Free delivery for full order</option>
+                  <option value="FIXED">Fixed delivery charge</option>
+                </Select>
+              </div>
+              <TextInput
+                label="Fixed Delivery Amount (৳)"
+                value={importData.deliveryOfferAmount}
+                onChange={(value) => updateField('deliveryOfferAmount', value)}
+                disabled={!importData.deliveryOfferEnabled || importData.deliveryOfferType !== 'FIXED'}
+              />
+              <TextInput
+                label="Offer Start"
+                type="datetime-local"
+                value={importData.deliveryOfferStartDate}
+                onChange={(value) => updateField('deliveryOfferStartDate', value)}
+                disabled={!importData.deliveryOfferEnabled}
+              />
+              <TextInput
+                label="Offer End"
+                type="datetime-local"
+                value={importData.deliveryOfferEndDate}
+                onChange={(value) => updateField('deliveryOfferEndDate', value)}
+                disabled={!importData.deliveryOfferEnabled}
+              />
+            </div>
+            <div className="mt-4">
+              <TextInput
+                label="Badge Text"
+                value={importData.deliveryOfferBadgeText}
+                onChange={(value) => updateField('deliveryOfferBadgeText', value)}
+                placeholder="এই পণ্যে ফ্রি ডেলিভারি"
+                disabled={!importData.deliveryOfferEnabled}
+              />
+            </div>
           </Section>
 
           <Section
@@ -1301,7 +1440,7 @@ export default function ImportProductPage() {
                 ['preOrderOption', 'Pre-order'],
               ] as Array<[keyof ImportData, string]>).map(([key, label]) => (
                 <label key={key as string} className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={Boolean(importData[key])}
                     onChange={(e) => updateField(key, e.target.checked as never)}
@@ -1324,13 +1463,13 @@ export default function ImportProductPage() {
             onToggle={() => toggleSection('faqs')}
           >
             <p className="text-xs text-gray-500 mb-3">
-              Import থেকে {importData.faqs.length} টি FAQ import হয়েছে। Edit/add করতে পারো।
+              Imported {importData.faqs.length} FAQ item{importData.faqs.length === 1 ? '' : 's'}. You can edit or add more.
             </p>
             <ProductFaqSection faqs={importData.faqs} onChange={(faqs) => updateField('faqs', faqs)} />
           </Section>
 
           <div className="flex items-center justify-between bg-white rounded-xl border border-gray-200 p-5 shadow-sm sticky bottom-0 z-10">
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setStep('paste');
@@ -1338,9 +1477,9 @@ export default function ImportProductPage() {
               }}
               className="inline-flex items-center px-5 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" /> আবার Paste করো
-            </button>
-            <button
+              <ArrowLeft className="w-4 h-4 mr-2" /> Paste again
+            </Button>
+            <Button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
@@ -1352,10 +1491,10 @@ export default function ImportProductPage() {
                 </>
               ) : (
                 <>
-                  <Save className="w-5 h-5 mr-2" /> Product Save করো
+                  <Save className="w-5 h-5 mr-2" /> Save product
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1383,7 +1522,7 @@ function Section({
 }) {
   return (
     <div className={`bg-white rounded-xl border shadow-sm overflow-hidden ${highlight ? 'border-amber-300' : 'border-gray-200'}`}>
-      <button
+      <Button
         type="button"
         onClick={onToggle}
         className={`w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors ${highlight ? 'bg-amber-50' : ''}`}
@@ -1395,7 +1534,7 @@ function Section({
           <span className={`font-semibold ${highlight ? 'text-amber-800' : 'text-gray-900'}`}>{title}</span>
         </div>
         {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-      </button>
+      </Button>
       {expanded && (
         <div id={`section-${sectionKey}`} className="px-6 pb-6 pt-2 border-t border-gray-100">
           {children}
@@ -1411,21 +1550,26 @@ function TextInput({
   onChange,
   placeholder,
   small = false,
+  type = 'text',
+  disabled = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   small?: boolean;
+  type?: string;
+  disabled?: boolean;
 }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <input
-        type="text"
+      <Input
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 ${small ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
+        disabled={disabled}
+        className={`w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-400 ${small ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
         placeholder={placeholder}
       />
     </div>
@@ -1448,7 +1592,7 @@ function TextareaInput({
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <textarea
+      <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
@@ -1471,7 +1615,7 @@ function ArrayTextarea({
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <textarea
+      <Textarea
         value={value.join(', ')}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
@@ -1496,7 +1640,7 @@ function JsonEditor({
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <textarea
+      <Textarea
         defaultValue={jsonString(value, Array.isArray(value) ? [] : {})}
         onBlur={(e) => onBlur(e.target.value)}
         rows={rows}

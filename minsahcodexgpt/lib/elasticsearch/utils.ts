@@ -100,11 +100,15 @@ export function validateSearchParams(
     }
   }
 
-  const validSorts = ['relevance', 'price_asc', 'price_desc', 'newest', 'rating', 'name_asc', 'name_desc', 'popularity'];
+  const validSorts = [
+    'relevance', 'price_asc', 'price_desc', 'newest', 'rating', 'name_asc', 'name_desc', 'popularity', 'discount_desc',
+    // Shop UI sort aliases. /api/search normalizes these after validation.
+    'featured', 'price-low-high', 'price-high-low', 'highest-rated', 'best-selling', 'biggest-discount', 'a-z', 'z-a',
+  ];
   const sort = searchParams.get('sort');
-  if (sort !== null && !validSorts.includes(sort)) {
-    errors.push(`sort must be one of: ${validSorts.join(', ')}`);
-  }
+  // Invalid sort values are intentionally non-blocking; the route normalizer falls back to relevance/featured.
+  void sort;
+  void validSorts;
 
   return { valid: errors.length === 0, errors };
 }

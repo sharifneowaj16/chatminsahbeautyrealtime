@@ -1,5 +1,7 @@
 'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { Search, Mail, Trash2, Eye } from 'lucide-react';
@@ -60,9 +62,9 @@ export default function ContactSubmissionsPage() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
-                    <button className="text-blue-600"><Eye className="w-4 h-4" /></button>
-                    <button className="text-purple-600"><Mail className="w-4 h-4" /></button>
-                    <button className="text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    <Button className="text-blue-600"><Eye className="w-4 h-4" /></Button>
+                    <Button className="text-purple-600"><Mail className="w-4 h-4" /></Button>
+                    <Button className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </td>
               </tr>

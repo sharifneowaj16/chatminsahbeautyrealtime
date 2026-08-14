@@ -1,3 +1,5 @@
+import { buildLegacyMetaGraphRedirectUrl, createLegacyMetaGraphClient } from '@/lib/meta-platform/transports/graph-http';
+
 const FACEBOOK_GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || 'v21.0';
 
 export interface FacebookProfile {
@@ -19,17 +21,13 @@ interface FacebookProfileResponse {
 
 const profileCache = new Map<string, Promise<FacebookProfile>>();
 
-/**
- * Use redirect=true so this URL works directly as <img src>.
- * redirect=false returns JSON ({"data":{"url":"..."}}) which breaks img tags.
- */
 function buildFacebookAvatarUrl(id: string, accessToken: string) {
-  const url = new URL(`https://graph.facebook.com/${FACEBOOK_GRAPH_API_VERSION}/${id}/picture`);
-  url.searchParams.set('width', '128');
-  url.searchParams.set('height', '128');
-  url.searchParams.set('redirect', 'true'); // ← was 'false', caused JSON response in <img>
-  url.searchParams.set('access_token', accessToken);
-  return url.toString();
+  return buildLegacyMetaGraphRedirectUrl({
+    path: `${id}/picture`,
+    graphApiVersion: FACEBOOK_GRAPH_API_VERSION,
+    accessToken,
+    query: { width: 128, height: 128, redirect: true },
+  });
 }
 
 export async function getFacebookProfile(
@@ -44,9 +42,7 @@ export async function getFacebookProfile(
     avatar: id && accessToken ? fallback?.avatar ?? buildFacebookAvatarUrl(id, accessToken) : fallback?.avatar ?? null,
   };
 
-  if (!id || !accessToken) {
-    return fallbackProfile;
-  }
+  if (!id || !accessToken) return fallbackProfile;
 
   const cacheKey = `${id}:${accessToken.slice(-12)}`;
   const cached = profileCache.get(cacheKey);
@@ -61,20 +57,16 @@ export async function getFacebookProfile(
 
   const pending = (async (): Promise<FacebookProfile> => {
     try {
-      const url = new URL(`https://graph.facebook.com/${FACEBOOK_GRAPH_API_VERSION}/${id}`);
-      url.searchParams.set('fields', 'id,name,profile_pic,picture.width(128).height(128)');
-      url.searchParams.set('access_token', accessToken);
-
-      const response = await fetch(url.toString(), { cache: 'no-store' });
-      if (!response.ok) {
-        return fallbackProfile;
-      }
-
-      const data = (await response.json()) as FacebookProfileResponse;
+      const client = createLegacyMetaGraphClient({
+        accessToken,
+        graphApiVersion: FACEBOOK_GRAPH_API_VERSION,
+      });
+      const data = await client.get<FacebookProfileResponse>(id, {
+        fields: 'id,name,profile_pic,picture.width(128).height(128)',
+      });
       return {
         id: data.id ?? safeId,
         name: data.name ?? fallbackProfile.name,
-        // profile_pic and picture.data.url are direct CDN URLs — safe for <img src>
         avatar: data.profile_pic ?? data.picture?.data?.url ?? fallbackProfile.avatar,
       };
     } catch {
@@ -83,5 +75,5 @@ export async function getFacebookProfile(
   })();
 
   profileCache.set(cacheKey, pending);
-  return await pending;
+  return pending;
 }

@@ -3,6 +3,13 @@
 import { useEffect } from 'react';
 import { normalizeMetaExternalIdValue } from '@/lib/tracking/meta-external-id';
 import { isPaymentGatewayReferralUrl, isPaymentReturnPath } from '@/lib/tracking/payment-gateway-referrals';
+import { canLoadNonEssentialTracking, getClientTrackingConsent } from '@/lib/tracking/tracking-consent';
+import { ensureAttributionSessionId } from '@/lib/attribution/cookies';
+import {
+  cleanTikTokAttributionValue,
+  resolveTikTokClickIdMaxAgeSeconds,
+  TIKTOK_CLICK_ID_COOKIE,
+} from '@/lib/tracking/tiktok-attribution';
 
 const VISITOR_COOKIE = 'mb_vid';
 const ATTRIBUTION_COOKIE = 'mb_attribution';
@@ -14,16 +21,26 @@ const LAST_NON_GATEWAY_REFERRER_COOKIE = 'mb_last_non_gateway_referrer';
 const VISITOR_MAX_AGE_SECONDS = 60 * 60 * 24 * 180; // 180 days
 const FBC_MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 days
 const ATTRIBUTION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+const TIKTOK_CLICK_ID_MAX_AGE_SECONDS = resolveTikTokClickIdMaxAgeSeconds(
+  process.env.NEXT_PUBLIC_TIKTOK_CLICK_ID_MAX_AGE_DAYS
+);
 
 const ATTRIBUTION_PARAMS = [
   'utm_source',
   'utm_medium',
   'utm_campaign',
   'utm_content',
+  'utm_term',
   'campaign_id',
   'adset_id',
   'ad_id',
   'placement',
+  'offer_version',
+  'ab_variant',
+  'coupon_code',
+  'free_delivery_threshold',
+  'landing_offer',
+  'campaign_source_url',
 ] as const;
 
 const SENSITIVE_URL_PARAMS = [
@@ -31,6 +48,11 @@ const SENSITIVE_URL_PARAMS = [
   'token',
   'access_token',
   'signature',
+  'sig',
+  'email',
+  'phone',
+  'mobile',
+  'msisdn',
   'secret',
   'auth',
   'session',
@@ -54,8 +76,10 @@ function getCookieValue(name: string): string | undefined {
 
 function setCookie(name: string, value: string, maxAgeSeconds: number) {
   if (typeof document === 'undefined') return;
+  if (!canLoadNonEssentialTracking(getClientTrackingConsent())) return;
 
-  document.cookie = `${name}=${encodeURIComponent(value)};max-age=${maxAgeSeconds};path=/;SameSite=Lax`;
+  const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)};max-age=${maxAgeSeconds};path=/;SameSite=Lax${secure}`;
 }
 
 function ensureVisitorId() {
@@ -103,7 +127,23 @@ function sanitizePath() {
   }
 }
 
+
+function captureTikTokClickId(searchParams: URLSearchParams) {
+  if (!canLoadNonEssentialTracking(getClientTrackingConsent())) return;
+
+  const ttclid = cleanTikTokAttributionValue(searchParams.get('ttclid'));
+  if (!ttclid) return;
+
+  // Keep an existing TikTok Click ID so later page views or payment returns do not overwrite
+  // the original ad click attribution used by the future Events API Purchase pipeline.
+  if (getCookieValue(TIKTOK_CLICK_ID_COOKIE)) return;
+
+  setCookie(TIKTOK_CLICK_ID_COOKIE, ttclid, TIKTOK_CLICK_ID_MAX_AGE_SECONDS);
+}
+
 function captureFbcFromFbclid(searchParams: URLSearchParams) {
+  if (!canLoadNonEssentialTracking(getClientTrackingConsent())) return;
+
   const fbclid = searchParams.get('fbclid')?.trim();
   if (!fbclid) return;
 
@@ -114,10 +154,22 @@ function captureFbcFromFbclid(searchParams: URLSearchParams) {
   setCookie('_fbc', fbc, FBC_MAX_AGE_SECONDS);
 }
 
+function normalizeAttributionValue(param: AttributionParam, value: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+
+  if (param === 'campaign_source_url') {
+    return sanitizeUrl(trimmed);
+  }
+
+  // Keep first-party attribution compact and safe for cookies/DB/event params.
+  return trimmed.slice(0, 300);
+}
+
 function captureAttribution(searchParams: URLSearchParams) {
   const attribution = ATTRIBUTION_PARAMS.reduce<Record<AttributionParam, string | undefined>>(
     (acc, param) => {
-      const value = searchParams.get(param)?.trim();
+      const value = normalizeAttributionValue(param, searchParams.get(param));
       if (value) acc[param] = value;
       return acc;
     },
@@ -125,7 +177,50 @@ function captureAttribution(searchParams: URLSearchParams) {
   );
 
   if (Object.values(attribution).some(Boolean)) {
+    // If no explicit campaign_source_url param is supplied, preserve the safe landing URL
+    // that produced the campaign/offer attribution. Payment return URLs are skipped by caller.
+    attribution.campaign_source_url =
+      attribution.campaign_source_url ?? sanitizeUrl(window.location.href);
     setCookie(ATTRIBUTION_COOKIE, JSON.stringify(attribution), ATTRIBUTION_MAX_AGE_SECONDS);
+  }
+}
+
+async function syncFirstPartyAttribution(searchParams: URLSearchParams, visitorId?: string) {
+  const sessionId = ensureAttributionSessionId();
+  if (!sessionId && !visitorId) return;
+  let stored: Record<string, string> = {};
+  const raw = getCookieValue(ATTRIBUTION_COOKIE);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) stored = parsed as Record<string, string>;
+    } catch {
+      stored = {};
+    }
+  }
+  const value = (name: string) => searchParams.get(name)?.trim() || stored[name];
+  try {
+    await fetch('/api/attribution/capture', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        sessionId,
+        visitorId,
+        landingPage: sanitizeUrl(window.location.href),
+        utm: {
+          source: value('utm_source'), medium: value('utm_medium'), campaign: value('utm_campaign'),
+          term: value('utm_term'), content: value('utm_content'),
+        },
+        fbclid: searchParams.get('fbclid')?.trim() || undefined,
+        fbp: getCookieValue('_fbp'),
+        fbc: getCookieValue('_fbc'),
+        capturedAt: new Date().toISOString(),
+      }),
+    });
+  } catch {
+    // Cookie snapshot remains available to checkout even when the capture API is unavailable.
   }
 }
 
@@ -169,6 +264,7 @@ function captureFirstLandingAndReferrer() {
  * Captures first-party tracking cookies required before checkout/order creation:
  * - mb_vid: stable anonymous visitor ID
  * - _fbc: generated from fbclid for Meta ad-click attribution
+ * - ttclid: TikTok Click ID captured with configurable retention for future Events API matching
  * - mb_attribution: UTM/ad ids stored as first-party cookie, not localStorage-only
  * - landing/referrer cookies used by readOrderAttribution()
  * Payment gateway referrers are intentionally ignored so GA4 attribution is not overwritten.
@@ -176,12 +272,23 @@ function captureFirstLandingAndReferrer() {
 export default function AttributionCookieCapture() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!canLoadNonEssentialTracking(getClientTrackingConsent())) return;
 
-    ensureVisitorId();
+    const visitorId = ensureVisitorId();
     const searchParams = new URLSearchParams(window.location.search);
+    const paymentReturn = isPaymentReturnPath(window.location.pathname);
+
+    captureTikTokClickId(searchParams);
     captureFbcFromFbclid(searchParams);
-    captureAttribution(searchParams);
+
+    // Payment gateways sometimes append their own query/referrer values on return.
+    // Never let those overwrite the original ad/offer attribution cookie.
+    if (!paymentReturn) {
+      captureAttribution(searchParams);
+    }
+
     captureFirstLandingAndReferrer();
+    if (!paymentReturn) void syncFirstPartyAttribution(searchParams, visitorId);
   }, []);
 
   return null;

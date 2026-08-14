@@ -1,0 +1,8 @@
+
+Running 5 tests using 1 worker
+
+[1/5] [mobile-chrome] › tests/accessibility/fcp03-app-shell.spec.ts:15:3 › storefront shell has one landmark set and no bottom-nav overlap at 360px
+[2/5] [mobile-chrome] › tests/accessibility/fcp03-app-shell.spec.ts:15:3 › storefront shell has one landmark set and no bottom-nav overlap at 390px
+[3/5] [mobile-chrome] › tests/accessibility/fcp03-app-shell.spec.ts:15:3 › storefront shell has one landmark set and no bottom-nav overlap at 430px
+[4/5] [mobile-chrome] › tests/accessibility/fcp03-app-shell.spec.ts:62:1 › desktop shell hides mobile navigation and preserves one header/footer/main
+[5/5] [mobile-chrome] › tests/accessibility/fcp03-app-shell.spec.ts:78:1 › skip link and mobile menu are keyboard operable

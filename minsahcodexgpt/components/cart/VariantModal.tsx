@@ -1,16 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Loader2, Minus, Plus, ShoppingCart, X } from 'lucide-react';
+import { Minus, Plus, ShoppingCart } from 'lucide-react';
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+import { Alert } from '@/components/ui/Alert';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { Modal } from '@/components/ui/Modal';
+import { Spinner } from '@/components/ui/Spinner';
+import { UI_COPY } from '@/lib/ui-copy';
 import { formatPrice } from '@/utils/currency';
+import { getCachedProductDetail } from './productDetailCache';
 
 export interface VariantOption {
   id: string;
   name: string;
   price: number;
   stock: number;
-  sku?: string;
+  sku?: string | null;
   image?: string | null;
   attributes: Record<string, string>;
 }
@@ -38,46 +46,28 @@ interface VariantModalProps {
   productName?: string;
   productImage?: string;
   variants?: VariantOption[];
+  variantsFullyLoaded?: boolean;
   currentVariantId?: string | null;
   onClose: () => void;
   onConfirm?: (payload: VariantSelectionPayload) => Promise<void> | void;
   onAdjust?: (payload: VariantAdjustmentPayload) => Promise<void> | void;
 }
 
-interface ProductResponse {
-  product: {
-    id: string;
-    name: string;
-    image: string;
-    price: number;
-    variants: Array<{
-      id: string;
-      name: string;
-      price: number;
-      stock: number;
-      sku?: string;
-      image?: string;
-      attributes?: Record<string, string>;
-    }>;
-  };
-}
-
 function normalizeVariants(variants: VariantModalProps['variants']): VariantOption[] {
-  return (variants ?? []).map((v) => ({
-    id: v.id,
-    name: v.name,
-    price: v.price,
-    stock: v.stock,
-    sku: v.sku,
-    image: v.image ?? null,
-    attributes: (v.attributes ?? {}) as Record<string, string>,
+  return (variants ?? []).map((variant) => ({
+    id: variant.id,
+    name: variant.name,
+    price: variant.price,
+    stock: variant.stock,
+    sku: variant.sku,
+    image: variant.image ?? null,
+    attributes: (variant.attributes ?? {}) as Record<string, string>,
   }));
 }
 
 function getAttributeValue(attributes: Record<string, string>, keys: string[]) {
   for (const key of keys) {
-    const exact = attributes[key];
-    if (exact) return exact;
+    if (attributes[key]) return attributes[key];
   }
 
   const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
@@ -89,8 +79,8 @@ function getAttributeValue(attributes: Record<string, string>, keys: string[]) {
 }
 
 function toVariantLabel(variant: VariantOption) {
-  const size = getAttributeValue(variant.attributes, ['size', 'Size']);
-  const color = getAttributeValue(variant.attributes, ['color', 'Color', 'shade', 'Shade']);
+  const size = getAttributeValue(variant.attributes, ['size']);
+  const color = getAttributeValue(variant.attributes, ['color', 'shade']);
   return [size, color].filter(Boolean).join(' / ') || variant.name;
 }
 
@@ -101,6 +91,7 @@ export default function VariantModal({
   productName,
   productImage,
   variants,
+  variantsFullyLoaded = true,
   currentVariantId,
   onClose,
   onConfirm,
@@ -109,12 +100,8 @@ export default function VariantModal({
   const [resolvedProductName, setResolvedProductName] = useState(productName ?? '');
   const [resolvedProductImage, setResolvedProductImage] = useState(productImage ?? '');
   const [resolvedBasePrice, setResolvedBasePrice] = useState(0);
-  const [resolvedVariants, setResolvedVariants] = useState<VariantOption[]>(
-    normalizeVariants(variants)
-  );
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    currentVariantId ?? null
-  );
+  const [resolvedVariants, setResolvedVariants] = useState<VariantOption[]>(normalizeVariants(variants));
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(currentVariantId ?? null);
   const [selectedQuantity, setSelectedQuantity] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -122,122 +109,80 @@ export default function VariantModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
     let active = true;
-
     const prefetched = normalizeVariants(variants);
+    const needsFullVariantLoad = variantsFullyLoaded === false || prefetched.length === 0;
+
     setResolvedProductName(productName ?? '');
     setResolvedProductImage(productImage ?? '');
-    setResolvedVariants(prefetched);
     setSelectedVariantId(currentVariantId ?? null);
-    setSelectedQuantity(currentVariantId ? 1 : prefetched.length === 1 ? 1 : 0);
+    setSelectedQuantity(currentVariantId ? 1 : !needsFullVariantLoad && prefetched.length === 1 ? 1 : 0);
     setError(null);
+    setLoading(needsFullVariantLoad);
+    setResolvedVariants(needsFullVariantLoad ? [] : prefetched);
 
-    if (prefetched.length > 0) return;
+    if (!needsFullVariantLoad) return;
 
-    const loadProduct = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/products/${productId}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error('Failed to load variants');
-        const data = (await res.json()) as ProductResponse;
+    void getCachedProductDetail(productId)
+      .then((productDetail) => {
         if (!active) return;
-
-        setResolvedProductName(data.product.name);
-        setResolvedProductImage(data.product.image);
-        setResolvedBasePrice(data.product.price);
-
-        const fetchedVariants = data.product.variants.map((v) => ({
-          id: v.id,
-          name: v.name,
-          price: v.price,
-          stock: v.stock,
-          sku: v.sku,
-          image: v.image ?? null,
-          attributes: (v.attributes ?? {}) as Record<string, string>,
-        }));
-
-        setResolvedVariants(fetchedVariants);
-        setSelectedQuantity(currentVariantId ? 1 : fetchedVariants.length === 1 ? 1 : 0);
-      } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : 'Failed to load variants');
-      } finally {
+        setResolvedProductName(productDetail.name || productName || '');
+        setResolvedProductImage(productDetail.image || productImage || '');
+        setResolvedBasePrice(productDetail.price);
+        setResolvedVariants(productDetail.variants);
+        setSelectedQuantity(currentVariantId ? 1 : productDetail.variants.length === 1 ? 1 : 0);
+      })
+      .catch((caughtError: unknown) => {
+        if (active) {
+          setError(caughtError instanceof Error ? caughtError.message : 'Failed to load variants');
+        }
+      })
+      .finally(() => {
         if (active) setLoading(false);
-      }
-    };
+      });
 
-    void loadProduct();
     return () => {
       active = false;
     };
-  }, [currentVariantId, isOpen, productId, productImage, productName, variants]);
+  }, [currentVariantId, isOpen, productId, productImage, productName, variants, variantsFullyLoaded]);
 
   useEffect(() => {
     if (!isOpen || resolvedBasePrice > 0 || resolvedVariants.length === 0) return;
-    const lowest = resolvedVariants.reduce(
-      (min, v) => Math.min(min, v.price),
-      resolvedVariants[0].price
-    );
-    setResolvedBasePrice(lowest);
+    setResolvedBasePrice(Math.min(...resolvedVariants.map((variant) => variant.price)));
   }, [isOpen, resolvedBasePrice, resolvedVariants]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [isOpen, onClose]);
-
-  const actionVariants = useMemo(() => {
-    if (mode === 'select') return [];
-    const currentId = currentVariantId ?? selectedVariantId;
-    return [...resolvedVariants].sort((a, b) => {
-      if (a.id === currentId) return -1;
-      if (b.id === currentId) return 1;
-      return 0;
-    });
-  }, [currentVariantId, mode, resolvedVariants, selectedVariantId]);
-
-  const selectedVariant = resolvedVariants.find((v) => v.id === selectedVariantId) ?? null;
 
   useEffect(() => {
     if (!isOpen || mode !== 'select') return;
     if (!selectedVariantId && resolvedVariants.length === 1) {
       setSelectedVariantId(resolvedVariants[0].id);
       setSelectedQuantity(1);
-      return;
-    }
-    if (!selectedVariantId && selectedQuantity !== 0) {
+    } else if (!selectedVariantId && selectedQuantity !== 0) {
       setSelectedQuantity(0);
     }
   }, [isOpen, mode, resolvedVariants, selectedQuantity, selectedVariantId]);
 
-  const canConfirm =
+  const actionVariants = useMemo(() => {
+    if (mode === 'select') return [];
+    const currentId = currentVariantId ?? selectedVariantId;
+    return [...resolvedVariants].sort((first, second) => {
+      if (first.id === currentId) return -1;
+      if (second.id === currentId) return 1;
+      return 0;
+    });
+  }, [currentVariantId, mode, resolvedVariants, selectedVariantId]);
+
+  const selectedVariant = resolvedVariants.find((variant) => variant.id === selectedVariantId) ?? null;
+  const canConfirm = Boolean(
     mode === 'select' &&
-    Boolean(
       selectedVariant &&
-        selectedVariant.stock > 0 &&
-        selectedQuantity > 0 &&
-        !submitting &&
-        !loading
-    );
+      selectedVariant.stock > 0 &&
+      selectedQuantity > 0 &&
+      !submitting &&
+      !loading,
+  );
 
   const modalTitle =
-    mode === 'decrease'
-      ? 'Update Cart'
-      : mode === 'increase'
-        ? 'Add Another Variant'
-        : 'Select Variant';
+    mode === 'decrease' ? 'Update Cart' : mode === 'increase' ? 'Add Another Variant' : 'Select Variant';
 
   const handleConfirm = async () => {
     if (!selectedVariant || !onConfirm) return;
@@ -274,252 +219,195 @@ export default function VariantModal({
       setSelectedQuantity(0);
       return;
     }
-
     setSelectedVariantId(variant.id);
     setSelectedQuantity(Math.min(variant.stock, nextQuantity));
   };
 
-  if (!isOpen) return null;
+  const footer =
+    mode === 'select' ? (
+      <Button
+        onClick={() => void handleConfirm()}
+        disabled={!canConfirm}
+        fullWidth
+        size="lg"
+        aria-busy={submitting}
+      >
+        {submitting ? <Spinner size="sm" decorative /> : <ShoppingCart className="h-4 w-4" aria-hidden="true" />}
+        {UI_COPY.cart.add}
+      </Button>
+    ) : undefined;
 
-  const modalNode = (
-    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/55 sm:items-center sm:px-4 sm:py-6">
-      <div className="flex h-[min(100dvh,calc(100dvh-0.25rem))] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:h-auto sm:max-h-[min(88vh,760px)] sm:rounded-[30px]">
-        <div className="shrink-0 border-b border-stone-200 px-4 py-4 sm:px-5">
-          <div className="mb-3 flex justify-center sm:hidden">
-            <span className="h-1.5 w-12 rounded-full bg-stone-200" />
-          </div>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
-                {modalTitle}
-              </p>
-              <h2 className="mt-1 line-clamp-2 text-base font-semibold text-stone-900 sm:text-lg">
-                {resolvedProductName || productName || 'Product'}
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 rounded-full p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
+  return (
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title={modalTitle}
+      description={resolvedProductName || productName || 'Product'}
+      size="lg"
+      dismissible={!submitting}
+      closeLabel={UI_COPY.common.close}
+      bodyClassName="max-h-[70dvh]"
+      footer={footer}
+      footerClassName="pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:pb-4"
+    >
+      {loading ? (
+        <LoadingState label="Loading variants…" description="Available product options are being loaded." />
+      ) : error ? (
+        <Alert tone="danger" role="alert">{error}</Alert>
+      ) : resolvedVariants.length === 0 ? (
+        <Alert tone="warning">No variants are available for this product right now.</Alert>
+      ) : mode === 'select' ? (
+        <div className="space-y-4">
+          <p className="rounded-2xl bg-minsah-surface-subtle p-4 text-sm text-minsah-text-muted">
+            Select a variant and quantity to add to your cart.
+          </p>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
-          {loading ? (
-            <div className="flex items-center justify-center py-16 text-stone-400">
-              <Loader2 size={22} className="animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          ) : resolvedVariants.length === 0 ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              No variants available for this product right now.
-            </div>
-          ) : mode === 'select' ? (
-            <div className="space-y-4">
-              <div className="rounded-3xl bg-[#F7F2EC] p-4 text-sm text-stone-700">
-                Select the variant and quantity you want to add to your cart.
-              </div>
+          {resolvedVariants.map((variant) => {
+            const quantity = selectedVariantId === variant.id ? selectedQuantity : 0;
+            const isSelected = quantity > 0;
+            const outOfStock = variant.stock <= 0;
 
-              {resolvedVariants.map((variant) => {
-                const quantity = selectedVariantId === variant.id ? selectedQuantity : 0;
-                const isSelected = quantity > 0;
-                const outOfStock = variant.stock <= 0;
-
-                return (
-                  <div
-                    key={variant.id}
-                    className={`rounded-2xl border px-3 py-3 sm:px-4 ${
-                      isSelected
-                        ? 'border-[#3D1F0E] bg-[#F5E9DC]'
-                        : outOfStock
-                          ? 'border-stone-200 bg-stone-50 opacity-60'
-                          : 'border-stone-200'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl bg-stone-100 sm:h-16 sm:w-16">
-                        {(variant.image || resolvedProductImage) ? (
-                          <img
-                            src={variant.image || resolvedProductImage}
-                            alt={toVariantLabel(variant)}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : null}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="break-words text-sm font-semibold text-stone-900">
-                            {toVariantLabel(variant)}
-                          </p>
-                          {isSelected && (
-                            <span className="flex-shrink-0 rounded-full bg-[#3D1F0E] px-2 py-0.5 text-[10px] font-semibold text-white">
-                              Selected
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs text-stone-500">
-                          {outOfStock
-                            ? 'Out of stock'
-                            : `${formatPrice(variant.price)} - ${variant.stock} available`}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <div className="flex items-center rounded-full border border-[#D6C0A9] bg-white">
-                        <button
-                          type="button"
-                          onClick={() => updateSelectedVariantQuantity(variant, quantity - 1)}
-                          disabled={quantity <= 0 || submitting}
-                          className="flex h-9 w-9 items-center justify-center rounded-l-full text-[#3D1F0E] disabled:cursor-not-allowed disabled:opacity-35"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="min-w-8 text-center text-sm font-semibold text-stone-900">
-                          {quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateSelectedVariantQuantity(variant, quantity + 1)}
-                          disabled={outOfStock || quantity >= variant.stock || submitting}
-                          className="flex h-9 w-9 items-center justify-center rounded-r-full text-[#3D1F0E] disabled:cursor-not-allowed disabled:opacity-35"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                    </div>
+            return (
+              <section
+                key={variant.id}
+                aria-label={toVariantLabel(variant)}
+                className={`rounded-2xl border p-3 sm:p-4 ${
+                  isSelected
+                    ? 'border-minsah-action-primary bg-minsah-surface-accent'
+                    : outOfStock
+                      ? 'border-minsah-border-subtle bg-minsah-surface-disabled opacity-70'
+                      : 'border-minsah-border-default bg-minsah-surface-panel'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-minsah-surface-subtle sm:h-16 sm:w-16">
+                    {variant.image || resolvedProductImage ? (
+                      <CatalogProductImage
+                        src={variant.image || resolvedProductImage}
+                        alt={toVariantLabel(variant)}
+                        sizes="64px"
+                        padding="sm"
+                      />
+                    ) : null}
                   </div>
-                );
-              })}
-
-              <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-stone-600">Selected Qty</span>
-                  <span className="font-semibold text-stone-900">{selectedQuantity}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span className="text-stone-600">Subtotal</span>
-                  <span className="font-semibold text-stone-900">
-                    {selectedVariant
-                      ? formatPrice(selectedVariant.price * selectedQuantity)
-                      : formatPrice(0)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="rounded-3xl bg-[#F7F2EC] px-4 py-3 text-sm text-stone-600">
-                {mode === 'decrease'
-                  ? 'Decrease quantity or remove a variant from your cart.'
-                  : 'Choose which variant to add more of.'}
-              </div>
-
-              {actionVariants.map((variant) => {
-                const isCurrent = variant.id === (currentVariantId ?? selectedVariantId);
-                const delta: 1 | -1 = isCurrent && mode === 'decrease' ? -1 : 1;
-                const disableAction = delta === 1 ? variant.stock <= 0 : false;
-
-                return (
-                  <div
-                    key={variant.id}
-                    className={`rounded-2xl border px-4 py-3 ${
-                      isCurrent ? 'border-[#3D1F0E] bg-[#F5E9DC]' : 'border-stone-200'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl bg-stone-100 sm:h-16 sm:w-16">
-                        {(variant.image || resolvedProductImage) ? (
-                          <img
-                            src={variant.image || resolvedProductImage}
-                            alt={toVariantLabel(variant)}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : null}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="break-words text-sm font-semibold text-stone-900">
-                            {toVariantLabel(variant)}
-                          </p>
-                          {isCurrent && (
-                            <span className="flex-shrink-0 rounded-full bg-[#3D1F0E] px-2 py-0.5 text-[10px] font-semibold text-white">
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs text-stone-500">
-                          {variant.stock > 0 ? `${variant.stock} available` : 'Out of stock'}
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-stone-900">
-                          {formatPrice(variant.price)}
-                        </p>
-                      </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="break-words text-sm font-bold text-minsah-text-primary">{toVariantLabel(variant)}</h3>
+                      {isSelected ? <Badge tone="success">Selected</Badge> : null}
                     </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        type="button"
-                        disabled={disableAction || submitting}
-                        onClick={() => void handleAdjust(variant, delta)}
-                        className={`flex h-10 min-w-10 items-center justify-center rounded-full border px-3 transition sm:w-10 sm:px-0 ${
-                          disableAction
-                            ? 'cursor-not-allowed border-stone-200 bg-stone-100 text-stone-400'
-                            : delta === -1
-                              ? 'border-[#3D1F0E] bg-white text-[#3D1F0E] hover:bg-[#F5E9DC]'
-                              : 'border-[#3D1F0E] bg-[#3D1F0E] text-white hover:bg-[#2A1509]'
-                        }`}
-                        aria-label={delta === -1 ? `Decrease ${variant.name}` : `Add ${variant.name}`}
-                      >
-                        {submitting ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : delta === -1 ? (
-                          <Minus size={14} />
-                        ) : (
-                          <Plus size={14} />
-                        )}
-                      </button>
-                    </div>
+                    <p className="mt-1 text-xs text-minsah-text-muted">
+                      {outOfStock ? UI_COPY.cart.outOfStock : `${formatPrice(variant.price)} · ${variant.stock} available`}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                </div>
 
-        {mode === 'select' && (
-          <div className="sticky bottom-0 shrink-0 border-t border-stone-200 bg-white px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-10px_24px_rgba(28,25,23,0.08)] sm:px-5 sm:pb-4">
-            <button
-              type="button"
-              onClick={() => void handleConfirm()}
-              disabled={!canConfirm}
-              className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                canConfirm
-                  ? 'bg-[#3D1F0E] text-[#F5E6D3] hover:bg-[#2A1509]'
-                  : 'cursor-not-allowed bg-stone-200 text-stone-500'
-              }`}
-            >
-              {submitting ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <ShoppingCart size={16} />
-              )}
-              Add to Cart
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+                <div className="mt-3 flex justify-end">
+                  <div className="flex items-center gap-1 rounded-full border border-minsah-border-default bg-minsah-surface-panel p-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => updateSelectedVariantQuantity(variant, quantity - 1)}
+                      disabled={quantity <= 0 || submitting}
+                      aria-label={`Decrease ${toVariantLabel(variant)} quantity`}
+                    >
+                      <Minus className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <output className="min-w-8 text-center text-sm font-bold text-minsah-text-primary">{quantity}</output>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => updateSelectedVariantQuantity(variant, quantity + 1)}
+                      disabled={outOfStock || quantity >= variant.stock || submitting}
+                      aria-label={`Increase ${toVariantLabel(variant)} quantity`}
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            );
+          })}
+
+          <dl className="rounded-2xl border border-minsah-border-default bg-minsah-surface-subtle p-4 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-minsah-text-muted">{UI_COPY.cart.quantity}</dt>
+              <dd className="font-bold text-minsah-text-primary">{selectedQuantity}</dd>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <dt className="text-minsah-text-muted">{UI_COPY.cart.subtotal}</dt>
+              <dd className="font-bold text-minsah-text-primary">
+                {formatPrice(selectedVariant ? selectedVariant.price * selectedQuantity : 0)}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="rounded-2xl bg-minsah-surface-subtle p-4 text-sm text-minsah-text-muted">
+            {mode === 'decrease'
+              ? 'Decrease quantity or remove a variant from your cart.'
+              : 'Choose which variant to add more of.'}
+          </p>
+
+          {actionVariants.map((variant) => {
+            const isCurrent = variant.id === (currentVariantId ?? selectedVariantId);
+            const delta: 1 | -1 = isCurrent && mode === 'decrease' ? -1 : 1;
+            const disableAction = delta === 1 && variant.stock <= 0;
+
+            return (
+              <section
+                key={variant.id}
+                aria-label={toVariantLabel(variant)}
+                className={`rounded-2xl border p-4 ${
+                  isCurrent
+                    ? 'border-minsah-action-primary bg-minsah-surface-accent'
+                    : 'border-minsah-border-default bg-minsah-surface-panel'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-minsah-surface-subtle sm:h-16 sm:w-16">
+                    {variant.image || resolvedProductImage ? (
+                      <CatalogProductImage
+                        src={variant.image || resolvedProductImage}
+                        alt={toVariantLabel(variant)}
+                        sizes="64px"
+                        padding="sm"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="break-words text-sm font-bold text-minsah-text-primary">{toVariantLabel(variant)}</h3>
+                      {isCurrent ? <Badge tone="info">Current</Badge> : null}
+                    </div>
+                    <p className="mt-1 text-xs text-minsah-text-muted">
+                      {variant.stock > 0 ? `${variant.stock} available` : UI_COPY.cart.outOfStock}
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-minsah-text-primary">{formatPrice(variant.price)}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    size="icon"
+                    variant={delta === -1 ? 'secondary' : 'primary'}
+                    disabled={disableAction || submitting}
+                    onClick={() => void handleAdjust(variant, delta)}
+                    aria-label={delta === -1 ? `Decrease ${variant.name}` : `Add ${variant.name}`}
+                  >
+                    {submitting ? (
+                      <Spinner size="sm" decorative />
+                    ) : delta === -1 ? (
+                      <Minus className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </Button>
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+    </Modal>
   );
-
-  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 }

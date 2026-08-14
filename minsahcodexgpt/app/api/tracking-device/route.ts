@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { Prisma } from '@/generated/prisma/client';
 import prisma from '@/lib/prisma';
 import { verifyAccessToken } from '@/lib/auth/jwt';
+import { shouldSkipServerTrackingRequest } from '@/lib/tracking/traffic-filter';
 
 async function getUserId(request: NextRequest): Promise<string | null> {
   const token =
@@ -46,6 +47,11 @@ export async function GET(request: NextRequest) {
 // PUT /api/tracking-device — upsert device UTM data
 export async function PUT(request: NextRequest) {
   try {
+    const skippedTraffic = shouldSkipServerTrackingRequest(request);
+    if (skippedTraffic) {
+      return NextResponse.json({ ok: true, skipped: true, reason: skippedTraffic.reason });
+    }
+
     const body = await request.json();
 
     // No `| null` — the API never intentionally clears UTM data.

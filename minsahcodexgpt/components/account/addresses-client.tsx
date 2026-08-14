@@ -11,6 +11,12 @@ import {
   CreditCard
 } from 'lucide-react';
 import { Star as StarSolidIcon } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Radio } from '@/components/ui/Radio';
+import { useToast } from '@/components/ui/ToastProvider';
 import type { UserAddress } from '@/types/user';
 
 interface AddressesClientProps {
@@ -62,6 +68,7 @@ async function refreshAddresses(): Promise<UserAddress[]> {
 }
 
 export function AddressesClient({ initialAddresses }: AddressesClientProps) {
+  const { requestConfirmation } = useToast();
   const [addresses, setAddresses] = useState<UserAddress[]>(initialAddresses);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<UserAddress | null>(null);
@@ -128,7 +135,14 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
   };
 
   const handleDelete = async (addressId: string) => {
-    if (!confirm('Are you sure you want to delete this address?')) return;
+    const confirmed = await requestConfirmation({
+      title: 'Delete this address?',
+      description: 'Are you sure you want to delete this address?',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     setAddresses(prev => prev.filter(addr => addr.id !== addressId));
     try {
       await fetch(`/api/addresses/${addressId}`, {
@@ -211,13 +225,15 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
               <p className="text-gray-600">Manage your shipping and billing addresses</p>
             </div>
             {!showAddForm && (
-              <button
+              <Button
+                type="button"
+                variant="primary"
                 onClick={() => setShowAddForm(true)}
-                className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                className="bg-purple-600 hover:bg-purple-700"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" aria-hidden="true" />
                 Add Address
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -232,212 +248,151 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Address Type */}
               <div className="flex items-center space-x-6">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="type"
-                    value="shipping"
-                    checked={formData.type === 'shipping'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
-                  />
-                  <span className="ml-2 text-gray-700">Shipping Address</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="type"
-                    value="billing"
-                    checked={formData.type === 'billing'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
-                  />
-                  <span className="ml-2 text-gray-700">Billing Address</span>
-                </label>
+                <Radio
+                  name="type"
+                  value="shipping"
+                  checked={formData.type === 'shipping'}
+                  onChange={handleInputChange}
+                  label="Shipping Address"
+                  containerClassName="w-auto"
+                />
+                <Radio
+                  name="type"
+                  value="billing"
+                  checked={formData.type === 'billing'}
+                  onChange={handleInputChange}
+                  label="Billing Address"
+                  containerClassName="w-auto"
+                />
               </div>
 
               {/* Personal Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
+                <Input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  required
+                  label="First Name"
+                />
+                <Input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  required
+                  label="Last Name"
+                />
               </div>
 
               {/* Company (Optional) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company (Optional)
-                </label>
-                <input
-                  type="text"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
+              <Input
+                type="text"
+                name="company"
+                value={formData.company}
+                onChange={handleInputChange}
+                label="Company (Optional)"
+              />
 
               {/* Address Lines */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address Line 1 *
-                </label>
-                <input
-                  type="text"
-                  name="addressLine1"
-                  value={formData.addressLine1}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address Line 2 (Optional)
-                </label>
-                <input
-                  type="text"
-                  name="addressLine2"
-                  value={formData.addressLine2}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
+              <Input
+                type="text"
+                name="addressLine1"
+                value={formData.addressLine1}
+                onChange={handleInputChange}
+                required
+                label="Address Line 1"
+              />
+              <Input
+                type="text"
+                name="addressLine2"
+                value={formData.addressLine2}
+                onChange={handleInputChange}
+                label="Address Line 2 (Optional)"
+              />
 
               {/* City, State, Postal Code */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State *
-                  </label>
-                  <select
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">Select State</option>
-                    {states.map(state => (
-                      <option key={state} value={state}>{state}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Postal Code *
-                  </label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    value={formData.postalCode}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
+                <Input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  required
+                  label="City"
+                />
+                <Select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                  label="State"
+                  placeholder="Select State"
+                >
+                  {states.map(state => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </Select>
+                <Input
+                  type="text"
+                  name="postalCode"
+                  value={formData.postalCode}
+                  onChange={handleInputChange}
+                  required
+                  label="Postal Code"
+                />
               </div>
 
               {/* Country and Phone */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country *
-                  </label>
-                  <select
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    {countries.map(country => (
-                      <option key={country} value={country}>{country}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
+                <Select
+                  name="country"
+                  value={formData.country}
+                  onChange={handleInputChange}
+                  required
+                  label="Country"
+                >
+                  {countries.map(country => (
+                    <option key={country} value={country}>{country}</option>
+                  ))}
+                </Select>
+                <Input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  label="Phone Number"
+                />
               </div>
 
               {/* Default Address */}
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="isDefault"
-                  id="isDefault"
-                  checked={formData.isDefault}
-                  onChange={handleInputChange}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <label htmlFor="isDefault" className="ml-2 text-gray-700">
-                  Set as default {formData.type} address
-                </label>
-              </div>
+              <Checkbox
+                name="isDefault"
+                id="isDefault"
+                checked={formData.isDefault}
+                onChange={handleInputChange}
+                label={`Set as default ${formData.type} address`}
+              />
 
               {/* Form Actions */}
               <div className="flex justify-end space-x-4">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={handleCancel}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={saving}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-60"
+                  className="bg-purple-600 hover:bg-purple-700"
                 >
                   {saving ? 'Saving...' : editingAddress ? 'Update Address' : 'Add Address'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -448,7 +403,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
           {/* Shipping Addresses */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Home className="w-5 h-5 mr-2" />
+              <Home className="w-5 h-5 mr-2" aria-hidden="true" />
               Shipping Addresses
             </h2>
             <div className="space-y-4">
@@ -457,13 +412,13 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center mb-3">
-                        <MapPin className="w-5 h-5 text-gray-400 mr-2" />
+                        <MapPin className="w-5 h-5 text-gray-400 mr-2" aria-hidden="true" />
                         <h3 className="font-medium text-gray-900">
                           {address.firstName} {address.lastName}
                         </h3>
                         {address.isDefault && (
                           <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            <StarSolidIcon className="w-3 h-3 mr-1" />
+                            <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
                             Default
                           </span>
                         )}
@@ -481,28 +436,37 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       {!address.isDefault && (
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleSetDefault(address.id, 'shipping')}
-                          className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                          title="Set as default"
+                          className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                          aria-label={`Set ${address.firstName} ${address.lastName}'s shipping address as default`}
                         >
-                          <Star className="w-5 h-5" />
-                        </button>
+                          <Star className="w-5 h-5" aria-hidden="true" />
+                        </Button>
                       )}
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleEdit(address)}
-                        className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                        title="Edit address"
+                        className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                        aria-label={`Edit ${address.firstName} ${address.lastName}'s shipping address`}
                       >
-                        <Edit className="w-5 h-5" />
-                      </button>
-                      <button
+                        <Edit className="w-5 h-5" aria-hidden="true" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDelete(address.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Delete address"
+                        className="text-gray-600 hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Delete ${address.firstName} ${address.lastName}'s shipping address`}
                       >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                        <Trash2 className="w-5 h-5" aria-hidden="true" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -513,7 +477,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
           {/* Billing Addresses */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <CreditCard className="w-5 h-5 mr-2" />
+              <CreditCard className="w-5 h-5 mr-2" aria-hidden="true" />
               Billing Addresses
             </h2>
             <div className="space-y-4">
@@ -522,13 +486,13 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center mb-3">
-                        <CreditCard className="w-5 h-5 text-gray-400 mr-2" />
+                        <CreditCard className="w-5 h-5 text-gray-400 mr-2" aria-hidden="true" />
                         <h3 className="font-medium text-gray-900">
                           {address.firstName} {address.lastName}
                         </h3>
                         {address.isDefault && (
                           <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            <StarSolidIcon className="w-3 h-3 mr-1" />
+                            <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
                             Default
                           </span>
                         )}
@@ -546,28 +510,37 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       {!address.isDefault && (
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleSetDefault(address.id, 'billing')}
-                          className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                          title="Set as default"
+                          className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                          aria-label={`Set ${address.firstName} ${address.lastName}'s billing address as default`}
                         >
-                          <Star className="w-5 h-5" />
-                        </button>
+                          <Star className="w-5 h-5" aria-hidden="true" />
+                        </Button>
                       )}
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleEdit(address)}
-                        className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                        title="Edit address"
+                        className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                        aria-label={`Edit ${address.firstName} ${address.lastName}'s billing address`}
                       >
-                        <Edit className="w-5 h-5" />
-                      </button>
-                      <button
+                        <Edit className="w-5 h-5" aria-hidden="true" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDelete(address.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Delete address"
+                        className="text-gray-600 hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Delete ${address.firstName} ${address.lastName}'s billing address`}
                       >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                        <Trash2 className="w-5 h-5" aria-hidden="true" />
+                      </Button>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,7 @@
 'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { Plus, Edit, Trash2, FileText } from 'lucide-react';
@@ -24,10 +26,10 @@ export default function PagesManagementPage() {
           <h1 className="text-2xl font-bold">Pages</h1>
           <p className="text-gray-600">Manage static pages</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <Button className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
           <Plus className="w-5 h-5 mr-2" />
           New Page
-        </button>
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg border overflow-hidden">
@@ -52,8 +54,8 @@ export default function PagesManagementPage() {
                 <td className="px-6 py-4 text-sm text-gray-600">{page.lastModified}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
-                    <button className="text-blue-600"><Edit className="w-4 h-4" /></button>
-                    <button className="text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    <Button className="text-blue-600"><Edit className="w-4 h-4" /></Button>
+                    <Button className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </td>
               </tr>

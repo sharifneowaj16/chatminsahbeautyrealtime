@@ -60,7 +60,8 @@ requireContains('lib/tracking/production-qa.ts', [
   'getFullQaMatrixSummary',
   'getQaStepVerification',
   'Required manual QA evidence is not marked verified',
-  "blockerCheck(\n          'manual_qa'",
+  'blockerCheck(',
+  "'manual_qa'",
   'manualQaRequiredVerified',
   'manualQaMissingRequired',
 ]);
@@ -78,6 +79,8 @@ requireContains('scripts/security-audit.mjs', [
   'phase8-static-contract-check.mjs',
   'FULL_PRODUCTION_QA_MATRIX',
   'qa:predeploy',
+  'qa:phase9-build-deploy-proof',
+  'qa:phase10-seo-postdeploy',
 ]);
 
 const packageJson = JSON.parse(read('package.json') || '{}');
@@ -86,12 +89,41 @@ for (const [scriptName, expected] of Object.entries({
   'audit:security': 'node scripts/security-audit.mjs',
   'qa:production': 'tsx scripts/production-qa.ts',
   'qa:phase8-static': 'node scripts/phase8-static-contract-check.mjs',
+  'qa:phase8-production-runtime': 'node scripts/phase8-production-runtime-readiness-audit.mjs',
   'qa:admin-api-security': 'node scripts/admin-api-security-audit.mjs',
-  'qa:predeploy': 'npm run audit:security && npm run qa:phase8-static && npm run qa:admin-api-security && npm run qa:telegram-security && npm run typecheck && npm run build && npm run qa:production',
 })) {
   if (scripts[scriptName] !== expected) {
     issues.push(`package.json script ${scriptName} must be exactly: ${expected}`);
   }
+}
+
+const predeployRequired = [
+  'npm run audit:security',
+  'npm run qa:phase9-build-deploy-proof',
+  'npm run qa:phase10-seo-postdeploy',
+  'npm run lint',
+  'npm run qa:phase8-static',
+  'npm run qa:phase12',
+  'npm run qa:phase13',
+  'npm run qa:phase14',
+  'npm run qa:phase15',
+  'npm run qa:phase16',
+  'npm run qa:phase17',
+  'npm run qa:phase8-production-runtime',
+  'npm run qa:tracking-deploy-gate',
+  'npm run qa:admin-api-security',
+  'npm run qa:search',
+  'npm run qa:telegram-security',
+  'npm run typecheck',
+  'npm run build',
+  'npm run qa:production',
+];
+const predeploy = scripts['qa:predeploy'] ?? '';
+let cursor = -1;
+for (const command of predeployRequired) {
+  const index = predeploy.indexOf(command, cursor + 1);
+  if (index < 0) issues.push(`package.json qa:predeploy missing or reorders required command: ${command}`);
+  else cursor = index;
 }
 
 const matrixText = read('lib/tracking/full-production-qa-matrix.ts');

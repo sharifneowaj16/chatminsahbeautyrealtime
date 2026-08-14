@@ -3,90 +3,13 @@
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
-import { buildVisitorMetaExternalId } from '@/lib/tracking/meta-external-id';
+import { canRunClientTracking } from '@/lib/tracking/client-traffic-filter';
+import { buildMetaBrowserEvent } from '@/lib/meta/browser/payload';
+import { dispatchMetaBrowserEvent } from '@/lib/meta/browser/client';
 
 interface FacebookPixelProps {
   pixelId: string;
   enabled?: boolean;
-}
-
-function getCookieValue(name: string): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-
-  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  if (!match) return undefined;
-
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return match[1];
-  }
-}
-
-function getMetaExternalIdRaw() {
-  return buildVisitorMetaExternalId(getCookieValue('mb_vid'));
-}
-
-function getFacebookIdentity() {
-  return {
-    fbc: getCookieValue('_fbc'),
-    fbp: getCookieValue('_fbp'),
-    // Raw stable key sent only to our server; /api/facebook-capi hashes it before Meta.
-    externalId: getMetaExternalIdRaw(),
-  };
-}
-
-
-const SENSITIVE_EVENT_SOURCE_PARAMS = [
-  'bpt',
-  'token',
-  'access_token',
-  'signature',
-  'secret',
-  'auth',
-  'session',
-  'nonce',
-];
-
-function getSafeEventSourceUrl() {
-  if (typeof window === 'undefined') return undefined;
-
-  try {
-    const url = new URL(window.location.href);
-    for (const param of SENSITIVE_EVENT_SOURCE_PARAMS) {
-      url.searchParams.delete(param);
-    }
-    return url.toString();
-  } catch {
-    return window.location.origin + window.location.pathname;
-  }
-}
-
-/**
- * Send PageView to Facebook Conversions API with the same eventID as the browser pixel.
- */
-async function sendPageViewToCAPI(eventId: string) {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const identity = getFacebookIdentity();
-
-    await fetch('/api/facebook-capi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventName: 'PageView',
-        eventId,
-        eventSourceUrl: getSafeEventSourceUrl(),
-        fbc: identity.fbc,
-        fbp: identity.fbp,
-        externalId: identity.externalId,
-        country: 'BD',
-      }),
-    });
-  } catch {
-    // Browser pixel already fired.
-  }
 }
 
 export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixelProps) {
@@ -95,7 +18,7 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
   const lastPageViewKey = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!enabled || !pixelId) return;
+    if (!enabled || !pixelId || !canRunClientTracking()) return;
 
     const pageViewKey =
       typeof window !== 'undefined'
@@ -104,46 +27,32 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
     if (lastPageViewKey.current === pageViewKey) return;
     lastPageViewKey.current = pageViewKey;
 
-    const eventId = `PageView-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    let attempts = 0;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const fireWithEventId = () => {
-      if (typeof window === 'undefined') return;
-
-      if (!window.fbq && attempts < 50) {
-        attempts += 1;
-        timer = setTimeout(fireWithEventId, 100);
-        return;
-      }
-
-      if (window.fbq && !(window as Window & { __mbFbInitReady?: boolean }).__mbFbInitReady && attempts < 50) {
-        attempts += 1;
-        timer = setTimeout(fireWithEventId, 100);
-        return;
-      }
-
-      if (window.fbq) {
-        window.fbq('track', 'PageView', {}, { eventID: eventId });
-        sendPageViewToCAPI(eventId);
-      }
-    };
-
-    timer = setTimeout(fireWithEventId, 0);
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
+    const pageViewEvent = buildMetaBrowserEvent({
+      eventName: 'PageView',
+      payload: {},
+    });
+    void dispatchMetaBrowserEvent(pageViewEvent);
   }, [pathname, searchParams, pixelId, enabled]);
 
-  if (!enabled || !pixelId) return null;
+  if (!enabled || !pixelId || typeof window === 'undefined' || !canRunClientTracking()) {
+    return null;
+  }
 
   return (
-    <>
-      <Script
-        id="facebook-pixel"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
+    <Script
+      id="facebook-pixel"
+      strategy="afterInteractive"
+      dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            function mbReadCookie(name) {
+              var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+              if (!match) return undefined;
+              try { return decodeURIComponent(match[1]); } catch (e) { return match[1]; }
+            }
+            if (String(mbReadCookie('mb_tracking_consent') || '').trim().toLowerCase() !== 'granted') {
+              return;
+            }
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
             n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -180,14 +89,14 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
                 })
                 .catch(function() { return undefined; });
             }
-            function mbReadCookie(name) {
-              var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-              if (!match) return undefined;
-              try { return decodeURIComponent(match[1]); } catch (e) { return match[1]; }
-            }
             function mbSetCookie(name, value, maxAge) {
-              document.cookie = name + '=' + encodeURIComponent(value) + ';max-age=' + maxAge + ';path=/;SameSite=Lax';
+              if (String(mbReadCookie('mb_tracking_consent') || '').trim().toLowerCase() !== 'granted') {
+                return;
+              }
+              var secure = window.location.protocol === 'https:' ? ';Secure' : '';
+              document.cookie = name + '=' + encodeURIComponent(value) + ';max-age=' + maxAge + ';path=/;SameSite=Lax' + secure;
             }
+            fbq('consent', 'grant');
             var mbVid = mbReadCookie('mb_vid');
             if (!mbVid) {
               mbVid = window.crypto && window.crypto.randomUUID
@@ -222,18 +131,9 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
               fbq('init', ${JSON.stringify(pixelId)});
               window.__mbFbInitReady = true;
             }
-          `,
-        }}
-      />
-      <noscript>
-        <img
-          height="1"
-          width="1"
-          style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
-          alt=""
-        />
-      </noscript>
-    </>
+          })();
+        `,
+      }}
+    />
   );
 }

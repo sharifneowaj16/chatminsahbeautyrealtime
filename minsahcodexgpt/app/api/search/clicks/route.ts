@@ -3,46 +3,67 @@ import { BehaviorTracker } from '@/lib/tracking/behavior';
 import { TRACKING_EVENTS } from '@/types/tracking';
 import prisma from '@/lib/prisma';
 import { verifyAccessToken } from '@/lib/auth/jwt';
-
-// ✅ Type definitions
-interface ClickTrackingPayload {
-  query: string;
-  productId: string;
-  productName: string;
-  position: number;
-  resultCount: number;
-  filters?: string[];
-  category?: string;
-  price?: number;
-  score?: number;
-  timestamp?: number;
-}
+import { requireAdminPermission } from '@/app/api/admin/_utils';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { buildMetaCatalogData } from '@/lib/tracking/meta-content-id';
+import { getServerMetaCatalogIdSource } from '@/lib/tracking/meta-content-id-server';
+import {
+  attachTrackingCookies,
+  buildTrackingIdentity,
+  enforceClickRateLimits,
+  findActiveClickableProduct,
+  isDuplicateClick,
+  recordValidatedSearchClick,
+  sanitizeClickPayload,
+  type PublicClickTrackingPayload,
+} from '@/lib/search/click-tracking';
 
 // ========================================
 // TRACK SEARCH RESULT CLICK
 // ========================================
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json() as ClickTrackingPayload;
-    const {
-      query,
-      productId,
-      productName,
-      position,
-      resultCount,
-      filters = [],
-      category,
-      price,
-      score,
-      timestamp = Date.now(),
-    } = body;
+  const identity = buildTrackingIdentity(request);
 
-    // ✅ Validate required fields
-    if (!query || !productId || position === undefined) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields: query, productId, position' },
+  try {
+    const body = await request.json() as PublicClickTrackingPayload;
+    const sanitized = sanitizeClickPayload(body);
+
+    if (!sanitized.ok) {
+      const response = NextResponse.json(
+        { success: false, error: sanitized.error },
+        { status: sanitized.status }
+      );
+      attachTrackingCookies(response, identity);
+      return response;
+    }
+
+    const rateLimit = await enforceClickRateLimits(identity);
+    if (!rateLimit.ok) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          error: rateLimit.error,
+          retryAfter: rateLimit.retryAfter,
+        },
+        {
+          status: rateLimit.status,
+          headers: { 'Retry-After': rateLimit.retryAfter.toString() },
+        }
+      );
+      attachTrackingCookies(response, identity);
+      return response;
+    }
+
+    const click = sanitized.value;
+
+    const activeProduct = await findActiveClickableProduct(click.productId);
+    if (!activeProduct) {
+      const response = NextResponse.json(
+        { success: false, error: 'Invalid or inactive productId' },
         { status: 400 }
       );
+      attachTrackingCookies(response, identity);
+      return response;
     }
 
     // ✅ Get user ID if authenticated
@@ -55,87 +76,73 @@ export async function POST(request: NextRequest) {
       userId = payload?.userId ?? null;
     }
 
-    // getBehavior() always returns null server-side; device/session IDs unavailable here
-    const deviceId: string | null = null;
-    const sessionId: string | null = null;
-
-    // No-op server-side (window check inside); runs on client via hydration
-    BehaviorTracker.trackEvent(TRACKING_EVENTS.VIEW_CONTENT, {
-      content_ids: [productId],
-      content_name: productName,
-      content_category: category,
-      value: price,
-      currency: 'USD',
+    const duplicate = await isDuplicateClick({
+      query: click.query,
+      productId: click.productId,
+      userId,
+      deviceIdHash: identity.deviceIdHash,
+      sessionIdHash: identity.sessionIdHash,
     });
 
-    // ========================================
-    // ✅ PERSIST CLICK EVENT TO DATABASE
-    // ========================================
-    try {
-      await prisma.searchClickEvent.create({
-        data: {
-          query: query.toLowerCase().trim(),
-          productId,
-          position,
-          resultCount,
-          filters: filters.join(',') || null,
-          category: category ?? null,
-          price: price ?? null,
-          score: score ?? null,
-          userId: userId ?? null,
-          deviceId: deviceId ?? null,
-          sessionId: sessionId ?? null,
-          clickedAt: new Date(timestamp),
-        }
+    if (duplicate) {
+      const response = NextResponse.json({
+        success: true,
+        deduped: true,
+        message: 'Duplicate click ignored',
+        data: { query: click.query, productId: click.productId, position: click.position },
       });
-    } catch (dbError) {
-      // Non-fatal: don't fail the request if the DB write fails
-      console.error('Failed to persist click event:', dbError);
+      attachTrackingCookies(response, identity);
+      return response;
     }
 
-    // ========================================
-    // ✅ UPDATE AGGREGATED CLICK METRICS
-    // ========================================
-    try {
-      await prisma.searchClickMetrics.upsert({
-        where: {
-          query_productId: {
-            query: query.toLowerCase().trim(),
-            productId,
-          }
-        },
-        create: {
-          query: query.toLowerCase().trim(),
-          productId,
-          avgPosition: position,
-          clicks: 1,
-          conversions: 0,
-          revenue: 0,
-          resultCount,
-          lastClicked: new Date(timestamp),
-        },
-        update: {
-          clicks: { increment: 1 },
-          lastClicked: new Date(timestamp),
-        }
-      });
-    } catch (metricsError) {
-      // Non-fatal
-      console.error('Failed to update click metrics:', metricsError);
-    }
+    const eventValue = click.price ?? Number(activeProduct.price?.toString?.() ?? 0);
+    const catalogData = buildMetaCatalogData(
+      [{
+        productId: activeProduct.id,
+        productSku: activeProduct.sku,
+        quantity: 1,
+        price: eventValue,
+      }],
+      getServerMetaCatalogIdSource()
+    );
 
-    return NextResponse.json({
+    // No-op server-side (window check inside); safe for legacy behavior.
+    BehaviorTracker.trackEvent(TRACKING_EVENTS.VIEW_CONTENT, {
+      ...(catalogData ?? {}),
+      content_name: click.productName || activeProduct.name,
+      content_category: click.category || activeProduct.category?.name || undefined,
+      value: eventValue,
+      currency: 'BDT',
+    });
+
+    await recordValidatedSearchClick({
+      click,
+      userId,
+      identity,
+    });
+
+    const response = NextResponse.json({
       success: true,
       message: 'Click tracked successfully',
-      data: { query, productId, position, timestamp },
+      data: {
+        query: click.query,
+        productId: click.productId,
+        position: click.position,
+        resultCount: click.resultCount,
+        deduped: false,
+      },
     });
+    attachTrackingCookies(response, identity);
+    return response;
 
   } catch (error: any) {
     console.error('❌ Click tracking error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { success: false, error: 'Click tracking failed', message: error.message },
       { status: 500 }
     );
+    attachTrackingCookies(response, identity);
+    return response;
   }
 }
 
@@ -143,6 +150,13 @@ export async function POST(request: NextRequest) {
 // GET CLICK-THROUGH RATE (CTR) ANALYTICS
 // ========================================
 export async function GET(request: NextRequest) {
+  const { response } = await requireAdminPermission(
+    request,
+    ADMIN_PERMISSIONS.ANALYTICS_VIEW,
+    { message: 'Search click analytics are restricted to admin users with analytics access.' }
+  );
+  if (response) return response;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('query');
@@ -256,40 +270,15 @@ export async function GET(request: NextRequest) {
 }
 
 // ========================================
-// TRACK CONVERSION (Purchase attributed to a search)
+// PUBLIC CONVERSION UPDATE REMOVED
 // ========================================
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { query, productId, revenue } = body;
-
-    if (!query || !productId) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields: query, productId' },
-        { status: 400 }
-      );
-    }
-
-    await prisma.searchClickMetrics.update({
-      where: {
-        query_productId: {
-          query: query.toLowerCase().trim(),
-          productId,
-        }
-      },
-      data: {
-        conversions: { increment: 1 },
-        revenue: { increment: revenue ?? 0 },
-      }
-    });
-
-    return NextResponse.json({ success: true, message: 'Conversion tracked successfully' });
-
-  } catch (error: any) {
-    console.error('❌ Conversion tracking error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Conversion tracking failed', message: error.message },
-      { status: 500 }
-    );
-  }
+export async function PUT() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Public search conversion updates are disabled. Search conversions are attributed only by verified order/payment flows.',
+      code: 'SEARCH_CONVERSION_CLIENT_UPDATE_DISABLED',
+    },
+    { status: 410 }
+  );
 }

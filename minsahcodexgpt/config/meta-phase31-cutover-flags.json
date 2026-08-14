@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "phase": 31,
+  "item": "8.1",
+  "title": "Phase 31 social cutover feature flag contract",
+  "acceptedBooleanValues": [
+    "true",
+    "false",
+    "1",
+    "0",
+    "yes",
+    "no"
+  ],
+  "invalidValuePolicy": "Use the per-flag failSafeValue, report INVALID_VALUE_FAIL_SAFE, and fail shared environment validation.",
+  "flags": [
+    {
+      "name": "META_PLATFORM_LEADS",
+      "tier": "required",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Authorizes the Phase 31 platform Lead Ads path; false preserves legacy authority until cutover.",
+      "nextWiringItem": "8.3"
+    },
+    {
+      "name": "META_PLATFORM_INSTAGRAM",
+      "tier": "required",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Authorizes the Phase 31 platform Instagram read path; writes remain independently disabled.",
+      "nextWiringItem": "8.4"
+    },
+    {
+      "name": "META_PLATFORM_LEGACY_FACEBOOK",
+      "tier": "required",
+      "defaultValue": true,
+      "productionDefault": true,
+      "failSafeValue": true,
+      "purpose": "Keeps the legacy Facebook path available until observed platform cutover and rollback proof complete.",
+      "nextWiringItem": "8.5"
+    },
+    {
+      "name": "META_PLATFORM_SOCIAL_REALTIME",
+      "tier": "required",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Authorizes the normalized platform realtime bridge; false prevents unobserved bridge authority.",
+      "nextWiringItem": "8.5"
+    },
+    {
+      "name": "META_PLATFORM_SOCIAL_WEBHOOKS",
+      "tier": "required",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Authorizes platform social webhook processing authority; false preserves the pre-cutover path.",
+      "nextWiringItem": "8.3-8.5"
+    },
+    {
+      "name": "META_PLATFORM_INSTAGRAM_WRITES",
+      "tier": "optional",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Allows controlled Instagram standard reply writes only after the platform read path is verified.",
+      "nextWiringItem": "8.2/8.4"
+    },
+    {
+      "name": "META_PLATFORM_INSTAGRAM_PRIVATE_REPLY",
+      "tier": "optional",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Allows Instagram private reply writes as a separate one-shot policy-controlled capability.",
+      "nextWiringItem": "8.2/8.4"
+    },
+    {
+      "name": "META_PLATFORM_SOCIAL_MEDIA_DOWNLOADS",
+      "tier": "optional",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Allows bounded social media download and validation jobs after storage and scanner readiness.",
+      "nextWiringItem": "8.2/8.4"
+    },
+    {
+      "name": "META_PLATFORM_SOCIAL_REPLAY",
+      "tier": "optional",
+      "defaultValue": false,
+      "productionDefault": false,
+      "failSafeValue": false,
+      "purpose": "Allows approval-backed social replay after dedupe, policy, and rollback controls are verified.",
+      "nextWiringItem": "8.6"
+    }
+  ],
+  "compatibilityControls": [
+    {
+      "name": "META_PHASE31_LEAD_RUNTIME",
+      "acceptedValues": [
+        "LEGACY",
+        "SHADOW",
+        "PLATFORM",
+        "DOMAIN",
+        "LEGACY_ROLLBACK"
+      ],
+      "owner": "8.3",
+      "note": "Lead cutover selector reconciled in Item 8.3. SHADOW keeps legacy authority and runs side-effect-free platform parity; PLATFORM requires both canonical Lead and webhook flags."
+    },
+    {
+      "name": "META_PHASE31_INSTAGRAM_INBOUND_RUNTIME",
+      "acceptedValues": [
+        "LEGACY",
+        "SHADOW",
+        "PLATFORM",
+        "DOMAIN",
+        "LEGACY_ROLLBACK"
+      ],
+      "owner": "8.4",
+      "note": "Instagram read selector reconciled in Item 8.4. SHADOW keeps legacy authority and performs side-effect-free normalized parity; PLATFORM requires canonical Instagram and webhook flags."
+    },
+    {
+      "name": "META_PHASE31_INSTAGRAM_OUTBOUND_RUNTIME",
+      "acceptedValues": [
+        "LEGACY",
+        "SHADOW",
+        "PLATFORM",
+        "DOMAIN",
+        "LEGACY_ROLLBACK"
+      ],
+      "owner": "8.4",
+      "note": "Instagram outbound selector reconciled in Item 8.4. Standard/private writes remain independently fail-closed and are re-evaluated at worker execution time."
+    },
+    {
+      "name": "META_PHASE31_INSTAGRAM_MEDIA_RUNTIME",
+      "acceptedValues": [
+        "LEGACY",
+        "SHADOW",
+        "PLATFORM",
+        "DOMAIN",
+        "LEGACY_ROLLBACK"
+      ],
+      "owner": "8.4",
+      "note": "Instagram media selector reconciled in Item 8.4. Metadata persists while provider media downloads require the separate fail-closed media-download flag."
+    },
+    {
+      "name": "META_PHASE31_FACEBOOK_INBOX_RUNTIME",
+      "acceptedValues": [
+        "LEGACY",
+        "SHADOW",
+        "PLATFORM",
+        "DOMAIN",
+        "LEGACY_ROLLBACK"
+      ],
+      "owner": "8.5",
+      "note": "Facebook/realtime selector reconciled in Item 8.5. SHADOW keeps realtime legacy authority and mirrors signed input for side-effect-free platform parity; PLATFORM requires legacy disabled plus platform realtime and webhook flags."
+    },
+    {
+      "name": "META_PHASE31_PAGE_DOMAIN_RUNTIME",
+      "acceptedValues": [
+        "DOMAIN",
+        "LEGACY_ROLLBACK"
+      ],
+      "owner": "8.5",
+      "note": "Existing Page-domain selector retained until final Facebook cutover."
+    },
+    {
+      "name": "REALTIME_FACEBOOK_MODE",
+      "acceptedValues": [
+        "bridge",
+        "legacy"
+      ],
+      "owner": "8.5",
+      "note": "Realtime service selector; legacy mode still requires REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED=true."
+    }
+  ]
+}

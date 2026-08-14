@@ -1,345 +1,385 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronRight, Flame, Heart } from 'lucide-react';
+import { ChevronRight, Flame, TimerReset } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { Product } from '@/contexts/ProductsContext';
-import { formatPrice } from '@/utils/currency';
+import type { VariantOption } from '@/components/cart/VariantModal';
+import type { HomeSection, HomeSectionBrand } from '@/types/admin';
+import { defaultBrands, defaultHomeSections } from '@/lib/homeData';
+import { DESIGN_TOKEN_VALUES } from '@/lib/design-tokens';
 import HomeCountdownTimer from './HomeCountdownTimer';
-import { HomeBuyNowAction, HomeOverlayCartAction } from './HomeProductActions';
+import { productPath } from '@/lib/product-url';
+import HomeProductCard, { type HomeProductCardData } from './HomeProductCard';
 
-const brands = [
-  { name: 'MAC', logo: 'MAC' },
-  { name: 'Dior', logo: 'Dior' },
-  { name: 'Fenty Beauty', logo: 'FENTY\nBEAUTY' },
-  { name: 'Chanel', logo: 'CHANEL' },
-];
+type ProductSectionType = 'flash-sale' | 'new-arrivals' | 'for-you' | 'recommendations' | 'favourites' | 'brands';
 
-interface HomeProductCardItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  stock: number;
-  hasVariants: boolean;
+const PRODUCT_SECTION_TYPES = new Set<string>([
+  'flash-sale',
+  'new-arrivals',
+  'for-you',
+  'recommendations',
+  'favourites',
+  'brands',
+]);
+
+function toFiniteNumber(value: unknown, fallback = 0) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
 }
 
-function ProductImage({ src, alt, sizes = '(max-width: 640px) 50vw, 33vw' }: {
-  src: string;
-  alt: string;
-  sizes?: string;
+function normalizeVariantName(size: string, color: string) {
+  return [size, color].filter(Boolean).join(' / ') || 'Option';
+}
+
+function mapVariants(product: Product): VariantOption[] {
+  return (product.variants ?? [])
+    .map((variant) => {
+      const size = variant.size ?? '';
+      const color = variant.color ?? '';
+      const name = normalizeVariantName(size, color);
+      const price = toFiniteNumber(variant.price, product.price);
+      const stock = toFiniteNumber(variant.stock, 0);
+
+      return {
+        id: variant.id,
+        name,
+        price,
+        stock,
+        sku: variant.sku || undefined,
+        image: variant.image || null,
+        attributes: {
+          ...(size ? { size } : {}),
+          ...(color ? { color } : {}),
+        },
+      };
+    })
+    .filter((variant) => variant.id);
+}
+
+function getCardPrice(product: Product) {
+  const salePrice = toFiniteNumber(product.salePrice, 0);
+  const basePrice = toFiniteNumber(product.price, 0);
+  const price = salePrice > 0 && salePrice < basePrice ? salePrice : basePrice;
+  const originalPrice =
+    product.originalPrice && product.originalPrice > price
+      ? product.originalPrice
+      : salePrice > 0 && salePrice < basePrice
+        ? basePrice
+        : undefined;
+
+  return { price, originalPrice };
+}
+
+function isActiveFlashSale(product: Product, now = Date.now()) {
+  if (!product.flashSaleEligible || !product.offerStartDate || !product.offerEndDate) return false;
+
+  const startsAt = new Date(product.offerStartDate).getTime();
+  const endsAt = new Date(product.offerEndDate).getTime();
+
+  if (!Number.isFinite(startsAt) || !Number.isFinite(endsAt)) return false;
+
+  return startsAt <= now && endsAt >= now;
+}
+
+function getNearestOfferEnd(products: Product[]) {
+  const activeEndTimes = products
+    .filter((product) => isActiveFlashSale(product))
+    .map((product) => product.offerEndDate)
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value).getTime())
+    .filter(Number.isFinite);
+
+  if (activeEndTimes.length === 0) return null;
+
+  return new Date(Math.min(...activeEndTimes)).toISOString();
+}
+
+function mapProduct(product: Product): HomeProductCardData {
+  const variants = mapVariants(product);
+  const { price, originalPrice } = getCardPrice(product);
+  const discountPercentage = toFiniteNumber(product.discountPercentage, 0);
+
+  return {
+    id: product.id,
+    slug: product.slug,
+    urlSlug: product.urlSlug,
+    href: productPath(product),
+    name: product.name,
+    category: product.category,
+    brand: product.brand,
+    price,
+    originalPrice,
+    discount: discountPercentage > 0 ? discountPercentage : undefined,
+    image: product.image,
+    stock: toFiniteNumber(product.stock, 0),
+    lowStockThreshold: toFiniteNumber(product.lowStockThreshold, 5),
+    rating: product.rating,
+    reviews: product.reviews,
+    soldCount: product.soldCount,
+    isNew: product.isNew,
+    featured: product.featured,
+    flashSaleEligible: product.flashSaleEligible,
+    offerEndDate: product.offerEndDate,
+    hasVariants: variants.length > 0 || Boolean(product.variantCount && product.variantCount > 0),
+    variantCount: product.variantCount ?? variants.length,
+    variantsFullyLoaded: product.variantsFullyLoaded ?? true,
+    variants,
+  };
+}
+
+function getDefaultHref(type: string) {
+  const hrefs: Record<string, string> = {
+    'flash-sale': '/flash-sale',
+    'new-arrivals': '/new-arrivals',
+    'for-you': '/for-you',
+    recommendations: '/recommendations',
+    favourites: '/favourites',
+    brands: '/brands',
+  };
+
+  return hrefs[type] ?? '/shop';
+}
+
+function SectionHeader({ title, subtitle, href, cta = 'View all', icon, showViewAll = true }: {
+  title: string;
+  subtitle?: string;
+  href: string;
+  cta?: string;
+  icon?: ReactNode;
+  showViewAll?: boolean;
 }) {
-  const isUrl = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:');
-  if (isUrl) {
+  return (
+    <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="truncate text-lg font-bold text-minsah-dark">{title}</h2>
+        </div>
+        {subtitle && <p className="mt-1 text-xs font-medium text-minsah-secondary">{subtitle}</p>}
+      </div>
+      {showViewAll && (
+        <Link href={href} aria-label={`${cta} ${title}`} className="minsah-tap-target minsah-touch-target min-h-11 inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold text-minsah-primary hover:bg-minsah-accent/60">
+          {cta} <ChevronRight size={16} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function getProductSectionConfigs(sections?: HomeSection[]) {
+  const source = sections && sections.length > 0 ? sections : defaultHomeSections;
+  return source
+    .filter((section) => PRODUCT_SECTION_TYPES.has(section.type))
+    .filter((section) => section.isVisible !== false)
+    .sort((a, b) => a.order - b.order);
+}
+
+function selectedSet(section: HomeSection, key: 'selectedProductIds' | 'selectedBrandIds') {
+  return new Set((section.settings[key] ?? []).map((item) => item.toLowerCase()));
+}
+
+function filterSelectedProducts(products: HomeProductCardData[], section: HomeSection) {
+  const selected = selectedSet(section, 'selectedProductIds');
+  if (selected.size === 0) return null;
+
+  return products
+    .filter((product) => selected.has(product.id.toLowerCase()) || selected.has((product.slug ?? '').toLowerCase()) || selected.has((product.urlSlug ?? '').toLowerCase()))
+    .sort((a, b) => {
+      const selectedIds = section.settings.selectedProductIds ?? [];
+      const indexA = selectedIds.findIndex((id) => id === a.id || id === a.slug || id === a.urlSlug);
+      const indexB = selectedIds.findIndex((id) => id === b.id || id === b.slug || id === b.urlSlug);
+      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+    });
+}
+
+function sectionLimit(section: HomeSection, fallback: number) {
+  return Math.max(1, Math.min(24, section.settings.itemsToShow ?? fallback));
+}
+
+function getProductsForSection({
+  section,
+  cardProducts,
+  createdAtById,
+}: {
+  section: HomeSection;
+  cardProducts: HomeProductCardData[];
+  createdAtById: Map<string, string>;
+}) {
+  const manualProducts = filterSelectedProducts(cardProducts, section);
+  const type = section.type as ProductSectionType;
+  const limit = sectionLimit(section, type === 'flash-sale' || type === 'new-arrivals' ? 4 : 6);
+
+  if (manualProducts) return manualProducts.slice(0, limit);
+
+  if (type === 'new-arrivals') {
+    return [...cardProducts]
+      .sort((a, b) => {
+        const originalA = createdAtById.get(a.id) ?? '';
+        const originalB = createdAtById.get(b.id) ?? '';
+        return new Date(originalB).getTime() - new Date(originalA).getTime();
+      })
+      .slice(0, limit);
+  }
+
+  if (type === 'for-you') return cardProducts.slice(0, limit);
+
+  if (type === 'recommendations') {
+    return [...cardProducts]
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+      .slice(0, limit);
+  }
+
+  if (type === 'favourites') {
+    return [...cardProducts]
+      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
+      .slice(0, limit);
+  }
+
+  return [];
+}
+
+function gridClass(section: HomeSection) {
+  if (section.settings.layout === 'grid-3') return 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6';
+  if (section.settings.layout === 'grid-4') return 'grid grid-cols-2 gap-3 md:grid-cols-4';
+  return 'grid grid-cols-2 gap-3 md:grid-cols-4';
+}
+
+function ProductGrid({ section, products }: { section: HomeSection; products: HomeProductCardData[] }) {
+  if (products.length === 0) return null;
+
+  if (section.settings.layout === 'horizontal-scroll') {
     return (
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        className="object-cover rounded-inherit"
-        sizes={sizes}
-        loading="lazy"
-        quality={60}
-      />
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        {products.map((product) => (
+          <div key={product.id} className="w-44 shrink-0 sm:w-52">
+            <HomeProductCard product={product} showCategory={false} />
+          </div>
+        ))}
+      </div>
     );
   }
 
-  return <span className="text-4xl">{src}</span>;
-}
-
-function renderOverlayCart(product: HomeProductCardItem) {
-  return (
-    <HomeOverlayCartAction
-      productId={product.id}
-      productName={product.name}
-      productImage={product.image}
-      price={product.price}
-      stock={product.stock}
-      hasVariants={product.hasVariants}
-    />
-  );
-}
-
-function renderBuyNow(product: HomeProductCardItem, className: string) {
-  return (
-    <HomeBuyNowAction
-      productId={product.id}
-      productName={product.name}
-      productImage={product.image}
-      price={product.price}
-      stock={product.stock}
-      hasVariants={product.hasVariants}
-      className={className}
-    />
-  );
-}
-
-export default function HomeProductSections({ products }: { products: Product[] }) {
-  const activeProducts = products.filter((product) => product.status === 'active');
-  const filledStar = String.fromCharCode(9733);
-  const emptyStar = String.fromCharCode(9734);
-
-  const newArrivals = [...activeProducts]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 8)
-    .map((product) => ({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      sku: product.category,
-      stock: product.stock,
-      hasVariants: Boolean(product.variants?.length),
-    }));
-
-  const forYouProducts = activeProducts.slice(0, 4).map((product) => ({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    image: product.image,
-    stock: product.stock,
-    hasVariants: Boolean(product.variants?.length),
-  }));
-
-  const recommendations = [...activeProducts]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3)
-    .map((product) => ({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      rating: Math.round(product.rating),
-      reviews: product.reviews,
-      image: product.image,
-      stock: product.stock,
-      hasVariants: Boolean(product.variants?.length),
-    }));
-
-  const favourites = [...activeProducts]
-    .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
-    .slice(0, 3)
-    .map((product) => ({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      rating: Math.round(product.rating ?? 0),
-      reviews: product.reviews ?? 0,
-      image: product.image,
-      stock: product.stock,
-      hasVariants: Boolean(product.variants?.length),
-    }));
-
-  const flashSaleProducts = activeProducts
-    .filter((product) => product.originalPrice != null && product.originalPrice > product.price)
-    .slice(0, 4)
-    .map((product) => ({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      originalPrice: product.originalPrice as number,
-      discount: Math.round(((product.originalPrice as number - product.price) / (product.originalPrice as number)) * 100),
-      image: product.image,
-      stock: product.stock,
-      hasVariants: Boolean(product.variants?.length),
-    }));
+  const compact = section.settings.layout === 'grid-3';
 
   return (
-    <div className="min-h-screen bg-minsah-light pb-20">
-      <section className="px-4 py-6 bg-gradient-to-br from-amber-50 to-orange-50">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Flame className="text-orange-500" size={24} />
-            <h2 className="text-lg font-bold text-minsah-dark">Flash Sale</h2>
-          </div>
-          <Link href="/flash-sale" className="text-sm text-minsah-primary font-semibold">
-            Shop Now
-          </Link>
-        </div>
-
-        <HomeCountdownTimer />
-
-        <div className="grid grid-cols-2 gap-3">
-          {flashSaleProducts.map((product, index) => (
-            <div key={product.id} className="bg-white rounded-xl p-3 shadow-sm relative">
-              <Link href={`/products/${product.id}`}>
-                <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} />
-                  </div>
-                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                    {product.discount}%
-                  </div>
-                  {renderOverlayCart(product)}
-                </div>
-                <h3 className="text-xs font-semibold text-minsah-dark mb-1 line-clamp-2">{product.name}</h3>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-bold text-minsah-primary">{formatPrice(product.price)}</span>
-                  <span className="text-xs text-minsah-secondary line-through">
-                    {formatPrice(product.originalPrice)}
-                  </span>
-                </div>
-              </Link>
-              {renderBuyNow(product, 'w-full')}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 py-6 bg-white">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-minsah-dark">New Arrival</h2>
-          <Link href="/new-arrivals" aria-label="View all new arrivals" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
-            View all <ChevronRight size={16} />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          {newArrivals.slice(0, 4).map((product, index) => (
-            <div key={product.id} className="bg-minsah-accent rounded-2xl p-3">
-              <Link href={`/products/${product.id}`}>
-                <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} />
-                  </div>
-                  <div className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
-                    <Heart size={16} className="text-minsah-secondary" />
-                  </div>
-                  {renderOverlayCart(product)}
-                </div>
-                <h3 className="text-xs font-semibold text-minsah-dark mb-1 line-clamp-2">{product.name}</h3>
-                <p className="text-xs text-minsah-secondary mb-1">{product.sku}</p>
-                <span className="text-sm font-bold text-minsah-primary mb-2 block">
-                  {formatPrice(product.price)}
-                </span>
-              </Link>
-              {renderBuyNow(product, 'w-full')}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 py-6 bg-minsah-light">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-minsah-dark">For You</h2>
-          <Link href="/for-you" aria-label="View all products for you" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
-            View all <ChevronRight size={16} />
-          </Link>
-        </div>
-
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {forYouProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-2xl p-3 flex-shrink-0 w-36">
-              <Link href={`/products/${product.id}`}>
-                <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-minsah-accent rounded-xl flex items-center justify-center overflow-hidden mb-2 relative">
-                    <ProductImage src={product.image} alt={product.name} sizes="144px" />
-                  </div>
-                  <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm">
-                    <Heart size={14} className="text-minsah-secondary" />
-                  </div>
-                  {renderOverlayCart(product)}
-                </div>
-                <h3 className="text-xs font-semibold text-minsah-dark mb-1 line-clamp-2">{product.name}</h3>
-                <span className="text-sm font-bold text-minsah-primary block mb-2">
-                  {formatPrice(product.price)}
-                </span>
-              </Link>
-              {renderBuyNow(product, 'w-full')}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 py-6 bg-white">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-minsah-dark">Recommendation</h2>
-          <Link href="/recommendations" aria-label="View all recommendations" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
-            View all <ChevronRight size={16} />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          {recommendations.slice(0, 6).map((product) => (
-            <div key={product.id} className="bg-minsah-accent rounded-xl p-2">
-              <Link href={`/products/${product.id}`}>
-                <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-white rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
-                    <ProductImage src={product.image} alt={product.name} sizes="33vw" />
-                  </div>
-                  <div className="absolute top-1 right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
-                    <Heart size={12} className="text-minsah-secondary" />
-                  </div>
-                  {renderOverlayCart(product)}
-                </div>
-                <h3 className="text-[10px] font-semibold text-minsah-dark mb-1 line-clamp-2">{product.name}</h3>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-bold text-minsah-primary">{formatPrice(product.price)}</span>
-                </div>
-                <div className="flex items-center gap-1 mb-2">
-                  <div className="flex text-amber-700 text-[10px]">
-                    {filledStar.repeat(product.rating)}{emptyStar.repeat(5 - product.rating)}
-                  </div>
-                  <span className="text-[9px] font-medium text-minsah-dark/75">({product.reviews})</span>
-                </div>
-              </Link>
-              {renderBuyNow(product, 'w-full text-xs')}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 py-6 bg-minsah-light">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-minsah-dark">Favourite</h2>
-          <Link href="/favourites" aria-label="View all favourites" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
-            View all <ChevronRight size={16} />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          {favourites.slice(0, 6).map((product) => (
-            <div key={product.id} className="bg-white rounded-xl p-2">
-              <Link href={`/products/${product.id}`}>
-                <div className="relative mb-2">
-                  <div className="w-full aspect-square bg-minsah-accent rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
-                    <ProductImage src={product.image} alt={product.name} sizes="33vw" />
-                  </div>
-                  <div className="absolute top-1 right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
-                    <Heart size={12} className="text-red-500 fill-red-500" />
-                  </div>
-                  {renderOverlayCart(product)}
-                </div>
-                <h3 className="text-[10px] font-semibold text-minsah-dark mb-1 line-clamp-2">{product.name}</h3>
-                <span className="text-xs font-bold text-minsah-primary block mb-2">
-                  {formatPrice(product.price)}
-                </span>
-              </Link>
-              {renderBuyNow(product, 'w-full text-xs')}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 py-6 bg-white">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-minsah-dark">Browse Popular Brand</h2>
-          <Link href="/brands" aria-label="View all popular brands" className="text-sm text-minsah-primary font-semibold flex items-center gap-1">
-            View all <ChevronRight size={16} />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-4 gap-3">
-          {brands.map((brand) => (
-            <Link
-              key={brand.name}
-              href={`/brands/${brand.name.toLowerCase().replace(' ', '-')}`}
-              className="bg-white border-2 border-minsah-accent rounded-full aspect-square flex items-center justify-center p-2 hover:border-minsah-primary transition"
-            >
-              <span className="text-xs font-bold text-minsah-dark text-center whitespace-pre-line">
-                {brand.logo}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+    <div className={gridClass(section)}>
+      {products.map((product, index) => (
+        <HomeProductCard
+          key={product.id}
+          product={product}
+          priority={false}
+          variant={compact ? 'compact' : 'standard'}
+          showCategory={section.type !== 'flash-sale'}
+        />
+      ))}
     </div>
   );
+}
+
+function BrandsSection({ section, brands }: { section: HomeSection; brands: HomeSectionBrand[] }) {
+  const selected = selectedSet(section, 'selectedBrandIds');
+  const filteredBrands = (selected.size > 0
+    ? brands.filter((brand) => selected.has(brand.id.toLowerCase()) || selected.has(brand.slug.toLowerCase()) || selected.has(brand.name.toLowerCase()))
+    : brands)
+    .filter((brand) => brand.isVisible !== false)
+    .slice(0, sectionLimit(section, 4));
+
+  if (filteredBrands.length === 0) return null;
+
+  return (
+    <section className="minsah-fade-up px-4 py-6" style={{ backgroundColor: section.settings.backgroundColor || DESIGN_TOKEN_VALUES.surface.panel }}>
+      <SectionHeader
+        title={section.title}
+        subtitle={section.subtitle}
+        href={section.settings.viewAllHref || getDefaultHref(section.type)}
+        cta={section.settings.ctaText || 'View all'}
+        showViewAll={section.settings.showViewAll !== false}
+      />
+      <div className="grid grid-cols-4 gap-3">
+        {filteredBrands.map((brand) => (
+          <Link
+            key={brand.id}
+            href={`/brands/${brand.slug}`}
+            className="minsah-tap-target flex aspect-square items-center justify-center rounded-full border-2 border-minsah-accent bg-white p-2 transition hover:-translate-y-0.5 hover:border-minsah-primary hover:shadow-md"
+          >
+            <span className="whitespace-pre-line text-center text-xs font-bold text-minsah-dark">
+              {brand.logo || brand.name}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function HomeProductSections({
+  products,
+  sections,
+  brands = defaultBrands,
+}: {
+  products: Product[];
+  sections?: HomeSection[];
+  brands?: HomeSectionBrand[];
+}) {
+  const activeProducts = products.filter((product) => product.status === 'active');
+  const cardProducts = activeProducts.map(mapProduct);
+  const createdAtById = new Map(activeProducts.map((product) => [product.id, product.createdAt]));
+  const activeFlashSaleSourceProducts = activeProducts.filter((product) => isActiveFlashSale(product));
+  const activeFlashSaleIds = new Set(activeFlashSaleSourceProducts.map((product) => product.id));
+  const flashSaleEndsAt = getNearestOfferEnd(activeFlashSaleSourceProducts);
+  const sectionConfigs = getProductSectionConfigs(sections);
+
+  const renderedSections = sectionConfigs.map((section) => {
+    if (section.type === 'brands') {
+      return <BrandsSection key={section.id} section={section} brands={brands} />;
+    }
+
+    let sectionProducts = getProductsForSection({ section, cardProducts, createdAtById });
+    let icon: ReactNode = null;
+    let cta = section.settings.ctaText || 'View all';
+
+    if (section.type === 'flash-sale') {
+      sectionProducts = sectionProducts.length > 0 && (section.settings.selectedProductIds?.length ?? 0) > 0
+        ? sectionProducts.filter((product) => activeFlashSaleIds.has(product.id))
+        : activeFlashSaleSourceProducts.map(mapProduct);
+      sectionProducts = sectionProducts
+        .filter((product) => product.originalPrice != null && product.originalPrice > product.price)
+        .slice(0, sectionLimit(section, 4));
+      icon = <Flame className="text-orange-500" size={24} />;
+      cta = section.settings.ctaText || 'Shop Now';
+    }
+
+    if (sectionProducts.length === 0) return null;
+
+    return (
+      <section key={section.id} className="minsah-fade-up px-4 py-6" style={{ backgroundColor: section.settings.backgroundColor || undefined }}>
+        <SectionHeader
+          title={section.title}
+          subtitle={section.subtitle}
+          href={section.settings.viewAllHref || getDefaultHref(section.type)}
+          cta={cta}
+          icon={icon}
+          showViewAll={section.settings.showViewAll !== false}
+        />
+
+        {section.type === 'flash-sale' && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <HomeCountdownTimer endsAt={flashSaleEndsAt} />
+            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-orange-700 shadow-sm">
+              <TimerReset size={14} /> Active limited-time offers only
+            </div>
+          </div>
+        )}
+
+        <ProductGrid section={section} products={sectionProducts} />
+      </section>
+    );
+  }).filter(Boolean);
+
+  if (renderedSections.length === 0) return null;
+
+  return <div className="bg-minsah-light pb-20">{renderedSections}</div>;
 }

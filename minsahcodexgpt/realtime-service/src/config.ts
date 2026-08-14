@@ -1,17 +1,18 @@
 import 'dotenv/config'
 import { z } from 'zod'
+import { resolveFacebookRealtimeCutover } from '../../packages/meta-facebook-cutover-contract/src'
 
 const envSchema = z.object({
   PORT: z.string().default('3001').transform(Number),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z.string().min(1).optional(),
   REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
   FB_APP_ID: z.string().optional(),
-  FB_APP_SECRET: z.string().min(10, 'FB_APP_SECRET is required'),
-  FB_VERIFY_TOKEN: z.string().min(8, 'FB_VERIFY_TOKEN is required'),
-  FB_PAGE_ACCESS_TOKEN: z.string().min(10, 'FB_PAGE_ACCESS_TOKEN is required'),
+  FB_APP_SECRET: z.string().min(10).optional(),
+  FB_VERIFY_TOKEN: z.string().min(8).optional(),
+  FB_PAGE_ACCESS_TOKEN: z.string().min(10).optional(),
   FB_SYSTEM_USER_TOKEN: z.string().optional(),
-  FB_PAGE_ID: z.string().min(1, 'FB_PAGE_ID is required'),
+  FB_PAGE_ID: z.string().min(1).optional(),
   FB_GRAPH_API_VERSION: z.string().default('v22.0'),
   REALTIME_PUBLIC_BASE_URL: z.string().default('http://localhost:3001'),
   MEDIA_STORAGE_BACKEND: z.enum(['local', 'minio']).default('local'),
@@ -44,7 +45,7 @@ const envSchema = z.object({
     ),
   FB_MEDIA_RETRY_ENABLED: z
     .enum(['true', 'false'])
-    .default('true')
+    .default('false')
     .transform((value) => value === 'true'),
   FB_MEDIA_RETRY_POLL_MS: z
     .string()
@@ -88,7 +89,7 @@ const envSchema = z.object({
     ),
   FB_REPLAY_ENABLED: z
     .enum(['true', 'false'])
-    .default('true')
+    .default('false')
     .transform((value) => value === 'true'),
   FB_REPLAY_POLL_MS: z
     .string()
@@ -168,7 +169,7 @@ const envSchema = z.object({
     ),
   FB_OUTGOING_RETRY_ENABLED: z
     .enum(['true', 'false'])
-    .default('true')
+    .default('false')
     .transform((value) => value === 'true'),
   FB_OUTGOING_RETRY_POLL_MS: z
     .string()
@@ -212,7 +213,7 @@ const envSchema = z.object({
     ),
   FB_SYNC_ENABLED: z
     .enum(['true', 'false'])
-    .default('true')
+    .default('false')
     .transform((value) => value === 'true'),
   FB_SYNC_INTERVAL_MS: z
     .string()
@@ -246,11 +247,78 @@ const envSchema = z.object({
       (value) => Number.isFinite(value) && value >= 0,
       'FB_SYNC_MESSAGE_OVERLAP_MS must be at least 0'
     ),
+  META_PLATFORM_LEGACY_FACEBOOK: z
+    .enum(['true', 'false', '1', '0', 'yes', 'no'])
+    .default('true')
+    .transform((value) => ['true', '1', 'yes'].includes(value)),
+  META_PLATFORM_SOCIAL_REALTIME: z
+    .enum(['true', 'false', '1', '0', 'yes', 'no'])
+    .default('false')
+    .transform((value) => ['true', '1', 'yes'].includes(value)),
+  META_PLATFORM_SOCIAL_WEBHOOKS: z
+    .enum(['true', 'false', '1', '0', 'yes', 'no'])
+    .default('false')
+    .transform((value) => ['true', '1', 'yes'].includes(value)),
+  META_PHASE31_FACEBOOK_INBOX_RUNTIME: z
+    .enum(['LEGACY', 'SHADOW', 'PLATFORM', 'DOMAIN', 'LEGACY_ROLLBACK'])
+    .default('LEGACY'),
+  REALTIME_RUNTIME_FLAVOR: z.enum(['bridge', 'legacy']).default('bridge'),
+  REALTIME_FACEBOOK_MODE: z.enum(['bridge', 'legacy']).default('bridge'),
+  REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+  REALTIME_EVENT_DEDUPE_TTL_SECONDS: z
+    .string()
+    .default('86400')
+    .transform(Number)
+    .refine((value) => Number.isFinite(value) && value >= 60, 'REALTIME_EVENT_DEDUPE_TTL_SECONDS must be at least 60'),
+  REALTIME_EVENT_HISTORY_TTL_SECONDS: z
+    .string()
+    .default('3600')
+    .transform(Number)
+    .refine((value) => Number.isFinite(value) && value >= 60, 'REALTIME_EVENT_HISTORY_TTL_SECONDS must be at least 60'),
+  REALTIME_BRIDGE_SECRET: z.string().min(32).optional(),
+  REALTIME_INTERNAL_TIMEOUT_MS: z
+    .string()
+    .default('10000')
+    .transform(Number)
+    .refine((value) => Number.isFinite(value) && value >= 1000 && value <= 30000, 'REALTIME_INTERNAL_TIMEOUT_MS must be between 1000 and 30000'),
   WS_AUTH_SECRET: z.string().min(32, 'WS_AUTH_SECRET must be at least 32 chars'),
-  REPLY_API_SECRET: z.string().min(32, 'REPLY_API_SECRET must be at least 32 chars'),
+  REALTIME_METRICS_SECRET: z.string().min(32, 'REALTIME_METRICS_SECRET must be at least 32 chars'),
+  REPLY_API_SECRET: z.string().min(32).optional(),
   NEXTJS_INTERNAL_URL: z.string().default('http://localhost:3000'),
 }).superRefine((data, ctx) => {
-  if (data.MEDIA_STORAGE_BACKEND !== 'minio') {
+  const cutover = resolveFacebookRealtimeCutover({
+    META_PLATFORM_LEGACY_FACEBOOK: data.META_PLATFORM_LEGACY_FACEBOOK,
+    META_PLATFORM_SOCIAL_REALTIME: data.META_PLATFORM_SOCIAL_REALTIME,
+    META_PLATFORM_SOCIAL_WEBHOOKS: data.META_PLATFORM_SOCIAL_WEBHOOKS,
+    META_PHASE31_FACEBOOK_INBOX_RUNTIME: data.META_PHASE31_FACEBOOK_INBOX_RUNTIME,
+    REALTIME_FACEBOOK_MODE: data.REALTIME_FACEBOOK_MODE,
+    REALTIME_RUNTIME_FLAVOR: data.REALTIME_RUNTIME_FLAVOR,
+    REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED: data.REALTIME_FACEBOOK_LEGACY_ROLLBACK_ENABLED,
+  }, { role: 'REALTIME' })
+  const legacyEnabled = cutover.legacyDirectClientEnabled
+  if (!cutover.valid) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['META_PHASE31_FACEBOOK_INBOX_RUNTIME'], message: cutover.reasonCode })
+  }
+  if (legacyEnabled) {
+    for (const [key, value] of [
+      ['FB_APP_SECRET', data.FB_APP_SECRET],
+      ['FB_VERIFY_TOKEN', data.FB_VERIFY_TOKEN],
+      ['FB_PAGE_ACCESS_TOKEN', data.FB_PAGE_ACCESS_TOKEN],
+      ['FB_PAGE_ID', data.FB_PAGE_ID],
+      ['DATABASE_URL', data.DATABASE_URL],
+      ['REPLY_API_SECRET', data.REPLY_API_SECRET],
+    ] as const) {
+      if (!value) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: `${key} is required in legacy rollback mode` })
+    }
+  }
+  if ((cutover.realtimeBridgeEnabled || cutover.shadowPlatformEvaluationEnabled) && !data.REALTIME_BRIDGE_SECRET) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['REALTIME_BRIDGE_SECRET'], message: 'REALTIME_BRIDGE_SECRET is required in bridge mode' })
+  }
+
+  if (!legacyEnabled || data.MEDIA_STORAGE_BACKEND !== 'minio') {
     return
   }
 

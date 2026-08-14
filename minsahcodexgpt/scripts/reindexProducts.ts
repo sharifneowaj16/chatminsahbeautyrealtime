@@ -21,6 +21,7 @@ import 'dotenv/config';
 import prisma from '../lib/prisma';
 import { esClient, PRODUCT_INDEX, testConnection, productIndexMapping } from '../lib/elasticsearch';
 import { transformProductToES } from '../lib/search/productTransformer';
+import { ACTIVE_PRODUCT_PRISMA_WHERE } from '../lib/search/activeProductFilter';
 
 const BATCH_SIZE = 500;
 
@@ -63,8 +64,8 @@ async function reindex(): Promise<void> {
   await ensureIndex();
 
   // 3. Count products
-  const total = await prisma.product.count();
-  console.log(`Total products in database: ${total}\n`);
+  const total = await prisma.product.count({ where: ACTIVE_PRODUCT_PRISMA_WHERE });
+  console.log(`Total active products eligible for search indexing: ${total}\n`);
 
   if (total === 0) {
     console.log('No products found – nothing to index.');
@@ -78,6 +79,7 @@ async function reindex(): Promise<void> {
   // 4. Batch loop
   while (skip < total) {
     const products = await prisma.product.findMany({
+      where: ACTIVE_PRODUCT_PRISMA_WHERE,
       skip,
       take: BATCH_SIZE,
       include: productInclude,

@@ -1,42 +1,31 @@
-import { adminUnauthorizedResponse, getVerifiedAdmin } from '@/app/api/admin/_utils'
-import { NextRequest, NextResponse } from 'next/server'
-
-const REALTIME_SERVICE_URL =
-  process.env.REALTIME_SERVICE_INTERNAL_URL ?? 'http://realtime-service:3001'
-const REPLY_API_SECRET = process.env.REPLY_API_SECRET ?? ''
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminPermission } from '@/app/api/admin/_utils';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { getMetaBusinessConfig } from '@/lib/meta-business/config';
+import { requestFacebookInboxSyncProduction } from '@/lib/meta-platform/domains/facebook/legacy-bridge';
 
 export async function POST(request: NextRequest) {
-  const admin = await getVerifiedAdmin(request)
-  if (!admin) {
-    return adminUnauthorizedResponse()
-  }
-
-  if (!REPLY_API_SECRET) {
+  const { admin, response } = await requireAdminPermission(request, ADMIN_PERMISSIONS.META_SOCIAL_OPERATE);
+  if (response) return response;
+  const body = await request.json().catch(() => ({})) as Readonly<Record<string, unknown>>;
+  const configured = getMetaBusinessConfig();
+  const pageId = typeof body.pageId === 'string' ? body.pageId.trim() : configured.pageId?.trim() ?? '';
+  if (!pageId) return NextResponse.json({ error: 'META_PAGE_NOT_CONFIGURED' }, { status: 409 });
+  try {
+    const queued = await requestFacebookInboxSyncProduction({ pageId, actorId: admin.adminId });
+    return NextResponse.json({
+      ok: true,
+      queued: queued.accepted,
+      deduplicated: queued.deduplicated,
+      requestId: queued.requestId,
+      synced: 0,
+      conversations: 0,
+    }, { status: queued.accepted ? 202 : 503 });
+  } catch (error) {
+    const candidate = error as { code?: unknown };
     return NextResponse.json(
-      { error: 'REPLY_API_SECRET is not configured' },
-      { status: 500 }
-    )
+      { error: typeof candidate.code === 'string' ? candidate.code : 'META_FACEBOOK_INBOX_SYNC_REQUEST_FAILED' },
+      { status: 400 },
+    );
   }
-
-  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
-
-  const response = await fetch(`${REALTIME_SERVICE_URL}/sync/facebook`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-secret': REPLY_API_SECRET,
-    },
-    body: JSON.stringify(body),
-  })
-
-  const data = (await response.json().catch(() => null)) as Record<string, unknown> | null
-
-  if (!response.ok) {
-    return NextResponse.json(
-      data ?? { error: 'Facebook inbox sync failed' },
-      { status: response.status }
-    )
-  }
-
-  return NextResponse.json(data ?? { ok: true })
 }

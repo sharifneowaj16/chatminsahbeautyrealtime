@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /**
  * SocialMediaInboxChat.tsx — Ultra-modern 2026 edition
@@ -27,6 +27,16 @@ import {
 } from 'react';
 import { fixEncoding } from '@/lib/fixEncoding';
 import { useInboxSocket, type InboxWsEvent } from '@/hooks/useInboxSocket';
+import { Alert } from '@/components/ui/Alert';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Drawer } from '@/components/ui/Drawer';
+import { Input } from '@/components/ui/Input';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { useToast } from '@/components/ui/ToastProvider';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -77,6 +87,29 @@ export interface SocialMessage {
   isIncoming: boolean;
 }
 
+interface ApiAdminFailure {
+  code: string;
+  classification?: string;
+  summary?: string;
+  retryable?: boolean;
+  reconciliationRequired?: boolean;
+  retryAt?: string;
+}
+
+interface ApiInboxProcessing {
+  status: 'READY' | 'PROCESSING' | 'BLOCKED' | string;
+  reasonCode: string;
+  failure?: ApiAdminFailure | null;
+}
+
+interface ApiReplyEligibility {
+  allowed: boolean;
+  policy: string;
+  reasonCode: string;
+  evaluatedAt: string;
+  expiresAt: string | null;
+}
+
 interface ApiRecord {
   id: string;
   externalId?: string | null;
@@ -90,6 +123,8 @@ interface ApiRecord {
   isRead: boolean;
   timestamp: string;
   isIncoming: boolean;
+  processing?: ApiInboxProcessing;
+  failure?: ApiAdminFailure | null;
   attachments?: Array<{
     id: string;
     type: string;
@@ -112,6 +147,9 @@ interface ApiConversationRecord {
   latestMessage: ApiRecord;
   unreadCount: number;
   searchText: string;
+  replyEligibility: ApiReplyEligibility | null;
+  processing: ApiInboxProcessing | null;
+  failure: ApiAdminFailure | null;
 }
 
 interface ApiPageInfo {
@@ -137,6 +175,9 @@ interface Conversation {
   latestMessage: SocialMessage;
   unreadCount: number;
   searchText: string;
+  replyEligibility: ApiReplyEligibility | null;
+  processing: ApiInboxProcessing | null;
+  failure: ApiAdminFailure | null;
 }
 
 interface DraftAttachment {
@@ -153,10 +194,6 @@ interface UploadedDraftAttachment {
   mimeType?: string;
   thumbnail?: string;
 }
-
-type ToastState =
-  | { type: 'success' | 'error'; message: string }
-  | null;
 
 type ClientProfile = {
   platform: 'facebook' | 'instagram' | 'whatsapp' | 'youtube';
@@ -207,7 +244,7 @@ interface SyncProgress {
 }
 
 type ConnectionStatus = 'connecting' | 'live' | 'polling' | 'offline';
-const MOBILE_MEDIA_QUERY = '(max-width: 639px)';
+const MOBILE_MEDIA_QUERY = '(max-width: 39.9375rem)';
 const CONVERSATION_PAGE_SIZE = 40;
 const THREAD_MESSAGE_LIMIT = 250;
 const CONVERSATION_ITEM_HEIGHT = 77;
@@ -265,6 +302,9 @@ function mapConversationRecord(record: ApiConversationRecord): Conversation {
     latestMessage,
     unreadCount: record.unreadCount,
     searchText: record.searchText,
+    replyEligibility: record.replyEligibility ?? null,
+    processing: record.processing ?? null,
+    failure: record.failure ?? record.processing?.failure ?? null,
   };
 }
 
@@ -282,6 +322,9 @@ function buildConversationSummary(items: SocialMessage[]): Conversation {
     participant,
     latestMessage,
     unreadCount: sorted.filter((message) => message.isIncoming && message.status === 'unread').length,
+    replyEligibility: null,
+    processing: null,
+    failure: null,
     searchText: sorted
       .map((message) => [
         message.sender.name,
@@ -347,6 +390,17 @@ function upsertConversationFromMessage(
     participant,
     latestMessage,
     unreadCount,
+    replyEligibility: message.platform === 'facebook' && message.isIncoming
+      ? {
+          allowed: true,
+          policy: 'FACEBOOK_MESSENGER_24H',
+          reasonCode: 'REPLY_WINDOW_OPEN',
+          evaluatedAt: new Date().toISOString(),
+          expiresAt: new Date(new Date(message.timestamp).getTime() + 24 * 60 * 60 * 1_000).toISOString(),
+        }
+      : existing?.replyEligibility ?? null,
+    processing: existing?.processing ?? null,
+    failure: existing?.failure ?? null,
     searchText: [
       existing?.searchText ?? '',
       participant.name,
@@ -395,7 +449,7 @@ function sortMessagesChronologically(messages: SocialMessage[]) {
   );
 }
 
-function fmtTime(ts: string) {
+function formatConvTime(ts: string) {
   const d = new Date(ts);
   const now = new Date();
   if (d.toDateString() === now.toDateString())
@@ -406,7 +460,7 @@ function fmtTime(ts: string) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-function fmtDivider(ts: string) {
+function dayLabel(ts: string) {
   const d = new Date(ts);
   const now = new Date();
   const y = new Date(now);
@@ -414,6 +468,20 @@ function fmtDivider(ts: string) {
   if (d.toDateString() === now.toDateString()) return 'Today';
   if (d.toDateString() === y.toDateString()) return 'Yesterday';
   return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function timeOnly(ts: string) {
+  return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function preview(message: SocialMessage) {
+  if (message.content.text) return fixEncoding(message.content.text);
+  const media = message.content.media?.[0];
+  if (!media) return '';
+  if (media.type === 'image') return '📷 Photo';
+  if (media.type === 'video') return '🎥 Video';
+  if (media.type === 'audio') return '🎤 Voice message';
+  return `📎 ${media.fileName ?? 'Attachment'}`;
 }
 
 function sameDay(a: string, b: string) {
@@ -455,7 +523,7 @@ function normalizeOutgoingStatus(
   return 'sent';
 }
 
-function getOutgoingStatusLabel(status: SocialMessage['status']) {
+function deliveryStatusLabel(status: SocialMessage['status']) {
   switch (normalizeOutgoingStatus(status)) {
     case 'sending':
       return 'Sending...';
@@ -550,94 +618,95 @@ function playNotificationSound() {
 
 // ─────────────────────────────────────── platform config ──
 
-const PLATFORM_CFG: Record<string, { color: string; label: string; name: string }> = {
-  facebook:  { color: '#1877f2', label: 'f',  name: 'Facebook' },
-  instagram: { color: '#e1306c', label: '▲',  name: 'Instagram' },
-  whatsapp:  { color: '#25d366', label: 'W',  name: 'WhatsApp' },
-  youtube:   { color: '#ff0000', label: '▶',  name: 'YouTube' },
+const PLATFORM_CFG: Record<string, { label: string; name: string; tone: 'info' | 'success' | 'warning' | 'danger' | 'neutral' }> = {
+  facebook: { label: 'f', name: 'Facebook', tone: 'info' },
+  instagram: { label: 'IG', name: 'Instagram', tone: 'warning' },
+  whatsapp: { label: 'WA', name: 'WhatsApp', tone: 'success' },
+  youtube: { label: 'YT', name: 'YouTube', tone: 'danger' },
 };
 
-function PlatBadge({ platform, size = 18 }: { platform: string; size?: number }) {
-  const cfg = PLATFORM_CFG[platform] ?? PLATFORM_CFG.facebook;
+function PlatBadge({ platform }: { platform: string; size?: number }) {
+  const config = PLATFORM_CFG[platform] ?? PLATFORM_CFG.facebook;
   return (
-    <span style={{
-      width: size, height: size, borderRadius: '50%',
-      background: cfg.color, color: '#fff',
-      fontSize: size * 0.52, fontWeight: 800,
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0, lineHeight: 1, fontFamily: 'sans-serif',
-      boxShadow: '0 0 0 2px #fff',
-    }}>
-      {cfg.label}
-    </span>
+    <Badge
+      tone={config.tone}
+      size="sm"
+      className="min-w-7 justify-center px-1.5"
+      aria-label={config.name}
+      title={config.name}
+    >
+      {config.label}
+    </Badge>
   );
 }
 
 // ──────────────────────────────────────────────────── Avatar ──
 
-function Avatar({ src, name, size = 44, online }: { src?: string; name: string; size?: number; online?: boolean }) {
-  const [err, setErr] = useState(false);
-  const colors = ['#1877f2', '#e1306c', '#25d366', '#8b5cf6', '#f59e0b'];
-  const color = colors[name.charCodeAt(0) % colors.length];
+function Avatar({ src, name, online }: { src?: string; name: string; size?: number; online?: boolean }) {
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
-      {src && !err ? (
-        <img src={src} alt={name} onError={() => setErr(true)}
-          style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover' }} />
+    <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-visible rounded-full bg-minsah-surface-accent text-sm font-black text-minsah-text-link">
+      {src && !imageFailed ? (
+        <img
+          src={src}
+          alt={`${name} profile photo`}
+          onError={() => setImageFailed(true)}
+          className="h-11 w-11 rounded-full object-cover"
+        />
       ) : (
-        <div style={{
-          width: size, height: size, borderRadius: '50%',
-          background: `linear-gradient(135deg, ${color}dd, ${color}88)`,
-          color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: size * 0.38, fontWeight: 700, letterSpacing: '-0.5px',
-        }}>
-          {initials(name)}
-        </div>
+        <span aria-hidden="true">{initials(name)}</span>
       )}
-      {online !== undefined && (
-        <span style={{
-          position: 'absolute', bottom: 1, right: 1,
-          width: size * 0.28, height: size * 0.28, borderRadius: '50%',
-          background: online ? '#22c55e' : '#94a3b8',
-          border: '2px solid #fff',
-        }} />
-      )}
-    </div>
+      {online !== undefined ? (
+        <span
+          className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-minsah-surface-panel ${
+            online ? 'bg-minsah-status-success-text' : 'bg-minsah-text-subtle'
+          }`}
+          aria-label={online ? 'Online' : 'Offline'}
+        />
+      ) : null}
+    </span>
   );
 }
 
 // ─────────────────────────────────────── ConnectionDot ──
 
 function ConnectionDot({ status }: { status: ConnectionStatus }) {
-  const map = {
-    connecting: { color: '#f59e0b', label: 'Connecting…' },
-    live:       { color: '#22c55e', label: 'Live' },
-    polling:    { color: '#3b82f6', label: 'Polling' },
-    offline:    { color: '#ef4444', label: 'Offline' },
-  };
-  const { color, label } = map[status];
+  const config = {
+    connecting: { tone: 'warning' as const, label: 'Connecting…', icon: RefreshCw },
+    live: { tone: 'success' as const, label: 'Live', icon: Wifi },
+    polling: { tone: 'info' as const, label: 'Polling', icon: RefreshCw },
+    offline: { tone: 'danger' as const, label: 'Offline', icon: WifiOff },
+  }[status];
+  const Icon = config.icon;
+
   return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
-      <span style={{
-        width: 7, height: 7, borderRadius: '50%', background: color,
-        boxShadow: status === 'live' ? `0 0 0 3px ${color}33` : 'none',
-        animation: status === 'live' ? 'pulse 2s infinite' : 'none',
-        display: 'inline-block',
-      }} />
-      {label}
-    </span>
+    <Badge tone={config.tone} leadingVisual={<Icon className="h-3.5 w-3.5" />}>
+      {config.label}
+    </Badge>
   );
 }
 
 // ────────────────────────────────────────── main component ──
 
-export default function SocialMediaInboxChat() {
+export interface SocialMediaInboxChatProps {
+  className?: string;
+  initialPlatform?: 'all' | SocialMessage['platform'];
+  title?: string;
+  description?: string;
+}
+
+export default function SocialMediaInboxChat({
+  className = '',
+  initialPlatform = 'facebook',
+  title = 'Social inbox',
+  description,
+}: SocialMediaInboxChatProps = {}) {
   const [messages, setMessages] = useState<SocialMessage[]>([]);
   const [conversationItems, setConversationItems] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
-  const [filterPlatform, setFilterPlatform] = useState('facebook');
+  const [filterPlatform, setFilterPlatform] = useState<string>(initialPlatform);
   const [search, setSearch] = useState('');
   const [initialLoading, setInitialLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -668,7 +737,7 @@ export default function SocialMediaInboxChat() {
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const aiSuggestionsAvailable = false;
 
-  const [toast, setToast] = useState<ToastState>(null);
+  const { pushToast } = useToast();
   const [showClientDetails, setShowClientDetails] = useState(false);
   const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null);
   const [clientProfileDraft, setClientProfileDraft] = useState<ClientProfile | null>(null);
@@ -701,12 +770,6 @@ export default function SocialMediaInboxChat() {
   const productSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const productSearchAbortRef = useRef<AbortController | null>(null);
   selectedRef.current = selected;
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = window.setTimeout(() => setToast(null), 2800);
-    return () => window.clearTimeout(t);
-  }, [toast]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -813,7 +876,7 @@ export default function SocialMediaInboxChat() {
         params.set('messageCursor', options.cursor);
       }
 
-      const response = await fetch(`/api/social/messages?${params}`, {
+      const response = await fetch(`/api/admin/inbox/messages?${params}`, {
         cache: 'no-store',
       });
       const data = (await response.json()) as {
@@ -888,7 +951,7 @@ export default function SocialMediaInboxChat() {
           params.set('conversationCursor', options.cursor);
         }
 
-        const response = await fetch(`/api/social/messages?${params}`, {
+        const response = await fetch(`/api/admin/inbox/messages?${params}`, {
           cache: 'no-store',
         });
         const data = (await response.json()) as {
@@ -933,7 +996,7 @@ export default function SocialMediaInboxChat() {
       if (filterPlatform !== 'all') params.set('platform', filterPlatform);
       params.set('limit', '300');
       const response = await fetch(
-        `/api/social/messages${params.toString() ? `?${params}` : ''}`,
+        `/api/admin/inbox/messages${params.toString() ? `?${params}` : ''}`,
         { cache: 'no-store' }
       );
       const data = (await response.json()) as { messages: ApiRecord[]; unreadCount: number };
@@ -984,8 +1047,15 @@ export default function SocialMediaInboxChat() {
   }, [loadDeadLetterCount]);
 
   const handleWsEvent = useCallback((event: InboxWsEvent) => {
+    if (event.type === 'pong' || event.type === 'connected' || event.type === 'subscribed' || event.type === 'connection_health_changed') return;
+
+    if (event.type === 'refresh_required') {
+      if (filterPlatform !== 'all' && filterPlatform !== event.platform) return;
+      void fetchMessages(false);
+      return;
+    }
+
     if (filterPlatform !== 'all' && filterPlatform !== 'facebook') return;
-    if (event.type === 'pong' || event.type === 'connected' || event.type === 'subscribed') return;
 
     if (event.type === 'conversation_read') {
       pendingReadRef.current.delete(event.conversationId);
@@ -1250,6 +1320,10 @@ export default function SocialMediaInboxChat() {
     () => conversations.find((c) => c.conversationId === selected) ?? null,
     [conversations, selected]
   );
+  const replyAllowed = activeConversation?.platform === 'facebook'
+    && activeConversation.replyEligibility?.allowed === true;
+  const replyBlockReason = activeConversation?.replyEligibility?.reasonCode
+    ?? 'REPLY_ELIGIBILITY_UNAVAILABLE';
 
   const threadMessages = useMemo(
     () => selected
@@ -1292,7 +1366,7 @@ export default function SocialMediaInboxChat() {
     } catch (e) {
       setClientProfile(null);
       setClientProfileDraft(null);
-      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Failed to load client details' });
+      pushToast({ tone: 'danger', description: e instanceof Error ? e.message : 'Failed to load client details' });
     } finally {
       setClientProfileLoading(false);
     }
@@ -1308,7 +1382,7 @@ export default function SocialMediaInboxChat() {
     try {
       const res = await fetch('/api/admin/inbox/client-profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
         body: JSON.stringify(clientProfileDraft),
       });
       const data = (await parseApiResponse<{ profile?: ClientProfile; error?: string }>(res)) as
@@ -1320,10 +1394,10 @@ export default function SocialMediaInboxChat() {
       const profile = data?.profile ?? null;
       setClientProfile(profile);
       setClientProfileDraft(profile ? { ...profile } : clientProfileDraft);
-      setToast({ type: 'success', message: 'Client shipping details saved' });
+      pushToast({ tone: 'success', description: 'Client shipping details saved' });
       setShowClientDetails(false);
     } catch (e) {
-      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Failed to save client details' });
+      pushToast({ tone: 'danger', description: e instanceof Error ? e.message : 'Failed to save client details' });
     } finally {
       setClientProfileSaving(false);
     }
@@ -1359,7 +1433,7 @@ export default function SocialMediaInboxChat() {
         return;
       }
       setProductSearchResults([]);
-      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Product search failed' });
+      pushToast({ tone: 'danger', description: e instanceof Error ? e.message : 'Product search failed' });
     } finally {
       setProductSearchLoading(false);
     }
@@ -1395,7 +1469,11 @@ export default function SocialMediaInboxChat() {
   const sendProductCard = useCallback(async () => {
     if (!selectedProductDraft || sendingProduct || !activeConversation || !selected) return;
     if (activeConversation.platform !== 'facebook') {
-      setToast({ type: 'error', message: 'Product sending currently supports Facebook only.' });
+      pushToast({ tone: 'danger', description: 'Product sending currently supports Facebook only.' });
+      return;
+    }
+    if (activeConversation.replyEligibility?.allowed !== true) {
+      pushToast({ tone: 'danger', description: `Reply blocked: ${activeConversation.replyEligibility?.reasonCode ?? 'REPLY_ELIGIBILITY_UNAVAILABLE'}` });
       return;
     }
 
@@ -1404,7 +1482,7 @@ export default function SocialMediaInboxChat() {
     const qty = Math.max(1, Math.min(99, selectedProductDraft.quantity || 1));
     const stock = variant?.stock ?? selectedProductDraft.product.stock;
     if (stock <= 0) {
-      setToast({ type: 'error', message: 'This product is out of stock.' });
+      pushToast({ tone: 'danger', description: 'This product is out of stock.' });
       return;
     }
 
@@ -1452,7 +1530,7 @@ export default function SocialMediaInboxChat() {
     try {
       const res = await fetch('/api/admin/inbox/reply', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
         body: JSON.stringify({
           type: 'messenger',
           recipientPsid: activeConversation.participant.id,
@@ -1470,11 +1548,11 @@ export default function SocialMediaInboxChat() {
         );
       }
 
-      setToast({ type: 'success', message: 'Product sent to client' });
+      pushToast({ tone: 'success', description: 'Product sent to client' });
       setShowProductDrawer(false);
       setSelectedProductDraft(null);
     } catch (e) {
-      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Failed to send product' });
+      pushToast({ tone: 'danger', description: e instanceof Error ? e.message : 'Failed to send product' });
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       void fetchMessages(false);
     } finally {
@@ -1694,9 +1772,9 @@ export default function SocialMediaInboxChat() {
     }
     void (async () => {
       try {
-        const response = await fetch('/api/social/messages', {
+        const response = await fetch('/api/admin/inbox/messages', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
           body: JSON.stringify({
             conversationId: selected,
             platform: activeConversation.platform,
@@ -1739,6 +1817,10 @@ export default function SocialMediaInboxChat() {
 
   const send = async () => {
     if ((!replyText.trim() && !drafts.length) || sending || !activeConversation) return;
+    if (activeConversation.replyEligibility?.allowed !== true) {
+      setReplyError(`Reply blocked: ${activeConversation.replyEligibility?.reasonCode ?? 'REPLY_ELIGIBILITY_UNAVAILABLE'}`);
+      return;
+    }
 
     const thread = threadMessages;
     const target = [...thread].reverse().find((m) => m.isIncoming) ?? thread[thread.length - 1];
@@ -1820,6 +1902,7 @@ export default function SocialMediaInboxChat() {
 
             const uploadRes = await fetch('/api/admin/social/upload', {
               method: 'POST',
+              headers: { 'X-Admin-Request': '1' },
               body: formData,
             });
 
@@ -1852,7 +1935,7 @@ export default function SocialMediaInboxChat() {
 
       const res = await fetch('/api/admin/inbox/reply', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
         body: JSON.stringify({
           type: target.type === 'comment' ? 'comment' : 'messenger',
           commentId: target.type === 'comment' ? target.externalId : undefined,
@@ -2004,7 +2087,7 @@ export default function SocialMediaInboxChat() {
       }));
       const res = await fetch('/api/admin/inbox/ai-suggest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -2048,7 +2131,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
     try {
       const res = await fetch('/api/admin/inbox/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
         body: JSON.stringify({}),
       });
       const data = (await res.json().catch(() => null)) as {
@@ -2118,1636 +2201,708 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
 
   // ─────────────────────────────────────────────────── render ──
 
-  const PLATFORM_TABS = [
-    { id: 'facebook', label: 'FB' },
-    { id: 'instagram', label: 'IG' },
-    { id: 'whatsapp', label: 'WA' },
+  const platformTabs = [
+    { id: 'facebook', label: 'Facebook' },
+    { id: 'instagram', label: 'Instagram' },
+    { id: 'whatsapp', label: 'WhatsApp' },
     { id: 'all', label: 'All' },
   ];
 
+  const activePlatformName = activeConversation
+    ? (PLATFORM_CFG[activeConversation.platform]?.name ?? activeConversation.platform)
+    : null;
+
   if (initialLoading) {
     return (
-      <div style={{
-        display: 'flex', height: '100%', width: '100%',
-        alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(135deg, #fdf8f5 0%, #f5ede6 100%)',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%',
-            border: '3px solid #f0dfd4',
-            borderTopColor: '#64320D',
-            animation: 'spin 0.8s linear infinite',
-            margin: '0 auto 12px',
-          }} />
-          <p style={{ fontSize: 13, color: '#8E6545', fontWeight: 500 }}>Loading inbox…</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } } @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
-      </div>
+      <LoadingState
+        className="h-full rounded-none border-0"
+        label="Loading inbox…"
+        description="Fetching conversations and recent messages."
+      />
     );
   }
 
   return (
-    <div style={{
-      display: 'flex', height: '100%', width: '100%', overflow: 'hidden',
-      fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
-      background: 'radial-gradient(circle at top left, #e8f5e9 0%, #f1f8e9 35%, #f6fbf7 100%)',
-      color: '#1f2937',
-    }}>
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg) } }
-        @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)} 70%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes slideDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 7px; height: 7px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(123, 84, 54, 0.22); border-radius: 999px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(123, 84, 54, 0.34); }
-        .conv-item:hover { background: rgba(255,255,255,0.72) !important; border-color: rgba(117,74,37,0.16) !important; transform: translateY(-1px); }
-        .conv-item-active { background: linear-gradient(180deg, #ffffff 0%, #fbf4ec 100%) !important; border-color: rgba(100,50,13,0.28) !important; box-shadow: 0 12px 26px rgba(72,43,18,0.08); }
-      `}</style>
-
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          top: 18,
-          right: 18,
-          zIndex: 1000,
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-            padding: '12px 14px',
-            borderRadius: 16,
-            border: `1px solid ${toast.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-            background: toast.type === 'success' ? '#f0fdf4' : '#fef2f2',
-            color: toast.type === 'success' ? '#166534' : '#991b1b',
-            boxShadow: '0 18px 30px rgba(0,0,0,0.10)',
-            maxWidth: 360,
-            fontSize: 13,
-            fontWeight: 800,
-          }}>
-            <span style={{
-              width: 10,
-              height: 10,
-              borderRadius: 999,
-              marginTop: 4,
-              background: toast.type === 'success' ? '#22c55e' : '#ef4444',
-              flexShrink: 0,
-            }} />
-            <span style={{ lineHeight: 1.35 }}>{toast.message}</span>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════ SIDEBAR ═══════════════════════════ */}
-      <aside style={{
-        display: isMobile && showChat ? 'none' : 'flex',
-        flexDirection: 'column',
-        width: isMobile ? '100%' : 372,
-        flexShrink: 0,
-        padding: isMobile ? 12 : 18,
-        gap: 14,
-        height: '100%',
-      }}
+    <section className={`flex h-full min-h-0 w-full overflow-hidden bg-minsah-surface-page text-minsah-text-primary ${className}`} aria-label="Social media inbox">
+      <aside
+        className={`${showChat && isMobile ? 'hidden' : 'flex'} min-h-0 w-full flex-col border-r border-minsah-border-subtle bg-minsah-surface-panel sm:flex sm:w-80 lg:w-96`}
+        aria-label="Conversation list"
       >
-        {/* Brand header */}
-        <div style={{
-          background: 'linear-gradient(160deg, rgba(7,94,84,0.96) 0%, rgba(18,140,126,0.94) 62%, rgba(37,211,102,0.9) 100%)',
-          padding: '18px 18px 16px',
-          borderRadius: 28,
-          boxShadow: '0 20px 45px rgba(47, 24, 10, 0.20)',
-          flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-              <a href="/admin" style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 38, height: 38, borderRadius: 14,
-                background: 'rgba(255,255,255,0.09)', color: '#fff4ec',
-                textDecoration: 'none',
-                flexShrink: 0,
-              }}>
-                <ArrowLeft size={16} />
-              </a>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,244,236,0.74)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Customer Operations</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#fff4ec', lineHeight: 1.1, marginTop: 3 }}>Minsah Inbox</div>
-                {unreadCount > 0 && (
-                  <div style={{ fontSize: 11, color: 'rgba(255,230,210,0.9)', marginTop: 4 }}>
-                    {unreadCount} unread
-                  </div>
-                )}
+        <header className="shrink-0 border-b border-minsah-border-subtle px-4 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-minsah-text-link" aria-hidden="true" />
+                <h1 className="truncate text-lg font-black">{title}</h1>
+                {unreadCount > 0 ? <Badge tone="danger">{unreadCount} unread</Badge> : null}
+              </div>
+              {description ? <p className="mt-1 text-sm text-minsah-text-muted">{description}</p> : null}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <ConnectionDot status={connectionStatus} />
+                {deadLetterCount > 0 ? <Badge tone="warning">{deadLetterCount} delivery issues</Badge> : null}
               </div>
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {/* Notification toggle */}
-              <button
-                onClick={() => notificationsEnabled ? setNotificationsEnabled(false) : requestNotifications()}
-                title={notificationsEnabled ? 'Notifications on' : 'Enable notifications'}
-                style={{
-                  width: 38, height: 38, borderRadius: 14,
-                  background: notificationsEnabled ? 'rgba(93,210,132,0.18)' : 'rgba(255,255,255,0.09)',
-                  border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', color: '#fff4ec',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
+            <div className="flex shrink-0 gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={notificationsEnabled ? 'Disable browser notifications' : 'Enable browser notifications'}
+                onClick={() => notificationsEnabled ? setNotificationsEnabled(false) : void requestNotifications()}
               >
-                {notificationsEnabled ? <Bell size={16} /> : <BellOff size={16} />}
-              </button>
-
-              {/* Sync button */}
-              {filterPlatform === 'facebook' && (
-                <button
-                  onClick={() => void syncFacebook()}
-                  disabled={syncingFb}
-                  title="Sync ALL Facebook conversations"
-                  style={{
-                    width: 38, height: 38, borderRadius: 14,
-                    background: 'rgba(255,255,255,0.09)',
-                    border: '1px solid rgba(255,255,255,0.08)', cursor: syncingFb ? 'not-allowed' : 'pointer',
-                    color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    opacity: syncingFb ? 0.7 : 1,
-                  }}
-                >
-                  <RefreshCw size={16} style={{ animation: syncingFb ? 'spin 1s linear infinite' : 'none' }} />
-                </button>
-              )}
+                {notificationsEnabled ? <Bell className="h-5 w-5" aria-hidden="true" /> : <BellOff className="h-5 w-5" aria-hidden="true" />}
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                aria-label="Sync Facebook inbox"
+                onClick={() => void syncFacebook()}
+                disabled={syncingFb}
+                aria-busy={syncingFb || undefined}
+              >
+                <RefreshCw className={`h-5 w-5 ${syncingFb ? 'animate-spin' : ''}`} aria-hidden="true" />
+              </Button>
             </div>
           </div>
 
-          {/* Connection status */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: 'rgba(255,255,255,0.10)', borderRadius: 18, padding: '12px 14px',
-          }}>
-            <ConnectionDot status={connectionStatus} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {deadLetterCount > 0 && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  padding: '6px 10px', borderRadius: 999,
-                  background: 'rgba(251,146,60,0.18)', color: '#ffedd5',
-                  border: '1px solid rgba(251,146,60,0.28)',
-                  fontSize: 11, fontWeight: 800,
-                }}>
-                  <AlertTriangle size={12} />
-                  {deadLetterCount} dead
-                </span>
-              )}
-              <span style={{ fontSize: 11, color: 'rgba(255,230,210,0.75)', letterSpacing: '0.04em' }}>
-                {visibleConversations.length} chats
-              </span>
+          {syncLabel ? (
+            <div className="mt-3">
+              <Alert
+                tone={syncProgress.stage === 'error' ? 'danger' : syncProgress.stage === 'completed' ? 'success' : 'info'}
+                announcement="polite"
+                className="py-2"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span>{syncLabel}</span>
+                  {syncingFb ? <span className="font-bold">{syncPercent}%</span> : null}
+                </div>
+                {syncingFb ? (
+                  <progress
+                    className="mt-2 h-2 w-full overflow-hidden rounded-full accent-minsah-action-primary"
+                    max={100}
+                    value={syncPercent}
+                    aria-label="Facebook sync progress"
+                  />
+                ) : null}
+              </Alert>
             </div>
+          ) : null}
+
+          <div className="mt-4 grid grid-cols-4 gap-2" role="tablist" aria-label="Filter conversations by platform">
+            {platformTabs.map((tab) => (
+              <Button
+                key={tab.id}
+                variant={filterPlatform === tab.id ? 'primary' : 'secondary'}
+                size="sm"
+                className="px-2"
+                role="tab"
+                aria-selected={filterPlatform === tab.id}
+                onClick={() => setFilterPlatform(tab.id)}
+              >
+                {tab.label}
+              </Button>
+            ))}
           </div>
-        </div>
 
-        {/* Sync progress */}
-        {syncingFb && (
-          <div style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.10)', borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <Zap size={12} color="#fff4ec" />
-              <span style={{ fontSize: 12, color: '#fff4ec', fontWeight: 700 }}>
-                {syncLabel}
-              </span>
-            </div>
-            <div style={{ height: 4, background: 'rgba(255,255,255,0.12)', borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: 999,
-                background: 'linear-gradient(90deg, #ffe0c2, #ffffff)',
-                width: `${syncPercent || 5}%`,
-                transition: 'width 0.3s ease',
-              }} />
-            </div>
-            {syncProgress.totalConversations > 0 && (
-              <div style={{ fontSize: 10, color: 'rgba(255,230,210,0.8)', marginTop: 6 }}>
-                {syncProgress.processedConversations} / {syncProgress.totalConversations} conversations
-              </div>
-            )}
-          </div>
-        )}
+          <Input
+            label="Search conversations"
+            hideLabel
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search conversations"
+            leading={<Search className="h-4 w-4" />}
+            containerClassName="mt-3"
+          />
+        </header>
 
-        {/* Completed/error banner */}
-        {!syncingFb && syncLabel && (
-          <div style={{
-            padding: '11px 14px', borderRadius: 16, flexShrink: 0, fontSize: 12, fontWeight: 600,
-            background: syncProgress.stage === 'error' ? '#fef2f2' : '#f0fdf4',
-            color: syncProgress.stage === 'error' ? '#dc2626' : '#16a34a',
-            border: `1px solid ${syncProgress.stage === 'error' ? '#fecaca' : '#d6ead8'}`,
-          }}>
-            {syncLabel}
-          </div>
-        )}
-
-        {/* Search */}
-        <div style={{ padding: 14, borderRadius: 28, background: 'rgba(255,255,255,0.54)', border: '1px solid rgba(115,75,42,0.10)', boxShadow: '0 18px 40px rgba(78,53,36,0.08)', backdropFilter: 'blur(12px)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ paddingBottom: 12, flexShrink: 0 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: '#fbf7f3', borderRadius: 18, padding: '13px 14px', border: '1px solid rgba(115,75,42,0.08)',
-          }}>
-            <Search size={15} color="#8d684e" />
-            <input
-              type="text" value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search conversations"
-              style={{
-                flex: 1, border: 'none', background: 'transparent',
-                fontSize: 14, color: '#24140b', outline: 'none',
-              }}
-            />
-            {search && (
-              <button onClick={() => setSearch('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#8d684e', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={14} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Platform tabs */}
-        <div style={{
-          display: 'flex', gap: 8, paddingBottom: 12,
-          flexShrink: 0,
-        }}>
-          {PLATFORM_TABS.map((tab) => (
-            <button key={tab.id} onClick={() => setFilterPlatform(tab.id)} style={{
-              flex: 1, padding: '10px 8px', border: '1px solid rgba(115,75,42,0.10)', borderRadius: 14, cursor: 'pointer',
-              fontSize: 12, fontWeight: 700, transition: 'all 0.15s',
-              background: filterPlatform === tab.id ? '#128C7E' : '#fff',
-              color: filterPlatform === tab.id ? '#ffffff' : '#4b5563',
-              boxShadow: filterPlatform === tab.id ? '0 10px 20px rgba(77,38,15,0.18)' : 'none',
-            }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Conversation list */}
         <div
           ref={conversationListRef}
           onScroll={onConversationListScroll}
-          style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
           {visibleConversations.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 260, gap: 10, color: '#8d684e', textAlign: 'center', padding: 24 }}>
-              <MessageSquare size={42} strokeWidth={1.25} opacity={0.42} />
-              <p style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#422617' }}>
-                {search.trim()
-                  ? 'No matching conversations'
-                  : filterPlatform === 'facebook'
-                    ? 'Inbox is waiting for conversations'
-                    : 'No conversations yet'}
-              </p>
+            <div className="px-5 py-10 text-center">
+              <MessageSquare className="mx-auto h-9 w-9 text-minsah-text-subtle" aria-hidden="true" />
+              <p className="mt-3 font-bold">No conversations found</p>
+              <p className="mt-1 text-sm text-minsah-text-muted">Try another platform or search term.</p>
             </div>
           ) : (
-            <div style={{ height: virtualConversationWindow.totalHeight, position: 'relative' }}>
-              <div style={{ transform: `translateY(${virtualConversationWindow.offsetTop}px)` }}>
-                {virtualConversationWindow.items.map((conv) => (
-              <button
-                key={conv.conversationId}
-                className={`conv-item ${selected === conv.conversationId ? 'conv-item-active' : ''}`}
-                onClick={() => {
-                  setSelected(conv.conversationId);
-                  if (isMobile) {
-                    setShowChat(true);
-                  }
-                }}
-                style={{
-                  display: 'flex', width: '100%', alignItems: 'center', gap: 10,
-                  padding: '14px 14px 13px', textAlign: 'left', background: 'rgba(255,255,255,0.46)',
-                  border: '1px solid rgba(115,75,42,0.08)', cursor: 'pointer',
-                  borderBottom: '1px solid rgba(115,75,42,0.08)',
-                  borderLeft: '1px solid rgba(115,75,42,0.08)',
-                  borderRadius: 22,
-                  transition: 'all 0.12s',
-                  minHeight: CONVERSATION_ITEM_HEIGHT,
-                  marginBottom: 10,
-                }}
-              >
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <Avatar src={conv.participant.avatar} name={conv.participant.name} size={46} />
-                  <span style={{ position: 'absolute', bottom: -3, right: -3 }}>
-                    <PlatBadge platform={conv.platform} size={16} />
-                  </span>
-                </div>
-
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
-                    <span style={{
-                      fontSize: 14, fontWeight: conv.unreadCount > 0 ? 800 : 700,
-                      color: '#27160d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {conv.participant.name}
-                    </span>
-                    <span style={{ fontSize: 11, color: '#87644a', flexShrink: 0 }}>
-                      {fmtTime(conv.latestMessage.timestamp)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6 }}>
-                    <span style={{
-                      fontSize: 12, color: conv.unreadCount > 0 ? '#3d2517' : '#8d684e',
-                      fontWeight: conv.unreadCount > 0 ? 600 : 400,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {!conv.latestMessage.isIncoming && <span style={{ color: '#64320D' }}>You: </span>}
-                      {fixEncoding(conv.latestMessage.content.text) || 'Attachment'}
-                    </span>
-                    {conv.unreadCount > 0 && (
-                      <span style={{
-                        minWidth: 22, height: 22, borderRadius: 999,
-                        background: '#128C7E', color: '#ffffff',
-                        fontSize: 11, fontWeight: 800,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '0 7px', flexShrink: 0,
-                      }}>
-                        {conv.unreadCount}
+            <div>
+                {visibleConversations.map((conversation) => {
+                  const isActive = conversation.conversationId === selected;
+                  return (
+                    <Button
+                      key={conversation.conversationId}
+                      variant="ghost"
+                      fullWidth
+                      className={`h-[77px] justify-start rounded-none border-b border-minsah-border-subtle px-4 py-3 text-left ${
+                        isActive ? 'bg-minsah-surface-accent text-minsah-text-primary' : ''
+                      }`}
+                      onClick={() => {
+                        setSelected(conversation.conversationId);
+                        if (isMobile) setShowChat(true);
+                      }}
+                      aria-current={isActive ? 'true' : undefined}
+                    >
+                      <span className="relative shrink-0">
+                        <Avatar src={conversation.participant.avatar} name={conversation.participant.name} />
+                        <span className="absolute -bottom-1 -right-2"><PlatBadge platform={conversation.platform} /></span>
                       </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-                ))}
-              </div>
-              {filterPlatform === 'facebook' && loadingMoreConversations && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: 8,
-                  left: 12,
-                  right: 12,
-                  padding: '8px 10px',
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.88)',
-                  border: '1px solid #ede5de',
-                  fontSize: 11,
-                  color: '#8E6545',
-                  textAlign: 'center',
-                }}>
-                  Loading more conversations...
-                </div>
-              )}
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="truncate font-black">{fixEncoding(conversation.participant.name)}</span>
+                          <span className="shrink-0 text-xs font-medium text-minsah-text-subtle">{formatConvTime(conversation.latestMessage.timestamp)}</span>
+                        </span>
+                        <span className="mt-1 flex items-center gap-2">
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-minsah-text-muted">
+                            {preview(conversation.latestMessage)}
+                          </span>
+                          {conversation.unreadCount > 0 ? <Badge tone="danger">{conversation.unreadCount}</Badge> : null}
+                        </span>
+                      </span>
+                    </Button>
+                  );
+                })}
             </div>
           )}
-        </div>
+
+          {hasMoreConversations ? (
+            <div className="p-3">
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={() => void loadMoreConversations()}
+                disabled={loadingMoreConversations}
+                aria-busy={loadingMoreConversations || undefined}
+              >
+                {loadingMoreConversations ? 'Loading…' : 'Load more conversations'}
+              </Button>
+            </div>
+          ) : null}
         </div>
       </aside>
 
-      {/* ═══════════════════════════ CHAT PANEL ═══════════════════════════ */}
-      <main style={{
-        flex: 1, display: isMobile && !showChat ? 'none' : 'flex',
-        flexDirection: 'column', minWidth: 0, height: '100%',
-        background: 'transparent', padding: isMobile ? '12px 12px 12px 0' : 18, paddingLeft: 0,
-        position: 'relative',
-      }}>
-        {activeConversation ? (
-          <div style={{
-            display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%',
-            borderRadius: isMobile ? 0 : 34,
-            background: 'rgba(255,255,255,0.56)',
-            border: isMobile ? 'none' : '1px solid rgba(115,75,42,0.10)',
-            boxShadow: isMobile ? 'none' : '0 24px 50px rgba(78,53,36,0.10)',
-            backdropFilter: 'blur(10px)',
-            overflow: 'hidden',
-          }}>
-            {/* Chat header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: isMobile ? '16px 16px 14px' : '20px 24px 18px',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(252,248,242,0.70) 100%)',
-              borderBottom: '1px solid rgba(115,75,42,0.10)', flexShrink: 0,
-            }}>
-              {/* Mobile back */}
-              <button onClick={() => setShowChat(false)} style={{
-                width: 40, height: 40, borderRadius: 14, border: '1px solid rgba(115,75,42,0.08)',
-                background: '#fffaf5', cursor: 'pointer', color: '#64320D',
-                display: isMobile ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <ArrowLeft size={17} />
-              </button>
-
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Avatar src={activeConversation.participant.avatar} name={activeConversation.participant.name} size={48} />
-                <span style={{ position: 'absolute', bottom: -2, right: -2 }}>
-                  <PlatBadge platform={activeConversation.platform} size={16} />
-                </span>
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 19, fontWeight: 800, color: '#23120a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.1 }}>
-                  {activeConversation.participant.name}
-                </div>
-                <div style={{ fontSize: 11, color: '#8E6545', textTransform: 'capitalize', marginTop: 1 }}>
-                  {PLATFORM_CFG[activeConversation.platform]?.name} · {activeConversation.latestMessage.type}
-                </div>
-              </div>
-
-              {/* Client details (shipping address) */}
-              <button
-                onClick={() => setShowClientDetails(true)}
-                title="Client shipping details"
-                style={{
-                  width: 42, height: 42, borderRadius: 16,
-                  background: '#fffaf5',
-                  border: '1px solid rgba(115,75,42,0.10)',
-                  cursor: 'pointer',
-                  color: '#64320D',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <MapPin size={18} />
-              </button>
-
-              {/* Product search */}
-              <button
-                onClick={() => { setShowProductDrawer(true); }}
-                title="Search products to send"
-                style={{
-                  width: 42, height: 42, borderRadius: 16,
-                  background: '#fffaf5',
-                  border: '1px solid rgba(115,75,42,0.10)',
-                  cursor: 'pointer',
-                  color: '#128C7E',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <Search size={18} />
-              </button>
-
-              {/* AI suggest */}
-                {aiSuggestionsAvailable && (
-                  <button
-                    onClick={() => void getAiSuggestion()}
-                    disabled={aiLoading}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      padding: isMobile ? '10px 12px' : '10px 16px', borderRadius: 16,
-                      background: aiLoading ? '#eadbcf' : '#4d260f',
-                      color: '#fff4ec', border: 'none', cursor: aiLoading ? 'not-allowed' : 'pointer',
-                      fontSize: 12, fontWeight: 800, boxShadow: aiLoading ? 'none' : '0 12px 22px rgba(77,38,15,0.16)',
-                    }}
-                  >
-                    {aiLoading ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={14} />}
-                    {!isMobile && <span>Draft Reply</span>}
-                  </button>
-                )}
-              </div>
-
-              {/* AI suggestion */}
-              {aiSuggestionsAvailable && aiSuggestion && (
-                <div style={{
-                  display: 'flex', gap: 12, padding: '14px 15px',
-                  margin: isMobile ? '12px 14px 0' : '16px 18px 0',
-                background: '#fffaf4', border: '1px solid rgba(115,75,42,0.10)', borderRadius: 22, flexShrink: 0,
-                animation: 'slideDown 0.2s ease',
-              }}>
-                <div style={{ width: 34, height: 34, borderRadius: 12, background: '#4d260f', color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Bot size={16} />
-                </div>
-                <p style={{ flex: 1, fontSize: 14, color: '#321d11', margin: 0, lineHeight: 1.65 }}>{aiSuggestion}</p>
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button onClick={acceptSuggestion} style={{
-                    padding: '9px 13px', borderRadius: 14,
-                    background: '#4d260f', color: '#fff4ec', border: 'none',
-                    fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                  }}>Use</button>
-                  <button onClick={() => setAiSuggestion('')} style={{
-                    width: 34, height: 34, borderRadius: 14,
-                    background: '#f3e4d7', border: 'none', cursor: 'pointer', color: '#64320D',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}><X size={14} /></button>
-                </div>
-              </div>
-            )}
-
-            {/* New message banner */}
-            {newMessageBanner && (
-              <div style={{
-                padding: '12px 14px', background: '#2f7bf6', color: '#fff',
-                fontSize: 12, fontWeight: 700, flexShrink: 0,
-                margin: isMobile ? '12px 14px 0' : '16px 18px 0', borderRadius: 18,
-                animation: 'slideDown 0.2s ease',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-                <Zap size={14} />
-                {newMessageBanner}
-              </div>
-            )}
-
-            {/* Messages area */}
-            <div
-              ref={scrollRef}
-              onScroll={onScroll}
-              style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: isMobile ? '16px 14px 12px' : '20px 24px 16px' }}
-            >
-              <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
-                {activeConversation?.platform === 'facebook' && hasMoreThreadMessages && (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0 18px' }}>
-                    <button
-                      onClick={() => void loadOlderMessages()}
-                      disabled={loadingOlderMessages}
-                      style={{
-                        padding: '9px 16px',
-                        borderRadius: 999,
-                        border: '1px solid rgba(115,75,42,0.10)',
-                        background: '#fffaf5',
-                        color: '#64320D',
-                        fontSize: 12,
-                        fontWeight: 800,
-                        cursor: loadingOlderMessages ? 'not-allowed' : 'pointer',
-                        opacity: loadingOlderMessages ? 0.7 : 1,
-                      }}
-                    >
-                      {loadingOlderMessages ? 'Loading older messages...' : 'Load older messages'}
-                    </button>
-                  </div>
-                )}
-                {threadMessages.map((msg, i) => {
-                  const prev = threadMessages[i - 1];
-                  const next = threadMessages[i + 1];
-                  const showDivider = !prev || !sameDay(prev.timestamp, msg.timestamp);
-                  const isOptimistic = msg.id.startsWith('optimistic-');
-                  const sameSenderAsPrev = prev && prev.isIncoming === msg.isIncoming && prev.sender.id === msg.sender.id;
-                  const sameSenderAsNext = next && next.isIncoming === msg.isIncoming && next.sender.id === msg.sender.id;
-                  const showAvatar = msg.isIncoming && (!next || !next.isIncoming || next.sender.id !== msg.sender.id);
-
-                  const maybeProductCard =
-                    typeof msg.content.text === 'string' && msg.content.text.startsWith(PRODUCT_CARD_PREFIX)
-                      ? safeJsonParse<{
-                          kind: 'product_card';
-                          slug: string;
-                          name: string;
-                          image: string;
-                          price: number;
-                          quantity: number;
-                          variantLabel?: string | null;
-                          note?: string;
-                          viewUrl: string;
-                          orderUrl: string;
-                        }>((msg.content.text.slice(PRODUCT_CARD_PREFIX.length).split('\n')[0] || '').trim())
-                      : null;
-
-                  return (
-                    <div key={msg.id} style={{ marginTop: sameSenderAsPrev ? 6 : 18, animation: 'fadeIn 0.2s ease' }}>
-                      {showDivider && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 0 14px' }}>
-                          <span style={{
-                            padding: '6px 12px', borderRadius: 999,
-                            background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(115,75,42,0.08)',
-                            fontSize: 11, color: '#87644a', fontWeight: 700,
-                          }}>
-                            {fmtDivider(msg.timestamp)}
-                          </span>
-                        </div>
-                      )}
-
-                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, justifyContent: msg.isIncoming ? 'flex-start' : 'flex-end' }}>
-                        {msg.isIncoming && (
-                          <div style={{ width: 34, flexShrink: 0, alignSelf: 'flex-end' }}>
-                            {showAvatar && <Avatar src={msg.sender.avatar} name={msg.sender.name} size={34} />}
-                          </div>
-                        )}
-
-                        <div style={{ maxWidth: isMobile ? '88%' : '72%', opacity: isOptimistic ? 0.7 : 1 }}>
-                          {msg.isIncoming && !sameSenderAsPrev && (
-                            <p style={{ fontSize: 11, color: '#7a573f', fontWeight: 800, marginBottom: 6, marginLeft: 2 }}>
-                              {msg.sender.name}
-                            </p>
-                          )}
-
-                          <div style={{
-                            padding: msg.content.media?.length ? '12px 12px 10px' : '12px 14px', fontSize: 14, lineHeight: 1.65,
-                            borderRadius: msg.isIncoming
-                              ? `${sameSenderAsPrev ? 12 : 24}px 24px 24px ${sameSenderAsNext ? 12 : 24}px`
-                              : `24px ${sameSenderAsPrev ? 12 : 24}px ${sameSenderAsNext ? 12 : 24}px 24px`,
-                            background: msg.isIncoming
-                              ? 'linear-gradient(180deg, #ffffff 0%, #f6f7f7 100%)'
-                              : 'linear-gradient(180deg, #DCF8C6 0%, #d2f5b2 100%)',
-                            color: '#111827',
-                            boxShadow: msg.isIncoming
-                              ? '0 10px 26px rgba(67,44,29,0.06)'
-                              : '0 10px 24px rgba(18,140,126,0.12)',
-                            border: `1px solid ${msg.isIncoming ? 'rgba(115,75,42,0.09)' : 'rgba(255,255,255,0.08)'}`,
-                          }}>
-                            {/* Type badge */}
-                            {!sameSenderAsPrev && msg.type !== 'message' && (
-                              <span style={{
-                                display: 'inline-block', marginBottom: 8,
-                                padding: '4px 8px', borderRadius: 999, fontSize: 10, fontWeight: 800,
-                                background: msg.isIncoming ? '#f4e6d8' : 'rgba(255,255,255,0.10)',
-                                color: msg.isIncoming ? '#64320D' : 'rgba(255,244,236,0.92)',
-                                textTransform: 'capitalize',
-                                letterSpacing: '0.04em',
-                              }}>
-                                {msg.type}
-                              </span>
-                            )}
-
-                            {maybeProductCard ? (
-                              <div style={{
-                                display: 'flex',
-                                gap: 12,
-                                alignItems: 'center',
-                                background: 'rgba(255,255,255,0.70)',
-                                border: '1px solid rgba(115,75,42,0.10)',
-                                borderRadius: 18,
-                                padding: 12,
-                              }}>
-                                <div style={{
-                                  width: 64,
-                                  height: 64,
-                                  borderRadius: 16,
-                                  overflow: 'hidden',
-                                  background: '#fff',
-                                  border: '1px solid rgba(115,75,42,0.10)',
-                                  flexShrink: 0,
-                                }}>
-                                  {maybeProductCard.image ? (
-                                    <img
-                                      src={maybeProductCard.image}
-                                      alt={maybeProductCard.name}
-                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                  ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8E6545', fontWeight: 800 }}>
-                                      MB
-                                    </div>
-                                  )}
-                                </div>
-                                <div style={{ minWidth: 0, flex: 1 }}>
-                                  <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a', lineHeight: 1.25, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {maybeProductCard.name}
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
-                                    <span>{formatBdt(maybeProductCard.price)}</span>
-                                    <span>Qty: {maybeProductCard.quantity}</span>
-                                  </div>
-                                  {maybeProductCard.variantLabel ? (
-                                    <div style={{ marginTop: 6, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>
-                                      Variant: {maybeProductCard.variantLabel}
-                                    </div>
-                                  ) : null}
-                                  {maybeProductCard.note ? (
-                                    <div style={{ marginTop: 6, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>
-                                      Note: {maybeProductCard.note}
-                                    </div>
-                                  ) : null}
-                                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                                    <a
-                                      href={toAbsoluteStorefrontUrl(maybeProductCard.viewUrl)}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      style={{
-                                        padding: '8px 10px',
-                                        borderRadius: 12,
-                                        background: '#fff',
-                                        border: '1px solid rgba(115,75,42,0.12)',
-                                        color: '#64320D',
-                                        fontSize: 12,
-                                        fontWeight: 900,
-                                        textDecoration: 'none',
-                                      }}
-                                    >
-                                      View Product
-                                    </a>
-                                    <a
-                                      href={toAbsoluteStorefrontUrl(maybeProductCard.orderUrl)}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      style={{
-                                        padding: '8px 10px',
-                                        borderRadius: 12,
-                                        background: '#128C7E',
-                                        border: '1px solid rgba(18,140,126,0.18)',
-                                        color: '#ffffff',
-                                        fontSize: 12,
-                                        fontWeight: 900,
-                                        textDecoration: 'none',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                      }}
-                                    >
-                                      <ShoppingCart size={14} />
-                                      Add to Cart / Order Now
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{fixEncoding(msg.content.text)}</p>
-                            )}
-
-                            {msg.content.media && msg.content.media.length > 0 && (
-                              <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
-                                {msg.content.media.map((m, mi) => renderMedia(m, `${msg.id}-${mi}`, msg.isIncoming))}
-                              </div>
-                            )}
-
-                            {isOptimistic && (
-                              <p style={{ margin: '4px 0 0', textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
-                                {getOutgoingStatusLabel(msg.status)}
-                              </p>
-                            )}
-                          </div>
-
-                          {!sameSenderAsNext && (
-                            <div style={{
-                              display: 'flex', alignItems: 'center', gap: 5, marginTop: 7,
-                              justifyContent: msg.isIncoming ? 'flex-start' : 'flex-end',
-                              paddingLeft: msg.isIncoming ? 4 : 0,
-                              paddingRight: msg.isIncoming ? 0 : 4,
-                            }}>
-                              <span style={{ fontSize: 11, color: '#a08167' }}>
-                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                              </span>
-                              {!msg.isIncoming && (
-                                <>
-                                  <span style={{ fontSize: 11, color: '#a08167' }}>
-                                    {getOutgoingStatusLabel(msg.status)}
-                                  </span>
-                                  <CheckCheck
-                                    size={12}
-                                    color={
-                                      normalizeOutgoingStatus(msg.status) === 'delivered' ||
-                                      normalizeOutgoingStatus(msg.status) === 'seen'
-                                        ? '#64320D'
-                                        : '#a8957f'
-                                    }
-                                  />
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={endRef} style={{ height: 4 }} />
-              </div>
-            </div>
-
-            {/* Scroll to bottom */}
-            {showScrollDown && (
-              <button
-                onClick={() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
-                style={{
-                  position: 'absolute', bottom: isMobile ? 112 : 126, right: isMobile ? 20 : 34,
-                  width: 42, height: 42, borderRadius: 16,
-                  background: '#128C7E', color: '#ffffff', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 14px 28px rgba(77,38,15,0.22)',
-                  animation: 'slideUp 0.2s ease',
-                }}
-              >
-                <ChevronDown size={18} />
-              </button>
-            )}
-
-            {/* Compose area */}
-            <div style={{
-              padding: isMobile ? '14px 14px 16px' : '18px 22px 20px', background: 'rgba(255,255,255,0.84)',
-              borderTop: '1px solid rgba(115,75,42,0.10)', flexShrink: 0,
-            }}>
-              {replyError && (
-                <div style={{
-                  marginBottom: 12, padding: '11px 14px', borderRadius: 16,
-                  background: '#fff3f2', color: '#b42318', fontSize: 12, border: '1px solid #fecaca',
-                }}>
-                  {replyError}
-                </div>
-              )}
-
-              {/* Draft previews */}
-              {drafts.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
-                  {drafts.map((d) => (
-                    <div key={d.id} style={{
-                      position: 'relative', width: 88, height: 88,
-                      borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(115,75,42,0.10)', background: '#fffaf5',
-                    }}>
-                      <button
-                        onClick={() => { URL.revokeObjectURL(d.previewUrl); setDrafts((p) => p.filter((x) => x.id !== d.id)); }}
-                        style={{
-                          position: 'absolute', top: 6, right: 6, zIndex: 1,
-                          width: 22, height: 22, borderRadius: 999,
-                          background: 'rgba(35,20,11,0.72)', border: 'none', cursor: 'pointer',
-                          color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
-                        <X size={12} />
-                      </button>
-                      {d.type === 'image' ? (
-                        <img src={d.previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : d.type === 'video' ? (
-                        <video
-                          src={d.previewUrl}
-                          muted
-                          playsInline
-                          preload="metadata"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', background: '#fffaf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {(() => {
-                            const PreviewIcon = getDraftPreviewIcon(d.type);
-                            return <PreviewIcon size={24} color="#64320D" />;
-                          })()}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {!canAttach && drafts.length === 0 && (
-                <p style={{ fontSize: 11, color: '#a8957f', marginBottom: 8 }}>
-                  Attachment replies are unavailable for this platform in the realtime inbox.
-                </p>
-              )}
-
-              <div style={{
-                display: 'flex', alignItems: 'flex-end', gap: 8,
-                background: '#fcf8f4', borderRadius: 24,
-                padding: '10px 10px 10px 12px', border: '1px solid rgba(115,75,42,0.10)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)',
-              }}>
-                <input ref={fileRef} type="file" accept="image/*,video/*,audio/*" multiple style={{ display: 'none' }} onChange={onFileChange} />
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={!canAttach || sending}
-                  style={{
-                    width: 42, height: 42, borderRadius: 16,
-                    background: '#fff', border: '1px solid rgba(115,75,42,0.10)',
-                    cursor: canAttach && !sending ? 'pointer' : 'not-allowed',
-                    color: '#8E6545', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, opacity: !canAttach ? 0.45 : 1,
-                  }}
-                >
-                  <Paperclip size={17} />
-                </button>
-
-                <textarea
-                  ref={taRef}
-                  value={replyText}
-                  onChange={(e) => {
-                    setReplyText(e.target.value);
-                    e.target.style.height = 'auto';
-                    e.target.style.height = `${Math.min(e.target.scrollHeight, 140)}px`;
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
-                  }}
-                  rows={1}
-                  placeholder="Reply with text, image, video, or audio"
-                  style={{
-                    flex: 1, border: 'none', background: 'transparent',
-                    resize: 'none', fontSize: 14, color: '#24140b',
-                    outline: 'none', padding: '9px 0', minHeight: 42, maxHeight: 140,
-                    fontFamily: 'inherit', lineHeight: 1.6,
-                  }}
-                />
-
-                <button
-                  onClick={() => void send()}
-                  disabled={(!replyText.trim() && !drafts.length) || sending}
-                  style={{
-                    width: 46, height: 46, borderRadius: 18,
-                    background: (!replyText.trim() && !drafts.length) || sending
-                      ? '#e8ddd4'
-                      : '#128C7E',
-                    border: 'none', cursor: 'pointer',
-                    color: '#fff4ec', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, transition: 'all 0.15s',
-                    boxShadow: (!replyText.trim() && !drafts.length) ? 'none' : '0 14px 24px rgba(77,38,15,0.18)',
-                  }}
-                >
-                  <Send size={17} />
-                </button>
-              </div>
-
-              <p style={{ fontSize: 11, color: '#b09780', textAlign: 'center', marginTop: 8 }}>
-                Press Enter to send. Shift + Enter adds a new line.
-              </p>
+      <main className={`${!showChat && isMobile ? 'hidden' : 'flex'} min-w-0 flex-1 flex-col bg-minsah-surface-subtle sm:flex`}>
+        {!activeConversation ? (
+          <div className="flex h-full items-center justify-center p-6 text-center">
+            <div>
+              <MessageSquare className="mx-auto h-12 w-12 text-minsah-text-subtle" aria-hidden="true" />
+              <h2 className="mt-4 text-xl font-black">Select a conversation</h2>
+              <p className="mt-2 text-sm text-minsah-text-muted">Choose a customer thread to read and reply.</p>
             </div>
           </div>
         ) : (
-          /* Empty state */
-          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }}>
-            <div style={{
-              width: 84, height: 84, borderRadius: 28,
-              background: 'linear-gradient(180deg, #5a2d12 0%, #3d1f0d 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 16px 30px rgba(61,31,13,0.18)',
-            }}>
-              <MessageSquare size={34} color="#fff4ec" />
-            </div>
-            <div style={{ textAlign: 'center', maxWidth: 420 }}>
-              <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#9a7c63', fontWeight: 800, marginBottom: 10 }}>Realtime Customer Inbox</div>
-              <h2 style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.1, color: '#23120a', margin: '0 0 10px' }}>Select a conversation and start working the thread.</h2>
-              <p style={{ fontSize: 15, color: '#7a573f', margin: 0, lineHeight: 1.7 }}>Open a chat from the left rail or run a Facebook sync to pull fresh conversations into the inbox.</p>
-            </div>
-            {filterPlatform === 'facebook' && !syncingFb && (
-              <button
-                onClick={() => void syncFacebook()}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '12px 18px', borderRadius: 16,
-                  background: '#128C7E',
-                  color: '#ffffff', border: 'none', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 800, marginTop: 10,
-                  boxShadow: '0 14px 26px rgba(77,38,15,0.18)',
-                }}
+          <>
+            <header className="flex shrink-0 items-center gap-3 border-b border-minsah-border-subtle bg-minsah-surface-panel px-3 py-3 sm:px-5">
+              {isMobile ? (
+                <Button size="icon" variant="ghost" aria-label="Back to conversations" onClick={() => setShowChat(false)}>
+                  <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                </Button>
+              ) : null}
+              <Avatar src={activeConversation.participant.avatar} name={activeConversation.participant.name} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate font-black">{fixEncoding(activeConversation.participant.name)}</h2>
+                  <PlatBadge platform={activeConversation.platform} />
+                </div>
+                <p className="mt-0.5 text-xs font-semibold text-minsah-text-muted">{activePlatformName}</p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <Badge tone={replyAllowed ? 'success' : 'warning'}>
+                    {activeConversation.replyEligibility?.reasonCode ?? 'REPLY_ELIGIBILITY_UNAVAILABLE'}
+                  </Badge>
+                  {activeConversation.processing ? (
+                    <Badge tone={activeConversation.processing.status === 'READY' ? 'success' : activeConversation.processing.status === 'BLOCKED' ? 'danger' : 'warning'}>
+                      {activeConversation.processing.reasonCode}
+                    </Badge>
+                  ) : null}
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => setShowClientDetails(true)}>
+                Client details
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowProductDrawer(true)}
+                disabled={activeConversation.platform !== 'facebook' || !replyAllowed}
               >
-                <RefreshCw size={15} />
-                Refresh Facebook Inbox
-              </button>
-            )}
-          </div>
+                <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden lg:inline">Send product</span>
+              </Button>
+            </header>
+
+            {newMessageBanner ? (
+              <Alert tone="info" announcement="polite" className="m-3 py-2 sm:mx-5">
+                <div className="flex items-center justify-between gap-3">
+                  <span>{newMessageBanner}</span>
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    setNewMessageBanner(null);
+                    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }}>
+                    View
+                  </Button>
+                </div>
+              </Alert>
+            ) : null}
+
+            <div
+              ref={scrollRef}
+              onScroll={onScroll}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-6"
+              aria-live="polite"
+            >
+              {hasMoreThreadMessages ? (
+                <div className="mb-4 text-center">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void loadOlderMessages()}
+                    disabled={loadingOlderMessages}
+                    aria-busy={loadingOlderMessages || undefined}
+                  >
+                    {loadingOlderMessages ? 'Loading…' : 'Load older messages'}
+                  </Button>
+                </div>
+              ) : null}
+
+              <div className="mx-auto flex w-full max-w-4xl flex-col gap-3">
+                {threadMessages.map((message, index) => {
+                  const previous = index > 0 ? threadMessages[index - 1] : null;
+                  const showDay = !previous || !sameDay(previous.timestamp, message.timestamp);
+                  return (
+                    <div key={message.id}>
+                      {showDay ? (
+                        <div className="my-4 flex items-center gap-3" aria-label={dayLabel(message.timestamp)}>
+                          <span className="h-px flex-1 bg-minsah-border-subtle" />
+                          <Badge tone="neutral">{dayLabel(message.timestamp)}</Badge>
+                          <span className="h-px flex-1 bg-minsah-border-subtle" />
+                        </div>
+                      ) : null}
+                      <article className={`flex items-end gap-2 ${message.isIncoming ? 'justify-start' : 'justify-end'}`}>
+                        {message.isIncoming ? <Avatar src={message.sender.avatar} name={message.sender.name} /> : null}
+                        <div className={`max-w-[85%] sm:max-w-[72%] ${message.isIncoming ? '' : 'text-right'}`}>
+                          <div className={`rounded-2xl border px-4 py-3 text-left shadow-[var(--shadow-small)] ${
+                            message.isIncoming
+                              ? 'border-minsah-border-subtle bg-minsah-surface-panel text-minsah-text-primary'
+                              : 'border-minsah-action-primary bg-minsah-action-primary text-minsah-text-inverse'
+                          }`}>
+                            {renderProductCard(message.content.text, message.isIncoming) ?? (
+                              message.content.text ? <p className="whitespace-pre-wrap break-words text-sm leading-6">{fixEncoding(message.content.text)}</p> : null
+                            )}
+                            {message.content.media?.length ? (
+                              <div className="mt-2 grid gap-2">
+                                {message.content.media.map((media, mediaIndex) => renderMedia(media, `${message.id}-${mediaIndex}`, message.isIncoming))}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className={`mt-1 flex items-center gap-2 text-xs text-minsah-text-subtle ${message.isIncoming ? '' : 'justify-end'}`}>
+                            <span>{timeOnly(message.timestamp)}</span>
+                            {!message.isIncoming ? (
+                              <span className="inline-flex items-center gap-1">
+                                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                                {deliveryStatusLabel(message.status)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+                  );
+                })}
+                <div ref={endRef} />
+              </div>
+            </div>
+
+            {showScrollDown ? (
+              <div className="pointer-events-none absolute bottom-32 right-6">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="pointer-events-auto shadow-[var(--shadow-panel)]"
+                  aria-label="Scroll to latest message"
+                  onClick={() => endRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <ChevronDown className="h-5 w-5" aria-hidden="true" />
+                </Button>
+              </div>
+            ) : null}
+
+            <footer className="shrink-0 border-t border-minsah-border-subtle bg-minsah-surface-panel p-3 sm:p-4">
+              <div className="mx-auto max-w-4xl">
+                {!replyAllowed ? (
+                  <Alert tone="warning" className="mb-3" title="Reply unavailable" icon={<AlertTriangle className="h-5 w-5" />}>
+                    {replyBlockReason}
+                    {activeConversation.replyEligibility?.expiresAt ? ` · Window ended ${new Date(activeConversation.replyEligibility.expiresAt).toLocaleString()}` : ''}
+                  </Alert>
+                ) : null}
+                {activeConversation.failure ? (
+                  <Alert tone="danger" className="mb-3" title={activeConversation.failure.code} icon={<AlertTriangle className="h-5 w-5" />}>
+                    {activeConversation.failure.summary ?? activeConversation.processing?.reasonCode ?? 'Message processing failed.'}
+                  </Alert>
+                ) : null}
+                {replyError ? (
+                  <Alert tone="danger" announcement="assertive" className="mb-3" icon={<AlertTriangle className="h-5 w-5" />}>
+                    {replyError}
+                  </Alert>
+                ) : null}
+
+                {aiSuggestion ? (
+                  <Alert tone="info" className="mb-3" title="Suggested reply" icon={<Sparkles className="h-5 w-5" />}>
+                    <p className="whitespace-pre-wrap">{aiSuggestion}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button size="sm" onClick={acceptSuggestion}>Use suggestion</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setAiSuggestion('')}>Dismiss</Button>
+                    </div>
+                  </Alert>
+                ) : null}
+
+                {drafts.length ? (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {drafts.map((draft) => (
+                      <div key={draft.id} className="flex max-w-full items-center gap-2 rounded-xl border border-minsah-border-default bg-minsah-surface-subtle px-3 py-2 text-sm">
+                        <Paperclip className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span className="max-w-48 truncate">{draft.file.name}</span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 min-h-8 w-8 min-w-8"
+                          aria-label={`Remove ${draft.file.name}`}
+                          onClick={() => setDrafts((current) => {
+                            const removed = current.find((item) => item.id === draft.id);
+                            if (removed) URL.revokeObjectURL(removed.previewUrl);
+                            return current.filter((item) => item.id !== draft.id);
+                          })}
+                        >
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="flex items-end gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*,video/*,audio/*"
+                    multiple
+                    onChange={onFileChange}
+                    className="sr-only"
+                    aria-label="Attach media"
+                  />
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    aria-label="Attach media"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={!canAttach || sending || !replyAllowed}
+                  >
+                    <Paperclip className="h-5 w-5" aria-hidden="true" />
+                  </Button>
+                  <Textarea
+                    ref={taRef}
+                    label="Reply"
+                    hideLabel
+                    rows={2}
+                    value={replyText}
+                    onChange={(event) => setReplyText(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        void send();
+                      }
+                    }}
+                    placeholder={`Reply to ${fixEncoding(activeConversation.participant.name)}…`}
+                    containerClassName="min-w-0 flex-1"
+                    textareaClassName="min-h-11 max-h-40"
+                    disabled={sending || !replyAllowed}
+                  />
+                  {aiSuggestionsAvailable ? (
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      aria-label="Generate reply suggestion"
+                      onClick={() => void getAiSuggestion()}
+                      disabled={aiLoading || sending || !replyAllowed}
+                    >
+                      <Sparkles className={`h-5 w-5 ${aiLoading ? 'animate-pulse' : ''}`} aria-hidden="true" />
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="icon"
+                    aria-label="Send reply"
+                    onClick={() => void send()}
+                    disabled={sending || !replyAllowed || (!replyText.trim() && drafts.length === 0)}
+                    aria-busy={sending || undefined}
+                  >
+                    <Send className="h-5 w-5" aria-hidden="true" />
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-minsah-text-subtle">Enter sends. Shift+Enter adds a new line.</p>
+              </div>
+            </footer>
+          </>
         )}
       </main>
 
-      {/* Client Details Modal */}
-      {showClientDetails && activeConversation && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 900,
-          background: 'rgba(0,0,0,0.38)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 16,
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: 640,
-            borderRadius: 24,
-            background: '#ffffff',
-            boxShadow: '0 40px 80px rgba(0,0,0,0.22)',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              padding: '16px 18px',
-              borderBottom: '1px solid #ede5de',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: 12,
-            }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a' }}>Client Details (Shipping Address)</div>
-                <div style={{ fontSize: 12, color: '#8E6545', marginTop: 3 }}>
-                  Phone number, real name, Address, District, Thana
-                </div>
-              </div>
-              <button
-                onClick={() => setShowClientDetails(false)}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 14,
-                  background: '#fffaf5',
-                  border: '1px solid rgba(115,75,42,0.10)',
-                  cursor: 'pointer',
-                  color: '#64320D',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <X size={16} />
-              </button>
-            </div>
+      <Drawer
+        open={showClientDetails}
+        onClose={() => setShowClientDetails(false)}
+        title="Client details"
+        description={activeConversation ? `Shipping details for ${fixEncoding(activeConversation.participant.name)}` : undefined}
+        side="right"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowClientDetails(false)} disabled={clientProfileSaving}>Cancel</Button>
+            <Button onClick={() => void saveClientProfile()} disabled={!clientProfileDraft || clientProfileSaving} aria-busy={clientProfileSaving || undefined}>
+              {clientProfileSaving ? 'Saving…' : 'Save details'}
+            </Button>
+          </>
+        }
+      >
+        {clientProfileLoading ? (
+          <LoadingState compact label="Loading client details…" />
+        ) : clientProfileDraft ? (
+          <div className="grid gap-4">
+            <Input label="Phone number" value={clientProfileDraft.phoneNumber} onChange={(event) => setClientProfileDraft({ ...clientProfileDraft, phoneNumber: event.target.value })} />
+            <Input label="Customer name" value={clientProfileDraft.realName} onChange={(event) => setClientProfileDraft({ ...clientProfileDraft, realName: event.target.value })} />
+            <Textarea label="Address" value={clientProfileDraft.address} onChange={(event) => setClientProfileDraft({ ...clientProfileDraft, address: event.target.value })} rows={3} />
+            <Input label="District" value={clientProfileDraft.district} onChange={(event) => setClientProfileDraft({ ...clientProfileDraft, district: event.target.value })} />
+            <Input label="Thana" value={clientProfileDraft.thana} onChange={(event) => setClientProfileDraft({ ...clientProfileDraft, thana: event.target.value })} />
+          </div>
+        ) : (
+          <Alert tone="warning">Client profile is unavailable for this conversation.</Alert>
+        )}
+      </Drawer>
 
-            <div style={{ padding: 18 }}>
-              {clientProfileLoading ? (
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#8E6545' }}>Loading client details…</div>
+      <Drawer
+        open={showProductDrawer}
+        onClose={() => {
+          setShowProductDrawer(false);
+          setSelectedProductDraft(null);
+        }}
+        title="Send a product"
+        description="Search the active catalogue and send a product card to this customer."
+        side="right"
+        size="lg"
+        footer={
+          selectedProductDraft ? (
+            <Button fullWidth onClick={() => setConfirmSendProduct(true)} disabled={sendingProduct || !replyAllowed}>
+              Review and send
+            </Button>
+          ) : undefined
+        }
+      >
+        <Input
+          label="Search products"
+          value={productSearchTerm}
+          onChange={(event) => setProductSearchTerm(event.target.value)}
+          placeholder="Product name or keyword"
+          leading={<Search className="h-4 w-4" />}
+        />
+
+        {productSearchLoading ? (
+          <LoadingState compact className="mt-4" label="Searching products…" />
+        ) : selectedProductDraft ? (
+          <div className="mt-5 grid gap-4">
+            <Button variant="ghost" size="sm" className="justify-start" onClick={() => setSelectedProductDraft(null)}>
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to results
+            </Button>
+            <div className="flex gap-4 rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle p-4">
+              {selectedProductDraft.product.image ? (
+                <img src={selectedProductDraft.product.image} alt={selectedProductDraft.product.name} className="h-24 w-24 rounded-xl object-cover" />
               ) : (
-                <div style={{ display: 'grid', gap: 10 }}>
-                  {(() => {
-                    const draft = clientProfileDraft ?? {
-                      platform: activeConversation.platform,
-                      participantId: activeConversation.participant.id,
-                      phoneNumber: '',
-                      realName: '',
-                      address: '',
-                      district: '',
-                      thana: '',
-                    };
-
-                    const set = (patch: Partial<ClientProfile>) =>
-                      setClientProfileDraft({ ...draft, ...patch });
-
-                    return (
-                      <>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                          <Field label="Phone Number" value={draft.phoneNumber} onChange={(v) => set({ phoneNumber: v })} />
-                          <Field label="Real Name" value={draft.realName} onChange={(v) => set({ realName: v })} />
-                        </div>
-                        <Field label="Address" value={draft.address} onChange={(v) => set({ address: v })} multiline />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                          <Field label="District" value={draft.district} onChange={(v) => set({ district: v })} />
-                          <Field label="Thana" value={draft.thana} onChange={(v) => set({ thana: v })} />
-                        </div>
-                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 6 }}>
-                          <button
-                            onClick={() => setShowClientDetails(false)}
-                            style={{
-                              padding: '10px 14px',
-                              borderRadius: 14,
-                              background: '#fffaf5',
-                              border: '1px solid rgba(115,75,42,0.12)',
-                              cursor: 'pointer',
-                              fontWeight: 900,
-                              color: '#64320D',
-                            }}
-                          >
-                            Close
-                          </button>
-                          <button
-                            onClick={() => void saveClientProfile()}
-                            disabled={clientProfileSaving}
-                            style={{
-                              padding: '10px 14px',
-                              borderRadius: 14,
-                              background: clientProfileSaving ? '#d1fae5' : '#128C7E',
-                              border: '1px solid rgba(18,140,126,0.18)',
-                              cursor: clientProfileSaving ? 'not-allowed' : 'pointer',
-                              fontWeight: 900,
-                              color: clientProfileSaving ? '#065f46' : '#ffffff',
-                              opacity: clientProfileSaving ? 0.85 : 1,
-                            }}
-                          >
-                            {clientProfileSaving ? 'Saving…' : 'Save'}
-                          </button>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
+                <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-minsah-surface-accent text-minsah-text-subtle">No image</div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Product Search Drawer */}
-      {showProductDrawer && activeConversation && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 950,
-          background: 'rgba(0,0,0,0.38)',
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}>
-          <div style={{
-            width: isMobile ? '100%' : 560,
-            height: '100%',
-            background: '#fff',
-            boxShadow: '-20px 0 60px rgba(0,0,0,0.20)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}>
-            <div style={{
-              padding: '16px 18px',
-              borderBottom: '1px solid #ede5de',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-            }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a' }}>Product Search</div>
-                <div style={{ fontSize: 12, color: '#8E6545', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  Select a product → preview → send to {activeConversation.participant.name}
-                </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-black">{selectedProductDraft.product.name}</h3>
+                <p className="mt-1 font-bold text-minsah-text-link">{formatBdt(selectedProductDraft.product.price)}</p>
+                <Badge tone={selectedProductDraft.product.inStock ? 'success' : 'danger'} className="mt-2">
+                  {selectedProductDraft.product.inStock ? `${selectedProductDraft.product.stock} in stock` : 'Out of stock'}
+                </Badge>
               </div>
-              <button
-                onClick={() => { setShowProductDrawer(false); setSelectedProductDraft(null); }}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 14,
-                  background: '#fffaf5',
-                  border: '1px solid rgba(115,75,42,0.10)',
-                  cursor: 'pointer',
-                  color: '#64320D',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+            </div>
+
+            {selectedProductDraft.product.variants?.length ? (
+              <Select
+                label="Variant"
+                value={selectedProductDraft.variantId ?? ''}
+                onChange={(event) => setSelectedProductDraft((current) => current ? { ...current, variantId: event.target.value || null } : current)}
               >
-                <X size={16} />
-              </button>
-            </div>
+                {selectedProductDraft.product.variants.map((variant) => (
+                  <option key={variant.id} value={variant.id} disabled={variant.stock <= 0}>
+                    {getVariantLabel(variant)} — {formatBdt(variant.price)} — {variant.stock} available
+                  </option>
+                ))}
+              </Select>
+            ) : null}
 
-            <div style={{ padding: 14, borderBottom: '1px solid #f2ebe4' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: '#fbf7f3',
-                borderRadius: 18,
-                padding: '12px 12px',
-                border: '1px solid rgba(115,75,42,0.10)',
-              }}>
-                <Search size={16} color="#8d684e" />
-                <input
-                  value={productSearchTerm}
-                  onChange={(e) => setProductSearchTerm(e.target.value)}
-                  placeholder="Search products…"
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    outline: 'none',
-                    background: 'transparent',
-                    fontSize: 14,
-                    color: '#23120a',
-                  }}
-                />
-                {productSearchLoading && (
-                  <RefreshCw size={16} color="#8d684e" style={{ animation: 'spin 1s linear infinite' }} />
-                )}
-              </div>
-            </div>
-
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 14 }}>
-              <div style={{ display: 'grid', gap: 10 }}>
-                {(productSearchResults.length === 0 && !productSearchLoading) ? (
-                  <div style={{
-                    padding: 14,
-                    borderRadius: 18,
-                    background: '#fffaf4',
-                    border: '1px solid rgba(115,75,42,0.10)',
-                    color: '#8E6545',
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}>
-                    No products found. Try a different search.
-                  </div>
-                ) : (
-                  productSearchResults.map((p) => (
-                    <button
-                      key={p.id}
-                      disabled={!p.inStock}
-                      onClick={() => {
-                        const defaultVariantId = getPreferredVariantId(p);
-                        setSelectedProductDraft({
-                          product: p,
-                          variantId: defaultVariantId,
-                          quantity: 1,
-                          note: '',
-                        });
-                      }}
-                      style={{
-                        display: 'flex',
-                        gap: 12,
-                        alignItems: 'center',
-                        padding: 12,
-                        borderRadius: 18,
-                        border: '1px solid rgba(115,75,42,0.10)',
-                        background: '#ffffff',
-                        cursor: p.inStock ? 'pointer' : 'not-allowed',
-                        opacity: p.inStock ? 1 : 0.56,
-                        textAlign: 'left',
-                      }}
-                    >
-                      <div style={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: 16,
-                        overflow: 'hidden',
-                        background: '#fffaf5',
-                        border: '1px solid rgba(115,75,42,0.10)',
-                        flexShrink: 0,
-                      }}>
-                        {p.image ? (
-                          <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8E6545', fontWeight: 900 }}>
-                            MB
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {p.name}
-                        </div>
-                        <div style={{ marginTop: 4, display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, fontWeight: 800, color: '#6b7280' }}>
-                          <span>{formatBdt(p.price)}</span>
-                          <span style={{ color: p.inStock ? '#16a34a' : '#dc2626' }}>{p.inStock ? 'In stock' : 'Out of stock'}</span>
-                          <span>Stock: {p.stock}</span>
-                        </div>
-                      </div>
-                      <div style={{
-                        padding: '6px 10px',
-                        borderRadius: 999,
-                        background: p.inStock ? 'rgba(18,140,126,0.10)' : 'rgba(220,38,38,0.08)',
-                        border: p.inStock ? '1px solid rgba(18,140,126,0.18)' : '1px solid rgba(220,38,38,0.14)',
-                        color: p.inStock ? '#065f46' : '#b91c1c',
-                        fontSize: 12,
-                        fontWeight: 900,
-                        flexShrink: 0,
-                      }}>
-                        {p.inStock ? 'Select' : 'Sold Out'}
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-
-              {/* Selected Product Preview */}
-              <div style={{ marginTop: 14 }}>
-                <div style={{
-                  padding: 14,
-                  borderRadius: 22,
-                  background: '#f8fafc',
-                  border: '1px solid rgba(15,23,42,0.08)',
-                }}>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: '#475569', letterSpacing: '0.10em', textTransform: 'uppercase' }}>
-                    Selected Product Preview
-                  </div>
-
-                  {!selectedProductDraft ? (
-                    <div style={{
-                      marginTop: 10,
-                      padding: 12,
-                      borderRadius: 18,
-                      background: '#ffffff',
-                      border: '1px dashed rgba(100,50,13,0.20)',
-                      color: '#8E6545',
-                      fontSize: 13,
-                      fontWeight: 800,
-                    }}>
-                      No product selected yet. Select a product to send.
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: 10, display: 'grid', gap: 12 }}>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <div style={{
-                          width: 72,
-                          height: 72,
-                          borderRadius: 18,
-                          overflow: 'hidden',
-                          background: '#fff',
-                          border: '1px solid rgba(15,23,42,0.10)',
-                          flexShrink: 0,
-                        }}>
-                          {selectedProductDraft.product.image ? (
-                            <img src={selectedProductDraft.product.image} alt={selectedProductDraft.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : null}
-                        </div>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: 15, fontWeight: 900, color: '#0f172a', lineHeight: 1.25 }}>
-                            {selectedProductDraft.product.name}
-                          </div>
-                          <div style={{ marginTop: 4, display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, fontWeight: 800, color: '#475569' }}>
-                            <span>{formatBdt(buildSelectedVariant(selectedProductDraft)?.price ?? selectedProductDraft.product.price)}</span>
-                            <span style={{ color: (buildSelectedVariant(selectedProductDraft)?.stock ?? selectedProductDraft.product.stock) > 0 ? '#16a34a' : '#dc2626' }}>
-                              {(buildSelectedVariant(selectedProductDraft)?.stock ?? selectedProductDraft.product.stock) > 0 ? 'In stock' : 'Out of stock'}
-                            </span>
-                            <span>Stock: {buildSelectedVariant(selectedProductDraft)?.stock ?? selectedProductDraft.product.stock}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {Array.isArray(selectedProductDraft.product.variants) && selectedProductDraft.product.variants.length > 0 && (
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 900, color: '#475569', marginBottom: 6 }}>Variant</div>
-                          <select
-                            value={selectedProductDraft.variantId ?? ''}
-                            onChange={(e) => setSelectedProductDraft((prev) => prev ? ({ ...prev, variantId: e.target.value || null }) : prev)}
-                            style={{
-                              width: '100%',
-                              padding: '10px 12px',
-                              borderRadius: 14,
-                              border: '1px solid rgba(15,23,42,0.10)',
-                              background: '#ffffff',
-                              fontSize: 13,
-                              fontWeight: 800,
-                              color: '#0f172a',
-                              outline: 'none',
-                            }}
-                          >
-                            <option value="" disabled>
-                              Select variant
-                            </option>
-                            {selectedProductDraft.product.variants.map((v) => (
-                              <option key={v.id} value={v.id}>
-                                {getVariantLabel(v)} • {formatBdt(v.price)} • Stock {v.stock}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                        <div style={{ fontSize: 12, fontWeight: 900, color: '#475569' }}>Quantity</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <button
-                            onClick={() => setSelectedProductDraft((prev) => prev ? ({ ...prev, quantity: Math.max(1, (prev.quantity || 1) - 1) }) : prev)}
-                            style={{
-                              width: 38,
-                              height: 38,
-                              borderRadius: 14,
-                              background: '#ffffff',
-                              border: '1px solid rgba(15,23,42,0.10)',
-                              cursor: 'pointer',
-                              fontWeight: 900,
-                              color: '#0f172a',
-                            }}
-                          >
-                            -
-                          </button>
-                          <div style={{ minWidth: 42, textAlign: 'center', fontSize: 14, fontWeight: 900, color: '#0f172a' }}>
-                            {selectedProductDraft.quantity}
-                          </div>
-                          <button
-                            onClick={() => setSelectedProductDraft((prev) => prev ? ({ ...prev, quantity: Math.min(99, (prev.quantity || 1) + 1) }) : prev)}
-                            style={{
-                              width: 38,
-                              height: 38,
-                              borderRadius: 14,
-                              background: '#ffffff',
-                              border: '1px solid rgba(15,23,42,0.10)',
-                              cursor: 'pointer',
-                              fontWeight: 900,
-                              color: '#0f172a',
-                            }}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 900, color: '#475569', marginBottom: 6 }}>Optional note/message</div>
-                        <textarea
-                          value={selectedProductDraft.note}
-                          onChange={(e) => setSelectedProductDraft((prev) => prev ? ({ ...prev, note: e.target.value }) : prev)}
-                          placeholder="Write a short note to the client (optional)"
-                          rows={3}
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px',
-                            borderRadius: 14,
-                            border: '1px solid rgba(15,23,42,0.10)',
-                            background: '#ffffff',
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: '#0f172a',
-                            outline: 'none',
-                            resize: 'none',
-                          }}
-                        />
-                      </div>
-
-                      <button
-                        onClick={() => setConfirmSendProduct(true)}
-                        disabled={!selectedProductDraft || sendingProduct}
-                        style={{
-                          width: '100%',
-                          padding: '12px 14px',
-                          borderRadius: 16,
-                          background: (!selectedProductDraft || sendingProduct) ? '#e2e8f0' : '#128C7E',
-                          border: '1px solid rgba(18,140,126,0.18)',
-                          cursor: (!selectedProductDraft || sendingProduct) ? 'not-allowed' : 'pointer',
-                          fontWeight: 900,
-                          color: (!selectedProductDraft || sendingProduct) ? '#64748b' : '#ffffff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 8,
-                        }}
-                      >
-                        {sendingProduct ? 'Sending…' : 'Send Product to Client'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <Input
+              label="Quantity"
+              type="number"
+              min={1}
+              max={99}
+              value={selectedProductDraft.quantity}
+              onChange={(event) => setSelectedProductDraft((current) => current ? { ...current, quantity: Math.max(1, Math.min(99, Number(event.target.value) || 1)) } : current)}
+            />
+            <Textarea
+              label="Optional note"
+              value={selectedProductDraft.note}
+              onChange={(event) => setSelectedProductDraft((current) => current ? { ...current, note: event.target.value } : current)}
+              placeholder="Add a short note for the customer"
+              rows={3}
+            />
           </div>
-        </div>
-      )}
-
-      {/* Confirmation Modal */}
-      {confirmSendProduct && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 980,
-          background: 'rgba(0,0,0,0.42)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 16,
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: 520,
-            borderRadius: 24,
-            background: '#ffffff',
-            boxShadow: '0 40px 80px rgba(0,0,0,0.22)',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              padding: '16px 18px',
-              borderBottom: '1px solid #ede5de',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: 12,
-            }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 900, color: '#23120a' }}>Confirm Send</div>
-                <div style={{ fontSize: 12, color: '#8E6545', marginTop: 3 }}>
-                  Are you sure you want to send this product to this client?
-                </div>
-              </div>
-              <button
-                onClick={() => setConfirmSendProduct(false)}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 14,
-                  background: '#fffaf5',
-                  border: '1px solid rgba(115,75,42,0.10)',
-                  cursor: 'pointer',
-                  color: '#64320D',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+        ) : productSearchResults.length ? (
+          <div className="mt-5 grid gap-3">
+            {productSearchResults.map((product) => (
+              <Button
+                key={product.id}
+                variant="secondary"
+                fullWidth
+                className="h-auto justify-start p-3 text-left"
+                onClick={() => setSelectedProductDraft({ product, variantId: getPreferredVariantId(product), quantity: 1, note: '' })}
               >
-                <X size={16} />
-              </button>
-            </div>
-            <div style={{ padding: 18, display: 'grid', gap: 12 }}>
-              <div style={{
-                padding: 12,
-                borderRadius: 18,
-                background: '#fffaf4',
-                border: '1px solid rgba(115,75,42,0.10)',
-                fontSize: 13,
-                fontWeight: 800,
-                color: '#64320D',
-              }}>
-                This will send a product card into the current conversation and save it in history.
-                {selectedProductDraft ? (
-                  <span style={{ display: 'block', marginTop: 8, color: '#8E6545' }}>
-                    {selectedProductDraft.product.name}
-                    {buildSelectedVariant(selectedProductDraft) ? ` • ${getVariantLabel(buildSelectedVariant(selectedProductDraft)!)}` : ''}
-                    {` • Qty ${Math.max(1, Math.min(99, selectedProductDraft.quantity || 1))}`}
-                  </span>
-                ) : null}
-              </div>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => setConfirmSendProduct(false)}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    background: '#fffaf5',
-                    border: '1px solid rgba(115,75,42,0.12)',
-                    cursor: 'pointer',
-                    fontWeight: 900,
-                    color: '#64320D',
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => void sendProductCard()}
-                  disabled={sendingProduct || !selectedProductDraft}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    background: (sendingProduct || !selectedProductDraft) ? '#e2e8f0' : '#128C7E',
-                    border: '1px solid rgba(18,140,126,0.18)',
-                    cursor: (sendingProduct || !selectedProductDraft) ? 'not-allowed' : 'pointer',
-                    fontWeight: 900,
-                    color: (sendingProduct || !selectedProductDraft) ? '#64748b' : '#ffffff',
-                  }}
-                >
-                  {sendingProduct ? 'Sending…' : 'Confirm & Send'}
-                </button>
-              </div>
-            </div>
+                {product.image ? <img src={product.image} alt={product.name} className="h-16 w-16 rounded-xl object-cover" /> : null}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-black">{product.name}</span>
+                  <span className="mt-1 block text-sm text-minsah-text-muted">{formatBdt(product.price)} · {product.stock} in stock</span>
+                </span>
+              </Button>
+            ))}
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="mt-8 text-center text-sm text-minsah-text-muted">No products matched your search.</div>
+        )}
+      </Drawer>
+
+      <ConfirmDialog
+        open={confirmSendProduct}
+        onClose={() => setConfirmSendProduct(false)}
+        onConfirm={() => void sendProductCard()}
+        title="Send this product?"
+        description={selectedProductDraft ? `${selectedProductDraft.product.name} will be sent to ${fixEncoding(activeConversation?.participant.name ?? 'the customer')}.` : undefined}
+        confirmLabel="Send product"
+        loading={sendingProduct}
+        disabled={!selectedProductDraft}
+      >
+        {selectedProductDraft ? (
+          <div className="rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle p-4 text-sm">
+            <p className="font-black">{selectedProductDraft.product.name}</p>
+            <p className="mt-1 text-minsah-text-muted">Quantity: {selectedProductDraft.quantity}</p>
+          </div>
+        ) : null}
+      </ConfirmDialog>
+    </section>
   );
 }
 
 // ─────────────────────────────────── media renderer ──
 
+function renderProductCard(text: string, isIncoming: boolean) {
+  if (!text.startsWith(PRODUCT_CARD_PREFIX)) return null;
+  const raw = (text.slice(PRODUCT_CARD_PREFIX.length).split('\n')[0] || '').trim();
+  const product = safeJsonParse<{
+    name: string;
+    image?: string;
+    price: number;
+    quantity: number;
+    variantLabel?: string | null;
+    note?: string;
+    viewUrl: string;
+    orderUrl: string;
+  }>(raw);
+  if (!product) return null;
+
+  return (
+    <div className="grid gap-3">
+      {product.image ? <img src={product.image} alt={product.name} className="max-h-56 w-full rounded-xl object-cover" /> : null}
+      <div>
+        <p className="font-black">{product.name}</p>
+        <p className={`mt-1 text-sm ${isIncoming ? 'text-minsah-text-muted' : 'text-minsah-text-inverse'}`}>
+          {formatBdt(product.price)} · Qty {product.quantity}
+        </p>
+        {product.variantLabel ? <p className="mt-1 text-xs">{product.variantLabel}</p> : null}
+        {product.note ? <p className="mt-2 text-sm">{product.note}</p> : null}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={toAbsoluteStorefrontUrl(product.viewUrl)}
+          target="_blank"
+          rel="noreferrer"
+          className={`minsah-control inline-flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold ${
+            isIncoming
+              ? 'border-minsah-border-default bg-minsah-surface-panel text-minsah-text-link'
+              : 'border-minsah-text-inverse text-minsah-text-inverse'
+          }`}
+        >
+          View product
+        </a>
+        <a
+          href={toAbsoluteStorefrontUrl(product.orderUrl)}
+          target="_blank"
+          rel="noreferrer"
+          className={`minsah-control inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold ${
+            isIncoming
+              ? 'bg-minsah-action-primary text-minsah-text-inverse'
+              : 'bg-minsah-surface-panel text-minsah-text-link'
+          }`}
+        >
+          Order now
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function renderMedia(
   media: NonNullable<SocialMessage['content']['media']>[number],
   key: string,
-  isIncoming: boolean
+  isIncoming: boolean,
 ) {
+  const contrastClass = isIncoming ? 'text-minsah-text-muted' : 'text-minsah-text-inverse';
+
   if (media.type === 'image') {
     return (
-      <a key={key} href={media.url} target="_blank" rel="noreferrer"
-        style={{ display: 'block', borderRadius: 18, overflow: 'hidden', border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}`, boxShadow: isIncoming ? '0 8px 20px rgba(67,44,29,0.05)' : 'none' }}>
-        <img src={media.thumbnail || media.url} alt={media.fileName || 'Image'}
-          style={{ maxHeight: 260, width: '100%', objectFit: 'cover', display: 'block' }} />
+      <a key={key} href={media.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-minsah-border-subtle">
+        <img src={media.thumbnail || media.url} alt={media.fileName || 'Shared image'} className="max-h-72 w-full object-cover" />
       </a>
     );
   }
   if (media.type === 'video') {
     return (
-      <div key={key} style={{ borderRadius: 18, overflow: 'hidden', background: '#000', border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}` }}>
-        <video controls preload="metadata" poster={media.thumbnail} style={{ maxHeight: 260, width: '100%' }} src={media.url} />
-        {media.fileName && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 12px', fontSize: 11, color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.7)' }}>
-            <VideoIcon size={12} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{media.fileName}</span>
+      <div key={key} className="overflow-hidden rounded-xl border border-minsah-border-subtle bg-minsah-surface-inverse">
+        <video controls preload="metadata" poster={media.thumbnail} className="max-h-72 w-full" src={media.url} />
+        {media.fileName ? (
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-minsah-text-inverse">
+            <VideoIcon className="h-4 w-4" aria-hidden="true" />
+            <span className="truncate">{media.fileName}</span>
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
   if (media.type === 'audio') {
     return (
-      <div key={key} style={{ borderRadius: 18, padding: '12px 12px', border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}`, background: isIncoming ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.8)', marginBottom: 8 }}>
-          <FileAudio size={12} />
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{media.fileName || 'Audio'}</span>
+      <div key={key} className="rounded-xl border border-minsah-border-subtle p-3">
+        <div className={`mb-2 flex items-center gap-2 text-xs ${contrastClass}`}>
+          <FileAudio className="h-4 w-4" aria-hidden="true" />
+          <span className="truncate">{media.fileName || 'Audio'}</span>
         </div>
-        <audio controls preload="metadata" style={{ width: '100%', height: 36 }} src={media.url} />
+        <audio controls preload="metadata" className="h-10 w-full" src={media.url} />
       </div>
     );
   }
   return (
-    <a key={key} href={media.url} target="_blank" rel="noreferrer" style={{
-      display: 'flex', alignItems: 'center', gap: 8, padding: '12px 12px', borderRadius: 18,
-      border: `1px solid ${isIncoming ? 'rgba(115,75,42,0.10)' : 'rgba(255,255,255,0.12)'}`,
-      color: isIncoming ? '#8E6545' : 'rgba(255,255,255,0.8)',
-      fontSize: 12, textDecoration: 'none',
-    }}>
-      <FileText size={14} style={{ flexShrink: 0 }} />
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{media.fileName || media.mimeType || 'File'}</span>
+    <a
+      key={key}
+      href={media.url}
+      target="_blank"
+      rel="noreferrer"
+      className={`flex min-h-11 items-center gap-2 rounded-xl border border-minsah-border-subtle px-3 py-2 text-sm font-semibold ${contrastClass}`}
+    >
+      <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span className="truncate">{media.fileName || media.mimeType || 'File'}</span>
     </a>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  multiline,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  multiline?: boolean;
-}) {
-  return (
-    <label style={{ display: 'grid', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 900, color: '#475569' }}>{label}</span>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={3}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            borderRadius: 14,
-            border: '1px solid rgba(15,23,42,0.10)',
-            background: '#ffffff',
-            fontSize: 13,
-            fontWeight: 700,
-            color: '#0f172a',
-            outline: 'none',
-            resize: 'none',
-          }}
-        />
-      ) : (
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            borderRadius: 14,
-            border: '1px solid rgba(15,23,42,0.10)',
-            background: '#ffffff',
-            fontSize: 13,
-            fontWeight: 800,
-            color: '#0f172a',
-            outline: 'none',
-          }}
-        />
-      )}
-    </label>
   );
 }

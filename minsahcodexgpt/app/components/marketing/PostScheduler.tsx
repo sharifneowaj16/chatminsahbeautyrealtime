@@ -1,5 +1,14 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { useState, useRef, useEffect } from 'react';
 import type { Platform, ScheduledPost, PostData, MediaItem } from '@/types/social';
 import { PLATFORM_CONFIGS } from '@/types/social';
@@ -25,6 +34,7 @@ interface PostSchedulerProps {
 }
 
 export default function PostScheduler({ onClose, onSchedule, platforms, selectedPlatforms = [] }: PostSchedulerProps) {
+  const { pushToast } = useToast();
   const [activeTab, setActiveTab] = useState<'compose' | 'preview'>('compose');
   const [selectedPlatformsState, setSelectedPlatforms] = useState<string[]>(selectedPlatforms);
   const [content, setContent] = useState('');
@@ -111,7 +121,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
 
   const handlePostNow = async () => {
     if (selectedPlatformsState.length === 0 || !content.trim()) {
-      alert('Please select at least one platform and add content');
+      pushToast({ tone: 'danger', description: 'Please select at least one platform and add content' });
       return;
     }
 
@@ -137,7 +147,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
 
   const handleSchedule = async () => {
     if (selectedPlatformsState.length === 0 || !content.trim() || (scheduleOption === 'later' && (!scheduledDate || !scheduledTime))) {
-      alert('Please fill all required fields');
+      pushToast({ tone: 'danger', description: 'Please fill all required fields' });
       return;
     }
 
@@ -175,25 +185,16 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
-
-        <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Create New Post</h2>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-300"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
+    <Modal
+      open
+      onClose={onClose}
+      title="Create New Post"
+      size="xl"
+      bodyClassName="p-0 sm:p-0"
+    >
           {/* Tabs */}
           <div className="flex border-b border-gray-200">
-            <button
+            <Button
               onClick={() => setActiveTab('compose')}
               className={`flex-1 px-6 py-3 text-sm font-medium transition-colors duration-300 ${
                 activeTab === 'compose'
@@ -202,8 +203,8 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
               }`}
             >
               Compose
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('preview')}
               className={`flex-1 px-6 py-3 text-sm font-medium transition-colors duration-300 ${
                 activeTab === 'preview'
@@ -212,7 +213,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
               }`}
             >
               Preview ({selectedPlatformConfigs.length})
-            </button>
+            </Button>
           </div>
 
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
@@ -224,7 +225,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                   <label className="block text-sm font-medium text-gray-700 mb-3">Select Platforms</label>
                   <div className="flex flex-wrap gap-2">
                     {connectedPlatforms.map((platform) => (
-                      <button
+                      <Button
                         key={platform.id}
                         onClick={() => togglePlatform(platform.id)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${
@@ -238,7 +239,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                         {selectedPlatformsState.includes(platform.id) && (
                           <Check className="h-4 w-4" />
                         )}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -247,13 +248,13 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="block text-sm font-medium text-gray-700">Media</label>
-                    <button
+                    <Button
                       onClick={() => fileInputRef.current?.click()}
                       className="flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 transition-colors duration-300"
                     >
-                      <Image className="h-4 w-4" />
+                      <Image className="h-4 w-4" aria-hidden="true" />
                       Add Media
-                    </button>
+                    </Button>
                   </div>
 
                   <input
@@ -267,21 +268,22 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
 
                   {media.length > 0 ? (
                     <div className="grid grid-cols-3 gap-3">
-                      {media.map((item) => (
+                      {media.map((item, index) => (
                         <div key={item.id} className="relative group">
                           <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                             {item.type === 'video' ? (
                               <video src={item.url} className="w-full h-full object-cover" />
                             ) : (
-                              <img src={item.url} alt="" className="w-full h-full object-cover" />
+                              <img src={item.url} alt={`Uploaded media preview ${index + 1}`} className="w-full h-full object-cover" />
                             )}
                           </div>
-                          <button
+                          <Button
+                            aria-label={`Remove media ${index + 1}`}
                             onClick={() => removeMedia(item.id)}
                             className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                           >
                             <X className="h-3 w-3" />
-                          </button>
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -290,7 +292,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                       onClick={() => fileInputRef.current?.click()}
                       className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors duration-300 cursor-pointer"
                     >
-                      <Image className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                      <Image className="h-12 w-12 text-gray-400 mx-auto mb-2" aria-hidden="true" />
                       <p className="text-sm text-gray-600">Click to upload images or videos</p>
                       <p className="text-xs text-gray-500 mt-1">Drag and drop supported</p>
                     </div>
@@ -303,24 +305,26 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                     <label className="block text-sm font-medium text-gray-700">Caption</label>
                     <div className="flex items-center gap-2">
                       <div className="relative">
-                        <button
+                        <Button
+                          aria-label="Open emoji picker"
+                          aria-expanded={showEmojiPicker}
                           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                           className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
                         >
                           <Smile className="h-4 w-4" />
-                        </button>
+                        </Button>
 
                         {showEmojiPicker && (
                           <div className="absolute bottom-full right-0 mb-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                             <div className="grid grid-cols-8 gap-1">
                               {emojis.map((emoji) => (
-                                <button
+                                <Button
                                   key={emoji}
                                   onClick={() => addEmoji(emoji)}
                                   className="p-2 hover:bg-gray-100 rounded transition-colors duration-300"
                                 >
                                   {emoji}
-                                </button>
+                                </Button>
                               ))}
                             </div>
                           </div>
@@ -328,25 +332,25 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                       </div>
 
                       <div className="relative">
-                        <button
+                        <Button
                           onClick={() => setShowHashtagSuggestions(!showHashtagSuggestions)}
                           className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
                         >
                           <Hash className="h-4 w-4" />
-                        </button>
+                        </Button>
 
                         {showHashtagSuggestions && (
                           <div className="absolute bottom-full right-0 mb-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg z-10 w-64 max-h-48 overflow-y-auto">
                             <p className="text-xs font-medium text-gray-700 mb-2">Suggested Hashtags</p>
                             <div className="space-y-1">
                               {beautyHashtags.slice(0, 10).map((hashtag) => (
-                                <button
+                                <Button
                                   key={hashtag}
                                   onClick={() => addHashtag(hashtag)}
                                   className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors duration-300"
                                 >
                                   {hashtag}
-                                </button>
+                                </Button>
                               ))}
                             </div>
                           </div>
@@ -355,7 +359,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                     </div>
                   </div>
 
-                  <textarea
+                  <Textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Write your caption here..."
@@ -392,12 +396,12 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                           className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
                         >
                           {hashtag}
-                          <button
+                          <Button
                             onClick={() => removeHashtag(hashtag)}
                             className="hover:text-blue-900 transition-colors duration-300"
                           >
                             <X className="h-3 w-3" />
-                          </button>
+                          </Button>
                         </span>
                       ))}
                     </div>
@@ -409,7 +413,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                   <label className="block text-sm font-medium text-gray-700 mb-3">When to Post</label>
                   <div className="flex gap-4 mb-4">
                     <label className="flex items-center">
-                      <input
+                      <Input
                         type="radio"
                         value="now"
                         checked={scheduleOption === 'now'}
@@ -419,7 +423,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                       <span className="text-sm">Post Now</span>
                     </label>
                     <label className="flex items-center">
-                      <input
+                      <Input
                         type="radio"
                         value="later"
                         checked={scheduleOption === 'later'}
@@ -433,7 +437,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                   {scheduleOption === 'later' && (
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <input
+                        <Input
                           type="date"
                           value={scheduledDate}
                           onChange={(e) => setScheduledDate(e.target.value)}
@@ -442,7 +446,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                         />
                       </div>
                       <div>
-                        <input
+                        <Input
                           type="time"
                           value={scheduledTime}
                           onChange={(e) => setScheduledTime(e.target.value)}
@@ -469,10 +473,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                     {selectedPlatformConfigs.map((platform) => (
                       <div key={platform.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center gap-3 mb-3">
-                          <div
-                            className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: `${platform.color}20` }}
-                          >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-minsah-surface-accent text-minsah-text-link">
                             {getPlatformIcon(platform.icon)}
                           </div>
                           <span className="font-medium text-gray-900">{platform.name}</span>
@@ -487,7 +488,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                                   {media[0].type === 'video' ? (
                                     <video src={media[0].url} className="w-full h-full object-cover" controls />
                                   ) : (
-                                    <img src={media[0].url} alt="" className="w-full h-full object-cover" />
+                                    <img src={media[0].url} alt="Selected post media preview" className="w-full h-full object-cover" />
                                   )}
                                 </div>
                               ) : (
@@ -497,7 +498,7 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                                       {item.type === 'video' ? (
                                         <video src={item.url} className="w-full h-full object-cover" />
                                       ) : (
-                                        <img src={item.url} alt="" className="w-full h-full object-cover" />
+                                        <img src={item.url} alt={`Selected post media preview ${index + 1}`} className="w-full h-full object-cover" />
                                       )}
                                     </div>
                                   ))}
@@ -533,20 +534,20 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
 
           {/* Footer Actions */}
           <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-            <button
+            <Button
               onClick={onClose}
               className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors duration-300"
             >
               Cancel
-            </button>
+            </Button>
 
             <div className="flex items-center gap-3">
-              <button className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300">
+              <Button className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300">
                 Save Draft
-              </button>
+              </Button>
 
               {scheduleOption === 'now' ? (
-                <button
+                <Button
                   onClick={handlePostNow}
                   disabled={isPosting || selectedPlatformsState.length === 0 || !content.trim()}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
@@ -562,9 +563,9 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                       Post Now
                     </>
                   )}
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   onClick={handleSchedule}
                   disabled={isScheduling || selectedPlatformsState.length === 0 || !content.trim() || !scheduledDate || !scheduledTime}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
@@ -580,12 +581,10 @@ export default function PostScheduler({ onClose, onSchedule, platforms, selected
                       Schedule Post
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

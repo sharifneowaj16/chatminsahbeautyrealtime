@@ -1,0 +1,16 @@
+# FCP-00 changed files and diff summary
+
+Modified: .dockerignore -> .dockerignore differ
+Modified: .github/workflows/ci.yml -> .github/workflows/ci.yml differ
+Modified: .gitignore -> .gitignore differ
+Added: FCP_00_BASELINE_REPORT.md
+Modified: app/api/admin/site-config/route.ts -> app/api/admin/site-config/route.ts differ
+Only in ./docs/release: HISTORICAL_REPORTS_NOTICE.md
+Only in ./docs/release: evidence
+Modified: hooks/useAccessibleDialog.ts -> hooks/useAccessibleDialog.ts differ
+Only in ./lib: accessibility
+Only in ./lib: prisma-json.ts
+Modified: package.json -> package.json differ
+Only in ./tests: fcp00
+
+## Line summary

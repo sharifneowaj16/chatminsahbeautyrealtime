@@ -36,6 +36,9 @@ import {
   Webhook,
 } from 'lucide-react';
 import { normalizeSteadfastDeliveryStatus } from '@/lib/steadfast/client';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -296,12 +299,16 @@ export default function SteadfastShipPanel({
                 <AlertTriangle className="w-3.5 h-3.5 text-yellow-300" />
               )}
             </div>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={onClose}
-              className="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close panel"
+              className="text-white/80 hover:bg-white/10 hover:text-white"
             >
-              <X className="w-5 h-5" />
-            </button>
+              <X className="w-5 h-5" aria-hidden="true" />
+            </Button>
           </div>
         </div>
 
@@ -316,22 +323,25 @@ export default function SteadfastShipPanel({
               </h3>
               <p className="text-xs text-gray-600 leading-relaxed">
                 In the Steadfast portal, set this callback URL and the same Bearer token as your server env (
-                <code className="rounded bg-white/90 px-1 py-0.5 text-[11px]">STEADFAST_WEBHOOK_SECRET</code> or{' '}
-                <code className="rounded bg-white/90 px-1 py-0.5 text-[11px]">STEADFAST_WEBHOOK_AUTHORIZATION</code>
+                <code className="rounded bg-white/90 px-1 py-0.5 text-xs">STEADFAST_WEBHOOK_SECRET</code> or{' '}
+                <code className="rounded bg-white/90 px-1 py-0.5 text-xs">STEADFAST_WEBHOOK_AUTHORIZATION</code>
                 ). Delivery updates will sync to this order automatically.
               </p>
               <div className="flex items-start gap-2 rounded-xl bg-white border border-violet-100 px-3 py-2">
-                <code className="text-[11px] font-mono text-gray-800 flex-1 break-all leading-snug">
+                <code className="text-xs font-mono text-gray-800 flex-1 break-all leading-snug">
                   {webhookCallbackUrl}
                 </code>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleCopy(webhookCallbackUrl)}
-                  className="p-1.5 text-gray-400 hover:text-violet-600 rounded-lg hover:bg-violet-50 shrink-0"
+                  className="shrink-0 text-gray-400 hover:bg-violet-50 hover:text-violet-600"
+                  aria-label="Copy webhook callback URL"
                   title="Copy URL"
                 >
-                  <Copy className="w-4 h-4" />
-                </button>
+                  <Copy className="w-4 h-4" aria-hidden="true" />
+                </Button>
               </div>
               <Link
                 href="/admin/shipping/steadfast-webhooks"
@@ -354,14 +364,17 @@ export default function SteadfastShipPanel({
                 <span className="text-sm font-semibold text-emerald-800">
                   📦 Dispatched to Steadfast
                 </span>
-                <button
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={handleSync}
                   disabled={syncing}
-                  className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                  className="border-transparent bg-emerald-100 text-xs text-emerald-700 hover:bg-emerald-200"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} aria-hidden="true" />
                   Refresh
-                </button>
+                </Button>
               </div>
 
               {currentStatus && <StatusBadge status={currentStatus} />}
@@ -376,19 +389,24 @@ export default function SteadfastShipPanel({
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleCopy(trackingCode || order.steadfastTrackingCode || '')}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                        aria-label="Copy tracking code"
+                        className="text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                       >
-                        <Copy className="w-4 h-4" />
-                      </button>
+                        <Copy className="w-4 h-4" aria-hidden="true" />
+                      </Button>
                       <a
                         href={`/track?code=${trackingCode || order.steadfastTrackingCode}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                        className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        aria-label="Open tracking page"
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <ExternalLink className="w-4 h-4" aria-hidden="true" />
                       </a>
                     </div>
                   </div>
@@ -437,46 +455,41 @@ export default function SteadfastShipPanel({
           {/* COD Amount */}
           {!alreadyDispatched && (
             <>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-violet-500" />
-                  COD Amount (৳)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
-                    ৳
+              <Input
+                type="number"
+                value={codAmount}
+                onChange={(e) => setCodAmount(Number(e.target.value))}
+                min={0}
+                step={0.01}
+                placeholder="0.00"
+                label={
+                  <span className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-violet-500" aria-hidden="true" />
+                    COD Amount (৳)
                   </span>
-                  <input
-                    type="number"
-                    value={codAmount}
-                    onChange={(e) => setCodAmount(Number(e.target.value))}
-                    min={0}
-                    step={0.01}
-                    className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                    placeholder="0.00"
-                  />
-                </div>
-                <p className="text-xs text-gray-500">
-                  {codAmount === 0
+                }
+                leading={<span className="text-sm font-medium text-gray-500">৳</span>}
+                description={
+                  codAmount === 0
                     ? '💳 Prepaid — no cash collection'
-                    : `💵 Collect ৳${codAmount.toFixed(2)} on delivery`}
-                </p>
-              </div>
+                    : `💵 Collect ৳${codAmount.toFixed(2)} on delivery`
+                }
+                className="focus:ring-violet-500"
+              />
 
               {/* Optional note */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700">
-                  Delivery Note{' '}
-                  <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={2}
-                  placeholder="e.g. Call before delivery, fragile items..."
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                />
-              </div>
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={2}
+                placeholder="e.g. Call before delivery, fragile items..."
+                label={
+                  <>
+                    Delivery Note <span className="text-gray-400 font-normal">(optional)</span>
+                  </>
+                }
+                className="resize-none focus:ring-violet-500"
+              />
             </>
           )}
 
@@ -503,50 +516,60 @@ export default function SteadfastShipPanel({
         {/* Footer */}
         <div className="border-t border-gray-100 p-5 space-y-3">
           {!alreadyDispatched ? (
-            <button
+            <Button
+              type="button"
+              variant="primary"
+              fullWidth
               onClick={handleDispatch}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-violet-200"
+              aria-busy={loading || undefined}
+              className="bg-gradient-to-r from-violet-600 to-purple-600 py-3 shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-purple-700"
             >
               {loading ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" />
                   Adding parcel…
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
+                  <Send className="w-4 h-4" aria-hidden="true" />
                   Add parcel (Steadfast)
                 </>
               )}
-            </button>
+            </Button>
           ) : (
             <div className="flex gap-2">
-              <button
+              <Button
+                type="button"
+                variant="secondary"
+                fullWidth
                 onClick={handleSync}
                 disabled={syncing}
-                className="flex-1 flex items-center justify-center gap-2 border border-violet-200 text-violet-700 hover:bg-violet-50 font-medium py-2.5 rounded-xl transition-colors disabled:opacity-60"
+                className="border-violet-200 text-violet-700 hover:bg-violet-50"
               >
-                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} aria-hidden="true" />
                 Sync Status
-              </button>
+              </Button>
               <a
                 href={`https://portal.steadfast.com.bd`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium py-2.5 px-4 rounded-xl transition-colors"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 font-medium text-gray-600 hover:bg-gray-50"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-4 h-4" aria-hidden="true" />
                 Portal
               </a>
             </div>
           )}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            fullWidth
             onClick={onClose}
-            className="w-full text-sm text-gray-500 hover:text-gray-700 py-2 transition-colors"
+            className="py-2 text-sm text-gray-500 hover:text-gray-700"
           >
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </>

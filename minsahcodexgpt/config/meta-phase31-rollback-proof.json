@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "phase": 31,
+  "item": "8.6",
+  "title": "Phase 31 rollback proof contract",
+  "requiredScenarios": [
+    "LEAD_PLATFORM_OFF",
+    "INSTAGRAM_READ_PLATFORM_OFF",
+    "INSTAGRAM_WRITES_OFF",
+    "INSTAGRAM_PRIVATE_REPLY_OFF",
+    "REALTIME_BRIDGE_OFF",
+    "LEGACY_FALLBACK_ACTIVE",
+    "QUEUED_JOBS_HONOR_CURRENT_FLAGS",
+    "NO_DATA_CORRUPTION_AFTER_TOGGLE",
+    "AUDIT_EVIDENCE_CAPTURED"
+  ],
+  "preservedBusinessState": [
+    "receiptCount",
+    "leadCount",
+    "leadHandoffCount",
+    "instagramConversationCount",
+    "instagramMessageCount",
+    "instagramOutboundRequestCount",
+    "facebookMessageCount",
+    "providerWriteCount",
+    "receiptDigest",
+    "leadDigest",
+    "instagramDigest",
+    "facebookDigest"
+  ],
+  "duplicateCounters": [
+    "duplicateLeadHandoffs",
+    "duplicateInstagramMessages",
+    "duplicateProviderWrites",
+    "duplicateFacebookEvents"
+  ],
+  "auditPolicy": "Audit record count may increase, but provider/business state and canonical digests must remain unchanged during a control-only rollback drill.",
+  "redactionPolicy": "Evidence contains only boolean controls, reason codes, counts and opaque SHA-256 digests. Raw environment values, tokens, webhook payloads and customer PII are forbidden."
+}

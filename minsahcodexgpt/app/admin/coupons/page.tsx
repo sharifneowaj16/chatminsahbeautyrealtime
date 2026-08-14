@@ -1,5 +1,13 @@
 'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -35,6 +43,7 @@ interface Coupon {
 }
 
 export default function CouponsPage() {
+  const { pushToast, requestConfirmation } = useToast();
   const { hasPermission } = useAdminAuth();
   const [coupons, setCoupons] = useState<Coupon[]>([
     {
@@ -103,11 +112,11 @@ export default function CouponsPage() {
 
   const handleCopyCoupon = (code: string) => {
     navigator.clipboard.writeText(code);
-    alert(`Coupon code "${code}" copied to clipboard!`);
+    pushToast({ tone: 'success', description: `Coupon code "${code}" copied to clipboard!` });
   };
 
-  const handleDeleteCoupon = (couponId: string) => {
-    if (confirm('Are you sure you want to delete this coupon?')) {
+  const handleDeleteCoupon = async (couponId: string) => {
+    if (await requestConfirmation({ title: 'Delete this coupon?', description: 'Customers will no longer be able to use it.', confirmLabel: 'Delete coupon', tone: 'danger' })) {
       setCoupons(coupons.filter(c => c.id !== couponId));
     }
   };
@@ -133,10 +142,10 @@ export default function CouponsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Coupons & Discounts</h1>
           <p className="text-gray-600">Create and manage promotional discount codes</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Create Coupon
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -193,7 +202,7 @@ export default function CouponsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search coupons..."
               value={searchTerm}
@@ -202,7 +211,7 @@ export default function CouponsPage() {
             />
           </div>
 
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -211,7 +220,7 @@ export default function CouponsPage() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
             <option value="expired">Expired</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -225,13 +234,13 @@ export default function CouponsPage() {
                   <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg font-mono font-bold text-sm">
                     {coupon.code}
                   </div>
-                  <button
+                  <Button
                     onClick={() => handleCopyCoupon(coupon.code)}
                     className="text-gray-400 hover:text-gray-600"
                     title="Copy Code"
                   >
                     <Copy className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
                 <p className="text-sm text-gray-600">{coupon.description}</p>
               </div>
@@ -285,27 +294,25 @@ export default function CouponsPage() {
               </div>
             </div>
 
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-              <div
-                className="bg-purple-600 h-2 rounded-full"
-                style={{
-                  width: `${coupon.usageLimit ? (coupon.usageCount / coupon.usageLimit) * 100 : 0}%`
-                }}
-              />
-            </div>
+            <progress
+              className="mb-4 h-2 w-full accent-minsah-action-primary"
+              max={Math.max(coupon.usageLimit || 1, 1)}
+              value={coupon.usageCount}
+              aria-label={`${coupon.code} usage`}
+            />
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-200">
               <div className="flex items-center space-x-2">
-                <button className="text-blue-600 hover:text-blue-800" title="Edit">
+                <Button className="text-blue-600 hover:text-blue-800" title="Edit">
                   <Edit className="w-4 h-4" />
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleDeleteCoupon(coupon.id)}
                   className="text-red-600 hover:text-red-800"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
               <div className="text-xs text-gray-500">
                 {coupon.applicableTo === 'all' ? 'All Products' :

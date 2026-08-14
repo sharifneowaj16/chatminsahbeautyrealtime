@@ -1,30 +1,21 @@
-﻿import Link from 'next/link';
-import Navbar from './components/Header';
-import TopBar from './components/TopBar';
-import Footer from './components/Footer';
+import Link from 'next/link';
 
-export default function NotFound() {
+export default function RootNotFound() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <Navbar />
-      <main className="flex-grow flex items-center justify-center py-12">
-        <div className="text-center">
-          <h1 className="text-9xl font-bold text-pink-600 mb-4">404</h1>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Page Not Found</h2>
-          <p className="text-gray-600 mb-8">
-            The page you're looking for doesn't exist or has been moved.
-          </p>
-          <Link
-            href="/"
-            className="inline-block bg-pink-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-pink-700 transition"
-          >
-            Go Back Home
-          </Link>
-        </div>
-      </main>
-      <Footer />
-    </div>
+    <main className="flex min-h-[60vh] items-center justify-center px-4 py-12" aria-labelledby="not-found-title">
+      <div className="text-center">
+        <p className="text-sm font-bold uppercase tracking-[0.18em] text-minsah-secondary">Error 404</p>
+        <h1 id="not-found-title" className="mt-3 text-4xl font-black text-minsah-dark sm:text-5xl">Page not found</h1>
+        <p className="mx-auto mt-4 max-w-md text-minsah-secondary">
+          The page you are looking for does not exist or has been moved.
+        </p>
+        <Link
+          href="/"
+          className="mt-8 inline-flex min-h-11 items-center justify-center rounded-full bg-minsah-primary px-7 py-3 font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary focus-visible:ring-offset-2"
+        >
+          Go back home
+        </Link>
+      </div>
+    </main>
   );
 }
-

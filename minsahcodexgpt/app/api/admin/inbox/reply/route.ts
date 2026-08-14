@@ -1,57 +1,53 @@
-import { adminUnauthorizedResponse, getVerifiedAdmin } from '@/app/api/admin/_utils'
-import { NextRequest, NextResponse } from 'next/server'
-
-const REALTIME_SERVICE_URL =
-  process.env.REALTIME_SERVICE_INTERNAL_URL ?? 'http://realtime-service:3001'
-const REPLY_API_SECRET = process.env.REPLY_API_SECRET ?? ''
-const FACEBOOK_PAGE_ID = process.env.FACEBOOK_PAGE_ID ?? ''
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminMutationPermission } from '@/app/api/admin/_utils';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
+import { executeMetaAdminAction } from '@/lib/meta/admin/service';
+import { metaAdminActionErrorResponse } from '@/app/api/admin/meta/_shared/response';
+import { requestFacebookAdminReplyProduction } from '@/lib/meta-platform/domains/facebook/admin-reply';
+import { assertMetaAdminSafeDto, metaAdminNoStoreHeaders } from '@/lib/meta-platform/admin';
 
 export async function POST(request: NextRequest) {
+  const { admin, response } = await requireAdminMutationPermission(request, ADMIN_PERMISSIONS.META_SOCIAL_OPERATE);
+  if (response) return response;
   try {
-    const admin = await getVerifiedAdmin(request)
-    if (!admin) {
-      return adminUnauthorizedResponse()
-    }
-
-    if (!REPLY_API_SECRET) {
-      return NextResponse.json(
-        { error: 'REPLY_API_SECRET is not configured' },
-        { status: 500 }
-      )
-    }
-
-    const body = await request.json()
-
-    const response = await fetch(`${REALTIME_SERVICE_URL}/reply`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-secret': REPLY_API_SECRET,
+    const body = await request.json() as Record<string, unknown>;
+    const resourceId = typeof body.recipientPsid === 'string'
+      ? body.recipientPsid
+      : typeof body.commentId === 'string' ? body.commentId : null;
+    const executed = await executeMetaAdminAction({
+      request,
+      actorId: admin.adminId,
+      actionKey: 'META_FACEBOOK_REPLY',
+      resourceType: body.type === 'comment' ? 'FACEBOOK_COMMENT' : 'FACEBOOK_CONVERSATION',
+      resourceId,
+      payload: {
+        type: body.type,
+        recipientPsid: body.recipientPsid,
+        commentId: body.commentId,
+        pageId: body.pageId,
+        hasText: typeof body.text === 'string' && Boolean(body.text.trim()),
+        attachmentCount: Array.isArray(body.attachments) ? body.attachments.length : 0,
+        clientMessageId: body.clientMessageId,
       },
-      body: JSON.stringify({
-        ...body,
-        agentId: admin.adminId,
-        pageId: body.pageId ?? FACEBOOK_PAGE_ID,
+      reason: 'Admin social inbox reply',
+      run: () => requestFacebookAdminReplyProduction({
+        type: body.type,
+        recipientPsid: body.recipientPsid,
+        commentId: body.commentId,
+        pageId: body.pageId,
+        text: body.text,
+        attachments: body.attachments,
+        actorId: admin.adminId,
+        clientMessageId: body.clientMessageId,
       }),
-    })
-
-    const data = (await response.json().catch(() => null)) as Record<string, unknown> | null
-
-    if (!response.ok) {
-      return NextResponse.json(data ?? { error: 'Reply failed' }, { status: response.status })
-    }
-
-    return NextResponse.json(data ?? { ok: true })
+    });
+    const payload = { ...executed.result, auditId: executed.auditId };
+    assertMetaAdminSafeDto(payload);
+    return NextResponse.json(payload, {
+      status: executed.result.queued ? 202 : 200,
+      headers: metaAdminNoStoreHeaders(),
+    });
   } catch (error) {
-    console.error('[admin/inbox/reply] POST failed', error)
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Reply failed',
-      },
-      { status: 500 }
-    )
+    return metaAdminActionErrorResponse(error);
   }
 }

@@ -1,0 +1,9 @@
+
+> minsah-beauty@2.0.0 env:check
+> node scripts/validate-env.mjs --example .env.example
+
+WARN: NEXT_PUBLIC_FACEBOOK_URL is recommended for production but is not configured.
+WARN: NEXT_PUBLIC_INSTAGRAM_URL is recommended for production but is not configured.
+WARN: NEXT_PUBLIC_YOUTUBE_URL is recommended for production but is not configured.
+WARN: NEXT_PUBLIC_TELEGRAM_URL is recommended for production but is not configured.
+Environment validation passed for .env.example (production contract).

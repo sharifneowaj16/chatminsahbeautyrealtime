@@ -1,0 +1,23 @@
+
+> minsah-beauty@2.0.0 build
+> node scripts/prisma-client-freshness.mjs && next build --webpack
+
+Generated Prisma client matches schema bd017fc75668.
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+Warning: Custom Cache-Control headers detected for the following routes:
+  - /_next/static/:path*
+  - /_next/image
+
+Setting a custom Cache-Control header can break Next.js development behavior.
+▲ Next.js 16.2.9 (webpack)
+- Experiments (use with caution):
+  ✓ optimizeCss
+  · optimizePackageImports
+  · serverActions
+
+  Creating an optimized production build ...

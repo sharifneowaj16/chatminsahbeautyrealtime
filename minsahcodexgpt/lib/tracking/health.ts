@@ -1,9 +1,11 @@
 import 'server-only';
 
+import type { Prisma } from '@/generated/prisma/client';
 import prisma from '@/lib/prisma';
 import { metaCapiPurchaseQueue } from '@/lib/queue/metaCapiQueue';
 import { getPaymentGatewayReferralQaConfig } from '@/lib/tracking/payment-gateway-referrals';
 import { buildPrivacyCatalogQaSnapshot } from '@/lib/tracking/privacy-catalog-qa';
+import { getCanonicalOnlinePaymentMethods } from '@/lib/payments/canonical-payment-contract';
 
 const DEFAULT_WINDOW_HOURS = 24;
 const MAX_WINDOW_HOURS = 24 * 30;
@@ -41,8 +43,23 @@ export type TrackingHealthSnapshot = {
     codPhoneConfirmed: number;
     onlinePaid: number;
     expectedMetaPurchases: number;
+    expectedTikTokPurchases: number;
     metaPurchaseSent: number;
     gaPurchaseSent: number;
+    tiktokEventsApiEnabled: boolean;
+    tiktokPurchaseLiveVerified: boolean;
+    tiktokPurchaseSent: number;
+    pendingTiktokPurchaseOrders: number;
+    tiktokFailures: number;
+    tiktokFinalFailures: number;
+    tiktokTokenInvalidFailures: number;
+    tiktokMatchBaseOrders: number;
+    tiktokClickIdOrders: number;
+    tiktokTtpOrders: number;
+    tiktokIpUaOrders: number;
+    tiktokClickIdCoverage: number;
+    tiktokTtpCoverage: number;
+    tiktokIpUaCoverage: number;
     capiFailures: number;
     capiFinalFailures: number;
     tokenInvalidFailures: number;
@@ -81,6 +98,11 @@ export type TrackingHealthFailureRow = {
   errorMessage: string | null;
   retryCount: number;
   finalFailed: boolean;
+  failureCategory: string | null;
+  cleanupAfter: string | null;
+  lastRetryAt: string | null;
+  resolvedAt: string | null;
+  safePayload: Prisma.JsonValue | null;
   hasFbp: boolean;
   hasFbc: boolean;
   hasExternalId: boolean;
@@ -91,6 +113,46 @@ export type TrackingHealthFailureRow = {
   createdAt: string;
   updatedAt: string;
 };
+
+
+const CASE_INSENSITIVE_MODE = 'insensitive' as const;
+
+function getOnlinePaymentMethodWhere(): Prisma.OrderWhereInput {
+  const onlineMethods = getCanonicalOnlinePaymentMethods();
+
+  return {
+    OR: onlineMethods.map((method) => ({
+      paymentMethod: { equals: method, mode: CASE_INSENSITIVE_MODE },
+    })),
+  };
+}
+
+function getOnlinePaidAtWhere(since: Date, paidAtField: 'paymentPaidAt' | 'paidAt'): Prisma.OrderWhereInput {
+  return {
+    isTest: false,
+    [paidAtField]: { gte: since },
+    ...(paidAtField === 'paidAt' ? { paymentPaidAt: null } : {}),
+    AND: [getOnlinePaymentMethodWhere()],
+  };
+}
+
+function getConfirmedOrVerifiedPaidPurchaseWhere(since: Date): Prisma.OrderWhereInput[] {
+  return [
+    { phoneConfirmedAt: { gte: since } },
+    {
+      AND: [
+        getOnlinePaymentMethodWhere(),
+        { paymentPaidAt: { gte: since } },
+      ],
+    },
+    {
+      AND: [
+        getOnlinePaymentMethodWhere(),
+        { paidAt: { gte: since }, paymentPaidAt: null },
+      ],
+    },
+  ];
+}
 
 function clampWindowHours(value: number | null | undefined) {
   if (!value || Number.isNaN(value)) return DEFAULT_WINDOW_HOURS;
@@ -177,6 +239,14 @@ export async function buildTrackingHealthSnapshot(options?: {
     onlinePaidByPaidAt,
     metaPurchaseSent,
     gaPurchaseSent,
+    tiktokPurchaseSent,
+    pendingTiktokPurchaseOrders,
+    tiktokFailures,
+    tiktokFinalFailures,
+    tiktokMatchBaseOrders,
+    tiktokClickIdOrders,
+    tiktokTtpOrders,
+    tiktokIpUaOrders,
     capiFailures,
     capiFinalFailures,
     recentFailures,
@@ -193,44 +263,51 @@ export async function buildTrackingHealthSnapshot(options?: {
   ] = await Promise.all([
     prisma.order.count({ where: { createdAt: { gte: since }, isTest: false } }),
     prisma.order.count({ where: { phoneConfirmedAt: { gte: since }, isTest: false } }),
-    prisma.order.count({ where: { paymentPaidAt: { gte: since }, isTest: false } }),
-    prisma.order.count({
-      where: {
-        paidAt: { gte: since },
-        paymentPaidAt: null,
-        isTest: false,
-      },
-    }),
+    prisma.order.count({ where: getOnlinePaidAtWhere(since, 'paymentPaidAt') }),
+    prisma.order.count({ where: getOnlinePaidAtWhere(since, 'paidAt') }),
     prisma.order.count({ where: { metaPurchaseSent: true, metaPurchaseSentAt: { gte: since }, isTest: false } }),
     prisma.order.count({ where: { gaPurchaseSent: true, gaPurchaseSentAt: { gte: since }, isTest: false } }),
-    prisma.metaCapiFailure.count({ where: { createdAt: { gte: since } } }),
-    prisma.metaCapiFailure.count({ where: { createdAt: { gte: since }, finalFailed: true } }),
+    prisma.order.count({ where: { tiktokPurchaseSent: true, tiktokPurchaseSentAt: { gte: since }, isTest: false } }),
+    prisma.order.count({
+      where: {
+        isTest: false,
+        tiktokPurchaseSent: false,
+        OR: getConfirmedOrVerifiedPaidPurchaseWhere(since),
+      },
+    }),
+    prisma.metaCapiFailure.count({ where: { provider: 'TIKTOK', createdAt: { gte: since } } }),
+    prisma.metaCapiFailure.count({ where: { provider: 'TIKTOK', createdAt: { gte: since }, finalFailed: true } }),
+    prisma.order.count({ where: { isTest: false, OR: getConfirmedOrVerifiedPaidPurchaseWhere(since) } }),
+    prisma.order.count({ where: { isTest: false, tiktokClickId: { not: null }, OR: getConfirmedOrVerifiedPaidPurchaseWhere(since) } }),
+    prisma.order.count({ where: { isTest: false, tiktokTtp: { not: null }, OR: getConfirmedOrVerifiedPaidPurchaseWhere(since) } }),
+    prisma.order.count({
+      where: {
+        isTest: false,
+        customerIp: { not: null },
+        customerUa: { not: null },
+        OR: getConfirmedOrVerifiedPaidPurchaseWhere(since),
+      },
+    }),
+    prisma.metaCapiFailure.count({ where: { provider: 'META', createdAt: { gte: since } } }),
+    prisma.metaCapiFailure.count({ where: { provider: 'META', createdAt: { gte: since }, finalFailed: true } }),
     prisma.metaCapiFailure.findMany({
       where: { createdAt: { gte: since } },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      select: { errorMessage: true, errorCode: true },
+      select: { provider: true, errorMessage: true, errorCode: true },
     }),
     prisma.order.count({
       where: {
         isTest: false,
         metaPurchaseSent: false,
-        OR: [
-          { phoneConfirmedAt: { gte: since } },
-          { paymentPaidAt: { gte: since } },
-          { paidAt: { gte: since } },
-        ],
+        OR: getConfirmedOrVerifiedPaidPurchaseWhere(since),
       },
     }),
     prisma.order.count({
       where: {
         isTest: false,
         gaPurchaseSent: false,
-        OR: [
-          { phoneConfirmedAt: { gte: since } },
-          { paymentPaidAt: { gte: since } },
-          { paidAt: { gte: since } },
-        ],
+        OR: getConfirmedOrVerifiedPaidPurchaseWhere(since),
       },
     }),
     prisma.metaCapiFailure.count({ where: { provider: 'GA4', createdAt: { gte: since } } }),
@@ -265,11 +342,7 @@ export async function buildTrackingHealthSnapshot(options?: {
       where: {
         isTest: false,
         gaClientId: null,
-        OR: [
-          { phoneConfirmedAt: { gte: since } },
-          { paymentPaidAt: { gte: since } },
-          { paidAt: { gte: since } },
-        ],
+        OR: getConfirmedOrVerifiedPaidPurchaseWhere(since),
       },
     }),
     getQueueCounts(),
@@ -279,9 +352,19 @@ export async function buildTrackingHealthSnapshot(options?: {
   const onlinePaid = onlinePaidByPaymentPaidAt + onlinePaidByPaidAt;
   const expectedMetaPurchases = codPhoneConfirmed + onlinePaid;
   const gaClientIdMissingRate = expectedMetaPurchases > 0 ? gaClientIdMissingOrders / expectedMetaPurchases : 0;
+  const expectedTikTokPurchases = expectedMetaPurchases;
+  const tiktokEventsApiEnabled = process.env.TIKTOK_EVENTS_API_ENABLED === 'true';
+  const tiktokPurchaseLiveVerified = process.env.TIKTOK_PURCHASE_LIVE_VERIFIED === 'true';
+  const tiktokClickIdCoverage = tiktokMatchBaseOrders > 0 ? tiktokClickIdOrders / tiktokMatchBaseOrders : 0;
+  const tiktokTtpCoverage = tiktokMatchBaseOrders > 0 ? tiktokTtpOrders / tiktokMatchBaseOrders : 0;
+  const tiktokIpUaCoverage = tiktokMatchBaseOrders > 0 ? tiktokIpUaOrders / tiktokMatchBaseOrders : 0;
   const referralExclusionsVerified = getPaymentGatewayReferralQaConfig().verified;
-  const tokenInvalidFailures = (recentFailures as Array<{ errorMessage: string | null; errorCode: string | null }>).filter((failure) =>
-    containsTokenError(failure.errorMessage, failure.errorCode)
+  const recentFailureRows = recentFailures as Array<{ provider: string | null; errorMessage: string | null; errorCode: string | null }>;
+  const tokenInvalidFailures = recentFailureRows.filter((failure) =>
+    failure.provider === 'META' && containsTokenError(failure.errorMessage, failure.errorCode)
+  ).length;
+  const tiktokTokenInvalidFailures = recentFailureRows.filter((failure) =>
+    failure.provider === 'TIKTOK' && containsTokenError(failure.errorMessage, failure.errorCode)
   ).length;
 
   const issues: TrackingIssue[] = [];
@@ -319,6 +402,45 @@ export async function buildTrackingHealthSnapshot(options?: {
         actual: gaPurchaseSent,
       });
     }
+
+    if (tiktokEventsApiEnabled && tiktokPurchaseLiveVerified) {
+      const tiktokGap = expectedTikTokPurchases - tiktokPurchaseSent;
+      if (tiktokGap > 0 && tiktokGap / expectedTikTokPurchases >= 0.2) {
+        addIssue(issues, {
+          code: 'TIKTOK_PURCHASE_GAP',
+          severity: tiktokGap >= 3 ? 'CRITICAL' : 'WARN',
+          message: 'TikTok server Purchase sent count is materially lower than confirmed/paid backend orders.',
+          expected: expectedTikTokPurchases,
+          actual: tiktokPurchaseSent,
+        });
+      }
+    }
+  }
+
+  if (tiktokEventsApiEnabled && expectedTikTokPurchases > 0 && tiktokPurchaseLiveVerified && tiktokPurchaseSent === 0) {
+    addIssue(issues, {
+      code: 'ZERO_TIKTOK_PURCHASE',
+      severity: 'CRITICAL',
+      message: 'Expected purchase signals exist, but TikTok server Purchase sent count is zero.',
+      expected: expectedTikTokPurchases,
+      actual: tiktokPurchaseSent,
+    });
+  }
+
+  if (tiktokEventsApiEnabled && ((!process.env.TIKTOK_PIXEL_ID && !process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID) || !process.env.TIKTOK_ACCESS_TOKEN)) {
+    addIssue(issues, {
+      code: 'TIKTOK_EVENTS_API_ENV_MISSING',
+      severity: 'CRITICAL',
+      message: 'TikTok Events API is enabled but TIKTOK_PIXEL_ID/NEXT_PUBLIC_TIKTOK_PIXEL_ID or TIKTOK_ACCESS_TOKEN is missing.',
+    });
+  }
+
+  if (process.env.NODE_ENV === 'production' && tiktokEventsApiEnabled && !tiktokPurchaseLiveVerified) {
+    addIssue(issues, {
+      code: 'TIKTOK_PURCHASE_LIVE_NOT_VERIFIED',
+      severity: 'WARN',
+      message: 'TikTok Events API is enabled but production live Purchase sending is still fail-closed by TIKTOK_PURCHASE_LIVE_VERIFIED=false.',
+    });
   }
 
   if (!process.env.GA4_API_SECRET && !process.env.GOOGLE_ANALYTICS_API_SECRET) {
@@ -422,6 +544,40 @@ export async function buildTrackingHealthSnapshot(options?: {
     });
   }
 
+  if (tiktokFinalFailures > 0) {
+    addIssue(issues, {
+      code: 'TIKTOK_FINAL_FAILURES',
+      severity: 'CRITICAL',
+      message: 'Final TikTok Events API Purchase failures exist in the selected window.',
+      value: tiktokFinalFailures,
+    });
+  } else if (tiktokFailures > 0) {
+    addIssue(issues, {
+      code: 'TIKTOK_FAILURES',
+      severity: 'WARN',
+      message: 'TikTok Events API failures exist in the selected window. Check retry status and error messages.',
+      value: tiktokFailures,
+    });
+  }
+
+  if (tiktokTokenInvalidFailures > 0) {
+    addIssue(issues, {
+      code: 'TIKTOK_TOKEN_OR_PERMISSION_FAILURE',
+      severity: 'CRITICAL',
+      message: 'Recent TikTok failure messages indicate access-token, permission, or auth issues.',
+      value: tiktokTokenInvalidFailures,
+    });
+  }
+
+  if (tiktokEventsApiEnabled && pendingTiktokPurchaseOrders > 0) {
+    addIssue(issues, {
+      code: 'PENDING_TIKTOK_PURCHASE_ORDERS',
+      severity: pendingTiktokPurchaseOrders >= 3 ? 'CRITICAL' : 'WARN',
+      message: 'Backend orders need TikTok server Purchase sending or retry.',
+      value: pendingTiktokPurchaseOrders,
+    });
+  }
+
   if (capiFinalFailures > 0) {
     addIssue(issues, {
       code: 'FINAL_FAILURES',
@@ -451,7 +607,7 @@ export async function buildTrackingHealthSnapshot(options?: {
     addIssue(issues, {
       code: 'QUEUE_FAILED_JOBS',
       severity: 'WARN',
-      message: 'Meta CAPI queue has failed jobs retained in Redis.',
+      message: 'Tracking queue has failed jobs retained in Redis.',
       value: queue.failed,
     });
   }
@@ -460,7 +616,7 @@ export async function buildTrackingHealthSnapshot(options?: {
     addIssue(issues, {
       code: 'QUEUE_BACKLOG',
       severity: 'WARN',
-      message: 'Meta CAPI queue backlog is high. Worker may be down or rate-limited.',
+      message: 'Tracking queue backlog is high. Worker may be down or rate-limited.',
       value: queue.waiting + queue.delayed,
     });
   }
@@ -469,7 +625,7 @@ export async function buildTrackingHealthSnapshot(options?: {
     addIssue(issues, {
       code: 'QUEUE_STATUS_UNKNOWN',
       severity: 'WARN',
-      message: 'Could not read Meta CAPI queue counts. Redis/worker connection may need checking.',
+      message: 'Could not read tracking queue counts. Redis/worker connection may need checking.',
       value: queue.error,
     });
   }
@@ -495,8 +651,23 @@ export async function buildTrackingHealthSnapshot(options?: {
       codPhoneConfirmed,
       onlinePaid,
       expectedMetaPurchases,
+      expectedTikTokPurchases,
       metaPurchaseSent,
       gaPurchaseSent,
+      tiktokEventsApiEnabled,
+      tiktokPurchaseLiveVerified,
+      tiktokPurchaseSent,
+      pendingTiktokPurchaseOrders,
+      tiktokFailures,
+      tiktokFinalFailures,
+      tiktokTokenInvalidFailures,
+      tiktokMatchBaseOrders,
+      tiktokClickIdOrders,
+      tiktokTtpOrders,
+      tiktokIpUaOrders,
+      tiktokClickIdCoverage,
+      tiktokTtpCoverage,
+      tiktokIpUaCoverage,
       capiFailures,
       capiFinalFailures,
       tokenInvalidFailures,
@@ -534,7 +705,9 @@ export async function persistTrackingHealthCheck(snapshot: TrackingHealthSnapsho
       ordersConfirmed: snapshot.metrics.codPhoneConfirmed + snapshot.metrics.onlinePaid,
       metaPurchaseSent: snapshot.metrics.metaPurchaseSent,
       gaPurchaseSent: snapshot.metrics.gaPurchaseSent,
+      tiktokPurchaseSent: snapshot.metrics.tiktokPurchaseSent,
       capiFailureCount: snapshot.metrics.capiFailures,
+      tiktokFailureCount: snapshot.metrics.tiktokFailures,
       status: snapshot.status,
       notes: snapshot.notes,
       details: snapshot,
@@ -555,7 +728,9 @@ export async function listTrackingHealthHistory(limit = 14) {
       ordersConfirmed: true,
       metaPurchaseSent: true,
       gaPurchaseSent: true,
+      tiktokPurchaseSent: true,
       capiFailureCount: true,
+      tiktokFailureCount: true,
       notes: true,
       createdAt: true,
     },
@@ -569,7 +744,9 @@ export async function listTrackingHealthHistory(limit = 14) {
     ordersConfirmed: number;
     metaPurchaseSent: number;
     gaPurchaseSent: number;
+    tiktokPurchaseSent: number;
     capiFailureCount: number;
+    tiktokFailureCount: number;
     notes: string | null;
     createdAt: Date;
   }>).map((row) => ({
@@ -597,6 +774,11 @@ export async function listRecentTrackingFailures(limit = 25): Promise<TrackingHe
       errorMessage: true,
       retryCount: true,
       finalFailed: true,
+      failureCategory: true,
+      cleanupAfter: true,
+      lastRetryAt: true,
+      resolvedAt: true,
+      safePayload: true,
       hasFbp: true,
       hasFbc: true,
       hasExternalId: true,
@@ -621,6 +803,11 @@ export async function listRecentTrackingFailures(limit = 25): Promise<TrackingHe
     errorMessage: string | null;
     retryCount: number;
     finalFailed: boolean;
+    failureCategory: string | null;
+    cleanupAfter: Date | null;
+    lastRetryAt: Date | null;
+    resolvedAt: Date | null;
+    safePayload: Prisma.JsonValue | null;
     hasFbp: boolean;
     hasFbc: boolean;
     hasExternalId: boolean;
@@ -632,6 +819,9 @@ export async function listRecentTrackingFailures(limit = 25): Promise<TrackingHe
     updatedAt: Date;
   }>).map((row) => ({
     ...row,
+    cleanupAfter: row.cleanupAfter?.toISOString() ?? null,
+    lastRetryAt: row.lastRetryAt?.toISOString() ?? null,
+    resolvedAt: row.resolvedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }));

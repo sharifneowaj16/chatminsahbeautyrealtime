@@ -8,8 +8,8 @@ const comboSlides = [
     gradient: 'from-minsah-primary via-minsah-secondary to-minsah-dark',
   },
   {
-    title: 'Premium Combo Deals',
-    description: 'Luxury Beauty at Great Prices',
+    title: 'Curated Combo Deals',
+    description: 'Better Value on Beauty Sets',
     gradient: 'from-purple-600 via-pink-500 to-orange-400',
   },
   {
@@ -21,24 +21,41 @@ const comboSlides = [
 
 const currentComboSlide = 0;
 
-export default function HomeCombosSection() {
+interface HomeCombosSectionProps {
+  title?: string;
+  subtitle?: string;
+  showViewAll?: boolean;
+  viewAllHref?: string;
+}
+
+export default function HomeCombosSection({
+  title = 'Combo Deals',
+  subtitle = 'Curated sets with better value',
+  showViewAll = true,
+  viewAllHref = '/combos',
+}: HomeCombosSectionProps) {
   const activeSlide = comboSlides[currentComboSlide];
 
   return (
     <section className="px-4 py-6 bg-white">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-minsah-dark">Browse by Combos</h2>
-        <Link
-          href="/combos"
-          aria-label="View all combos"
-          className="text-sm text-minsah-primary font-semibold flex items-center gap-1"
-        >
-          View all <ChevronRight size={16} />
-        </Link>
+        <div>
+          <h2 className="text-lg font-bold text-minsah-dark">{title}</h2>
+          {subtitle && <p className="mt-1 text-xs font-medium text-minsah-secondary">{subtitle}</p>}
+        </div>
+        {showViewAll && (
+          <Link
+            href={viewAllHref}
+            aria-label="View all combos"
+            className="text-sm text-minsah-primary font-semibold flex items-center gap-1"
+          >
+            View all <ChevronRight size={16} />
+          </Link>
+        )}
       </div>
 
       <div className="relative" style={{ minHeight: '248px' }}>
-        <Link href="/combos" className="block">
+        <Link href={viewAllHref} className="block">
           <div
             className={`bg-gradient-to-br ${activeSlide.gradient} rounded-3xl p-6 h-[200px] flex items-center justify-between overflow-hidden`}
             style={{ transition: 'background 0.5s ease' }}
@@ -73,7 +90,7 @@ export default function HomeCombosSection() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <Link href="/combos" className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
+        <Link href={viewAllHref} className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary">
             M
           </div>
@@ -82,7 +99,7 @@ export default function HomeCombosSection() {
             <p className="text-xs font-medium text-minsah-dark/80">From Tk 1001</p>
           </div>
         </Link>
-        <Link href="/combos" className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
+        <Link href={viewAllHref} className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary">
             S
           </div>

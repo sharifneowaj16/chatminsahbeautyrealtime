@@ -19,6 +19,9 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 
 type MarketingTab = 'overview' | 'social' | 'whatsapp' | 'email' | 'sms' | 'google' | 'meta';
 
@@ -145,23 +148,26 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
-                  <button
+                  <Button
                     key={tab.id}
+                    type="button"
+                    variant="ghost"
+                    aria-current={activeTab === tab.id ? 'page' : undefined}
                     onClick={() => handleTabChange(tab.id)}
-                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                    className={`min-h-0 whitespace-nowrap rounded-none border-b-2 px-1 py-4 font-medium ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:bg-transparent hover:text-gray-700'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-5 h-5" aria-hidden="true" />
                     {tab.name}
                     {tab.badge && (
                       <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                         {tab.badge}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </nav>
@@ -194,7 +200,9 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                     <h3 className="text-lg font-semibold text-gray-900">Meta Pixel Setup</h3>
                     <p className="text-sm text-gray-600">Configure Pixel and Conversion API for campaign tracking</p>
                   </div>
-                  <button
+                  <Button
+                    type="button"
+                    variant="primary"
                     onClick={async () => {
                       setMetaError(null);
                       try {
@@ -213,11 +221,11 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                         setMetaError(error instanceof Error ? error.message : 'Save failed');
                       }
                     }}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                    className="bg-blue-600 text-sm hover:bg-blue-700"
                   >
-                    <Save className="w-4 h-4 mr-2" />
+                    <Save className="w-4 h-4" aria-hidden="true" />
                     Save Meta Setup
-                  </button>
+                  </Button>
                 </div>
                 {metaSaved && (
                   <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
@@ -234,54 +242,42 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                   <div className="mb-4 text-sm text-gray-500">Loading meta setup...</div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Meta Pixel ID</label>
-                    <input
-                      value={metaSetup.pixelId}
-                      onChange={(e) => setMetaSetup((prev) => ({ ...prev, pixelId: e.target.value }))}
-                      placeholder="123456789012345"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Conversion API Token</label>
-                    <input
-                      type="password"
-                      value={metaSetup.conversionApiToken}
-                      onChange={(e) => setMetaSetup((prev) => ({ ...prev, conversionApiToken: e.target.value }))}
-                      placeholder="EAA..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
+                  <Input
+                    value={metaSetup.pixelId}
+                    onChange={(e) => setMetaSetup((prev) => ({ ...prev, pixelId: e.target.value }))}
+                    placeholder="123456789012345"
+                    label="Meta Pixel ID"
+                  />
+                  <Input
+                    type="password"
+                    value={metaSetup.conversionApiToken}
+                    onChange={(e) => setMetaSetup((prev) => ({ ...prev, conversionApiToken: e.target.value }))}
+                    placeholder="EAA..."
+                    label="Conversion API Token"
+                  />
                 </div>
               </div>
 
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaign Targeting</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Objective</label>
-                    <select
-                      value={metaSetup.objective}
-                      onChange={(e) => setMetaSetup((prev) => ({ ...prev, objective: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <option value="sales">Sales</option>
-                      <option value="traffic">Traffic</option>
-                      <option value="leads">Leads</option>
-                      <option value="engagement">Engagement</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Daily Budget (BDT)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={metaSetup.dailyBudgetBdt}
-                      onChange={(e) => setMetaSetup((prev) => ({ ...prev, dailyBudgetBdt: Number(e.target.value) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
+                  <Select
+                    value={metaSetup.objective}
+                    onChange={(e) => setMetaSetup((prev) => ({ ...prev, objective: e.target.value }))}
+                    label="Objective"
+                  >
+                    <option value="sales">Sales</option>
+                    <option value="traffic">Traffic</option>
+                    <option value="leads">Leads</option>
+                    <option value="engagement">Engagement</option>
+                  </Select>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={metaSetup.dailyBudgetBdt}
+                    onChange={(e) => setMetaSetup((prev) => ({ ...prev, dailyBudgetBdt: Number(e.target.value) }))}
+                    label="Daily Budget (BDT)"
+                  />
                 </div>
               </div>
 
@@ -289,8 +285,11 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Retarget Audiences</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                   {audiencePresets.map((audience) => (
-                    <button
+                    <Button
                       key={audience.id}
+                      type="button"
+                      variant="secondary"
+                      aria-pressed={metaSetup.selectedAudiences.includes(audience.id)}
                       onClick={() =>
                         setMetaSetup((prev) => ({
                           ...prev,
@@ -299,7 +298,7 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                             : [...prev.selectedAudiences, audience.id],
                         }))
                       }
-                      className={`rounded-lg border p-3 text-left ${
+                      className={`h-auto min-h-11 flex-col items-start justify-start text-left ${
                         metaSetup.selectedAudiences.includes(audience.id)
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
@@ -307,7 +306,7 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                     >
                       <p className="text-sm font-medium text-gray-900">{audience.label}</p>
                       <p className="text-xs text-gray-500">Est. audience: {audience.size.toLocaleString()}</p>
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -343,9 +342,9 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
               <p className="text-gray-600 mb-6">
                 Create and manage email campaigns, newsletters, and automated email sequences.
               </p>
-              <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <Button type="button" variant="primary" className="bg-blue-600 hover:bg-blue-700">
                 Create Email Campaign
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -357,9 +356,9 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
               <p className="text-gray-600 mb-6">
                 Send SMS campaigns, order updates, and promotional messages to your customers.
               </p>
-              <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <Button type="button" variant="primary" className="bg-blue-600 hover:bg-blue-700">
                 Create SMS Campaign
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": [
+    "lib/meta-platform/domains/leads/types.ts",
+    "lib/meta-platform/domains/leads/normalize-lead.ts",
+    "lib/meta-platform/domains/leads/lead-mapper.ts",
+    "lib/meta-platform/domains/leads/safe-projection.ts",
+    "lib/meta-platform/domains/leads/legacy-adapter.ts",
+    "lib/meta-platform/domains/leads/index.ts",
+    "lib/meta-platform/domains/leads/process-lead.ts",
+    "lib/meta-platform/domains/leads/feature-flags.ts",
+    "lib/meta-platform/domains/leads/test-lead.ts",
+    "lib/meta-platform/domains/instagram/normalize-message.ts",
+    "lib/meta-platform/domains/instagram/conversations.ts",
+    "lib/meta-platform/domains/instagram/feature-flags.ts",
+    "lib/meta-platform/domains/instagram/index.ts",
+    "lib/meta-platform/domains/instagram/send-reply.ts",
+    "lib/meta-platform/domains/instagram/private-reply.ts",
+    "lib/meta-platform/domains/instagram/media-policy.ts",
+    "lib/meta-platform/domains/pages/permissions.ts",
+    "lib/meta-platform/domains/pages/page-identity.ts",
+    "lib/meta-platform/domains/pages/feature-flags.ts",
+    "lib/meta-platform/domains/pages/index.ts",
+    "lib/meta-platform/domains/facebook/feature-flags.ts",
+    "lib/meta-platform/domains/facebook/inbox-sync.ts",
+    "lib/meta-platform/domains/facebook/index.ts"
+  ]
+}

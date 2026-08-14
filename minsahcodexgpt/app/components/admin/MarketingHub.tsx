@@ -1,5 +1,16 @@
 'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { useState, useEffect } from 'react';
 import type { SocialMediaPost, SocialMediaAccount, MarketingCampaign } from '@/types/admin';
 import {
@@ -35,6 +46,7 @@ import {
 } from 'lucide-react';
 
 export default function MarketingHub() {
+  const { pushToast } = useToast();
   const [socialAccounts, setSocialAccounts] = useState<SocialMediaAccount[]>([]);
   const [posts, setPosts] = useState<SocialMediaPost[]>([]);
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
@@ -561,7 +573,7 @@ export default function MarketingHub() {
       setPosts(prev => [post, ...prev]);
       setNewPost({});
       setShowCreatePost(false);
-      alert('Post created successfully!');
+      pushToast({ tone: 'success', description: 'Post created successfully!' });
     } catch (err) {
       console.error('Error creating post:', err);
     }
@@ -601,7 +613,7 @@ export default function MarketingHub() {
       setCampaigns(prev => [campaign, ...prev]);
       setNewCampaign({});
       setShowCreateCampaign(false);
-      alert('Campaign created successfully!');
+      pushToast({ tone: 'success', description: 'Campaign created successfully!' });
     } catch (err) {
       console.error('Error creating campaign:', err);
     }
@@ -650,30 +662,30 @@ export default function MarketingHub() {
         <div className="flex items-center gap-3">
           {activeTab === 'social' && (
             <>
-              <button
+              <Button
                 onClick={() => setShowConnectAccount(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
               >
                 <Plus className="h-4 w-4" />
                 Connect Account
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowCreatePost(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 <Plus className="h-4 w-4" />
                 Create Post
-              </button>
+              </Button>
             </>
           )}
           {activeTab === 'campaigns' && (
-            <button
+            <Button
               onClick={() => setShowCreateCampaign(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
             >
               <Plus className="h-4 w-4" />
               Create Campaign
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -687,7 +699,7 @@ export default function MarketingHub() {
             { id: 'campaigns', name: 'Campaigns', icon: Megaphone },
             { id: 'calendar', name: 'Calendar', icon: Calendar },
           ].map((tab) => (
-            <button
+            <Button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -700,7 +712,7 @@ export default function MarketingHub() {
                 <tab.icon className="h-4 w-4" />
                 {tab.name}
               </div>
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
@@ -790,9 +802,9 @@ export default function MarketingHub() {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Recent Posts</h3>
-              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <Button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                 View All Posts →
-              </button>
+              </Button>
             </div>
             <div className="space-y-4">
               {posts.slice(0, 5).map((post) => (
@@ -803,7 +815,7 @@ export default function MarketingHub() {
                     ) : post.type === 'reel' ? (
                       <Play className="h-6 w-6 text-gray-400" />
                     ) : (
-                      <Image className="h-6 w-6 text-gray-400" />
+                      <Image className="h-6 w-6 text-gray-400" aria-hidden="true" />
                     )}
                   </div>
                   <div className="flex-1">
@@ -838,7 +850,7 @@ export default function MarketingHub() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
+                <Input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -847,7 +859,7 @@ export default function MarketingHub() {
                 />
               </div>
 
-              <select
+              <Select
                 value={selectedPlatform}
                 onChange={(e) => setSelectedPlatform(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -859,9 +871,9 @@ export default function MarketingHub() {
                 <option value="youtube">YouTube</option>
                 <option value="twitter">Twitter/X</option>
                 <option value="linkedin">LinkedIn</option>
-              </select>
+              </Select>
 
-              <select
+              <Select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -871,11 +883,11 @@ export default function MarketingHub() {
                 <option value="scheduled">Scheduled</option>
                 <option value="draft">Draft</option>
                 <option value="failed">Failed</option>
-              </select>
+              </Select>
 
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+              <Button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                 Apply Filters
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -898,7 +910,7 @@ export default function MarketingHub() {
                     {post.type === 'video' || post.type === 'reel' ? (
                       <Video className="h-12 w-12 text-gray-400" />
                     ) : (
-                      <Image className="h-12 w-12 text-gray-400" />
+                      <Image className="h-12 w-12 text-gray-400" aria-hidden="true" />
                     )}
                   </div>
                   <p className="text-sm text-gray-600 line-clamp-3">{post.content.text}</p>
@@ -923,18 +935,18 @@ export default function MarketingHub() {
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                   <div className="flex items-center gap-1">
-                    <button
+                    <Button
                       onClick={() => setSelectedPost(post)}
                       className="p-1 text-gray-400 hover:text-gray-600"
                     >
                       <Eye className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
+                    </Button>
+                    <Button className="p-1 text-gray-400 hover:text-gray-600">
                       <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
+                    </Button>
+                    <Button className="p-1 text-gray-400 hover:text-gray-600">
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -1028,15 +1040,15 @@ export default function MarketingHub() {
                       <td className="px-4 py-3 text-sm text-gray-900">{campaign.metrics.converted || 0}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button
+                          <Button
                             onClick={() => setSelectedCampaign(campaign)}
                             className="p-1 text-gray-400 hover:text-gray-600"
                           >
                             <Eye className="h-4 w-4" />
-                          </button>
-                          <button className="p-1 text-gray-400 hover:text-gray-600">
+                          </Button>
+                          <Button className="p-1 text-gray-400 hover:text-gray-600">
                             <Edit className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -1072,26 +1084,18 @@ export default function MarketingHub() {
       )}
 
       {/* Create Post Modal */}
-      {showCreatePost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Create New Post</h3>
-                <button
-                  onClick={() => setShowCreatePost(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showCreatePost}
+        onClose={() => setShowCreatePost(false)}
+        title="Create New Post"
+        size="lg"
+      >
             <div className="p-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
-                    <select
+                    <Select
                       value={newPost.platform}
                       onChange={(e) => setNewPost({ ...newPost, platform: e.target.value as SocialMediaPost['platform'] })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1103,11 +1107,11 @@ export default function MarketingHub() {
                       <option value="youtube">YouTube</option>
                       <option value="twitter">Twitter/X</option>
                       <option value="linkedin">LinkedIn</option>
-                    </select>
+                    </Select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Post Type</label>
-                    <select
+                    <Select
                       value={newPost.type}
                       onChange={(e) => setNewPost({ ...newPost, type: e.target.value as SocialMediaPost['type'] })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1118,13 +1122,13 @@ export default function MarketingHub() {
                       <option value="reel">Reel</option>
                       <option value="video">Video</option>
                       <option value="pin">Pin</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                  <textarea
+                  <Textarea
                     rows={4}
                     value={newPost.content?.text || ''}
                     onChange={(e) => setNewPost({ ...newPost, content: { hashtags: [], mentions: [], ...newPost.content, text: e.target.value } })}
@@ -1135,7 +1139,7 @@ export default function MarketingHub() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Schedule (optional)</label>
-                  <input
+                  <Input
                     type="datetime-local"
                     value={newPost.scheduledAt ? new Date(newPost.scheduledAt).toISOString().slice(0, 16) : ''}
                     onChange={(e) => setNewPost({ ...newPost, scheduledAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
@@ -1146,56 +1150,46 @@ export default function MarketingHub() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Media</label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" aria-hidden="true" />
                     <p className="text-sm text-gray-600 mb-2">Drag and drop images or videos</p>
-                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    <Button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                       Choose Files
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button
+                <Button
                   onClick={handleCreatePost}
                   disabled={!newPost.platform || !newPost.content?.text}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   Create Post
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setShowCreatePost(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Create Campaign Modal */}
-      {showCreateCampaign && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Create New Campaign</h3>
-                <button
-                  onClick={() => setShowCreateCampaign(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showCreateCampaign}
+        onClose={() => setShowCreateCampaign(false)}
+        title="Create New Campaign"
+        size="lg"
+      >
             <div className="p-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Name</label>
-                    <input
+                    <Input
                       type="text"
                       value={newCampaign.name || ''}
                       onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
@@ -1205,7 +1199,7 @@ export default function MarketingHub() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Type</label>
-                    <select
+                    <Select
                       value={newCampaign.type}
                       onChange={(e) => setNewCampaign({ ...newCampaign, type: e.target.value as MarketingCampaign['type'] })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1216,14 +1210,14 @@ export default function MarketingHub() {
                       <option value="ads">Paid Ads</option>
                       <option value="sms">SMS</option>
                       <option value="push">Push Notification</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Budget</label>
-                    <input
+                    <Input
                       type="number"
                       value={newCampaign.budget || ''}
                       onChange={(e) => setNewCampaign({ ...newCampaign, budget: parseFloat(e.target.value) })}
@@ -1234,7 +1228,7 @@ export default function MarketingHub() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <input
+                    <Input
                       type="date"
                       value={newCampaign.duration?.end ? new Date(newCampaign.duration.end).toISOString().slice(0, 10) : ''}
                       onChange={(e) => setNewCampaign({
@@ -1248,7 +1242,7 @@ export default function MarketingHub() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
-                  <select
+                  <Select
                     value={newCampaign.targetAudience?.segments?.[0] || ''}
                     onChange={(e) => setNewCampaign({
                       ...newCampaign,
@@ -1262,12 +1256,12 @@ export default function MarketingHub() {
                     <option value="vip">VIP Customers</option>
                     <option value="inactive">Inactive Customers</option>
                     <option value="beauty-enthusiasts">Beauty Enthusiasts</option>
-                  </select>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Content</label>
-                  <textarea
+                  <Textarea
                     rows={3}
                     value={newCampaign.content?.body || ''}
                     onChange={(e) => setNewCampaign({ ...newCampaign, content: { ...newCampaign.content, body: e.target.value } })}
@@ -1278,40 +1272,29 @@ export default function MarketingHub() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button
+                <Button
                   onClick={handleCreateCampaign}
                   disabled={!newCampaign.name || !newCampaign.type}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   Create Campaign
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setShowCreateCampaign(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Connect Account Modal */}
-      {showConnectAccount && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Connect Social Account</h3>
-                <button
-                  onClick={() => setShowConnectAccount(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showConnectAccount}
+        onClose={() => setShowConnectAccount(false)}
+        title="Connect Social Account"
+      >
             <div className="p-6">
               <p className="text-gray-600 mb-4">Choose a platform to connect to your marketing hub:</p>
               <div className="space-y-3">
@@ -1322,18 +1305,16 @@ export default function MarketingHub() {
                   { name: 'Twitter/X', color: 'bg-sky-500' },
                   { name: 'LinkedIn', color: 'bg-blue-700' },
                 ].map((platform) => (
-                  <button
+                  <Button
                     key={platform.name}
                     className={`w-full px-4 py-3 ${platform.color} text-white rounded-lg hover:opacity-90 transition-opacity`}
                   >
                     Connect {platform.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

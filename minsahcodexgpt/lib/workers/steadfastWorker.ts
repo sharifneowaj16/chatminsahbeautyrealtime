@@ -26,6 +26,7 @@ import {
   mapSteadfastStatusToOrderStatus,
 } from '@/lib/steadfast/client';
 import prisma from '@/lib/prisma';
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -42,7 +43,20 @@ async function syncAllActiveShipments() {
     select: {
       id: true,
       orderNumber: true,
+      createdAt: true,
       status: true,
+      paymentStatus: true,
+      paymentMethod: true,
+      isTest: true,
+      phoneConfirmedAt: true,
+      paymentPaidAt: true,
+      paidAt: true,
+      deliveredAt: true,
+      cancelledAt: true,
+      returnedAt: true,
+      refundedAt: true,
+      courierDeliveredAt: true,
+      courierReturnedAt: true,
       steadfastConsignmentId: true,
       steadfastSentAt: true,
     },
@@ -86,9 +100,13 @@ async function syncAllActiveShipments() {
             );
           }
 
-          await prisma.order.update({
-            where: { id: order.id },
-            data: updateData,
+          await prisma.$transaction(async (tx) => {
+            const updatedOrder = await tx.order.update({
+              where: { id: order.id },
+              data: updateData,
+            });
+
+            await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
           });
 
           updated++;
@@ -120,7 +138,20 @@ async function syncSingleOrder(orderId: string) {
     select: {
       id: true,
       orderNumber: true,
+      createdAt: true,
       status: true,
+      paymentStatus: true,
+      paymentMethod: true,
+      isTest: true,
+      phoneConfirmedAt: true,
+      paymentPaidAt: true,
+      paidAt: true,
+      deliveredAt: true,
+      cancelledAt: true,
+      returnedAt: true,
+      refundedAt: true,
+      courierDeliveredAt: true,
+      courierReturnedAt: true,
       steadfastConsignmentId: true,
     },
   });
@@ -144,7 +175,10 @@ async function syncSingleOrder(orderId: string) {
     if (mappedStatus === 'CANCELLED') updateData.cancelledAt = new Date();
   }
 
-  await prisma.order.update({ where: { id: order.id }, data: updateData });
+  await prisma.$transaction(async (tx) => {
+    const updatedOrder = await tx.order.update({ where: { id: order.id }, data: updateData });
+    await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+  });
   console.log(
     `[SteadfastWorker] Synced ${order.orderNumber}: ${newSteadfastStatus}`
   );

@@ -1,5 +1,15 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import type { BusinessProfileData, GooglePost, GoogleReview } from '@/types/google';
 import { generateMockBusinessProfileData, GOOGLE_COLORS } from '@/types/google';
@@ -39,6 +49,7 @@ export default function BusinessProfileCard({
   onDateRangeChange,
   className = ''
 }: BusinessProfileCardProps) {
+  const { pushToast } = useToast();
   const [data, setData] = useState<BusinessProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +92,7 @@ export default function BusinessProfileCard({
       setReplyText('');
       setSelectedReview(null);
       // In real app, this would update the review with the reply
-      alert('Reply posted successfully!');
+      pushToast({ tone: 'success', description: 'Reply posted successfully!' });
     } catch (err) {
       console.error('Error replying to review:', err);
     }
@@ -97,7 +108,7 @@ export default function BusinessProfileCard({
       setNewPost({});
       setShowCreatePost(false);
       // In real app, this would create the post
-      alert('Post published successfully!');
+      pushToast({ tone: 'success', description: 'Post published successfully!' });
     } catch (err) {
       console.error('Error creating post:', err);
     }
@@ -186,7 +197,7 @@ export default function BusinessProfileCard({
             </div>
           </div>
 
-          <select
+          <Select
             value={dateRange}
             onChange={(e) => onDateRangeChange?.(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -195,7 +206,7 @@ export default function BusinessProfileCard({
             <option value="28days">Last 28 days</option>
             <option value="90days">Last 90 days</option>
             <option value="custom">Custom range</option>
-          </select>
+          </Select>
         </div>
 
         {/* Business Info Card */}
@@ -240,7 +251,7 @@ export default function BusinessProfileCard({
             { id: 'posts', name: 'Posts', icon: Edit3 },
             { id: 'photos', name: 'Photos', icon: Image }
           ].map((tab) => (
-            <button
+            <Button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -253,7 +264,7 @@ export default function BusinessProfileCard({
                 <tab.icon className="h-4 w-4" />
                 {tab.name}
               </div>
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
@@ -318,7 +329,7 @@ export default function BusinessProfileCard({
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                       {activity.type === 'review' && <Star className="h-4 w-4 text-blue-600" />}
                       {activity.type === 'question' && <MessageCircle className="h-4 w-4 text-blue-600" />}
-                      {activity.type === 'photo' && <Image className="h-4 w-4 text-blue-600" />}
+                      {activity.type === 'photo' && <Image className="h-4 w-4 text-blue-600" aria-hidden="true" />}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{activity.description}</p>
@@ -382,7 +393,7 @@ export default function BusinessProfileCard({
                   { value: 'neutral', label: 'Neutral' },
                   { value: 'negative', label: 'Negative' }
                 ].map((filter) => (
-                  <button
+                  <Button
                     key={filter.value}
                     onClick={() => setReviewFilter(filter.value as any)}
                     className={`px-3 py-1 rounded-lg text-sm ${
@@ -392,7 +403,7 @@ export default function BusinessProfileCard({
                     }`}
                   >
                     {filter.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
@@ -429,12 +440,12 @@ export default function BusinessProfileCard({
                       {review.reply && (
                         <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Replied</span>
                       )}
-                      <button
+                      <Button
                         onClick={() => setSelectedReview(review)}
                         className="p-1 text-gray-600 hover:text-gray-900"
                       >
                         <Edit className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -453,7 +464,7 @@ export default function BusinessProfileCard({
                   {/* Reply Form */}
                   {selectedReview?.id === review.id && (
                     <div className="mt-3 border-t pt-3">
-                      <textarea
+                      <Textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder="Write a reply..."
@@ -461,14 +472,14 @@ export default function BusinessProfileCard({
                         rows={3}
                       />
                       <div className="flex gap-2 mt-2">
-                        <button
+                        <Button
                           onClick={() => handleReviewReply(review.id)}
                           disabled={!replyText.trim()}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                           Post Reply
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => {
                             setSelectedReview(null);
                             setReplyText('');
@@ -476,7 +487,7 @@ export default function BusinessProfileCard({
                           className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                         >
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -491,13 +502,13 @@ export default function BusinessProfileCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Google Posts</h3>
-              <button
+              <Button
                 onClick={() => setShowCreatePost(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 <Plus className="h-4 w-4" />
                 Create Post
-              </button>
+              </Button>
             </div>
 
             {/* Create Post Form */}
@@ -505,7 +516,7 @@ export default function BusinessProfileCard({
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <h4 className="font-medium text-gray-900 mb-3">Create New Post</h4>
                 <div className="space-y-3">
-                  <select
+                  <Select
                     value={newPost.type || 'update'}
                     onChange={(e) => setNewPost({ ...newPost, type: e.target.value as any })}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -513,9 +524,9 @@ export default function BusinessProfileCard({
                     <option value="update">Update</option>
                     <option value="offer">Offer</option>
                     <option value="event">Event</option>
-                  </select>
+                  </Select>
 
-                  <input
+                  <Input
                     type="text"
                     value={newPost.title || ''}
                     onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
@@ -523,7 +534,7 @@ export default function BusinessProfileCard({
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
 
-                  <textarea
+                  <Textarea
                     value={newPost.content || ''}
                     onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
                     placeholder="What's new with your business?"
@@ -532,14 +543,14 @@ export default function BusinessProfileCard({
                   />
 
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={handleCreatePost}
                       disabled={!newPost.content?.trim()}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Publish Post
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         setShowCreatePost(false);
                         setNewPost({});
@@ -547,7 +558,7 @@ export default function BusinessProfileCard({
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -590,10 +601,10 @@ export default function BusinessProfileCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Business Photos</h3>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+              <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                 <Plus className="h-4 w-4" />
                 Add Photos
-              </button>
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -607,9 +618,9 @@ export default function BusinessProfileCard({
                     />
                   </div>
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <button className="p-2 bg-white rounded-full hover:bg-gray-100">
+                    <Button aria-label={`Delete ${photo.caption || `business photo ${index + 1}`}`} className="p-2 bg-white rounded-full hover:bg-gray-100">
                       <Trash2 className="h-4 w-4 text-gray-700" />
-                    </button>
+                    </Button>
                   </div>
                   {photo.caption && (
                     <p className="mt-1 text-xs text-gray-600">{photo.caption}</p>
@@ -619,11 +630,11 @@ export default function BusinessProfileCard({
             </div>
 
             <div className="text-center p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-              <Image className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+              <Image className="h-12 w-12 text-gray-400 mx-auto mb-2" aria-hidden="true" />
               <p className="text-gray-600">Upload photos to showcase your business</p>
-              <button className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <Button className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
                 Choose photos to upload
-              </button>
+              </Button>
             </div>
           </div>
         )}

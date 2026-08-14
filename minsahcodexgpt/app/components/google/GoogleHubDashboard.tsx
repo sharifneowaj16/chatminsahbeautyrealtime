@@ -1,5 +1,7 @@
-﻿'use client';
+'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import type { GoogleService } from '@/types/google';
 import { generateMockGoogleServices, GOOGLE_SERVICE_CONFIGS, GOOGLE_COLORS } from '@/types/google';
@@ -243,12 +245,12 @@ export default function GoogleHubDashboard({ className = '' }: GoogleHubDashboar
             <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Services</h3>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button
+            <Button
               onClick={loadGoogleServices}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
             >
               Try Again
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -271,17 +273,17 @@ export default function GoogleHubDashboard({ className = '' }: GoogleHubDashboar
               <span>Last sync: {formatLastSync(lastGlobalSync)}</span>
             </div>
 
-            <button
+            <Button
               onClick={handleSyncAll}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
             >
               <RefreshCw className="h-4 w-4" />
               Sync All
-            </button>
+            </Button>
 
-            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300">
+            <Button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300">
               <Settings className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -295,7 +297,7 @@ export default function GoogleHubDashboard({ className = '' }: GoogleHubDashboar
           <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${GOOGLE_COLORS.primary}20` }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-minsah-surface-accent">
                   <Search className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
@@ -334,7 +336,7 @@ export default function GoogleHubDashboard({ className = '' }: GoogleHubDashboar
           <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${GOOGLE_COLORS.warning}20` }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-minsah-surface-accent">
                   <ShoppingBag className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div>
@@ -375,7 +377,7 @@ export default function GoogleHubDashboard({ className = '' }: GoogleHubDashboar
           <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${GOOGLE_COLORS.orange}20` }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-minsah-surface-accent">
                   <BarChart className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
@@ -414,7 +416,7 @@ export default function GoogleHubDashboard({ className = '' }: GoogleHubDashboar
           <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${GOOGLE_COLORS.success}20` }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-minsah-surface-accent">
                   <Banknote className="w-6 h-6 text-green-600" />
                 </div>
                 <div>

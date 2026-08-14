@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { trackingManager, track } from '@/lib/tracking/manager';
 import { initCampaignTracking } from '@/lib/tracking/campaigns';
 import { canRunClientTracking } from '@/lib/tracking/client-traffic-filter';
@@ -43,8 +43,13 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
     // PageView events with different event IDs.
   }, []);
 
+  const contextValue = useMemo<TrackingContextType>(
+    () => ({ track, initialized }),
+    [initialized],
+  );
+
   return (
-    <TrackingContext.Provider value={{ track, initialized }}>
+    <TrackingContext.Provider value={contextValue}>
       {children}
     </TrackingContext.Provider>
   );

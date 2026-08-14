@@ -37,6 +37,11 @@ export async function POST(request: NextRequest) {
     pathaoStatus: result.pathaoStatus,
     consignmentId: result.consignmentId,
     trackingCode: result.trackingCode,
+    // shippingCost is kept for backward-compatible admin UI state.
+    // It is the customer-facing delivery charge, not the courier actual fee.
     shippingCost: result.shippingCost,
+    customerDeliveryCharge: result.customerDeliveryCharge,
+    courierDeliveryCharge: result.courierDeliveryCharge,
+    deliveryDiscountAmount: result.deliveryDiscountAmount,
   });
 }

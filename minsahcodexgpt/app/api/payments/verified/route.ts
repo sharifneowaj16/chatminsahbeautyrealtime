@@ -1,12 +1,25 @@
-import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { enqueueGa4Purchase, enqueueMetaCapiPurchase } from '@/lib/queue/metaCapiQueue';
+import { enqueueGa4Purchase, enqueueTikTokPurchase } from '@/lib/queue/metaCapiQueue';
+import { createMetaPurchaseOutboxInTransaction } from '@/lib/meta/capi/purchase-outbox';
+import { requestMetaOutboxDispatch } from '@/lib/meta/capi/dispatcher';
+import type { MetaOutboxDb } from '@/lib/meta/capi/outbox-repository';
 import { createOnlineBrowserPurchaseToken } from '@/lib/tracking/meta-browser-purchase-token';
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
 import {
   getCanonicalPaymentContractErrorResponse,
   validateVerifiedPaymentContract,
 } from '@/lib/payments/canonical-payment-contract';
+import { attributeVerifiedSearchConversionsForOrder } from '@/lib/search/conversion-attribution';
+import { notifyNewOrder } from '@/lib/telegram-notify';
+import { finalizeOnlineOrderStockInTransaction } from '@/lib/online-payment-stock';
+import { verifyHmacSha256Signature } from '@/lib/security/request-secret';
+import { expireOnlinePaymentOrderInTransaction } from '@/lib/orders/online-payment-lifecycle';
+import {
+  ONLINE_PAYMENT_COMPLETED_STATUS,
+  isPaidGatewayStatus,
+  normalizeTerminalGatewayFailureStatus,
+} from '@/lib/orders/payment-lifecycle';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,39 +47,6 @@ function toNumber(value: unknown) {
     return Number.isFinite(parsed) ? parsed : 0;
   }
   return 0;
-}
-
-function safeEqualHex(left: string, right: string) {
-  const leftBuffer = Buffer.from(left, 'hex');
-  const rightBuffer = Buffer.from(right, 'hex');
-  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
-}
-
-function verifySignature(rawBody: string, signatureHeader: string | null) {
-  const secret = process.env.PAYMENT_WEBHOOK_SECRET?.trim();
-  if (!secret) return { configured: false, verified: false };
-  if (!signatureHeader) return { configured: true, verified: false };
-
-  const provided = signatureHeader.replace(/^sha256=/i, '').trim();
-  if (!/^[a-f0-9]{64}$/i.test(provided)) {
-    return { configured: true, verified: false };
-  }
-
-  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-  return { configured: true, verified: safeEqualHex(expected, provided) };
-}
-
-function normalizePaidStatus(status?: string) {
-  const normalized = status?.trim().toLowerCase() ?? '';
-  return ['paid', 'completed', 'complete', 'success', 'successful', 'validated'].includes(normalized);
-}
-
-function normalizeTerminalFailureStatus(status?: string) {
-  const normalized = status?.trim().toLowerCase() ?? '';
-  if (['failed', 'fail', 'declined'].includes(normalized)) return 'FAILED';
-  if (['cancelled', 'canceled'].includes(normalized)) return 'CANCELLED';
-  if (['refunded', 'refund'].includes(normalized)) return 'REFUNDED';
-  return null;
 }
 
 function parsePaidAt(value?: string) {
@@ -107,7 +87,11 @@ export async function POST(request: NextRequest) {
   const redirectCustomer = wantsCustomerRedirect(request);
   const rawBody = await request.text();
   const signature = request.headers.get('x-payment-signature') ?? request.headers.get('x-webhook-signature');
-  const signatureCheck = verifySignature(rawBody, signature);
+  const signatureCheck = verifyHmacSha256Signature({
+    rawBody,
+    signatureHeader: signature,
+    secret: process.env.PAYMENT_WEBHOOK_SECRET,
+  });
 
   if (!signatureCheck.configured) {
     return NextResponse.json(
@@ -140,11 +124,26 @@ export async function POST(request: NextRequest) {
     select: {
       id: true,
       orderNumber: true,
+      createdAt: true,
+      status: true,
       paymentStatus: true,
       paymentMethod: true,
+      isTest: true,
+      phoneConfirmedAt: true,
       total: true,
       paidAt: true,
       paymentPaidAt: true,
+      paymentExpiresAt: true,
+      stockReservedAt: true,
+      stockFinalizedAt: true,
+      stockReleasedAt: true,
+      adminNotifiedAt: true,
+      deliveredAt: true,
+      cancelledAt: true,
+      returnedAt: true,
+      refundedAt: true,
+      courierDeliveredAt: true,
+      courierReturnedAt: true,
     },
   });
 
@@ -174,9 +173,18 @@ export async function POST(request: NextRequest) {
   const orderTotal = toNumber(order.total);
   const amountMatched = Math.abs(amount - orderTotal) < 0.01;
   const currencyMatched = currency === 'BDT';
-  const terminalFailureStatus = normalizeTerminalFailureStatus(payload.status);
+  const terminalFailureStatus = normalizeTerminalGatewayFailureStatus(payload.status);
 
-  if (!normalizePaidStatus(payload.status)) {
+  if (!isPaidGatewayStatus(payload.status)) {
+    if (terminalFailureStatus && order.paymentStatus === ONLINE_PAYMENT_COMPLETED_STATUS) {
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: 'ORDER_ALREADY_PAID',
+        purchaseSent: false,
+      });
+    }
+
     if (terminalFailureStatus) {
       const failurePaymentData = {
         orderId: order.id,
@@ -197,22 +205,24 @@ export async function POST(request: NextRequest) {
         currencyMatched,
       };
 
-      if (gatewayTransactionId) {
-        await prisma.payment.upsert({
-          where: { gatewayTransactionId },
-          update: failurePaymentData,
-          create: {
-            ...failurePaymentData,
-            gatewayTransactionId,
-          },
-        });
-      } else {
-        await prisma.payment.create({ data: failurePaymentData });
-      }
+      await prisma.$transaction(async (tx) => {
+        if (gatewayTransactionId) {
+          await tx.payment.upsert({
+            where: { gatewayTransactionId },
+            update: failurePaymentData,
+            create: {
+              ...failurePaymentData,
+              gatewayTransactionId,
+            },
+          });
+        } else {
+          await tx.payment.create({ data: failurePaymentData });
+        }
 
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { paymentStatus: terminalFailureStatus },
+        await expireOnlinePaymentOrderInTransaction(tx, {
+          orderId: order.id,
+          paymentStatus: terminalFailureStatus,
+        });
       });
     }
 
@@ -263,63 +273,225 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await prisma.$transaction(async (tx) => {
-    const paymentData = {
-      orderId: order.id,
-      method: order.paymentMethod || gateway,
-      status: 'COMPLETED' as const,
-      amount,
-      currency,
-      gateway,
-      transactionId: payload.transactionId?.trim() || null,
-      rawStatus,
-      verifiedAt: paidAt,
-      gatewayResponse: {
-        orderNumber: order.orderNumber,
-        status: payload.status ?? null,
-        rawStatus,
-      },
-      signatureVerified: true,
-      amountMatched: true,
-      currencyMatched: true,
-    };
+  if (
+    order.paymentExpiresAt &&
+    order.paymentStatus !== ONLINE_PAYMENT_COMPLETED_STATUS &&
+    paidAt.getTime() > new Date(order.paymentExpiresAt).getTime()
+  ) {
+    await prisma.$transaction(async (tx) => {
+      await expireOnlinePaymentOrderInTransaction(tx, {
+        orderId: order.id,
+        paymentStatus: 'CANCELLED',
+      });
+    });
 
-    if (gatewayTransactionId) {
-      await tx.payment.upsert({
-        where: { gatewayTransactionId },
-        update: paymentData,
-        create: {
-          ...paymentData,
-          gatewayTransactionId,
+    return NextResponse.json(
+      {
+        success: false,
+        code: 'PAYMENT_WINDOW_EXPIRED',
+        error: 'Payment was received after this order payment window expired. Please contact support for reconciliation.',
+      },
+      { status: 409 }
+    );
+  }
+
+  const shouldAttributeSearchConversion = order.paymentStatus !== ONLINE_PAYMENT_COMPLETED_STATUS;
+  const shouldNotifyAdminAfterPayment = order.paymentStatus !== ONLINE_PAYMENT_COMPLETED_STATUS && !order.adminNotifiedAt;
+
+  let metaPurchaseOutboxId: string | undefined;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const paymentData = {
+        orderId: order.id,
+        method: order.paymentMethod || gateway,
+        status: ONLINE_PAYMENT_COMPLETED_STATUS,
+        amount,
+        currency,
+        gateway,
+        transactionId: payload.transactionId?.trim() || null,
+        rawStatus,
+        verifiedAt: paidAt,
+        gatewayResponse: {
+          orderNumber: order.orderNumber,
+          status: payload.status ?? null,
+          rawStatus,
+        },
+        signatureVerified: true,
+        amountMatched: true,
+        currencyMatched: true,
+      };
+
+      if (gatewayTransactionId) {
+        await tx.payment.upsert({
+          where: { gatewayTransactionId },
+          update: paymentData,
+          create: {
+            ...paymentData,
+            gatewayTransactionId,
+          },
+        });
+      } else {
+        await tx.payment.create({ data: paymentData });
+      }
+
+      if (order.paymentStatus !== ONLINE_PAYMENT_COMPLETED_STATUS) {
+        await finalizeOnlineOrderStockInTransaction(tx, order.id);
+      }
+
+      const updatedOrder = await tx.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'CONFIRMED',
+          paymentStatus: ONLINE_PAYMENT_COMPLETED_STATUS,
+          paidAt,
+          paymentPaidAt: paidAt,
+          stockFinalizedAt: order.stockFinalizedAt ?? paidAt,
         },
       });
-    } else {
-      await tx.payment.create({ data: paymentData });
-    }
 
-    await tx.order.update({
+      await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+
+      if (!order.isTest) {
+        const outbox = await createMetaPurchaseOutboxInTransaction(
+          tx as unknown as MetaOutboxDb,
+          {
+            purchaseType: 'online_paid_purchase',
+            orderId: order.id,
+            eventTime: paidAt,
+            eventSourceUrl: new URL('/checkout/payment-complete', request.nextUrl.origin).toString(),
+            sourceType: 'ONLINE_PAYMENT_VERIFIED',
+            sourceId: gatewayTransactionId ?? payload.transactionId?.trim() ?? order.id,
+            safePayload: {
+              payment_status: ONLINE_PAYMENT_COMPLETED_STATUS,
+              gateway,
+              amount,
+              currency,
+            },
+          }
+        );
+        metaPurchaseOutboxId = outbox.record.id;
+      }
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      [
+        'ONLINE_STOCK_FINALIZATION_FAILED',
+        'ONLINE_STOCK_RESERVATION_ALREADY_RELEASED',
+      ].includes(error.message)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'ONLINE_STOCK_FINALIZATION_FAILED',
+          error: 'Stock is no longer available for one or more paid order items. Please contact support for reconciliation.',
+        },
+        { status: 409 }
+      );
+    }
+    throw error;
+  }
+
+  if (shouldNotifyAdminAfterPayment) {
+    const notificationOrder = await prisma.order.findUnique({
       where: { id: order.id },
-      data: {
-        paymentStatus: 'COMPLETED',
-        paidAt,
-        paymentPaidAt: paidAt,
+      select: {
+        id: true,
+        orderNumber: true,
+        subtotal: true,
+        shippingCost: true,
+        courierDeliveryCharge: true,
+        deliveryDiscountAmount: true,
+        deliveryPricingSource: true,
+        deliveryOfferType: true,
+        deliveryOfferBadgeText: true,
+        total: true,
+        paymentMethod: true,
+        shippingAddress: {
+          select: { firstName: true, lastName: true, phone: true, city: true, street1: true, street2: true },
+        },
+        items: {
+          select: { name: true, quantity: true, price: true, total: true },
+        },
       },
     });
-  });
+
+    if (notificationOrder) {
+      await notifyNewOrder({
+        orderId: notificationOrder.id,
+        orderNumber: notificationOrder.orderNumber,
+        customerName: notificationOrder.shippingAddress
+          ? `${notificationOrder.shippingAddress.firstName} ${notificationOrder.shippingAddress.lastName}`.trim()
+          : 'N/A',
+        customerPhone: notificationOrder.shippingAddress?.phone || 'N/A',
+        address: {
+          city: notificationOrder.shippingAddress?.city || 'N/A',
+          zone: notificationOrder.shippingAddress?.street2 || null,
+          area: notificationOrder.shippingAddress?.street1 || null,
+        },
+        items: notificationOrder.items.map((item) => ({
+          name: item.name,
+          variant: null,
+          quantity: item.quantity,
+          unitPrice: toNumber(item.price),
+          total: toNumber(item.total),
+        })),
+        subtotal: toNumber(notificationOrder.subtotal),
+        shippingCost: toNumber(notificationOrder.shippingCost),
+        courierDeliveryCharge: notificationOrder.courierDeliveryCharge === null
+          ? null
+          : toNumber(notificationOrder.courierDeliveryCharge),
+        deliveryDiscountAmount: toNumber(notificationOrder.deliveryDiscountAmount),
+        deliveryPricingSource: String(notificationOrder.deliveryPricingSource),
+        deliveryOfferType: String(notificationOrder.deliveryOfferType),
+        deliveryOfferBadgeText: notificationOrder.deliveryOfferBadgeText,
+        total: toNumber(notificationOrder.total),
+        paymentMethod: notificationOrder.paymentMethod || gateway,
+      });
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { adminNotifiedAt: new Date() },
+      });
+    }
+  }
+
+  let searchConversionAttribution: Awaited<ReturnType<typeof attributeVerifiedSearchConversionsForOrder>> | undefined;
+  if (shouldAttributeSearchConversion) {
+    try {
+      searchConversionAttribution = await attributeVerifiedSearchConversionsForOrder(order.id, {
+        source: 'online_paid_payment_verified',
+      });
+    } catch (error) {
+      console.error('Search conversion attribution failed for verified online payment:', error);
+      searchConversionAttribution = {
+        attributed: 0,
+        source: 'online_paid_payment_verified',
+        skipped: 'ATTRIBUTION_ERROR',
+      };
+    }
+  } else {
+    searchConversionAttribution = {
+      attributed: 0,
+      source: 'online_paid_payment_verified',
+      skipped: 'ORDER_ALREADY_COMPLETED',
+    };
+  }
 
   let purchaseJobId: string | undefined;
   let purchaseQueued = false;
   let purchaseQueueError: string | undefined;
-  try {
-    const job = await enqueueMetaCapiPurchase({
-      type: 'online_paid_purchase',
-      orderId: order.id,
-    });
-    purchaseJobId = job.id;
-    purchaseQueued = true;
-  } catch (error) {
-    console.error('Online paid Meta Purchase queue enqueue failed:', error);
-    purchaseQueueError = 'PAYMENT_RECORDED_PURCHASE_QUEUE_FAILED';
+  if (metaPurchaseOutboxId) {
+    const dispatch = await requestMetaOutboxDispatch(metaPurchaseOutboxId);
+    purchaseQueued = dispatch.queued;
+    purchaseJobId = dispatch.jobId;
+    if (!dispatch.queued) {
+      console.error('Online paid Meta outbox immediate dispatch failed:', dispatch.error);
+      purchaseQueueError = 'PAYMENT_RECORDED_META_OUTBOX_PENDING_DISPATCH';
+    }
+  } else if (!order.isTest) {
+    purchaseQueueError = 'PAYMENT_RECORDED_META_OUTBOX_NOT_CREATED';
   }
 
   let ga4PurchaseJobId: string | undefined;
@@ -335,6 +507,21 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Online paid GA4 Purchase queue enqueue failed:', error);
     ga4PurchaseQueueError = 'PAYMENT_RECORDED_GA4_PURCHASE_QUEUE_FAILED';
+  }
+
+  let tiktokPurchaseJobId: string | undefined;
+  let tiktokPurchaseQueued = false;
+  let tiktokPurchaseQueueError: string | undefined;
+  try {
+    const job = await enqueueTikTokPurchase({
+      type: 'tiktok_online_paid_purchase',
+      orderId: order.id,
+    });
+    tiktokPurchaseJobId = job.id;
+    tiktokPurchaseQueued = true;
+  } catch (error) {
+    console.error('Online paid TikTok Purchase queue enqueue failed:', error);
+    tiktokPurchaseQueueError = 'PAYMENT_RECORDED_TIKTOK_PURCHASE_QUEUE_FAILED';
   }
 
   let browserPurchaseToken: string | undefined;
@@ -380,6 +567,10 @@ export async function POST(request: NextRequest) {
     ga4PurchaseQueued,
     ga4PurchaseJobId,
     ga4PurchaseQueueError,
+    tiktokPurchaseQueued,
+    tiktokPurchaseJobId,
+    tiktokPurchaseQueueError,
+    searchConversionAttribution,
     browserPurchaseTokenCreated: Boolean(browserPurchaseToken),
     // Do not expose the bridge URL in JSON responses: it contains the short-lived bpt token.
     // Customer-browser payment returns should use redirectCustomer mode, where the token is only

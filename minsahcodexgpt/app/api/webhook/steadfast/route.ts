@@ -6,9 +6,12 @@
  */
 import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@/generated/prisma/client'
 import prisma from '@/lib/prisma'
 import { mapSteadfastStatusToOrderStatus } from '@/lib/steadfast/client'
+import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics'
+import { extractBearerToken, secureCompareText } from '@/lib/security/request-secret'
+import { isPrismaUniqueConstraintError } from '@/lib/prisma-errors'
+import { calculateCourierSendAccounting, toJsonInput } from '@/lib/courier-send-accounting'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,16 +37,6 @@ type WebhookAuthResult = { ok: true } | { ok: false; reason?: 'not_configured' }
  * If multiple env vars are set, **any one** matching request headers is enough
  * (OR). Requiring all (AND) broke real callbacks when extra keys were left in .env.
  */
-function bearerTokenFromAuthorizationHeader(raw: string | null): string | undefined {
-  const v = raw?.trim()
-  if (!v) return undefined
-  const lower = v.toLowerCase()
-  if (lower.startsWith('bearer ')) {
-    return v.slice(7).trim() || undefined
-  }
-  return v
-}
-
 function authorizationHeaderMatchesExpected(
   request: NextRequest,
   expected: string
@@ -51,10 +44,10 @@ function authorizationHeaderMatchesExpected(
   const raw = request.headers.get('authorization')?.trim() ?? ''
   const exp = expected.trim()
   if (!raw || !exp) return false
-  if (raw === exp) return true
-  const rawToken = bearerTokenFromAuthorizationHeader(raw)
-  const expToken = bearerTokenFromAuthorizationHeader(exp)
-  if (rawToken && expToken && rawToken === expToken) return true
+  if (secureCompareText(raw, exp)) return true
+  const rawToken = extractBearerToken(raw)
+  const expToken = extractBearerToken(exp)
+  if (rawToken && expToken && secureCompareText(rawToken, expToken)) return true
   return false
 }
 
@@ -76,9 +69,9 @@ function isWebhookAuthorized(request: NextRequest): WebhookAuthResult {
     const headerSecret = request.headers.get('x-steadfast-webhook-secret')?.trim()
     const authHeader = request.headers.get('authorization')?.trim()
     const secretOk =
-      headerSecret === secret ||
-      authHeader === `Bearer ${secret}` ||
-      authHeader === secret ||
+      secureCompareText(headerSecret, secret) ||
+      secureCompareText(authHeader, `Bearer ${secret}`) ||
+      secureCompareText(authHeader, secret) ||
       authorizationHeaderMatchesExpected(request, secret)
     checks.push(secretOk)
   }
@@ -88,7 +81,7 @@ function isWebhookAuthorized(request: NextRequest): WebhookAuthResult {
       request.headers.get('customer-key')?.trim() ||
       request.headers.get('x-api-key')?.trim() ||
       request.headers.get('api-key')?.trim()
-    checks.push(provided === customerKey)
+    checks.push(secureCompareText(provided, customerKey))
   }
 
   if (authorization) {
@@ -150,8 +143,26 @@ function jsonError(message: string, httpStatus: number) {
   return NextResponse.json({ status: 'error', message }, { status: httpStatus })
 }
 
-function toJsonInput(value: unknown): Prisma.InputJsonValue {
-  return (value ?? {}) as Prisma.InputJsonValue
+function parseOptionalMoney(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') return null
+
+  let parsed: number | null = null
+  if (typeof value === 'number') {
+    parsed = value
+  } else if (typeof value === 'string') {
+    parsed = Number.parseFloat(value.trim())
+  } else if (value && typeof value === 'object') {
+    const maybeDecimal = value as { toNumber?: () => number; toString?: () => string }
+    if (typeof maybeDecimal.toNumber === 'function') {
+      parsed = maybeDecimal.toNumber()
+    } else if (typeof maybeDecimal.toString === 'function') {
+      parsed = Number.parseFloat(maybeDecimal.toString())
+    }
+  }
+
+  return parsed !== null && Number.isFinite(parsed) && parsed >= 0
+    ? Math.round((parsed + Number.EPSILON) * 100) / 100
+    : null
 }
 
 export async function POST(request: NextRequest) {
@@ -200,21 +211,29 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  const event = await prisma.steadfastWebhookEvent.create({
-    data: {
-      eventKey,
-      eventType,
-      invoice: invoice ?? null,
-      consignmentId: consignmentId ?? null,
-      trackingCode: trackingCode ?? null,
-      status: status ?? null,
-      trackingMessage: trackingMessage ?? null,
-      payload: toJsonInput(body),
-      processingStatus: 'RECEIVED',
-      receivedAt,
-    },
-    select: { id: true },
-  })
+  let event: { id: string }
+  try {
+    event = await prisma.steadfastWebhookEvent.create({
+      data: {
+        eventKey,
+        eventType,
+        invoice: invoice ?? null,
+        consignmentId: consignmentId ?? null,
+        trackingCode: trackingCode ?? null,
+        status: status ?? null,
+        trackingMessage: trackingMessage ?? null,
+        payload: toJsonInput(body),
+        processingStatus: 'RECEIVED',
+        receivedAt,
+      },
+      select: { id: true },
+    })
+  } catch (error) {
+    if (isPrismaUniqueConstraintError(error)) {
+      return jsonSuccess({ duplicate: true })
+    }
+    throw error
+  }
 
   const matchConditions = [
     ...(consignmentId ? [{ steadfastConsignmentId: consignmentId }] : []),
@@ -240,7 +259,23 @@ export async function POST(request: NextRequest) {
     },
     select: {
       id: true,
+      createdAt: true,
       status: true,
+      paymentStatus: true,
+      paymentMethod: true,
+      isTest: true,
+      phoneConfirmedAt: true,
+      paymentPaidAt: true,
+      paidAt: true,
+      deliveredAt: true,
+      cancelledAt: true,
+      returnedAt: true,
+      refundedAt: true,
+      courierDeliveredAt: true,
+      courierReturnedAt: true,
+      shippingCost: true,
+      courierDeliveryCharge: true,
+      deliveryDiscountAmount: true,
       steadfastStatus: true,
       trackingNumber: true,
     },
@@ -268,9 +303,16 @@ export async function POST(request: NextRequest) {
   if (status && status !== order.steadfastStatus) {
     updateData.steadfastStatus = status
   }
-  const deliveryCharge = Number(payload.delivery_charge)
-  if (Number.isFinite(deliveryCharge) && deliveryCharge >= 0) {
-    updateData.shippingCost = deliveryCharge
+  const webhookCourierCharge = parseOptionalMoney(payload.delivery_charge)
+  if (webhookCourierCharge !== null) {
+    const courierAccounting = calculateCourierSendAccounting({
+      customerShippingCost: order.shippingCost,
+      currentCourierDeliveryCharge: order.courierDeliveryCharge,
+      currentDeliveryDiscountAmount: order.deliveryDiscountAmount,
+      courierResponseCharge: webhookCourierCharge,
+    })
+    updateData.courierDeliveryCharge = courierAccounting.courierDeliveryCharge
+    updateData.deliveryDiscountAmount = courierAccounting.deliveryDiscountAmount
   }
   if (trackingMessage) {
     updateData.adminNote = trackingMessage
@@ -292,27 +334,25 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const eventUpdate = prisma.steadfastWebhookEvent.update({
-    where: { id: event.id },
-    data: {
-      orderId: order.id,
-      processingStatus: 'PROCESSED',
-      processedAt: now,
-    },
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(updateData).length > 0) {
+      const updatedOrder = await tx.order.update({
+        where: { id: order.id },
+        data: updateData,
+      })
+
+      await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder)
+    }
+
+    await tx.steadfastWebhookEvent.update({
+      where: { id: event.id },
+      data: {
+        orderId: order.id,
+        processingStatus: 'PROCESSED',
+        processedAt: now,
+      },
+    })
   })
-
-  const ops =
-    Object.keys(updateData).length > 0
-      ? [
-          prisma.order.update({
-            where: { id: order.id },
-            data: updateData,
-          }),
-          eventUpdate,
-        ]
-      : [eventUpdate]
-
-  await prisma.$transaction(ops)
 
   return jsonSuccess({
     eventId: event.id,

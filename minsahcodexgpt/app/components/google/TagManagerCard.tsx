@@ -1,5 +1,15 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import type { TagManagerData, GoogleTag } from '@/types/google';
 import { generateMockTagManagerData, GOOGLE_COLORS } from '@/types/google';
@@ -36,6 +46,7 @@ export default function TagManagerCard({
   onDateRangeChange,
   className = ''
 }: TagManagerCardProps) {
+  const { pushToast } = useToast();
   const [data, setData] = useState<TagManagerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +89,7 @@ export default function TagManagerCard({
       setNewTag({});
       setShowCreateTag(false);
       // In real app, this would create the tag
-      alert('Tag created successfully!');
+      pushToast({ tone: 'success', description: 'Tag created successfully!' });
     } catch (err) {
       console.error('Error creating tag:', err);
     }
@@ -173,7 +184,7 @@ export default function TagManagerCard({
           </div>
 
           <div className="flex items-center gap-3">
-            <button
+            <Button
               onClick={() => setPreviewMode(!previewMode)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm ${
                 previewMode
@@ -192,9 +203,9 @@ export default function TagManagerCard({
                   Preview Mode
                 </>
               )}
-            </button>
+            </Button>
 
-            <select
+            <Select
               value={dateRange}
               onChange={(e) => onDateRangeChange?.(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -203,7 +214,7 @@ export default function TagManagerCard({
               <option value="28days">Last 28 days</option>
               <option value="90days">Last 90 days</option>
               <option value="custom">Custom range</option>
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -226,13 +237,13 @@ export default function TagManagerCard({
                 </div>
               </div>
 
-              <button
+              <Button
                 onClick={handleCopySnippet}
                 className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
               >
                 <Clipboard className="h-4 w-4" />
                 {copiedSnippet ? 'Copied!' : 'Copy Snippet'}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -248,7 +259,7 @@ export default function TagManagerCard({
             { id: 'variables', name: 'Variables', icon: FileText },
             { id: 'preview', name: 'Preview', icon: Eye }
           ].map((tab) => (
-            <button
+            <Button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -261,7 +272,7 @@ export default function TagManagerCard({
                 <tab.icon className="h-4 w-4" />
                 {tab.name}
               </div>
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
@@ -351,13 +362,13 @@ export default function TagManagerCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Tags</h3>
-              <button
+              <Button
                 onClick={() => setShowCreateTag(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 <Plus className="h-4 w-4" />
                 Create Tag
-              </button>
+              </Button>
             </div>
 
             {/* Create Tag Form */}
@@ -365,7 +376,7 @@ export default function TagManagerCard({
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <h4 className="font-medium text-gray-900 mb-3">Create New Tag</h4>
                 <div className="space-y-3">
-                  <select
+                  <Select
                     value={newTag.type || 'custom'}
                     onChange={(e) => setNewTag({ ...newTag, type: e.target.value as any })}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -375,9 +386,9 @@ export default function TagManagerCard({
                     <option value="google-ads">Google Ads Conversion</option>
                     <option value="facebook-pixel">Meta Pixel</option>
                     <option value="linkedin-insight">LinkedIn Insight Tag</option>
-                  </select>
+                  </Select>
 
-                  <input
+                  <Input
                     type="text"
                     value={newTag.name || ''}
                     onChange={(e) => setNewTag({ ...newTag, name: e.target.value })}
@@ -385,7 +396,7 @@ export default function TagManagerCard({
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
 
-                  <textarea
+                  <Textarea
                     value={newTag.code || ''}
                     onChange={(e) => setNewTag({ ...newTag, code: e.target.value })}
                     placeholder="Tag code or HTML"
@@ -394,14 +405,14 @@ export default function TagManagerCard({
                   />
 
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={handleCreateTag}
                       disabled={!newTag.name?.trim() || !newTag.code?.trim()}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Create Tag
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         setShowCreateTag(false);
                         setNewTag({});
@@ -409,7 +420,7 @@ export default function TagManagerCard({
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -442,15 +453,15 @@ export default function TagManagerCard({
                       <td className="px-4 py-2 text-sm text-gray-700">{tag.lastFired?.toLocaleDateString() || 'Never'}</td>
                       <td className="px-4 py-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <button
+                          <Button
                             onClick={() => setSelectedTag(tag)}
                             className="p-1 text-gray-600 hover:text-gray-900"
                           >
                             <Edit className="h-4 w-4" />
-                          </button>
-                          <button className="p-1 text-gray-600 hover:text-gray-900">
+                          </Button>
+                          <Button className="p-1 text-gray-600 hover:text-gray-900">
                             <Trash2 className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -466,10 +477,10 @@ export default function TagManagerCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Triggers</h3>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+              <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                 <Plus className="h-4 w-4" />
                 Create Trigger
-              </button>
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -491,12 +502,12 @@ export default function TagManagerCard({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button className="p-1 text-gray-600 hover:text-gray-900">
+                    <Button className="p-1 text-gray-600 hover:text-gray-900">
                       <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-600 hover:text-gray-900">
+                    </Button>
+                    <Button className="p-1 text-gray-600 hover:text-gray-900">
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -509,10 +520,10 @@ export default function TagManagerCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Variables</h3>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+              <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                 <Plus className="h-4 w-4" />
                 Create Variable
-              </button>
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -533,12 +544,12 @@ export default function TagManagerCard({
                   )}
 
                   <div className="flex items-center gap-2 mt-2">
-                    <button className="p-1 text-gray-600 hover:text-gray-900">
+                    <Button className="p-1 text-gray-600 hover:text-gray-900">
                       <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-600 hover:text-gray-900">
+                    </Button>
+                    <Button className="p-1 text-gray-600 hover:text-gray-900">
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -555,24 +566,24 @@ export default function TagManagerCard({
                   <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Preview Mode Active</h3>
                   <p className="text-gray-600 mb-4">Your changes are being tested in preview mode</p>
-                  <button
+                  <Button
                     onClick={() => setPreviewMode(false)}
                     className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                   >
                     Exit Preview Mode
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div>
                   <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Preview Mode</h3>
                   <p className="text-gray-600 mb-4">Test your tag configurations before publishing</p>
-                  <button
+                  <Button
                     onClick={() => setPreviewMode(true)}
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     Enable Preview Mode
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

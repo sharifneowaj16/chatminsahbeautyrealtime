@@ -1,31 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { verifyAdminAccessToken } from '@/lib/auth/jwt';
-import { Prisma, $Enums } from '@/generated/prisma/client';
-import { generateDailyOrderNumber } from '@/lib/order-number';
-import { notifyNewOrder } from '@/lib/telegram-notify';
+import { NextRequest, NextResponse } from "next/server";
+import { recordProductOrderCreatedInTransaction } from "@/lib/analytics/product-metrics";
+import prisma from "@/lib/prisma";
+import { verifyAdminAccessToken } from "@/lib/auth/jwt";
+import { Prisma, $Enums } from "@/generated/prisma/client";
+import { generateDailyOrderNumber } from "@/lib/order-number";
+import { notifyNewOrder } from "@/lib/telegram-notify";
+import { buildOrderTrackingExclusionData } from "@/lib/tracking/traffic-filter";
 import {
   getCanonicalPaymentContractErrorResponse,
   isCanonicalOnlinePaymentMethod,
   isCodPaymentMethod,
   isPaidLikePaymentStatus,
-} from '@/lib/payments/canonical-payment-contract';
+} from "@/lib/payments/canonical-payment-contract";
 
 type Decimal = Prisma.Decimal;
 const Decimal = Prisma.Decimal;
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 function toNumber(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  if (typeof value === "number" && Number.isFinite(value)) {
     return value;
   }
 
   if (
     value &&
-    typeof value === 'object' &&
-    'toNumber' in value &&
-    typeof (value as { toNumber?: unknown }).toNumber === 'function'
+    typeof value === "object" &&
+    "toNumber" in value &&
+    typeof (value as { toNumber?: unknown }).toNumber === "function"
   ) {
     const parsed = (value as { toNumber: () => number }).toNumber();
     if (Number.isFinite(parsed)) {
@@ -38,72 +40,93 @@ function toNumber(value: unknown): number {
 }
 
 function readVariantAttribute(attributes: unknown, keys: string[]) {
-  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+  if (
+    !attributes ||
+    typeof attributes !== "object" ||
+    Array.isArray(attributes)
+  ) {
     return null;
   }
 
   const record = attributes as Record<string, unknown>;
   for (const key of keys) {
     const value = record[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
-    if (typeof value === 'number') return String(value);
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
   }
 
   const loweredKeys = keys.map((key) => key.toLowerCase());
   for (const [key, value] of Object.entries(record)) {
     if (!loweredKeys.includes(key.toLowerCase())) continue;
-    if (typeof value === 'string' && value.trim()) return value.trim();
-    if (typeof value === 'number') return String(value);
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
   }
 
   return null;
 }
 
 function normalizeAdminPaymentStatus(status?: string | null) {
-  const normalized = String(status || 'PENDING').trim().toLowerCase();
+  const normalized = String(status || "PENDING")
+    .trim()
+    .toLowerCase();
   const paymentMap: Record<string, $Enums.PaymentStatus> = {
-    pending: 'PENDING',
-    processing: 'PROCESSING',
-    paid: 'COMPLETED',
-    completed: 'COMPLETED',
-    complete: 'COMPLETED',
-    success: 'COMPLETED',
-    successful: 'COMPLETED',
-    failed: 'FAILED',
-    fail: 'FAILED',
-    refunded: 'REFUNDED',
-    refund: 'REFUNDED',
-    cancelled: 'CANCELLED',
-    canceled: 'CANCELLED',
+    pending: "PENDING",
+    processing: "PROCESSING",
+    paid: "COMPLETED",
+    completed: "COMPLETED",
+    complete: "COMPLETED",
+    success: "COMPLETED",
+    successful: "COMPLETED",
+    failed: "FAILED",
+    fail: "FAILED",
+    refunded: "REFUNDED",
+    refund: "REFUNDED",
+    cancelled: "CANCELLED",
+    canceled: "CANCELLED",
   };
 
-  return paymentMap[normalized] ?? 'PENDING';
+  return paymentMap[normalized] ?? "PENDING";
 }
 
-function formatVariantForNotification(variant: { name: string; attributes?: unknown } | null | undefined) {
+function formatVariantForNotification(
+  variant: { name: string; attributes?: unknown } | null | undefined,
+) {
   if (!variant) return null;
 
-  const sizeOrVolume = readVariantAttribute(variant.attributes, ['size', 'Size', 'volume', 'Volume']);
-  const colorOrShade = readVariantAttribute(variant.attributes, ['color', 'Color', 'shade', 'Shade']);
+  const sizeOrVolume = readVariantAttribute(variant.attributes, [
+    "size",
+    "Size",
+    "volume",
+    "Volume",
+  ]);
+  const colorOrShade = readVariantAttribute(variant.attributes, [
+    "color",
+    "Color",
+    "shade",
+    "Shade",
+  ]);
   const details = [
     sizeOrVolume ? `Size/Volume: ${sizeOrVolume}` : null,
     colorOrShade ? `Color/Shade: ${colorOrShade}` : null,
   ].filter(Boolean);
 
-  return details.length ? details.join(' / ') : variant.name || null;
+  return details.length ? details.join(" / ") : variant.name || null;
 }
 
 // POST /api/admin/orders — Create order (admin-created on behalf of customer)
 export async function POST(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('admin_access_token')?.value;
+    const accessToken = request.cookies.get("admin_access_token")?.value;
     if (!accessToken) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const payload = await verifyAdminAccessToken(accessToken);
     if (!payload) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 },
+      );
     }
 
     const body = await request.json();
@@ -114,53 +137,72 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       paymentStatus,
       shippingCost,
+      courierDeliveryCharge,
+      deliveryDiscountAmount,
+      deliveryPricingSource,
+      deliveryOfferType,
+      deliveryOfferProductId,
+      deliveryOfferBadgeText,
       discountAmount,
       couponCode,
       adminNote,
-      status = 'PENDING',
+      status = "PENDING",
     } = body;
 
     // Validation
     if (!customer?.firstName || !customer?.phone) {
       return NextResponse.json(
-        { error: 'Customer firstName and phone required' },
-        { status: 400 }
+        { error: "Customer firstName and phone required" },
+        { status: 400 },
       );
     }
 
-    const requestedPaymentMethod = paymentMethod || 'cash_on_delivery';
-    const requestedPaymentStatusInput = String(paymentStatus || 'PENDING');
-    const requestedPaymentStatus = normalizeAdminPaymentStatus(requestedPaymentStatusInput);
+    const requestedPaymentMethod = paymentMethod || "cash_on_delivery";
+    const requestedPaymentStatusInput = String(paymentStatus || "PENDING");
+    const requestedPaymentStatus = normalizeAdminPaymentStatus(
+      requestedPaymentStatusInput,
+    );
 
-    if (!isCodPaymentMethod(requestedPaymentMethod) && !isCanonicalOnlinePaymentMethod(requestedPaymentMethod)) {
+    if (
+      !isCodPaymentMethod(requestedPaymentMethod) &&
+      !isCanonicalOnlinePaymentMethod(requestedPaymentMethod)
+    ) {
       return NextResponse.json(
         getCanonicalPaymentContractErrorResponse({
-          code: 'UNSUPPORTED_PAYMENT_METHOD',
-          message: 'Admin-created orders must use COD, bKash, or Nagad until a verified provider adapter is added.',
+          code: "UNSUPPORTED_PAYMENT_METHOD",
+          message:
+            "Admin-created orders must use COD, bKash, or Nagad until a verified provider adapter is added.",
         }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (isPaidLikePaymentStatus(requestedPaymentStatusInput) && !isCodPaymentMethod(requestedPaymentMethod)) {
+    if (
+      isPaidLikePaymentStatus(requestedPaymentStatusInput) &&
+      !isCodPaymentMethod(requestedPaymentMethod)
+    ) {
       return NextResponse.json(
         getCanonicalPaymentContractErrorResponse({
-          code: 'ADMIN_ONLINE_PAYMENT_COMPLETION_BLOCKED',
-          message: 'Admin-created online orders cannot start as paid. Create the order as pending and let /api/payments/verified record paid status after gateway verification.',
+          code: "ADMIN_ONLINE_PAYMENT_COMPLETION_BLOCKED",
+          message:
+            "Admin-created online orders cannot start as paid. Create the order as pending and let /api/payments/verified record paid status after gateway verification.",
         }),
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     if (!shippingAddress?.street1 || !shippingAddress?.city) {
       return NextResponse.json(
-        { error: 'Shipping address street1 and city required' },
-        { status: 400 }
+        { error: "Shipping address street1 and city required" },
+        { status: 400 },
       );
     }
 
     if (!items || items.length === 0) {
-      return NextResponse.json({ error: 'At least one item required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "At least one item required" },
+        { status: 400 },
+      );
     }
 
     // Find or create customer
@@ -173,7 +215,7 @@ export async function POST(request: NextRequest) {
         data: {
           email: customer.email || `temp-${Date.now()}@order.local`,
           firstName: customer.firstName,
-          lastName: customer.lastName || '',
+          lastName: customer.lastName || "",
           phone: customer.phone,
         },
       });
@@ -183,16 +225,16 @@ export async function POST(request: NextRequest) {
     const address = await prisma.address.create({
       data: {
         userId: user.id,
-        type: 'SHIPPING',
+        type: "SHIPPING",
         isDefault: false,
         firstName: shippingAddress.firstName || customer.firstName,
-        lastName: shippingAddress.lastName || customer.lastName || '',
+        lastName: shippingAddress.lastName || customer.lastName || "",
         street1: shippingAddress.street1,
-        street2: shippingAddress.street2 || '',
+        street2: shippingAddress.street2 || "",
         city: shippingAddress.city,
-        state: shippingAddress.state || '',
-        postalCode: shippingAddress.postalCode || '',
-        country: shippingAddress.country || 'Bangladesh',
+        state: shippingAddress.state || "",
+        postalCode: shippingAddress.postalCode || "",
+        country: shippingAddress.country || "Bangladesh",
         phone: shippingAddress.phone || customer.phone,
         pathaoCityId: shippingAddress.pathaoCityId,
         pathaoZoneId: shippingAddress.pathaoZoneId,
@@ -200,29 +242,57 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const orderTrackingExclusion = buildOrderTrackingExclusionData({
+      request,
+      email: user.email ?? customer.email,
+      phones: [user.phone, customer.phone, shippingAddress.phone],
+      markInternalRequestAsTest: false,
+    });
+
     // Calculate totals & validate products
     let subtotal = new Decimal(0);
-    const orderItems: { productId: string | null; variantId?: string; name: string; sku: string; price: Decimal; quantity: number; total: Decimal }[] = [];
-    const notifyItems: { name: string; variant: string | null; quantity: number; unitPrice: number; total: number }[] = [];
-    const shortlistItems: { productId: string; quantity: number; price: Decimal }[] = [];
+    const orderItems: {
+      productId: string | null;
+      variantId?: string;
+      name: string;
+      sku: string;
+      price: Decimal;
+      quantity: number;
+      total: Decimal;
+    }[] = [];
+    const notifyItems: {
+      name: string;
+      variant: string | null;
+      quantity: number;
+      unitPrice: number;
+      total: number;
+    }[] = [];
+    const shortlistItems: {
+      productId: string;
+      quantity: number;
+      price: Decimal;
+    }[] = [];
 
     // ✨ NEW: Track custom products for UnlistedProduct
     const customProducts: { name: string; sku: string; price: Decimal }[] = [];
     const variantIds: string[] = [];
     for (const item of items as Array<{ variantId?: unknown }>) {
-      if (typeof item.variantId === 'string' && item.variantId.length > 0 && !variantIds.includes(item.variantId)) {
+      if (
+        typeof item.variantId === "string" &&
+        item.variantId.length > 0 &&
+        !variantIds.includes(item.variantId)
+      ) {
         variantIds.push(item.variantId);
       }
     }
     const variantMap = new Map(
-      (
-        variantIds.length
-          ? await prisma.productVariant.findMany({
-              where: { id: { in: variantIds } },
-              select: { id: true, name: true, attributes: true },
-            })
-          : []
-      ).map((variant) => [variant.id, variant])
+      (variantIds.length
+        ? await prisma.productVariant.findMany({
+            where: { id: { in: variantIds } },
+            select: { id: true, name: true, attributes: true },
+          })
+        : []
+      ).map((variant) => [variant.id, variant]),
     );
 
     for (const item of items) {
@@ -235,11 +305,20 @@ export async function POST(request: NextRequest) {
         // DB product — validate + stock check
         const product = await prisma.product.findUnique({
           where: { id: item.productId },
-          select: { id: true, name: true, sku: true, quantity: true, price: true },
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            quantity: true,
+            price: true,
+          },
         });
 
         if (!product) {
-          return NextResponse.json({ error: `Product ${item.productId} not found` }, { status: 404 });
+          return NextResponse.json(
+            { error: `Product ${item.productId} not found` },
+            { status: 404 },
+          );
         }
 
         orderItems.push({
@@ -253,7 +332,9 @@ export async function POST(request: NextRequest) {
         });
         notifyItems.push({
           name: product.name,
-          variant: formatVariantForNotification(item.variantId ? variantMap.get(item.variantId) : null),
+          variant: formatVariantForNotification(
+            item.variantId ? variantMap.get(item.variantId) : null,
+          ),
           quantity: itemQuantity,
           unitPrice: toNumber(itemPrice),
           total: toNumber(itemTotal),
@@ -271,14 +352,14 @@ export async function POST(request: NextRequest) {
         orderItems.push({
           productId: null,
           variantId: undefined,
-          name: item.name || 'Custom Product',
+          name: item.name || "Custom Product",
           sku: item.sku || `CUSTOM-${Date.now()}`,
           price: itemPrice,
           quantity: itemQuantity,
           total: itemTotal,
         });
         notifyItems.push({
-          name: item.name || 'Custom Product',
+          name: item.name || "Custom Product",
           variant: null,
           quantity: itemQuantity,
           unitPrice: toNumber(itemPrice),
@@ -286,7 +367,7 @@ export async function POST(request: NextRequest) {
         });
 
         customProducts.push({
-          name: item.name || 'Custom Product',
+          name: item.name || "Custom Product",
           sku: item.sku || `CUSTOM-${Date.now()}`,
           price: itemPrice,
         });
@@ -295,45 +376,101 @@ export async function POST(request: NextRequest) {
 
     // Calculate final total
     const shippingCostDec = new Decimal(shippingCost || 0);
+    const courierDeliveryChargeDec =
+      courierDeliveryCharge === null || courierDeliveryCharge === undefined
+        ? null
+        : new Decimal(courierDeliveryCharge || 0);
+    const computedDeliveryDiscountDec = courierDeliveryChargeDec
+      ? courierDeliveryChargeDec.minus(shippingCostDec)
+      : null;
+    const deliveryDiscountDec = computedDeliveryDiscountDec
+      ? computedDeliveryDiscountDec.isNegative()
+        ? new Decimal(0)
+        : computedDeliveryDiscountDec
+      : new Decimal(deliveryDiscountAmount || 0);
+    const normalizedDeliveryPricingSource = String(
+      deliveryPricingSource || "MANUAL",
+    ).toUpperCase();
+    const normalizedDeliveryOfferType = String(
+      deliveryOfferType || "DEFAULT",
+    ).toUpperCase();
     const discountDec = new Decimal(discountAmount || 0);
     const total = subtotal.add(shippingCostDec).minus(discountDec);
-    const codAdminPaidAt = isCodPaymentMethod(requestedPaymentMethod) && isPaidLikePaymentStatus(requestedPaymentStatusInput)
-      ? new Date()
-      : null;
+    const codAdminPaidAt =
+      isCodPaymentMethod(requestedPaymentMethod) &&
+      isPaidLikePaymentStatus(requestedPaymentStatusInput)
+        ? new Date()
+        : null;
 
     // Create order
-    const order = await prisma.$transaction(async (tx) => tx.order.create({
-      data: {
-        orderNumber: await generateDailyOrderNumber(tx),
-        userId: user.id,
-        status: status.toUpperCase() as $Enums.OrderStatus,
-        paymentStatus: requestedPaymentStatus,
-        paymentMethod: requestedPaymentMethod,
-        shippingMethod: 'pathao',
-        subtotal,
-        shippingCost: shippingCostDec,
-        taxAmount: new Decimal(0),
-        discountAmount: discountDec,
-        total,
-        addressId: address.id,
-        couponCode,
-        adminNote,
-        paidAt: codAdminPaidAt,
-        paymentPaidAt: codAdminPaidAt,
-        items: {
-          create: orderItems.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            name: item.name,
-            sku: item.sku,
-            price: item.price,
-            quantity: item.quantity,
-            total: item.total,
-          })),
+    const order = await prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          orderNumber: await generateDailyOrderNumber(tx),
+          userId: user.id,
+          status: status.toUpperCase() as $Enums.OrderStatus,
+          paymentStatus: requestedPaymentStatus,
+          paymentMethod: requestedPaymentMethod,
+          shippingMethod: "pathao",
+          subtotal,
+          shippingCost: shippingCostDec,
+          courierDeliveryCharge: courierDeliveryChargeDec,
+          deliveryDiscountAmount: deliveryDiscountDec,
+          deliveryPricingSource: Object.values(
+            $Enums.DeliveryPricingSource,
+          ).includes(
+            normalizedDeliveryPricingSource as $Enums.DeliveryPricingSource,
+          )
+            ? (normalizedDeliveryPricingSource as $Enums.DeliveryPricingSource)
+            : $Enums.DeliveryPricingSource.MANUAL,
+          deliveryOfferType: Object.values($Enums.DeliveryOfferType).includes(
+            normalizedDeliveryOfferType as $Enums.DeliveryOfferType,
+          )
+            ? (normalizedDeliveryOfferType as $Enums.DeliveryOfferType)
+            : $Enums.DeliveryOfferType.DEFAULT,
+          deliveryOfferProductId:
+            typeof deliveryOfferProductId === "string" &&
+            deliveryOfferProductId.trim()
+              ? deliveryOfferProductId.trim()
+              : null,
+          deliveryOfferBadgeText:
+            typeof deliveryOfferBadgeText === "string" &&
+            deliveryOfferBadgeText.trim()
+              ? deliveryOfferBadgeText.trim()
+              : null,
+          taxAmount: new Decimal(0),
+          discountAmount: discountDec,
+          total,
+          addressId: address.id,
+          couponCode,
+          adminNote,
+          ...orderTrackingExclusion,
+          paidAt: codAdminPaidAt,
+          paymentPaidAt: codAdminPaidAt,
+          items: {
+            create: orderItems.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              name: item.name,
+              sku: item.sku,
+              price: item.price,
+              quantity: item.quantity,
+              total: item.total,
+            })),
+          },
         },
-      },
-      include: { items: true },
-    }));
+        include: { items: true },
+      });
+
+      await recordProductOrderCreatedInTransaction(
+        tx,
+        orderItems.map((item) => ({ productId: item.productId, quantity: item.quantity, total: toNumber(item.total) })),
+        undefined,
+        { skip: Boolean(orderTrackingExclusion.isTest), reason: orderTrackingExclusion.trackingFilteredReason ?? undefined }
+      );
+
+      return createdOrder;
+    });
 
     // Create purchase shortlist for out-of-stock items
     for (const shortItem of shortlistItems) {
@@ -347,7 +484,9 @@ export async function POST(request: NextRequest) {
         create: {
           orderId: order.id,
           productId: shortItem.productId,
-          productName: orderItems.find((oi) => oi.productId === shortItem.productId)?.name || '',
+          productName:
+            orderItems.find((oi) => oi.productId === shortItem.productId)
+              ?.name || "",
           quantity: shortItem.quantity,
           buyPrice: new Decimal(0),
           sellPrice: shortItem.price,
@@ -383,19 +522,27 @@ export async function POST(request: NextRequest) {
       orderNumber: order.orderNumber,
       customerName:
         `${address.firstName} ${address.lastName}`.trim() ||
-        `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-        'N/A',
-      customerPhone: address.phone || user.phone || 'N/A',
+        `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+        "N/A",
+      customerPhone: address.phone || user.phone || "N/A",
       address: {
-        city: address.city || 'N/A',
+        city: address.city || "N/A",
         zone: address.state || address.street2 || null,
         area: address.street1 || null,
       },
       items: notifyItems,
       subtotal: toNumber(order.subtotal),
       shippingCost: toNumber(order.shippingCost),
+      courierDeliveryCharge:
+        order.courierDeliveryCharge === null
+          ? null
+          : toNumber(order.courierDeliveryCharge),
+      deliveryDiscountAmount: toNumber(order.deliveryDiscountAmount),
+      deliveryPricingSource: order.deliveryPricingSource,
+      deliveryOfferType: order.deliveryOfferType,
+      deliveryOfferBadgeText: order.deliveryOfferBadgeText,
       total: toNumber(order.total),
-      paymentMethod: order.paymentMethod || 'cash_on_delivery',
+      paymentMethod: order.paymentMethod || "cash_on_delivery",
     }).catch(() => {});
 
     return NextResponse.json(
@@ -409,53 +556,64 @@ export async function POST(request: NextRequest) {
           shortlistedItems: shortlistItems.length,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error('Admin order POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Admin order POST error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
 // GET /api/admin/orders - List all orders with filters
 export async function GET(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('admin_access_token')?.value;
+    const accessToken = request.cookies.get("admin_access_token")?.value;
     if (!accessToken) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const payload = await verifyAdminAccessToken(accessToken);
     if (!payload) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 },
+      );
     }
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') || '';
-    const paymentStatus = searchParams.get('paymentStatus') || '';
-    const dateRange = searchParams.get('dateRange') || '';
-    const sortBy = searchParams.get('sortBy') || 'created';
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "";
+    const paymentStatus = searchParams.get("paymentStatus") || "";
+    const dateRange = searchParams.get("dateRange") || "";
+    const sortBy = searchParams.get("sortBy") || "created";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
 
     // Build date filter
     let dateFilter: { gte?: Date } = {};
     const now = new Date();
-    if (dateRange === 'today') {
-      const start = new Date(now); start.setHours(0, 0, 0, 0);
+    if (dateRange === "today") {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
       dateFilter = { gte: start };
-    } else if (dateRange === 'week' || dateRange === '7d') {
-      const start = new Date(now); start.setDate(now.getDate() - 7);
+    } else if (dateRange === "week" || dateRange === "7d") {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 7);
       dateFilter = { gte: start };
-    } else if (dateRange === 'month' || dateRange === '30d') {
-      const start = new Date(now); start.setMonth(now.getMonth() - 1);
+    } else if (dateRange === "month" || dateRange === "30d") {
+      const start = new Date(now);
+      start.setMonth(now.getMonth() - 1);
       dateFilter = { gte: start };
-    } else if (dateRange === '90d') {
-      const start = new Date(now); start.setDate(now.getDate() - 90);
+    } else if (dateRange === "90d") {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 90);
       dateFilter = { gte: start };
-    } else if (dateRange === 'year') {
-      const start = new Date(now); start.setFullYear(now.getFullYear() - 1);
+    } else if (dateRange === "year") {
+      const start = new Date(now);
+      start.setFullYear(now.getFullYear() - 1);
       dateFilter = { gte: start };
     }
 
@@ -466,7 +624,9 @@ export async function GET(request: NextRequest) {
       const statusAliases: Record<string, $Enums.OrderStatus> = {
         completed: $Enums.OrderStatus.DELIVERED,
       };
-      const upperStatus = statusAliases[status.toLowerCase()] ?? (status.toUpperCase() as $Enums.OrderStatus);
+      const upperStatus =
+        statusAliases[status.toLowerCase()] ??
+        (status.toUpperCase() as $Enums.OrderStatus);
       if (Object.values($Enums.OrderStatus).includes(upperStatus)) {
         where.status = upperStatus;
       }
@@ -475,7 +635,9 @@ export async function GET(request: NextRequest) {
       const paymentAliases: Record<string, $Enums.PaymentStatus> = {
         paid: $Enums.PaymentStatus.COMPLETED,
       };
-      const upperPayment = paymentAliases[paymentStatus.toLowerCase()] ?? (paymentStatus.toUpperCase() as $Enums.PaymentStatus);
+      const upperPayment =
+        paymentAliases[paymentStatus.toLowerCase()] ??
+        (paymentStatus.toUpperCase() as $Enums.PaymentStatus);
       if (Object.values($Enums.PaymentStatus).includes(upperPayment)) {
         where.paymentStatus = upperPayment;
       }
@@ -485,19 +647,19 @@ export async function GET(request: NextRequest) {
     }
     if (search) {
       where.OR = [
-        { orderNumber: { contains: search, mode: 'insensitive' } },
-        { user: { email: { contains: search, mode: 'insensitive' } } },
-        { user: { firstName: { contains: search, mode: 'insensitive' } } },
-        { user: { lastName: { contains: search, mode: 'insensitive' } } },
+        { orderNumber: { contains: search, mode: "insensitive" } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+        { user: { firstName: { contains: search, mode: "insensitive" } } },
+        { user: { lastName: { contains: search, mode: "insensitive" } } },
       ];
     }
 
     // Build orderBy
-    let orderBy: Prisma.OrderOrderByWithRelationInput = { createdAt: 'desc' };
-    if (sortBy === 'updated') orderBy = { updatedAt: 'desc' };
-    else if (sortBy === 'total_high') orderBy = { total: 'desc' };
-    else if (sortBy === 'total_low') orderBy = { total: 'asc' };
-    else if (sortBy === 'customer') orderBy = { user: { firstName: 'asc' } };
+    let orderBy: Prisma.OrderOrderByWithRelationInput = { createdAt: "desc" };
+    if (sortBy === "updated") orderBy = { updatedAt: "desc" };
+    else if (sortBy === "total_high") orderBy = { total: "desc" };
+    else if (sortBy === "total_low") orderBy = { total: "asc" };
+    else if (sortBy === "customer") orderBy = { user: { firstName: "asc" } };
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
@@ -513,6 +675,13 @@ export async function GET(request: NextRequest) {
           paymentMethod: true,
           paymentStatus: true,
           shippingMethod: true,
+          shippingCost: true,
+          courierDeliveryCharge: true,
+          deliveryDiscountAmount: true,
+          deliveryPricingSource: true,
+          deliveryOfferType: true,
+          deliveryOfferProductId: true,
+          deliveryOfferBadgeText: true,
           trackingNumber: true,
           steadfastStatus: true,
           steadfastTrackingCode: true,
@@ -546,10 +715,14 @@ export async function GET(request: NextRequest) {
       prisma.order.count({ where }),
     ]);
 
-    const userIds = [...new Set(orders.map((order) => order.userId).filter(Boolean))];
+    const userIds = [
+      ...new Set(orders.map((order) => order.userId).filter(Boolean)),
+    ];
     const productIds = [
       ...new Set(
-        orders.flatMap((order) => order.items.map((item) => item.productId).filter(Boolean))
+        orders.flatMap((order) =>
+          order.items.map((item) => item.productId).filter(Boolean),
+        ),
       ),
     ];
 
@@ -573,7 +746,7 @@ export async function GET(request: NextRequest) {
               id: true,
               images: {
                 take: 1,
-                orderBy: { sortOrder: 'asc' },
+                orderBy: { sortOrder: "asc" },
                 select: { url: true },
               },
             },
@@ -582,7 +755,9 @@ export async function GET(request: NextRequest) {
     ]);
 
     const userMap = new Map(users.map((user) => [user.id, user]));
-    const productMap = new Map(products.map((product) => [product.id, product]));
+    const productMap = new Map(
+      products.map((product) => [product.id, product]),
+    );
 
     // Format orders for admin UI
     const formatted = orders.map((order) => {
@@ -593,22 +768,46 @@ export async function GET(request: NextRequest) {
         dbId: order.id,
         customer: {
           name:
-            `${user?.firstName || ''} ${user?.lastName || ''}`.trim() ||
+            `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
             user?.email ||
-            'Unknown customer',
-          email: user?.email || '',
-          phone: user?.phone || '',
+            "Unknown customer",
+          email: user?.email || "",
+          phone: user?.phone || "",
         },
         items: order.items.map((item) => ({
           id: item.id,
           name: item.name,
           quantity: item.quantity,
           price: toNumber(item.price),
-          image: item.productId ? (productMap.get(item.productId)?.images?.[0]?.url || '') : '',
+          image: item.productId
+            ? productMap.get(item.productId)?.images?.[0]?.url || ""
+            : "",
         })),
         total: toNumber(order.total),
+        shippingCost: toNumber(order.shippingCost),
+        courierDeliveryCharge:
+          order.courierDeliveryCharge === null
+            ? null
+            : toNumber(order.courierDeliveryCharge),
+        deliveryDiscountAmount: toNumber(order.deliveryDiscountAmount),
+        deliveryPricingSource: order.deliveryPricingSource,
+        deliveryOfferType: order.deliveryOfferType,
+        deliveryOfferProductId: order.deliveryOfferProductId,
+        deliveryOfferBadgeText: order.deliveryOfferBadgeText,
+        deliveryAccounting: {
+          customerDeliveryPaid: toNumber(order.shippingCost),
+          courierActualCharge:
+            order.courierDeliveryCharge === null
+              ? null
+              : toNumber(order.courierDeliveryCharge),
+          subsidyAmount: toNumber(order.deliveryDiscountAmount),
+          pricingSource: order.deliveryPricingSource,
+          offerType: order.deliveryOfferType,
+          offerProductId: order.deliveryOfferProductId,
+          offerBadgeText: order.deliveryOfferBadgeText,
+        },
         status: order.status.toLowerCase(),
-        paymentMethod: order.paymentMethod || 'cash_on_delivery',
+        paymentMethod: order.paymentMethod || "cash_on_delivery",
         paymentStatus: order.paymentStatus.toLowerCase(),
         shipping: order.shippingAddress
           ? {
@@ -618,7 +817,7 @@ export async function GET(request: NextRequest) {
               postalCode: order.shippingAddress.postalCode,
               country: order.shippingAddress.country,
             }
-          : { address: '', city: '', state: '', postalCode: '', country: '' },
+          : { address: "", city: "", state: "", postalCode: "", country: "" },
         tracking: order.trackingNumber || undefined,
         shippingMethod: order.shippingMethod || undefined,
         steadfastStatus: order.steadfastStatus || undefined,
@@ -633,11 +832,27 @@ export async function GET(request: NextRequest) {
     });
 
     // Stats
-    const [pendingCount, processingCount, shippedCount, totalRevenue] = await Promise.all([
+    const [
+      pendingCount,
+      processingCount,
+      shippedCount,
+      totalRevenue,
+      deliveryAccountingTotals,
+    ] = await Promise.all([
       prisma.order.count({ where: { status: $Enums.OrderStatus.PENDING } }),
       prisma.order.count({ where: { status: $Enums.OrderStatus.PROCESSING } }),
       prisma.order.count({ where: { status: $Enums.OrderStatus.SHIPPED } }),
-      prisma.order.aggregate({ _sum: { total: true }, where: { paymentStatus: $Enums.PaymentStatus.COMPLETED } }),
+      prisma.order.aggregate({
+        _sum: { total: true },
+        where: { paymentStatus: $Enums.PaymentStatus.COMPLETED },
+      }),
+      prisma.order.aggregate({
+        _sum: {
+          shippingCost: true,
+          courierDeliveryCharge: true,
+          deliveryDiscountAmount: true,
+        },
+      }),
     ]);
 
     return NextResponse.json({
@@ -648,10 +863,22 @@ export async function GET(request: NextRequest) {
         processing: processingCount,
         shipped: shippedCount,
         totalRevenue: toNumber(totalRevenue._sum.total),
+        customerDeliveryCollected: toNumber(
+          deliveryAccountingTotals._sum.shippingCost,
+        ),
+        courierDeliveryActual: toNumber(
+          deliveryAccountingTotals._sum.courierDeliveryCharge,
+        ),
+        deliverySubsidy: toNumber(
+          deliveryAccountingTotals._sum.deliveryDiscountAmount,
+        ),
       },
     });
   } catch (error) {
-    console.error('Admin orders GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Admin orders GET error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

@@ -13,7 +13,11 @@ export interface UnifiedCourierTracking {
   consignmentId: string | null;
   currentStatus: string;
   lastUpdatedAt: string | null;
+  /** Customer-facing delivery charge paid by the customer. Internal courier actual cost is intentionally not exposed here. */
+  customerDeliveryCharge: number;
+  /** Backward-compatible alias for customerDeliveryCharge. */
   deliveryCharge: number;
+  deliveryChargeLabel: string;
   timeline: UnifiedTrackingTimelineItem[];
 }
 
@@ -160,13 +164,17 @@ export function buildUnifiedCourierTracking(order: OrderTrackingInput): UnifiedC
       : toIsoString(order.steadfastSentAt)) ??
     toIsoString(order.updatedAt);
 
+  const customerDeliveryCharge = toNumber(order.shippingCost);
+
   return {
     courier,
     trackingId,
     consignmentId,
     currentStatus,
     lastUpdatedAt,
-    deliveryCharge: toNumber(order.shippingCost),
+    customerDeliveryCharge,
+    deliveryCharge: customerDeliveryCharge,
+    deliveryChargeLabel: customerDeliveryCharge <= 0 ? 'Free' : `৳${customerDeliveryCharge}`,
     timeline,
   };
 }

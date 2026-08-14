@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "phase": 31,
+  "item": "8.2",
+  "title": "Phase 31 global social outbound-write controls",
+  "killSwitches": [
+    {
+      "name": "META_PLATFORM_GLOBAL_KILL_SWITCH",
+      "scope": "ALL_META_WRITES",
+      "defaultValue": false,
+      "invalidValueFailSafe": true
+    },
+    {
+      "name": "META_PLATFORM_SOCIAL_OUTBOUND_KILL_SWITCH",
+      "scope": "ALL_SOCIAL_OUTBOUND_WRITES",
+      "defaultValue": false,
+      "invalidValueFailSafe": true
+    },
+    {
+      "name": "META_PLATFORM_INSTAGRAM_KILL_SWITCH",
+      "scope": "INSTAGRAM_OUTBOUND_WRITES",
+      "defaultValue": false,
+      "invalidValueFailSafe": true
+    },
+    {
+      "name": "META_PLATFORM_FACEBOOK_KILL_SWITCH",
+      "scope": "FACEBOOK_PAGE_OUTBOUND_WRITES",
+      "defaultValue": false,
+      "invalidValueFailSafe": true
+    }
+  ],
+  "enableFlags": [
+    {
+      "name": "META_PLATFORM_INSTAGRAM_WRITES",
+      "scope": "INSTAGRAM_STANDARD_REPLY",
+      "defaultValue": false,
+      "invalidValueFailSafe": false
+    },
+    {
+      "name": "META_PLATFORM_INSTAGRAM_PRIVATE_REPLY",
+      "scope": "INSTAGRAM_PRIVATE_REPLY",
+      "defaultValue": false,
+      "invalidValueFailSafe": false
+    }
+  ],
+  "operations": [
+    "INSTAGRAM_STANDARD_REPLY",
+    "INSTAGRAM_PRIVATE_REPLY",
+    "FACEBOOK_PAGE_MESSAGE",
+    "FACEBOOK_PAGE_COMMENT_REPLY",
+    "FACEBOOK_PAGE_MEDIA"
+  ],
+  "executionRule": "Every provider write and queued retry must resolve current environment controls immediately before the provider call."
+}

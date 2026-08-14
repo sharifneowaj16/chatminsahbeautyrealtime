@@ -5,10 +5,13 @@ import {
   verifyOnlineBrowserPurchaseToken,
 } from '@/lib/tracking/meta-browser-purchase-token';
 import {
-  buildMetaCatalogContentIds,
-  buildMetaCatalogContents,
-  getMetaCatalogContentType,
+  buildMetaCatalogData,
+  prepareMetaCatalogPayload,
 } from '@/lib/tracking/meta-content-id';
+import {
+  classifyStoredOrderTraffic,
+  shouldSkipServerTrackingRequest,
+} from '@/lib/tracking/traffic-filter';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,10 +103,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Browser Purchase requires consent both when the order was created and at
+  // the moment this signed payment-return browser requests authorization.
+  const requestTraffic = shouldSkipServerTrackingRequest(request);
+  if (requestTraffic) {
+    return jsonResponse(
+      { track: false, reason: requestTraffic.reason },
+      undefined,
+      { clearBrowserPurchaseToken: true }
+    );
+  }
+
   // ── 1. Look up order + verified payment ──────────────────────────────────
   const order = await prisma.order.findFirst({
     where: { id: orderId },
     include: {
+      user: true,
+      shippingAddress: { select: { phone: true } },
       items: { include: { product: true, variant: true } },
       payments: {
         where: {
@@ -124,8 +140,9 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 2. Guard conditions (no claim made yet — safe to retry) ──────────────
-  if (order.isTest) {
-    return jsonResponse({ track: false, reason: 'TEST_ORDER' }, undefined, { clearBrowserPurchaseToken: true });
+  const traffic = classifyStoredOrderTraffic(order);
+  if (!traffic.allowed) {
+    return jsonResponse({ track: false, reason: traffic.reason }, undefined, { clearBrowserPurchaseToken: true });
   }
 
   if (isCodPaymentMethod(order.paymentMethod)) {
@@ -193,26 +210,23 @@ export async function POST(request: NextRequest) {
     ...item,
     price: decimalToNumber(item.price),
   }));
-  const contents = buildMetaCatalogContents(catalogItems);
-  const contentIds = buildMetaCatalogContentIds(catalogItems);
-  const contentType = getMetaCatalogContentType(catalogItems);
+  const metaCatalogData = buildMetaCatalogData(catalogItems);
 
   const contentName = getContentName(order.items);
+  const purchaseData = prepareMetaCatalogPayload({
+    value: orderValue,
+    currency: 'BDT',
+    order_id: String(order.id),
+    ...(metaCatalogData ?? {}),
+    ...(contentName && { content_name: contentName }),
+    num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
+  });
 
   return jsonResponse({
     track: true,
     eventId: `Purchase-${order.id}`,
     eventTime: Math.floor(order.paymentPaidAt.getTime() / 1000),
-    purchaseData: {
-      value: orderValue,
-      currency: 'BDT',
-      order_id: String(order.id),
-      content_ids: contentIds,
-      content_type: contentType,
-      ...(contentName && { content_name: contentName }),
-      contents,
-      num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
-    },
+    purchaseData,
   }, undefined, { clearBrowserPurchaseToken: true });
 }
 

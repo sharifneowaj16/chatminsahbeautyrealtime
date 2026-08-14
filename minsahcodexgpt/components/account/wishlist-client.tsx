@@ -1,25 +1,26 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { formatPrice } from '@/utils/currency';
-import { useCart } from '@/contexts/CartContext';
-import {
-  Heart,
-  ShoppingBag,
-  X,
-  Star,
-  Search,
-  Package
-} from 'lucide-react';
-import { Heart as HeartSolid } from 'lucide-react';
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { formatPrice } from "@/utils/currency";
+import { useCart, type CartItem } from "@/contexts/CartContext";
+import { useCartDrawer } from "@/contexts/CartDrawerContext";
+import { productPath } from "@/lib/product-url";
+import { Heart, ShoppingBag, X, Star, Search, Package } from "lucide-react";
+import { Heart as HeartSolid } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 
 interface WishlistItem {
   id: string;
   productId: string;
+  productSlug?: string | null;
   productName: string;
-  productImage: any;
+  productImage: string | null;
   price: number;
   originalPrice: number | null;
   inStock: boolean;
@@ -38,12 +39,13 @@ interface WishlistClientProps {
 export function WishlistClient({ initialItems }: WishlistClientProps) {
   const router = useRouter();
   const { addItem } = useCart();
+  const { registerAddIntent, openForSuccessfulAdd } = useCartDrawer();
   const [wishlistItems, setWishlistItems] = useState(initialItems);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('dateAdded');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("dateAdded");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [removingIds, setRemovingIds] = useState<string[]>([]);
   const [addingToCartIds, setAddingToCartIds] = useState<string[]>([]);
   const [addedToCartIds, setAddedToCartIds] = useState<string[]>([]);
@@ -51,8 +53,11 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
   const toDateValue = (value: string | Date) => new Date(value);
 
   const categories = useMemo(
-    () => ['all', ...Array.from(new Set(wishlistItems.map((item) => item.category)))],
-    [wishlistItems]
+    () => [
+      "all",
+      ...Array.from(new Set(wishlistItems.map((item) => item.category))),
+    ],
+    [wishlistItems],
   );
 
   const filteredItems = useMemo(() => {
@@ -60,30 +65,34 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
     if (normalizedSearchTerm) {
-      filtered = filtered.filter(item =>
-        item.productName.toLowerCase().includes(normalizedSearchTerm) ||
-        item.category.toLowerCase().includes(normalizedSearchTerm)
+      filtered = filtered.filter(
+        (item) =>
+          item.productName.toLowerCase().includes(normalizedSearchTerm) ||
+          item.category.toLowerCase().includes(normalizedSearchTerm),
       );
     }
 
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(item => item.category === categoryFilter);
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((item) => item.category === categoryFilter);
     }
 
     switch (sortBy) {
-      case 'dateAdded':
-        filtered.sort((a, b) => toDateValue(b.addedAt).getTime() - toDateValue(a.addedAt).getTime());
+      case "dateAdded":
+        filtered.sort(
+          (a, b) =>
+            toDateValue(b.addedAt).getTime() - toDateValue(a.addedAt).getTime(),
+        );
         break;
-      case 'priceLow':
+      case "priceLow":
         filtered.sort((a, b) => a.price - b.price);
         break;
-      case 'priceHigh':
+      case "priceHigh":
         filtered.sort((a, b) => b.price - a.price);
         break;
-      case 'name':
+      case "name":
         filtered.sort((a, b) => a.productName.localeCompare(b.productName));
         break;
-      case 'rating':
+      case "rating":
         filtered.sort((a, b) => b.rating - a.rating);
         break;
     }
@@ -92,20 +101,22 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
   }, [wishlistItems, searchTerm, categoryFilter, sortBy]);
 
   const handleRemoveItem = async (itemId: string) => {
-    setErrorMessage('');
+    setErrorMessage("");
     setRemovingIds((prev) => [...prev, itemId]);
 
     try {
-      const response = await fetch(`/api/wishlist/${itemId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/wishlist/${itemId}`, {
+        method: "DELETE",
+      });
       if (!response.ok) {
-        throw new Error('Failed to remove item');
+        throw new Error("Failed to remove item");
       }
 
       setWishlistItems((prev) => prev.filter((item) => item.id !== itemId));
       setSelectedItems((prev) => prev.filter((id) => id !== itemId));
       router.refresh();
     } catch {
-      setErrorMessage('Failed to remove wishlist item. Please try again.');
+      setErrorMessage("Failed to remove wishlist item. Please try again.");
     } finally {
       setRemovingIds((prev) => prev.filter((id) => id !== itemId));
     }
@@ -114,23 +125,29 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
   const handleRemoveSelected = async () => {
     if (selectedItems.length === 0) return;
 
-    setErrorMessage('');
+    setErrorMessage("");
     setRemovingIds((prev) => [...new Set([...prev, ...selectedItems])]);
 
     try {
       const responses = await Promise.all(
-        selectedItems.map((itemId) => fetch(`/api/wishlist/${itemId}`, { method: 'DELETE' }))
+        selectedItems.map((itemId) =>
+          fetch(`/api/wishlist/${itemId}`, { method: "DELETE" }),
+        ),
       );
 
       if (responses.some((response) => !response.ok)) {
-        throw new Error('Failed to remove selected items');
+        throw new Error("Failed to remove selected items");
       }
 
-      setWishlistItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
+      setWishlistItems((prev) =>
+        prev.filter((item) => !selectedItems.includes(item.id)),
+      );
       setSelectedItems([]);
       router.refresh();
     } catch {
-      setErrorMessage('Failed to remove selected wishlist items. Please try again.');
+      setErrorMessage(
+        "Failed to remove selected wishlist items. Please try again.",
+      );
     } finally {
       setRemovingIds([]);
     }
@@ -141,35 +158,39 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
       return;
     }
 
-    setErrorMessage('');
+    setErrorMessage("");
     setAddingToCartIds((prev) => [...prev, item.id]);
 
     try {
-      await addItem({
+      const drawerIntentId = registerAddIntent();
+      const cartItem: CartItem = {
         id: item.productId,
         productId: item.productId,
         name: item.productName,
         price: item.price,
         quantity: 1,
-        image: typeof item.productImage === 'string' ? item.productImage : '',
-      });
+        image: typeof item.productImage === "string" ? item.productImage : "",
+      };
+      const success = await addItem(cartItem);
+      if (!success) throw new Error("Failed to add wishlist item to cart");
+      openForSuccessfulAdd(drawerIntentId, cartItem, 1);
 
       setAddedToCartIds((prev) => [...prev, item.id]);
       setTimeout(() => {
         setAddedToCartIds((prev) => prev.filter((id) => id !== item.id));
       }, 1800);
     } catch {
-      setErrorMessage('Failed to add item to cart. Please try again.');
+      setErrorMessage("Failed to add item to cart. Please try again.");
     } finally {
       setAddingToCartIds((prev) => prev.filter((id) => id !== item.id));
     }
   };
 
   const handleSelectItem = (itemId: string) => {
-    setSelectedItems(prev =>
+    setSelectedItems((prev) =>
       prev.includes(itemId)
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId],
     );
   };
 
@@ -177,123 +198,141 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
     if (selectedItems.length === filteredItems.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(filteredItems.map(item => item.id));
+      setSelectedItems(filteredItems.map((item) => item.id));
     }
   };
 
-  function ProductImage({ src, name }: { src: any; name: string }) {
-    if (typeof src === 'string' && (src.startsWith('/') || src.startsWith('http'))) {
-      return <img src={src} alt={name} className="w-full h-full object-cover" />;
+  function ProductImage({ src, name }: { src: string | null; name: string }) {
+    if (
+      src &&
+      (src.startsWith("/") || src.startsWith("http") || src.startsWith("data:"))
+    ) {
+      return (
+        <Image
+          src={src}
+          alt={name ? `${name} product image` : "Wishlist product image"}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-contain p-4"
+        />
+      );
     }
 
-    if (src && typeof src === 'object') {
-      return src;
-    }
-
-    return <Package className="w-12 h-12 text-purple-400" />;
+    return (
+      <Package className="h-12 w-12 text-minsah-secondary" aria-hidden="true" />
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-minsah-surface">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Wishlist</h1>
-              <p className="text-gray-600">
-                {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} saved
+              <h1 className="text-3xl font-bold text-minsah-text mb-2">
+                My Wishlist
+              </h1>
+              <p className="text-minsah-muted">
+                {wishlistItems.length}{" "}
+                {wishlistItems.length === 1 ? "item" : "items"} saved
               </p>
             </div>
             {selectedItems.length > 0 && (
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-minsah-muted">
                   {selectedItems.length} selected
                 </span>
-                <button
+                <Button
+                  type="button"
+                  variant="secondary"
                   onClick={handleRemoveSelected}
-                  className="inline-flex items-center px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition"
+                  className="rounded-2xl border-red-300 text-red-700 hover:bg-red-50"
                 >
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                   Remove Selected
-                </button>
+                </Button>
               </div>
             )}
           </div>
         </div>
 
         {errorMessage && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}
           </div>
         )}
 
         {/* Filters and Controls */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search wishlist items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
+              <Input
+                type="text"
+                placeholder="Search wishlist items..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                label="Search wishlist items"
+                hideLabel
+                leading={<Search className="w-5 h-5" aria-hidden="true" />}
+                className="rounded-2xl focus:ring-minsah-focus"
+              />
             </div>
 
             {/* Category Filter */}
             <div className="lg:w-48">
-              <select
+              <Select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                label="Filter by category"
+                hideLabel
+                className="rounded-2xl focus:ring-minsah-focus"
               >
-                {categories.map(category => (
+                {categories.map((category) => (
                   <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category}
+                    {category === "all" ? "All Categories" : category}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Sort */}
             <div className="lg:w-48">
-              <select
+              <Select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                label="Sort wishlist"
+                hideLabel
+                className="rounded-2xl focus:ring-minsah-focus"
               >
                 <option value="dateAdded">Date Added</option>
                 <option value="name">Name</option>
                 <option value="priceLow">Price: Low to High</option>
                 <option value="priceHigh">Price: High to Low</option>
                 <option value="rating">Highest Rated</option>
-              </select>
+              </Select>
             </div>
           </div>
         </div>
 
         {/* Wishlist Items */}
         {filteredItems.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || categoryFilter !== 'all'
-                ? 'No items found'
-                : 'Your wishlist is empty'}
+            <h3 className="text-lg font-medium text-minsah-text mb-2">
+              {searchTerm || categoryFilter !== "all"
+                ? "No items found"
+                : "Your wishlist is empty"}
             </h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm || categoryFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Start adding items to your wishlist to keep track of products you love'}
+            <p className="text-minsah-muted mb-6">
+              {searchTerm || categoryFilter !== "all"
+                ? "Try adjusting your filters"
+                : "Start adding items to your wishlist to keep track of products you love"}
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className="inline-flex items-center px-6 py-3 bg-minsah-primary text-white rounded-2xl hover:bg-minsah-dark transition"
             >
               <ShoppingBag className="w-4 h-4 mr-2" />
               Start Shopping
@@ -303,57 +342,53 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
           <div className="space-y-4">
             {/* Select All Checkbox */}
             {filteredItems.length > 1 && (
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.length === filteredItems.length}
-                    onChange={handleSelectAll}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Select all items</span>
-                </label>
+              <div className="bg-white rounded-2xl shadow-sm p-4">
+                <Checkbox
+                  checked={selectedItems.length === filteredItems.length}
+                  onChange={handleSelectAll}
+                  label="Select all items"
+                  labelClassName="text-sm font-medium text-minsah-muted"
+                />
               </div>
             )}
 
             {/* Items Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredItems.map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                >
                   {/* Product Image */}
                   <div className="relative">
-                    <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
-                      <ProductImage src={item.productImage} name={item.productName} />
+                    <div className="relative aspect-square bg-gradient-to-br from-minsah-light to-minsah-accent flex items-center justify-center">
+                      <ProductImage
+                        src={item.productImage}
+                        name={item.productName}
+                      />
                     </div>
 
                     {/* Actions Overlay */}
                     <div className="absolute top-2 right-2 flex flex-col space-y-2">
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleRemoveItem(item.id)}
                         disabled={removingIds.includes(item.id)}
-                        className="p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow"
+                        className="h-auto min-h-0 w-auto min-w-0 rounded-full bg-white p-2 text-minsah-muted shadow-md hover:shadow-lg"
+                        aria-label={`Remove ${item.productName} from wishlist`}
                       >
-                        <X className="w-4 h-4 text-gray-600" />
-                      </button>
-                      <label className="p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow cursor-pointer">
-                        <input
-                          type="checkbox"
+                        <X className="w-4 h-4" aria-hidden="true" />
+                      </Button>
+                      <div className="rounded-full bg-white p-2 shadow-md hover:shadow-lg">
+                        <Checkbox
                           checked={selectedItems.includes(item.id)}
                           onChange={() => handleSelectItem(item.id)}
-                          className="sr-only"
+                          label={<span className="sr-only">Select {item.productName}</span>}
+                          containerClassName="w-auto"
                         />
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                          selectedItems.includes(item.id)
-                            ? 'bg-purple-600 border-purple-600'
-                            : 'border-gray-300'
-                        }`}>
-                          {selectedItems.includes(item.id) && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                      </label>
+                      </div>
                     </div>
 
                     {/* Discount Badge */}
@@ -366,11 +401,16 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
                     {/* Out of Stock Overlay */}
                     {!item.inStock && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                        <div className="bg-white rounded-lg p-4 text-center">
-                          <p className="text-gray-900 font-medium mb-1">Out of Stock</p>
+                        <div className="bg-white rounded-2xl p-4 text-center">
+                          <p className="text-minsah-text font-medium mb-1">
+                            Out of Stock
+                          </p>
                           {item.restockDate && (
-                            <p className="text-sm text-gray-600">
-                              Expected: {toDateValue(item.restockDate).toLocaleDateString()}
+                            <p className="text-sm text-minsah-muted">
+                              Expected:{" "}
+                              {toDateValue(
+                                item.restockDate,
+                              ).toLocaleDateString()}
                             </p>
                           )}
                         </div>
@@ -381,11 +421,11 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
                   {/* Product Info */}
                   <div className="p-4">
                     <div className="mb-2">
-                      <span className="text-xs text-purple-600 font-medium uppercase tracking-wide">
+                      <span className="text-xs text-minsah-primary font-medium uppercase tracking-wide">
                         {item.category}
                       </span>
                     </div>
-                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="font-medium text-minsah-text mb-2 line-clamp-2">
                       {item.productName}
                     </h3>
 
@@ -397,13 +437,13 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
                             key={i}
                             className={`w-4 h-4 ${
                               i < Math.floor(item.rating)
-                                ? 'text-yellow-400'
-                                : 'text-gray-300'
+                                ? "text-yellow-400"
+                                : "text-gray-300"
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="text-sm text-gray-600 ml-2">
+                      <span className="text-sm text-minsah-muted ml-2">
                         {item.rating} ({item.reviewCount})
                       </span>
                     </div>
@@ -411,7 +451,7 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
                     {/* Price */}
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <span className="text-lg font-bold text-gray-900">
+                        <span className="text-lg font-bold text-minsah-text">
                           {formatPrice(item.price)}
                         </span>
                         {item.originalPrice && (
@@ -420,37 +460,54 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
                           </span>
                         )}
                       </div>
-                      <button className="p-2 text-red-500 hover:bg-red-50 rounded-full transition">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-auto min-h-0 w-auto min-w-0 p-2 text-red-500 hover:bg-red-50"
+                        aria-label={
+                          selectedItems.includes(item.id)
+                            ? `${item.productName} is selected`
+                            : `Select ${item.productName}`
+                        }
+                      >
                         {selectedItems.includes(item.id) ? (
-                          <HeartSolid className="w-5 h-5 fill-current" />
+                          <HeartSolid className="w-5 h-5 fill-current" aria-hidden="true" />
                         ) : (
-                          <Heart className="w-5 h-5" />
+                          <Heart className="w-5 h-5" aria-hidden="true" />
                         )}
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Actions */}
                     <div className="flex space-x-2">
-                      <button
+                      <Button
+                        type="button"
+                        variant="primary"
                         onClick={() => handleMoveToCart(item)}
-                        disabled={!item.inStock || addingToCartIds.includes(item.id)}
-                        className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+                        disabled={
+                          !item.inStock || addingToCartIds.includes(item.id)
+                        }
+                        className={`flex-1 rounded-2xl ${
                           item.inStock && !addingToCartIds.includes(item.id)
-                            ? 'bg-purple-600 text-white hover:bg-purple-700'
-                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            ? "bg-minsah-primary hover:bg-minsah-dark"
+                            : "bg-gray-200 text-gray-500"
                         }`}
                       >
                         {!item.inStock
-                          ? 'Out of Stock'
+                          ? "Out of Stock"
                           : addingToCartIds.includes(item.id)
-                            ? 'Adding...'
+                            ? "Adding..."
                             : addedToCartIds.includes(item.id)
-                              ? 'Added!'
-                              : 'Add to Cart'}
-                      </button>
+                              ? "Added!"
+                              : "Add to Cart"}
+                      </Button>
                       <Link
-                        href={`/products/${item.productId}`}
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        href={productPath({
+                          id: item.productId,
+                          slug: item.productSlug,
+                        })}
+                        className="px-4 py-2 border border-gray-300 rounded-2xl text-minsah-muted hover:bg-minsah-surface transition"
                       >
                         View
                       </Link>

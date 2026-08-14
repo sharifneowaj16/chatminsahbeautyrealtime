@@ -579,6 +579,7 @@ export interface HomeSection {
   id: string;
   type: SectionType;
   title: string;
+  subtitle?: string;
   isVisible: boolean;
   order: number;
   settings: {
@@ -586,9 +587,31 @@ export interface HomeSection {
     itemsToShow?: number;
     layout?: 'grid-2' | 'grid-3' | 'grid-4' | 'horizontal-scroll';
     backgroundColor?: string;
+    viewAllHref?: string;
+    ctaText?: string;
+    ctaHref?: string;
+    selectedProductIds?: string[];
+    selectedCategoryIds?: string[];
+    selectedBrandIds?: string[];
   };
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface HomeHeroConfig {
+  isVisible: boolean;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  primaryCtaText: string;
+  primaryCtaHref: string;
+  secondaryCtaText: string;
+  secondaryCtaHref: string;
+  imageUrl?: string;
+  featuredProductName?: string;
+  badgeOne?: string;
+  badgeTwo?: string;
+  backgroundClass?: string;
 }
 
 export interface HomeSectionCategory {

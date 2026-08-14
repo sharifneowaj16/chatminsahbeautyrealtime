@@ -1,0 +1,41 @@
+.git
+.github
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+.next
+out
+build
+dist
+coverage
+playwright-report
+test-results
+*.log
+*.tsbuildinfo
+.DS_Store
+.vercel
+.claude
+.cursor
+.git-push-staging
+
+# Documentation and local reports are not required in the runtime image.
+*.md
+!README.md
+
+# Reference folders and separately deployed service artifacts.
+addtovartbuynow
+addtocardallfiles
+derivrychargeclculate
+minsahinboxcodex
+realtime-service/node_modules
+realtime-service/dist
+realtime-service/prisma/generated
+
+# Generated caches, local logs and release evidence
+*.tsbuildinfo
+.eslintcache
+*.log
+logs/
+docs/release/evidence/

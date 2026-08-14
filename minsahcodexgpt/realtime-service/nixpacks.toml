@@ -6,4 +6,4 @@ cmds = [
 ]
 
 [start]
-cmd = "node dist/index.js"
+cmd = "node dist/realtime-service/src/index.js"

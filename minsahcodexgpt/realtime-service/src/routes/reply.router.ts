@@ -6,6 +6,7 @@ import {
   replyToComment,
 } from '../facebook/graph.client'
 import { sendOutgoingNowOrQueue } from '../facebook/outgoing-retry'
+import { FacebookOutboundWriteBlockedError } from '../facebook/outbound-write-control'
 
 export const replyRouter = Router()
 
@@ -163,6 +164,10 @@ replyRouter.post('/', async (req: Request, res: Response) => {
     const { id } = await replyToComment(parsed.data.commentId, parsed.data.text.trim())
     res.json({ ok: true, replyId: id })
   } catch (error) {
+    if (error instanceof FacebookOutboundWriteBlockedError) {
+      res.status(409).json({ error: 'Outbound write blocked', code: error.code })
+      return
+    }
     if (error instanceof GraphApiError) {
       console.error('[reply] Graph API error', error)
       res.status(502).json({ error: 'Graph API error', detail: error.message })

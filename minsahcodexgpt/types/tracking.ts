@@ -4,8 +4,10 @@ export const TRACKING_EVENTS = {
   VIEW_CONTENT: 'ViewContent',
   SEARCH: 'Search',
   ADD_TO_CART: 'AddToCart',
+  VIEW_CART: 'ViewCart',
   ADD_TO_WISHLIST: 'AddToWishlist',
   INITIATE_CHECKOUT: 'InitiateCheckout',
+  ADD_SHIPPING_INFO: 'AddShippingInfo',
   ADD_PAYMENT_INFO: 'AddPaymentInfo',
   PURCHASE: 'Purchase',
   LEAD: 'Lead',
@@ -21,8 +23,10 @@ export type TrackingEvent =
   | 'ViewContent'
   | 'Search'
   | 'AddToCart'
+  | 'ViewCart'
   | 'AddToWishlist'
   | 'InitiateCheckout'
+  | 'AddShippingInfo'
   | 'AddPaymentInfo'
   | 'Purchase'
   | 'Lead'

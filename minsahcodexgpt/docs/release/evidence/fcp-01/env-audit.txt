@@ -1,0 +1,5 @@
+
+> minsah-beauty@2.0.0 audit:env
+> node scripts/env-contract-audit.mjs
+
+Environment contract audit passed: no committed runtime env files, credential URLs, or secret-like NEXT_PUBLIC keys found.

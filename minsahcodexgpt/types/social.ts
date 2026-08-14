@@ -1,4 +1,6 @@
-﻿// TypeScript interfaces for Social Media Management System
+﻿import { SOCIAL_PLATFORM_COLORS } from '@/lib/design-token-exceptions';
+
+// TypeScript interfaces for Social Media Management System
 
 export interface Platform {
   id: string;
@@ -296,7 +298,7 @@ export const PLATFORM_CONFIGS = {
     id: 'facebook',
     name: 'Facebook',
     icon: 'fileText',
-    color: '#1877F2',
+    color: SOCIAL_PLATFORM_COLORS.facebook,
     characterLimit: 63206,
     supportedMedia: ['image', 'video', 'gif'],
     features: ['posts', 'stories', 'reels', 'shop', 'groups', 'events', 'messenger']
@@ -305,7 +307,7 @@ export const PLATFORM_CONFIGS = {
     id: 'instagram',
     name: 'Instagram',
     icon: 'instagram',
-    color: '#E4405F',
+    color: SOCIAL_PLATFORM_COLORS.instagram,
     characterLimit: 2200,
     supportedMedia: ['image', 'video', 'carousel', 'reels'],
     features: ['posts', 'stories', 'reels', 'shop', 'igtv', 'guides']
@@ -314,7 +316,7 @@ export const PLATFORM_CONFIGS = {
     id: 'tiktok',
     name: 'TikTok',
     icon: 'music',
-    color: '#000000',
+    color: SOCIAL_PLATFORM_COLORS.tiktok,
     characterLimit: 150,
     supportedMedia: ['video'],
     features: ['posts', 'shop', 'duet', 'stitch', 'sounds']
@@ -323,7 +325,7 @@ export const PLATFORM_CONFIGS = {
     id: 'youtube',
     name: 'YouTube',
     icon: 'youtube',
-    color: '#FF0000',
+    color: SOCIAL_PLATFORM_COLORS.youtube,
     characterLimit: 5000,
     supportedMedia: ['video', 'thumbnail'],
     features: ['videos', 'shorts', 'playlists', 'livestream', 'premiere']
@@ -332,7 +334,7 @@ export const PLATFORM_CONFIGS = {
     id: 'pinterest',
     name: 'Pinterest',
     icon: 'mapPin',
-    color: '#BD081C',
+    color: SOCIAL_PLATFORM_COLORS.pinterest,
     characterLimit: 500,
     supportedMedia: ['image', 'video'],
     features: ['pins', 'boards', 'idea-pins', 'shop', 'stories']
@@ -341,7 +343,7 @@ export const PLATFORM_CONFIGS = {
     id: 'twitter',
     name: 'Twitter/X',
     icon: 'twitter',
-    color: '#000000',
+    color: SOCIAL_PLATFORM_COLORS.twitter,
     characterLimit: 280,
     supportedMedia: ['image', 'video', 'gif'],
     features: ['tweets', 'threads', 'polls', 'spaces']
@@ -350,7 +352,7 @@ export const PLATFORM_CONFIGS = {
     id: 'linkedin',
     name: 'LinkedIn',
     icon: 'linkedin',
-    color: '#0077B5',
+    color: SOCIAL_PLATFORM_COLORS.linkedin,
     characterLimit: 3000,
     supportedMedia: ['image', 'video', 'document'],
     features: ['posts', 'articles', 'documents', 'polls', 'events']
@@ -359,7 +361,7 @@ export const PLATFORM_CONFIGS = {
     id: 'whatsapp',
     name: 'WhatsApp Business',
     icon: 'messageCircle',
-    color: '#25D366',
+    color: SOCIAL_PLATFORM_COLORS.whatsapp,
     characterLimit: 1024,
     supportedMedia: ['image', 'video', 'document'],
     features: ['status', 'broadcast', 'auto-reply', 'catalog']
@@ -368,7 +370,7 @@ export const PLATFORM_CONFIGS = {
     id: 'telegram',
     name: 'Telegram',
     icon: 'send',
-    color: '#0088CC',
+    color: SOCIAL_PLATFORM_COLORS.telegram,
     characterLimit: 4096,
     supportedMedia: ['image', 'video', 'document'],
     features: ['channels', 'groups', 'bots', 'stories']
@@ -377,7 +379,7 @@ export const PLATFORM_CONFIGS = {
     id: 'discord',
     name: 'Discord',
     icon: 'gamepad2',
-    color: '#5865F2',
+    color: SOCIAL_PLATFORM_COLORS.discord,
     characterLimit: 2000,
     supportedMedia: ['image', 'video', 'gif'],
     features: ['servers', 'channels', 'embeds', 'webhooks']
@@ -390,7 +392,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'facebook',
     name: 'Facebook',
     icon: 'fileText',
-    color: '#1877F2',
+    color: SOCIAL_PLATFORM_COLORS.facebook,
     connected: true,
     followers: 12500,
     engagement: 8.5,
@@ -407,7 +409,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'instagram',
     name: 'Instagram',
     icon: 'instagram',
-    color: '#E4405F',
+    color: SOCIAL_PLATFORM_COLORS.instagram,
     connected: true,
     followers: 25300,
     engagement: 12.3,
@@ -423,7 +425,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'tiktok',
     name: 'TikTok',
     icon: 'music',
-    color: '#000000',
+    color: SOCIAL_PLATFORM_COLORS.tiktok,
     connected: true,
     followers: 45600,
     engagement: 18.7,
@@ -440,7 +442,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'youtube',
     name: 'YouTube',
     icon: 'youtube',
-    color: '#FF0000',
+    color: SOCIAL_PLATFORM_COLORS.youtube,
     connected: false,
     followers: 8900,
     engagement: 6.2,
@@ -450,7 +452,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'pinterest',
     name: 'Pinterest',
     icon: 'mapPin',
-    color: '#BD081C',
+    color: SOCIAL_PLATFORM_COLORS.pinterest,
     connected: true,
     followers: 15700,
     engagement: 4.8,
@@ -466,7 +468,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'twitter',
     name: 'Twitter/X',
     icon: 'twitter',
-    color: '#000000',
+    color: SOCIAL_PLATFORM_COLORS.twitter,
     connected: true,
     followers: 8200,
     engagement: 3.4,
@@ -483,7 +485,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'linkedin',
     name: 'LinkedIn',
     icon: 'linkedin',
-    color: '#0077B5',
+    color: SOCIAL_PLATFORM_COLORS.linkedin,
     connected: false,
     followers: 3200,
     engagement: 2.1,
@@ -493,7 +495,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'whatsapp',
     name: 'WhatsApp Business',
     icon: 'messageCircle',
-    color: '#25D366',
+    color: SOCIAL_PLATFORM_COLORS.whatsapp,
     connected: true,
     followers: 0, // Not applicable
     engagement: 0,
@@ -503,7 +505,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'telegram',
     name: 'Telegram',
     icon: 'send',
-    color: '#0088CC',
+    color: SOCIAL_PLATFORM_COLORS.telegram,
     connected: false,
     followers: 1200,
     engagement: 1.8,
@@ -513,7 +515,7 @@ export const generateMockPlatforms = (): Platform[] => [
     id: 'discord',
     name: 'Discord',
     icon: 'gamepad2',
-    color: '#5865F2',
+    color: SOCIAL_PLATFORM_COLORS.discord,
     connected: true,
     followers: 3400,
     engagement: 5.2,

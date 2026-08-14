@@ -1,5 +1,7 @@
-﻿'use client';
+'use client';
 
+
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import type { GoogleService } from '@/types/google';
 import { GOOGLE_SERVICE_CONFIGS, GOOGLE_COLORS } from '@/types/google';
@@ -77,7 +79,7 @@ export default function QuickActions({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           
-          <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+          <Button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Plus className="h-5 w-5 text-blue-600" />
             </div>
@@ -85,9 +87,9 @@ export default function QuickActions({
               <p className="font-medium text-gray-900">Create Campaign</p>
               <p className="text-sm text-gray-600">Start new ad campaign</p>
             </div>
-          </button>
+          </Button>
 
-          <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+          <Button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
             <div className="p-2 bg-green-100 rounded-lg">
               <BarChart className="h-5 w-5 text-green-600" />
             </div>
@@ -95,9 +97,9 @@ export default function QuickActions({
               <p className="font-medium text-gray-900">View Analytics</p>
               <p className="text-sm text-gray-600">Check performance metrics</p>
             </div>
-          </button>
+          </Button>
 
-          <button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+          <Button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
             <div className="p-2 bg-purple-100 rounded-lg">
               <BookOpen className="h-5 w-5 text-purple-600" />
             </div>
@@ -105,9 +107,9 @@ export default function QuickActions({
               <p className="font-medium text-gray-900">Reports</p>
               <p className="text-sm text-gray-600">Generate reports</p>
             </div>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={onSyncAll}
             disabled={isLoading}
             className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
@@ -119,7 +121,7 @@ export default function QuickActions({
               <p className="font-medium text-gray-900">Sync All</p>
               <p className="text-sm text-gray-600">Update all services</p>
             </div>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -138,7 +140,7 @@ export default function QuickActions({
                   <p className="text-sm mt-1">
                     {service.errors?.length ? service.errors[0] : 'Please check your service configuration'}
                   </p>
-                  <button className="text-sm underline mt-2">Fix Issues</button>
+                  <Button className="text-sm underline mt-2">Fix Issues</Button>
                 </div>
               </div>
             ))}
@@ -157,7 +159,7 @@ export default function QuickActions({
                       <span>{(service.metrics as Record<string, unknown>)?.coverageIssues ? ((service.metrics as Record<string, unknown>).coverageIssues as Record<string, number>).errors : 0} coverage issues</span>
                     )}
                   </div>
-                  <button className="text-sm underline mt-2">Review Issues</button>
+                  <Button className="text-sm underline mt-2">Review Issues</Button>
                 </div>
               </div>
             ))}
@@ -184,9 +186,9 @@ export default function QuickActions({
                     <p className="text-sm text-gray-600 mt-1">
                       Shopping ads are performing well. Increase the budget to capture more sales.
                     </p>
-                    <button className="text-sm font-medium text-green-600 hover:text-green-700 mt-2">
+                    <Button className="text-sm font-medium text-green-600 hover:text-green-700 mt-2">
                       View Recommendations →
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -204,9 +206,9 @@ export default function QuickActions({
                     <p className="text-sm text-gray-600 mt-1">
                       Your "beauty products" queries are trending. Create content around these keywords.
                     </p>
-                    <button className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-2">
+                    <Button className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-2">
                       Explore Keywords →
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -224,9 +226,9 @@ export default function QuickActions({
                     <p className="text-sm text-gray-600 mt-1">
                       Add product attributes like GTIN and detailed descriptions to improve visibility.
                     </p>
-                    <button className="text-sm font-medium text-yellow-600 hover:text-yellow-700 mt-2">
+                    <Button className="text-sm font-medium text-yellow-600 hover:text-yellow-700 mt-2">
                       Improve Listings →
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -256,13 +258,13 @@ export default function QuickActions({
                       <p className="text-sm text-gray-600">{config?.description}</p>
                     </div>
                   </div>
-                  <button
+                  <Button
                     onClick={() => handleConnectService(service.id)}
                     disabled={isLoading}
                     className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
                   >
                     {isLoading ? 'Connecting...' : 'Connect'}
-                  </button>
+                  </Button>
                 </div>
               );
             })}
@@ -276,9 +278,9 @@ export default function QuickActions({
                 <p className="text-sm text-blue-700 mt-1">
                   Check our step-by-step guides for setting up each Google service.
                 </p>
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-2 underline">
+                <Button className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-2 underline">
                   View Setup Guides →
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -295,10 +297,7 @@ export default function QuickActions({
               const config = GOOGLE_SERVICE_CONFIGS[service.id as keyof typeof GOOGLE_SERVICE_CONFIGS];
               return (
                 <div key={service.id} className="text-center">
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl mx-auto mb-2"
-                    style={{ backgroundColor: `${config?.color}20` }}
-                  >
+                  <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-minsah-surface-accent text-2xl text-minsah-text-link">
                     {service.icon}
                   </div>
                   <p className="font-medium text-gray-900 text-sm">
@@ -315,9 +314,9 @@ export default function QuickActions({
               <p className="text-sm text-gray-600">
                 {connectedServices.length} of {services.length} services connected
               </p>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <Button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                 Manage All Services →
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -15,8 +15,17 @@ import {
   getSearchFunnel,
 } from '@/lib/elasticsearch/searchAnalytics';
 import { searchMetrics } from '@/lib/elasticsearch/metrics';
+import { requireAdminPermission } from '@/app/api/admin/_utils';
+import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
 
 export async function GET(request: NextRequest) {
+  const { response } = await requireAdminPermission(
+    request,
+    ADMIN_PERMISSIONS.ANALYTICS_VIEW,
+    { message: 'Search analytics are restricted to admin users with analytics access.' }
+  );
+  if (response) return response;
+
   try {
     const days = parseInt(
       request.nextUrl.searchParams.get('days') || '30',

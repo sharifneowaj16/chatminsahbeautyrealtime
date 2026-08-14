@@ -4,6 +4,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Plus, Check, Building2, Home as HomeIcon } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export default function SelectAddressPage() {
   const router = useRouter();
@@ -38,20 +40,23 @@ export default function SelectAddressPage() {
         {/* Search Location */}
         <div className="absolute top-4 left-4 right-4">
           <div className="bg-white rounded-xl shadow-lg p-3 flex items-center gap-2">
-            <MapPin size={20} className="text-minsah-primary" />
-            <input
+            <Input
               type="text"
               placeholder="Search Location"
-              className="flex-1 outline-none text-sm text-minsah-dark placeholder:text-minsah-secondary"
+              label="Search location"
+              hideLabel
+              leading={<MapPin size={20} aria-hidden="true" />}
+              containerClassName="flex-1"
+              className="border-0 bg-transparent p-0 text-sm text-minsah-dark shadow-none focus:outline-none focus:ring-0"
             />
           </div>
         </div>
 
         {/* Use Current Location Button */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-          <button className="bg-white px-6 py-2 rounded-full shadow-lg font-semibold text-sm text-minsah-primary hover:bg-minsah-accent transition">
+          <Button type="button" variant="secondary" className="rounded-full bg-white px-6 py-2 shadow-lg hover:bg-minsah-accent">
             Use Current Location
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -59,10 +64,12 @@ export default function SelectAddressPage() {
         {/* Saved Addresses */}
         <div className="space-y-3 mb-6">
           {addresses.map((address) => (
-            <button
+            <Button
               key={address.id}
+              type="button"
+              variant="secondary"
               onClick={() => handleSelectAddress(address)}
-              className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${
+              className={`w-full justify-start rounded-2xl border-2 p-4 text-left ${
                 selectedAddress?.id === address.id
                   ? 'border-minsah-primary bg-minsah-accent shadow-md'
                   : 'border-transparent bg-white hover:border-minsah-secondary'
@@ -135,7 +142,7 @@ export default function SelectAddressPage() {
                   </div>
                 </div>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -152,12 +159,15 @@ export default function SelectAddressPage() {
 
         {/* Confirm Button */}
         {selectedAddress && (
-          <button
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
             onClick={() => router.back()}
-            className="mt-6 w-full bg-minsah-primary text-minsah-light py-4 rounded-xl font-bold shadow-lg hover:bg-minsah-dark transition"
+            className="mt-6 rounded-xl bg-minsah-primary py-4 shadow-lg hover:bg-minsah-dark"
           >
             Confirm Address
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -1,69 +1,88 @@
-# Phase 3 — Variant/Shade Meta Catalog Mapping
+# Phase 3 — Exact Meta Catalog Identity Mapping
 
-## Goal
+## Objective
 
-Meta Browser Pixel, public CAPI, COD/online Purchase CAPI, signed browser Purchase, and GA4 item IDs must use one canonical catalog mapping strategy.
+Meta Browser Pixel, public CAPI, COD/online Purchase CAPI and the signed browser Purchase bridge must use the exact same catalog namespace. GA4 and TikTok retain separate identity helpers so a Meta catalog change cannot silently alter their reporting.
 
-## Production Rule
+## Required deployment decision
 
-- Simple product:
-  - `content_ids = [Product.id]`
-  - `content_type = "product"`
-- Variant/shade product:
-  - `content_ids = [parent Product.id]`
-  - `content_type = "product_group"`
-  - `contents[].id = parent Product.id`
-  - `contents[].item_group_id = parent Product.id`
-  - `contents[].variant_id`, `variant_sku`, `item_variant`, `shade`, `color`, `size` are included when available for diagnostics.
+Export the active Meta catalog and compare its `id` and `item_group_id` fields with database values. Then set exactly one value:
 
-## Why
+```env
+# Catalog id = Product.sku / ProductVariant.sku
+NEXT_PUBLIC_META_CATALOG_ID_SOURCE=sku
 
-Meta Dynamic Product Ads and Advantage+ catalog matching require the event product IDs to match the product/group IDs in the catalog feed. If ViewContent/AddToCart/Purchase send variant IDs while the feed uses parent product IDs, Meta can receive the event but fail product-level catalog matching.
+# OR catalog id = Product.id / ProductVariant.id
+NEXT_PUBLIC_META_CATALOG_ID_SOURCE=database_id
+```
 
-## Source of Truth
+Do not configure this from assumption. Blank or invalid configuration intentionally omits catalog-specific event fields while preserving the event, value, currency, item count and deduplication ID.
 
-`lib/tracking/meta-content-id.ts`
+## Final event identity rules
 
-All tracking code must use this helper instead of building `content_ids` manually.
+### Simple item
 
-## Enforced Consumers
+```text
+content_ids = [exact simple catalog row id]
+content_type = product
+contents[].id = exact simple catalog row id
+```
 
-- `lib/tracking/ecommerce.ts`
-- `app/api/facebook-capi/route.ts`
-- `lib/tracking/meta-capi-cod-purchase.ts`
-- `app/api/tracking/meta/online-purchase/route.ts`
-- `lib/tracking/ga4-measurement-protocol.ts`
-- `contexts/CartContext.tsx`
-- `app/api/cart/route.ts`
+### Selected variant
 
-## Regression Lock
+```text
+content_ids = [exact variant child row id]
+content_type = product
+contents[].id = exact variant child row id
+contents[].item_group_id = exact parent group id
+```
 
-`npm run audit:security` now fails if:
+### Mixed cart/order
 
-- canonical catalog helper is missing,
-- tracking payloads hardcode `content_type: 'product'`,
-- tracking code derives `content_ids` from `contents.map(...)`,
-- public CAPI drops variant metadata,
-- cart context does not preserve product/variant SKU metadata.
+All simple and variant rows use item-level catalog IDs, therefore:
 
-## Manual QA
+```text
+content_type = product
+```
 
-1. Open a simple product.
-   - Expected: `ViewContent.content_type = product`
-   - Expected: `content_ids = [Product.id]`
-2. Open a variant/shade product.
-   - Expected: `ViewContent.content_type = product_group`
-   - Expected: `content_ids = [parent Product.id]`
-3. Add a selected shade to cart.
-   - Expected: `AddToCart.content_type = product_group`
-   - Expected: `content_ids = [parent Product.id]`
-   - Expected: `contents[0].variant_id` has selected variant ID.
-4. Begin checkout with variant items.
-   - Expected: `InitiateCheckout.content_type = product_group`
-   - Expected: content IDs use parent product IDs only.
-5. Complete an online paid order through verified flow.
-   - Expected: Browser Purchase and CAPI Purchase use same parent product IDs.
-6. Confirm a COD order by phone.
-   - Expected: Server CAPI Purchase uses same parent product IDs.
-7. Check Meta Events Manager diagnostics.
-   - Expected: product/catalog match warnings decrease or stay clean.
+A mixed Purchase remains one Purchase event with one value and one shared browser/server event ID.
+
+### Variant-capable ViewContent before selection
+
+A parent group ID may be sent with `content_type=product_group`. After a visitor selects a child variant, a new ViewContent uses the exact child item ID with `content_type=product`.
+
+## Fail-closed behavior
+
+`lib/tracking/meta-content-id.ts` resolves identities atomically. If the namespace is unconfigured or any row is missing its required parent/child identity, the entire catalog field set is omitted. The implementation never falls back across CUID, SKU, product ID and variant ID namespaces.
+
+## Explicit data flow
+
+Storefront/cart rows preserve:
+
+```text
+productId
+productSku
+variantId
+variantSku
+```
+
+Server order rows resolve the same values from `item.product` and `item.variant` relations.
+
+## Platform separation
+
+- Meta: `lib/tracking/meta-content-id.ts`
+- GA4: `lib/tracking/ga4-item-id.ts`
+- TikTok: `lib/tracking/tiktok-content-id.ts`
+- Shared non-Meta compatibility internals: `lib/tracking/analytics-item-identity.ts`
+
+GA4 and TikTok no longer import the Meta catalog helper.
+
+## Verification before enabling catalog QA flags
+
+1. Export active catalog rows.
+2. Compare five simple products and at least ten variant child rows.
+3. Confirm selected namespace matches every sampled `id` exactly, including case and prefixes.
+4. Confirm every variant's resolved parent value matches catalog `item_group_id` exactly.
+5. Verify simple, variant and mixed payloads in Meta Test Events.
+6. Confirm browser `eventID` equals CAPI `event_id`.
+7. Only then set `META_CATALOG_QA_VERIFIED=true`.

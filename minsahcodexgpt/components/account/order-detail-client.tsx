@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatPrice } from '@/utils/currency';
+import { productPath } from '@/lib/product-url';
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+import { Button } from '@/components/ui/Button';
 import {
   ArrowLeft,
   Truck,
@@ -35,17 +38,26 @@ interface UnifiedTrackingResponse {
   consignmentId: string | null;
   currentStatus: string;
   lastUpdatedAt: string | null;
+  customerDeliveryCharge: number;
   deliveryCharge: number;
+  deliveryChargeLabel?: string;
   timeline: UnifiedTrackingEvent[];
 }
 
 function ProductImage({ src, name }: { src: string | null; name: string }) {
-  if (src && (src.startsWith('/') || src.startsWith('http'))) {
-    return <img src={src} alt={name} className="h-full w-full rounded-lg object-cover" />;
+  if (src) {
+    return (
+      <CatalogProductImage
+        src={src}
+        alt={name ? `${name} product image` : 'Product image'}
+        sizes="64px"
+        padding="sm"
+      />
+    );
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center rounded-lg bg-gradient-to-br from-pink-100 to-purple-100 text-xl font-semibold text-purple-600">
+    <div className="flex h-full w-full items-center justify-center rounded-lg bg-minsah-accent text-xl font-semibold text-minsah-primary">
       {name.slice(0, 1).toUpperCase()}
     </div>
   );
@@ -141,7 +153,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
 
     switch (status) {
       case 'ordered':
-        return <div className={`${baseClasses} bg-blue-500`}><Package className="w-3 h-3 text-white" /></div>;
+        return <div className={`${baseClasses} bg-blue-500`}><Package className="w-3 h-3 text-white" aria-hidden="true" /></div>;
       case 'shipped':
         return <div className={`${baseClasses} bg-purple-500`}><Truck className="w-3 h-3 text-white" /></div>;
       default:
@@ -187,7 +199,11 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
           source: (order.shippingMethod === 'pathao' ? 'pathao' : 'steadfast') as 'pathao' | 'steadfast',
         }))
       : []);
-  const deliveryCharge = trackingDetails?.deliveryCharge ?? order.shipping;
+  const customerDeliveryCharge =
+    trackingDetails?.customerDeliveryCharge ?? trackingDetails?.deliveryCharge ?? order.shipping;
+  const deliveryChargeLabel =
+    trackingDetails?.deliveryChargeLabel ??
+    (customerDeliveryCharge <= 0 ? 'Free' : formatPrice(customerDeliveryCharge));
   const lastUpdatedAt = trackingDetails?.lastUpdatedAt;
 
   return (
@@ -195,13 +211,15 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           {!printMode && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => router.back()}
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4 transition"
+              className="mb-4 px-0 text-gray-600 hover:bg-transparent hover:text-gray-900"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" />
               Back to Orders
-            </button>
+            </Button>
           )}
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Details</h1>
           <div className="flex flex-wrap items-center gap-3">
@@ -262,8 +280,8 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                       <span className="text-sm text-gray-900">{trackingDetails?.consignmentId || order.pathaoConsignmentId || '—'}</span>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Delivery Charge</span>
-                      <span className="text-sm text-gray-900">{formatPrice(deliveryCharge || 0)}</span>
+                      <span className="text-sm font-medium text-gray-700">Delivery Paid</span>
+                      <span className="text-sm text-gray-900">{deliveryChargeLabel}</span>
                     </div>
                     {lastUpdatedAt && (
                       <div className="mt-2 flex items-center justify-between">
@@ -302,7 +320,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                       <ProductImage src={item.productImage} name={item.productName} />
                     </div>
                     <div className="flex-1">
-                      <Link href={`/products/${item.productSlug}`} className="font-medium text-gray-900 hover:text-purple-600">
+                      <Link href={productPath({ id: item.productId, slug: item.productSlug })} className="font-medium text-gray-900 hover:text-purple-600">
                         {item.productName}
                       </Link>
                       <p className="text-sm text-gray-600">SKU: {item.sku}</p>
@@ -340,7 +358,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">{formatPrice(deliveryCharge || 0)}</span>
+                  <span className="font-medium">{deliveryChargeLabel}</span>
                 </div>
                 {order.tax > 0 && (
                   <div className="flex justify-between">
@@ -425,13 +443,15 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     Track package
                   </a>
                 )}
-                <button
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
                   onClick={() => window.print()}
-                  className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
+                  <FileText className="w-4 h-4" aria-hidden="true" />
                   Download Invoice
-                </button>
+                </Button>
                 {(order.status === 'delivered' || order.status === 'shipped') && !order.latestReturn && (
                   <Link
                     href={`/account/orders/${order.id}/return`}
@@ -440,10 +460,15 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                     Return/Exchange
                   </Link>
                 )}
-                <button className="w-full inline-flex items-center justify-center px-4 py-2 border border-purple-600 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition">
-                  <Mail className="w-4 h-4 mr-2" />
+                <Button
+                  type="button"
+                  variant="primary"
+                  fullWidth
+                  className="border border-purple-600 bg-purple-600 hover:bg-purple-700"
+                >
+                  <Mail className="w-4 h-4" aria-hidden="true" />
                   Contact Support
-                </button>
+                </Button>
               </div>
             </div>
           </div>

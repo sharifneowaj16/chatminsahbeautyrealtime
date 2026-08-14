@@ -1,0 +1,80 @@
+
+> minsah-beauty@2.0.0 test:fcp03
+> node --import tsx --test tests/fcp03/*.test.ts
+
+TAP version 13
+# Subtest: storefront route group and AppShell are active
+ok 1 - storefront route group and AppShell are active
+  ---
+  duration_ms: 1.506993
+  type: 'test'
+  ...
+# Subtest: legacy shell adapters and duplicate navigation owners are deleted
+ok 2 - legacy shell adapters and duplicate navigation owners are deleted
+  ---
+  duration_ms: 0.264527
+  type: 'test'
+  ...
+# Subtest: AppShell is the only storefront owner of header, footer, bottom nav, skip target and main landmark
+ok 3 - AppShell is the only storefront owner of header, footer, bottom nav, skip target and main landmark
+  ---
+  duration_ms: 11.746531
+  type: 'test'
+  ...
+# Subtest: root layout owns providers only and storefront shell owns customer overlays
+ok 4 - root layout owns providers only and storefront shell owns customer overlays
+  ---
+  duration_ms: 0.347902
+  type: 'test'
+  ...
+# Subtest: safe-area and fixed-navigation geometry are centralized
+ok 5 - safe-area and fixed-navigation geometry are centralized
+  ---
+  duration_ms: 0.287652
+  type: 'test'
+  ...
+# Subtest: storefront routes use the unified public shell
+ok 6 - storefront routes use the unified public shell
+  ---
+  duration_ms: 0.819
+  type: 'test'
+  ...
+# Subtest: product detail owns its product header and sticky CTA without a second mobile nav
+ok 7 - product detail owns its product header and sticky CTA without a second mobile nav
+  ---
+  duration_ms: 0.11949
+  type: 'test'
+  ...
+# Subtest: special route families remain outside the storefront shell
+ok 8 - special route families remain outside the storefront shell
+  ---
+  duration_ms: 0.218458
+  type: 'test'
+  ...
+# Subtest: all documented route families have an explicit owner and shell decision
+ok 9 - all documented route families have an explicit owner and shell decision
+  ---
+  duration_ms: 0.204057
+  type: 'test'
+  ...
+# Subtest: mobile navigation contains at most five unique items
+ok 10 - mobile navigation contains at most five unique items
+  ---
+  duration_ms: 0.152639
+  type: 'test'
+  ...
+# Subtest: navigation active-state rules cover canonical catalog and wishlist aliases
+ok 11 - navigation active-state rules cover canonical catalog and wishlist aliases
+  ---
+  duration_ms: 0.145448
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 423.683001

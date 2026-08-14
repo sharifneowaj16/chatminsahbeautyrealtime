@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "mode": "engineering",
+  "decision": "BLOCKED",
+  "generatedAt": "2026-07-17T22:24:31.981Z",
+  "blockers": [
+    "gate:prisma-client-freshness"
+  ],
+  "warnings": [
+    "phase-03:events-manager-funnel:pending",
+    "phase-07:connection-health:pending",
+    "phase-08:lead-webhook-crm:pending",
+    "phase-10:catalog-diagnostics-live:pending",
+    "phase-10:paging-sla:pending",
+    "phase-13:ads-insights-and-mutation:pending",
+    "phase-14:instagram-webhook-and-reply:pending",
+    "phase-15:critical-e2e:pending",
+    "phase-15:migration-apply-rollback:pending",
+    "phase-15:release-rollback-drill:pending"
+  ],
+  "gates": [
+    {
+      "id": "global-blockers",
+      "status": "PASS",
+      "detail": "PASS A13 [P2,P4,P7,P8,P10,P13] Meta lifecycle statuses use Prisma enums | PASS A14 [P10] Catalog Diagnostics are persisted and exposed |  | Strict gate is enabled: unresolved blockers fail the command."
+    },
+    {
+      "id": "migration-governance",
+      "status": "PASS",
+      "detail": "PASS 20260718060000_meta_v6_phase14_instagram_social_crm hash matches | PASS 20260718060000_meta_v6_phase14_instagram_social_crm rollback/forward-fix note exists | PASS 20260718060000_meta_v6_phase14_instagram_social_crm verification note exists | PASS 20260718060000_meta_v6_phase14_instagram_social_crm destructive classification matches"
+    },
+    {
+      "id": "evidence-ledger",
+      "status": "PASS",
+      "detail": "PASS every non-NOT_STARTED phase has an evidence file | PASS no COMPLETE phase is missing evidence file | PASS all declared evidence files exist | PASS runtime-required COMPLETE phases have attached evidence"
+    },
+    {
+      "id": "graph-version-policy",
+      "status": "PASS",
+      "detail": "PASS internal warning date is explicit for non-latest baseline | PASS internal block date is explicit for non-latest baseline | PASS configured version is not past internal block date — 2026-10-01T00:00:00.000Z | PASS configured regression did not fail"
+    },
+    {
+      "id": "prisma-client-freshness",
+      "status": "FAIL",
+      "detail": "Generated Prisma client is stale for prisma/schema.prisma. Run `npm run db:generate` and commit the refreshed generated/prisma snapshot."
+    },
+    {
+      "id": "phase-15-semantic-static",
+      "status": "PASS",
+      "detail": "PASS production release gate is explicit | PASS claim script does not run automatically in predeploy |  | Phase 15 release governance static audit: 109/109 passed"
+    }
+  ],
+  "phaseSummary": {
+    "total": 15,
+    "complete": 1,
+    "runtimeRequired": 7,
+    "runtimeReady": 0
+  },
+  "evidenceDigest": "22f25ddf4df094856ac34ff0e18818c8fb6be04445accc1c517ff665b5bf8c5f"
+}

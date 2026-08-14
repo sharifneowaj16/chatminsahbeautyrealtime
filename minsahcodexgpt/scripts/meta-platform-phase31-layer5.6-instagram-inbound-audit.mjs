@@ -1,0 +1,13 @@
+import fs from 'node:fs'; const read=p=>fs.readFileSync(p,'utf8'); const checks=[]; const check=(n,o)=>{checks.push(!!o);console.log(`[${o?'PASS':'FAIL'}] ${n}`)};
+const worker=read('workers/meta-instagram.worker.ts'), messages=read('lib/meta/instagram/messages.ts'), production=read('lib/meta-platform/domains/instagram/production.ts'), cutover=read('lib/meta-platform/domains/instagram/cutover.ts'), normalizer=read('lib/meta-platform/domains/instagram/normalize-message.ts');
+check('inbound normalizer exists',fs.existsSync('lib/meta-platform/domains/instagram/normalize-message.ts'));
+check('conversation side-effect planner exists',fs.existsSync('lib/meta-platform/domains/instagram/conversations.ts'));
+check('production worker calls inbound domain',worker.includes('processInstagramInboundReceiptProduction'));
+check('legacy inbound is not worker-authoritative',worker.includes('processInstagramInboundReceiptProduction as processInstagramWebhookReceipt')&&!/import\s*\{[^}]*processInstagramWebhookReceipt[^}]*\}\s*from\s*['"]@\/lib\/meta\/instagram\/messages['"]/s.test(worker));
+check('rollback requires explicit cutover selector',production.includes('getMetaInstagramCutoverStatus')&&cutover.includes('contract.runtimeSelectors.inbound')&&cutover.includes('LEGACY_ROLLBACK'));
+check('duplicate messages skip attachment scheduling',messages.includes('if (sideEffects.scheduleAttachments)'));
+check('duplicate messages skip realtime publication',messages.includes('if (realtimeEvent)')&&messages.includes('sideEffects.emitRealtime'));
+check('out-of-order flag derives from storage ordering',messages.includes('!persisted.orderingAdvanced'));
+check('identity and participant inputs are normalized',normalizer.includes('accountId')&&normalizer.includes('senderId')&&normalizer.includes('recipientId'));
+check('Prisma schema unchanged',!fs.existsSync('prisma/migrations/phase31_layer5_6'));
+const p=checks.filter(Boolean).length; console.log(`Layer 5.6 Instagram inbound audit: ${p}/${checks.length} PASS`); if(p!==checks.length)process.exitCode=1;

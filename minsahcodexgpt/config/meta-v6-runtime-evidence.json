@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-18T00:00:00.000Z",
+  "phases": [
+    {
+      "phaseId": 1,
+      "evidence": [
+        {
+          "key": "identity-parity",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 2,
+      "evidence": [
+        {
+          "key": "catalog-provider-parity",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        },
+        {
+          "key": "migration-apply",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 3,
+      "evidence": [
+        {
+          "key": "events-manager-funnel",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        }
+      ]
+    },
+    {
+      "phaseId": 4,
+      "evidence": [
+        {
+          "key": "purchase-dedup",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 5,
+      "evidence": [
+        {
+          "key": "redis-worker-recovery",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 6,
+      "evidence": [
+        {
+          "key": "privacy-runtime",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        },
+        {
+          "key": "legal-retention-approval",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 7,
+      "evidence": [
+        {
+          "key": "connection-health",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        }
+      ]
+    },
+    {
+      "phaseId": 8,
+      "evidence": [
+        {
+          "key": "lead-webhook-crm",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        }
+      ]
+    },
+    {
+      "phaseId": 9,
+      "evidence": [
+        {
+          "key": "admin-two-person-approval",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 10,
+      "evidence": [
+        {
+          "key": "catalog-diagnostics-live",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        },
+        {
+          "key": "paging-sla",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        }
+      ]
+    },
+    {
+      "phaseId": 11,
+      "evidence": [
+        {
+          "key": "attribution-reconciliation",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 12,
+      "evidence": [
+        {
+          "key": "product-set-provider-parity",
+          "status": "NOT_REQUIRED",
+          "note": "Phase does not require provider runtime evidence."
+        }
+      ]
+    },
+    {
+      "phaseId": 13,
+      "evidence": [
+        {
+          "key": "ads-insights-and-mutation",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        }
+      ]
+    },
+    {
+      "phaseId": 14,
+      "evidence": [
+        {
+          "key": "instagram-webhook-and-reply",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        }
+      ]
+    },
+    {
+      "phaseId": 15,
+      "evidence": [
+        {
+          "key": "critical-e2e",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        },
+        {
+          "key": "migration-apply-rollback",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        },
+        {
+          "key": "release-rollback-drill",
+          "status": "PENDING",
+          "note": "Attach hashed staging/production evidence before COMPLETE."
+        }
+      ]
+    }
+  ]
+}

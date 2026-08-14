@@ -3,6 +3,16 @@ import type { NextRequest } from 'next/server';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { sanitizeTrackingPath, sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
 import { normalizeMetaExternalIdValue } from '@/lib/tracking/meta-external-id';
+import {
+  canLoadNonEssentialTracking,
+  getServerTrackingConsentFromCookie,
+  TRACKING_CONSENT_COOKIE,
+} from '@/lib/tracking/tracking-consent';
+import {
+  cleanTikTokAttributionValue,
+  resolveTikTokClickIdMaxAgeSeconds,
+  TIKTOK_CLICK_ID_COOKIE,
+} from '@/lib/tracking/tiktok-attribution';
 
 // Get allowed origins from environment or use defaults
 function getAllowedOrigins(): string[] {
@@ -41,6 +51,9 @@ const TRACKING_COOKIE_MAX_AGE = {
   fbc: 90 * 24 * 60 * 60,
   attribution: 30 * 24 * 60 * 60,
   visitor: 180 * 24 * 60 * 60,
+  tiktokClickId: resolveTikTokClickIdMaxAgeSeconds(
+    process.env.TIKTOK_CLICK_ID_MAX_AGE_DAYS ?? process.env.NEXT_PUBLIC_TIKTOK_CLICK_ID_MAX_AGE_DAYS
+  ),
 };
 
 const ATTRIBUTION_PARAMS = [
@@ -64,6 +77,12 @@ function createFbp() {
 
 function createVisitorId() {
   return `mbv_${Date.now()}_${crypto.randomUUID()}`;
+}
+
+
+function canApplyTikTokAttributionCookies(request: NextRequest) {
+  const consent = getServerTrackingConsentFromCookie(request.cookies.get(TRACKING_CONSENT_COOKIE)?.value);
+  return canLoadNonEssentialTracking(consent);
 }
 
 function shouldApplyTrackingCookies(request: NextRequest) {
@@ -103,6 +122,14 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
     response.cookies.set('_fbc', `fb.1.${Date.now()}.${fbclid}`, {
       ...cookieOptions,
       maxAge: TRACKING_COOKIE_MAX_AGE.fbc,
+    });
+  }
+
+  const ttclid = cleanTikTokAttributionValue(searchParams.get('ttclid'));
+  if (ttclid && canApplyTikTokAttributionCookies(request) && !request.cookies.get(TIKTOK_CLICK_ID_COOKIE)?.value) {
+    response.cookies.set(TIKTOK_CLICK_ID_COOKIE, ttclid, {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.tiktokClickId,
     });
   }
 
@@ -181,14 +208,15 @@ function createSecureResponse(response: NextResponse): NextResponse {
     response.headers.set(
       'Content-Security-Policy',
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://www.google-analytics.com; " +
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://www.google-analytics.com https://analytics.tiktok.com; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      `img-src 'self' data: https: blob: http://${minioHost}:9000 https://${minioHost}; ` +
+      `img-src 'self' data: https: blob: http://${minioHost}:9000 https://${minioHost} https://analytics.tiktok.com; ` +
       "font-src 'self' https://fonts.gstatic.com; " +
-      `connect-src 'self' https://www.google-analytics.com https://graph.facebook.com wss: http://${minioHost}:9000; ` +
+      `connect-src 'self' https://www.google-analytics.com https://graph.facebook.com https://www.facebook.com https://analytics.tiktok.com wss: http://${minioHost}:9000; ` +
+      "frame-src 'self' https://www.facebook.com; " +
       "frame-ancestors 'none'; " +
       "base-uri 'self'; " +
-      "form-action 'self'; " +
+      "form-action 'self' https://www.facebook.com; " +
       "upgrade-insecure-requests;"
     );
   }
@@ -218,6 +246,14 @@ function handleCors(request: NextRequest, response: NextResponse): NextResponse 
 }
 
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get('host');
+
+  if (host === 'www.minsahbeauty.cloud') {
+    const url = request.nextUrl.clone();
+    url.hostname = 'minsahbeauty.cloud';
+    return NextResponse.redirect(url, 301);
+  }
+
   const { pathname } = request.nextUrl;
 
   // Handle CORS preflight requests

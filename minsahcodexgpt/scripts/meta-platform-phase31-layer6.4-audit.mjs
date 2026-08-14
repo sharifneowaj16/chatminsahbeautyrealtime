@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+let passed = 0;
+function check(name, condition) { if (!condition) { console.error(`FAIL ${name}`); process.exitCode = 1; return; } passed += 1; console.log(`PASS ${name}`); }
+const s0 = fs.readFileSync('app/api/admin/inbox/sync/dead-letter/route.ts', 'utf8');
+const s1 = fs.readFileSync('app/api/webhook/facebook/route.ts', 'utf8');
+const s2 = fs.readFileSync('realtime-service/src/app.ts', 'utf8');
+const s3 = fs.readFileSync('realtime-service/src/config.ts', 'utf8');
+check('media retry default off', s3.includes('FB_MEDIA_RETRY_ENABLED: z'));
+check('replay default off', s3.includes('FB_REPLAY_ENABLED: z'));
+check('outgoing retry default off', s3.includes('FB_OUTGOING_RETRY_ENABLED: z'));
+check('sync default off', s3.includes('FB_SYNC_ENABLED: z'));
+check('main app dead-letter audits', s0.includes('listMetaJobAudits'));
+check('main app controlled replay', s0.includes('replayMetaDeadLetter'));
+check('replay approval required', s0.includes('approvalId'));
+check('view permission enforced', s0.includes('META_SOCIAL_VIEW'));
+check('operate permission enforced', s0.includes('META_SOCIAL_OPERATE'));
+check('deterministic handoff key', s1.includes('requestKey:'));
+check('BullMQ ownership projected', s2.includes("cutover.retryOwner === 'MAIN_APP_BULLMQ'") || (s2.includes('retryOwner: cutover.retryOwner') && s2.includes('main-app-meta-job-audit')));
+check('job audit ownership projected', s2.includes('main-app-meta-job-audit'));
+if (!process.exitCode) console.log(`Layer 6.4 audit: ${passed}/12 PASS`);

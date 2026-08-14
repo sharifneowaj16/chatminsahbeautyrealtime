@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ProductsProvider, useProducts, type Product } from '@/contexts/ProductsContext';
 import { formatPrice } from '@/utils/currency';
+import { productPath } from '@/lib/product-url';
 import { HomeBuyNowAction, HomeOverlayCartAction } from './HomeProductActions';
 
 function ProductImage({ src, alt }: { src: string; alt: string }) {
@@ -29,7 +30,7 @@ function FallbackProductGrid({ products }: { products: Product[] }) {
   return (
     <section className="bg-minsah-light px-4 py-6 pb-20">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-minsah-dark">New Arrival</h2>
+        <h2 className="text-lg font-bold text-minsah-dark">New Arrivals</h2>
         <Link href="/shop" className="text-sm font-semibold text-minsah-primary">
           View all
         </Link>
@@ -41,7 +42,7 @@ function FallbackProductGrid({ products }: { products: Product[] }) {
 
           return (
             <div key={product.id} className="rounded-2xl bg-white p-3">
-              <Link href={`/products/${product.id}`}>
+              <Link href={productPath(product)}>
                 <div className="relative mb-2">
                   <div className="relative mb-2 flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl bg-minsah-accent">
                     <ProductImage src={product.image} alt={product.name} />

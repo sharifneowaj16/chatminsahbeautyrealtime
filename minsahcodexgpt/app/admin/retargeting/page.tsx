@@ -1,5 +1,11 @@
 'use client';
 
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -208,10 +214,10 @@ export default function RetargetingAudiencesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Retargeting Audiences</h1>
           <p className="text-gray-600">Build and manage custom audiences for retargeting campaigns</p>
         </div>
-        <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
           <Plus className="w-5 h-5 mr-2" />
           Create Audience
-        </button>
+        </Button>
       </div>
 
       {/* Stats Overview */}
@@ -266,7 +272,7 @@ export default function RetargetingAudiencesPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search audiences..."
               value={searchQuery}
@@ -275,7 +281,7 @@ export default function RetargetingAudiencesPage() {
             />
           </div>
 
-          <select
+          <Select
             value={filterPlatform}
             onChange={(e) => setFilterPlatform(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -286,9 +292,9 @@ export default function RetargetingAudiencesPage() {
             <option value="tiktok">TikTok</option>
             <option value="instagram">Instagram</option>
             <option value="twitter">Twitter</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -297,7 +303,7 @@ export default function RetargetingAudiencesPage() {
             <option value="active">Active</option>
             <option value="paused">Paused</option>
             <option value="draft">Draft</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -383,24 +389,24 @@ export default function RetargetingAudiencesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <button className="text-purple-600 hover:text-purple-900">
+                      <Button className="text-purple-600 hover:text-purple-900">
                         <Edit className="w-4 h-4" />
-                      </button>
+                      </Button>
                       {audience.status === 'active' ? (
-                        <button className="text-yellow-600 hover:text-yellow-900">
+                        <Button className="text-yellow-600 hover:text-yellow-900">
                           <Pause className="w-4 h-4" />
-                        </button>
+                        </Button>
                       ) : (
-                        <button className="text-green-600 hover:text-green-900">
+                        <Button className="text-green-600 hover:text-green-900">
                           <Play className="w-4 h-4" />
-                        </button>
+                        </Button>
                       )}
-                      <button className="text-blue-600 hover:text-blue-900">
+                      <Button className="text-blue-600 hover:text-blue-900">
                         <Download className="w-4 h-4" />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      </Button>
+                      <Button className="text-red-600 hover:text-red-900">
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -420,10 +426,10 @@ export default function RetargetingAudiencesPage() {
               : 'Create your first retargeting audience to get started'}
           </p>
           {!searchQuery && filterPlatform === 'all' && filterStatus === 'all' && (
-            <button className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+            <Button className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Audience
-            </button>
+            </Button>
           )}
         </div>
       )}

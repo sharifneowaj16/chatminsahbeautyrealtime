@@ -1,5 +1,14 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import type { AdminOrder } from '@/types/admin';
 import {
@@ -22,6 +31,7 @@ import {
 } from 'lucide-react';
 
 export default function OrderManagement() {
+  const { requestConfirmation } = useToast();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -299,7 +309,7 @@ export default function OrderManagement() {
   };
 
   const processRefund = async (order: AdminOrder) => {
-    if (confirm(`Process full refund for order ${order.orderNumber}?`)) {
+    if (await requestConfirmation({ title: 'Process full refund?', description: `Order ${order.orderNumber} will be marked as refunded.`, confirmLabel: 'Process refund', tone: 'danger' })) {
       // Simulate API call
       setOrders(prev => prev.map(o =>
         o.id === order.id
@@ -342,14 +352,14 @@ export default function OrderManagement() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+          <Button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
             <RefreshCw className="h-4 w-4" />
             Sync Orders
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+          </Button>
+          <Button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
             <Printer className="h-4 w-4" />
             Bulk Print
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -405,7 +415,7 @@ export default function OrderManagement() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -414,7 +424,7 @@ export default function OrderManagement() {
             />
           </div>
 
-          <select
+          <Select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -427,9 +437,9 @@ export default function OrderManagement() {
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
             <option value="refunded">Refunded</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={selectedPaymentStatus}
             onChange={(e) => setSelectedPaymentStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -440,9 +450,9 @@ export default function OrderManagement() {
             <option value="failed">Failed</option>
             <option value="refunded">Refunded</option>
             <option value="partially_refunded">Partially Refunded</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -452,11 +462,11 @@ export default function OrderManagement() {
             <option value="7days">Last 7 Days</option>
             <option value="30days">Last 30 Days</option>
             <option value="90days">Last 90 Days</option>
-          </select>
+          </Select>
 
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+          <Button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
             Apply Filters
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -537,7 +547,7 @@ export default function OrderManagement() {
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1">
-                      <button
+                      <Button
                         onClick={() => {
                           setSelectedOrder(order);
                           setShowOrderDetails(true);
@@ -545,20 +555,20 @@ export default function OrderManagement() {
                         className="p-1 text-gray-400 hover:text-gray-600"
                       >
                         <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-1 text-gray-400 hover:text-gray-600">
+                      </Button>
+                      <Button className="p-1 text-gray-400 hover:text-gray-600">
                         <Edit className="h-4 w-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => printInvoice(order)}
                         className="p-1 text-gray-400 hover:text-gray-600"
                       >
                         <Printer className="h-4 w-4" />
-                      </button>
+                      </Button>
                       {order.shipping.tracking && (
-                        <button className="p-1 text-gray-400 hover:text-gray-600">
+                        <Button className="p-1 text-gray-400 hover:text-gray-600">
                           <Truck className="h-4 w-4" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </td>
@@ -578,24 +588,14 @@ export default function OrderManagement() {
       )}
 
       {/* Order Details Modal */}
-      {showOrderDetails && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Order Details</h3>
-                  <p className="text-sm text-gray-600">{selectedOrder.orderNumber}</p>
-                </div>
-                <button
-                  onClick={() => setShowOrderDetails(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
+      {selectedOrder ? (
+        <Modal
+          open={showOrderDetails}
+          onClose={() => setShowOrderDetails(false)}
+          title="Order Details"
+          description={selectedOrder.orderNumber}
+          size="xl"
+        >
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Customer Info */}
@@ -703,51 +703,50 @@ export default function OrderManagement() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
-                <button
+                <Button
                   onClick={() => printInvoice(selectedOrder)}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                 >
                   <Printer className="h-4 w-4" />
                   Print Invoice
-                </button>
+                </Button>
                 {selectedOrder.status === 'shipped' && (
-                  <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
+                  <Button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
                     <Truck className="h-4 w-4" />
                     Print Shipping Label
-                  </button>
+                  </Button>
                 )}
                 {(selectedOrder.status === 'delivered' || selectedOrder.status === 'shipped') && (
-                  <button
+                  <Button
                     onClick={() => processRefund(selectedOrder)}
                     className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
                   >
                     <Receipt className="h-4 w-4" />
                     Process Refund
-                  </button>
+                  </Button>
                 )}
                 {selectedOrder.status === 'confirmed' && (
-                  <button
+                  <Button
                     onClick={() => updateOrderStatus(selectedOrder.id, 'processing')}
                     className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
                   >
                     <Filter className="h-4 w-4" />
                     Start Processing
-                  </button>
+                  </Button>
                 )}
                 {selectedOrder.status === 'processing' && (
-                  <button
+                  <Button
                     onClick={() => updateOrderStatus(selectedOrder.id, 'shipped')}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
                   >
                     <Truck className="h-4 w-4" />
                     Mark as Shipped
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+        </Modal>
+      ) : null}
     </div>
   );
 }

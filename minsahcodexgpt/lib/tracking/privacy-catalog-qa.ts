@@ -1,7 +1,11 @@
 import 'server-only';
 
 import prisma from '@/lib/prisma';
-import { getMetaContentId } from '@/lib/tracking/meta-content-id';
+import {
+  resolveMetaCatalogIdentity,
+} from '@/lib/tracking/meta-content-id';
+import { getServerMetaCatalogIdSource } from '@/lib/tracking/meta-content-id-server';
+import { isTrackingConsentRequired } from '@/lib/tracking/tracking-consent';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -59,6 +63,9 @@ export type CatalogQaProductIssue = {
   slug: string;
   sku: string | null;
   contentId: string;
+  itemGroupId: string | null;
+  catalogIdSource: string | null;
+  unmappedVariantCount: number;
   price: number;
   salePrice: number | null;
   quantity: number;
@@ -86,6 +93,7 @@ export type PrivacyCatalogQaSnapshot = {
     clarityMaskingVerified: boolean;
     metaCatalogConnected: boolean;
     metaCatalogQaVerified: boolean;
+    metaCatalogIdSource: string | null;
   };
   metrics: {
     activeProducts: number;
@@ -100,6 +108,8 @@ export type PrivacyCatalogQaSnapshot = {
     activeOutOfStockProducts: number;
     variantProducts: number;
     variantMappingRiskProducts: number;
+    unmappedCatalogProducts: number;
+    unmappedCatalogVariants: number;
   };
   catalogIssueRows: CatalogQaProductIssue[];
   issues: string[];
@@ -117,9 +127,9 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
   const privacyPolicyUrl = `${siteUrl}/privacy-policy`;
   const trackingDisclosureVerified = isEnvTrue('TRACKING_DISCLOSURE_VERIFIED');
   const cookieDisclosureVerified = isEnvTrue('COOKIE_DISCLOSURE_VERIFIED');
-  const consentModeRequired = isEnvTrue('CONSENT_MODE_REQUIRED');
+  const consentModeRequired = isTrackingConsentRequired();
   const consentModeVerified = isEnvTrue('CONSENT_MODE_VERIFIED');
-  const browserConsentGateEnabled = process.env.NEXT_PUBLIC_REQUIRE_TRACKING_CONSENT === 'true';
+  const browserConsentGateEnabled = isTrackingConsentRequired();
   const internalTrafficFilterConfigured = Boolean(
     process.env.ANALYTICS_INTERNAL_IPS || process.env.INTERNAL_TRAFFIC_IPS || process.env.STAFF_IPS
   );
@@ -128,6 +138,7 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
   const clarityMaskingVerified = isEnvTrue('CLARITY_SENSITIVE_MASKING_VERIFIED');
   const metaCatalogConnected = isEnvTrue('META_CATALOG_CONNECTED');
   const metaCatalogQaVerified = isEnvTrue('META_CATALOG_QA_VERIFIED');
+  const metaCatalogIdSource = getServerMetaCatalogIdSource();
   const privacyContactEmailConfigured = Boolean(
     process.env.PRIVACY_CONTACT_EMAIL || process.env.DATA_DELETION_EMAIL || process.env.SUPPORT_EMAIL
   );
@@ -170,7 +181,31 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
     const canonicalHost = normalizeHost(product.canonicalUrl);
     const variantCount = product.variants.length;
     const hasVariants = variantCount > 0 || jsonHasShadeData(product.shadeOptions);
+    const simpleIdentity = resolveMetaCatalogIdentity(
+      {
+        productId: product.id,
+        productSku: product.sku,
+        sku: product.sku,
+      },
+      metaCatalogIdSource
+    );
+    const variantIdentities = product.variants.map((variant) =>
+      resolveMetaCatalogIdentity(
+        {
+          productId: product.id,
+          productSku: product.sku,
+          variantId: variant.id,
+          variantSku: variant.sku,
+          sku: variant.sku,
+        },
+        metaCatalogIdSource
+      )
+    );
+    const unmappedVariantCount = variantIdentities.filter((identity) => !identity).length;
 
+    if (!metaCatalogIdSource) issues.push('Meta catalog ID source is not configured.');
+    if (!simpleIdentity) issues.push('Product cannot resolve an exact Meta catalog item ID.');
+    if (unmappedVariantCount > 0) issues.push(`${unmappedVariantCount} variant(s) cannot resolve exact Meta item/group IDs.`);
     if (!product.sku?.trim()) issues.push('Missing SKU/catalog ID fallback.');
     if (price <= 0 && (!salePrice || salePrice <= 0)) issues.push('Missing or invalid BDT price.');
     if (!defaultImageUrl) issues.push('Missing product image.');
@@ -194,7 +229,9 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
     const critical = issues.some((issue) =>
       issue.includes('Missing product image') ||
       issue.includes('Missing or invalid') ||
-      issue.includes('Missing SKU')
+      issue.includes('Missing SKU') ||
+      issue.includes('not configured') ||
+      issue.includes('cannot resolve')
     );
 
     return {
@@ -202,7 +239,10 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
       name: product.name,
       slug: product.slug,
       sku: product.sku,
-      contentId: getMetaContentId({ productId: product.id, sku: product.sku }),
+      contentId: simpleIdentity?.itemId ?? '',
+      itemGroupId: simpleIdentity?.groupId ?? null,
+      catalogIdSource: metaCatalogIdSource,
+      unmappedVariantCount,
       price,
       salePrice,
       quantity: product.quantity,
@@ -222,6 +262,8 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
   const activeOutOfStockProducts = issueRows.filter((row) => row.issues.some((issue) => issue.includes('out of stock'))).length;
   const variantMappingRiskProducts = issueRows.filter((row) => row.issues.some((issue) => issue.includes('Variant/shade'))).length;
   const variantProducts = products.filter((product) => product.variants.length > 0 || jsonHasShadeData(product.shadeOptions)).length;
+  const unmappedCatalogProducts = issueRows.filter((row) => !row.contentId).length;
+  const unmappedCatalogVariants = issueRows.reduce((sum, row) => sum + row.unmappedVariantCount, 0);
 
   const issues = [
     !trackingDisclosureVerified ? 'Tracking disclosure is not marked verified.' : null,
@@ -231,6 +273,7 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
     !internalTrafficFilterConfigured ? 'Internal/staff IP filter is not configured.' : null,
     clarityEnabled && !clarityProjectConfigured ? 'Clarity is enabled but project ID is missing.' : null,
     clarityEnabled && !clarityMaskingVerified ? 'Clarity sensitive input masking is not marked verified.' : null,
+    !metaCatalogIdSource ? 'META_CATALOG_ID_SOURCE/NEXT_PUBLIC_META_CATALOG_ID_SOURCE are missing, invalid, or mismatched.' : null,
     !metaCatalogConnected ? 'Meta Catalog is not marked connected.' : null,
     !metaCatalogQaVerified ? 'Meta Catalog QA is not marked verified.' : null,
     issueRows.length > 0 ? `${issueRows.length} active product(s) have catalog readiness warnings.` : null,
@@ -253,6 +296,7 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
       clarityMaskingVerified,
       metaCatalogConnected,
       metaCatalogQaVerified,
+      metaCatalogIdSource,
     },
     metrics: {
       activeProducts,
@@ -267,16 +311,19 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
       activeOutOfStockProducts,
       variantProducts,
       variantMappingRiskProducts,
+      unmappedCatalogProducts,
+      unmappedCatalogVariants,
     },
     catalogIssueRows: issueRows.slice(0, limit),
     issues,
     instructions: [
       'Verify /privacy-policy contains cookie/tracking disclosure for Meta Pixel/CAPI, GA4, and Clarity.',
       'Set TRACKING_DISCLOSURE_VERIFIED=true and COOKIE_DISCLOSURE_VERIFIED=true only after legal/content QA passes.',
-      'If consent is required, set NEXT_PUBLIC_REQUIRE_TRACKING_CONSENT=true and verify deny/allow behavior before setting CONSENT_MODE_VERIFIED=true.',
+      'Consent is code-enforced and fail-closed. Verify unknown/deny/allow/revoke behavior before setting CONSENT_MODE_VERIFIED=true.',
       'Configure ANALYTICS_INTERNAL_IPS/INTERNAL_TRAFFIC_IPS/STAFF_IPS so staff/developer traffic is excluded from product analytics and public CAPI.',
       'Enable Clarity only after sensitive checkout/account/admin fields are masked in Clarity project settings; then set CLARITY_SENSITIVE_MASKING_VERIFIED=true.',
-      'Connect Meta Catalog and confirm Catalog item IDs match Browser Pixel/CAPI content_ids.',
+      'Export the active Meta Catalog and set matching META_CATALOG_ID_SOURCE and NEXT_PUBLIC_META_CATALOG_ID_SOURCE values only when catalog id/item_group_id values prove that namespace.',
+      'Connect Meta Catalog and confirm simple IDs, variant child IDs, and item_group_id values exactly match Browser Pixel/CAPI payloads.',
       'Fix products with missing image, SKU/catalog ID, invalid price, canonical URL, or variant/shade mapping warnings before scaling dynamic ads.',
     ],
   };

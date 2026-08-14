@@ -4,6 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Star } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
 
 interface ReviewFormClientProps {
   mode: 'create' | 'edit';
@@ -21,12 +25,12 @@ interface ReviewFormClientProps {
 }
 
 function ProductImage({ src, alt }: { src: string | null; alt: string }) {
-  if (src && (src.startsWith('/') || src.startsWith('http'))) {
-    return <img src={src} alt={alt} className="h-full w-full object-cover" />;
+  if (src) {
+    return <CatalogProductImage src={src} alt={alt || 'Product image'} sizes="80px" padding="sm" />;
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-pink-100 to-purple-100 text-sm font-medium text-purple-600">
+    <div className="flex h-full w-full items-center justify-center bg-minsah-accent text-sm font-medium text-minsah-primary">
       {alt.slice(0, 1).toUpperCase()}
     </div>
   );
@@ -132,19 +136,22 @@ export function ReviewFormClient({
             <label className="mb-3 block text-sm font-medium text-gray-700">Your Rating</label>
             <div className="flex items-center gap-2">
               {[1, 2, 3, 4, 5].map((value) => (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setRating(value)}
-                  className="rounded-full p-1 transition hover:scale-105"
+                  className="hover:scale-105"
                   aria-label={`Rate ${value} star${value > 1 ? 's' : ''}`}
                 >
                   <Star
                     className={`h-7 w-7 ${
                       value <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
                     }`}
+                    aria-hidden="true"
                   />
-                </button>
+                </Button>
               ))}
               <span className="ml-2 text-sm text-gray-500">
                 {rating > 0 ? `${rating} out of 5` : 'Select a rating'}
@@ -152,43 +159,36 @@ export function ReviewFormClient({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="title" className="mb-2 block text-sm font-medium text-gray-700">
-              Review Title
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Summarize your experience"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
+          <Input
+            id="title"
+            type="text"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Summarize your experience"
+            label="Review Title"
+            className="focus:ring-purple-500"
+          />
 
-          <div>
-            <label htmlFor="comment" className="mb-2 block text-sm font-medium text-gray-700">
-              Your Review
-            </label>
-            <textarea
-              id="comment"
-              rows={6}
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              placeholder="What did you like? How was the quality, packaging, or result?"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
+          <Textarea
+            id="comment"
+            rows={6}
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="What did you like? How was the quality, packaging, or result?"
+            label="Your Review"
+            className="focus:ring-purple-500"
+          />
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={isSubmitting}
-              className="inline-flex items-center rounded-lg bg-purple-600 px-6 py-3 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-70"
+              className="bg-purple-600 px-6 py-3 hover:bg-purple-700"
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {mode === 'edit' ? 'Update Review' : 'Submit Review'}
-            </button>
+            </Button>
             <Link
               href="/account/reviews"
               className="inline-flex items-center rounded-lg border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"

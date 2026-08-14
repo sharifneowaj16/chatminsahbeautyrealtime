@@ -2,8 +2,11 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { ActiveFilter, ShopFilters } from '@/types/product';
 import { getActiveFilters, buildSearchParams, parseSearchParams } from '@/lib/shopUtils';
+import { trackShopClearFilter } from '@/lib/tracking/shop-events';
+import { buildCatalogPath } from '@/lib/catalog-navigation';
 
 interface ActiveFiltersProps {
   totalProducts: number;
@@ -67,13 +70,19 @@ export default function ActiveFilters({ totalProducts }: ActiveFiltersProps) {
     // Reset to page 1 when filters change
     delete newFilters.page;
 
+    trackShopClearFilter(filter.param, totalProducts);
+
     const queryString = buildSearchParams(newFilters);
-    router.push(`/shop${queryString ? `?${queryString}` : ''}`, { scroll: false });
+    router.push(buildCatalogPath(new URLSearchParams(queryString)), { scroll: false });
   };
 
   const clearAllFilters = () => {
-    const queryString = buildSearchParams({ sort: filters.sort });
-    router.push(`/shop${queryString ? `?${queryString}` : ''}`, { scroll: false });
+    trackShopClearFilter('all', totalProducts);
+    const queryString = buildSearchParams({
+      search: filters.search,
+      sort: filters.sort,
+    });
+    router.push(buildCatalogPath(new URLSearchParams(queryString)), { scroll: false });
   };
 
   if (activeFilters.length === 0) {
@@ -91,31 +100,37 @@ export default function ActiveFilters({ totalProducts }: ActiveFiltersProps) {
       {/* Result Count */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-minsah-secondary">
-          Showing <span className="font-semibold text-minsah-dark">{totalProducts}</span> products with{' '}
+          Showing <span className="font-semibold text-minsah-dark">{totalProducts}</span> matching products with{' '}
           <span className="font-semibold text-minsah-primary">{activeFilters.length}</span> filter
           {activeFilters.length !== 1 ? 's' : ''} applied
         </p>
         {activeFilters.length > 1 && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={clearAllFilters}
-            className="text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
+            aria-label="Clear all active shop filters"
+            className="rounded-xl px-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
           >
             Clear All
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Filter Chips */}
       <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-2">
         {activeFilters.map((filter, index) => (
-          <button
+          <Button
             key={`${filter.param}-${index}`}
+            type="button"
+            variant="primary"
             onClick={() => removeFilter(filter)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-minsah-primary to-minsah-secondary text-white rounded-full text-sm font-medium hover:from-minsah-dark hover:to-minsah-primary transition-all duration-200 group shadow-sm hover:shadow"
+            aria-label={`Remove ${filter.label} filter`}
+            className="rounded-full bg-gradient-to-r from-minsah-primary to-minsah-secondary px-3 py-1.5 text-sm shadow-sm hover:from-minsah-dark hover:to-minsah-primary hover:shadow"
           >
             <span>{filter.label}</span>
-            <X size={14} className="group-hover:rotate-90 transition-transform duration-200" />
-          </button>
+            <X size={14} className="transition-transform duration-200 group-hover:rotate-90" aria-hidden="true" />
+          </Button>
         ))}
       </div>
 

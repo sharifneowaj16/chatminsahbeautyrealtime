@@ -1,5 +1,11 @@
 'use client';
 
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Search,
@@ -244,7 +250,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
       <div className="relative mb-4" ref={dropRef}>
         <div className="flex gap-2">
           {/* qty */}
-          <input
+          <Input
             type="number"
             min={1}
             value={addQty}
@@ -254,7 +260,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
           {/* search input */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search products or type a custom name..."
               value={query}
@@ -303,7 +309,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                         <div className="mt-1.5">
                           <p className="text-xs text-gray-400 mb-1">Select variant (optional):</p>
                           <div className="flex flex-wrap gap-1.5">
-                            <button
+                            <Button
                               type="button"
                               onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: null }))}
                               className={`text-xs px-2 py-1 rounded border transition-colors ${
@@ -313,9 +319,9 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                               }`}
                             >
                               Base
-                            </button>
+                            </Button>
                             {product.variants.map(v => (
-                              <button
+                              <Button
                                 key={v.id}
                                 type="button"
                                 onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: v.id }))}
@@ -327,7 +333,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                                 title={`${formatPrice(v.price)} · Stock: ${v.stock}`}
                               >
                                 {formatVariantLabel(v)}
-                              </button>
+                              </Button>
                             ))}
                           </div>
                         </div>
@@ -335,14 +341,14 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     </div>
 
                     {/* Add button */}
-                    <button
+                    <Button
                       type="button"
                       onClick={() => addDbProduct(product, selVariantId)}
                       className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs rounded-lg transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Add{selVariant ? ` (${formatPrice(selVariant.price)})` : ''}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -350,7 +356,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
 
             {/* "Add as custom" row always shown when there's a query */}
             {!searching && (
-              <button
+              <Button
                 type="button"
                 onClick={addCustomProduct}
                 className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-violet-50 border-t border-dashed border-violet-200 group"
@@ -362,7 +368,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                   Add <strong className="text-violet-700">"{query}"</strong> as custom product
                   <span className="text-xs text-gray-400 ml-1">(not in DB)</span>
                 </span>
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -408,7 +414,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     </div>
 
                     {/* qty */}
-                    <input
+                    <Input
                       type="number"
                       min={1}
                       value={item.quantity}
@@ -422,21 +428,21 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     </span>
 
                     {/* actions */}
-                    <button
+                    <Button
                       type="button"
                       onClick={() => startEdit(item)}
                       className="p-1.5 text-gray-400 hover:text-violet-600 hover:bg-violet-100 rounded transition-colors"
                       title="Edit price / type / variant"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() => removeItem(item.key)}
                       className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   /* ── Edit mode ──────────────────────────────────────────── */
@@ -444,7 +450,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     {/* Name */}
                     <div>
                       <label className="text-xs font-medium text-gray-600 mb-1 block">Name</label>
-                      <input
+                      <Input
                         type="text"
                         value={editValues.name ?? item.name}
                         onChange={e => setEditValues(p => ({ ...p, name: e.target.value }))}
@@ -456,7 +462,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       {/* Price */}
                       <div>
                         <label className="text-xs font-medium text-gray-600 mb-1 block">Unit Price (৳)</label>
-                        <input
+                        <Input
                           type="number"
                           min={0}
                           step="0.01"
@@ -469,7 +475,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       {/* SKU */}
                       <div>
                         <label className="text-xs font-medium text-gray-600 mb-1 block">SKU</label>
-                        <input
+                        <Input
                           type="text"
                           value={editValues.sku ?? item.sku}
                           onChange={e => setEditValues(p => ({ ...p, sku: e.target.value }))}
@@ -480,7 +486,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       {/* Product Type */}
                       <div>
                         <label className="text-xs font-medium text-gray-600 mb-1 block">Type</label>
-                        <select
+                        <Select
                           value={editValues.productType ?? item.productType}
                           onChange={e => setEditValues(p => ({ ...p, productType: e.target.value as ProductType }))}
                           className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
@@ -488,26 +494,26 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                           <option value="new">New</option>
                           <option value="old">Old</option>
                           <option value="virtual">Virtual</option>
-                        </select>
+                        </Select>
                       </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex gap-2 justify-end">
-                      <button
+                      <Button
                         type="button"
                         onClick={cancelEdit}
                         className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <X className="w-3.5 h-3.5" /> Cancel
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => commitEdit(item.key)}
                         className="flex items-center gap-1 px-3 py-1.5 text-xs bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" /> Save
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}

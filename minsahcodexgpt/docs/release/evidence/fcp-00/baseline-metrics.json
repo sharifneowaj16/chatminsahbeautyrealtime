@@ -1,0 +1,12 @@
+{
+  "auditDate": "2026-07-12",
+  "sourceArchiveSha256": "da99e16abdf54b1ca55c0194b23e97ad3dc3df53f12906b8931d7ac08fad184c",
+  "gitCommit": null,
+  "gitCommitReason": "Supplied ZIP did not contain .git metadata",
+  "envCheck": { "status": "pass", "recommendedWarnings": 4 },
+  "blockingLint": { "status": "pass", "errors": 0 },
+  "typecheck": { "status": "pass", "errors": 0 },
+  "fastGate": { "status": "pass" },
+  "targetedTests": { "status": "pass", "testCases": 9 },
+  "unsafePrismaInputJsonCastsInSiteConfigWritePath": 0
+}

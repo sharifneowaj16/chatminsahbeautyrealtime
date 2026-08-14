@@ -4,12 +4,19 @@ import { sanitizeTrackingPath, sanitizeTrackingUrl } from '@/lib/tracking/saniti
 import { isPaymentGatewayReferralUrl } from '@/lib/tracking/payment-gateway-referrals';
 import { chooseCanonicalMetaExternalId, normalizeMetaExternalIdValue } from '@/lib/tracking/meta-external-id';
 import {
-  canLoadNonEssentialTracking,
   getServerTrackingConsentFromCookie,
+  getServerTrackingConsentVersionFromCookie,
+  TRACKING_CONSENT_VERSION_COOKIE,
+  isConsentDenied,
   TRACKING_CONSENT_COOKIE,
 } from '@/lib/tracking/tracking-consent';
-
-const TRACKING_SCHEMA_VERSION = 'mb_tracking_v1';
+import { resolveTrackingDecision } from '@/lib/privacy/consent-resolver';
+import { TRACKING_SCHEMA_VERSION } from '@/lib/tracking/meta-schema';
+import {
+  cleanTikTokAttributionValue,
+  TIKTOK_CLICK_ID_COOKIE,
+  TIKTOK_TTP_COOKIE,
+} from '@/lib/tracking/tiktok-attribution';
 
 const ATTRIBUTION_COOKIE = 'mb_attribution';
 const FIRST_LANDING_PATH_COOKIE = 'mb_first_landing_path';
@@ -17,20 +24,46 @@ const FIRST_LANDING_URL_COOKIE = 'mb_first_landing_url';
 const REFERRER_COOKIE = 'mb_referrer';
 const VISITOR_ID_COOKIE = 'mb_vid';
 
+const MAX_ATTRIBUTION_VALUE_LENGTH = 300;
+
 type AttributionCookie = {
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
   utm_content?: string;
+  utm_term?: string;
   campaign_id?: string;
   adset_id?: string;
   ad_id?: string;
   placement?: string;
+  offer_version?: string;
+  ab_variant?: string;
+  coupon_code?: string;
+  free_delivery_threshold?: string;
+  landing_offer?: string;
+  campaign_source_url?: string;
 };
 
 function clean(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed || undefined;
+}
+
+function cleanAttributionValue(value?: string | null, maxLength = MAX_ATTRIBUTION_VALUE_LENGTH) {
+  const trimmed = clean(value);
+  return trimmed ? trimmed.slice(0, maxLength) : undefined;
+}
+
+function parsePositiveAmount(value?: string | null) {
+  const trimmed = clean(value);
+  if (!trimmed) return undefined;
+
+  const normalized = trimmed.replace(/,/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return undefined;
+
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount < 0) return undefined;
+  return Number(amount.toFixed(2));
 }
 
 function readCookie(request: NextRequest, name: string) {
@@ -115,42 +148,124 @@ function sanitizeNonGatewayReferrer(value?: string) {
   return isPaymentGatewayReferralUrl(sanitized) ? undefined : sanitized;
 }
 
+function sanitizeNonGatewayCampaignSourceUrl(value?: string | null) {
+  const sanitized = sanitizeTrackingUrl(value);
+  if (!sanitized) return undefined;
+  return isPaymentGatewayReferralUrl(sanitized) ? undefined : sanitized;
+}
+
 export function readOrderAttribution(
   request: NextRequest,
   options: { userId?: string | null } = {}
 ) {
-  const attribution = parseAttributionCookie(request);
-  const visitorId = normalizeMetaExternalIdValue(readCookie(request, VISITOR_ID_COOKIE));
-  const externalId = chooseCanonicalMetaExternalId({
-    visitorId,
-    userId: options.userId,
+  const trackingConsent = getServerTrackingConsentFromCookie(
+    readCookie(request, TRACKING_CONSENT_COOKIE)
+  );
+  const trackingConsentVersion = getServerTrackingConsentVersionFromCookie(
+    readCookie(request, TRACKING_CONSENT_VERSION_COOKIE)
+  );
+  const trackingDecision = resolveTrackingDecision({
+    consentState: trackingConsent,
+    consentVersion: trackingConsentVersion,
+    eventCategory: 'ADVERTISING',
   });
-  const trackingConsent = getServerTrackingConsentFromCookie(readCookie(request, TRACKING_CONSENT_COOKIE));
-  const nonEssentialTrackingAllowed = canLoadNonEssentialTracking(trackingConsent);
+  const nonEssentialTrackingAllowed = trackingDecision.allowCapiEvent;
+  const attribution = nonEssentialTrackingAllowed ? parseAttributionCookie(request) : {};
+  const visitorId = nonEssentialTrackingAllowed
+    ? normalizeMetaExternalIdValue(readCookie(request, VISITOR_ID_COOKIE))
+    : undefined;
+  const externalId = nonEssentialTrackingAllowed
+    ? chooseCanonicalMetaExternalId({
+        visitorId,
+        userId: options.userId,
+      })
+    : undefined;
+  const firstLandingUrl = nonEssentialTrackingAllowed
+    ? sanitizeTrackingUrl(readDecodedCookie(request, FIRST_LANDING_URL_COOKIE))
+    : undefined;
+  const campaignSourceUrl = nonEssentialTrackingAllowed
+    ? sanitizeNonGatewayCampaignSourceUrl(attribution.campaign_source_url) ?? firstLandingUrl
+    : undefined;
 
   return {
-    fbp: readCookie(request, '_fbp'),
-    fbc: readCookie(request, '_fbc'),
+    fbp: nonEssentialTrackingAllowed ? readCookie(request, '_fbp') : undefined,
+    fbc: nonEssentialTrackingAllowed ? readCookie(request, '_fbc') : undefined,
     externalId,
     anonymousVisitorId: visitorId,
+    tiktokClickId: nonEssentialTrackingAllowed
+      ? cleanTikTokAttributionValue(readDecodedCookie(request, TIKTOK_CLICK_ID_COOKIE))
+      : undefined,
+    tiktokTtp: nonEssentialTrackingAllowed
+      ? cleanTikTokAttributionValue(readDecodedCookie(request, TIKTOK_TTP_COOKIE))
+      : undefined,
+    tiktokExternalId: nonEssentialTrackingAllowed ? externalId : undefined,
+    // IP and user agent remain available for essential security/fraud controls.
+    // Downstream advertising dispatch is blocked by nonEssentialTrackingAllowed.
     customerIp: getCustomerIp(request),
     customerUa: clean(request.headers.get('user-agent')),
-    gaClientId: parseGaClientId(readCookie(request, '_ga')),
-    gaSessionId: readGaSessionId(request),
-    utmSource: clean(attribution.utm_source),
-    utmMedium: clean(attribution.utm_medium),
-    utmCampaign: clean(attribution.utm_campaign),
-    utmContent: clean(attribution.utm_content),
-    campaignId: clean(attribution.campaign_id),
-    adsetId: clean(attribution.adset_id),
-    adId: clean(attribution.ad_id),
-    placement: clean(attribution.placement),
-    firstLandingPath: sanitizeTrackingPath(readDecodedCookie(request, FIRST_LANDING_PATH_COOKIE)),
-    firstLandingUrl: sanitizeTrackingUrl(readDecodedCookie(request, FIRST_LANDING_URL_COOKIE)),
-    referrer: sanitizeNonGatewayReferrer(readDecodedCookie(request, REFERRER_COOKIE)),
+    gaClientId: nonEssentialTrackingAllowed
+      ? parseGaClientId(readCookie(request, '_ga'))
+      : undefined,
+    gaSessionId: nonEssentialTrackingAllowed ? readGaSessionId(request) : undefined,
+    utmSource: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.utm_source)
+      : undefined,
+    utmMedium: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.utm_medium)
+      : undefined,
+    utmCampaign: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.utm_campaign)
+      : undefined,
+    utmContent: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.utm_content)
+      : undefined,
+    utmTerm: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.utm_term)
+      : undefined,
+    campaignId: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.campaign_id)
+      : undefined,
+    adsetId: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.adset_id)
+      : undefined,
+    adId: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.ad_id)
+      : undefined,
+    placement: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.placement)
+      : undefined,
+    offerVersion: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.offer_version)
+      : undefined,
+    abVariant: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.ab_variant)
+      : undefined,
+    attributionCouponCode: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.coupon_code, 100)
+      : undefined,
+    freeDeliveryThreshold: nonEssentialTrackingAllowed
+      ? parsePositiveAmount(attribution.free_delivery_threshold)
+      : undefined,
+    landingOffer: nonEssentialTrackingAllowed
+      ? cleanAttributionValue(attribution.landing_offer)
+      : undefined,
+    campaignSourceUrl,
+    firstLandingPath: nonEssentialTrackingAllowed
+      ? sanitizeTrackingPath(readDecodedCookie(request, FIRST_LANDING_PATH_COOKIE))
+      : undefined,
+    firstLandingUrl,
+    referrer: nonEssentialTrackingAllowed
+      ? sanitizeNonGatewayReferrer(readDecodedCookie(request, REFERRER_COOKIE))
+      : undefined,
     trackingConsent,
+    trackingConsentVersion,
+    trackingPolicyReason: trackingDecision.reason,
     nonEssentialTrackingAllowed,
-    trackingFilteredReason: nonEssentialTrackingAllowed ? undefined : 'CONSENT_DENIED',
+    trackingFilteredReason: nonEssentialTrackingAllowed
+      ? undefined
+      : isConsentDenied(trackingConsent)
+        ? 'CONSENT_DENIED'
+        : 'CONSENT_NOT_GRANTED',
     trackingSchemaVersion: TRACKING_SCHEMA_VERSION,
   };
 }

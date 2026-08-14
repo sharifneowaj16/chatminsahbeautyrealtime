@@ -1,5 +1,10 @@
-﻿'use client';
+'use client';
 
+
+
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import type { GoogleAdsCampaign } from '@/types/google';
 import { generateMockGoogleAdsCampaigns, GOOGLE_COLORS } from '@/types/google';
@@ -32,6 +37,7 @@ interface GoogleAdsManagerProps {
 }
 
 export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerProps) {
+  const { requestConfirmation } = useToast();
   const [campaigns, setCampaigns] = useState<GoogleAdsCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -231,7 +237,7 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
-    if (confirm('Are you sure you want to delete this campaign?')) {
+    if (await requestConfirmation({ title: 'Delete this campaign?', description: 'The campaign will be removed from this Google Ads view.', confirmLabel: 'Delete campaign', tone: 'danger' })) {
       setCampaigns(prev => prev.filter(c => c.id !== campaignId));
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(null);
@@ -308,13 +314,13 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
             </div>
           </div>
 
-          <button
+          <Button
             onClick={() => setShowCreateCampaign(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
           >
             <Plus className="h-4 w-4" />
             Create Campaign
-          </button>
+          </Button>
         </div>
 
         {/* Campaign Stats */}
@@ -361,7 +367,7 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
       <div className="p-6 border-b border-gray-200">
         <div className="flex space-x-1">
           {(['all', 'search', 'shopping', 'display', 'youtube'] as const).map((type) => (
-            <button
+            <Button
               key={type}
               onClick={() => setFilter(type)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
@@ -371,7 +377,7 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
               }`}
             >
               {type === 'all' ? 'All Campaigns' : getCampaignTypeName(type as GoogleAdsCampaign['type'])}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -402,9 +408,9 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
                   <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-lg">
                     {campaign.budgetType === 'daily' ? '৳' : ''}{formatPrice(campaign.budget)}/day
                   </span>
-                  <button className="text-blue-600 hover:text-blue-700 underline text-sm">
+                  <Button className="text-blue-600 hover:text-blue-700 underline text-sm">
                     Edit
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -470,49 +476,49 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
               <div className="flex items-center gap-3">
                 {campaign.status === 'active' ? (
                   <>
-                    <button
+                    <Button
                       onClick={() => handlePauseCampaign(campaign.id)}
                       className="flex items-center gap-2 px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors duration-200"
                     >
                       <Pause className="h-4 w-4" />
                       Pause
-                    </button>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200">
+                    </Button>
+                    <Button className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200">
                       <BarChart className="h-4 w-4" />
                       Analytics
-                    </button>
+                    </Button>
                   </>
                 ) : campaign.status === 'paused' ? (
                   <>
-                    <button
+                    <Button
                       onClick={() => handleResumeCampaign(campaign.id)}
                       className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200"
                     >
                       <Play className="h-4 w-4" />
                       Resume
-                    </button>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200">
+                    </Button>
+                    <Button className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200">
                       <Square className="h-4 w-4" />
                       End
-                    </button>
+                    </Button>
                   </>
                 ) : (
-                  <button
+                  <Button
                     onClick={() => handleDeleteCampaign(campaign.id)}
                     className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete
-                  </button>
+                  </Button>
                 )}
 
-                <button
+                <Button
                   onClick={() => setSelectedCampaign(campaign)}
                   className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
                 >
                   <Eye className="h-4 w-4" />
                   Details
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -531,35 +537,21 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
                 : `No ${getCampaignTypeName(filter as GoogleAdsCampaign['type'])} campaigns found`
               }
             </p>
-            <button
+            <Button
               onClick={() => setShowCreateCampaign(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
             >
               <Plus className="h-4 w-4" />
               Create Campaign
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
       {/* Campaign Detail Modal */}
-      {selectedCampaign && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSelectedCampaign(null)}></div>
-
-            <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Campaign Details</h3>
-                <button
-                  onClick={() => setSelectedCampaign(null)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-300"
-                >
-                  <XCircle className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+      {selectedCampaign ? (
+        <Modal open onClose={() => setSelectedCampaign(null)} title="Campaign Details" size="xl">
+              <div>
                 <div className="space-y-6">
                   {/* Campaign Overview */}
                   <div>
@@ -632,10 +624,8 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+        </Modal>
+      ) : null}
     </div>
   );
 }

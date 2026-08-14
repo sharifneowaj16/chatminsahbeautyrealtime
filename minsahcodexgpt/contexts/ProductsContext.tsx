@@ -19,6 +19,7 @@ export interface Product {
   images?: string[];
   rating: number;
   reviews: number;
+  soldCount?: number;
   createdAt: string;
   featured: boolean;
   isNew?: boolean;
@@ -28,6 +29,8 @@ export interface Product {
   skinType?: string[];
   expiryDate?: string;
   shelfLife?: string;
+  variantCount?: number;
+  variantsFullyLoaded?: boolean;
   variants?: Array<{
     id: string;
     size?: string;
@@ -39,6 +42,7 @@ export interface Product {
   }>;
   metaTitle?: string;
   metaDescription?: string;
+  slug?: string;
   urlSlug?: string;
   tags?: string;
   shippingWeight?: string;
@@ -249,6 +253,8 @@ type ApiProduct = {
   faqSchemaReady?: boolean;
   faqs?: unknown;
   gender?: string | null;
+  variantCount?: number;
+  variantsFullyLoaded?: boolean;
   variants?: ApiVariant[];
 };
 
@@ -270,6 +276,22 @@ function imageToUrl(image: unknown): string {
   }
 
   return '';
+}
+
+function normalizeProductSlugFields(product: Pick<Product, 'id'> & Partial<Pick<Product, 'slug' | 'urlSlug'>>): Pick<Product, 'slug' | 'urlSlug'> {
+  const normalizedSlug = product.slug?.trim() || product.urlSlug?.trim() || '';
+
+  return {
+    slug: normalizedSlug,
+    urlSlug: normalizedSlug,
+  };
+}
+
+function normalizeProduct(product: Product): Product {
+  return {
+    ...product,
+    ...normalizeProductSlugFields(product),
+  };
 }
 
 function mapApiProduct(product: ApiProduct): Product {
@@ -305,7 +327,11 @@ function mapApiProduct(product: ApiProduct): Product {
     tags: product.tags ?? product.metaKeywords ?? '',
     metaTitle: product.metaTitle || '',
     metaDescription: product.metaDescription || '',
-    urlSlug: product.slug ?? product.urlSlug ?? '',
+    ...normalizeProductSlugFields({
+      id: product.id,
+      slug: product.slug,
+      urlSlug: product.urlSlug,
+    }),
     skinType: Array.isArray(product.skinType) ? product.skinType : [],
     ingredients: product.ingredients || '',
     shelfLife: product.shelfLife || '',
@@ -324,7 +350,7 @@ function mapApiProduct(product: ApiProduct): Product {
           height: product.height?.toString() || '',
         },
     isFragile: product.isFragile ?? false,
-    freeShippingEligible: product.freeShippingEligible ?? true,
+    freeShippingEligible: product.freeShippingEligible === true,
     discountPercentage: product.discountPercentage?.toString() || '',
     salePrice: product.salePrice?.toString() || '',
     offerStartDate: product.offerStartDate || '',
@@ -384,6 +410,8 @@ function mapApiProduct(product: ApiProduct): Product {
     faqSchemaReady: product.faqSchemaReady ?? false,
     faqs: product.faqs ?? null,
     gender: product.gender || '',
+    variantCount: Array.isArray(product.variants) ? product.variants.length : product.variantCount,
+    variantsFullyLoaded: Array.isArray(product.variants) ? true : product.variantsFullyLoaded,
     variants: Array.isArray(product.variants)
       ? product.variants.map((variant) => ({
           id: variant.id || '',
@@ -411,7 +439,7 @@ export function ProductsProvider({
   activeOnly = false,
   limit = 500,
 }: ProductsProviderProps) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>(() => initialProducts.map(normalizeProduct));
   const [loading, setLoading] = useState(initialProducts.length === 0);
   const [error, setError] = useState<string | null>(null);
 
@@ -476,15 +504,16 @@ export function ProductsProvider({
   }, [initialProducts.length]);
 
   const saveProducts = (newProducts: Product[]) => {
-    setProducts(newProducts);
+    setProducts(newProducts.map(normalizeProduct));
   };
 
   const addProduct = (product: Product) => {
-    setProducts((prev) => [product, ...prev]);
+    setProducts((prev) => [normalizeProduct(product), ...prev]);
   };
 
   const updateProduct = (id: string, updatedProduct: Product) => {
-    setProducts((prev) => prev.map((product) => (product.id === id ? updatedProduct : product)));
+    const normalizedProduct = normalizeProduct(updatedProduct);
+    setProducts((prev) => prev.map((product) => (product.id === id ? normalizedProduct : product)));
   };
 
   const deleteProduct = (id: string) => {
@@ -492,7 +521,7 @@ export function ProductsProvider({
   };
 
   const getProductById = (id: string) => {
-    return products.find((product) => product.id === id || product.urlSlug === id);
+    return products.find((product) => product.id === id || product.slug === id || product.urlSlug === id);
   };
 
   return (

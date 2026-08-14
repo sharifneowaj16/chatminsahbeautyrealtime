@@ -3,6 +3,8 @@
 import {
   canLoadNonEssentialTracking,
   getClientTrackingConsent,
+  getClientTrackingConsentVersion,
+  isConsentDenied,
 } from '@/lib/tracking/tracking-consent';
 
 const BOT_UA_PATTERN = /bot|crawler|spider|crawling|preview|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|headlesschrome|pingdom|uptime|monitoring|lighthouse|pagespeed/i;
@@ -32,7 +34,7 @@ export function hasInternalTrafficMarker() {
 
 export function canRunClientTracking() {
   if (typeof window === 'undefined') return false;
-  if (!canLoadNonEssentialTracking(getClientTrackingConsent())) return false;
+  if (!canLoadNonEssentialTracking(getClientTrackingConsent(), getClientTrackingConsentVersion())) return false;
   if (hasInternalTrafficMarker()) return false;
   if (isLikelyAutomatedClient()) return false;
   return true;
@@ -40,7 +42,10 @@ export function canRunClientTracking() {
 
 export function getClientTrackingBlockReason() {
   if (typeof window === 'undefined') return 'SERVER_SIDE';
-  if (!canLoadNonEssentialTracking(getClientTrackingConsent())) return 'CONSENT_DENIED_OR_REQUIRED';
+  const consent = getClientTrackingConsent();
+  if (!canLoadNonEssentialTracking(consent, getClientTrackingConsentVersion())) {
+    return isConsentDenied(consent) ? 'CONSENT_DENIED' : 'CONSENT_NOT_GRANTED';
+  }
   if (hasInternalTrafficMarker()) return 'INTERNAL_TRAFFIC';
   if (isLikelyAutomatedClient()) return 'BOT_OR_AUTOMATED_TRAFFIC';
   return null;

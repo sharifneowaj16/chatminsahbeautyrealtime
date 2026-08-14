@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { recordProductOrderCreatedInTransaction } from '@/lib/analytics/product-metrics';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import {
@@ -9,6 +10,21 @@ import {
 import { generateDailyOrderNumber } from '@/lib/order-number';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
 import { readOrderAttribution } from '@/lib/tracking/order-attribution';
+import { buildOrderTrackingExclusionData } from '@/lib/tracking/traffic-filter';
+import { resolveOrderDeliveryAccounting } from '@/lib/order-delivery-accounting';
+import { isCanonicalOnlinePaymentMethod } from '@/lib/payments/canonical-payment-contract';
+import { parseSupportedCheckoutPaymentMethod } from '@/lib/payments/payment-methods';
+import {
+  ONLINE_PAYMENT_INITIAL_STATUS,
+  ONLINE_PAYMENT_PENDING_ORDER_STATUS,
+} from '@/lib/orders/payment-lifecycle';
+import {
+  availableProductStock,
+  availableVariantStock,
+  decrementCodOrderStockInTransaction,
+  getOnlinePaymentExpiresAt,
+  reserveOnlineOrderStockInTransaction,
+} from '@/lib/online-payment-stock';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +61,13 @@ export async function POST(request: NextRequest) {
       items?: BuyNowItemInput[];
       shippingAddress?: BuyNowAddressInput;
       deliveryCharge?: number;
+      customerDeliveryCharge?: number;
+      courierDeliveryCharge?: number;
+      deliveryDiscountAmount?: number;
+      deliveryPricingSource?: string;
+      deliveryOfferType?: string;
+      deliveryOfferProductId?: string | null;
+      deliveryOfferBadgeText?: string | null;
       subtotal?: number;
       grandTotal?: number;
       parcelWeight?: number;
@@ -54,8 +77,21 @@ export async function POST(request: NextRequest) {
 
     const items = body.items ?? [];
     const shippingAddress = body.shippingAddress;
-    const paymentMethod = body.paymentMethod?.trim() || 'COD';
-    const deliveryCharge = Math.max(0, Number(body.deliveryCharge ?? 0));
+    const paymentMethod = parseSupportedCheckoutPaymentMethod(
+      body.paymentMethod?.trim() || 'cod',
+    );
+    if (!paymentMethod) {
+      return NextResponse.json(
+        { error: 'Unsupported payment method', code: 'UNSUPPORTED_PAYMENT_METHOD' },
+        { status: 400 },
+      );
+    }
+    const isOnlinePaymentOrder = isCanonicalOnlinePaymentMethod(paymentMethod);
+    const orderLifecycleNow = new Date();
+    const onlinePaymentExpiresAt = isOnlinePaymentOrder
+      ? getOnlinePaymentExpiresAt(orderLifecycleNow)
+      : null;
+    const clientDeliveryCharge = Math.max(0, Number(body.deliveryCharge ?? 0));
     const deliveryPendingConfirmation = Boolean(body.deliveryPendingConfirmation);
 
     if (!items.length) {
@@ -77,7 +113,7 @@ export async function POST(request: NextRequest) {
     const productIds = [...new Set(items.map((item) => item.productId))];
     const variantIds = [...new Set(items.map((item) => item.variantId).filter(Boolean))] as string[];
 
-    const [products, variants, configs] = await Promise.all([
+    const [products, variants, configs, customerForTracking] = await Promise.all([
       prisma.product.findMany({
         where: { id: { in: productIds }, isActive: true },
         select: {
@@ -86,10 +122,17 @@ export async function POST(request: NextRequest) {
           sku: true,
           price: true,
           quantity: true,
+          reservedQuantity: true,
           trackInventory: true,
           allowBackorder: true,
           weight: true,
           shippingWeight: true,
+          deliveryOfferEnabled: true,
+          deliveryOfferType: true,
+          deliveryOfferAmount: true,
+          deliveryOfferStartDate: true,
+          deliveryOfferEndDate: true,
+          deliveryOfferBadgeText: true,
         },
       }),
       variantIds.length
@@ -102,6 +145,7 @@ export async function POST(request: NextRequest) {
               sku: true,
               price: true,
               quantity: true,
+              reservedQuantity: true,
               attributes: true,
             },
           })
@@ -113,6 +157,10 @@ export async function POST(request: NextRequest) {
           },
         },
         select: { value: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, phone: true },
       }),
     ]);
 
@@ -133,7 +181,7 @@ export async function POST(request: NextRequest) {
         throw new Error(`VARIANT_NOT_FOUND:${item.variantId}`);
       }
 
-      const availableStock = variant ? variant.quantity : product.quantity;
+      const availableStock = variant ? availableVariantStock(variant) : availableProductStock(product);
       if (product.trackInventory && !product.allowBackorder && availableStock < quantity) {
         throw new Error(`INSUFFICIENT_STOCK:${product.id}`);
       }
@@ -176,10 +224,36 @@ export async function POST(request: NextRequest) {
       orderItems.reduce((sum, item) => sum + item.unitWeightKg * item.quantity, 0).toFixed(3)
     );
     const parcelWeightKg = Number((itemsWeightKg + packagingWeightKg).toFixed(3));
+    const deliveryAccounting = await resolveOrderDeliveryAccounting({
+      items: items.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId ?? null,
+        quantity: item.quantity,
+      })),
+      products,
+      variants,
+      address: shippingAddress,
+      client: {
+        shippingCost: clientDeliveryCharge,
+        customerDeliveryCharge: body.customerDeliveryCharge,
+        courierDeliveryCharge: body.courierDeliveryCharge,
+        deliveryDiscountAmount: body.deliveryDiscountAmount,
+        deliveryPricingSource: body.deliveryPricingSource,
+        deliveryOfferType: body.deliveryOfferType,
+        deliveryOfferProductId: body.deliveryOfferProductId ?? null,
+        deliveryOfferBadgeText: body.deliveryOfferBadgeText ?? null,
+      },
+    });
+    const deliveryCharge = deliveryAccounting.shippingCost;
     const total = Number((subtotal + deliveryCharge).toFixed(2));
     const computedSubtotal = Number(body.subtotal ?? 0);
     const computedGrandTotal = Number(body.grandTotal ?? 0);
     const orderAttribution = readOrderAttribution(request, { userId });
+    const orderTrackingExclusion = buildOrderTrackingExclusionData({
+      request,
+      email: customerForTracking?.email,
+      phones: [customerForTracking?.phone, shippingAddress.phone],
+    });
 
     const order = await prisma.$transaction(async (tx) => {
       const addressRecord = await tx.address.create({
@@ -207,6 +281,7 @@ export async function POST(request: NextRequest) {
         'Placed with Buy Now flow',
         `Parcel weight: ${parcelWeightKg.toFixed(3)}kg`,
         deliveryPendingConfirmation ? 'Delivery charge pending courier confirmation' : null,
+        deliveryAccounting.pricingNote,
         computedSubtotal && Math.abs(computedSubtotal - subtotal) > 0.01
           ? `Client subtotal mismatch: ${computedSubtotal}`
           : null,
@@ -220,17 +295,29 @@ export async function POST(request: NextRequest) {
           orderNumber,
           userId,
           addressId: addressRecord.id,
-          status: 'CONFIRMED',
-          paymentStatus: 'PENDING',
+          status: isOnlinePaymentOrder
+            ? ONLINE_PAYMENT_PENDING_ORDER_STATUS
+            : 'CONFIRMED',
+          paymentStatus: ONLINE_PAYMENT_INITIAL_STATUS,
           paymentMethod,
+          paymentExpiresAt: onlinePaymentExpiresAt,
+          stockReservedAt: isOnlinePaymentOrder ? orderLifecycleNow : null,
+          stockFinalizedAt: isOnlinePaymentOrder ? null : orderLifecycleNow,
           subtotal,
           shippingCost: deliveryCharge,
+          courierDeliveryCharge: deliveryAccounting.courierDeliveryCharge,
+          deliveryDiscountAmount: deliveryAccounting.deliveryDiscountAmount,
+          deliveryPricingSource: deliveryAccounting.deliveryPricingSource,
+          deliveryOfferType: deliveryAccounting.deliveryOfferType,
+          deliveryOfferProductId: deliveryAccounting.deliveryOfferProductId,
+          deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
           shippingMethod: 'pathao',
           taxAmount: 0,
           discountAmount: 0,
           total,
           customerNote: customerNoteParts.join(' | '),
           ...orderAttribution,
+          ...orderTrackingExclusion,
           items: {
             create: orderItems.map((item) => ({
               productId: item.productId,
@@ -245,30 +332,45 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      for (const item of orderItems) {
-        if (item.variantId) {
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: { quantity: { decrement: item.quantity } },
-          });
-        } else {
-          const product = productMap.get(item.productId);
-          if (product?.trackInventory) {
-            await tx.product.update({
-              where: { id: item.productId },
-              data: { quantity: { decrement: item.quantity } },
-            });
-          }
-        }
+      if (isOnlinePaymentOrder) {
+        await reserveOnlineOrderStockInTransaction(
+          tx,
+          orderItems.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+          })),
+          productMap,
+          variantMap,
+        );
+      } else {
+        await decrementCodOrderStockInTransaction(
+          tx,
+          orderItems.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+          })),
+          productMap,
+        );
       }
+
+      await recordProductOrderCreatedInTransaction(
+        tx,
+        orderItems.map((item) => ({ productId: item.productId, quantity: item.quantity, total: item.total })),
+        undefined,
+        { skip: Boolean(orderTrackingExclusion.isTest), reason: orderTrackingExclusion.trackingFilteredReason ?? undefined }
+      );
 
       return createdOrder;
     });
 
-    const pathaoDelivery = await createPathaoDeliveryForOrder(order.id, {
-      preserveOrderStatus: true,
-      saveFailureStatus: true,
-    });
+    const pathaoDelivery = isOnlinePaymentOrder
+      ? { skipped: true, reason: 'ONLINE_PAYMENT_PENDING' }
+      : await createPathaoDeliveryForOrder(order.id, {
+          preserveOrderStatus: true,
+          saveFailureStatus: true,
+        });
 
     const normalizedPaymentMethod = paymentMethod.trim().toLowerCase();
     const redirectURL = ['bkash', 'nagad'].includes(normalizedPaymentMethod)
@@ -281,6 +383,15 @@ export async function POST(request: NextRequest) {
       orderNumber: order.orderNumber,
       subtotal,
       deliveryCharge,
+      deliveryAccounting: {
+        shippingCost: deliveryCharge,
+        courierDeliveryCharge: deliveryAccounting.courierDeliveryCharge,
+        deliveryDiscountAmount: deliveryAccounting.deliveryDiscountAmount,
+        deliveryPricingSource: deliveryAccounting.deliveryPricingSource,
+        deliveryOfferType: deliveryAccounting.deliveryOfferType,
+        deliveryOfferProductId: deliveryAccounting.deliveryOfferProductId,
+        quoteVerified: deliveryAccounting.quoteVerified,
+      },
       grandTotal: total,
       parcelWeightKg,
       estimatedDelivery: shippingAddress.city.toLowerCase().includes('dhaka') ? '1-2 days' : '2-3 days',
@@ -293,6 +404,13 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error) {
       if (error.message.startsWith('PRODUCT_NOT_FOUND:') || error.message.startsWith('VARIANT_NOT_FOUND:')) {
         return NextResponse.json({ error: 'One or more selected items are unavailable' }, { status: 400 });
+      }
+
+      if (
+        error.message === 'ONLINE_STOCK_RESERVATION_FAILED' ||
+        error.message === 'COD_STOCK_DECREMENT_FAILED'
+      ) {
+        return NextResponse.json({ error: 'Some selected quantity is no longer available' }, { status: 409 });
       }
 
       if (error.message.startsWith('INSUFFICIENT_STOCK:')) {

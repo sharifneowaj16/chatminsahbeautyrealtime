@@ -2,29 +2,31 @@ import 'server-only';
 import crypto from 'node:crypto';
 import prisma from '@/lib/prisma';
 import {
-  buildMetaCatalogContentIds,
-  buildMetaCatalogContents,
-  getMetaCatalogContentType,
+  buildMetaCatalogData,
+  prepareMetaCatalogPayload,
+  type MetaCatalogData,
 } from '@/lib/tracking/meta-content-id';
 import { sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
 import { normalizeMetaExternalId } from '@/lib/tracking/meta-external-id';
 import { classifyStoredOrderTraffic } from '@/lib/tracking/traffic-filter';
+import {
+  getMetaTestEventCode,
+  TRACKING_SCHEMA_VERSION,
+  withMetaSafePayloadSchema,
+  withMetaSchemaVersion,
+} from '@/lib/tracking/meta-schema';
+import type { MetaBusinessSdkRequestInput } from '@/lib/tracking/meta-business-sdk';
+import { sendMetaCapiWithPhase28Cutover } from '@/lib/meta-platform/migration/phase28-capi-facade';
+import { getTrackingFailureLogRetentionMetadata } from '@/lib/tracking/failure-retention';
+import { logOperationalError } from '@/lib/observability/logger';
+import { buildMetaPurchaseEventId } from '@/lib/meta/capi/event-id';
+import { computeMetaAdaptiveCooldownMs, parseMetaRateLimitHeaders } from '@/lib/jobs/rate-limit';
 
-const META_GRAPH_API_VERSION = process.env.META_GRAPH_API_VERSION ?? 'v20.0';
-const META_PIXEL_ID =
-  process.env.META_PIXEL_ID ??
-  process.env.NEXT_PUBLIC_META_PIXEL_ID ??
-  process.env.NEXT_PUBLIC_FB_PIXEL_ID ??
-  process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
-const META_CAPI_ACCESS_TOKEN =
-  process.env.META_CAPI_ACCESS_TOKEN ?? process.env.FACEBOOK_CONVERSION_API_TOKEN;
-const META_TEST_EVENT_CODE = process.env.META_TEST_EVENT_CODE;
-const META_CAPI_TIMEOUT_MS = Number(process.env.META_CAPI_TIMEOUT_MS ?? 10_000) || 10_000;
+const META_TEST_EVENT_CODE = getMetaTestEventCode();
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
   'https://minsahbeauty.cloud';
-const TRACKING_SCHEMA_VERSION = 'mb_tracking_v1';
 
 function getSafePurchaseEventSourceUrl(firstLandingUrl?: string | null) {
   const sanitizedFirstLandingUrl = sanitizeTrackingUrl(firstLandingUrl);
@@ -105,22 +107,6 @@ function shouldRetryMetaCapi(status?: number, errorCode?: string | number | null
   return false;
 }
 
-async function postMetaCapiPayload(url: string, payload: unknown) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), META_CAPI_TIMEOUT_MS);
-
-  try {
-    return await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
 function isCodPaymentMethod(paymentMethod?: string | null) {
   const normalized = paymentMethod?.toLowerCase() ?? '';
   return normalized.includes('cod') || normalized.includes('cash');
@@ -186,6 +172,52 @@ function getOrderContentName(items: Array<{ name?: string | null }>) {
     .slice(0, 300);
 }
 
+type PurchaseAttributionOrder = {
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  campaignId?: string | null;
+  adsetId?: string | null;
+  adId?: string | null;
+  placement?: string | null;
+  offerVersion?: string | null;
+  abVariant?: string | null;
+  attributionCouponCode?: string | null;
+  couponCode?: string | null;
+  freeDeliveryThreshold?: unknown;
+  landingOffer?: string | null;
+  campaignSourceUrl?: string | null;
+};
+
+function buildPurchaseAttributionCustomData(order: PurchaseAttributionOrder) {
+  const freeDeliveryThreshold = decimalToNumber(order.freeDeliveryThreshold);
+  const campaignSourceUrl = sanitizeTrackingUrl(order.campaignSourceUrl);
+
+  return {
+    ...(order.utmSource && { utm_source: order.utmSource }),
+    ...(order.utmMedium && { utm_medium: order.utmMedium }),
+    ...(order.utmCampaign && { utm_campaign: order.utmCampaign }),
+    ...(order.utmContent && { utm_content: order.utmContent }),
+    ...(order.utmTerm && { utm_term: order.utmTerm }),
+    ...(order.campaignId && { campaign_id: order.campaignId }),
+    ...(order.adsetId && { adset_id: order.adsetId }),
+    ...(order.adId && { ad_id: order.adId }),
+    ...(order.placement && { placement: order.placement }),
+    ...(order.offerVersion && { offer_version: order.offerVersion }),
+    ...(order.abVariant && { ab_variant: order.abVariant }),
+    ...(order.couponCode && { applied_coupon_code: order.couponCode }),
+    ...(order.attributionCouponCode && { attribution_coupon_code: order.attributionCouponCode }),
+    ...((order.couponCode || order.attributionCouponCode) && {
+      coupon_code: order.couponCode ?? order.attributionCouponCode,
+    }),
+    ...(freeDeliveryThreshold > 0 && { free_delivery_threshold: freeDeliveryThreshold }),
+    ...(order.landingOffer && { landing_offer: order.landingOffer }),
+    ...(campaignSourceUrl && { campaign_source_url: campaignSourceUrl }),
+  };
+}
+
 async function logMetaFailure(params: {
   orderId?: string;
   eventName: string;
@@ -206,6 +238,14 @@ async function logMetaFailure(params: {
   hasIp?: boolean;
   hasUa?: boolean;
 }) {
+  const retention = getTrackingFailureLogRetentionMetadata({
+    provider: 'META',
+    statusCode: params.statusCode,
+    errorCode: params.errorCode,
+    errorMessage: params.errorMessage,
+    finalFailed: params.finalFailed ?? false,
+  });
+
   await prisma.metaCapiFailure.create({
     data: {
       orderId: params.orderId,
@@ -219,6 +259,8 @@ async function logMetaFailure(params: {
       errorMessage: params.errorMessage,
       retryCount: params.retryCount ?? 0,
       finalFailed: params.finalFailed ?? false,
+      failureCategory: retention.failureCategory,
+      cleanupAfter: retention.cleanupAfter,
       safePayload: toPrismaJson(params.safePayload),
       responsePayload: toPrismaJson(params.responsePayload),
       hasFbp: params.hasFbp ?? false,
@@ -232,31 +274,173 @@ async function logMetaFailure(params: {
   });
 }
 
+
+class LoggedMetaPurchaseRetryableError extends Error {
+  readonly metaCapiFailureAlreadyLogged = true;
+  readonly providerStatus?: number;
+  readonly retryAfterMs?: number;
+
+  constructor(message: string, providerStatus?: number, retryAfterMs?: number) {
+    super(message);
+    this.name = 'LoggedMetaPurchaseRetryableError';
+    this.providerStatus = providerStatus;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+function isLoggedMetaPurchaseRetryableError(
+  error: unknown
+): error is LoggedMetaPurchaseRetryableError {
+  return (
+    error instanceof LoggedMetaPurchaseRetryableError ||
+    (typeof error === 'object' &&
+      error !== null &&
+      'metaCapiFailureAlreadyLogged' in error &&
+      (error as { metaCapiFailureAlreadyLogged?: unknown }).metaCapiFailureAlreadyLogged === true)
+  );
+}
+
+async function deliverPurchaseWithBusinessSdk(params: {
+  orderId: string;
+  eventId: string;
+  payload: MetaBusinessSdkRequestInput;
+  safePayload: Record<string, unknown>;
+  retryCount: number;
+  finalAttempt: boolean;
+  hasFbp: boolean;
+  hasFbc: boolean;
+  hasExternalId: boolean;
+  hasEmailHash: boolean;
+  hasPhoneHash: boolean;
+  hasIp: boolean;
+  hasUa: boolean;
+}) {
+  try {
+    const result = await sendMetaCapiWithPhase28Cutover({
+      payload: params.payload,
+      correlationId: params.eventId,
+    });
+    const responsePayload = result.responsePayload;
+
+    if (result.ok) {
+      await markMetaPurchaseSent(params.orderId, params.eventId);
+      console.log(
+        `[CAPI][Phase28][Purchase] Event sent successfully: ${params.eventId}`
+      );
+      return {
+        ok: true,
+        retry: false,
+        response: responsePayload,
+        transport: result.transport,
+        cutoverMode: result.cutoverMode,
+        graphApiVersion: result.graphApiVersion,
+        sdkVersion: result.sdkVersion,
+        credentialVersion: result.credentialVersion,
+      };
+    }
+
+    const metaError = responsePayload?.error;
+    const errorCode = metaError?.code ? String(metaError.code) : undefined;
+    const retry = shouldRetryMetaCapi(result.status, errorCode);
+
+    await logMetaFailure({
+      orderId: params.orderId,
+      eventName: 'Purchase',
+      eventId: params.eventId,
+      statusCode: result.status,
+      errorCode,
+      errorSubcode: metaError?.error_subcode ? String(metaError.error_subcode) : undefined,
+      errorMessage:
+        metaError?.message ??
+        `Meta CAPI Business SDK failed with status ${result.status}`,
+      retryCount: params.retryCount,
+      finalFailed: !retry || params.finalAttempt,
+      safePayload: params.safePayload,
+      responsePayload,
+      hasFbp: params.hasFbp,
+      hasFbc: params.hasFbc,
+      hasExternalId: params.hasExternalId,
+      hasEmailHash: params.hasEmailHash,
+      hasPhoneHash: params.hasPhoneHash,
+      hasIp: params.hasIp,
+      hasUa: params.hasUa,
+    });
+
+    if (String(errorCode) === '190') {
+      logOperationalError(
+        'tracking.meta_capi.invalid_access_token',
+        new Error('Meta CAPI access token is invalid or expired.'),
+        {
+          eventName: 'Purchase',
+          eventId: params.eventId,
+          orderId: params.orderId,
+          statusCode: result.status,
+          errorCode,
+        }
+      );
+    }
+
+    await releaseMetaPurchaseClaim(params.orderId, params.eventId);
+
+    if (retry) {
+      const rateHeaders = parseMetaRateLimitHeaders(result.responseHeaders);
+      throw new LoggedMetaPurchaseRetryableError(
+        `Retryable Meta CAPI Business SDK error: ${result.status}`,
+        result.status,
+        computeMetaAdaptiveCooldownMs({ status: result.status, headers: rateHeaders })
+      );
+    }
+
+    return {
+      ok: false,
+      retry: false,
+      reason: 'META_CAPI_PERMANENT_FAILURE',
+      transport: result.transport,
+      cutoverMode: result.cutoverMode,
+      graphApiVersion: result.graphApiVersion,
+      sdkVersion: result.sdkVersion,
+    };
+  } catch (error) {
+    if (isLoggedMetaPurchaseRetryableError(error)) {
+      throw error;
+    }
+
+    await logMetaFailure({
+      orderId: params.orderId,
+      eventName: 'Purchase',
+      eventId: params.eventId,
+      errorCode: 'BUSINESS_SDK_NETWORK_OR_RUNTIME_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown Business SDK error',
+      retryCount: params.retryCount,
+      finalFailed: params.finalAttempt,
+      safePayload: params.safePayload,
+      hasFbp: params.hasFbp,
+      hasFbc: params.hasFbc,
+      hasExternalId: params.hasExternalId,
+      hasEmailHash: params.hasEmailHash,
+      hasPhoneHash: params.hasPhoneHash,
+      hasIp: params.hasIp,
+      hasUa: params.hasUa,
+    });
+
+    await releaseMetaPurchaseClaim(params.orderId, params.eventId);
+    throw error;
+  }
+}
+
 export async function sendCodPurchaseToMeta(params: {
   orderId: string;
   retryCount?: number;
   finalAttempt?: boolean;
 }) {
   const { orderId, retryCount = 0, finalAttempt = false } = params;
-  const eventId = `Purchase-${orderId}`;
-
-  if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) {
-    await logMetaFailure({
-      orderId,
-      eventName: 'Purchase',
-      eventId,
-      errorCode: 'META_ENV_MISSING',
-      errorMessage: 'META_PIXEL_ID or META_CAPI_ACCESS_TOKEN is missing.',
-      retryCount,
-      finalFailed: true,
-    });
-    return { ok: false, retry: false, reason: 'META_ENV_MISSING' };
-  }
+  const eventId = buildMetaPurchaseEventId(orderId);
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
       user: true,
+      shippingAddress: { select: { phone: true } },
       items: { include: { product: true, variant: true } },
     },
   });
@@ -340,9 +524,9 @@ export async function sendCodPurchaseToMeta(params: {
     ...item,
     price: decimalToNumber(item.price),
   }));
-  const contents = buildMetaCatalogContents(catalogItems);
-  const contentIds = buildMetaCatalogContentIds(catalogItems);
-  const contentType = getMetaCatalogContentType(catalogItems);
+  const resolvedMetaCatalogData = buildMetaCatalogData(catalogItems);
+  const catalogShape = resolvedMetaCatalogData ? 'product_only' : 'empty';
+  const metaCatalogData = prepareMetaCatalogPayload(resolvedMetaCatalogData ?? {}) as Partial<MetaCatalogData>;
   const contentName = getOrderContentName(order.items);
   const orderValue = decimalToNumber(order.total);
 
@@ -388,16 +572,15 @@ export async function sendCodPurchaseToMeta(params: {
           ...(order.customerIp && { client_ip_address: order.customerIp }),
           ...(order.customerUa && { client_user_agent: order.customerUa }),
         },
-        custom_data: {
+        custom_data: withMetaSchemaVersion({
           currency: 'BDT',
           value: orderValue,
           order_id: String(order.id),
-          content_ids: contentIds,
-          content_type: contentType,
+          ...metaCatalogData,
           ...(contentName && { content_name: contentName }),
-          contents,
           num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
-        },
+          ...buildPurchaseAttributionCustomData(order),
+        }),
       },
     ],
     ...(process.env.NODE_ENV !== 'production' && META_TEST_EVENT_CODE
@@ -405,14 +588,22 @@ export async function sendCodPurchaseToMeta(params: {
       : {}),
   };
 
-  const safePayload = {
+  const safePayload = withMetaSafePayloadSchema({
     event_name: 'Purchase',
     event_id: eventId,
     order_id: order.id,
     event_time: eventTime,
     event_time_source: 'order.phoneConfirmedAt',
+    source: 'cod_phone_confirmed',
     value: orderValue,
     currency: 'BDT',
+    catalog_shape: catalogShape,
+    content_type: metaCatalogData.content_type,
+    content_id_count: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids.length : 0,
+    contents_count: Array.isArray(metaCatalogData.contents) ? metaCatalogData.contents.length : 0,
+    num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    custom_data_keys: Object.keys(payload.data[0].custom_data).sort(),
+    attribution_keys: Object.keys(buildPurchaseAttributionCustomData(order)).sort(),
     has_fbp: Boolean(order.fbp),
     has_fbc: Boolean(order.fbc),
     has_external_id: Boolean(externalIdHash),
@@ -420,92 +611,23 @@ export async function sendCodPurchaseToMeta(params: {
     has_phone_hash: Boolean(phoneHash),
     has_ip: Boolean(order.customerIp),
     has_ua: Boolean(order.customerUa),
-  };
+  });
 
-  const url = `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${META_PIXEL_ID}/events?access_token=${encodeURIComponent(META_CAPI_ACCESS_TOKEN)}`;
-
-  try {
-    const res = await postMetaCapiPayload(url, payload);
-
-    const responsePayload = (await res.json().catch(() => null)) as {
-      error?: {
-        code?: string | number;
-        error_subcode?: string | number;
-        message?: string;
-      };
-    } | null;
-
-    if (res.ok) {
-      await markMetaPurchaseSent(order.id, eventId);
-
-      return { ok: true, retry: false, response: responsePayload };
-    }
-
-    const metaError = responsePayload?.error;
-    const errorCode = metaError?.code ? String(metaError.code) : undefined;
-    const retry = shouldRetryMetaCapi(res.status, errorCode);
-
-    await logMetaFailure({
-      orderId: order.id,
-      eventName: 'Purchase',
-      eventId,
-      statusCode: res.status,
-      errorCode,
-      errorSubcode: metaError?.error_subcode ? String(metaError.error_subcode) : undefined,
-      errorMessage: metaError?.message ?? `Meta CAPI failed with status ${res.status}`,
-      retryCount,
-      finalFailed: !retry || finalAttempt,
-      safePayload,
-      responsePayload,
-      hasFbp: Boolean(order.fbp),
-      hasFbc: Boolean(order.fbc),
-      hasExternalId: Boolean(externalIdHash),
-      hasEmailHash: Boolean(emailHash),
-      hasPhoneHash: Boolean(phoneHash),
-      hasIp: Boolean(order.customerIp),
-      hasUa: Boolean(order.customerUa),
-    });
-
-    if (String(errorCode) === '190') {
-      console.error('[CRITICAL][META_CAPI] Invalid access token or expired token.', {
-        eventName: 'Purchase',
-        eventId,
-        orderId: order.id,
-        statusCode: res.status,
-        errorCode,
-      });
-    }
-
-    if (retry) {
-      await releaseMetaPurchaseClaim(order.id, eventId);
-      throw new Error(`Retryable Meta CAPI error: ${res.status}`);
-    }
-
-    await releaseMetaPurchaseClaim(order.id, eventId);
-
-    return { ok: false, retry: false, reason: 'META_CAPI_PERMANENT_FAILURE' };
-  } catch (error) {
-    await logMetaFailure({
-      orderId: order.id,
-      eventName: 'Purchase',
-      eventId,
-      errorCode: 'NETWORK_OR_RETRYABLE_ERROR',
-      errorMessage: error instanceof Error ? error.message : 'Unknown network/retryable error',
-      retryCount,
-      finalFailed: finalAttempt,
-      safePayload,
-      hasFbp: Boolean(order.fbp),
-      hasFbc: Boolean(order.fbc),
-      hasExternalId: Boolean(externalIdHash),
-      hasEmailHash: Boolean(emailHash),
-      hasPhoneHash: Boolean(phoneHash),
-      hasIp: Boolean(order.customerIp),
-      hasUa: Boolean(order.customerUa),
-    });
-
-    await releaseMetaPurchaseClaim(order.id, eventId);
-    throw error;
-  }
+  return deliverPurchaseWithBusinessSdk({
+    orderId: order.id,
+    eventId,
+    payload: payload as MetaBusinessSdkRequestInput,
+    safePayload,
+    retryCount,
+    finalAttempt,
+    hasFbp: Boolean(order.fbp),
+    hasFbc: Boolean(order.fbc),
+    hasExternalId: Boolean(externalIdHash),
+    hasEmailHash: Boolean(emailHash),
+    hasPhoneHash: Boolean(phoneHash),
+    hasIp: Boolean(order.customerIp),
+    hasUa: Boolean(order.customerUa),
+  });
 }
 
 export async function sendOnlinePaidPurchaseToMeta(params: {
@@ -514,25 +636,13 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
   finalAttempt?: boolean;
 }) {
   const { orderId, retryCount = 0, finalAttempt = false } = params;
-  const eventId = `Purchase-${orderId}`;
-
-  if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) {
-    await logMetaFailure({
-      orderId,
-      eventName: 'Purchase',
-      eventId,
-      errorCode: 'META_ENV_MISSING',
-      errorMessage: 'META_PIXEL_ID or META_CAPI_ACCESS_TOKEN is missing.',
-      retryCount,
-      finalFailed: true,
-    });
-    return { ok: false, retry: false, reason: 'META_ENV_MISSING' };
-  }
+  const eventId = buildMetaPurchaseEventId(orderId);
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
       user: true,
+      shippingAddress: { select: { phone: true } },
       items: { include: { product: true, variant: true } },
     },
   });
@@ -620,9 +730,9 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
     ...item,
     price: decimalToNumber(item.price),
   }));
-  const contents = buildMetaCatalogContents(catalogItems);
-  const contentIds = buildMetaCatalogContentIds(catalogItems);
-  const contentType = getMetaCatalogContentType(catalogItems);
+  const resolvedMetaCatalogData = buildMetaCatalogData(catalogItems);
+  const catalogShape = resolvedMetaCatalogData ? 'product_only' : 'empty';
+  const metaCatalogData = prepareMetaCatalogPayload(resolvedMetaCatalogData ?? {}) as Partial<MetaCatalogData>;
   const contentName = getOrderContentName(order.items);
   const orderValue = decimalToNumber(order.total);
 
@@ -721,16 +831,15 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
           ...(order.customerIp && { client_ip_address: order.customerIp }),
           ...(order.customerUa && { client_user_agent: order.customerUa }),
         },
-        custom_data: {
+        custom_data: withMetaSchemaVersion({
           currency: 'BDT',
           value: orderValue,
           order_id: String(order.id),
-          content_ids: contentIds,
-          content_type: contentType,
+          ...metaCatalogData,
           ...(contentName && { content_name: contentName }),
-          contents,
           num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
-        },
+          ...buildPurchaseAttributionCustomData(order),
+        }),
       },
     ],
     ...(process.env.NODE_ENV !== 'production' && META_TEST_EVENT_CODE
@@ -738,14 +847,22 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
       : {}),
   };
 
-  const safePayload = {
+  const safePayload = withMetaSafePayloadSchema({
     event_name: 'Purchase',
     event_id: eventId,
     order_id: order.id,
     event_time: eventTime,
     event_time_source: 'order.paymentPaidAt',
+    source: 'online_paid',
     value: orderValue,
     currency: 'BDT',
+    catalog_shape: catalogShape,
+    content_type: metaCatalogData.content_type,
+    content_id_count: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids.length : 0,
+    contents_count: Array.isArray(metaCatalogData.contents) ? metaCatalogData.contents.length : 0,
+    num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    custom_data_keys: Object.keys(payload.data[0].custom_data).sort(),
+    attribution_keys: Object.keys(buildPurchaseAttributionCustomData(order)).sort(),
     has_fbp: Boolean(order.fbp),
     has_fbc: Boolean(order.fbc),
     has_external_id: Boolean(externalIdHash),
@@ -753,90 +870,21 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
     has_phone_hash: Boolean(phoneHash),
     has_ip: Boolean(order.customerIp),
     has_ua: Boolean(order.customerUa),
-  };
+  });
 
-  const url = `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${META_PIXEL_ID}/events?access_token=${encodeURIComponent(META_CAPI_ACCESS_TOKEN)}`;
-
-  try {
-    const res = await postMetaCapiPayload(url, payload);
-
-    const responsePayload = (await res.json().catch(() => null)) as {
-      error?: {
-        code?: string | number;
-        error_subcode?: string | number;
-        message?: string;
-      };
-    } | null;
-
-    if (res.ok) {
-      await markMetaPurchaseSent(order.id, eventId);
-
-      return { ok: true, retry: false, response: responsePayload };
-    }
-
-    const metaError = responsePayload?.error;
-    const errorCode = metaError?.code ? String(metaError.code) : undefined;
-    const retry = shouldRetryMetaCapi(res.status, errorCode);
-
-    await logMetaFailure({
-      orderId: order.id,
-      eventName: 'Purchase',
-      eventId,
-      statusCode: res.status,
-      errorCode,
-      errorSubcode: metaError?.error_subcode ? String(metaError.error_subcode) : undefined,
-      errorMessage: metaError?.message ?? `Meta CAPI failed with status ${res.status}`,
-      retryCount,
-      finalFailed: !retry || finalAttempt,
-      safePayload,
-      responsePayload,
-      hasFbp: Boolean(order.fbp),
-      hasFbc: Boolean(order.fbc),
-      hasExternalId: Boolean(externalIdHash),
-      hasEmailHash: Boolean(emailHash),
-      hasPhoneHash: Boolean(phoneHash),
-      hasIp: Boolean(order.customerIp),
-      hasUa: Boolean(order.customerUa),
-    });
-
-    if (String(errorCode) === '190') {
-      console.error('[CRITICAL][META_CAPI] Invalid access token or expired token.', {
-        eventName: 'Purchase',
-        eventId,
-        orderId: order.id,
-        statusCode: res.status,
-        errorCode,
-      });
-    }
-
-    if (retry) {
-      await releaseMetaPurchaseClaim(order.id, eventId);
-      throw new Error(`Retryable Meta CAPI error: ${res.status}`);
-    }
-
-    await releaseMetaPurchaseClaim(order.id, eventId);
-
-    return { ok: false, retry: false, reason: 'META_CAPI_PERMANENT_FAILURE' };
-  } catch (error) {
-    await logMetaFailure({
-      orderId: order.id,
-      eventName: 'Purchase',
-      eventId,
-      errorCode: 'NETWORK_OR_RETRYABLE_ERROR',
-      errorMessage: error instanceof Error ? error.message : 'Unknown network/retryable error',
-      retryCount,
-      finalFailed: finalAttempt,
-      safePayload,
-      hasFbp: Boolean(order.fbp),
-      hasFbc: Boolean(order.fbc),
-      hasExternalId: Boolean(externalIdHash),
-      hasEmailHash: Boolean(emailHash),
-      hasPhoneHash: Boolean(phoneHash),
-      hasIp: Boolean(order.customerIp),
-      hasUa: Boolean(order.customerUa),
-    });
-
-    await releaseMetaPurchaseClaim(order.id, eventId);
-    throw error;
-  }
+  return deliverPurchaseWithBusinessSdk({
+    orderId: order.id,
+    eventId,
+    payload: payload as MetaBusinessSdkRequestInput,
+    safePayload,
+    retryCount,
+    finalAttempt,
+    hasFbp: Boolean(order.fbp),
+    hasFbc: Boolean(order.fbc),
+    hasExternalId: Boolean(externalIdHash),
+    hasEmailHash: Boolean(emailHash),
+    hasPhoneHash: Boolean(phoneHash),
+    hasIp: Boolean(order.customerIp),
+    hasUa: Boolean(order.customerUa),
+  });
 }

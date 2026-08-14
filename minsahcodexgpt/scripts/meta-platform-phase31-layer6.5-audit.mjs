@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+let passed = 0;
+function check(name, condition) { if (!condition) { console.error(`FAIL ${name}`); process.exitCode = 1; return; } passed += 1; console.log(`PASS ${name}`); }
+const s0 = fs.readFileSync('lib/meta-platform/queue/social-attachment-validation-processor.ts', 'utf8');
+const s1 = fs.readFileSync('lib/meta-platform/repositories/facebook-inbox.ts', 'utf8');
+const s2 = fs.readFileSync('lib/social/socialMessageIngest.ts', 'utf8');
+const s3 = fs.readFileSync('realtime-service/.env.example', 'utf8');
+const s4 = fs.readFileSync('realtime-service/src/app.ts', 'utf8');
+const s5 = fs.readFileSync('realtime-service/src/index.ts', 'utf8');
+check('facebook direct media deferred', s1.includes('deferAttachmentDownload: true'));
+check('ingest supports deferred media', s2.includes('deferAttachmentDownload'));
+check('shared media pipeline used', s0.includes('runMetaSocialAttachmentValidationPipeline'));
+check('attachment ready event', s0.includes("state: 'READY'"));
+check('attachment rejected event', s0.includes("state: 'REJECTED'"));
+check('attachment failed event', s0.includes("state: 'FAILED'"));
+check('media serving disabled', s4.includes('mediaServingEnabled: false'));
+check('token health main app owner', s4.includes('main-app-meta-connection'));
+check('permission health main app owner', s4.includes('main-app-page-health'));
+check('legacy token health isolated', s5.includes("./facebook/token-health"));
+check('legacy media retry isolated', s5.includes("./facebook/media-retry"));
+check('bridge env documented', s3.includes('REALTIME_FACEBOOK_MODE=bridge'));
+if (!process.exitCode) console.log(`Layer 6.5 audit: ${passed}/12 PASS`);

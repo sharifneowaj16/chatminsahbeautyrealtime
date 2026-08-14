@@ -13,6 +13,8 @@ import { processIncomingInboxMessage } from '../facebook/inbox-processor'
 import { scheduleInboxReplayJob } from '../facebook/replay-queue'
 import { verifyFacebookSignature } from '../facebook/signature'
 import type { FbWebhookBody, ParsedFbEvent } from '../facebook/types'
+import { getRealtimeFacebookCutoverStatus } from '../facebook/cutover'
+import { forwardFacebookWebhookToMainApp } from '../realtime/main-app-facebook-handoff'
 import { publishInboxEvent } from '../realtime/pubsub'
 
 export const webhookRouter = Router()
@@ -60,10 +62,22 @@ webhookRouter.post('/meta', async (req: Request, res: Response) => {
   // Meta should get a fast ACK to avoid retries and duplicate pressure.
   res.status(200).json({ ok: true, accepted: events.length })
 
-  void processWebhookBatch({
+  const processing = processWebhookBatch({
     events,
     auditId: audit.id,
   })
+  const cutover = getRealtimeFacebookCutoverStatus()
+  const shadowMirror = cutover.shadowPlatformEvaluationEnabled
+    ? forwardFacebookWebhookToMainApp({
+        body: rawBody,
+        providerSignature: typeof signatureHeader === 'string' ? signatureHeader : undefined,
+      }).then((response) => {
+        if (response.status < 200 || response.status >= 300) {
+          console.error('[webhook] platform shadow mirror rejected', { status: response.status })
+        }
+      })
+    : Promise.resolve()
+  void Promise.allSettled([processing, shadowMirror])
 })
 
 async function processWebhookBatch(input: {

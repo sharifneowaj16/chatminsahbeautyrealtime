@@ -1,5 +1,15 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import type { RemarketingData } from '@/types/google';
 import { generateMockRemarketingData, GOOGLE_COLORS } from '@/types/google';
@@ -35,6 +45,7 @@ export default function RemarketingCard({
   onDateRangeChange,
   className = ''
 }: RemarketingCardProps) {
+  const { pushToast } = useToast();
   const [data, setData] = useState<RemarketingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +89,7 @@ export default function RemarketingCard({
       setNewAudience({});
       setShowCreateAudience(false);
       // In real app, this would create the audience
-      alert('Audience created successfully!');
+      pushToast({ tone: 'success', description: 'Audience created successfully!' });
     } catch (err) {
       console.error('Error creating audience:', err);
     }
@@ -94,7 +105,7 @@ export default function RemarketingCard({
       setNewCampaign({});
       setShowCreateCampaign(false);
       // In real app, this would create the campaign
-      alert('Remarketing campaign created successfully!');
+      pushToast({ tone: 'success', description: 'Remarketing campaign created successfully!' });
     } catch (err) {
       console.error('Error creating campaign:', err);
     }
@@ -177,7 +188,7 @@ export default function RemarketingCard({
             </div>
           </div>
 
-          <select
+          <Select
             value={dateRange}
             onChange={(e) => onDateRangeChange?.(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -186,7 +197,7 @@ export default function RemarketingCard({
             <option value="28days">Last 28 days</option>
             <option value="90days">Last 90 days</option>
             <option value="custom">Custom range</option>
-          </select>
+          </Select>
         </div>
 
         {/* Performance Summary */}
@@ -246,7 +257,7 @@ export default function RemarketingCard({
             { id: 'campaigns', name: 'Campaigns', icon: RefreshCw },
             { id: 'pixels', name: 'Pixels', icon: Eye }
           ].map((tab) => (
-            <button
+            <Button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -259,7 +270,7 @@ export default function RemarketingCard({
                 <tab.icon className="h-4 w-4" />
                 {tab.name}
               </div>
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
@@ -319,13 +330,9 @@ export default function RemarketingCard({
                       <p className="text-xs text-gray-500">{stage.count.toLocaleString()} users</p>
                     </div>
                     <div className="flex-1">
-                      <div className="bg-gray-200 rounded-full h-6 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full flex items-center justify-center text-xs text-white font-medium"
-                          style={{ width: `${stage.percentage}%` }}
-                        >
-                          {stage.percentage.toFixed(1)}%
-                        </div>
+                      <div className="flex items-center gap-3">
+                        <progress className="h-3 w-full accent-minsah-action-primary" max={100} value={stage.percentage} aria-label={`${stage.name} audience percentage`} />
+                        <span className="w-14 text-right text-xs font-bold text-minsah-text-muted">{stage.percentage.toFixed(1)}%</span>
                       </div>
                     </div>
                   </div>
@@ -363,13 +370,13 @@ export default function RemarketingCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Custom Audiences</h3>
-              <button
+              <Button
                 onClick={() => setShowCreateAudience(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 <Plus className="h-4 w-4" />
                 Create Audience
-              </button>
+              </Button>
             </div>
 
             {/* Create Audience Form */}
@@ -377,7 +384,7 @@ export default function RemarketingCard({
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <h4 className="font-medium text-gray-900 mb-3">Create New Audience</h4>
                 <div className="space-y-3">
-                  <select
+                  <Select
                     value={newAudience.type || 'website'}
                     onChange={(e) => setNewAudience({ ...newAudience, type: e.target.value as any })}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -387,9 +394,9 @@ export default function RemarketingCard({
                     <option value="cart">Abandoned Cart</option>
                     <option value="page">Page Visitors</option>
                     <option value="custom">Custom Combination</option>
-                  </select>
+                  </Select>
 
-                  <input
+                  <Input
                     type="text"
                     value={newAudience.name || ''}
                     onChange={(e) => setNewAudience({ ...newAudience, name: e.target.value })}
@@ -397,7 +404,7 @@ export default function RemarketingCard({
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
 
-                  <textarea
+                  <Textarea
                     value={newAudience.rules || ''}
                     onChange={(e) => setNewAudience({ ...newAudience, rules: e.target.value })}
                     placeholder="Audience rules (e.g., visited product pages in last 30 days)"
@@ -406,14 +413,14 @@ export default function RemarketingCard({
                   />
 
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={handleCreateAudience}
                       disabled={!newAudience.name?.trim()}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Create Audience
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         setShowCreateAudience(false);
                         setNewAudience({});
@@ -421,7 +428,7 @@ export default function RemarketingCard({
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -455,15 +462,15 @@ export default function RemarketingCard({
                   <p className="text-xs text-gray-500 mb-3">{audience.rules}</p>
 
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       onClick={() => setSelectedAudience(audience)}
                       className="p-1 text-gray-600 hover:text-gray-900"
                     >
                       <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="p-1 text-gray-600 hover:text-gray-900">
+                    </Button>
+                    <Button className="p-1 text-gray-600 hover:text-gray-900">
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -476,13 +483,13 @@ export default function RemarketingCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Remarketing Campaigns</h3>
-              <button
+              <Button
                 onClick={() => setShowCreateCampaign(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 <Plus className="h-4 w-4" />
                 Create Campaign
-              </button>
+              </Button>
             </div>
 
             {/* Create Campaign Form */}
@@ -490,7 +497,7 @@ export default function RemarketingCard({
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <h4 className="font-medium text-gray-900 mb-3">Create New Campaign</h4>
                 <div className="space-y-3">
-                  <select
+                  <Select
                     value={newCampaign.type || 'display'}
                     onChange={(e) => setNewCampaign({ ...newCampaign, type: e.target.value as any })}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -500,9 +507,9 @@ export default function RemarketingCard({
                     <option value="shopping">Shopping</option>
                     <option value="video">YouTube</option>
                     <option value="discovery">Discovery</option>
-                  </select>
+                  </Select>
 
-                  <input
+                  <Input
                     type="text"
                     value={newCampaign.name || ''}
                     onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
@@ -510,7 +517,7 @@ export default function RemarketingCard({
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
 
-                  <input
+                  <Input
                     type="number"
                     value={newCampaign.budget || ''}
                     onChange={(e) => setNewCampaign({ ...newCampaign, budget: parseFloat(e.target.value) })}
@@ -519,14 +526,14 @@ export default function RemarketingCard({
                   />
 
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={handleCreateCampaign}
                       disabled={!newCampaign.name?.trim()}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Create Campaign
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         setShowCreateCampaign(false);
                         setNewCampaign({});
@@ -534,7 +541,7 @@ export default function RemarketingCard({
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -569,10 +576,10 @@ export default function RemarketingCard({
                       <td className="px-4 py-2 text-sm text-gray-700">{campaign.audiences.length}</td>
                       <td className="px-4 py-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <button className="p-1 text-gray-600 hover:text-gray-900">
+                          <Button className="p-1 text-gray-600 hover:text-gray-900">
                             <Edit className="h-4 w-4" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => setSelectedCampaign(campaign)}
                             className="p-1 text-gray-600 hover:text-gray-900"
                           >
@@ -581,10 +588,10 @@ export default function RemarketingCard({
                             ) : (
                               <Play className="h-4 w-4" />
                             )}
-                          </button>
-                          <button className="p-1 text-gray-600 hover:text-gray-900">
+                          </Button>
+                          <Button className="p-1 text-gray-600 hover:text-gray-900">
                             <Trash2 className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -625,12 +632,12 @@ export default function RemarketingCard({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button className="p-1 text-gray-600 hover:text-gray-900">
+                      <Button className="p-1 text-gray-600 hover:text-gray-900">
                         <Edit className="h-4 w-4" />
-                      </button>
-                      <button className="p-1 text-gray-600 hover:text-gray-900">
+                      </Button>
+                      <Button className="p-1 text-gray-600 hover:text-gray-900">
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}

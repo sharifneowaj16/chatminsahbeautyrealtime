@@ -1,5 +1,14 @@
-﻿'use client';
+'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import {
   MessageCircle,
@@ -41,6 +50,7 @@ interface WhatsAppAccount {
 }
 
 export default function WhatsAppIntegration() {
+  const { requestConfirmation } = useToast();
   const [account, setAccount] = useState<WhatsAppAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
@@ -100,7 +110,7 @@ export default function WhatsAppIntegration() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect WhatsApp?')) return;
+    if (!(await requestConfirmation({ title: 'Disconnect WhatsApp?', description: 'New messages will stop syncing until WhatsApp is connected again.', confirmLabel: 'Disconnect', tone: 'danger' }))) return;
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -132,13 +142,13 @@ export default function WhatsAppIntegration() {
           <p className="text-gray-600 text-sm">Connect and manage your WhatsApp Business account</p>
         </div>
         {account && account.status === 'connected' && (
-          <button
+          <Button
             onClick={() => setShowSettings(true)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             <Settings className="w-5 h-5" />
             Settings
-          </button>
+          </Button>
         )}
       </div>
 
@@ -153,13 +163,13 @@ export default function WhatsAppIntegration() {
             <p className="text-gray-600 mb-6">
               Connect your WhatsApp Business account to send and receive messages directly from your admin dashboard.
             </p>
-            <button
+            <Button
               onClick={handleConnect}
               className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 mx-auto"
             >
               <Link className="w-5 h-5" />
               Connect WhatsApp
-            </button>
+            </Button>
           </div>
         </div>
       ) : account.status === 'pending' ? (
@@ -179,12 +189,12 @@ export default function WhatsAppIntegration() {
                 </div>
               </div>
             )}
-            <button
+            <Button
               onClick={() => setShowQR(true)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Show QR Code
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -238,7 +248,7 @@ export default function WhatsAppIntegration() {
                   <p className="text-sm text-gray-500">Automatically reply to incoming messages</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={account.settings.autoReply}
                     onChange={(e) => setAccount(prev => prev ? {
@@ -256,7 +266,7 @@ export default function WhatsAppIntegration() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Auto-Reply Message
                   </label>
-                  <textarea
+                  <Textarea
                     value={account.settings.autoReplyMessage || ''}
                     onChange={(e) => setAccount(prev => prev ? {
                       ...prev,
@@ -277,7 +287,7 @@ export default function WhatsAppIntegration() {
                   </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={account.settings.businessHours.enabled}
                     onChange={(e) => setAccount(prev => prev ? {
@@ -297,88 +307,83 @@ export default function WhatsAppIntegration() {
 
           {/* Disconnect Button */}
           <div className="flex justify-end">
-            <button
+            <Button
               onClick={handleDisconnect}
               className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
             >
               Disconnect WhatsApp
-            </button>
+            </Button>
           </div>
         </>
       )}
 
       {/* Settings Modal */}
-      {showSettings && account && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">WhatsApp Settings</h3>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="p-2 text-gray-400 hover:text-gray-600"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
+      <Modal
+        open={showSettings && Boolean(account)}
+        onClose={() => setShowSettings(false)}
+        title="WhatsApp Settings"
+        size="lg"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowSettings(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowSettings(false);
+                // Save settings
+              }}
+            >
+              Save Settings
+            </Button>
+          </>
+        }
+      >
+        {account ? (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+                Business Name
+              </label>
+              <Input
+                type="text"
+                value={account.businessName}
+                onChange={(event) =>
+                  setAccount((previous) =>
+                    previous ? { ...previous, businessName: event.target.value } : null,
+                  )
+                }
+              />
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Name
-                </label>
-                <input
-                  type="text"
-                  value={account.businessName}
-                  onChange={(e) => setAccount(prev => prev ? { ...prev, businessName: e.target.value } : null)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  value={account.phoneNumber}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Away Message
-                </label>
-                <textarea
-                  value={account.settings.awayMessage || ''}
-                  onChange={(e) => setAccount(prev => prev ? {
-                    ...prev,
-                    settings: { ...prev.settings, awayMessage: e.target.value }
-                  } : null)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Message to send when offline..."
-                />
-              </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+                Phone Number
+              </label>
+              <Input type="text" value={account.phoneNumber} readOnly />
             </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowSettings(false);
-                  // Save settings
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Save Settings
-              </button>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+                Away Message
+              </label>
+              <Textarea
+                value={account.settings.awayMessage || ''}
+                onChange={(event) =>
+                  setAccount((previous) =>
+                    previous
+                      ? {
+                          ...previous,
+                          settings: { ...previous.settings, awayMessage: event.target.value },
+                        }
+                      : null,
+                  )
+                }
+                rows={3}
+                placeholder="Message to send when offline..."
+              />
             </div>
           </div>
-        </div>
-      )}
+        ) : null}
+      </Modal>
     </div>
   );
 }

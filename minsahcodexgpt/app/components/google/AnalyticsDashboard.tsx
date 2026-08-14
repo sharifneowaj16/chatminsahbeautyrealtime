@@ -1,5 +1,9 @@
-﻿'use client';
+'use client';
 
+
+
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import type { GA4Metrics } from '@/types/google';
 import { generateMockGA4Data, GOOGLE_COLORS } from '@/types/google';
@@ -191,7 +195,7 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
           </div>
 
           <div className="flex items-center gap-3">
-            <select
+            <Select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -200,22 +204,22 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
               <option value="28days">Last 28 days</option>
               <option value="90days">Last 90 days</option>
               <option value="custom">Custom range</option>
-            </select>
+            </Select>
 
-            <button
+            <Button
               onClick={exportReport}
               className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm"
             >
               <Download className="h-4 w-4" />
               Export
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Navigation Tabs */}
         <div className="flex space-x-1 mb-6">
           {(['overview', 'acquisition', 'engagement', 'monetization', 'audience'] as const).map((tab) => (
-            <button
+            <Button
               key={tab}
               onClick={() => setSelectedTab(tab)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
@@ -225,7 +229,7 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -517,16 +521,12 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
                       <span className="text-sm text-gray-600">Sessions</span>
                       <span className="text-sm font-medium text-gray-900">{data.sessions.toLocaleString()}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(data.pageviews / data.sessions) * 100}%` }}></div>
-                    </div>
+                    <progress className="h-2 w-full accent-minsah-action-primary" max={Math.max(data.sessions, 1)} value={data.pageviews} aria-label="Page views per session" />
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Page Views</span>
                       <span className="text-sm font-medium text-gray-900">{data.pageviews.toLocaleString()}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(data.engagementRate / 100) * 100}%` }}></div>
-                    </div>
+                    <progress className="h-2 w-full accent-minsah-status-success-text" max={100} value={data.engagementRate} aria-label="Engagement rate" />
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Conversions</span>
                       <span className="text-sm font-medium text-gray-900">{data.conversions}</span>
@@ -583,12 +583,7 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
                         <span className="text-sm font-medium text-gray-900">{ageGroup.age}</span>
                         <span className="text-xs text-gray-500">({ageGroup.percentage}%)</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: `${ageGroup.percentage}%` }}
-                        ></div>
-                      </div>
+                      <progress className="h-2 w-full accent-minsah-action-primary" max={100} value={ageGroup.percentage} aria-label={`${ageGroup.age} audience percentage`} />
                     </div>
                   ))}
                 </div>
@@ -606,12 +601,7 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
                         </span>
                         <span className="text-xs text-gray-500">({gender.percentage}%)</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-purple-500 h-2 rounded-full"
-                          style={{ width: `${gender.percentage}%` }}
-                        ></div>
-                      </div>
+                      <progress className="h-2 w-full accent-minsah-action-secondary" max={100} value={gender.percentage} aria-label={`${gender.gender} audience percentage`} />
                     </div>
                   ))}
                 </div>

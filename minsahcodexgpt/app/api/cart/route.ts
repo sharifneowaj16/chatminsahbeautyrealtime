@@ -5,6 +5,12 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+function toOptionalNumber(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 // GET /api/cart - Get user's cart
 export async function GET(request: NextRequest) {
   try {
@@ -42,6 +48,10 @@ export async function GET(request: NextRequest) {
         brand: item.product.brand?.name || null,
         sku: item.product.sku,
         stock: item.product.quantity,
+        trackInventory: item.product.trackInventory,
+        allowBackorder: item.product.allowBackorder,
+        weight: item.product.weight ? item.product.weight.toNumber() : null,
+        shippingWeight: toOptionalNumber(item.product.shippingWeight),
       },
       variant: item.variant
         ? {
@@ -213,6 +223,10 @@ export async function POST(request: NextRequest) {
           brand: cartItem.product.brand?.name || null,
           sku: cartItem.product.sku,
           stock: cartItem.product.quantity,
+          trackInventory: cartItem.product.trackInventory,
+          allowBackorder: cartItem.product.allowBackorder,
+          weight: cartItem.product.weight ? cartItem.product.weight.toNumber() : null,
+          shippingWeight: toOptionalNumber(cartItem.product.shippingWeight),
         },
         variant: cartItem.variant
           ? {
@@ -302,13 +316,20 @@ export async function PUT(request: NextRequest) {
           price: updated.product.price.toNumber(),
           image: updated.product.images[0]?.url || null,
           sku: updated.product.sku,
+          stock: updated.product.quantity,
+          trackInventory: updated.product.trackInventory,
+          allowBackorder: updated.product.allowBackorder,
+          weight: updated.product.weight ? updated.product.weight.toNumber() : null,
+          shippingWeight: toOptionalNumber(updated.product.shippingWeight),
         },
         variant: updated.variant
           ? {
               id: updated.variant.id,
               name: updated.variant.name,
               price: updated.variant.price?.toNumber() || updated.product.price.toNumber(),
+              stock: updated.variant.quantity,
               sku: updated.variant.sku,
+              attributes: updated.variant.attributes,
             }
           : null,
       },

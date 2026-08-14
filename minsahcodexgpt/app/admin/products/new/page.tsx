@@ -1,5 +1,15 @@
 'use client';
 
+
+
+
+
+
+import { useToast } from '@/components/ui/ToastProvider';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -7,6 +17,7 @@ import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
 import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
 import { adminFetchJson } from '@/lib/adminFetch';
+import { DEFAULT_SITE_URL } from '@/lib/seo';
 import {
   ArrowLeft,
   Save,
@@ -29,6 +40,9 @@ import {
   Megaphone,
 } from 'lucide-react';
 
+const ADMIN_SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_SITE_URL).replace(/\/$/, '');
+const canonicalProductUrl = (slug: string) => slug.trim() ? `${ADMIN_SITE_URL}/products/${slug.trim()}` : undefined;
+
 interface ProductVariant {
   id: string;
   size?: string;
@@ -46,6 +60,8 @@ interface ProductImage {
 }
 
 // ── PLACE 1: ProductFormData interface ────────────────────────────────────────
+type DeliveryOfferType = 'DEFAULT' | 'FREE' | 'FIXED';
+
 interface ProductFormData {
   name: string;
   category: string;
@@ -119,6 +135,12 @@ interface ProductFormData {
   shippingWeight: string;
   dimensions: { length: string; width: string; height: string };
   isFragile: boolean;
+  deliveryOfferEnabled: boolean;
+  deliveryOfferType: DeliveryOfferType;
+  deliveryOfferAmount: string;
+  deliveryOfferStartDate: string;
+  deliveryOfferEndDate: string;
+  deliveryOfferBadgeText: string;
   discountPercentage: string;
   salePrice: string;
   offerStartDate: string;
@@ -177,13 +199,17 @@ const defaultForm: ProductFormData = {
   ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
   productCondition: 'NEW', gtin: '', averageRating: 0, reviewCount: 0,
   shippingWeight: '', dimensions: { length: '', width: '', height: '' },
-  isFragile: false, discountPercentage: '', salePrice: '',
+  isFragile: false,
+  deliveryOfferEnabled: false, deliveryOfferType: 'DEFAULT', deliveryOfferAmount: '',
+  deliveryOfferStartDate: '', deliveryOfferEndDate: '', deliveryOfferBadgeText: '',
+  discountPercentage: '', salePrice: '',
   offerStartDate: '', offerEndDate: '', flashSaleEligible: false,
   lowStockThreshold: '10', barcode: '',
   returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '', faqs: [],
 };
 
 export default function NewProductPage() {
+  const { pushToast } = useToast();
   const router = useRouter();
   const { hasPermission } = useAdminAuth();
   const { getActiveCategories } = useCategories();
@@ -215,11 +241,11 @@ export default function NewProductPage() {
   const AI_MODELS = [
     {
       id: 'claude-haiku-4-5-20251001',
-      label: 'Haiku — দ্রুত (~5s)',
-      badge: 'সাশ্রয়ী',
+      label: 'Haiku — Fast (~5s)',
+      badge: 'Economical',
       badgeColor: 'bg-green-100 text-green-700',
       cost: '~$0.02/product',
-      note: 'Simple products এর জন্য ভালো',
+      note: 'Best for simple products',
     },
     {
       id: 'claude-sonnet-4-20250514',
@@ -231,11 +257,11 @@ export default function NewProductPage() {
     },
     {
       id: 'claude-opus-4-20250514',
-      label: 'Opus — সেরা (~25s)',
+      label: 'Opus — Best quality (~25s)',
       badge: 'Premium',
       badgeColor: 'bg-amber-100 text-amber-700',
       cost: '~$0.40/product',
-      note: 'Complex/premium products এর জন্য',
+      note: 'Best for complex or premium products',
     },
   ];
 
@@ -383,8 +409,8 @@ export default function NewProductPage() {
     if (!files || files.length === 0) return;
     const newImages: ProductImage[] = [];
     Array.from(files).forEach((file, index) => {
-      if (!file.type.startsWith('image/')) { alert(`File ${file.name} is not an image`); return; }
-      if (file.size > 10 * 1024 * 1024) { alert(`File ${file.name} exceeds 10MB`); return; }
+      if (!file.type.startsWith('image/')) { pushToast({ tone: 'danger', description: `File ${file.name} is not an image` }); return; }
+      if (file.size > 10 * 1024 * 1024) { pushToast({ tone: 'danger', description: `File ${file.name} exceeds 10MB` }); return; }
       newImages.push({
         id: `${Date.now()}_${index}`,
         file,
@@ -423,8 +449,8 @@ export default function NewProductPage() {
   const handleOgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('OG Image must be under 5MB'); return; }
+    if (!file.type.startsWith('image/')) { pushToast({ tone: 'danger', description: 'Please select an image file' }); return; }
+    if (file.size > 5 * 1024 * 1024) { pushToast({ tone: 'danger', description: 'OG Image must be under 5MB' }); return; }
     setFormData((prev) => ({ ...prev, ogImageFile: file, ogImagePreview: URL.createObjectURL(file) }));
   };
 
@@ -445,7 +471,7 @@ export default function NewProductPage() {
   };
 
   const handleRemoveVariant = (variantId: string) => {
-    if (formData.variants.length <= 1) { alert('At least one variant is required'); return; }
+    if (formData.variants.length <= 1) { pushToast({ tone: 'danger', description: 'At least one variant is required' }); return; }
     setFormData((prev) => ({ ...prev, variants: prev.variants.filter((v) => v.id !== variantId) }));
   };
 
@@ -529,6 +555,27 @@ export default function NewProductPage() {
     setFormData((prev) => ({ ...prev, dimensions: { ...prev.dimensions, [field]: value } }));
   };
 
+  const handleDeliveryOfferToggle = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliveryOfferEnabled: checked,
+      deliveryOfferType: checked && prev.deliveryOfferType === 'DEFAULT' ? 'FREE' : prev.deliveryOfferType,
+      deliveryOfferAmount: checked ? prev.deliveryOfferAmount : '',
+      deliveryOfferStartDate: checked ? prev.deliveryOfferStartDate : '',
+      deliveryOfferEndDate: checked ? prev.deliveryOfferEndDate : '',
+      deliveryOfferBadgeText: checked ? prev.deliveryOfferBadgeText : '',
+    }));
+  };
+
+  const handleDeliveryOfferTypeChange = (type: DeliveryOfferType) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliveryOfferType: type,
+      deliveryOfferEnabled: type !== 'DEFAULT',
+      deliveryOfferAmount: type === 'FIXED' ? prev.deliveryOfferAmount : '',
+    }));
+  };
+
   // ── Validate ──────────────────────────────────────────────────────────
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -545,6 +592,19 @@ export default function NewProductPage() {
     if (!isValidOptionalNumber(formData.dimensions.length)) newErrors.dimensions_length = 'Length must be a number';
     if (!isValidOptionalNumber(formData.dimensions.width)) newErrors.dimensions_width = 'Width must be a number';
     if (!isValidOptionalNumber(formData.dimensions.height)) newErrors.dimensions_height = 'Height must be a number';
+    if (formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED') {
+      const amount = Number(formData.deliveryOfferAmount);
+      if (!formData.deliveryOfferAmount.trim() || !Number.isFinite(amount) || amount < 0) {
+        newErrors.deliveryOfferAmount = 'Fixed delivery charge must be 0 or greater';
+      }
+    }
+    if (formData.deliveryOfferStartDate && formData.deliveryOfferEndDate) {
+      const start = new Date(formData.deliveryOfferStartDate);
+      const end = new Date(formData.deliveryOfferEndDate);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start > end) {
+        newErrors.deliveryOfferEndDate = 'Delivery offer end must be after start';
+      }
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -553,7 +613,7 @@ export default function NewProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
-      alert('Please fix all errors before submitting');
+      pushToast({ tone: 'danger', description: 'Please fix all errors before submitting' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -663,13 +723,19 @@ export default function NewProductPage() {
           // ─────────────────────────────────────────────────────────────
           ogTitle: formData.ogTitle || formData.metaTitle || undefined,
           ogImageUrl: uploadedOgImageUrl || formData.ogImageUrl || undefined,
-          canonicalUrl: formData.canonicalUrl || (formData.urlSlug ? `https://minsahbeauty.cloud/products/${formData.urlSlug}` : undefined),
+          canonicalUrl: formData.canonicalUrl || canonicalProductUrl(formData.urlSlug),
           condition: formData.productCondition || 'NEW', gtin: formData.gtin || undefined,
           averageRating: formData.averageRating || 0, reviewCount: formData.reviewCount || 0,
           shippingWeight: formData.shippingWeight || undefined,
           dimensions: (formData.dimensions.length || formData.dimensions.width || formData.dimensions.height)
             ? formData.dimensions : undefined,
           isFragile: formData.isFragile,
+          deliveryOfferEnabled: formData.deliveryOfferEnabled && formData.deliveryOfferType !== 'DEFAULT',
+          deliveryOfferType: formData.deliveryOfferEnabled ? formData.deliveryOfferType : 'DEFAULT',
+          deliveryOfferAmount: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? formData.deliveryOfferAmount : undefined,
+          deliveryOfferStartDate: formData.deliveryOfferEnabled ? formData.deliveryOfferStartDate || undefined : undefined,
+          deliveryOfferEndDate: formData.deliveryOfferEnabled ? formData.deliveryOfferEndDate || undefined : undefined,
+          deliveryOfferBadgeText: formData.deliveryOfferEnabled ? formData.deliveryOfferBadgeText || undefined : undefined,
           discountPercentage: formData.discountPercentage || undefined,
           salePrice: formData.salePrice || undefined, originalPrice,
           offerStartDate: formData.offerStartDate || undefined, offerEndDate: formData.offerEndDate || undefined,
@@ -682,10 +748,10 @@ export default function NewProductPage() {
         },
       });
 
-      alert('Product created successfully!');
+      pushToast({ tone: 'success', description: 'Product created successfully!' });
       router.push('/admin/products');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to create product. Please try again.');
+      pushToast({ tone: 'danger', description: error instanceof Error ? error.message : 'Failed to create product. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -713,32 +779,32 @@ export default function NewProductPage() {
           <Sparkles className={`w-5 h-5 ${aiApplied ? 'text-green-600' : 'text-purple-600'}`} />
           <span className={`text-base font-semibold ${aiApplied ? 'text-green-800' : 'text-purple-900'}`}>
             {aiApplied
-              ? `✅ ${AI_MODELS.find(m => m.id === aiAppliedModel)?.badge || 'AI'} দিয়ে Generate হয়েছে — Review & adjust করো`
+              ? `✅ Generated with ${AI_MODELS.find(m => m.id === aiAppliedModel)?.badge || 'AI'} — review and adjust the result`
               : 'AI Product Generator'}
           </span>
           {aiApplied && (
-            <button
+            <Button
               type="button"
               onClick={() => { setAiApplied(false); setAiAppliedModel(''); setFormData(defaultForm); setFacebookAdAngle(null); setMarketNote(''); setCompetitionNote(''); setAiInput(''); }}
               className="ml-auto text-xs text-gray-500 hover:text-red-600 underline"
             >
               Reset & start fresh
-            </button>
+            </Button>
           )}
         </div>
 
         {!aiApplied && (
           <>
             <p className="text-sm text-purple-700 mb-3">
-              Product name বা keyword দাও — AI সব fields automatically fill করে দেবে। শুধু price আর images তোমাকে দিতে হবে।
+              Enter a product name or keyword. AI will fill the supported fields automatically; you only need to provide the price and images.
             </p>
 
             {/* Model selector */}
             <div className="mb-4">
-              <p className="text-xs font-semibold text-purple-800 mb-2">AI Model বেছে নাও:</p>
+              <p className="text-xs font-semibold text-purple-800 mb-2">Choose an AI model:</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {AI_MODELS.map((m) => (
-                  <button
+                  <Button
                     key={m.id}
                     type="button"
                     onClick={() => setAiModel(m.id)}
@@ -750,21 +816,21 @@ export default function NewProductPage() {
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-semibold text-gray-800">{m.label}</span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.badgeColor}`}>{m.badge}</span>
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${m.badgeColor}`}>{m.badge}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-gray-500">{m.note}</span>
-                      <span className="text-[11px] font-mono text-gray-400">{m.cost}</span>
+                      <span className="text-xs text-gray-500">{m.note}</span>
+                      <span className="text-xs font-mono text-gray-400">{m.cost}</span>
                     </div>
                     {aiModel === m.id && (
                       <div className="mt-1.5 h-0.5 bg-purple-500 rounded" />
                     )}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
             <div className="flex gap-3">
-              <input
+              <Input
                 type="text"
                 value={aiInput}
                 onChange={(e) => setAiInput(e.target.value)}
@@ -773,16 +839,16 @@ export default function NewProductPage() {
                 className="flex-1 px-4 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white"
                 disabled={isGenerating}
               />
-              <button
+              <Button
                 type="button"
                 onClick={handleAiGenerate}
                 disabled={isGenerating || !aiInput.trim()}
                 className="inline-flex items-center px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium text-sm shadow"
               >
                 {isGenerating
-                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {AI_MODELS.find(m => m.id === aiModel)?.badge} দিয়ে generate হচ্ছে...</>
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating with {AI_MODELS.find(m => m.id === aiModel)?.badge}…</>
                   : <><Sparkles className="w-4 h-4 mr-2" /> Generate</>}
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -815,14 +881,14 @@ export default function NewProductPage() {
         {/* Facebook Ad Angle panel */}
         {facebookAdAngle && (
           <div className="mt-4 border border-purple-200 rounded-lg bg-white overflow-hidden">
-            <button
+            <Button
               type="button"
               onClick={() => setShowAdAngle((v) => !v)}
               className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-purple-800 hover:bg-purple-50"
             >
               <span className="flex items-center gap-2"><Megaphone className="w-4 h-4" /> Facebook Ad Copy (AI Generated)</span>
               {showAdAngle ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
+            </Button>
             {showAdAngle && (
               <div className="px-4 pb-4 space-y-3 border-t border-purple-100">
                 <div>
@@ -856,7 +922,7 @@ export default function NewProductPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-              <input type="text" name="name" value={formData.name} onChange={handleNameChange}
+              <Input type="text" name="name" value={formData.name} onChange={handleNameChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="e.g., Hydrating Face Serum with Hyaluronic Acid" />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
@@ -865,37 +931,37 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                <select name="category" value={formData.category}
+                <Select name="category" value={formData.category}
                   onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value, subcategory: '', item: '' }))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   {categoriesData.map((cat) => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
-                <select name="subcategory" value={formData.subcategory}
+                <Select name="subcategory" value={formData.subcategory}
                   onChange={(e) => setFormData((prev) => ({ ...prev, subcategory: e.target.value, item: '' }))}
                   disabled={!formData.category}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
                   <option value="">Select subcategory</option>
                   {subcategories.map((s: { name: string }) => <option key={s.name} value={s.name}>{s.name}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Type/Item</label>
-                <select name="item" value={formData.item} onChange={handleChange}
+                <Select name="item" value={formData.item} onChange={handleChange}
                   disabled={!formData.subcategory || items.length === 0}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
                   <option value="">Select item</option>
                   {items.map((item: string) => <option key={item} value={item}>{item}</option>)}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Brand *</label>
-                <input type="text" name="brand" value={formData.brand} onChange={handleChange} list="brands"
+                <Input type="text" name="brand" value={formData.brand} onChange={handleChange} list="brands"
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.brand ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Select or type brand" />
                 <datalist id="brands">{brands.map((b) => <option key={b} value={b} />)}</datalist>
@@ -903,26 +969,26 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Origin Country</label>
-                <select name="originCountry" value={formData.originCountry} onChange={handleChange}
+                <Select name="originCountry" value={formData.originCountry} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                <select name="status" value={formData.status} onChange={handleChange}
+                <Select name="status" value={formData.status} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="out_of_stock">Out of Stock</option>
-                </select>
+                </Select>
               </div>
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
-                  <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
+                  <Input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
                     className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Featured Product</span>
                 </label>
@@ -931,7 +997,7 @@ export default function NewProductPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Description *</label>
-              <textarea name="description" value={formData.description} onChange={handleChange} rows={6}
+              <Textarea name="description" value={formData.description} onChange={handleChange} rows={6}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Detailed product description..." />
               {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
@@ -948,10 +1014,10 @@ export default function NewProductPage() {
           <p className="text-sm text-gray-500 mb-4">Max 10MB per image. First/main image is the display image.</p>
           <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
 
-          <button type="button" onClick={() => fileInputRef.current?.click()}
+          <Button type="button" onClick={() => fileInputRef.current?.click()}
             className="inline-flex items-center px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
             <Upload className="w-5 h-5 mr-2" /> Upload Images
-          </button>
+          </Button>
           {errors.images && <p className="mt-2 text-sm text-red-600 flex items-center gap-1"><AlertCircle className="w-4 h-4" />{errors.images}</p>}
 
           {formData.images.length > 0 && (
@@ -961,18 +1027,18 @@ export default function NewProductPage() {
                   <div key={image.id}
                     className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200'}`}>
                     <div className="aspect-square">
-                      <img src={image.preview} alt="" className="w-full h-full object-cover" />
+                      <img src={image.preview} alt={`Product image preview ${index + 1}`} className="w-full h-full object-cover" />
                     </div>
                     {image.isMain && <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs font-semibold px-2 py-1 rounded">Main</div>}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                       {!image.isMain && (
-                        <button type="button" onClick={() => handleSetMainImage(image.id)} className="p-2 bg-white rounded-full hover:bg-gray-100">
+                        <Button type="button" aria-label={`Set image ${index + 1} as main image`} onClick={() => handleSetMainImage(image.id)} className="p-2 bg-white rounded-full hover:bg-gray-100">
                           <ImageIcon className="w-4 h-4 text-gray-700" />
-                        </button>
+                        </Button>
                       )}
-                      <button type="button" onClick={() => handleRemoveImage(image.id)} className="p-2 bg-red-500 rounded-full hover:bg-red-600">
+                      <Button type="button" aria-label={`Remove image ${index + 1}`} onClick={() => handleRemoveImage(image.id)} className="p-2 bg-red-500 rounded-full hover:bg-red-600">
                         <Trash2 className="w-4 h-4 text-white" />
-                      </button>
+                      </Button>
                     </div>
                     <div className="sr-only">{index + 1}</div>
                   </div>
@@ -983,10 +1049,10 @@ export default function NewProductPage() {
                 <div className="space-y-3">
                   {formData.images.map((image, index) => (
                     <div key={image.id} className="flex gap-3">
-                      <img src={image.preview} alt="" className="w-16 h-16 object-cover rounded border flex-shrink-0" />
+                      <img src={image.preview} alt={`Product image preview ${index + 1}`} className="w-16 h-16 object-cover rounded border flex-shrink-0" />
                       <div className="flex-1">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Image {index + 1} {image.isMain && '(Main)'}</label>
-                        <input type="text" value={formData.imageAltTexts[index] || ''}
+                        <Input type="text" value={formData.imageAltTexts[index] || ''}
                           onChange={(e) => handleImageAltTextChange(index, e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
                           placeholder="Rhode Peptide Lip Tint Ribbon Bangladesh" />
@@ -1009,10 +1075,10 @@ export default function NewProductPage() {
                 <p className="text-sm text-gray-500">Size, color, price, stock per variant</p>
               </div>
             </div>
-            <button type="button" onClick={handleAddVariant}
+            <Button type="button" onClick={handleAddVariant}
               className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
               <Plus className="w-4 h-4 mr-1" /> Add Variant
-            </button>
+            </Button>
           </div>
 
           {aiApplied && (
@@ -1028,9 +1094,9 @@ export default function NewProductPage() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-900">Variant #{index + 1}</h3>
                   {formData.variants.length > 1 && (
-                    <button type="button" onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
+                    <Button type="button" aria-label={`Remove variant ${index + 1}`} onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -1039,7 +1105,7 @@ export default function NewProductPage() {
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         {field === 'size' ? 'Size/Volume' : field === 'color' ? 'Color/Shade' : field === 'price' ? 'Price (BDT ৳) *' : field === 'stock' ? 'Stock *' : 'SKU *'}
                       </label>
-                      <input
+                      <Input
                         type={field === 'price' || field === 'stock' ? 'number' : 'text'}
                         value={variant[field] || ''}
                         onChange={(e) => handleVariantChange(variant.id, field, e.target.value)}
@@ -1069,20 +1135,20 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume (numeric)</label>
-                <input type="text" name="weight" value={formData.weight} onChange={handleChange}
+                <Input type="text" name="weight" value={formData.weight} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="e.g., 30" />
                 {errors.weight && <p className="mt-1 text-sm text-red-600">{errors.weight}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
-                <input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
+                <Input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="e.g., 24 months" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
+                <Input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
@@ -1091,14 +1157,14 @@ export default function NewProductPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Suitable Skin Type</label>
               <div className="flex flex-wrap gap-2">
                 {skinTypes.map((type) => (
-                  <button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
+                  <Button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
                     className={`px-4 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
                       formData.skinType.includes(type)
                         ? 'bg-purple-600 border-purple-600 text-white'
                         : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400'
                     }`}>
                     {type}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -1106,16 +1172,16 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Condition</label>
-                <select name="productCondition" value={formData.productCondition} onChange={handleChange}
+                <Select name="productCondition" value={formData.productCondition} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                   <option value="NEW">New</option>
                   <option value="USED">Used</option>
                   <option value="REFURBISHED">Refurbished</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">GTIN/EAN/UPC</label>
-                <input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
+                <Input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="1234567890123" />
               </div>
@@ -1124,20 +1190,20 @@ export default function NewProductPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Average Rating (0–5)</label>
-                <input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
+                <Input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
                   min="0" max="5" step="0.1"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Review Count</label>
-                <input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
+                <Input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
                   min="0" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients List</label>
-              <textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
+              <Textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Aqua, Glycerin, Hyaluronic Acid..." />
             </div>
@@ -1155,7 +1221,7 @@ export default function NewProductPage() {
             {/* Meta Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
-              <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
+              <Input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="SEO title — include focus keyword" />
               <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaTitle.length}/60</p>
@@ -1164,23 +1230,23 @@ export default function NewProductPage() {
             {/* Meta Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
-              <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
+              <Textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder='150–160 chars. Include "Cash on Delivery" or price signal.' />
               <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaDescription.length}/160</p>
             </div>
 
-            {/* বাংলা Product Name + Focus Keyword */}
+            {/* Bangla Product Name + Focus Keyword */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Product Name</label>
-                <input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Product Name</label>
+                <Input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="বাংলা নাম" />
+                  placeholder="বাংলা নাম" lang="bn-BD" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
-                <input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
+                <Input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="e.g., vitamin c serum bangladesh" />
                 <p className="text-xs text-gray-400 mt-1">Must appear in Meta Title, description first 100 words, and URL Slug</p>
@@ -1193,7 +1259,7 @@ export default function NewProductPage() {
                 Secondary Keywords
                 <span className="ml-2 text-xs font-normal text-gray-400">comma-separated, 3–5 long-tail terms</span>
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.secondaryKeywords.join(', ')}
                 onChange={(e) => handleSecondaryKeywordsChange(e.target.value)}
@@ -1205,8 +1271,9 @@ export default function NewProductPage() {
                   {formData.secondaryKeywords.map((kw, i) => (
                     <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs text-purple-700">
                       {kw}
-                      <button
+                      <Button
                         type="button"
+                        aria-label={`Remove secondary keyword ${kw}`}
                         onClick={() => setFormData((prev) => ({
                           ...prev,
                           secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
@@ -1214,27 +1281,28 @@ export default function NewProductPage() {
                         className="text-purple-400 hover:text-purple-700"
                       >
                         <X className="w-3 h-3" />
-                      </button>
+                      </Button>
                     </span>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* বাংলা Focus Keyword + OG Description — NEW */}
+            {/* Bangla Focus Keyword + OG Description — NEW */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  বাংলা Focus Keyword
+                  Bangla Focus Keyword
                   <span className="ml-2 text-xs font-normal text-gray-400">Bengali script only</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="bengaliFocusKeyword"
                   value={formData.bengaliFocusKeyword}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="লিপ অয়েল দাম বাংলাদেশ"
+                  lang="bn-BD"
                 />
               </div>
               <div>
@@ -1242,7 +1310,7 @@ export default function NewProductPage() {
                   OG Description
                   <span className="ml-2 text-xs font-normal text-gray-400">Facebook/WhatsApp share — 100–130 chars</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="ogDescription"
                   value={formData.ogDescription}
@@ -1257,10 +1325,10 @@ export default function NewProductPage() {
               </div>
             </div>
 
-            {/* বাংলা Meta Description */}
+            {/* Bangla Meta Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">বাংলা Meta Description</label>
-              <textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} maxLength={160} rows={2}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Meta Description</label>
+              <Textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} maxLength={160} rows={2}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
             </div>
 
@@ -1268,13 +1336,13 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
-                <input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
+                <Input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="Leave blank to use Meta Title" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
-                <input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
+                <Input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="product-url-slug" />
                 <p className="text-xs text-gray-400 mt-1">/products/<strong>{formData.urlSlug || 'product-url-slug'}</strong></p>
@@ -1285,19 +1353,19 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Canonical URL</label>
-                <input
+                <Input
                   type="text"
                   name="canonicalUrl"
                   value={formData.canonicalUrl}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="https://minsahbeauty.cloud/products/product-url-slug"
+                  placeholder={`${ADMIN_SITE_URL}/products/product-url-slug`}
                 />
                 <p className="text-xs text-gray-400 mt-1">Leave blank to auto-generate from slug.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Page H1</label>
-                <input
+                <Input
                   type="text"
                   name="pageH1"
                   value={formData.pageH1}
@@ -1310,7 +1378,7 @@ export default function NewProductPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">SEO Intro / Top Visible Intro</label>
-              <textarea
+              <Textarea
                 name="seoIntro"
                 value={formData.seoIntro}
                 onChange={handleChange}
@@ -1323,7 +1391,7 @@ export default function NewProductPage() {
             {/* Manual OG Image URL */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">OG Image URL</label>
-              <input
+              <Input
                 type="text"
                 name="ogImageUrl"
                 value={formData.ogImageUrl}
@@ -1350,7 +1418,7 @@ export default function NewProductPage() {
                 Tags/Keywords
                 <span className="ml-2 text-xs font-normal text-gray-400">15–20 tags, priority order: focusKeyword first</span>
               </label>
-              <input type="text" name="tags" value={formData.tags} onChange={handleChange}
+              <Input type="text" name="tags" value={formData.tags} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="beauty glazed lip oil bangladesh, lip oil bd, লিপ অয়েল, ..." />
             </div>
@@ -1367,31 +1435,31 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Search Intent</label>
-                <input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
+                <Input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Primary Concern</label>
-                <input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
+                <Input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-                <input type="text" name="gender" value={formData.gender} onChange={handleChange}
+                <Input type="text" name="gender" value={formData.gender} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
-              <textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
+              <Textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">FAQ Schema Note</label>
-                <textarea
+                <Textarea
                   name="faqSchemaNote"
                   value={formData.faqSchemaNote}
                   onChange={handleChange}
@@ -1402,7 +1470,7 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Authenticity Note</label>
-                <textarea
+                <Textarea
                   name="authenticityNote"
                   value={formData.authenticityNote}
                   onChange={handleChange}
@@ -1415,7 +1483,7 @@ export default function NewProductPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Ingredient Verification Status</label>
-              <input
+              <Input
                 type="text"
                 name="ingredientVerificationStatus"
                 value={formData.ingredientVerificationStatus}
@@ -1439,7 +1507,7 @@ export default function NewProductPage() {
             ].map(([field, label]) => (
               <div key={field}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                <textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
+                <Textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
                   onChange={(e) => handleArrayFieldChange(field as keyof ProductFormData, e.target.value)}
                   rows={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" />
@@ -1464,7 +1532,7 @@ export default function NewProductPage() {
               ].map(([field, label]) => (
                 <div key={field}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                  <textarea name={field} value={formData[field as keyof ProductFormData] as string}
+                  <Textarea name={field} value={formData[field as keyof ProductFormData] as string}
                     onChange={handleChange} rows={7}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono" />
                 </div>
@@ -1472,7 +1540,7 @@ export default function NewProductPage() {
             </div>
 
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
+              <Input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
                 className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
               <span className="text-sm text-gray-700">FAQ schema ready</span>
             </label>
@@ -1495,7 +1563,7 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Weight</label>
-                <input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
+                <Input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="e.g., 150g" />
               </div>
@@ -1504,21 +1572,104 @@ export default function NewProductPage() {
                 <div className="grid grid-cols-3 gap-2">
                   {(['length', 'width', 'height'] as const).map((dim) => (
                     <div key={dim}>
-                      <input type="text" value={formData.dimensions[dim]}
+                      <Input type="text" value={formData.dimensions[dim]}
                         onChange={(e) => handleDimensionChange(dim, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
                         placeholder={dim.charAt(0).toUpperCase()} />
-                      <p className="text-[10px] text-gray-400 mt-0.5 text-center">{dim.charAt(0).toUpperCase()} (cm)</p>
+                      <p className="text-xs text-gray-400 mt-0.5 text-center">{dim.charAt(0).toUpperCase()} (cm)</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
             <label className="flex items-center">
-              <input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
+              <Input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
                 className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
               <span className="ml-2 text-sm text-gray-700">Fragile Item</span>
             </label>
+
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-emerald-900">Product Delivery Offer</h3>
+                  <p className="mt-1 text-xs text-emerald-700">
+                    Customer-facing offer only. Courier actual charge will still be calculated later in checkout/order phases.
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-emerald-900 shadow-sm">
+                  <Input
+                    type="checkbox"
+                    checked={formData.deliveryOfferEnabled}
+                    onChange={(e) => handleDeliveryOfferToggle(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded"
+                  />
+                  Enable delivery offer
+                </label>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Offer Type</label>
+                  <Select
+                    value={formData.deliveryOfferEnabled ? formData.deliveryOfferType : 'DEFAULT'}
+                    onChange={(e) => handleDeliveryOfferTypeChange(e.target.value as DeliveryOfferType)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+                  >
+                    <option value="DEFAULT">Courier calculated / No product offer</option>
+                    <option value="FREE">Free delivery for full order</option>
+                    <option value="FIXED">Fixed delivery charge</option>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fixed Delivery Amount (৳)</label>
+                  <Input
+                    type="number"
+                    name="deliveryOfferAmount"
+                    value={formData.deliveryOfferAmount}
+                    onChange={handleChange}
+                    disabled={!formData.deliveryOfferEnabled || formData.deliveryOfferType !== 'FIXED'}
+                    min="0"
+                    step="1"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100 disabled:text-gray-400 ${errors.deliveryOfferAmount ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="e.g., 60"
+                  />
+                  {errors.deliveryOfferAmount && <p className="mt-1 text-sm text-red-600">{errors.deliveryOfferAmount}</p>}
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Offer Start</label>
+                  <Input type="datetime-local" name="deliveryOfferStartDate" value={formData.deliveryOfferStartDate} onChange={handleChange}
+                    disabled={!formData.deliveryOfferEnabled}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Offer End</label>
+                  <Input type="datetime-local" name="deliveryOfferEndDate" value={formData.deliveryOfferEndDate} onChange={handleChange}
+                    disabled={!formData.deliveryOfferEnabled}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100 ${errors.deliveryOfferEndDate ? 'border-red-500' : 'border-gray-300'}`} />
+                  {errors.deliveryOfferEndDate && <p className="mt-1 text-sm text-red-600">{errors.deliveryOfferEndDate}</p>}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Badge Text</label>
+                <Input
+                  type="text"
+                  name="deliveryOfferBadgeText"
+                  value={formData.deliveryOfferBadgeText}
+                  onChange={handleChange}
+                  disabled={!formData.deliveryOfferEnabled}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100"
+                  placeholder="এই পণ্যে ফ্রি ডেলিভারি"
+                  lang="bn-BD"
+                />
+                <p className="mt-2 text-xs text-emerald-700">
+                  If a free-delivery product is in the cart, delivery becomes free for the entire order.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1532,7 +1683,7 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Discount %</label>
-                <input type="number" value={formData.discountPercentage}
+                <Input type="number" value={formData.discountPercentage}
                   onChange={(e) => handleDiscountChange(e.target.value)}
                   min="0" max="100" step="0.01"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -1540,14 +1691,14 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sale Price (৳)</label>
-                <input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
+                <Input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
                   step="1" min="0"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="Auto-calculated" />
               </div>
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
-                  <input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
+                  <Input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
                     className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Flash Sale Eligible</span>
                 </label>
@@ -1556,12 +1707,12 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer Start</label>
-                <input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
+                <Input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer End</label>
-                <input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
+                <Input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
               </div>
             </div>
@@ -1577,13 +1728,13 @@ export default function NewProductPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Low Stock Alert Threshold</label>
-              <input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
+              <Input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="10" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Barcode/UPC</label>
-              <input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
+              <Input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Enter barcode" />
             </div>
@@ -1604,7 +1755,7 @@ export default function NewProductPage() {
                 { name: 'preOrderOption', label: 'Pre-order Option' },
               ].map((opt) => (
                 <label key={opt.name} className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" name={opt.name}
+                  <Input type="checkbox" name={opt.name}
                     checked={formData[opt.name as keyof ProductFormData] as boolean}
                     onChange={handleChange}
                     className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
@@ -1614,7 +1765,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Related Products</label>
-              <input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
+              <Input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 placeholder="Product IDs separated by commas" />
             </div>
@@ -1627,12 +1778,12 @@ export default function NewProductPage() {
             className="inline-flex items-center px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
             <X className="w-5 h-5 mr-2" /> Cancel
           </Link>
-          <button type="submit" disabled={isSubmitting}
+          <Button type="submit" disabled={isSubmitting}
             className="inline-flex items-center px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium shadow-lg">
             {isSubmitting
               ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creating...</>
               : <><Save className="w-5 h-5 mr-2" /> Create Product</>}
-          </button>
+          </Button>
         </div>
 
       </form>

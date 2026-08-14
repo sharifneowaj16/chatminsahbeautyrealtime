@@ -2,14 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { useCart, type CartItem } from '@/contexts/CartContext';
+import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import type {
   VariantAdjustmentPayload,
   VariantModalMode,
   VariantOption,
   VariantSelectionPayload,
 } from './VariantModal';
+import { getCachedProductDetail } from './productDetailCache';
+import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
 
 const VariantModal = dynamic(() => import('./VariantModal'), {
   ssr: false,
@@ -25,25 +29,22 @@ interface CartStepperProps {
   maxStock?: number;
   variantId?: string | null;
   variantName?: string | null;
+  sku?: string | null;
+  productSku?: string | null;
   size?: string | null;
   color?: string | null;
   variantImage?: string | null;
   hasRequiredVariants?: boolean;
+  variantCount?: number;
+  variantsFullyLoaded?: boolean;
   variants?: VariantOption[];
   className?: string;
   disabled?: boolean;
   circleAdd?: boolean;
+  onAddToCartSuccess?: (payload: { quantity: number; variantId?: string | null }) => void;
 }
 
 type ZeroStateMode = 'button' | 'stepper';
-
-interface ProductLookupResponse {
-  product: {
-    image?: string;
-    stock?: number;
-    variants?: VariantOption[];
-  };
-}
 
 function clampStock(stock?: number) {
   if (typeof stock !== 'number' || Number.isNaN(stock)) return 99;
@@ -81,16 +82,22 @@ export default function CartStepper({
   maxStock = 99,
   variantId,
   variantName,
+  sku,
+  productSku,
   size,
   color,
   variantImage,
   hasRequiredVariants = false,
+  variantCount,
+  variantsFullyLoaded = true,
   variants,
   className = '',
   disabled = false,
   circleAdd = false,
+  onAddToCartSuccess,
 }: CartStepperProps) {
   const { items, addItem, updateQuantity, removeItem } = useCart();
+  const { registerAddIntent, openForSuccessfulAdd } = useCartDrawer();
   const [isBusy, setIsBusy] = useState(false);
   const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<VariantModalMode>('select');
@@ -99,23 +106,37 @@ export default function CartStepper({
   const [resolvedVariants, setResolvedVariants] = useState<VariantOption[]>(variants ?? []);
   const [resolvedMaxStock, setResolvedMaxStock] = useState<number | null>(null);
   const [resolvedProductImage, setResolvedProductImage] = useState<string | null>(null);
-  const [hasResolvedProductContext, setHasResolvedProductContext] = useState(Boolean(variants?.length));
+  const [resolvedProductSku, setResolvedProductSku] = useState<string | null>(productSku ?? (variantId ? null : sku) ?? null);
+  const [resolvedVariantCount, setResolvedVariantCount] = useState(variantCount ?? variants?.length ?? 0);
+  const [hasResolvedProductContext, setHasResolvedProductContext] = useState(
+    Boolean(variants?.length) && variantsFullyLoaded !== false
+  );
+  const [pendingDrawerPayload, setPendingDrawerPayload] = useState<{
+    intentId: number;
+    item: CartItem;
+    addedQuantity: number;
+  } | null>(null);
 
   useEffect(() => {
     setResolvedVariants(variants ?? []);
     setResolvedMaxStock(null);
     setResolvedProductImage(null);
-    setHasResolvedProductContext(Boolean(variants?.length));
-  }, [maxStock, productId, productImage, variants]);
+    setResolvedProductSku(productSku ?? (variantId ? null : sku) ?? null);
+    setResolvedVariantCount(variantCount ?? variants?.length ?? 0);
+    setHasResolvedProductContext(Boolean(variants?.length) && variantsFullyLoaded !== false);
+  }, [maxStock, productId, productImage, productSku, sku, variantCount, variantId, variants, variantsFullyLoaded]);
 
   const effectiveVariants = useMemo(
     () => (resolvedVariants.length > 0 ? resolvedVariants : variants ?? []),
     [resolvedVariants, variants]
   );
   const effectiveProductImage = resolvedProductImage || variantImage || productImage;
+  const variantsMayBePartial =
+    !hasResolvedProductContext &&
+    (variantsFullyLoaded === false || resolvedVariantCount > effectiveVariants.length);
 
   const isVariantProduct =
-    hasRequiredVariants || Boolean(variantId || boundVariantId) || effectiveVariants.length > 0;
+    hasRequiredVariants || Boolean(variantId || boundVariantId) || resolvedVariantCount > 0 || effectiveVariants.length > 0;
 
   const productCartItems = useMemo(
     () =>
@@ -173,76 +194,145 @@ export default function CartStepper({
     setIsVariantModalOpen(true);
   };
 
-  const resolveProductContext = async () => {
-    if (hasRequiredVariants || variantId || hasResolvedProductContext) {
+  const openDrawerForAdd = (
+    intentId: number,
+    item: CartItem,
+    addedQuantity: number,
+    delayUntilModalClose = false
+  ) => {
+    if (delayUntilModalClose || isVariantModalOpen) {
+      setPendingDrawerPayload({ intentId, item, addedQuantity });
+      return;
+    }
+    openForSuccessfulAdd(intentId, item, addedQuantity);
+  };
+
+  const notifyAddToCartSuccess = (quantity: number, addedVariantId?: string | null) => {
+    onAddToCartSuccess?.({ quantity, variantId: addedVariantId ?? null });
+  };
+
+  useEffect(() => {
+    if (isVariantModalOpen || !pendingDrawerPayload) return;
+
+    const timeout = window.setTimeout(() => {
+      openForSuccessfulAdd(
+        pendingDrawerPayload.intentId,
+        pendingDrawerPayload.item,
+        pendingDrawerPayload.addedQuantity
+      );
+      setPendingDrawerPayload(null);
+    }, 180);
+
+    return () => window.clearTimeout(timeout);
+  }, [isVariantModalOpen, openForSuccessfulAdd, pendingDrawerPayload]);
+
+  const resolveProductContext = async ({ forceFullVariants = false } = {}) => {
+    const needsFullVariants =
+      !hasResolvedProductContext &&
+      (forceFullVariants || variantsMayBePartial || (hasRequiredVariants && effectiveVariants.length === 0));
+
+    if (!needsFullVariants && hasResolvedProductContext) {
       return {
         image: effectiveProductImage,
         maxStock: resolvedMaxStock ?? maxStock,
         variants: effectiveVariants,
+        sku: resolvedProductSku ?? productSku ?? (variantId ? null : sku) ?? null,
       };
     }
 
     setIsBusy(true);
     try {
-      const res = await fetch(`/api/products/${productId}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to load product');
-
-      const data = (await res.json()) as ProductLookupResponse;
-      const fetchedVariants = (data.product.variants ?? []).map((variant) => ({
-        id: variant.id,
-        name: variant.name,
-        price: variant.price,
-        stock: variant.stock,
-        sku: variant.sku,
-        image: variant.image ?? null,
-        attributes: (variant.attributes ?? {}) as Record<string, string>,
-      }));
+      const productDetail = await getCachedProductDetail(productId);
+      const fetchedVariants = productDetail.variants;
 
       setResolvedVariants(fetchedVariants);
-      setResolvedMaxStock(data.product.stock ?? maxStock);
-      setResolvedProductImage(data.product.image ?? null);
+      setResolvedVariantCount(fetchedVariants.length);
+      setResolvedMaxStock(productDetail.stock ?? maxStock);
+      setResolvedProductImage(productDetail.image || null);
+      setResolvedProductSku(productDetail.sku ?? null);
       setHasResolvedProductContext(true);
 
       return {
-        image: data.product.image ?? effectiveProductImage,
-        maxStock: data.product.stock ?? maxStock,
+        image: productDetail.image || effectiveProductImage,
+        maxStock: productDetail.stock ?? maxStock,
         variants: fetchedVariants,
+        sku: productDetail.sku ?? resolvedProductSku ?? productSku ?? (variantId ? null : sku) ?? null,
       };
     } catch {
       return {
         image: effectiveProductImage,
         maxStock,
         variants: effectiveVariants,
+        sku: resolvedProductSku ?? productSku ?? (variantId ? null : sku) ?? null,
       };
     } finally {
       setIsBusy(false);
     }
   };
 
-  const addOrIncrementVariant = async (variant: {
-    id: string; name: string; price: number; image?: string | null;
-    attributes: Record<string, string>;
-  }, quantity = 1) => {
+  const addOrIncrementVariant = async (
+    variant: {
+      id: string; name: string; price: number; stock: number; sku?: string | null; image?: string | null;
+      attributes: Record<string, string>;
+    },
+    quantity = 1,
+    delayDrawerOpen = false,
+    parentSku?: string | null
+  ) => {
     const targetId = variant.id;
-    const existingQty = items.find((item) => item.id === targetId)?.quantity ?? 0;
+    const existingItem = items.find((item) => item.id === targetId);
+    const existingQty = existingItem?.quantity ?? 0;
     const display = getVariantDisplay(variant);
+    const intentId = registerAddIntent();
+
     if (!variantId) setBoundVariantId(targetId);
-    if (existingQty > 0) {
-      await Promise.resolve(updateQuantity(targetId, existingQty + quantity));
-      return;
+
+    if (existingItem && existingQty > 0) {
+      const nextQuantity = existingQty + quantity;
+      const success = await updateQuantity(targetId, nextQuantity);
+      if (success) {
+        openDrawerForAdd(
+          intentId,
+          { ...existingItem, quantity: nextQuantity },
+          quantity,
+          delayDrawerOpen
+        );
+        notifyAddToCartSuccess(quantity, targetId);
+      }
+      return success;
     }
-    await Promise.resolve(addItem({
-      id: targetId, productId, variantId: targetId,
+
+    const addedQuantity = Math.max(initialQuantity, quantity);
+    const cartItem: CartItem = {
+      id: targetId,
+      productId,
+      variantId: targetId,
       variantName: display.label,
-      size: display.size, color: display.color,
-      variantImage: variant.image ?? null, name: productName, price: variant.price,
-      quantity: Math.max(initialQuantity, quantity), image: variant.image || effectiveProductImage,
-    }));
+      sku: variant.sku ?? undefined,
+      productSku: parentSku ?? resolvedProductSku ?? productSku ?? sku ?? undefined,
+      variantSku: variant.sku ?? null,
+      size: display.size,
+      color: display.color,
+      variantImage: variant.image ?? null,
+      name: productName,
+      price: variant.price,
+      quantity: addedQuantity,
+      image: variant.image || effectiveProductImage,
+      stock: variant.stock,
+      maxQuantity: variant.stock,
+    };
+
+    const success = await addItem(cartItem);
+    if (success) {
+      openDrawerForAdd(intentId, cartItem, addedQuantity, delayDrawerOpen);
+      notifyAddToCartSuccess(addedQuantity, targetId);
+    }
+    return success;
   };
 
   const handleSelectConfirm = async ({ variant, quantity }: VariantSelectionPayload) => {
     setZeroStateMode('button');
-    await runMutation(async () => { await addOrIncrementVariant(variant, quantity); });
+    await runMutation(async () => { await addOrIncrementVariant(variant, quantity, true, resolvedProductSku ?? productSku ?? sku); });
   };
 
   const handleAdjustVariant = async ({ variant, delta }: VariantAdjustmentPayload) => {
@@ -252,22 +342,22 @@ export default function CartStepper({
       if (delta === -1) {
         if (!variantId) setBoundVariantId(targetId);
         if (existingQty <= 1) {
-          await Promise.resolve(removeItem(targetId));
+          await removeItem(targetId);
           setZeroStateMode('stepper');
           return;
         }
-        await Promise.resolve(updateQuantity(targetId, existingQty - 1));
+        await updateQuantity(targetId, existingQty - 1);
         setZeroStateMode('button');
         return;
       }
       setZeroStateMode('button');
-      await addOrIncrementVariant(variant);
+      await addOrIncrementVariant(variant, 1, true, resolvedProductSku ?? productSku ?? sku);
     });
   };
 
   const handleAddToCart = async () => {
     if (disabled || isBusy || isOutOfStock) return;
-    const context = isVariantProduct ? null : await resolveProductContext();
+    const context = await resolveProductContext({ forceFullVariants: isVariantProduct });
     const availableVariants = context?.variants ?? effectiveVariants;
     const requiresVariantSelection =
       hasRequiredVariants || Boolean(currentVariantId) || availableVariants.length > 0;
@@ -279,26 +369,50 @@ export default function CartStepper({
     await runMutation(async () => {
       if (requiresVariantSelection && nextVariant) {
         setZeroStateMode('button');
-        await addOrIncrementVariant(nextVariant);
+        await addOrIncrementVariant(nextVariant, 1, false, context?.sku);
         return;
       }
-      const existingQty = items.find((item) => item.id === currentCartItemId)?.quantity ?? 0;
-      if (existingQty > 0) {
-        await Promise.resolve(updateQuantity(currentCartItemId, existingQty + 1));
+      const existingItem = items.find((item) => item.id === currentCartItemId);
+      const existingQty = existingItem?.quantity ?? 0;
+      const intentId = registerAddIntent();
+      if (existingItem && existingQty > 0) {
+        const nextQuantity = existingQty + 1;
+        const success = await updateQuantity(currentCartItemId, nextQuantity);
+        if (success) {
+          openDrawerForAdd(intentId, { ...existingItem, quantity: nextQuantity }, 1);
+          notifyAddToCartSuccess(1, currentVariantId);
+        }
         return;
       }
-      await Promise.resolve(addItem({
-        id: currentCartItemId, productId, variantId: variantId ?? null,
-        variantName: variantName ?? null, size: size ?? null, color: color ?? null,
-        variantImage: variantImage ?? null, name: productName, price,
-        quantity: initialQuantity, image: variantImage || context?.image || effectiveProductImage,
-      }));
+      const cartItem: CartItem = {
+        id: currentCartItemId,
+        productId,
+        variantId: variantId ?? null,
+        variantName: variantName ?? null,
+        sku: sku ?? context?.sku ?? undefined,
+        productSku: context?.sku ?? productSku ?? (variantId ? null : sku) ?? undefined,
+        variantSku: variantId ? sku ?? null : null,
+        size: size ?? null,
+        color: color ?? null,
+        variantImage: variantImage ?? null,
+        name: productName,
+        price,
+        quantity: initialQuantity,
+        image: variantImage || context?.image || effectiveProductImage,
+        stock: safeMaxStock,
+        maxQuantity: safeMaxStock,
+      };
+      const success = await addItem(cartItem);
+      if (success) {
+        openDrawerForAdd(intentId, cartItem, initialQuantity);
+        notifyAddToCartSuccess(initialQuantity, variantId ?? null);
+      }
     });
   };
 
   const handleIncrease = async () => {
     if (disabled || isBusy || isOutOfStock) return;
-    const context = isVariantProduct ? null : await resolveProductContext();
+    const context = await resolveProductContext({ forceFullVariants: isVariantProduct });
     const requiresVariantSelection =
       hasRequiredVariants ||
       Boolean(currentVariantId) ||
@@ -306,16 +420,39 @@ export default function CartStepper({
 
     if (requiresVariantSelection) { openModal(qty === 0 ? 'select' : 'increase'); return; }
     await runMutation(async () => {
+      const intentId = registerAddIntent();
       if (qty === 0) {
-        await Promise.resolve(addItem({
-          id: currentCartItemId, productId, variantId: variantId ?? null,
-          variantName: variantName ?? null, size: size ?? null, color: color ?? null,
-          variantImage: variantImage ?? null, name: productName, price,
-          quantity: initialQuantity, image: variantImage || context?.image || effectiveProductImage,
-        }));
+        const cartItem: CartItem = {
+          id: currentCartItemId,
+          productId,
+          variantId: variantId ?? null,
+          variantName: variantName ?? null,
+          sku: sku ?? context?.sku ?? undefined,
+          productSku: context?.sku ?? productSku ?? (variantId ? null : sku) ?? undefined,
+          variantSku: variantId ? sku ?? null : null,
+          size: size ?? null,
+          color: color ?? null,
+          variantImage: variantImage ?? null,
+          name: productName,
+          price,
+          quantity: initialQuantity,
+          image: variantImage || context?.image || effectiveProductImage,
+          stock: safeMaxStock,
+          maxQuantity: safeMaxStock,
+        };
+        const success = await addItem(cartItem);
+        if (success) {
+          openDrawerForAdd(intentId, cartItem, initialQuantity);
+          notifyAddToCartSuccess(initialQuantity, variantId ?? null);
+        }
         return;
       }
-      await Promise.resolve(updateQuantity(currentCartItemId, qty + 1));
+      const existingItem = items.find((item) => item.id === currentCartItemId);
+      const success = await updateQuantity(currentCartItemId, qty + 1);
+      if (success && existingItem) {
+        openDrawerForAdd(intentId, { ...existingItem, quantity: qty + 1 }, 1);
+        notifyAddToCartSuccess(1, currentVariantId);
+      }
     });
   };
 
@@ -323,7 +460,7 @@ export default function CartStepper({
     if (disabled || isBusy) return;
     if (qty === 0) {
       await runMutation(async () => {
-        await Promise.all(productCartItems.map((item) => Promise.resolve(removeItem(item.id))));
+        await Promise.all(productCartItems.map((item) => removeItem(item.id)));
       });
       if (!variantId) setBoundVariantId(null);
       setZeroStateMode('button');
@@ -332,17 +469,25 @@ export default function CartStepper({
     if (isVariantProduct) { openModal('decrease'); return; }
     await runMutation(async () => {
       if (qty <= 1) {
-        await Promise.resolve(removeItem(currentCartItemId));
+        await removeItem(currentCartItemId);
         setZeroStateMode('stepper');
         return;
       }
-      await Promise.resolve(updateQuantity(currentCartItemId, qty - 1));
+      await updateQuantity(currentCartItemId, qty - 1);
     });
   };
 
   const showAddButton = qty === 0 && zeroStateMode === 'button';
   const showZeroStepper = qty === 0 && zeroStateMode === 'stepper';
   const plusDisabled = disabled || isBusy || isOutOfStock || (!isVariantProduct && qty >= safeMaxStock);
+  const addButtonLabel = isOutOfStock
+    ? 'Out of Stock'
+    : hasRequiredVariants && !currentVariantId
+      ? 'Choose Option'
+      : 'Add to Cart';
+  const addButtonAriaLabel = isOutOfStock
+    ? `${productName} is out of stock`
+    : `${addButtonLabel} for ${productName}`;
 
   const variantModalNode = isVariantModalOpen ? (
     <VariantModal
@@ -352,6 +497,7 @@ export default function CartStepper({
       productName={productName}
       productImage={effectiveProductImage}
       variants={effectiveVariants}
+      variantsFullyLoaded={!variantsMayBePartial}
       currentVariantId={currentVariantId}
       onClose={() => setIsVariantModalOpen(false)}
       onConfirm={handleSelectConfirm}
@@ -364,48 +510,59 @@ export default function CartStepper({
     return (
       <>
         {showAddButton ? (
-          <button
+          <Button
             type="button"
+            size="icon"
             onClick={() => void handleAddToCart()}
             disabled={disabled || isBusy || isOutOfStock}
-            aria-label={`Add ${productName} to cart`}
-            className={`group relative flex h-8 w-8 items-center justify-center rounded-full bg-[#FACC15] shadow-[0_4px_14px_rgba(250,204,21,0.40)] transition-all duration-200 hover:scale-110 hover:bg-[#EAB308] active:scale-95 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none ${className}`}
+            aria-label={addButtonAriaLabel}
+            className={`shadow-sm ${className}`}
           >
-            {isBusy
-              ? <Loader2 size={14} className="animate-spin text-white" />
-              : <Plus size={16} strokeWidth={2.8} className="text-white" />}
-            <span className="pointer-events-none absolute inset-0 rounded-full bg-[#FACC15] opacity-0 group-hover:animate-ping group-hover:opacity-25" />
-          </button>
+            {isBusy ? (
+              <Spinner size="sm" decorative />
+            ) : (
+              <Plus className="h-4 w-4" strokeWidth={2.8} aria-hidden="true" />
+            )}
+          </Button>
         ) : (
           <div
-            className={`inline-flex h-10 items-center overflow-hidden rounded-full border-2 border-[#E8466A] bg-white shadow-[0_3px_12px_rgba(232,70,106,0.22)] ${className}`}
+            className={`inline-flex min-h-11 items-center overflow-hidden rounded-full border border-minsah-border-default bg-minsah-surface-panel shadow-sm ${className}`}
             role="group"
             aria-label={`${productName} cart quantity`}
           >
-            <button
+            <Button
               type="button"
+              size="icon"
+              variant="ghost"
               onClick={() => void handleDecrease()}
               disabled={disabled || isBusy}
               aria-label={showZeroStepper ? `Remove ${productName}` : `Decrease ${productName}`}
-              className="flex h-full w-9 flex-shrink-0 items-center justify-center text-[#E8466A] transition-colors hover:bg-pink-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-l-full rounded-r-none"
             >
-              {showZeroStepper ? <Trash2 size={13} /> : <Minus size={13} />}
-            </button>
-            <span
-              className="flex min-w-[1.5rem] flex-1 items-center justify-center px-1 text-sm font-bold text-[#1A0D06]"
-              aria-live="polite" aria-atomic="true"
+              {showZeroStepper ? (
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Minus className="h-4 w-4" aria-hidden="true" />
+              )}
+            </Button>
+            <output
+              className="flex min-w-8 flex-1 items-center justify-center px-1 text-sm font-bold text-minsah-text-primary"
+              aria-live="polite"
+              aria-atomic="true"
             >
-              {isBusy ? <Loader2 size={13} className="animate-spin" /> : qty}
-            </span>
-            <button
+              {isBusy ? <Spinner size="sm" decorative /> : qty}
+            </output>
+            <Button
               type="button"
+              size="icon"
+              variant="ghost"
               onClick={() => void handleIncrease()}
               disabled={plusDisabled}
               aria-label={`Increase ${productName}`}
-              className="flex h-full w-9 flex-shrink-0 items-center justify-center text-[#E8466A] transition-colors hover:bg-pink-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-l-none rounded-r-full"
             >
-              <Plus size={13} />
-            </button>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+            </Button>
           </div>
         )}
         {variantModalNode}
@@ -417,46 +574,65 @@ export default function CartStepper({
   return (
     <>
       {showAddButton ? (
-        <button
+        <Button
           type="button"
           onClick={() => void handleAddToCart()}
           disabled={disabled || isBusy || isOutOfStock}
-          aria-label={`Add ${productName} to cart`}
-          className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#3D1F0E] px-5 py-3 text-sm font-semibold text-[#F5E6D3] transition-all duration-200 hover:bg-[#2A1509] disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 ${className}`}
+          aria-label={addButtonAriaLabel}
+          className={className}
         >
-          {isBusy ? <Loader2 size={15} className="animate-spin" /> : <ShoppingCart size={15} />}
-          Add to Cart
-        </button>
+          {isBusy ? (
+            <Spinner size="sm" decorative />
+          ) : (
+            <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+          )}
+          {addButtonLabel}
+        </Button>
       ) : (
         <div
-          className={`inline-flex h-11 items-center rounded-2xl border-2 border-[#3D1F0E] bg-white ${className}`}
+          className={`inline-flex min-h-11 items-center rounded-2xl border border-minsah-border-default bg-minsah-surface-panel ${className}`}
           role="group"
           aria-label={`${productName} cart quantity`}
         >
-          <button
+          <Button
             type="button"
+            size="icon"
+            variant="ghost"
             onClick={() => void handleDecrease()}
             disabled={disabled || isBusy}
-            aria-label={showZeroStepper ? `Remove ${productName} from cart` : qty <= 1 ? `Decrease ${productName} quantity to zero` : `Decrease ${productName} quantity`}
-            className="flex h-full w-10 flex-shrink-0 items-center justify-center rounded-l-2xl text-[#3D1F0E] transition-colors hover:bg-[#F5E9DC] disabled:cursor-not-allowed disabled:opacity-35"
+            aria-label={
+              showZeroStepper
+                ? `Remove ${productName} from cart`
+                : qty <= 1
+                  ? `Decrease ${productName} quantity to zero`
+                  : `Decrease ${productName} quantity`
+            }
+            className="rounded-l-2xl rounded-r-none"
           >
-            {showZeroStepper ? <Trash2 size={15} /> : <Minus size={15} />}
-          </button>
-          <span
-            className="flex min-w-10 flex-1 items-center justify-center px-2 text-sm font-bold text-[#1A0D06]"
-            aria-live="polite" aria-atomic="true"
+            {showZeroStepper ? (
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Minus className="h-4 w-4" aria-hidden="true" />
+            )}
+          </Button>
+          <output
+            className="flex min-w-10 flex-1 items-center justify-center px-2 text-sm font-bold text-minsah-text-primary"
+            aria-live="polite"
+            aria-atomic="true"
           >
-            {isBusy ? <Loader2 size={14} className="animate-spin" /> : qty}
-          </span>
-          <button
+            {isBusy ? <Spinner size="sm" decorative /> : qty}
+          </output>
+          <Button
             type="button"
+            size="icon"
+            variant="ghost"
             onClick={() => void handleIncrease()}
             disabled={plusDisabled}
             aria-label={`Increase ${productName} quantity`}
-            className="flex h-full w-10 flex-shrink-0 items-center justify-center rounded-r-2xl text-[#3D1F0E] transition-colors hover:bg-[#F5E9DC] disabled:cursor-not-allowed disabled:opacity-35"
+            className="rounded-l-none rounded-r-2xl"
           >
-            <Plus size={15} />
-          </button>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </div>
       )}
       {variantModalNode}

@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "minsahbeauty.cloud" },
       { protocol: "https", hostname: "minio.minsahbeauty.cloud" },
+      { protocol: "https", hostname: "storage.minsahbeauty.cloud" },
       { protocol: "http",  hostname: "minio",     port: "9000" },
       { protocol: "http",  hostname: "localhost",  port: "9000" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
@@ -19,6 +20,7 @@ const nextConfig: NextConfig = {
     ],
     // ✅ avif + webp — modern formats, file size ছোট হবে
     formats: ["image/avif", "image/webp"],
+    qualities: [60, 72, 75, 80, 82, 88],
     // ✅ 30 days cache (2592000s) — আগে ছিল 31 days, request অনুযায়ী 30 days
     minimumCacheTTL: 2592000,
     // ✅ Mobile-first deviceSizes — 390 (iPhone) যোগ হয়েছে, unnecessary বড় sizes কমেছে
@@ -26,11 +28,8 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
-  env: {
-    NEXT_PUBLIC_APP_URL: "https://minsahbeauty.cloud",
-    NEXT_PUBLIC_REALTIME_WS_URL: "wss://realtime.minsahbeauty.cloud/ws",
-    NEXT_PUBLIC_MINIO_PUBLIC_URL: "https://minio.minsahbeauty.cloud",
-  },
+  // NEXT_PUBLIC_* values are read from the deployment environment.
+  // Do not hard-code them here: doing so overrides local/staging configuration at build time.
 
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
@@ -52,14 +51,6 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy",           value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy",        value: "camera=(), microphone=(), geolocation=(self), interest-cohort=()" },
         ],
-      },
-      {
-        source: "/_next/static/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
-      },
-      {
-        source: "/_next/image",
-        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
       },
       {
         source: "/api/:path*",

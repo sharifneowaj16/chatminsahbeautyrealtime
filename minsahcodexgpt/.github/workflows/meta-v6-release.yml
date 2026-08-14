@@ -1,0 +1,91 @@
+name: Meta v6 Release Governance
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/minsah_meta_ci
+  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/minsah_meta_ci
+  REDIS_URL: redis://127.0.0.1:6379
+  NEXTAUTH_SECRET: ci-only-nextauth-secret-at-least-32-characters
+  JWT_SECRET: ci-only-jwt-secret-at-least-32-characters
+  JWT_REFRESH_SECRET: ci-only-refresh-secret-at-least-32-characters
+  PASSWORD_RESET_TOKEN_SECRET: ci-only-reset-secret-at-least-32-characters
+  CRON_SECRET: ci-only-cron-secret-at-least-32-characters
+  INTERNAL_CRON_SECRET: ci-only-internal-secret-at-least-32-characters
+  WS_AUTH_SECRET: ci-only-websocket-secret-at-least-32-characters
+  REPLY_API_SECRET: ci-only-reply-secret-at-least-32-characters
+  PAYMENT_WEBHOOK_SECRET: ci-only-payment-secret-at-least-32-characters
+  META_BROWSER_PURCHASE_TOKEN_SECRET: ci-only-browser-secret-at-least-32-characters
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: minsah_meta_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d minsah_meta_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install exact dependencies without stale-client postinstall
+        run: npm ci --ignore-scripts
+      - name: Require schema and migration SQL in the same change-set
+        run: npm run qa:prisma-schema-migration-pair
+      - name: Generate and stamp Prisma Client
+        run: npm run db:generate
+      - name: Validate Prisma schema
+        run: npx prisma validate
+      - name: Apply migrations to disposable PostgreSQL
+        run: npx prisma migrate deploy
+      - name: Verify committed migration hashes and rollback notes
+        run: npm run qa:meta-v6-migrations
+      - name: Run Meta phases 1 through 15
+        run: npm run qa:meta-v6-all-phases
+      - name: Run unified Meta platform phases 19 through 29
+        run: npm run qa:meta-platform-phases19-30
+      - name: Validate runtime evidence ledger structure
+        run: npm run qa:meta-v6-evidence
+      - name: Run inherited master tracking release gate
+        run: npm run qa:master-tracking
+      - name: Run global blocker and version policy gates
+        run: npm run qa:meta-v6-gate && npm run qa:meta-graph-version-policy
+      - name: Security and dependency checks
+        run: npm run audit:security && npm run audit:dependencies
+      - name: TypeScript
+        run: npm run typecheck
+      - name: ESLint
+        run: npm run lint
+      - name: Application tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Engineering release evaluation
+        run: npm run qa:meta-v6-release-candidate

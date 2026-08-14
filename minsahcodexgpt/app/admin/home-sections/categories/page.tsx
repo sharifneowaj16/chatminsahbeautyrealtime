@@ -1,5 +1,13 @@
 'use client';
 
+
+
+
+
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Edit, Trash2, Save, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
@@ -7,6 +15,7 @@ import { defaultCategories } from '@/lib/homeData';
 import { HomeSectionCategory } from '@/types/admin';
 
 export default function CategoriesManagementPage() {
+  const { pushToast, requestConfirmation } = useToast();
   const [categories, setCategories] = useState<HomeSectionCategory[]>(defaultCategories);
   const [editingCategory, setEditingCategory] = useState<HomeSectionCategory | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -40,16 +49,16 @@ export default function CategoriesManagementPage() {
         body: JSON.stringify({ key: 'homeCategories', value: categories }),
       });
       if (!res.ok) throw new Error('Save failed');
-      alert('Categories saved successfully!');
+      pushToast({ tone: 'success', description: 'Categories saved successfully!' });
     } catch {
-      alert('Failed to save changes. Please try again.');
+      pushToast({ tone: 'danger', description: 'Failed to save changes. Please try again.' });
     }
   };
 
   // Add new category
   const addCategory = () => {
     if (!newCategory.name) {
-      alert('Please enter a category name');
+      pushToast({ tone: 'danger', description: 'Please enter a category name' });
       return;
     }
 
@@ -77,8 +86,8 @@ export default function CategoriesManagementPage() {
   };
 
   // Delete category
-  const deleteCategory = (id: string) => {
-    if (confirm('Are you sure you want to delete this category?')) {
+  const deleteCategory = async (id: string) => {
+    if (await requestConfirmation({ title: 'Delete this homepage category?', description: 'The category will be removed from the homepage configuration.', confirmLabel: 'Delete category', tone: 'danger' })) {
       setCategories(categories.filter(cat => cat.id !== id));
     }
   };
@@ -138,20 +147,20 @@ export default function CategoriesManagementPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={() => setShowAddForm(!showAddForm)}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
           >
             <Plus size={20} />
             Add Category
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={saveCategories}
             className="flex items-center gap-2 px-4 py-2 bg-minsah-primary text-white rounded-lg hover:bg-minsah-dark transition"
           >
             <Save size={20} />
             Save Changes
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -162,7 +171,7 @@ export default function CategoriesManagementPage() {
           <div className="grid grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-minsah-secondary mb-2">Name</label>
-              <input
+              <Input
                 type="text"
                 value={newCategory.name}
                 onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
@@ -172,7 +181,7 @@ export default function CategoriesManagementPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-minsah-secondary mb-2">Icon</label>
-              <select
+              <Select
                 value={newCategory.icon}
                 onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
                 className="w-full px-3 py-2 border border-minsah-accent rounded-lg focus:outline-none focus:border-minsah-primary"
@@ -180,11 +189,11 @@ export default function CategoriesManagementPage() {
                 {iconOptions.map(icon => (
                   <option key={icon} value={icon}>{icon}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label className="block text-sm font-medium text-minsah-secondary mb-2">Color</label>
-              <select
+              <Select
                 value={newCategory.color}
                 onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
                 className="w-full px-3 py-2 border border-minsah-accent rounded-lg focus:outline-none focus:border-minsah-primary"
@@ -192,15 +201,15 @@ export default function CategoriesManagementPage() {
                 {colorOptions.map(color => (
                   <option key={color} value={color}>{color.replace('bg-', '').replace('-100', '')}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="flex items-end">
-              <button
+              <Button
                 onClick={addCategory}
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
               >
                 Add Category
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -232,7 +241,7 @@ export default function CategoriesManagementPage() {
 
               {/* Name */}
               <div className="flex-1">
-                <input
+                <Input
                   type="text"
                   value={category.name}
                   onChange={(e) => updateCategory(category.id, { name: e.target.value })}
@@ -245,7 +254,7 @@ export default function CategoriesManagementPage() {
 
               {/* Color */}
               <div className="w-32">
-                <select
+                <Select
                   value={category.color}
                   onChange={(e) => updateCategory(category.id, { color: e.target.value })}
                   className="w-full px-2 py-1 text-sm border border-minsah-accent rounded focus:outline-none focus:border-minsah-primary"
@@ -253,7 +262,7 @@ export default function CategoriesManagementPage() {
                   {colorOptions.map(color => (
                     <option key={color} value={color}>{color.replace('bg-', '')}</option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {/* Product Count */}
@@ -263,7 +272,7 @@ export default function CategoriesManagementPage() {
 
               {/* Visibility */}
               <div className="w-24 flex justify-center">
-                <button
+                <Button
                   onClick={() => toggleVisibility(category.id)}
                   className={`p-2 rounded-lg transition ${
                     category.isVisible
@@ -272,31 +281,31 @@ export default function CategoriesManagementPage() {
                   }`}
                 >
                   {category.isVisible ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
+                </Button>
               </div>
 
               {/* Actions */}
               <div className="w-48 flex items-center justify-center gap-2">
-                <button
+                <Button
                   onClick={() => moveCategory(category.id, 'up')}
                   disabled={index === 0}
                   className="p-2 rounded hover:bg-minsah-accent disabled:opacity-30 disabled:cursor-not-allowed transition"
                 >
                   <ChevronUp size={18} />
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => moveCategory(category.id, 'down')}
                   disabled={index === categories.length - 1}
                   className="p-2 rounded hover:bg-minsah-accent disabled:opacity-30 disabled:cursor-not-allowed transition"
                 >
                   <ChevronDown size={18} />
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => deleteCategory(category.id)}
                   className="p-2 rounded hover:bg-red-100 text-red-600 transition"
                 >
                   <Trash2 size={18} />
-                </button>
+                </Button>
               </div>
             </div>
           ))}

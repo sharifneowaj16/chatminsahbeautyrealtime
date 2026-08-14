@@ -1,3 +1,4 @@
+import { noindexMetadata } from '@/lib/metadata/noindex';
 // app/gift/[token]/page.tsx
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -17,10 +18,11 @@ async function fetchGift(token: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { token } = await params;
   const data = await fetchGift(token);
-  if (!data) return { title: 'Gift | Minsah Beauty' };
+  if (!data) return { ...noindexMetadata, title: 'Gift' };
 
   return {
-    title: `${data.gift.senderName} তোমাকে গিফট করতে চায় | Minsah Beauty`,
+    ...noindexMetadata,
+    title: `${data.gift.senderName} তোমাকে গিফট করতে চায়`,
     description: `${data.product.name} — Minsah Beauty থেকে বিশেষ উপহার`,
     openGraph: {
       title: `🎁 ${data.gift.senderName} তোমার জন্য গিফট পাঠিয়েছে!`,

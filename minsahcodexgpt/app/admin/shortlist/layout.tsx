@@ -1,3 +1,4 @@
+import { DESIGN_TOKEN_VALUES } from '@/lib/design-tokens';
 // app/admin/shortlist/layout.tsx - PWA Meta Tags
 
 import type { Metadata, Viewport } from 'next';
@@ -50,8 +51,8 @@ export const viewport: Viewport = {
   
   // Theme colors for mobile browsers
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#1f2937' },
+    { media: '(prefers-color-scheme: light)', color: DESIGN_TOKEN_VALUES.surface.panel },
+    { media: '(prefers-color-scheme: dark)', color: DESIGN_TOKEN_VALUES.surface.inverse },
   ],
 };
 

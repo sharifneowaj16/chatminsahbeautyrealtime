@@ -1,10 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, Upload, X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { useToast } from '@/components/ui/ToastProvider';
 import { formatPrice } from '@/utils/currency';
+import { productPath } from '@/lib/product-url';
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
 
 interface ReturnableItem {
   id: string;
@@ -61,12 +68,12 @@ const RETURN_REASON_PRESETS = [
 const MAX_RETURN_IMAGES = 4;
 
 function ProductImage({ src, alt }: { src: string | null; alt: string }) {
-  if (src && (src.startsWith('/') || src.startsWith('http'))) {
-    return <img src={src} alt={alt} className="h-full w-full object-cover" />;
+  if (src) {
+    return <CatalogProductImage src={src} alt={alt || 'Product image'} sizes="64px" padding="sm" />;
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-pink-100 to-purple-100 text-lg font-semibold text-purple-600">
+    <div className="flex h-full w-full items-center justify-center bg-minsah-accent text-lg font-semibold text-minsah-primary">
       {alt.slice(0, 1).toUpperCase()}
     </div>
   );
@@ -74,6 +81,8 @@ function ProductImage({ src, alt }: { src: string | null; alt: string }) {
 
 export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
   const router = useRouter();
+  const { requestConfirmation } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [reason, setReason] = useState('');
   const [selectedItems, setSelectedItems] = useState<Record<string, number>>({});
   const [evidenceImages, setEvidenceImages] = useState<UploadedEvidenceImage[]>([]);
@@ -249,9 +258,13 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Cancel return request ${order.latestReturn.returnNumber}?`
-    );
+    const confirmed = await requestConfirmation({
+      title: 'Cancel this return request?',
+      description: `Cancel return request ${order.latestReturn.returnNumber}?`,
+      confirmLabel: 'Cancel request',
+      cancelLabel: 'Keep request',
+      tone: 'danger',
+    });
 
     if (!confirmed) {
       return;
@@ -347,9 +360,17 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
           <div className="rounded-lg bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Uploaded Photos</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {order.latestReturn.images.map((imageUrl) => (
+              {order.latestReturn.images.map((imageUrl, index) => (
                 <div key={imageUrl} className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                  <img src={imageUrl} alt="Return evidence" className="h-32 w-full object-cover" />
+                  <div className="relative h-32 w-full">
+                    <CatalogProductImage
+                      src={imageUrl}
+                      alt={`Return evidence ${index + 1}`}
+                      sizes="(max-width: 640px) 50vw, 240px"
+                      fit="cover"
+                      padding="none"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -358,15 +379,16 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
 
         {canCancelExistingReturn && (
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={handleCancelReturn}
               disabled={isCanceling}
-              className="inline-flex items-center rounded-lg border border-red-200 px-6 py-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
+              className="border-red-200 px-6 py-3 text-red-700 hover:bg-red-50"
             >
-              {isCanceling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isCanceling && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               Cancel Request
-            </button>
+            </Button>
             <Link
               href="/account/returns"
               className="inline-flex items-center rounded-lg border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -419,17 +441,17 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
               return (
                 <div key={item.id} className="rounded-lg border border-gray-200 p-4">
                   <div className="flex items-start gap-4">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={isSelected}
                       onChange={() => toggleItem(item)}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      label={<span className="sr-only">Select {item.productName} for return</span>}
+                      containerClassName="mt-1 w-auto"
                     />
                     <div className="h-16 w-16 overflow-hidden rounded-lg bg-gray-100">
                       <ProductImage src={item.productImage} alt={item.productName} />
                     </div>
                     <div className="flex-1">
-                      <Link href={`/products/${item.productSlug}`} className="font-medium text-gray-900 hover:text-purple-600">
+                      <Link href={productPath({ id: item.productId, slug: item.productSlug })} className="font-medium text-gray-900 hover:text-purple-600">
                         {item.productName}
                       </Link>
                       <p className="text-sm text-gray-600">SKU: {item.sku}</p>
@@ -439,8 +461,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
 
                       {isSelected && (
                         <div className="mt-3 flex items-center gap-3">
-                          <label className="text-sm font-medium text-gray-700">Return Qty</label>
-                          <input
+                          <Input
                             type="number"
                             min={1}
                             max={item.quantity}
@@ -451,7 +472,9 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
                                 Math.min(item.quantity, Number(event.target.value) || 0)
                               )
                             }
-                            className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            label="Return Qty"
+                            containerClassName="w-24"
+                            className="focus:ring-purple-500"
                           />
                           <span className="text-sm text-gray-500">
                             Refund: {formatPrice(selectedQuantity * item.price)}
@@ -470,26 +493,25 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Reason for return</h2>
           <div className="mb-4 flex flex-wrap gap-2">
             {RETURN_REASON_PRESETS.map((preset) => (
-              <button
+              <Button
                 key={preset}
                 type="button"
+                variant="secondary"
                 onClick={() => setReason(preset)}
-                className={`rounded-full border px-3 py-2 text-sm transition ${
-                  reason === preset
-                    ? 'border-purple-600 bg-purple-50 text-purple-700'
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`rounded-full px-3 py-2 text-sm ${reason === preset ? 'border-purple-600 bg-purple-50 text-purple-700' : 'hover:bg-gray-50'}`}
               >
                 {preset}
-              </button>
+              </Button>
             ))}
           </div>
-          <textarea
+          <Textarea
             rows={5}
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             placeholder="Tell us what went wrong, for example damaged item, wrong product, or quality issue."
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            label="Reason for return"
+            hideLabel
+            className="focus:ring-purple-500"
           />
 
           <div className="mt-6 rounded-lg border border-dashed border-gray-300 p-4">
@@ -500,37 +522,49 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
                   Add up to {MAX_RETURN_IMAGES} photos to show damage, leakage, or the wrong item.
                 </p>
               </div>
-              <label className="inline-flex cursor-pointer items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                <Upload className="mr-2 h-4 w-4" />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingImages || evidenceImages.length >= MAX_RETURN_IMAGES}
+              >
+                <Upload className="h-4 w-4" aria-hidden="true" />
                 {isUploadingImages ? 'Uploading...' : 'Add Photos'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleEvidenceUpload}
-                  disabled={isUploadingImages || evidenceImages.length >= MAX_RETURN_IMAGES}
-                  className="hidden"
-                />
-              </label>
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleEvidenceUpload}
+                disabled={isUploadingImages || evidenceImages.length >= MAX_RETURN_IMAGES}
+                className="hidden"
+              />
             </div>
 
             {evidenceImages.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {evidenceImages.map((image, index) => (
                   <div key={image.key} className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                    <img
-                      src={image.url}
-                      alt={`Return evidence ${index + 1}`}
-                      className="h-28 w-full object-cover"
-                    />
-                    <button
+                    <div className="relative h-28 w-full">
+                      <CatalogProductImage
+                        src={image.url}
+                        alt={`Return evidence ${index + 1}`}
+                        sizes="(max-width: 640px) 50vw, 200px"
+                        fit="cover"
+                        padding="none"
+                      />
+                    </div>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => removeEvidenceImage(image)}
-                      className="absolute right-2 top-2 rounded-full bg-white/90 p-1 text-gray-700 shadow-sm hover:bg-white"
+                      className="absolute right-2 top-2 h-auto min-h-0 w-auto min-w-0 rounded-full bg-white/90 p-1 text-gray-700 shadow-sm hover:bg-white"
                       aria-label={`Remove evidence image ${index + 1}`}
                     >
-                      <X className="h-4 w-4" />
-                    </button>
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -549,14 +583,15 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={isSubmitting}
-              className="inline-flex items-center rounded-lg bg-purple-600 px-6 py-3 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-70"
+              className="bg-purple-600 px-6 py-3 hover:bg-purple-700"
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               Submit Return Request
-            </button>
+            </Button>
             <Link
               href={`/account/orders/${order.id}`}
               className="inline-flex items-center rounded-lg border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
