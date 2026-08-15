@@ -953,12 +953,12 @@ function CheckoutContent() {
                 {/* 1. Full Name (Floating Label) */}
                 <div className="relative">
                   <div
-                    className={`relative rounded-2xl border transition-all duration-200 bg-white ${
+                    className={`relative rounded-2xl border transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                       visibleFieldErrors.fullName
-                        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100"
+                        ? "border-[#8B261D]"
                         : focusedField === "fullName"
-                          ? "border-[#984B29] ring-2 ring-[#984B29]/10"
-                          : "border-[#E8E0D5] hover:border-[#C57A58]"
+                          ? "border-[#984B29]"
+                          : "border-[#E2D9CF] hover:border-[#984B29]/60"
                     }`}
                   >
                     <input
@@ -981,26 +981,26 @@ function CheckoutContent() {
                       }
                       placeholder="Full name"
                       aria-invalid={Boolean(fieldErrors.fullName)}
-                      className="w-full rounded-2xl bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none placeholder:text-transparent"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent"
                     />
                     <label
                       htmlFor="checkout-full-name"
-                      className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                      className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "fullName" || shippingForm.fullName.trim()
                           ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
                             (visibleFieldErrors.fullName
-                              ? "text-red-500"
+                              ? "text-[#8B261D]"
                               : focusedField === "fullName"
                                 ? "text-[#984B29]"
                                 : "text-[#7A6E65]")
-                          : "top-1/2 -translate-y-1/2 text-sm text-[#7A6E65]"
+                          : "left-4 top-1/2 -translate-y-1/2 text-sm text-[#8C7E74]"
                       }`}
                     >
                       Full name
                     </label>
                   </div>
                   {visibleFieldErrors.fullName && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1 text-xs text-[#8B261D] flex items-center gap-1">
                       <AlertCircle size={13} /> {visibleFieldErrors.fullName}
                     </p>
                   )}
@@ -1009,15 +1009,15 @@ function CheckoutContent() {
                 {/* 2. Phone Number with +880 (Floating Label) */}
                 <div className="relative">
                   <div
-                    className={`relative flex items-center rounded-2xl border transition-all duration-200 bg-white ${
+                    className={`relative flex items-center rounded-2xl border transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                       visibleFieldErrors.phoneNumber
-                        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100"
+                        ? "border-[#8B261D]"
                         : focusedField === "phoneNumber"
-                          ? "border-[#984B29] ring-2 ring-[#984B29]/10"
-                          : "border-[#E8E0D5] hover:border-[#C57A58]"
+                          ? "border-[#984B29]"
+                          : "border-[#E2D9CF] hover:border-[#984B29]/60"
                     }`}
                   >
-                    <div className="flex items-center pl-4 pr-2 text-xs font-bold text-[#7A6E65] border-r border-[#E8E0D5] select-none">
+                    <div className="flex items-center pl-4 pr-2 text-xs font-bold text-[#7A6E65] border-r border-[#E2D9CF] select-none">
                       +880
                     </div>
                     <input
@@ -1042,26 +1042,26 @@ function CheckoutContent() {
                       }
                       placeholder="Phone number"
                       aria-invalid={Boolean(fieldErrors.phoneNumber)}
-                      className="w-full rounded-2xl bg-transparent px-3.5 pt-4 pb-3 text-sm text-[#2D1F18] outline-none placeholder:text-transparent"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-3.5 pt-4 pb-3 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent"
                     />
                     <label
                       htmlFor="checkout-phone"
-                      className={`pointer-events-none absolute transition-all duration-200 ease-out ${
+                      className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "phoneNumber" || shippingForm.phoneNumber.trim()
                           ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
                             (visibleFieldErrors.phoneNumber
-                              ? "text-red-500"
+                              ? "text-[#8B261D]"
                               : focusedField === "phoneNumber"
                                 ? "text-[#984B29]"
                                 : "text-[#7A6E65]")
-                          : "left-16 top-1/2 -translate-y-1/2 text-sm text-[#7A6E65]"
+                          : "left-[4.5rem] top-1/2 -translate-y-1/2 text-sm text-[#8C7E74]"
                       }`}
                     >
                       Phone number
                     </label>
                   </div>
                   {visibleFieldErrors.phoneNumber && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1 text-xs text-[#8B261D] flex items-center gap-1">
                       <AlertCircle size={13} /> {visibleFieldErrors.phoneNumber}
                     </p>
                   )}
@@ -1078,12 +1078,12 @@ function CheckoutContent() {
                         setSearchQuery("");
                         markBeginCheckout();
                       }}
-                      className={`relative flex items-center justify-between cursor-pointer rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-200 bg-white ${
+                      className={`relative flex items-center justify-between cursor-pointer rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                         visibleFieldErrors.city
-                          ? "border-red-400"
+                          ? "border-[#8B261D]"
                           : openDropdown === "city"
-                            ? "border-[#984B29] ring-2 ring-[#984B29]/10"
-                            : "border-[#E8E0D5] hover:border-[#C57A58]"
+                            ? "border-[#984B29]"
+                            : "border-[#E2D9CF] hover:border-[#984B29]/60"
                       }`}
                     >
                       <span className={`text-xs sm:text-sm truncate ${shippingForm.city ? "font-semibold text-[#2D1F18]" : "text-transparent"}`}>
@@ -1091,18 +1091,18 @@ function CheckoutContent() {
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "city" ? "rotate-180 text-[#984B29]" : ""}`}
+                        className={`text-[#7A6E65] transition-transform duration-250 ${openDropdown === "city" ? "rotate-180 text-[#984B29]" : ""}`}
                       />
                       <label
-                        className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                        className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "city" || shippingForm.city
                             ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
                               (visibleFieldErrors.city
-                                ? "text-red-500"
+                                ? "text-[#8B261D]"
                                 : openDropdown === "city"
                                   ? "text-[#984B29]"
                                   : "text-[#7A6E65]")
-                            : "top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#7A6E65]"
+                            : "left-3.5 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#8C7E74]"
                         }`}
                       >
                         {locationLoading === "cities" ? "Loading cities..." : "Select City"}
@@ -1111,7 +1111,7 @@ function CheckoutContent() {
 
                     {/* Searchable Dropdown Popup */}
                     {openDropdown === "city" && (
-                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-hidden rounded-2xl border border-[#E8E0D5] bg-white shadow-xl animate-in fade-in zoom-in-95">
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-60 overflow-hidden rounded-2xl border border-[#E2D9CF] bg-white shadow-xl animate-in fade-in zoom-in-95 duration-150">
                         <div className="sticky top-0 border-b border-[#F4EFEA] bg-white p-2">
                           <div className="relative flex items-center">
                             <Search size={14} className="absolute left-2.5 text-[#7A6E65]" />
@@ -1121,7 +1121,7 @@ function CheckoutContent() {
                               placeholder="Search city / জেলা..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="w-full rounded-xl border border-[#E8E0D5] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
+                              className="w-full rounded-xl border border-[#E2D9CF] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
                             />
                             {searchQuery && (
                               <button
@@ -1161,7 +1161,7 @@ function CheckoutContent() {
                       </div>
                     )}
                     {visibleFieldErrors.city && (
-                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.city}</p>
+                      <p className="mt-1 text-xs text-[#8B261D]">{visibleFieldErrors.city}</p>
                     )}
                     <select
                       id="checkout-city"
@@ -1186,15 +1186,15 @@ function CheckoutContent() {
                         setOpenDropdown(openDropdown === "zone" ? null : "zone");
                         setSearchQuery("");
                       }}
-                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-200 ${
+                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                         !shippingForm.pathao_city_id
-                          ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E8E0D5]"
+                          ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E2D9CF]"
                           : "cursor-pointer bg-white " +
                             (visibleFieldErrors.zone
-                              ? "border-red-400"
+                              ? "border-[#8B261D]"
                               : openDropdown === "zone"
-                                ? "border-[#984B29] ring-2 ring-[#984B29]/10"
-                                : "border-[#E8E0D5] hover:border-[#C57A58]")
+                                ? "border-[#984B29]"
+                                : "border-[#E2D9CF] hover:border-[#984B29]/60")
                       }`}
                     >
                       <span className={`text-xs sm:text-sm truncate ${shippingForm.zone ? "font-semibold text-[#2D1F18]" : "text-transparent"}`}>
@@ -1202,18 +1202,18 @@ function CheckoutContent() {
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "zone" ? "rotate-180 text-[#984B29]" : ""}`}
+                        className={`text-[#7A6E65] transition-transform duration-250 ${openDropdown === "zone" ? "rotate-180 text-[#984B29]" : ""}`}
                       />
                       <label
-                        className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                        className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "zone" || shippingForm.zone
                             ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
                               (visibleFieldErrors.zone
-                                ? "text-red-500"
+                                ? "text-[#8B261D]"
                                 : openDropdown === "zone"
                                   ? "text-[#984B29]"
                                   : "text-[#7A6E65]")
-                            : "top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#7A6E65]"
+                            : "left-3.5 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#8C7E74]"
                         }`}
                       >
                         {locationLoading === "zones" ? "Loading zones..." : "Select Zone"}
@@ -1222,7 +1222,7 @@ function CheckoutContent() {
 
                     {/* Searchable Dropdown Popup */}
                     {openDropdown === "zone" && (
-                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-hidden rounded-2xl border border-[#E8E0D5] bg-white shadow-xl animate-in fade-in zoom-in-95">
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-60 overflow-hidden rounded-2xl border border-[#E2D9CF] bg-white shadow-xl animate-in fade-in zoom-in-95 duration-150">
                         <div className="sticky top-0 border-b border-[#F4EFEA] bg-white p-2">
                           <div className="relative flex items-center">
                             <Search size={14} className="absolute left-2.5 text-[#7A6E65]" />
@@ -1232,7 +1232,7 @@ function CheckoutContent() {
                               placeholder="Search zone / থানা..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="w-full rounded-xl border border-[#E8E0D5] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
+                              className="w-full rounded-xl border border-[#E2D9CF] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
                             />
                             {searchQuery && (
                               <button
@@ -1272,7 +1272,7 @@ function CheckoutContent() {
                       </div>
                     )}
                     {visibleFieldErrors.zone && (
-                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.zone}</p>
+                      <p className="mt-1 text-xs text-[#8B261D]">{visibleFieldErrors.zone}</p>
                     )}
                     <select
                       id="checkout-zone"
@@ -1297,15 +1297,15 @@ function CheckoutContent() {
                         setOpenDropdown(openDropdown === "area" ? null : "area");
                         setSearchQuery("");
                       }}
-                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-200 ${
+                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                         !shippingForm.pathao_zone_id
-                          ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E8E0D5]"
+                          ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E2D9CF]"
                           : "cursor-pointer bg-white " +
                             (visibleFieldErrors.area
-                              ? "border-red-400"
+                              ? "border-[#8B261D]"
                               : openDropdown === "area"
-                                ? "border-[#984B29] ring-2 ring-[#984B29]/10"
-                                : "border-[#E8E0D5] hover:border-[#C57A58]")
+                                ? "border-[#984B29]"
+                                : "border-[#E2D9CF] hover:border-[#984B29]/60")
                       }`}
                     >
                       <span className={`text-xs sm:text-sm truncate ${shippingForm.area ? "font-semibold text-[#2D1F18]" : "text-transparent"}`}>
@@ -1313,18 +1313,18 @@ function CheckoutContent() {
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "area" ? "rotate-180 text-[#984B29]" : ""}`}
+                        className={`text-[#7A6E65] transition-transform duration-250 ${openDropdown === "area" ? "rotate-180 text-[#984B29]" : ""}`}
                       />
                       <label
-                        className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                        className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "area" || shippingForm.area
                             ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
                               (visibleFieldErrors.area
-                                ? "text-red-500"
+                                ? "text-[#8B261D]"
                                 : openDropdown === "area"
                                   ? "text-[#984B29]"
                                   : "text-[#7A6E65]")
-                            : "top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#7A6E65]"
+                            : "left-3.5 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#8C7E74]"
                         }`}
                       >
                         {locationLoading === "areas" ? "Loading areas..." : "Select Area"}
@@ -1333,7 +1333,7 @@ function CheckoutContent() {
 
                     {/* Searchable Dropdown Popup */}
                     {openDropdown === "area" && (
-                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-hidden rounded-2xl border border-[#E8E0D5] bg-white shadow-xl animate-in fade-in zoom-in-95">
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-60 overflow-hidden rounded-2xl border border-[#E2D9CF] bg-white shadow-xl animate-in fade-in zoom-in-95 duration-150">
                         <div className="sticky top-0 border-b border-[#F4EFEA] bg-white p-2">
                           <div className="relative flex items-center">
                             <Search size={14} className="absolute left-2.5 text-[#7A6E65]" />
@@ -1343,7 +1343,7 @@ function CheckoutContent() {
                               placeholder="Search area / এলাকা..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="w-full rounded-xl border border-[#E8E0D5] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
+                              className="w-full rounded-xl border border-[#E2D9CF] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
                             />
                             {searchQuery && (
                               <button
@@ -1386,7 +1386,7 @@ function CheckoutContent() {
                       </div>
                     )}
                     {visibleFieldErrors.area && (
-                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.area}</p>
+                      <p className="mt-1 text-xs text-[#8B261D]">{visibleFieldErrors.area}</p>
                     )}
                     <select
                       id="checkout-area"
@@ -1413,12 +1413,12 @@ function CheckoutContent() {
                 {/* 4. Street Address (Floating Label) */}
                 <div className="relative">
                   <div
-                    className={`relative rounded-2xl border transition-all duration-200 bg-white ${
+                    className={`relative rounded-2xl border transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                       visibleFieldErrors.streetAddress
-                        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100"
+                        ? "border-[#8B261D]"
                         : focusedField === "streetAddress"
-                          ? "border-[#984B29] ring-2 ring-[#984B29]/10"
-                          : "border-[#E8E0D5] hover:border-[#C57A58]"
+                          ? "border-[#984B29]"
+                          : "border-[#E2D9CF] hover:border-[#984B29]/60"
                     }`}
                   >
                     <input
@@ -1440,33 +1440,33 @@ function CheckoutContent() {
                         }))
                       }
                       placeholder="Street address"
-                      className="w-full rounded-2xl bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none placeholder:text-transparent"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent"
                     />
                     <label
                       htmlFor="checkout-street-address"
-                      className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                      className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "streetAddress" || shippingForm.streetAddress.trim()
                           ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
                             (visibleFieldErrors.streetAddress
-                              ? "text-red-500"
+                              ? "text-[#8B261D]"
                               : focusedField === "streetAddress"
                                 ? "text-[#984B29]"
                                 : "text-[#7A6E65]")
-                          : "top-1/2 -translate-y-1/2 text-sm text-[#7A6E65]"
+                          : "left-4 top-1/2 -translate-y-1/2 text-sm text-[#8C7E74]"
                       }`}
                     >
                       Street address
                     </label>
                   </div>
                   {visibleFieldErrors.streetAddress && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1 text-xs text-[#8B261D] flex items-center gap-1">
                       <AlertCircle size={13} /> {visibleFieldErrors.streetAddress}
                     </p>
                   )}
                 </div>
 
                 {locationError && (
-                  <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-100">
+                  <p className="text-xs text-[#8B261D] bg-[#FDF6F5] p-2.5 rounded-xl border border-[#F0D5D1]">
                     {locationError}
                   </p>
                 )}
@@ -1509,15 +1509,15 @@ function CheckoutContent() {
                         setSelectedPaymentMethod(method);
                         trackPaymentInfoOnce(method);
                       }}
-                      className={`cursor-pointer rounded-2xl border-2 p-4 transition-all duration-200 ${
+                      className={`cursor-pointer rounded-2xl border p-4 transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                         isSelected
-                          ? "border-[#984B29] bg-[#FAF6F2] shadow-sm ring-1 ring-[#984B29]/20"
-                          : "border-[#E8E0D5] bg-white hover:border-[#C57A58] hover:bg-[#FDFBF9]"
+                          ? "border-[#984B29] bg-[#FAF6F2]"
+                          : "border-[#E2D9CF] bg-white hover:border-[#984B29]/50 hover:bg-[#FDFBF9]"
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <div
-                          className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition ${
+                          className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${
                             isSelected
                               ? "border-[#984B29] bg-[#984B29] text-white"
                               : "border-[#B0A59A] bg-white"
@@ -1636,7 +1636,7 @@ function CheckoutContent() {
                           <button
                             type="button"
                             onClick={() => removeItem(item.id)}
-                            className="p-1 text-[#A3978C] hover:text-red-600 transition-colors"
+                            className="p-1 text-[#A3978C] hover:text-[#8B261D] transition-colors"
                             aria-label="Remove item"
                           >
                             <Trash2 size={13} />
@@ -1675,7 +1675,7 @@ function CheckoutContent() {
                 )}
 
                 {deliveryError && (
-                  <p className="rounded-lg bg-red-50 p-2 text-[11px] text-red-600">
+                  <p className="rounded-lg bg-[#FDF6F5] border border-[#F0D5D1] p-2 text-[11px] text-[#8B261D]">
                     {deliveryError}
                   </p>
                 )}
@@ -1688,7 +1688,7 @@ function CheckoutContent() {
 
               {/* Error Message Box */}
               {checkoutError && (
-                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+                <div className="mt-4 rounded-xl border border-[#F0D5D1] bg-[#FDF6F5] p-3 text-xs font-medium text-[#8B261D]">
                   {checkoutError}
                 </div>
               )}
@@ -1754,7 +1754,7 @@ function CheckoutContent() {
         </div>
 
         {checkoutError && (
-          <p className="mt-2 text-center text-[11px] font-medium text-red-600">
+          <p className="mt-2 text-center text-[11px] font-medium text-[#8B261D]">
             {checkoutError}
           </p>
         )}
