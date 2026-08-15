@@ -12,7 +12,8 @@ COPY scripts ./scripts
 # Skip postinstall: it runs prisma-client-freshness.mjs which requires a
 # previously generated client (unavailable here). We run prisma generate explicitly.
 RUN npm ci --ignore-scripts
-RUN npx prisma generate
+# Replicate what the skipped postinstall does: generate client + write freshness stamp
+RUN npx prisma generate && node scripts/prisma-client-freshness.mjs --write
 
 FROM base AS builder
 WORKDIR /app
