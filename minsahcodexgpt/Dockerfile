@@ -6,7 +6,12 @@ COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 COPY scripts ./scripts
-RUN npm ci
+# Use --ignore-scripts to prevent the postinstall hook from running prisma generate
+# during npm ci. The postinstall calls prisma-client-freshness.mjs which requires
+# a previously generated client — unavailable at this stage — causing npm to crash
+# with "Exit handler never called!". We run prisma generate explicitly below.
+RUN npm ci --ignore-scripts
+RUN npx prisma generate
 
 FROM base AS builder
 WORKDIR /app
