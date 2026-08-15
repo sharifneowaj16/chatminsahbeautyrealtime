@@ -10,11 +10,17 @@ import {
   ArrowLeft,
   MapPin,
   CreditCard,
-  FileText,
-  ChevronDown,
-  ChevronUp,
-  ShoppingCart,
+  ShoppingBag,
   Check,
+  ShieldCheck,
+  Truck,
+  Sparkles,
+  ChevronRight,
+  AlertCircle,
+  Plus,
+  Minus,
+  Trash2,
+  Lock,
 } from "lucide-react";
 import { formatPrice } from "@/utils/currency";
 import { Button } from "@/components/ui/Button";
@@ -28,9 +34,6 @@ import {
   trackViewCart,
 } from "@/lib/tracking/ecommerce";
 import type { DeliveryQuoteResponse } from "@/types/delivery-quote";
-import CartItemRow from "@/features/cart/CartItemRow";
-import OrderSummary from "@/features/cart/OrderSummary";
-import CheckoutStepper from "@/features/checkout/CheckoutStepper";
 import { UI_COPY } from "@/lib/ui-copy";
 
 const SocialLoginModal = dynamic(
@@ -61,7 +64,7 @@ type ShippingFormState = {
 };
 
 function formatCustomerDeliveryCharge(amount: number) {
-  return amount <= 0 ? UI_COPY.checkout.free : formatPrice(amount);
+  return amount <= 0 ? "Free Delivery" : formatPrice(amount);
 }
 
 function getDeliveryOfferMessage(quote: DeliveryQuoteResponse | null) {
@@ -71,7 +74,7 @@ function getDeliveryOfferMessage(quote: DeliveryQuoteResponse | null) {
     quote.deliveryOfferBadgeText || quote.appliedDeliveryOffer?.badgeText;
 
   if (discountAmount > 0) {
-    return `${badgeText || UI_COPY.checkout.deliveryOfferApplied} · ${UI_COPY.checkout.saved} ${formatPrice(discountAmount)}`;
+    return `${badgeText || "Delivery offer applied"} · Saved ${formatPrice(discountAmount)}`;
   }
 
   if (quote.deliveryPricingSource === "PRODUCT_OFFER" && badgeText) {
@@ -104,10 +107,15 @@ function isValidBdMobileNumber(value: string) {
   return /^01[3-9]\d{8}$/.test(value);
 }
 
-type CheckoutFieldKey =
-  "fullName" | "phoneNumber" | "city" | "zone" | "area" | "streetAddress";
+export type CheckoutFieldKey =
+  | "fullName"
+  | "phoneNumber"
+  | "city"
+  | "zone"
+  | "area"
+  | "streetAddress";
 
-type CheckoutFieldErrors = Partial<Record<CheckoutFieldKey, string>>;
+export type CheckoutFieldErrors = Partial<Record<CheckoutFieldKey, string>>;
 type CheckoutTouchedFields = Partial<Record<CheckoutFieldKey, boolean>>;
 
 type CartItemWithWeight = {
@@ -121,9 +129,6 @@ function normalizeWeightKg(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") return null;
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue) || numericValue <= 0) return null;
-
-  // Admin product weights are sometimes stored as grams. Keep kg values as-is,
-  // but convert large gram-like values to kg for Pathao quote payloads.
   return numericValue > 20 ? numericValue / 1000 : numericValue;
 }
 
@@ -139,7 +144,7 @@ function getCartItemWeightKg(item: CartItemWithWeight) {
 
 function getFriendlyCheckoutError(data: unknown) {
   if (!data || typeof data !== "object") {
-    return UI_COPY.checkout.genericError;
+    return "Something went wrong. Please try again.";
   }
 
   const payload = data as {
@@ -156,26 +161,26 @@ function getFriendlyCheckoutError(data: unknown) {
         : "";
 
   if (code === "IDEMPOTENCY_PAYLOAD_MISMATCH") {
-    return UI_COPY.checkout.changedDetails;
+    return "Cart or address details changed. Please review and place order again.";
   }
 
   if (code === "PATHAO_HOME_DELIVERY_UNAVAILABLE") {
-    return UI_COPY.checkout.homeDeliveryUnavailable;
+    return "Home delivery is not available in the selected area. Please select another area.";
   }
 
   if (code === "PATHAO_AREA_ZONE_MISMATCH") {
-    return UI_COPY.checkout.areaZoneMismatch;
+    return "Selected area does not match the selected zone. Please re-select.";
   }
 
   if (rawMessage.toLowerCase().includes("phone")) {
-    return UI_COPY.checkout.invalidPhone;
+    return "Phone number ta 11 digit-er valid BD number din.";
   }
 
   if (rawMessage.toLowerCase().includes("street")) {
-    return UI_COPY.checkout.streetRequired;
+    return "Street address ta din.";
   }
 
-  return rawMessage || UI_COPY.checkout.genericError;
+  return rawMessage || "Something went wrong. Please try again.";
 }
 
 function normalizeDeliveryOptions(value: unknown): DeliveryOption[] {
@@ -222,7 +227,7 @@ function normalizeDeliveryAreas(value: unknown): DeliveryAreaOption[] {
 function CheckoutContent() {
   const router = useRouter();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _searchParams = useSearchParams(); // kept for Suspense boundary
+  const _searchParams = useSearchParams();
   const { user } = useAuth();
   const {
     items,
@@ -236,7 +241,7 @@ function CheckoutContent() {
   } = useCart();
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const [expandedSection, setExpandedSection] = useState<
+  const [, setExpandedSection] = useState<
     "address" | "payment" | "summary" | null
   >("address");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -266,7 +271,7 @@ function CheckoutContent() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
-  const [deliveryRetryNonce, setDeliveryRetryNonce] = useState(0);
+  const [, setDeliveryRetryNonce] = useState(0);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [touchedFields, setTouchedFields] = useState<CheckoutTouchedFields>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -277,6 +282,7 @@ function CheckoutContent() {
   const initiateCheckoutTrackedRef = useRef(false);
   const shippingInfoTrackedRef = useRef(false);
   const paymentInfoTrackedRef = useRef(false);
+
   const shippingQuoteItems = useMemo(
     () =>
       items.map((item) => ({
@@ -286,6 +292,7 @@ function CheckoutContent() {
       })),
     [items],
   );
+
   const estimatedTotalWeightKg = useMemo(
     () =>
       Number(
@@ -299,22 +306,27 @@ function CheckoutContent() {
       ),
     [items],
   );
+
   const normalizedShippingPhone = normalizeBdMobileNumber(
     shippingForm.phoneNumber,
   );
+
   const selectedArea = useMemo(
     () => areas.find((area) => area.id === shippingForm.pathao_area_id) ?? null,
     [areas, shippingForm.pathao_area_id],
   );
+
   const selectedAreaHomeDeliveryAvailable = Boolean(
     selectedArea?.homeDeliveryAvailable,
   );
+
   const hasDeliveryLocation = Boolean(
     shippingForm.pathao_city_id &&
     shippingForm.pathao_zone_id &&
     shippingForm.pathao_area_id &&
     selectedAreaHomeDeliveryAvailable,
   );
+
   const hasRequiredShippingFields = Boolean(
     shippingForm.fullName.trim() &&
     isValidBdMobileNumber(normalizedShippingPhone) &&
@@ -324,36 +336,37 @@ function CheckoutContent() {
     shippingForm.streetAddress.trim() &&
     hasDeliveryLocation,
   );
+
   const finalTotal = subtotal + deliveryCharge;
   const deliveryOfferMessage = getDeliveryOfferMessage(deliveryQuote);
+
   const fieldErrors = useMemo<CheckoutFieldErrors>(() => {
     const errors: CheckoutFieldErrors = {};
 
     if (!shippingForm.fullName.trim()) {
-      errors.fullName = UI_COPY.checkout.fullNameRequired;
+      errors.fullName = "Please enter your full name.";
     }
 
     if (!isValidBdMobileNumber(normalizedShippingPhone)) {
-      errors.phoneNumber = UI_COPY.checkout.invalidPhone;
+      errors.phoneNumber = "Phone number ta 11 digit-er valid BD number din.";
     }
 
     if (!shippingForm.pathao_city_id) {
-      errors.city = UI_COPY.checkout.cityRequired;
+      errors.city = "City select korun.";
     }
 
     if (!shippingForm.pathao_zone_id) {
-      errors.zone = UI_COPY.checkout.zoneRequired;
+      errors.zone = "Zone select korun.";
     }
 
     if (!shippingForm.pathao_area_id) {
-      errors.area = UI_COPY.checkout.areaRequired;
+      errors.area = "Area select korun.";
     } else if (selectedArea && !selectedArea.homeDeliveryAvailable) {
-      errors.area =
-        UI_COPY.checkout.homeDeliveryUnavailable;
+      errors.area = "Home delivery is not available in this area";
     }
 
     if (!shippingForm.streetAddress.trim()) {
-      errors.streetAddress = UI_COPY.checkout.streetRequired;
+      errors.streetAddress = "Street address ta din.";
     }
 
     return errors;
@@ -379,36 +392,33 @@ function CheckoutContent() {
   }, [fieldErrors, submitAttempted, touchedFields]);
 
   const checkoutBlockReason = useMemo(() => {
-    if (items.length === 0)
-      return UI_COPY.checkout.cartEmpty;
+    if (items.length === 0) return "Your cart is empty";
     const firstFieldError = Object.values(fieldErrors)[0];
     if (firstFieldError) return firstFieldError;
-    if (!selectedPaymentMethod) return UI_COPY.checkout.paymentRequired;
-    if (deliveryState === "loading") return UI_COPY.checkout.calculatingDelivery;
+    if (!selectedPaymentMethod) return "Please select a payment method.";
+    if (deliveryState === "loading") return "Delivery charge calculate hocche.";
     if (deliveryState !== "success") {
-      return UI_COPY.checkout.deliveryCalculationFailed;
+      return "Delivery calculation failed. Please re-check address.";
     }
     return null;
   }, [deliveryState, fieldErrors, items.length, selectedPaymentMethod]);
 
-  const checkoutStep =
-    expandedSection === "payment" ? 2 : expandedSection === "summary" ? 3 : 1;
-  const canOpenLoginBeforeCheckout = !user && items.length > 0;
   const placeOrderDisabled =
     isPlacingOrder ||
     items.length === 0 ||
+    !selectedPaymentMethod ||
     (Boolean(user) && deliveryState === "loading");
 
   const orderButtonLabel = useMemo(() => {
     if (isPlacingOrder) {
       return selectedPaymentMethod?.type === "cod"
-        ? UI_COPY.checkout.placingOrder
+        ? "Placing order..."
         : `Preparing ${selectedPaymentMethod?.name || "payment"}...`;
     }
-    if (!user) return UI_COPY.checkout.loginToOrder;
-    if (checkoutBlockReason) return UI_COPY.checkout.completeDetails;
-    if (selectedPaymentMethod?.type === "cod") return UI_COPY.checkout.placeOrder;
-    return `${selectedPaymentMethod?.name || "পেমেন্ট"} দিয়ে এগিয়ে যান`;
+    if (!user) return "Login to Place Order";
+    if (checkoutBlockReason) return "Complete checkout details";
+    if (selectedPaymentMethod?.type === "cod") return "Confirm Order";
+    return `Pay with ${selectedPaymentMethod?.name || "Payment"}`;
   }, [checkoutBlockReason, isPlacingOrder, selectedPaymentMethod, user]);
 
   const markFieldTouched = (field: CheckoutFieldKey) => {
@@ -491,7 +501,7 @@ function CheckoutContent() {
       } catch {
         if (!isCancelled && !controller.signal.aborted) {
           setCities([]);
-          setLocationError("ডেলিভারির শহরগুলো লোড করা যায়নি। আবার চেষ্টা করুন।");
+          setLocationError("Could not load delivery cities. Please retry.");
         }
       } finally {
         if (!isCancelled) setLocationLoading(null);
@@ -532,9 +542,7 @@ function CheckoutContent() {
       } catch {
         if (!isCancelled && !controller.signal.aborted) {
           setZones([]);
-          setLocationError(
-            "এই শহরের জোনগুলো লোড করা যায়নি। আবার চেষ্টা করুন।",
-          );
+          setLocationError("Could not load zones for this city.");
         }
       } finally {
         if (!isCancelled) setLocationLoading(null);
@@ -574,9 +582,7 @@ function CheckoutContent() {
       } catch {
         if (!isCancelled && !controller.signal.aborted) {
           setAreas([]);
-          setLocationError(
-            "এই জোনের এলাকাগুলো লোড করা যায়নি। আবার চেষ্টা করুন।",
-          );
+          setLocationError("Could not load areas for this zone.");
         }
       } finally {
         if (!isCancelled) setLocationLoading(null);
@@ -643,9 +649,7 @@ function CheckoutContent() {
           setDeliveryCharge(0);
           setDeliveryQuote(null);
           setDeliveryState("error");
-          setDeliveryError(
-            UI_COPY.checkout.deliveryCalculationFailed,
-          );
+          setDeliveryError("Delivery calculation failed. Please re-check address.");
         }
       }
     };
@@ -663,7 +667,6 @@ function CheckoutContent() {
     shippingForm.pathao_city_id,
     shippingForm.pathao_zone_id,
     shippingForm.pathao_area_id,
-    deliveryRetryNonce,
   ]);
 
   const submitOrder = async (sessionUserId?: string) => {
@@ -674,20 +677,7 @@ function CheckoutContent() {
 
     if (checkoutBlockReason) {
       setCheckoutError(checkoutBlockReason);
-      if (
-        fieldErrors.fullName ||
-        fieldErrors.phoneNumber ||
-        fieldErrors.city ||
-        fieldErrors.zone ||
-        fieldErrors.area ||
-        fieldErrors.streetAddress
-      ) {
-        setExpandedSection("address");
-      } else if (!selectedPaymentMethod) {
-        setExpandedSection("payment");
-      } else {
-        setExpandedSection("summary");
-      }
+      setExpandedSection("address");
       return;
     }
 
@@ -696,7 +686,8 @@ function CheckoutContent() {
       !selectedAreaHomeDeliveryAvailable ||
       !selectedPaymentMethod
     ) {
-      setCheckoutError(UI_COPY.checkout.completeDetails);
+      setCheckoutError("Home delivery is not available in the selected area");
+      setExpandedSection("address");
       return;
     }
 
@@ -773,7 +764,7 @@ function CheckoutContent() {
       router.push(nextURL);
     } catch {
       setCheckoutError(
-        UI_COPY.checkout.networkError,
+        "Network connection failed. Please check your internet and try again.",
       );
     } finally {
       setIsPlacingOrder(false);
@@ -797,329 +788,296 @@ function CheckoutContent() {
     }
   };
 
-  const toggleSection = (section: "address" | "payment" | "summary") => {
-    if (section === "address") {
-      markBeginCheckout();
-    }
-    setExpandedSection(expandedSection === section ? null : section);
-  };
-
   const handleCityChange = (cityId: string) => {
     markBeginCheckout();
     const selectedCity = cities.find((city) => String(city.id) === cityId);
     setShippingForm((current) => ({
       ...current,
-      city: selectedCity?.name ?? "",
+      city: selectedCity ? selectedCity.name : "",
       zone: "",
       area: "",
-      pathao_city_id: selectedCity?.id ?? null,
+      pathao_city_id: selectedCity ? selectedCity.id : null,
       pathao_zone_id: null,
       pathao_area_id: null,
     }));
-    setZones([]);
-    setAreas([]);
   };
 
   const handleZoneChange = (zoneId: string) => {
-    markBeginCheckout();
     const selectedZone = zones.find((zone) => String(zone.id) === zoneId);
     setShippingForm((current) => ({
       ...current,
-      zone: selectedZone?.name ?? "",
+      zone: selectedZone ? selectedZone.name : "",
       area: "",
-      pathao_zone_id: selectedZone?.id ?? null,
+      pathao_zone_id: selectedZone ? selectedZone.id : null,
       pathao_area_id: null,
     }));
-    setAreas([]);
   };
 
   const handleAreaChange = (areaId: string) => {
-    markBeginCheckout();
-    const selectedArea = areas.find((area) => String(area.id) === areaId);
+    const selectedAreaCandidate = areas.find((area) => String(area.id) === areaId);
     setShippingForm((current) => ({
       ...current,
-      area: selectedArea?.name ?? "",
-      pathao_area_id: selectedArea?.id ?? null,
+      area: selectedAreaCandidate ? selectedAreaCandidate.name : "",
+      pathao_area_id: selectedAreaCandidate ? selectedAreaCandidate.id : null,
     }));
+  };
+
+  const handleQuantityChange = (itemId: string, nextQuantity: number) => {
+    if (nextQuantity <= 0) {
+      void removeItem(itemId);
+    } else {
+      void updateQuantity(itemId, nextQuantity);
+    }
   };
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-minsah-light">
-        <header className="bg-minsah-dark text-minsah-light sticky top-0 z-50 shadow-md">
-          <div className="px-4 py-4 flex items-center justify-between">
-            <Link
-              href="/shop"
-              aria-label="শপে ফিরে যান"
-              className="p-2 hover:bg-minsah-primary rounded-lg transition"
-            >
-              <ArrowLeft size={24} aria-hidden="true" />
-            </Link>
-            <h1 className="text-xl font-semibold">কার্ট ও চেকআউট</h1>
-            <div className="w-10" />
+      <div className="min-h-screen bg-[#FAF6F2] px-4 py-12 text-[#2D1F18]">
+        <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center rounded-3xl bg-white p-8 text-center shadow-sm border border-[#EFE7DE]">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FAF6F2] text-[#984B29]">
+            <ShoppingBag size={36} aria-hidden="true" />
           </div>
-        </header>
-
-        <main className="px-4 py-10">
-          <div className="mx-auto max-w-md rounded-3xl bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-minsah-accent">
-              <ShoppingCart size={28} className="text-minsah-primary" />
-            </div>
-            <h2 className="text-xl font-bold text-minsah-dark">
-              আপনার কার্ট খালি
-            </h2>
-            <p className="mt-2 text-sm text-minsah-secondary">
-              চেকআউট করতে একটি পণ্য যোগ করুন।
-            </p>
-            <Link
-              href="/shop"
-              className="mt-6 inline-flex rounded-xl bg-minsah-primary px-6 py-3 text-sm font-bold text-minsah-light transition hover:bg-minsah-dark"
-            >
-              কেনাকাটা চালিয়ে যান
-            </Link>
-          </div>
-        </main>
+          <h1 className="mt-6 text-2xl font-bold text-[#2D1F18]">Your Cart is Empty</h1>
+          <p className="mt-2 text-sm text-[#7A6E65]">
+            Looks like you haven&apos;t added any luxury Korean beauty products to your bag yet.
+          </p>
+          <Link
+            href="/shop"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-[#984B29] px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-[#7E3D20] transition-colors"
+          >
+            Continue Shopping
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-minsah-light pb-24 lg:pb-8">
-      <header className="bg-minsah-dark text-minsah-light sticky top-0 z-50 shadow-md">
-        <div className="px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#FAF6F2] pb-28 lg:pb-16 text-[#2D1F18]">
+      {/* Top Clean Header */}
+      <header className="sticky top-0 z-40 border-b border-[#EFE7DE] bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link
-            href="/cart"
-            aria-label="কার্টে ফিরে যান"
-            className="p-2 hover:bg-minsah-primary rounded-lg transition"
+            href="/shop"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#7A6E65] hover:text-[#984B29] transition-colors"
           >
-            <ArrowLeft size={24} aria-hidden="true" />
+            <ArrowLeft size={18} aria-hidden="true" />
+            <span className="hidden sm:inline">Continue Shopping</span>
           </Link>
-          <h1 className="text-xl font-semibold">কার্ট ও চেকআউট</h1>
-          <div className="w-10" />
+
+          <div className="text-center">
+            <h1 className="text-lg font-bold tracking-tight text-[#2D1F18] sm:text-xl">
+              Checkout
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#15803D]">
+            <ShieldCheck size={16} aria-hidden="true" />
+            <span className="hidden sm:inline">100% Secure</span>
+          </div>
         </div>
       </header>
 
-      <main id="main-content" className="mx-auto max-w-3xl space-y-4 px-4 py-6">
-        <CheckoutStepper currentStep={checkoutStep} />
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-4 py-4 border-b border-minsah-accent flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-minsah-accent rounded-lg flex items-center justify-center">
-                <ShoppingCart size={20} aria-hidden="true" className="text-minsah-primary" />
-              </div>
-              <div>
-                <h2 className="font-bold text-minsah-dark">কার্টের পণ্য</h2>
-                <p className="text-xs text-minsah-secondary">
-                  চেকআউটের আগে পণ্যগুলো যাচাই করুন
-                </p>
-              </div>
-            </div>
-            <span className="text-sm font-semibold text-minsah-primary">
-              {items.length}টি পণ্য · {totalQuantity}টি আইটেম
-            </span>
-          </div>
-
-          <div className="px-4 py-4">
-            {items.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-sm text-minsah-secondary mb-3">
-                  আপনার কার্ট খালি
-                </p>
-                <Link
-                  href="/shop"
-                  className="text-minsah-primary font-semibold text-sm"
-                >
-                  কেনাকাটা চালিয়ে যান
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {items.map((item) => (
-                  <CartItemRow
-                    key={item.id}
-                    item={item}
-                    density="compact"
-                    showLineTotal
-                    onQuantityChange={(nextQuantity) =>
-                      void updateQuantity(item.id, nextQuantity)
-                    }
-                    onRemove={() => void removeItem(item.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <Button
-            id="checkout-address-toggle"
-            type="button"
-            variant="ghost"
-            onClick={() => toggleSection("address")}
-            aria-expanded={expandedSection === "address"}
-            aria-controls="checkout-address-panel"
-            className="w-full justify-between rounded-none px-4 py-4 hover:bg-minsah-accent/30"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-minsah-accent rounded-lg flex items-center justify-center">
-                <MapPin size={20} aria-hidden="true" className="text-minsah-primary" />
-              </div>
-              <div className="text-left">
-                <h2
-                  id="checkout-address-heading"
-                  className="font-bold text-minsah-dark"
-                >
-                  ডেলিভারির ঠিকানা
-                </h2>
-                {hasRequiredShippingFields && expandedSection !== "address" && (
-                  <p className="text-xs text-minsah-secondary line-clamp-1">
-                    {shippingForm.area}, {shippingForm.zone},{" "}
-                    {shippingForm.city}
-                  </p>
-                )}
-              </div>
-            </div>
-            {expandedSection === "address" ? (
-              <ChevronUp className="text-minsah-secondary" size={20} aria-hidden="true" />
-            ) : (
-              <ChevronDown className="text-minsah-secondary" size={20} aria-hidden="true" />
-            )}
-          </Button>
-
-          {expandedSection === "address" && (
-            <div
-              id="checkout-address-panel"
-              role="region"
-              aria-labelledby="checkout-address-toggle"
-              className="px-4 pb-4 border-t border-minsah-accent"
+      {/* Main 2-Column Responsive Layout */}
+      <main id="main-content" className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-8 xl:gap-12">
+          
+          {/* Left Column: Delivery Details & Payment Method */}
+          <div className="space-y-6">
+            
+            {/* Step 1: Delivery Information */}
+            <section
+              aria-labelledby="delivery-heading"
+              className="rounded-3xl border border-[#EFE7DE] bg-white p-6 shadow-sm sm:p-8"
             >
-              <div className="mt-4 grid gap-4">
-                <Input
-                  id="checkout-full-name"
-                  value={shippingForm.fullName}
-                  onFocus={markBeginCheckout}
-                  onBlur={() => markFieldTouched("fullName")}
-                  onChange={(event) =>
-                    setShippingForm((current) => ({
-                      ...current,
-                      fullName: event.target.value,
-                    }))
-                  }
-                  placeholder="আপনার পুরো নাম"
-                  label="পুরো নাম"
-                  error={visibleFieldErrors.fullName}
-                  labelClassName="text-xs font-semibold text-minsah-dark"
-                  className="rounded-xl border-minsah-accent py-3 focus:border-minsah-primary"
-                />
-                <Input
-                  id="checkout-phone"
-                  value={shippingForm.phoneNumber}
-                  onFocus={markBeginCheckout}
-                  onBlur={() => markFieldTouched("phoneNumber")}
-                  onChange={(event) =>
-                    setShippingForm((current) => ({
-                      ...current,
-                      phoneNumber: normalizeBdMobileNumber(
-                        event.target.value,
-                      ),
-                    }))
-                  }
-                  placeholder="01XXXXXXXXX"
-                  inputMode="tel"
-                  maxLength={11}
-                  label="মোবাইল নম্বর"
-                  error={visibleFieldErrors.phoneNumber}
-                  labelClassName="text-xs font-semibold text-minsah-dark"
-                  className="rounded-xl border-minsah-accent py-3 focus:border-minsah-primary"
-                />
-                <Select
-                  id="checkout-city"
-                  value={shippingForm.pathao_city_id ?? ""}
-                  onBlur={() => markFieldTouched("city")}
-                  onChange={(event) => {
-                    markFieldTouched("city");
-                    handleCityChange(event.target.value);
-                  }}
-                  label="শহর"
-                  error={visibleFieldErrors.city}
-                  labelClassName="text-xs font-semibold text-minsah-dark"
-                  className="rounded-xl border-minsah-accent py-3 focus:border-minsah-primary"
-                  placeholder={
-                    locationLoading === "cities"
-                      ? "শহর লোড হচ্ছে…"
-                      : "শহর নির্বাচন করুন"
-                  }
-                >
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </Select>
-                <Select
-                  id="checkout-zone"
-                  value={shippingForm.pathao_zone_id ?? ""}
-                  onBlur={() => markFieldTouched("zone")}
-                  onChange={(event) => {
-                    markFieldTouched("zone");
-                    handleZoneChange(event.target.value);
-                  }}
-                  disabled={
-                    !shippingForm.pathao_city_id ||
-                    locationLoading === "zones"
-                  }
-                  label="জোন"
-                  error={visibleFieldErrors.zone}
-                  labelClassName="text-xs font-semibold text-minsah-dark"
-                  className="rounded-xl border-minsah-accent py-3 focus:border-minsah-primary disabled:cursor-not-allowed disabled:bg-minsah-accent/40"
-                  placeholder={
-                    locationLoading === "zones"
-                      ? "জোন লোড হচ্ছে…"
-                      : "জোন নির্বাচন করুন"
-                  }
-                >
-                  {zones.map((zone) => (
-                    <option key={zone.id} value={zone.id}>
-                      {zone.name}
-                    </option>
-                  ))}
-                </Select>
-                <Select
-                  id="checkout-area"
-                  value={shippingForm.pathao_area_id ?? ""}
-                  onBlur={() => markFieldTouched("area")}
-                  onChange={(event) => {
-                    markFieldTouched("area");
-                    handleAreaChange(event.target.value);
-                  }}
-                  disabled={
-                    !shippingForm.pathao_zone_id ||
-                    locationLoading === "areas"
-                  }
-                  label="এলাকা"
-                  error={visibleFieldErrors.area}
-                  labelClassName="text-xs font-semibold text-minsah-dark"
-                  className="rounded-xl border-minsah-accent py-3 focus:border-minsah-primary disabled:cursor-not-allowed disabled:bg-minsah-accent/40"
-                  placeholder={
-                    locationLoading === "areas"
-                      ? "এলাকা লোড হচ্ছে..."
-                      : "এলাকা নির্বাচন করুন"
-                  }
-                >
-                    {areas.map((area) => (
-                      <option
-                        key={area.id}
-                        value={area.id}
-                        disabled={!area.homeDeliveryAvailable}
-                      >
-                        {area.name}
-                        {!area.homeDeliveryAvailable ? " (পাওয়া যাচ্ছে না)" : ""}
-                      </option>
-                    ))}
-                  </Select>
-                <Input
-                  id="checkout-street-address"
+              <div className="flex items-center gap-3 border-b border-[#F4EFEA] pb-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FAF6F2] text-[#984B29] font-bold text-sm">
+                  1
+                </div>
+                <div>
+                  <h2 id="delivery-heading" className="text-lg font-bold text-[#2D1F18]">
+                    Delivery Information
+                  </h2>
+                  <p className="text-xs text-[#7A6E65]">
+                    Where should we send your authentic beauty order?
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {/* Full Name */}
+                <div>
+                  <label htmlFor="checkout-full-name" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
+                    Full Name
+                  </label>
+                  <Input
+                    id="checkout-full-name"
+                    value={shippingForm.fullName}
+                    onFocus={markBeginCheckout}
+                    onBlur={() => markFieldTouched("fullName")}
+                    onChange={(event) =>
+                      setShippingForm((current) => ({
+                        ...current,
+                        fullName: event.target.value,
+                      }))
+                    }
+                    placeholder="Full name"
+                    aria-invalid={Boolean(fieldErrors.fullName)}
+                    className={`w-full rounded-2xl border bg-[#FDFBF9] px-4 py-3.5 text-sm text-[#2D1F18] transition focus:bg-white ${
+                      visibleFieldErrors.fullName
+                        ? "border-red-400 focus:border-red-500"
+                        : "border-[#E8E0D5] focus:border-[#984B29]"
+                    }`}
+                  />
+                  {visibleFieldErrors.fullName && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle size={13} /> {visibleFieldErrors.fullName}
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label htmlFor="checkout-phone" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
+                    Phone Number (BD Mobile)
+                  </label>
+                  <div className="relative flex items-center">
+                    <div className="absolute left-3.5 flex items-center gap-1 text-xs font-bold text-[#7A6E65] border-r border-[#E8E0D5] pr-2.5">
+                      +880
+                    </div>
+                    <Input
+                      id="checkout-phone"
+                      value={shippingForm.phoneNumber}
+                      onFocus={markBeginCheckout}
+                      onBlur={() => markFieldTouched("phoneNumber")}
+                      onChange={(event) =>
+                        setShippingForm((current) => ({
+                          ...current,
+                          phoneNumber: normalizeBdMobileNumber(event.target.value),
+                        }))
+                      }
+                      placeholder="Phone number"
+                      inputMode="tel"
+                      maxLength={11}
+                      aria-invalid={Boolean(fieldErrors.phoneNumber)}
+                      className={`w-full rounded-2xl border bg-[#FDFBF9] pl-16 pr-4 py-3.5 text-sm text-[#2D1F18] transition focus:bg-white ${
+                        visibleFieldErrors.phoneNumber
+                          ? "border-red-400 focus:border-red-500"
+                          : "border-[#E8E0D5] focus:border-[#984B29]"
+                      }`}
+                    />
+                  </div>
+                  {visibleFieldErrors.phoneNumber && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle size={13} /> {visibleFieldErrors.phoneNumber}
+                    </p>
+                  )}
+                </div>
+
+                {/* Cascading Pathao Selects */}
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {/* City */}
+                  <div>
+                    <label htmlFor="checkout-city" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
+                      City / জেলা
+                    </label>
+                    <Select
+                      id="checkout-city"
+                      value={shippingForm.pathao_city_id ?? ""}
+                      onBlur={() => markFieldTouched("city")}
+                      onChange={(event) => {
+                        markFieldTouched("city");
+                        handleCityChange(event.target.value);
+                      }}
+                      className="w-full rounded-2xl border border-[#E8E0D5] bg-[#FDFBF9] px-3.5 py-3 text-xs sm:text-sm text-[#2D1F18] focus:border-[#984B29] focus:bg-white"
+                      placeholder={
+                        locationLoading === "cities" ? "Loading cities..." : "Select City"
+                      }
+                    >
+                      {cities.map((city) => (
+                        <option key={city.id} value={city.id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </Select>
+                    {visibleFieldErrors.city && (
+                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.city}</p>
+                    )}
+                  </div>
+
+                  {/* Zone */}
+                  <div>
+                    <label htmlFor="checkout-zone" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
+                      Zone / থানা
+                    </label>
+                    <Select
+                      id="checkout-zone"
+                      value={shippingForm.pathao_zone_id ?? ""}
+                      onBlur={() => markFieldTouched("zone")}
+                      onChange={(event) => {
+                        markFieldTouched("zone");
+                        handleZoneChange(event.target.value);
+                      }}
+                      disabled={!shippingForm.pathao_city_id || locationLoading === "zones"}
+                      className="w-full rounded-2xl border border-[#E8E0D5] bg-[#FDFBF9] px-3.5 py-3 text-xs sm:text-sm text-[#2D1F18] focus:border-[#984B29] focus:bg-white disabled:bg-gray-100 disabled:opacity-60"
+                      placeholder={
+                        locationLoading === "zones" ? "Loading zones..." : "Select Zone"
+                      }
+                    >
+                      {zones.map((zone) => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.name}
+                        </option>
+                      ))}
+                    </Select>
+                    {visibleFieldErrors.zone && (
+                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.zone}</p>
+                    )}
+                  </div>
+
+                  {/* Area */}
+                  <div>
+                    <label htmlFor="checkout-area" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
+                      Area / এলাকা
+                    </label>
+                    <Select
+                      id="checkout-area"
+                      value={shippingForm.pathao_area_id ?? ""}
+                      onBlur={() => markFieldTouched("area")}
+                      onChange={(event) => {
+                        markFieldTouched("area");
+                        handleAreaChange(event.target.value);
+                      }}
+                      disabled={!shippingForm.pathao_zone_id || locationLoading === "areas"}
+                      className="w-full rounded-2xl border border-[#E8E0D5] bg-[#FDFBF9] px-3.5 py-3 text-xs sm:text-sm text-[#2D1F18] focus:border-[#984B29] focus:bg-white disabled:bg-gray-100 disabled:opacity-60"
+                      placeholder={
+                        locationLoading === "areas" ? "Loading areas..." : "Select Area"
+                      }
+                    >
+                      {areas.map((area) => (
+                        <option
+                          key={area.id}
+                          value={area.id}
+                          disabled={!area.homeDeliveryAvailable}
+                        >
+                          {area.name}
+                          {!area.homeDeliveryAvailable ? " (Unavailable)" : ""}
+                        </option>
+                      ))}
+                    </Select>
+                    {visibleFieldErrors.area && (
+                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.area}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Street Address */}
+                <div>
+                  <label htmlFor="checkout-street-address" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
+                    Street Address / বিস্তারিত ঠিকানা
+                  </label>
+                  <Input
+                    id="checkout-street-address"
                     value={shippingForm.streetAddress}
                     onFocus={markBeginCheckout}
                     onBlur={() => markFieldTouched("streetAddress")}
@@ -1129,74 +1087,57 @@ function CheckoutContent() {
                         streetAddress: event.target.value,
                       }))
                     }
-                    placeholder="বাসা, রাস্তা, ফ্লোর ও নিকটস্থ পরিচিত স্থান"
-                  label="বিস্তারিত ঠিকানা"
-                  error={visibleFieldErrors.streetAddress}
-                  labelClassName="text-xs font-semibold text-minsah-dark"
-                  className="rounded-xl border-minsah-accent py-3 focus:border-minsah-primary"
-                />
-                {locationError && (
-                  <p className="text-xs text-red-600">{locationError}</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+                    placeholder="Street address"
+                    className={`w-full rounded-2xl border bg-[#FDFBF9] px-4 py-3.5 text-sm text-[#2D1F18] transition focus:bg-white ${
+                      visibleFieldErrors.streetAddress
+                        ? "border-red-400 focus:border-red-500"
+                        : "border-[#E8E0D5] focus:border-[#984B29]"
+                    }`}
+                  />
+                  {visibleFieldErrors.streetAddress && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle size={13} /> {visibleFieldErrors.streetAddress}
+                    </p>
+                  )}
+                </div>
 
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <Button
-            id="checkout-payment-toggle"
-            type="button"
-            variant="ghost"
-            onClick={() => toggleSection("payment")}
-            aria-expanded={expandedSection === "payment"}
-            aria-controls="checkout-payment-panel"
-            className="w-full justify-between rounded-none px-4 py-4 hover:bg-minsah-accent/30"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-minsah-accent rounded-lg flex items-center justify-center">
-                <CreditCard size={20} aria-hidden="true" className="text-minsah-primary" />
-              </div>
-              <div className="text-left">
-                <h2
-                  id="checkout-payment-heading"
-                  className="font-bold text-minsah-dark"
-                >
-                  পেমেন্ট পদ্ধতি
-                </h2>
-                {selectedPaymentMethod && expandedSection !== "payment" && (
-                  <p className="text-xs text-minsah-secondary">
-                    {selectedPaymentMethod.name}
+                {locationError && (
+                  <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-100">
+                    {locationError}
                   </p>
                 )}
               </div>
-            </div>
-            {expandedSection === "payment" ? (
-              <ChevronUp className="text-minsah-secondary" size={20} aria-hidden="true" />
-            ) : (
-              <ChevronDown className="text-minsah-secondary" size={20} aria-hidden="true" />
-            )}
-          </Button>
+            </section>
 
-          {expandedSection === "payment" && (
-            <div
-              id="checkout-payment-panel"
-              role="region"
-              aria-labelledby="checkout-payment-toggle"
-              className="px-4 pb-4 border-t border-minsah-accent"
+            {/* Step 2: Payment Method */}
+            <section
+              aria-labelledby="payment-heading"
+              className="rounded-3xl border border-[#EFE7DE] bg-white p-6 shadow-sm sm:p-8"
             >
+              <div className="flex items-center gap-3 border-b border-[#F4EFEA] pb-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FAF6F2] text-[#984B29] font-bold text-sm">
+                  2
+                </div>
+                <div>
+                  <h2 id="payment-heading" className="text-lg font-bold text-[#2D1F18]">
+                    Payment Method
+                  </h2>
+                  <p className="text-xs text-[#7A6E65]">
+                    Order will be created first, and payment pages open only after a valid order is created.
+                  </p>
+                </div>
+              </div>
+
               <div
-                className="mt-4 grid gap-3"
+                className="mt-6 grid gap-3 sm:grid-cols-2"
                 role="radiogroup"
-                aria-labelledby="checkout-payment-heading"
+                aria-labelledby="payment-heading"
               >
                 {paymentMethods.map((method) => {
                   const isSelected = selectedPaymentMethod?.id === method.id;
                   return (
-                    <Button
+                    <div
                       key={method.id}
-                      type="button"
-                      variant="secondary"
                       role="radio"
                       aria-checked={isSelected}
                       onClick={() => {
@@ -1204,224 +1145,261 @@ function CheckoutContent() {
                         setSelectedPaymentMethod(method);
                         trackPaymentInfoOnce(method);
                       }}
-                      className={`w-full justify-start rounded-xl border-2 p-4 text-left ${
+                      className={`cursor-pointer rounded-2xl border-2 p-4 transition-all duration-200 ${
                         isSelected
-                          ? "border-minsah-primary bg-minsah-accent shadow-sm"
-                          : "border-minsah-accent bg-white hover:border-minsah-secondary"
+                          ? "border-[#984B29] bg-[#FAF6F2] shadow-sm ring-1 ring-[#984B29]/20"
+                          : "border-[#E8E0D5] bg-white hover:border-[#C57A58] hover:bg-[#FDFBF9]"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3">
                         <div
-                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition ${
                             isSelected
-                              ? "border-minsah-primary bg-minsah-primary"
-                              : "border-minsah-secondary"
+                              ? "border-[#984B29] bg-[#984B29] text-white"
+                              : "border-[#B0A59A] bg-white"
                           }`}
                         >
-                          {isSelected && (
-                            <Check size={14} aria-hidden="true" className="text-white" />
-                          )}
+                          {isSelected && <Check size={12} strokeWidth={3} />}
                         </div>
-                        <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center flex-shrink-0">
-                          {method.icon?.startsWith("/") ? (
-                            <Image
-                              src={method.icon}
-                              alt={method.name}
-                              width={28}
-                              height={28}
-                              sizes="28px"
-                              className="h-7 w-7 object-contain"
-                            />
-                          ) : (
-                            <span className="text-2xl">{method.icon}</span>
-                          )}
-                        </div>
+
                         <div className="flex-1">
-                          <p className="font-semibold text-minsah-dark">
-                            {method.name}
-                          </p>
-                          <p className="text-xs text-minsah-secondary mt-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm text-[#2D1F18]">
+                              {method.name}
+                            </span>
+                            {method.icon?.startsWith("/") ? (
+                              <Image
+                                src={method.icon}
+                                alt={method.name}
+                                width={24}
+                                height={24}
+                                className="h-6 w-6 object-contain"
+                              />
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-[#7A6E65]">
                             {method.type === "cod"
-                              ? "অর্ডার পৌঁছালে পেমেন্ট করুন"
-                              : `প্রথমে অর্ডার তৈরি হবে, তারপর ${method.name} পেমেন্ট শুরু হবে`}
+                              ? "Cash on Delivery (Pay when you receive)"
+                              : `Instant online payment with ${method.name}`}
                           </p>
                         </div>
                       </div>
-                    </Button>
+                    </div>
                   );
                 })}
               </div>
-              <p className="mt-3 text-xs text-minsah-secondary">
-                পেমেন্ট পদ্ধতি এই পেজেই নির্বাচন করুন। বৈধ অর্ডার তৈরি হওয়ার পরই bKash/Nagad পেমেন্ট পেজ খুলবে।
-              </p>
-            </div>
-          )}
-        </div>
+            </section>
+          </div>
 
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <Button
-            id="checkout-summary-toggle"
-            type="button"
-            variant="ghost"
-            onClick={() => toggleSection("summary")}
-            aria-expanded={expandedSection === "summary"}
-            aria-controls="checkout-summary-panel"
-            className="w-full justify-between rounded-none px-4 py-4 hover:bg-minsah-accent/30"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-minsah-accent rounded-lg flex items-center justify-center">
-                <FileText size={20} aria-hidden="true" className="text-minsah-primary" />
-              </div>
-              <div className="text-left">
-                <h2
-                  id="checkout-summary-heading"
-                  className="font-bold text-minsah-dark"
-                >
-                  অর্ডারের সারসংক্ষেপ
-                </h2>
-                <p className="text-xs text-minsah-secondary">
-                  {items.length}টি পণ্য · {totalQuantity}টি আইটেম
-                </p>
-              </div>
-            </div>
-            {expandedSection === "summary" ? (
-              <ChevronUp className="text-minsah-secondary" size={20} aria-hidden="true" />
-            ) : (
-              <ChevronDown className="text-minsah-secondary" size={20} aria-hidden="true" />
-            )}
-          </Button>
-
-          {expandedSection === "summary" && (
-            <div
-              id="checkout-summary-panel"
-              role="region"
-              aria-labelledby="checkout-summary-toggle"
-              className="px-4 pb-4 border-t border-minsah-accent"
+          {/* Right Column: Sticky Order Summary */}
+          <div className="mt-8 lg:mt-0">
+            <aside
+              aria-label="Order Summary"
+              className="sticky top-24 rounded-3xl border border-[#EFE7DE] bg-white p-6 shadow-sm"
             >
-              {items.length === 0 ? (
-                <div className="mt-4 text-center py-6">
-                  <p className="text-sm text-minsah-secondary mb-3">
-                    আপনার কার্ট খালি
-                  </p>
-                  <Link
-                    href="/shop"
-                    className="text-minsah-primary font-semibold text-sm"
-                  >
-                    কেনাকাটা চালিয়ে যান
-                  </Link>
+              <div className="flex items-center justify-between border-b border-[#F4EFEA] pb-4">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag size={18} className="text-[#984B29]" />
+                  <h2 className="text-base font-bold text-[#2D1F18]">
+                    Order Summary
+                  </h2>
                 </div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  {items.map((item) => (
-                    <CartItemRow key={item.id} item={item} density="summary" />
-                  ))}
+                <span className="text-xs font-semibold text-[#7A6E65]">
+                  {totalQuantity} {totalQuantity === 1 ? "item" : "items"} (Cart Items)
+                </span>
+              </div>
 
-                  <OrderSummary
-                    compact
-                    title=""
-                    lines={[
-                      {
-                        key: "subtotal",
-                        label: "পণ্যের মোট",
-                        value: formatPrice(subtotal),
-                      },
-                      {
-                        key: "delivery",
-                        label: "ডেলিভারি",
-                        value:
-                          deliveryState === "loading"
-                            ? "হিসাব করা হচ্ছে…"
-                            : deliveryState === "success"
-                              ? formatCustomerDeliveryCharge(deliveryCharge)
-                              : "শহর, জোন ও এলাকা নির্বাচন করুন",
-                      },
-                    ]}
-                    notice={
-                      <>
-                        {deliveryOfferMessage && (
-                          <p className="text-xs font-medium text-emerald-700">
-                            {deliveryOfferMessage}
+              {/* Product list with inline quantity controls */}
+              <div className="mt-4 max-h-64 divide-y divide-[#F4EFEA] overflow-y-auto pr-1">
+                {items.map((item) => (
+                  <div key={item.id} className="flex gap-3 py-3 text-xs">
+                    <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-[#FAF6F2] p-1">
+                      {item.variantImage || item.image ? (
+                        <Image
+                          src={(item.variantImage || item.image) as string}
+                          alt={item.name}
+                          width={56}
+                          height={56}
+                          className="h-full w-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-400">
+                          <ShoppingBag size={16} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-1 flex-col justify-between">
+                      <div>
+                        <h3 className="font-bold text-[#2D1F18] line-clamp-1">
+                          {item.name}
+                        </h3>
+                        {(item.size || item.color || item.variantName) && (
+                          <p className="text-[11px] text-[#7A6E65]">
+                            {[item.size, item.color].filter(Boolean).join(" / ") || item.variantName}
                           </p>
                         )}
-                        {deliveryError && (
-                          <div className="mt-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2">
-                            <p className="text-xs text-red-600">
-                              {deliveryError}
-                            </p>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() =>
-                                setDeliveryRetryNonce((value) => value + 1)
-                              }
-                              disabled={
-                                !hasDeliveryLocation ||
-                                deliveryState === "loading"
-                              }
-                              className="mt-2 h-auto min-h-0 p-0 text-xs text-minsah-primary underline-offset-2 hover:underline"
-                            >
-                              ডেলিভারি চার্জ আবার হিসাব করুন
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    }
-                    total={{ label: "সর্বমোট", value: formatPrice(finalTotal) }}
-                  />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        {/* Quantity adjuster */}
+                        <div className="flex items-center rounded-lg border border-[#E8E0D5] bg-[#FDFBF9]">
+                          <button
+                            type="button"
+                            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                            className="p-1 text-[#7A6E65] hover:text-[#2D1F18]"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus size={11} />
+                          </button>
+                          <span className="px-2 font-bold text-xs text-[#2D1F18]">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                            className="p-1 text-[#7A6E65] hover:text-[#2D1F18]"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus size={11} />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-[#984B29]">
+                            {formatPrice(item.price * item.quantity)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="p-1 text-[#A3978C] hover:text-red-600 transition-colors"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="mt-4 space-y-2.5 border-t border-[#F4EFEA] pt-4 text-xs">
+                <div className="flex justify-between text-[#7A6E65]">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-[#2D1F18]">{formatPrice(subtotal)}</span>
+                </div>
+
+                <div className="flex justify-between text-[#7A6E65]">
+                  <span className="flex items-center gap-1.5">
+                    <Truck size={14} className="text-[#984B29]" /> Delivery Fee
+                  </span>
+                  <span className="font-semibold text-[#2D1F18]">
+                    {deliveryState === "loading"
+                      ? "Calculating..."
+                      : deliveryState === "success"
+                        ? formatCustomerDeliveryCharge(deliveryCharge)
+                        : "Select Address"}
+                  </span>
+                </div>
+
+                {deliveryOfferMessage && (
+                  <p className="rounded-lg bg-emerald-50 p-2 text-[11px] font-semibold text-emerald-800 flex items-center gap-1">
+                    <Sparkles size={12} /> {deliveryOfferMessage}
+                  </p>
+                )}
+
+                {deliveryError && (
+                  <p className="rounded-lg bg-red-50 p-2 text-[11px] text-red-600">
+                    {deliveryError}
+                  </p>
+                )}
+
+                <div className="flex justify-between border-t border-[#F4EFEA] pt-3 text-sm font-bold text-[#2D1F18]">
+                  <span>Total</span>
+                  <span className="text-base text-[#984B29]">{formatPrice(finalTotal)}</span>
+                </div>
+              </div>
+
+              {/* Error Message Box */}
+              {checkoutError && (
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+                  {checkoutError}
                 </div>
               )}
-            </div>
-          )}
+
+              {/* Desktop Place Order Button */}
+              <div className="mt-5 hidden lg:block">
+                <Button
+                  type="button"
+                  variant="primary"
+                  fullWidth
+                  onClick={handlePlaceOrder}
+                  disabled={placeOrderDisabled}
+                  className="rounded-2xl bg-[#984B29] py-4 text-sm font-bold text-white shadow-md hover:bg-[#7E3D20] disabled:opacity-50 transition-all"
+                >
+                  {isPlacingOrder ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      {orderButtonLabel}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Lock size={15} />
+                      {orderButtonLabel}
+                    </span>
+                  )}
+                </Button>
+
+                <p className="mt-3 text-center text-[11px] text-[#A3978C] flex items-center justify-center gap-1.5">
+                  <ShieldCheck size={14} className="text-[#15803D]" /> 100% Authentic Korean Beauty Products
+                </p>
+              </div>
+            </aside>
+          </div>
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-[80] border-t border-minsah-accent bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-minsah-secondary">সর্বমোট</span>
-          <span className="text-xl font-bold text-minsah-primary">
-            {formatPrice(finalTotal)}
-          </span>
-        </div>
-        {checkoutError && (
-          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm font-medium text-red-700">{checkoutError}</p>
+      {/* Mobile Slim Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#EFE7DE] bg-white/95 backdrop-blur-md p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg lg:hidden">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold text-[#7A6E65] uppercase tracking-wider">Total</p>
+            <p className="text-lg font-black text-[#984B29]">{formatPrice(finalTotal)}</p>
           </div>
-        )}
-        <Button
-          type="button"
-          variant="primary"
-          fullWidth
-          onClick={handlePlaceOrder}
-          disabled={placeOrderDisabled}
-          className="bg-minsah-primary py-4 text-base text-minsah-light shadow-lg hover:bg-minsah-dark"
-          aria-disabled={placeOrderDisabled}
-        >
-          {isPlacingOrder ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-              {orderButtonLabel}
-            </span>
-          ) : (
-            orderButtonLabel
-          )}
-        </Button>
-        {canOpenLoginBeforeCheckout && !isPlacingOrder && (
-          <p className="mt-2 text-center text-xs text-minsah-secondary">
-            চেকআউটের তথ্য নিশ্চিত করে অর্ডার করতে লগইন করুন।
-          </p>
-        )}
-        {user && checkoutBlockReason && !isPlacingOrder && (
-          <p className="mt-2 text-center text-xs text-minsah-secondary">
-            {submitAttempted
-              ? checkoutBlockReason
-              : UI_COPY.checkout.completeDetails}
+
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handlePlaceOrder}
+            disabled={placeOrderDisabled}
+            className="flex-1 rounded-2xl bg-[#984B29] py-3.5 text-sm font-bold text-white shadow-md hover:bg-[#7E3D20] disabled:opacity-50"
+          >
+            {isPlacingOrder ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                {orderButtonLabel}
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-1.5">
+                {orderButtonLabel} <ChevronRight size={16} />
+              </span>
+            )}
+          </Button>
+        </div>
+
+        {checkoutError && (
+          <p className="mt-2 text-center text-[11px] font-medium text-red-600">
+            {checkoutError}
           </p>
         )}
       </div>
 
+      {/* Auth Modal Integration */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in">
             <SocialLoginModal
               purpose="checkout"
               onSuccess={handleLoginSuccess}
@@ -1441,8 +1419,8 @@ export default function CheckoutPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-minsah-light flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-minsah-primary border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen bg-[#FAF6F2] flex items-center justify-center">
+          <div className="h-8 w-8 border-4 border-[#984B29] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >
