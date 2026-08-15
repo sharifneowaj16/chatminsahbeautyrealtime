@@ -379,27 +379,30 @@ export default async function HomePage() {
 
   const renderedSections = visibleSections.map((section) => {
     if (section.type === 'promotion') {
-      if (!homeConfig.hero.isVisible) return null;
-
-      return (
-        <div key={section.id}>
-          <HomeHeroBanner
-            eyebrow={homeConfig.hero.eyebrow}
-            title={homeConfig.hero.title || section.title}
-            subtitle={homeConfig.hero.subtitle || section.subtitle}
-            primaryCtaText={homeConfig.hero.primaryCtaText}
-            primaryCtaHref={homeConfig.hero.primaryCtaHref}
-            secondaryCtaText={homeConfig.hero.secondaryCtaText}
-            secondaryCtaHref={homeConfig.hero.secondaryCtaHref}
-            badgeOne={homeConfig.hero.badgeOne}
-            badgeTwo={homeConfig.hero.badgeTwo}
-            backgroundClass={homeConfig.hero.backgroundClass}
-            featuredImage={homeConfig.hero.imageUrl || heroProduct?.image}
-            featuredProductName={homeConfig.hero.featuredProductName || heroProduct?.name}
-          />
-          <HomeTrustStrip />
-        </div>
-      );
+      // --- TEMPORARILY HIDDEN: Hero Banner + Trust Strip ---
+      // Uncomment the block below to re-enable.
+      return null;
+      // if (!homeConfig.hero.isVisible) return null;
+      //
+      // return (
+      //   <div key={section.id}>
+      //     <HomeHeroBanner
+      //       eyebrow={homeConfig.hero.eyebrow}
+      //       title={homeConfig.hero.title || section.title}
+      //       subtitle={homeConfig.hero.subtitle || section.subtitle}
+      //       primaryCtaText={homeConfig.hero.primaryCtaText}
+      //       primaryCtaHref={homeConfig.hero.primaryCtaHref}
+      //       secondaryCtaText={homeConfig.hero.secondaryCtaText}
+      //       secondaryCtaHref={homeConfig.hero.secondaryCtaHref}
+      //       badgeOne={homeConfig.hero.badgeOne}
+      //       badgeTwo={homeConfig.hero.badgeTwo}
+      //       backgroundClass={homeConfig.hero.backgroundClass}
+      //       featuredImage={homeConfig.hero.imageUrl || heroProduct?.image}
+      //       featuredProductName={homeConfig.hero.featuredProductName || heroProduct?.name}
+      //     />
+      //     <HomeTrustStrip />
+      //   </div>
+      // );
     }
 
     if (section.type === 'categories') {
@@ -418,16 +421,19 @@ export default async function HomePage() {
     }
 
     if (section.type === 'combos') {
-      return (
-        <Suspense key={section.id} fallback={<HomeSectionSkeleton type="combos" />}>
-          <HomeCombosSection
-            title={section.title}
-            subtitle={section.subtitle}
-            showViewAll={section.settings.showViewAll !== false}
-            viewAllHref={section.settings.viewAllHref || '/combos'}
-          />
-        </Suspense>
-      );
+      // --- TEMPORARILY HIDDEN: Best Value Combos ---
+      // Uncomment the block below to re-enable.
+      return null;
+      // return (
+      //   <Suspense key={section.id} fallback={<HomeSectionSkeleton type="combos" />}>
+      //     <HomeCombosSection
+      //       title={section.title}
+      //       subtitle={section.subtitle}
+      //       showViewAll={section.settings.showViewAll !== false}
+      //       viewAllHref={section.settings.viewAllHref || '/combos'}
+      //     />
+      //   </Suspense>
+      // );
     }
 
     if (isProductHomeSection(section.type)) {
