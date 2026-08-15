@@ -8,7 +8,7 @@ import {
   resolvePackagingWeightKg,
 } from '@/lib/buy-now';
 import { generateDailyOrderNumber } from '@/lib/order-number';
-import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
+import { notifyNewOrder } from '@/lib/telegram-notify';
 import { readOrderAttribution } from '@/lib/tracking/order-attribution';
 import { buildOrderTrackingExclusionData } from '@/lib/tracking/traffic-filter';
 import { resolveOrderDeliveryAccounting } from '@/lib/order-delivery-accounting';
@@ -365,12 +365,38 @@ export async function POST(request: NextRequest) {
       return createdOrder;
     });
 
-    const pathaoDelivery = isOnlinePaymentOrder
-      ? { skipped: true, reason: 'ONLINE_PAYMENT_PENDING' }
-      : await createPathaoDeliveryForOrder(order.id, {
-          preserveOrderStatus: true,
-          saveFailureStatus: true,
-        });
+    // Pathao delivery is deferred until phone confirmation via Telegram/Admin callback.
+    if (!isOnlinePaymentOrder) {
+      notifyNewOrder({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerName: shippingAddress.name.trim(),
+        customerPhone: shippingAddress.phone.trim(),
+        address: {
+          city: shippingAddress.city.trim(),
+          zone: shippingAddress.zone?.trim() || null,
+          area: shippingAddress.area.trim(),
+        },
+        items: orderItems.map((item) => ({
+          name: item.productName,
+          variant: item.variantLabel || null,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          total: item.total,
+        })),
+        subtotal,
+        shippingCost: deliveryCharge,
+        courierDeliveryCharge: deliveryAccounting.courierDeliveryCharge,
+        deliveryDiscountAmount: deliveryAccounting.deliveryDiscountAmount,
+        deliveryPricingSource: deliveryAccounting.deliveryPricingSource,
+        deliveryOfferType: deliveryAccounting.deliveryOfferType,
+        deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
+        total,
+        paymentMethod,
+      }).catch(() => {});
+    }
+
+    const pathaoDelivery = { skipped: true, reason: 'DEFERRED_UNTIL_PHONE_CONFIRMATION' };
 
     const normalizedPaymentMethod = paymentMethod.trim().toLowerCase();
     const redirectURL = ['bkash', 'nagad'].includes(normalizedPaymentMethod)

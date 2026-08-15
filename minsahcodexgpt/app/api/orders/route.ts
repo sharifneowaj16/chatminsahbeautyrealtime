@@ -697,7 +697,7 @@ export async function POST(request: NextRequest) {
 
       // 6d. Persist one immutable first-party attribution snapshot in the same transaction.
       await snapshotOrderAttributionInTransaction(tx as unknown as AttributionDb, {
-        orderId: order.id,
+        orderId: newOrder.id,
         customerId: userId,
         visitorId: orderAttribution.anonymousVisitorId,
         fbp: orderAttribution.fbp,
@@ -711,7 +711,7 @@ export async function POST(request: NextRequest) {
         consentState: orderAttribution.trackingConsent,
         total: total.toString(),
         currency: 'BDT',
-        createdAt: order.createdAt,
+        createdAt: newOrder.createdAt,
       });
 
       // 6e. Stock handling
