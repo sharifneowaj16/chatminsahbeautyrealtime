@@ -16,16 +16,17 @@ import {
   Truck,
   Sparkles,
   ChevronRight,
+  ChevronDown,
   AlertCircle,
   Plus,
   Minus,
   Trash2,
   Lock,
+  Search,
+  X,
 } from "lucide-react";
 import { formatPrice } from "@/utils/currency";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import dynamic from "next/dynamic";
 import {
   trackAddPaymentInfo,
@@ -34,7 +35,6 @@ import {
   trackViewCart,
 } from "@/lib/tracking/ecommerce";
 import type { DeliveryQuoteResponse } from "@/types/delivery-quote";
-import { UI_COPY } from "@/lib/ui-copy";
 
 const SocialLoginModal = dynamic(
   () => import("@/app/(storefront)/products/[id]/components/SocialLoginModal"),
@@ -271,10 +271,17 @@ function CheckoutContent() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
-  const [, setDeliveryRetryNonce] = useState(0);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [touchedFields, setTouchedFields] = useState<CheckoutTouchedFields>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Focus states for Floating Labels
+  const [focusedField, setFocusedField] = useState<CheckoutFieldKey | null>(null);
+
+  // Searchable Dropdown Open / Query States
+  const [openDropdown, setOpenDropdown] = useState<"city" | "zone" | "area" | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const pendingOrderRef = useRef(false);
   const checkoutIdempotencyKeyRef = useRef<string | null>(null);
@@ -282,6 +289,18 @@ function CheckoutContent() {
   const initiateCheckoutTrackedRef = useRef(false);
   const shippingInfoTrackedRef = useRef(false);
   const paymentInfoTrackedRef = useRef(false);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+        setSearchQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const shippingQuoteItems = useMemo(
     () =>
@@ -830,6 +849,28 @@ function CheckoutContent() {
     }
   };
 
+  // Filtered dropdown options based on search query
+  const filteredCities = useMemo(() => {
+    if (!searchQuery.trim()) return cities;
+    return cities.filter((c) =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [cities, searchQuery]);
+
+  const filteredZones = useMemo(() => {
+    if (!searchQuery.trim()) return zones;
+    return zones.filter((z) =>
+      z.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [zones, searchQuery]);
+
+  const filteredAreas = useMemo(() => {
+    if (!searchQuery.trim()) return areas;
+    return areas.filter((a) =>
+      a.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [areas, searchQuery]);
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-[#FAF6F2] px-4 py-12 text-[#2D1F18]">
@@ -854,6 +895,8 @@ function CheckoutContent() {
 
   return (
     <div className="min-h-screen bg-[#FAF6F2] pb-28 lg:pb-16 text-[#2D1F18]">
+
+
       {/* Top Clean Header */}
       <header className="sticky top-0 z-40 border-b border-[#EFE7DE] bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
@@ -885,10 +928,11 @@ function CheckoutContent() {
           {/* Left Column: Delivery Details & Payment Method */}
           <div className="space-y-6">
             
-            {/* Step 1: Delivery Information */}
+            {/* Step 1: Delivery Information with Smooth Floating Labels & Searchable Selects */}
             <section
               aria-labelledby="delivery-heading"
               className="rounded-3xl border border-[#EFE7DE] bg-white p-6 shadow-sm sm:p-8"
+              ref={dropdownRef}
             >
               <div className="flex items-center gap-3 border-b border-[#F4EFEA] pb-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FAF6F2] text-[#984B29] font-bold text-sm">
@@ -904,31 +948,57 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
-                {/* Full Name */}
-                <div>
-                  <label htmlFor="checkout-full-name" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
-                    Full Name
-                  </label>
-                  <Input
-                    id="checkout-full-name"
-                    value={shippingForm.fullName}
-                    onFocus={markBeginCheckout}
-                    onBlur={() => markFieldTouched("fullName")}
-                    onChange={(event) =>
-                      setShippingForm((current) => ({
-                        ...current,
-                        fullName: event.target.value,
-                      }))
-                    }
-                    placeholder="Full name"
-                    aria-invalid={Boolean(fieldErrors.fullName)}
-                    className={`w-full rounded-2xl border bg-[#FDFBF9] px-4 py-3.5 text-sm text-[#2D1F18] transition focus:bg-white ${
+              <div className="mt-6 space-y-5">
+                
+                {/* 1. Full Name (Floating Label) */}
+                <div className="relative">
+                  <div
+                    className={`relative rounded-2xl border transition-all duration-200 bg-white ${
                       visibleFieldErrors.fullName
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-[#E8E0D5] focus:border-[#984B29]"
+                        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100"
+                        : focusedField === "fullName"
+                          ? "border-[#984B29] ring-2 ring-[#984B29]/10"
+                          : "border-[#E8E0D5] hover:border-[#C57A58]"
                     }`}
-                  />
+                  >
+                    <input
+                      id="checkout-full-name"
+                      type="text"
+                      value={shippingForm.fullName}
+                      onFocus={() => {
+                        setFocusedField("fullName");
+                        markBeginCheckout();
+                      }}
+                      onBlur={() => {
+                        setFocusedField(null);
+                        markFieldTouched("fullName");
+                      }}
+                      onChange={(event) =>
+                        setShippingForm((current) => ({
+                          ...current,
+                          fullName: event.target.value,
+                        }))
+                      }
+                      placeholder="Full name"
+                      aria-invalid={Boolean(fieldErrors.fullName)}
+                      className="w-full rounded-2xl bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none placeholder:text-transparent"
+                    />
+                    <label
+                      htmlFor="checkout-full-name"
+                      className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                        focusedField === "fullName" || shippingForm.fullName.trim()
+                          ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                            (visibleFieldErrors.fullName
+                              ? "text-red-500"
+                              : focusedField === "fullName"
+                                ? "text-[#984B29]"
+                                : "text-[#7A6E65]")
+                          : "top-1/2 -translate-y-1/2 text-sm text-[#7A6E65]"
+                      }`}
+                    >
+                      Full name
+                    </label>
+                  </div>
                   {visibleFieldErrors.fullName && (
                     <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                       <AlertCircle size={13} /> {visibleFieldErrors.fullName}
@@ -936,20 +1006,34 @@ function CheckoutContent() {
                   )}
                 </div>
 
-                {/* Phone Number */}
-                <div>
-                  <label htmlFor="checkout-phone" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
-                    Phone Number (BD Mobile)
-                  </label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3.5 flex items-center gap-1 text-xs font-bold text-[#7A6E65] border-r border-[#E8E0D5] pr-2.5">
+                {/* 2. Phone Number with +880 (Floating Label) */}
+                <div className="relative">
+                  <div
+                    className={`relative flex items-center rounded-2xl border transition-all duration-200 bg-white ${
+                      visibleFieldErrors.phoneNumber
+                        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100"
+                        : focusedField === "phoneNumber"
+                          ? "border-[#984B29] ring-2 ring-[#984B29]/10"
+                          : "border-[#E8E0D5] hover:border-[#C57A58]"
+                    }`}
+                  >
+                    <div className="flex items-center pl-4 pr-2 text-xs font-bold text-[#7A6E65] border-r border-[#E8E0D5] select-none">
                       +880
                     </div>
-                    <Input
+                    <input
                       id="checkout-phone"
+                      type="tel"
+                      inputMode="tel"
+                      maxLength={11}
                       value={shippingForm.phoneNumber}
-                      onFocus={markBeginCheckout}
-                      onBlur={() => markFieldTouched("phoneNumber")}
+                      onFocus={() => {
+                        setFocusedField("phoneNumber");
+                        markBeginCheckout();
+                      }}
+                      onBlur={() => {
+                        setFocusedField(null);
+                        markFieldTouched("phoneNumber");
+                      }}
                       onChange={(event) =>
                         setShippingForm((current) => ({
                           ...current,
@@ -957,15 +1041,24 @@ function CheckoutContent() {
                         }))
                       }
                       placeholder="Phone number"
-                      inputMode="tel"
-                      maxLength={11}
                       aria-invalid={Boolean(fieldErrors.phoneNumber)}
-                      className={`w-full rounded-2xl border bg-[#FDFBF9] pl-16 pr-4 py-3.5 text-sm text-[#2D1F18] transition focus:bg-white ${
-                        visibleFieldErrors.phoneNumber
-                          ? "border-red-400 focus:border-red-500"
-                          : "border-[#E8E0D5] focus:border-[#984B29]"
-                      }`}
+                      className="w-full rounded-2xl bg-transparent px-3.5 pt-4 pb-3 text-sm text-[#2D1F18] outline-none placeholder:text-transparent"
                     />
+                    <label
+                      htmlFor="checkout-phone"
+                      className={`pointer-events-none absolute transition-all duration-200 ease-out ${
+                        focusedField === "phoneNumber" || shippingForm.phoneNumber.trim()
+                          ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                            (visibleFieldErrors.phoneNumber
+                              ? "text-red-500"
+                              : focusedField === "phoneNumber"
+                                ? "text-[#984B29]"
+                                : "text-[#7A6E65]")
+                          : "left-16 top-1/2 -translate-y-1/2 text-sm text-[#7A6E65]"
+                      }`}
+                    >
+                      Phone number
+                    </label>
                   </div>
                   {visibleFieldErrors.phoneNumber && (
                     <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -974,126 +1067,397 @@ function CheckoutContent() {
                   )}
                 </div>
 
-                {/* Cascading Pathao Selects */}
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {/* City */}
-                  <div>
-                    <label htmlFor="checkout-city" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
-                      City / জেলা
-                    </label>
-                    <Select
-                      id="checkout-city"
-                      value={shippingForm.pathao_city_id ?? ""}
-                      onBlur={() => markFieldTouched("city")}
-                      onChange={(event) => {
-                        markFieldTouched("city");
-                        handleCityChange(event.target.value);
+                {/* 3. Searchable Cascading Selects: City, Zone, Area (Floating Labels) */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  
+                  {/* City Searchable Select */}
+                  <div className="relative">
+                    <div
+                      onClick={() => {
+                        setOpenDropdown(openDropdown === "city" ? null : "city");
+                        setSearchQuery("");
+                        markBeginCheckout();
                       }}
-                      className="w-full rounded-2xl border border-[#E8E0D5] bg-[#FDFBF9] px-3.5 py-3 text-xs sm:text-sm text-[#2D1F18] focus:border-[#984B29] focus:bg-white"
-                      placeholder={
-                        locationLoading === "cities" ? "Loading cities..." : "Select City"
-                      }
+                      className={`relative flex items-center justify-between cursor-pointer rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-200 bg-white ${
+                        visibleFieldErrors.city
+                          ? "border-red-400"
+                          : openDropdown === "city"
+                            ? "border-[#984B29] ring-2 ring-[#984B29]/10"
+                            : "border-[#E8E0D5] hover:border-[#C57A58]"
+                      }`}
                     >
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.id}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </Select>
+                      <span className={`text-xs sm:text-sm truncate ${shippingForm.city ? "font-semibold text-[#2D1F18]" : "text-transparent"}`}>
+                        {shippingForm.city || "City"}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "city" ? "rotate-180 text-[#984B29]" : ""}`}
+                      />
+                      <label
+                        className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                          openDropdown === "city" || shippingForm.city
+                            ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                              (visibleFieldErrors.city
+                                ? "text-red-500"
+                                : openDropdown === "city"
+                                  ? "text-[#984B29]"
+                                  : "text-[#7A6E65]")
+                            : "top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#7A6E65]"
+                        }`}
+                      >
+                        {locationLoading === "cities" ? "Loading cities..." : "Select City"}
+                      </label>
+                    </div>
+
+                    {/* Searchable Dropdown Popup */}
+                    {openDropdown === "city" && (
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-hidden rounded-2xl border border-[#E8E0D5] bg-white shadow-xl animate-in fade-in zoom-in-95">
+                        <div className="sticky top-0 border-b border-[#F4EFEA] bg-white p-2">
+                          <div className="relative flex items-center">
+                            <Search size={14} className="absolute left-2.5 text-[#7A6E65]" />
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Search city / জেলা..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full rounded-xl border border-[#E8E0D5] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
+                            />
+                            {searchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2 text-gray-400 hover:text-gray-600"
+                              >
+                                <X size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto p-1 text-xs">
+                          {filteredCities.length === 0 ? (
+                            <p className="py-4 text-center text-[#7A6E65]">No city found</p>
+                          ) : (
+                            filteredCities.map((city) => (
+                              <div
+                                key={city.id}
+                                onClick={() => {
+                                  handleCityChange(String(city.id));
+                                  setOpenDropdown(null);
+                                  setSearchQuery("");
+                                }}
+                                className={`flex items-center justify-between rounded-xl px-3 py-2 cursor-pointer transition ${
+                                  shippingForm.pathao_city_id === city.id
+                                    ? "bg-[#FAF6F2] font-bold text-[#984B29]"
+                                    : "hover:bg-gray-50 text-[#2D1F18]"
+                                }`}
+                              >
+                                <span>{city.name}</span>
+                                {shippingForm.pathao_city_id === city.id && <Check size={14} />}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {visibleFieldErrors.city && (
                       <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.city}</p>
                     )}
+                    <select
+                      id="checkout-city"
+                      value={shippingForm.pathao_city_id ?? ""}
+                      onChange={(e) => handleCityChange(e.target.value)}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    >
+                      <option value="">Loading cities...</option>
+                      {cities.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  {/* Zone */}
-                  <div>
-                    <label htmlFor="checkout-zone" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
-                      Zone / থানা
-                    </label>
-                    <Select
-                      id="checkout-zone"
-                      value={shippingForm.pathao_zone_id ?? ""}
-                      onBlur={() => markFieldTouched("zone")}
-                      onChange={(event) => {
-                        markFieldTouched("zone");
-                        handleZoneChange(event.target.value);
+                  {/* Zone Searchable Select */}
+                  <div className="relative">
+                    <div
+                      onClick={() => {
+                        if (!shippingForm.pathao_city_id || locationLoading === "zones") return;
+                        setOpenDropdown(openDropdown === "zone" ? null : "zone");
+                        setSearchQuery("");
                       }}
-                      disabled={!shippingForm.pathao_city_id || locationLoading === "zones"}
-                      className="w-full rounded-2xl border border-[#E8E0D5] bg-[#FDFBF9] px-3.5 py-3 text-xs sm:text-sm text-[#2D1F18] focus:border-[#984B29] focus:bg-white disabled:bg-gray-100 disabled:opacity-60"
-                      placeholder={
-                        locationLoading === "zones" ? "Loading zones..." : "Select Zone"
-                      }
+                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-200 ${
+                        !shippingForm.pathao_city_id
+                          ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E8E0D5]"
+                          : "cursor-pointer bg-white " +
+                            (visibleFieldErrors.zone
+                              ? "border-red-400"
+                              : openDropdown === "zone"
+                                ? "border-[#984B29] ring-2 ring-[#984B29]/10"
+                                : "border-[#E8E0D5] hover:border-[#C57A58]")
+                      }`}
                     >
-                      {zones.map((zone) => (
-                        <option key={zone.id} value={zone.id}>
-                          {zone.name}
-                        </option>
-                      ))}
-                    </Select>
+                      <span className={`text-xs sm:text-sm truncate ${shippingForm.zone ? "font-semibold text-[#2D1F18]" : "text-transparent"}`}>
+                        {shippingForm.zone || "Zone"}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "zone" ? "rotate-180 text-[#984B29]" : ""}`}
+                      />
+                      <label
+                        className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                          openDropdown === "zone" || shippingForm.zone
+                            ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                              (visibleFieldErrors.zone
+                                ? "text-red-500"
+                                : openDropdown === "zone"
+                                  ? "text-[#984B29]"
+                                  : "text-[#7A6E65]")
+                            : "top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#7A6E65]"
+                        }`}
+                      >
+                        {locationLoading === "zones" ? "Loading zones..." : "Select Zone"}
+                      </label>
+                    </div>
+
+                    {/* Searchable Dropdown Popup */}
+                    {openDropdown === "zone" && (
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-hidden rounded-2xl border border-[#E8E0D5] bg-white shadow-xl animate-in fade-in zoom-in-95">
+                        <div className="sticky top-0 border-b border-[#F4EFEA] bg-white p-2">
+                          <div className="relative flex items-center">
+                            <Search size={14} className="absolute left-2.5 text-[#7A6E65]" />
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Search zone / থানা..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full rounded-xl border border-[#E8E0D5] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
+                            />
+                            {searchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2 text-gray-400 hover:text-gray-600"
+                              >
+                                <X size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto p-1 text-xs">
+                          {filteredZones.length === 0 ? (
+                            <p className="py-4 text-center text-[#7A6E65]">No zone found</p>
+                          ) : (
+                            filteredZones.map((zone) => (
+                              <div
+                                key={zone.id}
+                                onClick={() => {
+                                  handleZoneChange(String(zone.id));
+                                  setOpenDropdown(null);
+                                  setSearchQuery("");
+                                }}
+                                className={`flex items-center justify-between rounded-xl px-3 py-2 cursor-pointer transition ${
+                                  shippingForm.pathao_zone_id === zone.id
+                                    ? "bg-[#FAF6F2] font-bold text-[#984B29]"
+                                    : "hover:bg-gray-50 text-[#2D1F18]"
+                                }`}
+                              >
+                                <span>{zone.name}</span>
+                                {shippingForm.pathao_zone_id === zone.id && <Check size={14} />}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {visibleFieldErrors.zone && (
                       <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.zone}</p>
                     )}
+                    <select
+                      id="checkout-zone"
+                      value={shippingForm.pathao_zone_id ?? ""}
+                      onChange={(e) => handleZoneChange(e.target.value)}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    >
+                      <option value="">Loading zones...</option>
+                      {zones.map((z) => (
+                        <option key={z.id} value={z.id}>{z.name}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  {/* Area */}
-                  <div>
-                    <label htmlFor="checkout-area" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
-                      Area / এলাকা
-                    </label>
-                    <Select
+                  {/* Area Searchable Select */}
+                  <div className="relative">
+                    <div
+                      onClick={() => {
+                        if (!shippingForm.pathao_zone_id || locationLoading === "areas") return;
+                        setOpenDropdown(openDropdown === "area" ? null : "area");
+                        setSearchQuery("");
+                      }}
+                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-200 ${
+                        !shippingForm.pathao_zone_id
+                          ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E8E0D5]"
+                          : "cursor-pointer bg-white " +
+                            (visibleFieldErrors.area
+                              ? "border-red-400"
+                              : openDropdown === "area"
+                                ? "border-[#984B29] ring-2 ring-[#984B29]/10"
+                                : "border-[#E8E0D5] hover:border-[#C57A58]")
+                      }`}
+                    >
+                      <span className={`text-xs sm:text-sm truncate ${shippingForm.area ? "font-semibold text-[#2D1F18]" : "text-transparent"}`}>
+                        {shippingForm.area || "Area"}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "area" ? "rotate-180 text-[#984B29]" : ""}`}
+                      />
+                      <label
+                        className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                          openDropdown === "area" || shippingForm.area
+                            ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                              (visibleFieldErrors.area
+                                ? "text-red-500"
+                                : openDropdown === "area"
+                                  ? "text-[#984B29]"
+                                  : "text-[#7A6E65]")
+                            : "top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#7A6E65]"
+                        }`}
+                      >
+                        {locationLoading === "areas" ? "Loading areas..." : "Select Area"}
+                      </label>
+                    </div>
+
+                    {/* Searchable Dropdown Popup */}
+                    {openDropdown === "area" && (
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-hidden rounded-2xl border border-[#E8E0D5] bg-white shadow-xl animate-in fade-in zoom-in-95">
+                        <div className="sticky top-0 border-b border-[#F4EFEA] bg-white p-2">
+                          <div className="relative flex items-center">
+                            <Search size={14} className="absolute left-2.5 text-[#7A6E65]" />
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Search area / এলাকা..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full rounded-xl border border-[#E8E0D5] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
+                            />
+                            {searchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2 text-gray-400 hover:text-gray-600"
+                              >
+                                <X size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto p-1 text-xs">
+                          {filteredAreas.length === 0 ? (
+                            <p className="py-4 text-center text-[#7A6E65]">No area found</p>
+                          ) : (
+                            filteredAreas.map((area) => (
+                              <div
+                                key={area.id}
+                                onClick={() => {
+                                  if (!area.homeDeliveryAvailable) return;
+                                  handleAreaChange(String(area.id));
+                                  setOpenDropdown(null);
+                                  setSearchQuery("");
+                                }}
+                                className={`flex items-center justify-between rounded-xl px-3 py-2 cursor-pointer transition ${
+                                  !area.homeDeliveryAvailable
+                                    ? "opacity-40 cursor-not-allowed text-gray-400"
+                                    : shippingForm.pathao_area_id === area.id
+                                      ? "bg-[#FAF6F2] font-bold text-[#984B29]"
+                                      : "hover:bg-gray-50 text-[#2D1F18]"
+                                }`}
+                              >
+                                <span>{area.name} {!area.homeDeliveryAvailable ? "(Unavailable)" : ""}</span>
+                                {shippingForm.pathao_area_id === area.id && <Check size={14} />}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {visibleFieldErrors.area && (
+                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.area}</p>
+                    )}
+                    <select
                       id="checkout-area"
                       value={shippingForm.pathao_area_id ?? ""}
-                      onBlur={() => markFieldTouched("area")}
-                      onChange={(event) => {
-                        markFieldTouched("area");
-                        handleAreaChange(event.target.value);
-                      }}
-                      disabled={!shippingForm.pathao_zone_id || locationLoading === "areas"}
-                      className="w-full rounded-2xl border border-[#E8E0D5] bg-[#FDFBF9] px-3.5 py-3 text-xs sm:text-sm text-[#2D1F18] focus:border-[#984B29] focus:bg-white disabled:bg-gray-100 disabled:opacity-60"
-                      placeholder={
-                        locationLoading === "areas" ? "Loading areas..." : "Select Area"
-                      }
+                      onChange={(e) => handleAreaChange(e.target.value)}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-hidden="true"
                     >
+                      <option value="">Loading areas...</option>
                       {areas.map((area) => (
                         <option
                           key={area.id}
                           value={area.id}
                           disabled={!area.homeDeliveryAvailable}
                         >
-                          {area.name}
-                          {!area.homeDeliveryAvailable ? " (Unavailable)" : ""}
+                          {area.name} {!area.homeDeliveryAvailable ? "(Unavailable)" : ""}
                         </option>
                       ))}
-                    </Select>
-                    {visibleFieldErrors.area && (
-                      <p className="mt-1 text-xs text-red-600">{visibleFieldErrors.area}</p>
-                    )}
+                    </select>
                   </div>
                 </div>
 
-                {/* Street Address */}
-                <div>
-                  <label htmlFor="checkout-street-address" className="block text-xs font-bold uppercase tracking-wider text-[#7A6E65] mb-1.5">
-                    Street Address / বিস্তারিত ঠিকানা
-                  </label>
-                  <Input
-                    id="checkout-street-address"
-                    value={shippingForm.streetAddress}
-                    onFocus={markBeginCheckout}
-                    onBlur={() => markFieldTouched("streetAddress")}
-                    onChange={(event) =>
-                      setShippingForm((current) => ({
-                        ...current,
-                        streetAddress: event.target.value,
-                      }))
-                    }
-                    placeholder="Street address"
-                    className={`w-full rounded-2xl border bg-[#FDFBF9] px-4 py-3.5 text-sm text-[#2D1F18] transition focus:bg-white ${
+                {/* 4. Street Address (Floating Label) */}
+                <div className="relative">
+                  <div
+                    className={`relative rounded-2xl border transition-all duration-200 bg-white ${
                       visibleFieldErrors.streetAddress
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-[#E8E0D5] focus:border-[#984B29]"
+                        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100"
+                        : focusedField === "streetAddress"
+                          ? "border-[#984B29] ring-2 ring-[#984B29]/10"
+                          : "border-[#E8E0D5] hover:border-[#C57A58]"
                     }`}
-                  />
+                  >
+                    <input
+                      id="checkout-street-address"
+                      type="text"
+                      value={shippingForm.streetAddress}
+                      onFocus={() => {
+                        setFocusedField("streetAddress");
+                        markBeginCheckout();
+                      }}
+                      onBlur={() => {
+                        setFocusedField(null);
+                        markFieldTouched("streetAddress");
+                      }}
+                      onChange={(event) =>
+                        setShippingForm((current) => ({
+                          ...current,
+                          streetAddress: event.target.value,
+                        }))
+                      }
+                      placeholder="Street address"
+                      className="w-full rounded-2xl bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none placeholder:text-transparent"
+                    />
+                    <label
+                      htmlFor="checkout-street-address"
+                      className={`pointer-events-none absolute left-3 transition-all duration-200 ease-out ${
+                        focusedField === "streetAddress" || shippingForm.streetAddress.trim()
+                          ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                            (visibleFieldErrors.streetAddress
+                              ? "text-red-500"
+                              : focusedField === "streetAddress"
+                                ? "text-[#984B29]"
+                                : "text-[#7A6E65]")
+                          : "top-1/2 -translate-y-1/2 text-sm text-[#7A6E65]"
+                      }`}
+                    >
+                      Street address
+                    </label>
+                  </div>
                   {visibleFieldErrors.streetAddress && (
                     <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                       <AlertCircle size={13} /> {visibleFieldErrors.streetAddress}
