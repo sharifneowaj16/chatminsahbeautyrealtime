@@ -1,4 +1,7 @@
 FROM node:22.23.1-bookworm-slim AS base
+# npm 10.x has a known crash bug ("Exit handler never called!") when processing
+# large dependency trees under memory pressure. Upgrade to npm 12 which fixes it.
+RUN npm install -g npm@12
 
 FROM base AS deps
 WORKDIR /app
@@ -6,10 +9,8 @@ COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 COPY scripts ./scripts
-# Use --ignore-scripts to prevent the postinstall hook from running prisma generate
-# during npm ci. The postinstall calls prisma-client-freshness.mjs which requires
-# a previously generated client — unavailable at this stage — causing npm to crash
-# with "Exit handler never called!". We run prisma generate explicitly below.
+# Skip postinstall: it runs prisma-client-freshness.mjs which requires a
+# previously generated client (unavailable here). We run prisma generate explicitly.
 RUN npm ci --ignore-scripts
 RUN npx prisma generate
 
