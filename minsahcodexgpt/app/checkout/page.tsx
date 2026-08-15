@@ -953,7 +953,7 @@ function CheckoutContent() {
                 {/* 1. Full Name (Floating Label) */}
                 <div className="relative">
                   <div
-                    className={`relative rounded-2xl border transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
+                    className={`relative rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                       visibleFieldErrors.fullName
                         ? "border-[#8B261D]"
                         : focusedField === "fullName"
@@ -981,13 +981,13 @@ function CheckoutContent() {
                       }
                       placeholder="Full name"
                       aria-invalid={Boolean(fieldErrors.fullName)}
-                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label
                       htmlFor="checkout-full-name"
-                      className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
+                      className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "fullName" || shippingForm.fullName.trim()
-                          ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                          ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
                             (visibleFieldErrors.fullName
                               ? "text-[#8B261D]"
                               : focusedField === "fullName"
@@ -1009,7 +1009,7 @@ function CheckoutContent() {
                 {/* 2. Phone Number with +880 (Floating Label) */}
                 <div className="relative">
                   <div
-                    className={`relative flex items-center rounded-2xl border transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
+                    className={`relative flex items-center rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                       visibleFieldErrors.phoneNumber
                         ? "border-[#8B261D]"
                         : focusedField === "phoneNumber"
@@ -1042,13 +1042,13 @@ function CheckoutContent() {
                       }
                       placeholder="Phone number"
                       aria-invalid={Boolean(fieldErrors.phoneNumber)}
-                      className="w-full rounded-2xl border-0 border-none bg-transparent px-3.5 pt-4 pb-3 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-3.5 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label
                       htmlFor="checkout-phone"
-                      className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
+                      className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "phoneNumber" || shippingForm.phoneNumber.trim()
-                          ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                          ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
                             (visibleFieldErrors.phoneNumber
                               ? "text-[#8B261D]"
                               : focusedField === "phoneNumber"
@@ -1078,7 +1078,7 @@ function CheckoutContent() {
                         setSearchQuery("");
                         markBeginCheckout();
                       }}
-                      className={`relative flex items-center justify-between cursor-pointer rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
+                      className={`relative flex items-center justify-between cursor-pointer rounded-2xl border px-3.5 py-3.5 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                         visibleFieldErrors.city
                           ? "border-[#8B261D]"
                           : openDropdown === "city"
@@ -1091,12 +1091,12 @@ function CheckoutContent() {
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-[#7A6E65] transition-transform duration-250 ${openDropdown === "city" ? "rotate-180 text-[#984B29]" : ""}`}
+                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "city" ? "rotate-180 text-[#984B29]" : ""}`}
                       />
                       <label
-                        className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
+                        className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "city" || shippingForm.city
-                            ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                            ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
                               (visibleFieldErrors.city
                                 ? "text-[#8B261D]"
                                 : openDropdown === "city"
@@ -1186,7 +1186,7 @@ function CheckoutContent() {
                         setOpenDropdown(openDropdown === "zone" ? null : "zone");
                         setSearchQuery("");
                       }}
-                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 py-3.5 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                         !shippingForm.pathao_city_id
                           ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E2D9CF]"
                           : "cursor-pointer bg-white " +
@@ -1202,12 +1202,12 @@ function CheckoutContent() {
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-[#7A6E65] transition-transform duration-250 ${openDropdown === "zone" ? "rotate-180 text-[#984B29]" : ""}`}
+                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "zone" ? "rotate-180 text-[#984B29]" : ""}`}
                       />
                       <label
-                        className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
+                        className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "zone" || shippingForm.zone
-                            ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                            ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
                               (visibleFieldErrors.zone
                                 ? "text-[#8B261D]"
                                 : openDropdown === "zone"
@@ -1297,7 +1297,7 @@ function CheckoutContent() {
                         setOpenDropdown(openDropdown === "area" ? null : "area");
                         setSearchQuery("");
                       }}
-                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 pt-4 pb-3 transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      className={`relative flex items-center justify-between rounded-2xl border px-3.5 py-3.5 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                         !shippingForm.pathao_zone_id
                           ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E2D9CF]"
                           : "cursor-pointer bg-white " +
@@ -1313,12 +1313,12 @@ function CheckoutContent() {
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-[#7A6E65] transition-transform duration-250 ${openDropdown === "area" ? "rotate-180 text-[#984B29]" : ""}`}
+                        className={`text-[#7A6E65] transition-transform duration-200 ${openDropdown === "area" ? "rotate-180 text-[#984B29]" : ""}`}
                       />
                       <label
-                        className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
+                        className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "area" || shippingForm.area
-                            ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                            ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
                               (visibleFieldErrors.area
                                 ? "text-[#8B261D]"
                                 : openDropdown === "area"
@@ -1413,7 +1413,7 @@ function CheckoutContent() {
                 {/* 4. Street Address (Floating Label) */}
                 <div className="relative">
                   <div
-                    className={`relative rounded-2xl border transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
+                    className={`relative rounded-2xl border transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] bg-white ${
                       visibleFieldErrors.streetAddress
                         ? "border-[#8B261D]"
                         : focusedField === "streetAddress"
@@ -1440,13 +1440,13 @@ function CheckoutContent() {
                         }))
                       }
                       placeholder="Street address"
-                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 pt-4 pb-3 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label
                       htmlFor="checkout-street-address"
-                      className={`pointer-events-none absolute transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
+                      className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "streetAddress" || shippingForm.streetAddress.trim()
-                          ? "-top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold leading-none " +
+                          ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
                             (visibleFieldErrors.streetAddress
                               ? "text-[#8B261D]"
                               : focusedField === "streetAddress"
