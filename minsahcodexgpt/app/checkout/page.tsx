@@ -948,6 +948,29 @@ function CheckoutContent() {
                 </div>
               </div>
 
+              {/* Scoped CSS override to completely kill browser focus-visible outline on checkout inputs */}
+              <style dangerouslySetInnerHTML={{__html: `
+                #checkout-full-name,
+                #checkout-phone,
+                #checkout-street-address {
+                  outline: none !important;
+                  outline-offset: 0 !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                }
+                #checkout-full-name:focus-visible,
+                #checkout-phone:focus-visible,
+                #checkout-street-address:focus-visible,
+                #checkout-full-name:focus,
+                #checkout-phone:focus,
+                #checkout-street-address:focus {
+                  outline: none !important;
+                  outline-offset: 0 !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                }
+              `}} />
+
               <div className="mt-6 space-y-5">
                 
                 {/* 1. Full Name (Floating Label) */}
@@ -964,6 +987,7 @@ function CheckoutContent() {
                     <input
                       id="checkout-full-name"
                       type="text"
+                      style={{ outline: "none", boxShadow: "none" }}
                       value={shippingForm.fullName}
                       onFocus={() => {
                         setFocusedField("fullName");
@@ -981,13 +1005,13 @@ function CheckoutContent() {
                       }
                       placeholder="Full name"
                       aria-invalid={Boolean(fieldErrors.fullName)}
-                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label
                       htmlFor="checkout-full-name"
                       className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "fullName" || shippingForm.fullName.trim()
-                          ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
+                          ? "top-0 -translate-y-1/2 left-3.5 z-20 bg-white px-2 py-0.5 text-xs font-semibold leading-none " +
                             (visibleFieldErrors.fullName
                               ? "text-[#8B261D]"
                               : focusedField === "fullName"
@@ -1025,6 +1049,7 @@ function CheckoutContent() {
                       type="tel"
                       inputMode="tel"
                       maxLength={11}
+                      style={{ outline: "none", boxShadow: "none" }}
                       value={shippingForm.phoneNumber}
                       onFocus={() => {
                         setFocusedField("phoneNumber");
@@ -1042,13 +1067,13 @@ function CheckoutContent() {
                       }
                       placeholder="Phone number"
                       aria-invalid={Boolean(fieldErrors.phoneNumber)}
-                      className="w-full rounded-2xl border-0 border-none bg-transparent px-3.5 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-3.5 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label
                       htmlFor="checkout-phone"
                       className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "phoneNumber" || shippingForm.phoneNumber.trim()
-                          ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
+                          ? "top-0 -translate-y-1/2 left-3.5 z-20 bg-white px-2 py-0.5 text-xs font-semibold leading-none " +
                             (visibleFieldErrors.phoneNumber
                               ? "text-[#8B261D]"
                               : focusedField === "phoneNumber"
@@ -1096,7 +1121,7 @@ function CheckoutContent() {
                       <label
                         className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "city" || shippingForm.city
-                            ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
+                            ? "top-0 -translate-y-1/2 left-3.5 z-20 bg-white px-2 py-0.5 text-xs font-semibold leading-none " +
                               (visibleFieldErrors.city
                                 ? "text-[#8B261D]"
                                 : openDropdown === "city"
@@ -1118,6 +1143,7 @@ function CheckoutContent() {
                             <input
                               type="text"
                               autoFocus
+                              style={{ outline: "none", boxShadow: "none" }}
                               placeholder="Search city / জেলা..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1207,7 +1233,7 @@ function CheckoutContent() {
                       <label
                         className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "zone" || shippingForm.zone
-                            ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
+                            ? "top-0 -translate-y-1/2 left-3.5 z-20 bg-white px-2 py-0.5 text-xs font-semibold leading-none " +
                               (visibleFieldErrors.zone
                                 ? "text-[#8B261D]"
                                 : openDropdown === "zone"
@@ -1229,6 +1255,7 @@ function CheckoutContent() {
                             <input
                               type="text"
                               autoFocus
+                              style={{ outline: "none", boxShadow: "none" }}
                               placeholder="Search zone / থানা..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1318,7 +1345,7 @@ function CheckoutContent() {
                       <label
                         className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                           openDropdown === "area" || shippingForm.area
-                            ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
+                            ? "top-0 -translate-y-1/2 left-3.5 z-20 bg-white px-2 py-0.5 text-xs font-semibold leading-none " +
                               (visibleFieldErrors.area
                                 ? "text-[#8B261D]"
                                 : openDropdown === "area"
@@ -1340,6 +1367,7 @@ function CheckoutContent() {
                             <input
                               type="text"
                               autoFocus
+                              style={{ outline: "none", boxShadow: "none" }}
                               placeholder="Search area / এলাকা..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1424,6 +1452,7 @@ function CheckoutContent() {
                     <input
                       id="checkout-street-address"
                       type="text"
+                      style={{ outline: "none", boxShadow: "none" }}
                       value={shippingForm.streetAddress}
                       onFocus={() => {
                         setFocusedField("streetAddress");
@@ -1440,13 +1469,13 @@ function CheckoutContent() {
                         }))
                       }
                       placeholder="Street address"
-                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
+                      className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label
                       htmlFor="checkout-street-address"
                       className={`pointer-events-none absolute transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] select-none ${
                         focusedField === "streetAddress" || shippingForm.streetAddress.trim()
-                          ? "top-0 -translate-y-1/2 left-3 z-10 bg-white px-1.5 text-xs font-semibold leading-none " +
+                          ? "top-0 -translate-y-1/2 left-3.5 z-20 bg-white px-2 py-0.5 text-xs font-semibold leading-none " +
                             (visibleFieldErrors.streetAddress
                               ? "text-[#8B261D]"
                               : focusedField === "streetAddress"
