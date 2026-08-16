@@ -328,26 +328,42 @@ export default function HomeSearch({
         style={{
           width: isOpen ? '320px' : '52px',
           maxWidth: '100%',
+          /* GPU layer promotion */
           transform: 'translateZ(0)',
           willChange: 'width, transform',
+          /* Premium 420ms spring */
           transition: [
             'width 420ms cubic-bezier(0.16, 1, 0.3, 1)',
             'background-color 300ms ease',
             'border-color 300ms ease',
             'box-shadow 350ms ease',
           ].join(', '),
-          ...(isOpen
-            ? {
-                background: 'linear-gradient(180deg, #202329 0%, #1C1F24 100%)',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.025)',
-              }
-            : {}),
         }}
         className={`relative flex h-[52px] items-center rounded-full overflow-hidden cursor-pointer select-none ${
           isOpen
             ? 'border border-[#8E6545]'
             : 'bg-white/10 border border-white/15 hover:bg-white/20 hover:border-white/30'
         }`}
+        /* Inline styles for open-state gradient + shadow (can't do gradient in className) */
+        {...(isOpen
+          ? {
+              style: {
+                width: '320px',
+                maxWidth: '100%',
+                transform: 'translateZ(0)',
+                willChange: 'width, transform',
+                transition: [
+                  'width 420ms cubic-bezier(0.16, 1, 0.3, 1)',
+                  'background-color 300ms ease',
+                  'border-color 300ms ease',
+                  'box-shadow 350ms ease',
+                ].join(', '),
+                background: 'linear-gradient(180deg, #202329 0%, #1C1F24 100%)',
+                boxShadow:
+                  '0 12px 30px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.025)',
+              },
+            }
+          : {})}
       >
 
         {/* 1 ── Search Icon (Fixed anchor, zero jitter) ── */}
