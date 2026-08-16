@@ -137,7 +137,7 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
     router.push(getSuggestionHref(suggestion));
   }, [router]);
 
-  // Voice Search Handler with Web Speech API
+  // Voice Search with Web Speech API
   const startVoiceSearch = useCallback(() => {
     if (typeof window === 'undefined') return;
     const SpeechRecognition =
@@ -303,100 +303,133 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
 
   return (
     <div ref={searchRef} className={`relative flex flex-col items-start ${className}`}>
-      {/* 52px <-> 320px Expandable Pill Capsule */}
+      {/* 52px <-> 320px Ultra-Smooth GPU-Accelerated Capsule */}
       <div
         onClick={() => {
           if (!isExpanded) {
             setIsExpanded(true);
-            setTimeout(() => inputRef.current?.focus(), 50);
+            setTimeout(() => inputRef.current?.focus(), 80);
           }
         }}
-        className={`group relative flex h-[52px] items-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden cursor-pointer ${
+        style={{
+          width: isExpanded ? '320px' : '52px',
+          maxWidth: '100%',
+          transform: 'translateZ(0)',
+          willChange: 'width, background-color, border-color, box-shadow',
+          transition: 'width 380ms cubic-bezier(0.16, 1, 0.3, 1), background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease',
+        }}
+        className={`relative flex h-[52px] items-center rounded-full overflow-hidden cursor-pointer select-none ${
           isExpanded
-            ? 'w-full max-w-[320px] sm:max-w-[340px] md:max-w-[360px] bg-[#1E2024] border border-[#984B29]/80 ring-2 ring-[#FFE6D2]/20 shadow-xl'
-            : 'w-[52px] bg-white/10 border border-white/15 hover:bg-white/20 hover:border-white/30 shadow-sm'
+            ? 'bg-[#1C1F24] border border-[#984B29] ring-2 ring-[#FFE6D2]/25 shadow-2xl'
+            : 'bg-white/10 border border-white/15 hover:bg-white/20 hover:border-white/30 shadow-sm'
         }`}
       >
-        {/* Fixed Search Icon Anchor (Zero-jump) */}
+        {/* 1. Fixed Search Icon Anchor (Completely Zero Jitter) */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             if (!isExpanded) {
               setIsExpanded(true);
-              setTimeout(() => inputRef.current?.focus(), 50);
+              setTimeout(() => inputRef.current?.focus(), 80);
             } else if (searchQuery.trim()) {
               navigateToSearch();
             } else {
               inputRef.current?.focus();
             }
           }}
-          className="absolute left-0 top-0 z-20 flex h-[52px] w-[52px] items-center justify-center text-[#E58B24] transition-transform duration-200 active:scale-95 cursor-pointer"
+          className="absolute left-0 top-0 z-20 flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center text-[#E58B24] transition-transform duration-200 active:scale-90 cursor-pointer"
           aria-label={isExpanded ? 'Search' : 'Open Search'}
         >
           <Search size={20} aria-hidden="true" />
         </button>
 
-        {/* Text Input Area */}
-        <input
-          ref={inputRef}
-          id={inputId}
-          type="text"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          onKeyDown={handleInputKeyDown}
-          onFocus={() => {
-            setIsExpanded(true);
-            setShowSuggestions(true);
-          }}
-          placeholder="Search..."
-          role="combobox"
-          aria-expanded={hasSuggestionsPanel}
-          aria-controls={listboxId}
-          aria-autocomplete="list"
-          aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
-          tabIndex={isExpanded ? 0 : -1}
-          style={{ outline: 'none', boxShadow: 'none' }}
-          className={`h-full w-full bg-transparent pl-[48px] pr-[44px] text-sm font-medium text-white placeholder:text-[#8C7E74] outline-none border-0 border-none shadow-none focus:outline-none focus:ring-0 transition-opacity duration-200 ${
-            isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        />
-
-        {/* Right Action: Mic <-> X Morphing */}
+        {/* 2. Unmasked Fixed Input (Eliminates text wrapping / layout reflow during width change) */}
         <div
-          className={`absolute right-1.5 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center transition-all duration-200 ${
-            isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-0 pointer-events-none'
-          }`}
+          style={{
+            width: '320px',
+            opacity: isExpanded ? 1 : 0,
+            transition: isExpanded
+              ? 'opacity 260ms cubic-bezier(0.16, 1, 0.3, 1) 100ms'
+              : 'opacity 160ms cubic-bezier(0.16, 1, 0.3, 1) 0ms',
+            pointerEvents: isExpanded ? 'auto' : 'none',
+          }}
+          className="absolute left-0 top-0 h-[52px] pl-[50px] pr-[48px] flex items-center"
         >
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                clearSearch();
-                inputRef.current?.focus();
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[#FFE6D2] hover:bg-white/15 hover:text-white transition-all duration-200 ease-out transform scale-100 rotate-0"
-              aria-label="Clear search"
-            >
-              <X size={17} aria-hidden="true" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                startVoiceSearch();
-              }}
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-[#E58B24] hover:bg-white/15 transition-all duration-200 ease-out transform scale-100 rotate-0 ${
-                isListening ? 'animate-pulse bg-[#984B29]/40 text-white ring-1 ring-[#E58B24]' : ''
-              }`}
-              aria-label="Voice search"
-              title="Voice search"
-            >
-              <Mic size={18} aria-hidden="true" />
-            </button>
-          )}
+          <input
+            ref={inputRef}
+            id={inputId}
+            type="text"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={handleInputKeyDown}
+            onFocus={() => {
+              setIsExpanded(true);
+              setShowSuggestions(true);
+            }}
+            placeholder="Search..."
+            role="combobox"
+            aria-expanded={hasSuggestionsPanel}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
+            tabIndex={isExpanded ? 0 : -1}
+            style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
+            className="w-full bg-transparent text-sm font-medium text-white placeholder:text-[#8C7E74] outline-none border-none shadow-none focus:outline-none focus:ring-0 select-text"
+          />
+        </div>
+
+        {/* 3. Layered Morphing Mic <-> X Icons with Smooth Crossfade Rotation */}
+        <div
+          style={{
+            opacity: isExpanded ? 1 : 0,
+            transform: isExpanded ? 'translateY(-50%) scale(1)' : 'translateY(-50%) scale(0.7)',
+            transition: 'opacity 240ms cubic-bezier(0.16, 1, 0.3, 1) 80ms, transform 240ms cubic-bezier(0.16, 1, 0.3, 1) 80ms',
+            pointerEvents: isExpanded ? 'auto' : 'none',
+          }}
+          className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 items-center justify-center"
+        >
+          {/* Mic Icon */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              startVoiceSearch();
+            }}
+            style={{
+              opacity: searchQuery ? 0 : 1,
+              transform: searchQuery ? 'rotate(90deg) scale(0)' : 'rotate(0deg) scale(1)',
+              transition: 'opacity 220ms ease, transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
+              pointerEvents: searchQuery ? 'none' : 'auto',
+            }}
+            className={`absolute flex h-8 w-8 items-center justify-center rounded-full text-[#E58B24] hover:bg-white/15 ${
+              isListening ? 'animate-pulse bg-[#984B29]/50 text-white ring-1 ring-[#E58B24]' : ''
+            }`}
+            aria-label="Voice search"
+            title="Voice search"
+          >
+            <Mic size={18} aria-hidden="true" />
+          </button>
+
+          {/* X (Clear) Icon */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              clearSearch();
+              inputRef.current?.focus();
+            }}
+            style={{
+              opacity: searchQuery ? 1 : 0,
+              transform: searchQuery ? 'rotate(0deg) scale(1)' : 'rotate(-90deg) scale(0)',
+              transition: 'opacity 220ms ease, transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
+              pointerEvents: searchQuery ? 'auto' : 'none',
+            }}
+            className="absolute flex h-8 w-8 items-center justify-center rounded-full text-[#FFE6D2] hover:bg-white/15 hover:text-white"
+            aria-label="Clear search"
+          >
+            <X size={17} aria-hidden="true" />
+          </button>
         </div>
       </div>
 
@@ -417,7 +450,7 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
       )}
 
       {hasSuggestionsPanel && (
-        <div className="absolute left-0 top-[58px] z-50 w-full max-w-[360px] sm:max-w-[400px] overflow-hidden rounded-2xl border border-[#984B29]/40 bg-[#1E2024] text-white shadow-2xl animate-in fade-in zoom-in-95 duration-150" role="presentation">
+        <div className="absolute left-0 top-[58px] z-50 w-full max-w-[320px] sm:max-w-[360px] overflow-hidden rounded-2xl border border-[#984B29]/40 bg-[#1E2024] text-white shadow-2xl animate-in fade-in zoom-in-95 duration-150" role="presentation">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-[#17191D]">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.16em] text-[#E58B24]">

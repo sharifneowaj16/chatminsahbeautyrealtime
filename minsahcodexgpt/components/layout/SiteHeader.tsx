@@ -54,7 +54,7 @@ export default function SiteHeader() {
             })}
           </nav>
 
-          <div className="order-3 w-full md:order-none md:min-w-0 md:flex-1 lg:ml-3">
+          <div className="order-3 w-full md:order-none md:min-w-0 md:flex-1 lg:ml-3 flex items-center justify-center md:justify-start">
             <HomeSearch showTrendingChips={false} />
           </div>
 
