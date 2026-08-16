@@ -8,7 +8,7 @@ import {
   Heart,
   MapPin,
   Menu,
-  ShoppingBag,
+  ShoppingCart,
   Sparkles,
   UserRound,
   X,
@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import HomeSearch from '@/app/components/HomeSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import {
   isPrimaryNavigationItemActive,
   primaryNavigationItems,
@@ -44,6 +45,7 @@ const defaultHeaderCategories: HeaderCategoryItem[] = [
 export default function SiteHeader() {
   const pathname = usePathname();
   const { items } = useCart();
+  const { openDrawer } = useCartDrawer();
   const { user, loading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [categories, setCategories] = useState<HeaderCategoryItem[]>(defaultHeaderCategories);
@@ -81,19 +83,23 @@ export default function SiteHeader() {
             TOP HEADER BAR (n8n.io Clean Structured Style)
            ═══════════════════════════════════════ */}
         <div className="flex min-h-[64px] flex-wrap items-center justify-between gap-3 py-2.5">
-          {/* Logo */}
+          {/* Logo with n8n.io style smooth color transitions */}
           <Link
             href="/"
-            className="minsah-touch-target flex min-w-0 flex-shrink-0 items-center gap-2.5"
+            className="group minsah-touch-target flex min-w-0 flex-shrink-0 items-center gap-2.5 transition-all duration-300"
             aria-label="Minsah Beauty home"
             onClick={closeMenu}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#E58B24] text-black shadow-sm font-black">
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#E58B24] text-black shadow-sm font-black transition-all duration-300 group-hover:scale-105 group-hover:bg-[#FF6D5A] group-hover:text-white">
               <Sparkles size={19} aria-hidden="true" />
             </span>
             <span className="leading-tight">
-              <span className="block text-base font-black tracking-tight text-white sm:text-lg">Minsah</span>
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#E58B24]">Beauty</span>
+              <span className="block text-base font-black tracking-tight text-white transition-colors duration-300 group-hover:text-[#FFE6D2] sm:text-lg">
+                Minsah
+              </span>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#E58B24] transition-colors duration-300 group-hover:text-[#FF6D5A]">
+                Beauty
+              </span>
             </span>
           </Link>
 
@@ -128,31 +134,32 @@ export default function SiteHeader() {
               <Heart size={18} aria-hidden="true" />
             </Link>
 
-            {/* Sign In / Account */}
+            {/* Sign In / Account (Dynamic based on login status) */}
             <Link
               href={accountHref}
               aria-label={user ? 'Go to account' : 'Sign in to your account'}
               className="hidden sm:flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-xs font-bold text-white transition-all hover:bg-white/[0.08] hover:border-white/20 focus-visible:ring-2 focus-visible:ring-[#E58B24]"
             >
               <UserRound size={16} className="text-[#E58B24]" aria-hidden="true" />
-              <span>{user ? 'Account' : 'Sign In / Account'}</span>
+              <span>{user ? 'Account' : 'Sign In'}</span>
             </Link>
 
-            {/* Cart */}
-            <Link
-              href="/cart"
-              aria-label={`Cart${itemCount > 0 ? `, ${itemCount} item${itemCount > 1 ? 's' : ''}` : ''}`}
-              className="relative flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-white transition-all hover:bg-white/[0.08] hover:border-white/20 focus-visible:ring-2 focus-visible:ring-[#E58B24]"
+            {/* Cart Button (Opens CartDrawer first, ShoppingCart icon, mobile top-left / desktop top-right badge) */}
+            <button
+              type="button"
+              onClick={openDrawer}
+              aria-label={`Open cart drawer${itemCount > 0 ? `, ${itemCount} items` : ''}`}
+              className="relative flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-white transition-all hover:bg-white/[0.08] hover:border-white/20 focus-visible:ring-2 focus-visible:ring-[#E58B24] cursor-pointer"
             >
-              <ShoppingBag size={18} className="text-[#E58B24]" aria-hidden="true" />
+              <ShoppingCart size={19} className="text-[#E58B24]" aria-hidden="true" />
               {itemCount > 0 ? (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E58B24] px-1 text-[11px] font-black leading-none text-black shadow-sm">
+                <span className="absolute -top-1.5 -left-1.5 sm:-top-1.5 sm:-right-1.5 sm:left-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E58B24] px-1 text-[11px] font-black leading-none text-black shadow-sm">
                   {itemCount > 99 ? '99+' : itemCount}
                 </span>
               ) : (
                 <span className="hidden sm:inline text-white/60">0</span>
               )}
-            </Link>
+            </button>
 
             {/* Mobile Hamburger Toggle */}
             <Button
@@ -263,7 +270,7 @@ export default function SiteHeader() {
               onClick={closeMenu}
               className="flex min-h-11 items-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white hover:bg-white/[0.08] sm:hidden"
             >
-              <UserRound size={17} className="mr-2 text-[#E58B24]" aria-hidden="true" /> {user ? 'Account' : 'Login'}
+              <UserRound size={17} className="mr-2 text-[#E58B24]" aria-hidden="true" /> {user ? 'Account' : 'Sign In'}
             </Link>
           </nav>
 

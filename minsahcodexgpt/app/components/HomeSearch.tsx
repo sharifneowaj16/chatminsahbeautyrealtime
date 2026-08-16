@@ -99,6 +99,7 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
   const [isLoading, setIsLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [fallbackMessage, setFallbackMessage] = useState('');
+  const [isMac, setIsMac] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,6 +143,13 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
     [router]
   );
 
+  // Detect OS for keyboard shortcut badge
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.userAgent) {
+      setIsMac(/Mac|iPod|iPhone|iPad/.test(navigator.userAgent));
+    }
+  }, []);
+
   // Voice Search with Web Speech API
   const startVoiceSearch = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -179,10 +187,10 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
     }
   }, []);
 
-  // Global ⌘K / Ctrl+K keyboard shortcut
+  // Global Ctrl+K / ⌘K keyboard shortcut
   useEffect(() => {
     const handleGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      if ((event.metaKey || event.ctrlKey) && (event.key === 'k' || event.key === 'K')) {
         event.preventDefault();
         inputRef.current?.focus();
         setShowSuggestions(true);
@@ -317,7 +325,7 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
     <div ref={searchRef} className={`relative w-full max-w-[620px] ${className}`}>
       {/* n8n.io Style Structured Search Bar */}
       <div
-        className="group relative flex h-11 w-full items-center rounded-xl border border-white/15 bg-[#1B1816]/90 px-3 transition-all duration-200 hover:border-white/25 focus-within:border-[#E58B24] focus-within:ring-2 focus-within:ring-[#E58B24]/20 focus-within:bg-[#161412]"
+        className="group relative flex h-11 w-full items-center rounded-xl border border-white/15 bg-[#1B1816] px-3 transition-all duration-200 hover:border-white/30 focus-within:border-[#E58B24] focus-within:ring-2 focus-within:ring-[#E58B24]/25 focus-within:bg-[#161412]"
       >
         {/* Search Icon */}
         <button
@@ -354,12 +362,19 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           className="h-full w-full bg-transparent px-2.5 text-sm font-medium text-white placeholder:text-white/40 outline-none border-none shadow-none focus:outline-none focus:ring-0"
         />
 
-        {/* ⌘K Badge */}
-        <kbd className="hidden md:inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-semibold text-white/40 bg-white/[0.06] border border-white/10 select-none mr-1.5">
-          ⌘K
+        {/* High-Contrast Clear [Ctrl + K] / [⌘K] Badge */}
+        <kbd
+          onClick={() => {
+            inputRef.current?.focus();
+            setShowSuggestions(true);
+          }}
+          className="hidden md:inline-flex items-center justify-center rounded-md px-2 py-0.5 text-[11px] font-bold font-mono text-white/90 bg-white/10 border border-white/20 shadow-sm select-none mr-2 cursor-pointer transition-colors hover:bg-white/20 hover:text-white"
+          title="Press shortcut to search"
+        >
+          {isMac ? '⌘K' : 'Ctrl + K'}
         </kbd>
 
-        {/* Action Button (Mic / X Clear) */}
+        {/* Polished Action Button (Mic / X Clear) */}
         {searchQuery ? (
           <button
             type="button"
@@ -367,22 +382,22 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
               clearSearch();
               inputRef.current?.focus();
             }}
-            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-white/60 transition-all hover:bg-white/10 hover:text-white active:scale-95"
             aria-label="Clear search"
           >
-            <X size={15} strokeWidth={2} aria-hidden="true" />
+            <X size={16} strokeWidth={2} aria-hidden="true" />
           </button>
         ) : (
           <button
             type="button"
             onClick={startVoiceSearch}
-            className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#E58B24]/15 text-[#E58B24] transition-all hover:bg-[#E58B24] hover:text-black ${
-              isListening ? 'animate-pulse bg-[#E58B24] text-black ring-2 ring-[#E58B24]/40' : ''
+            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#E58B24]/15 border border-[#E58B24]/30 text-[#E58B24] transition-all duration-200 hover:bg-[#E58B24] hover:text-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#E58B24] ${
+              isListening ? 'animate-pulse bg-[#E58B24] text-black ring-2 ring-[#E58B24]' : ''
             }`}
             aria-label="Voice search"
             title="Voice search"
           >
-            <Mic size={15} strokeWidth={2} aria-hidden="true" />
+            <Mic size={16} strokeWidth={2} aria-hidden="true" />
           </button>
         )}
       </div>
