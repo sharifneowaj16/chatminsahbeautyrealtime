@@ -87,12 +87,11 @@ function isImageUrl(src?: string) {
   return Boolean(src && (src.startsWith('/') || src.startsWith('http') || src.startsWith('data:')));
 }
 
-export default function HomeSearch({ showTrendingChips = true, className = '' }: HomeSearchProps) {
+export default function HomeSearch({ showTrendingChips = false, className = '' }: HomeSearchProps) {
   const router = useRouter();
   const inputId = useId();
   const listboxId = `${inputId}-suggestions`;
   const [searchQuery, setSearchQuery] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [trendingSuggestions, setTrendingSuggestions] = useState<Suggestion[]>([]);
@@ -100,7 +99,7 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
   const [isLoading, setIsLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [fallbackMessage, setFallbackMessage] = useState('');
-  
+
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastRequestedQueryRef = useRef('');
@@ -119,23 +118,29 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
     return [...new Set([...terms, ...fallbackTrendingChips])].slice(0, 6);
   }, [trendingSuggestions]);
 
-  const hasSuggestionsPanel = isExpanded && showSuggestions && (visibleSuggestions.length > 0 || isLoading || normalizedQuery.length >= 2);
+  const hasSuggestionsPanel = showSuggestions && (visibleSuggestions.length > 0 || isLoading || normalizedQuery.length >= 2);
 
-  const navigateToSearch = useCallback((query?: string) => {
-    const q = (query ?? searchQuery).trim();
-    if (!q) return;
+  const navigateToSearch = useCallback(
+    (query?: string) => {
+      const q = (query ?? searchQuery).trim();
+      if (!q) return;
 
-    setShowSuggestions(false);
-    setActiveIndex(-1);
-    router.push(buildCatalogSearchPath(q));
-  }, [searchQuery, router]);
+      setShowSuggestions(false);
+      setActiveIndex(-1);
+      router.push(buildCatalogSearchPath(q));
+    },
+    [searchQuery, router]
+  );
 
-  const selectSuggestion = useCallback((suggestion: Suggestion) => {
-    setSearchQuery(getSuggestionText(suggestion));
-    setShowSuggestions(false);
-    setActiveIndex(-1);
-    router.push(getSuggestionHref(suggestion));
-  }, [router]);
+  const selectSuggestion = useCallback(
+    (suggestion: Suggestion) => {
+      setSearchQuery(getSuggestionText(suggestion));
+      setShowSuggestions(false);
+      setActiveIndex(-1);
+      router.push(getSuggestionHref(suggestion));
+    },
+    [router]
+  );
 
   // Voice Search with Web Speech API
   const startVoiceSearch = useCallback(() => {
@@ -163,7 +168,6 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
         const transcript = event.results?.[0]?.[0]?.transcript;
         if (transcript) {
           setSearchQuery(transcript);
-          setIsExpanded(true);
           inputRef.current?.focus();
         }
       };
@@ -173,6 +177,20 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
       setIsListening(false);
       inputRef.current?.focus();
     }
+  }, []);
+
+  // Global ⌘K / Ctrl+K keyboard shortcut
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        inputRef.current?.focus();
+        setShowSuggestions(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
   useEffect(() => {
@@ -237,7 +255,7 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
           setIsLoading(false);
         }
       }
-    }, 220);
+    }, 200);
 
     return () => {
       controller.abort();
@@ -250,15 +268,12 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
         setActiveIndex(-1);
-        if (!searchQuery.trim()) {
-          setIsExpanded(false);
-        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [searchQuery]);
+  }, []);
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown') {
@@ -288,9 +303,6 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
     if (event.key === 'Escape') {
       setShowSuggestions(false);
       setActiveIndex(-1);
-      if (!searchQuery.trim()) {
-        setIsExpanded(false);
-      }
     }
   };
 
@@ -302,146 +314,89 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
   };
 
   return (
-    <div ref={searchRef} className={`relative flex flex-col items-start ${className}`}>
-      {/* 52px <-> 320px Ultra-Smooth GPU-Accelerated Capsule */}
+    <div ref={searchRef} className={`relative w-full max-w-[620px] ${className}`}>
+      {/* n8n.io Style Structured Search Bar */}
       <div
-        onClick={() => {
-          if (!isExpanded) {
-            setIsExpanded(true);
-            setTimeout(() => inputRef.current?.focus(), 80);
-          }
-        }}
-        style={{
-          width: isExpanded ? '320px' : '52px',
-          maxWidth: '100%',
-          transform: 'translateZ(0)',
-          willChange: 'width, background-color, border-color, box-shadow',
-          transition: 'width 380ms cubic-bezier(0.16, 1, 0.3, 1), background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease',
-        }}
-        className={`relative flex h-[52px] items-center rounded-full overflow-hidden cursor-pointer select-none ${
-          isExpanded
-            ? 'bg-[#1C1F24] border border-[#984B29] ring-2 ring-[#FFE6D2]/25 shadow-2xl'
-            : 'bg-white/10 border border-white/15 hover:bg-white/20 hover:border-white/30 shadow-sm'
-        }`}
+        className="group relative flex h-11 w-full items-center rounded-xl border border-white/15 bg-[#1B1816]/90 px-3 transition-all duration-200 hover:border-white/25 focus-within:border-[#E58B24] focus-within:ring-2 focus-within:ring-[#E58B24]/20 focus-within:bg-[#161412]"
       >
-        {/* 1. Fixed Search Icon Anchor (Completely Zero Jitter) */}
+        {/* Search Icon */}
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isExpanded) {
-              setIsExpanded(true);
-              setTimeout(() => inputRef.current?.focus(), 80);
-            } else if (searchQuery.trim()) {
+          onClick={() => {
+            if (searchQuery.trim()) {
               navigateToSearch();
             } else {
               inputRef.current?.focus();
             }
           }}
-          className="absolute left-0 top-0 z-20 flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center text-[#E58B24] transition-transform duration-200 active:scale-90 cursor-pointer"
-          aria-label={isExpanded ? 'Search' : 'Open Search'}
+          className="flex h-7 w-7 flex-shrink-0 items-center justify-center text-white/50 transition-colors group-focus-within:text-[#E58B24] hover:text-[#E58B24]"
+          aria-label="Search"
         >
-          <Search size={20} aria-hidden="true" />
+          <Search size={17} strokeWidth={2} aria-hidden="true" />
         </button>
 
-        {/* 2. Unmasked Fixed Input (Eliminates text wrapping / layout reflow during width change) */}
-        <div
-          style={{
-            width: '320px',
-            opacity: isExpanded ? 1 : 0,
-            transition: isExpanded
-              ? 'opacity 260ms cubic-bezier(0.16, 1, 0.3, 1) 100ms'
-              : 'opacity 160ms cubic-bezier(0.16, 1, 0.3, 1) 0ms',
-            pointerEvents: isExpanded ? 'auto' : 'none',
-          }}
-          className="absolute left-0 top-0 h-[52px] pl-[50px] pr-[48px] flex items-center"
-        >
-          <input
-            ref={inputRef}
-            id={inputId}
-            type="text"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            onKeyDown={handleInputKeyDown}
-            onFocus={() => {
-              setIsExpanded(true);
-              setShowSuggestions(true);
-            }}
-            placeholder="Search..."
-            role="combobox"
-            aria-expanded={hasSuggestionsPanel}
-            aria-controls={listboxId}
-            aria-autocomplete="list"
-            aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
-            tabIndex={isExpanded ? 0 : -1}
-            style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
-            className="w-full bg-transparent text-sm font-medium text-white placeholder:text-[#8C7E74] outline-none border-none shadow-none focus:outline-none focus:ring-0 select-text"
-          />
-        </div>
+        {/* Input */}
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="text"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          onKeyDown={handleInputKeyDown}
+          onFocus={() => setShowSuggestions(true)}
+          placeholder="Search products, categories, brands..."
+          role="combobox"
+          aria-expanded={hasSuggestionsPanel}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
+          style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
+          className="h-full w-full bg-transparent px-2.5 text-sm font-medium text-white placeholder:text-white/40 outline-none border-none shadow-none focus:outline-none focus:ring-0"
+        />
 
-        {/* 3. Layered Morphing Mic <-> X Icons with Smooth Crossfade Rotation */}
-        <div
-          style={{
-            opacity: isExpanded ? 1 : 0,
-            transform: isExpanded ? 'translateY(-50%) scale(1)' : 'translateY(-50%) scale(0.7)',
-            transition: 'opacity 240ms cubic-bezier(0.16, 1, 0.3, 1) 80ms, transform 240ms cubic-bezier(0.16, 1, 0.3, 1) 80ms',
-            pointerEvents: isExpanded ? 'auto' : 'none',
-          }}
-          className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 items-center justify-center"
-        >
-          {/* Mic Icon */}
+        {/* ⌘K Badge */}
+        <kbd className="hidden md:inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-semibold text-white/40 bg-white/[0.06] border border-white/10 select-none mr-1.5">
+          ⌘K
+        </kbd>
+
+        {/* Action Button (Mic / X Clear) */}
+        {searchQuery ? (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              startVoiceSearch();
+            onClick={() => {
+              clearSearch();
+              inputRef.current?.focus();
             }}
-            style={{
-              opacity: searchQuery ? 0 : 1,
-              transform: searchQuery ? 'rotate(90deg) scale(0)' : 'rotate(0deg) scale(1)',
-              transition: 'opacity 220ms ease, transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
-              pointerEvents: searchQuery ? 'none' : 'auto',
-            }}
-            className={`absolute flex h-8 w-8 items-center justify-center rounded-full text-[#E58B24] hover:bg-white/15 ${
-              isListening ? 'animate-pulse bg-[#984B29]/50 text-white ring-1 ring-[#E58B24]' : ''
+            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Clear search"
+          >
+            <X size={15} strokeWidth={2} aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={startVoiceSearch}
+            className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#E58B24]/15 text-[#E58B24] transition-all hover:bg-[#E58B24] hover:text-black ${
+              isListening ? 'animate-pulse bg-[#E58B24] text-black ring-2 ring-[#E58B24]/40' : ''
             }`}
             aria-label="Voice search"
             title="Voice search"
           >
-            <Mic size={18} aria-hidden="true" />
+            <Mic size={15} strokeWidth={2} aria-hidden="true" />
           </button>
-
-          {/* X (Clear) Icon */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              clearSearch();
-              inputRef.current?.focus();
-            }}
-            style={{
-              opacity: searchQuery ? 1 : 0,
-              transform: searchQuery ? 'rotate(0deg) scale(1)' : 'rotate(-90deg) scale(0)',
-              transition: 'opacity 220ms ease, transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
-              pointerEvents: searchQuery ? 'auto' : 'none',
-            }}
-            className="absolute flex h-8 w-8 items-center justify-center rounded-full text-[#FFE6D2] hover:bg-white/15 hover:text-white"
-            aria-label="Clear search"
-          >
-            <X size={17} aria-hidden="true" />
-          </button>
-        </div>
+        )}
       </div>
 
-      {showTrendingChips && isExpanded && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" aria-label="Trending searches">
+      {/* Trending Search Chips (Optional) */}
+      {showTrendingChips && (
+        <div className="mt-2.5 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" aria-label="Trending searches">
           {dynamicTrendingChips.map((chip) => (
             <Button
               key={chip}
               type="button"
               variant="ghost"
               onClick={() => navigateToSearch(chip)}
-              className="flex-shrink-0 gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-minsah-accent ring-1 ring-white/10 hover:bg-white/20"
+              className="flex-shrink-0 gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-1 text-xs font-semibold text-white/70 border border-white/10 hover:bg-white/[0.12] hover:text-white"
             >
               <TrendingUp size={13} aria-hidden="true" /> {chip}
             </Button>
@@ -449,34 +404,38 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
         </div>
       )}
 
+      {/* Suggestions Dropdown */}
       {hasSuggestionsPanel && (
-        <div className="absolute left-0 top-[58px] z-50 w-full max-w-[320px] sm:max-w-[360px] overflow-hidden rounded-2xl border border-[#984B29]/40 bg-[#1E2024] text-white shadow-2xl animate-in fade-in zoom-in-95 duration-150" role="presentation">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-[#17191D]">
+        <div
+          className="absolute left-0 top-[48px] z-50 w-full overflow-hidden rounded-xl border border-white/15 bg-[#171513] text-white shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          role="presentation"
+        >
+          <div className="flex items-center justify-between border-b border-white/10 px-3.5 py-2.5 bg-black/25">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#E58B24]">
-                {normalizedQuery.length >= 2 ? 'Search suggestions' : 'Popular right now'}
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#E58B24]">
+                {normalizedQuery.length >= 2 ? 'Search suggestions' : 'Popular searches'}
               </p>
               {fallbackMessage ? (
-                <p className="mt-1 line-clamp-1 text-xs text-[#C5B8AC]">Showing related popular results.</p>
+                <p className="mt-0.5 line-clamp-1 text-xs text-white/60">Showing related popular results.</p>
               ) : null}
             </div>
-            {isLoading ? <Loader2 size={16} className="animate-spin text-[#E58B24]" aria-hidden="true" /> : null}
+            {isLoading ? <Loader2 size={15} className="animate-spin text-[#E58B24]" aria-hidden="true" /> : null}
           </div>
 
           {isLoading && visibleSuggestions.length === 0 ? (
-            <div className="space-y-3 px-4 py-4" aria-live="polite">
+            <div className="space-y-2.5 px-3.5 py-3" aria-live="polite">
               {[0, 1, 2].map((item) => (
                 <div key={item} className="flex animate-pulse items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-white/10" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 w-2/3 rounded-full bg-white/10" />
-                    <div className="h-3 w-1/3 rounded-full bg-white/10" />
+                  <div className="h-9 w-9 rounded-lg bg-white/10" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 w-2/3 rounded bg-white/10" />
+                    <div className="h-2.5 w-1/3 rounded bg-white/10" />
                   </div>
                 </div>
               ))}
             </div>
           ) : visibleSuggestions.length > 0 ? (
-            <ul id={listboxId} role="listbox" aria-label="Search suggestions" className="max-h-[70vh] overflow-y-auto py-1">
+            <ul id={listboxId} role="listbox" aria-label="Search suggestions" className="max-h-[60vh] overflow-y-auto py-1">
               {visibleSuggestions.map((suggestion, index) => {
                 const active = index === activeIndex;
                 const productImage = suggestion.type === 'product' && isImageUrl(suggestion.image) ? suggestion.image : undefined;
@@ -494,67 +453,67 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
                       variant="ghost"
                       onMouseEnter={() => setActiveIndex(index)}
                       onClick={() => selectSuggestion(suggestion)}
-                      className={`w-full justify-start gap-3 rounded-none px-4 py-3 text-left ${
-                        active ? 'bg-white/15' : 'hover:bg-white/10'
+                      className={`w-full justify-start gap-3 rounded-none px-3.5 py-2.5 text-left transition-colors ${
+                        active ? 'bg-white/[0.12]' : 'hover:bg-white/[0.06]'
                       }`}
                     >
                       {productImage ? (
-                        <span className="relative h-11 w-11 flex-shrink-0 overflow-hidden rounded-xl bg-white/10">
+                        <span className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-white/10">
                           <Image
                             src={productImage}
                             alt={label}
                             fill
-                            sizes="44px"
+                            sizes="40px"
                             className="object-cover"
                           />
                         </span>
                       ) : (
-                        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#E58B24]">
+                        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.06] border border-white/10 text-[#E58B24]">
                           {suggestion.type === 'trending' ? (
-                            <TrendingUp size={17} aria-hidden="true" />
+                            <TrendingUp size={16} aria-hidden="true" />
                           ) : suggestion.type === 'completion' ? (
-                            <Sparkles size={17} aria-hidden="true" />
+                            <Sparkles size={16} aria-hidden="true" />
                           ) : (
-                            <Search size={17} aria-hidden="true" />
+                            <Search size={16} aria-hidden="true" />
                           )}
                         </span>
                       )}
 
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
-                          <span className="truncate text-sm font-bold text-white">{label}</span>
-                          <span className="flex-shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-[#E58B24]">
+                          <span className="truncate text-sm font-semibold text-white">{label}</span>
+                          <span className="flex-shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#E58B24]">
                             {getSuggestionKindLabel(suggestion)}
                           </span>
                         </span>
-                        <span className="mt-1 flex items-center gap-2 text-xs font-semibold text-[#FFE6D2]">
+                        <span className="mt-0.5 flex items-center gap-2 text-xs text-white/70">
                           {getSuggestionMeta(suggestion)}
                           {suggestion.type === 'product' && suggestion.badges?.slice(0, 2).map((badge) => (
-                            <span key={badge} className="rounded-full bg-[#984B29] px-2 py-0.5 text-xs text-white">
+                            <span key={badge} className="rounded bg-[#984B29] px-1.5 py-0.2 text-[10px] font-medium text-white">
                               {badge}
                             </span>
                           ))}
                         </span>
                       </span>
 
-                      <ArrowRight size={15} className="flex-shrink-0 text-[#C5B8AC]" aria-hidden="true" />
+                      <ArrowRight size={14} className="flex-shrink-0 text-white/40" aria-hidden="true" />
                     </Button>
                   </li>
                 );
               })}
             </ul>
           ) : (
-            <div className="px-4 py-5 text-sm" aria-live="polite">
-              <p className="font-bold text-white">No products found.</p>
-              <p className="mt-1 text-xs text-[#C5B8AC]">Try a shorter keyword or browse popular searches below.</p>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <div className="px-4 py-4 text-sm" aria-live="polite">
+              <p className="font-semibold text-white">No products found.</p>
+              <p className="mt-1 text-xs text-white/60">Try a shorter keyword or browse popular searches below.</p>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {fallbackTrendingChips.slice(0, 4).map((chip) => (
                   <Button
                     key={chip}
                     type="button"
                     variant="ghost"
                     onClick={() => navigateToSearch(chip)}
-                    className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-[#FFE6D2] hover:bg-white/20"
+                    className="rounded-lg bg-white/[0.06] border border-white/10 px-2.5 py-1 text-xs text-white/80 hover:bg-white/[0.12]"
                   >
                     {chip}
                   </Button>
@@ -568,10 +527,10 @@ export default function HomeSearch({ showTrendingChips = true, className = '' }:
               type="button"
               variant="ghost"
               onClick={() => navigateToSearch()}
-              className="w-full justify-between rounded-none border-t border-white/10 px-4 py-3 text-left text-sm text-[#FFE6D2] hover:bg-white/10"
+              className="w-full justify-between rounded-none border-t border-white/10 px-3.5 py-2.5 text-left text-xs font-semibold text-[#E58B24] hover:bg-white/[0.08]"
             >
               <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
-              <ArrowRight size={16} aria-hidden="true" />
+              <ArrowRight size={14} aria-hidden="true" />
             </Button>
           ) : null}
         </div>
