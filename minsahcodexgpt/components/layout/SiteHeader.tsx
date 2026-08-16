@@ -14,29 +14,65 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import HomeSearch from '@/app/components/HomeSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { useCategories } from '@/contexts/CategoriesContext';
 import {
   isPrimaryNavigationItemActive,
   primaryNavigationItems,
 } from '@/components/navigation/navigation-config';
 import { Button } from '@/components/ui/Button';
 
+interface HeaderCategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  href: string;
+}
+
+const defaultHeaderCategories: HeaderCategoryItem[] = [
+  { id: 'cat-skincare', name: 'Skincare', slug: 'skincare', href: '/shop?category=Skincare' },
+  { id: 'cat-makeup', name: 'Makeup', slug: 'makeup', href: '/shop?category=Makeup' },
+  { id: 'cat-lip-care', name: 'Lip Care', slug: 'lip-care', href: '/shop?category=Lip%20Care' },
+  { id: 'cat-sunscreen', name: 'Sunscreen', slug: 'sunscreen', href: '/shop?category=Sunscreen' },
+  { id: 'cat-hair-care', name: 'Hair Care', slug: 'hair-care', href: '/shop?category=Hair%20Care' },
+  { id: 'cat-serum', name: 'Serum', slug: 'serum', href: '/shop?category=Serum' },
+  { id: 'cat-offers', name: 'Offers', slug: 'offers', href: '/flash-sale' },
+];
+
 export default function SiteHeader() {
   const pathname = usePathname();
   const { items } = useCart();
   const { user, loading } = useAuth();
-  const { getActiveCategories, loading: categoriesLoading } = useCategories();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<HeaderCategoryItem[]>(defaultHeaderCategories);
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const accountHref = !loading && user ? '/account' : '/login';
-  const activeCategories = getActiveCategories();
 
   const closeMenu = () => setMenuOpen(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/categories?activeOnly=true', { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.categories?.length) {
+          setCategories(
+            data.categories.map((c: any) => ({
+              id: c.id || c.slug,
+              name: c.name,
+              slug: c.slug,
+              href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#141210] text-white shadow-md">
@@ -170,27 +206,25 @@ export default function SiteHeader() {
 
           <span className="h-3.5 w-px bg-white/15 mx-1" aria-hidden="true" />
 
-          {/* Live Category Chips */}
-          {!categoriesLoading && activeCategories.length > 0 && (
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-              {activeCategories.map((cat) => {
-                const isActive = pathname === `/categories/${cat.slug}`;
-                return (
-                  <Link
-                    key={cat.id}
-                    href={cat.href || `/categories/${cat.slug}`}
-                    className={`flex-shrink-0 rounded-lg px-2.5 py-1 text-xs transition-colors ${
-                      isActive
-                        ? 'bg-white/15 text-white font-bold'
-                        : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
-                    }`}
-                  >
-                    {cat.name}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+          {/* Category Chips */}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            {categories.map((cat) => {
+              const isActive = pathname === `/categories/${cat.slug}`;
+              return (
+                <Link
+                  key={cat.id}
+                  href={cat.href || `/categories/${cat.slug}`}
+                  className={`flex-shrink-0 rounded-lg px-2.5 py-1 text-xs transition-colors ${
+                    isActive
+                      ? 'bg-white/15 text-white font-bold'
+                      : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
+                  }`}
+                >
+                  {cat.name}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -234,25 +268,23 @@ export default function SiteHeader() {
           </nav>
 
           {/* Categories in mobile menu */}
-          {!categoriesLoading && activeCategories.length > 0 && (
-            <div className="border-t border-white/10 px-4 py-3 bg-[#0E0D0C]">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
-                Categories
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {activeCategories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={cat.href || `/categories/${cat.slug}`}
-                    onClick={closeMenu}
-                    className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-white/80 transition hover:bg-white/[0.08] hover:text-white"
-                  >
-                    {cat.name}
-                  </Link>
-                ))}
-              </div>
+          <div className="border-t border-white/10 px-4 py-3 bg-[#0E0D0C]">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
+              Categories
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={cat.href || `/categories/${cat.slug}`}
+                  onClick={closeMenu}
+                  className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-white/80 transition hover:bg-white/[0.08] hover:text-white"
+                >
+                  {cat.name}
+                </Link>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       )}
     </header>
