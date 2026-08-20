@@ -322,12 +322,10 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
   };
 
   return (
-    <div ref={searchRef} className={`relative w-full max-w-[620px] ${className}`}>
-      {/* n8n.io Style Structured Search Bar */}
-      <div
-        className="group relative flex h-11 w-full items-center rounded-xl border border-white/15 bg-[#1B1816] px-3 transition-all duration-200 hover:border-white/30 focus-within:border-[#E58B24] focus-within:ring-2 focus-within:ring-[#E58B24]/25 focus-within:bg-[#161412]"
-      >
-        {/* Search Icon */}
+    <div ref={searchRef} className={`relative w-full max-w-[540px] ${className}`}>
+      {/* Minsah Beauty Structured Search Bar */}
+      <div className="search-shell">
+        {/* Search Icon Button */}
         <button
           type="button"
           onClick={() => {
@@ -337,10 +335,10 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
               inputRef.current?.focus();
             }
           }}
-          className="flex h-7 w-7 flex-shrink-0 items-center justify-center text-white/50 transition-colors group-focus-within:text-[#E58B24] hover:text-[#E58B24]"
+          className="search-icon-btn"
           aria-label="Search"
         >
-          <Search size={17} strokeWidth={2} aria-hidden="true" />
+          <Search size={16} strokeWidth={2} aria-hidden="true" />
         </button>
 
         {/* Input */}
@@ -358,23 +356,22 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           aria-controls={listboxId}
           aria-autocomplete="list"
           aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
-          style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
-          className="h-full w-full bg-transparent px-2.5 text-sm font-medium text-white placeholder:text-white/40 outline-none border-none shadow-none focus:outline-none focus:ring-0"
+          className="search-input"
         />
 
-        {/* High-Contrast Clear [Ctrl + K] / [⌘K] Badge */}
+        {/* High-Contrast Clear [Ctrl + K] / [⌘ + K] Badge */}
         <kbd
           onClick={() => {
             inputRef.current?.focus();
             setShowSuggestions(true);
           }}
-          className="hidden md:inline-flex items-center justify-center rounded-md px-2 py-0.5 text-[11px] font-bold font-mono text-white/90 bg-white/10 border border-white/20 shadow-sm select-none mr-2 cursor-pointer transition-colors hover:bg-white/20 hover:text-white"
+          className="shortcut cursor-pointer"
           title="Press shortcut to search"
         >
-          {isMac ? '⌘K' : 'Ctrl + K'}
+          {isMac ? '⌘ + K' : 'Ctrl + K'}
         </kbd>
 
-        {/* Polished Action Button (Mic / X Clear) */}
+        {/* Action Button (Voice / Clear) */}
         {searchQuery ? (
           <button
             type="button"
@@ -391,8 +388,8 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           <button
             type="button"
             onClick={startVoiceSearch}
-            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#E58B24]/15 border border-[#E58B24]/30 text-[#E58B24] transition-all duration-200 hover:bg-[#E58B24] hover:text-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#E58B24] ${
-              isListening ? 'animate-pulse bg-[#E58B24] text-black ring-2 ring-[#E58B24]' : ''
+            className={`voice-btn ${
+              isListening ? '!bg-[#E58B24] !text-black ring-2 ring-[#E58B24] scale-105' : ''
             }`}
             aria-label="Voice search"
             title="Voice search"
