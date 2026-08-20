@@ -338,7 +338,20 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           className="search-icon-btn"
           aria-label="Search"
         >
-          <Search size={16} strokeWidth={2} aria-hidden="true" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m21 21-4.34-4.34" />
+            <circle cx="11" cy="11" r="8" />
+          </svg>
         </button>
 
         {/* Input */}
@@ -351,6 +364,7 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           onKeyDown={handleInputKeyDown}
           onFocus={() => setShowSuggestions(true)}
           placeholder="Search products, categories, brands..."
+          aria-label="Search products"
           role="combobox"
           aria-expanded={hasSuggestionsPanel}
           aria-controls={listboxId}
@@ -359,7 +373,7 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           className="search-input"
         />
 
-        {/* High-Contrast Clear [Ctrl + K] / [⌘ + K] Badge */}
+        {/* High-Contrast Clear [⌘ + K] Badge */}
         <kbd
           onClick={() => {
             inputRef.current?.focus();
@@ -368,7 +382,7 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           className="shortcut cursor-pointer"
           title="Press shortcut to search"
         >
-          {isMac ? '⌘ + K' : 'Ctrl + K'}
+          ⌘ + K
         </kbd>
 
         {/* Action Button (Voice / Clear) */}
@@ -382,7 +396,20 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
             className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-white/60 transition-all hover:bg-white/10 hover:text-white active:scale-95"
             aria-label="Clear search"
           >
-            <X size={16} strokeWidth={2} aria-hidden="true" />
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
           </button>
         ) : (
           <button
@@ -394,7 +421,21 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
             aria-label="Voice search"
             title="Voice search"
           >
-            <Mic size={16} strokeWidth={2} aria-hidden="true" />
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 19v3" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <rect x="9" y="2" width="6" height="13" rx="3" />
+            </svg>
           </button>
         )}
       </div>
