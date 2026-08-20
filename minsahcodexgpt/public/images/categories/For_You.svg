@@ -1,0 +1,6 @@
+<svg aria-hidden="true" fill="none" viewbox="0 0 32 32">
+<path class="mb-icon-stroke" d="M9.8 6.7h12.4c1.9 0 3.5 1.45 3.7 3.35l1.55 14.05c.23 2.16-1.45 4.05-3.62 4.05H8.17c-2.17 0-3.85-1.89-3.62-4.05L6.1 10.05A3.74 3.74 0 0 1 9.8 6.7Z"></path>
+<path class="mb-icon-accent-soft" d="M10.05 11.65c.35 3.07 2.87 5.4 5.95 5.4 3.09 0 5.61-2.33 5.96-5.4a7.18 7.18 0 0 1-11.91 0Z"></path>
+<path class="mb-icon-stroke" d="M10.05 11.65c0 3.23 2.66 5.85 5.95 5.85 3.3 0 5.96-2.62 5.96-5.85"></path>
+<circle class="mb-icon-accent" cx="24.6" cy="24.6" r="1.15"></circle>
+</svg>
