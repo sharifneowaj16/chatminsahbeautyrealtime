@@ -1013,7 +1013,6 @@ img {
 .voice-btn:hover {
   color: #000;
   background: var(--accent);
-  border-color: var(--accent);
   transform: scale(1.05);
 }
 
