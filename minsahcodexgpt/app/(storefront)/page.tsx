@@ -406,18 +406,8 @@ export default async function HomePage() {
     }
 
     if (section.type === 'categories') {
-      return (
-        <Suspense key={section.id} fallback={<HomeSectionSkeleton type="categories" />}>
-          <HomeCategoriesSection
-            categories={homeConfig.categories.filter((category) => category.isVisible !== false)}
-            title={section.title}
-            subtitle={section.subtitle}
-            itemsToShow={section.settings.itemsToShow}
-            showViewAll={section.settings.showViewAll !== false}
-            selectedCategoryIds={section.settings.selectedCategoryIds}
-          />
-        </Suspense>
-      );
+      // --- HIDDEN: Browse by Categories (Primary category navigation handled by CategoryRail in SiteHeader) ---
+      return null;
     }
 
     if (section.type === 'combos') {

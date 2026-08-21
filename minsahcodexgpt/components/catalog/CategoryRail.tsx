@@ -3,6 +3,19 @@
 import Link from 'next/link';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+/**
+ * ============================================================================
+ * Primary Storefront Category Component — Minsah Beauty
+ * ============================================================================
+ * This is the central, universal Category Rail component for the storefront.
+ * It renders the sticky category navigation rail below the site header with:
+ * - Dynamic admin synchronization from `/api/categories?activeOnly=true`
+ * - Full CRUD support managed via the Admin Dashboard (`/admin/categories`)
+ * - Smooth mouse drag-scrolling and touch swipe support
+ * - Dynamic active background and indicator bar calculations
+ * ============================================================================
+ */
+
 export interface CategoryRailItem {
   id: string;
   name: string;
@@ -58,7 +71,7 @@ export default function CategoryRail({
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // Fetch dynamic categories from API and merge cleanly without losing default categories
+  // Fetch dynamic categories from Admin API and synchronize with primary rail
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/categories?activeOnly=true', { signal: controller.signal })
@@ -77,7 +90,7 @@ export default function CategoryRail({
                 name: c.name,
                 slug: slug,
                 href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
-                image: `/images/categories/${fileSlug}.png`,
+                image: c.icon || c.image || `/images/categories/${fileSlug}.png`,
               });
             }
           });
