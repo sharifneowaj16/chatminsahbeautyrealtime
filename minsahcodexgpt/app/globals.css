@@ -1011,9 +1011,9 @@ img {
 }
 
 .voice-btn:hover {
-  color: #ffffff;
-  background: #cf5178;
-  border-color: #cf5178;
+  color: #000;
+  background: var(--accent);
+  border-color: var(--accent);
   transform: scale(1.05);
 }
 
