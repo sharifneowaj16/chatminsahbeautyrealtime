@@ -767,7 +767,7 @@ img {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 100;
   color: var(--white);
   background: linear-gradient(135deg, #151012 0%, #251a1e 55%, #171113 100%) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.10);
@@ -920,7 +920,7 @@ img {
   display: flex;
   align-items: center;
   padding-inline: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.10) !important;
   transition: 0.2s ease;
@@ -932,7 +932,7 @@ img {
 
 .search-shell:focus-within {
   border-color: #e88aa5 !important;
-  background: rgba(255, 255, 255, 0.14) !important;
+  background: #161412 !important;
   box-shadow: 0 0 0 3px rgba(232, 138, 165, 0.18) !important;
 }
 
@@ -1011,8 +1011,9 @@ img {
 }
 
 .voice-btn:hover {
-  color: #000;
-  background: var(--accent);
+  color: #ffffff;
+  background: #cf5178;
+  border-color: #cf5178;
   transform: scale(1.05);
 }
 
