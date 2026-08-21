@@ -939,6 +939,8 @@ img {
 .search-icon-btn {
   width: 32px;
   height: 32px;
+  min-height: 0 !important;
+  min-block-size: 0 !important;
   flex: 0 0 32px;
   display: grid;
   place-items: center;
@@ -957,21 +959,29 @@ img {
   width: 100%;
   min-width: 0;
   height: 100%;
+  min-height: 0 !important;
+  min-block-size: 0 !important;
   padding-inline: 10px;
   border: 0;
   outline: 0;
-  color: var(--white);
+  color: #ffffff;
   background: transparent;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.40);
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 300;
+  opacity: 1;
 }
 
 .shortcut {
   height: 32px;
+  min-height: 0 !important;
+  min-block-size: 0 !important;
   min-width: 32px;
   flex: 0 0 auto;
   display: inline-flex;
@@ -1000,6 +1010,8 @@ img {
 .voice-btn {
   width: 32px;
   height: 32px;
+  min-height: 0 !important;
+  min-block-size: 0 !important;
   flex: 0 0 32px;
   display: grid;
   place-items: center;
