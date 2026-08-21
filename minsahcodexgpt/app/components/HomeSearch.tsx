@@ -373,32 +373,20 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
           className="search-input"
         />
 
-        {/* High-Contrast Clear [⌘ + K] Badge */}
-        <kbd
-          onClick={() => {
-            inputRef.current?.focus();
-            setShowSuggestions(true);
-          }}
-          className="shortcut cursor-pointer"
-          title="Press shortcut to search"
-        >
-          ⌘ + K
-        </kbd>
-
-        {/* Action Button (Voice / Clear) */}
-        {searchQuery ? (
+        {/* Clear query button if query exists */}
+        {searchQuery && (
           <button
             type="button"
             onClick={() => {
               clearSearch();
               inputRef.current?.focus();
             }}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-white/60 transition-all hover:bg-white/10 hover:text-white active:scale-95"
+            className="mr-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-white/50 transition-all hover:bg-white/10 hover:text-white active:scale-95"
             aria-label="Clear search"
           >
             <svg
-              width="16"
-              height="16"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -411,33 +399,46 @@ export default function HomeSearch({ showTrendingChips = false, className = '' }
               <path d="m6 6 12 12" />
             </svg>
           </button>
-        ) : (
-          <button
-            type="button"
-            onClick={startVoiceSearch}
-            className={`voice-btn ${
-              isListening ? '!bg-[#E58B24] !text-black ring-2 ring-[#E58B24] scale-105' : ''
-            }`}
-            aria-label="Voice search"
-            title="Voice search"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 19v3" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <rect x="9" y="2" width="6" height="13" rx="3" />
-            </svg>
-          </button>
         )}
+
+        {/* High-Contrast Clear [⌘ + K] Badge */}
+        <kbd
+          onClick={() => {
+            inputRef.current?.focus();
+            setShowSuggestions(true);
+          }}
+          className="shortcut cursor-pointer"
+          title="Press shortcut to search"
+        >
+          ⌘ + K
+        </kbd>
+
+        {/* Voice Search Button (Always Present) */}
+        <button
+          type="button"
+          onClick={startVoiceSearch}
+          className={`voice-btn ${
+            isListening ? '!bg-[#E58B24] !text-black ring-2 ring-[#E58B24] scale-105' : ''
+          }`}
+          aria-label="Voice search"
+          title="Voice search"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 19v3" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <rect x="9" y="2" width="6" height="13" rx="3" />
+          </svg>
+        </button>
       </div>
 
       {/* Trending Search Chips (Optional) */}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -58,28 +58,33 @@ export default function CategoryRail({
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // Fetch dynamic categories from API
+  // Fetch dynamic categories from API and merge cleanly without losing default categories
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/categories?activeOnly=true', { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.categories?.length) {
-          const apiCats: CategoryRailItem[] = data.categories.map((c: any) => {
-            const slug = c.slug || c.name.toLowerCase().replace(/\s+/g, '-');
-            const fileSlug = c.name.replace(/\s+/g, '_');
-            return {
-              id: c.id || slug,
-              name: c.name,
-              slug: slug,
-              href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
-              image: `/images/categories/${fileSlug}.png`,
-            };
+          const existingNames = new Set(defaultCategoryRailItems.map((item) => item.name.toLowerCase()));
+          const newApiCats: CategoryRailItem[] = [];
+
+          data.categories.forEach((c: any) => {
+            if (!existingNames.has(c.name.toLowerCase())) {
+              const slug = c.slug || c.name.toLowerCase().replace(/\s+/g, '-');
+              const fileSlug = c.name.replace(/\s+/g, '_');
+              newApiCats.push({
+                id: c.id || slug,
+                name: c.name,
+                slug: slug,
+                href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
+                image: `/images/categories/${fileSlug}.png`,
+              });
+            }
           });
-          setCategories([
-            { id: 'cat-for-you', name: 'For You', slug: 'for-you', href: '/#for-you', image: '/images/categories/For_You.svg' },
-            ...apiCats,
-          ]);
+
+          if (newApiCats.length > 0) {
+            setCategories([...defaultCategoryRailItems, ...newApiCats]);
+          }
         }
       })
       .catch(() => {});
