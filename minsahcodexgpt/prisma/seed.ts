@@ -138,32 +138,32 @@ async function main() {
   console.log('✅ Brands created');
 
   // ==========================================
-  // 3. Categories (Your 8 categories with hierarchy)
+  // 3. Categories (12 Core Storefront Categories with High-Res Artwork)
   // ==========================================
   console.log('📂 Creating categories...');
 
   // Main categories
-  const skincare = await prisma.category.upsert({
-    where: { slug: 'skincare' },
-    update: {},
+  const makeup = await prisma.category.upsert({
+    where: { slug: 'makeup' },
+    update: { image: '/images/categories/Makeup.png', sortOrder: 0, isActive: true },
     create: {
-      name: 'Skincare',
-      slug: 'skincare',
-      description: 'Face and body skincare products',
-      image: '/categories/skincare.jpg',
+      name: 'Makeup',
+      slug: 'makeup',
+      description: 'Professional makeup, lipsticks, and cosmetics',
+      image: '/images/categories/Makeup.png',
       isActive: true,
       sortOrder: 0,
     },
   });
 
-  const makeup = await prisma.category.upsert({
-    where: { slug: 'makeup' },
-    update: {},
+  const skincare = await prisma.category.upsert({
+    where: { slug: 'skincare' },
+    update: { image: '/images/categories/Skincare.png', sortOrder: 1, isActive: true },
     create: {
-      name: 'Makeup',
-      slug: 'makeup',
-      description: 'Professional makeup and cosmetics',
-      image: '/categories/makeup.jpg',
+      name: 'Skincare',
+      slug: 'skincare',
+      description: 'Authentic Korean face and body skincare products',
+      image: '/images/categories/Skincare.png',
       isActive: true,
       sortOrder: 1,
     },
@@ -171,79 +171,131 @@ async function main() {
 
   const haircare = await prisma.category.upsert({
     where: { slug: 'hair-care' },
-    update: {},
+    update: { image: '/images/categories/Hair_Care.png', sortOrder: 2, isActive: true },
     create: {
       name: 'Hair Care',
       slug: 'hair-care',
-      description: 'Shampoos, conditioners, and treatments',
-      image: '/categories/hair-care.jpg',
+      description: 'Shampoos, conditioners, and hair treatments',
+      image: '/images/categories/Hair_Care.png',
       isActive: true,
       sortOrder: 2,
     },
   });
 
-  const fragrances = await prisma.category.upsert({
-    where: { slug: 'fragrances' },
-    update: {},
+  const hairColor = await prisma.category.upsert({
+    where: { slug: 'hair-color' },
+    update: { image: '/images/categories/Hair_Color.png', sortOrder: 3, isActive: true },
     create: {
-      name: 'Fragrances',
-      slug: 'fragrances',
-      description: 'Perfumes and body sprays',
-      image: '/categories/fragrances.jpg',
+      name: 'Hair Color',
+      slug: 'hair-color',
+      description: 'Premium hair colors and dyes',
+      image: '/images/categories/Hair_Color.png',
       isActive: true,
       sortOrder: 3,
     },
   });
 
-  const bathBody = await prisma.category.upsert({
-    where: { slug: 'bath-body' },
-    update: {},
+  const lipCare = await prisma.category.upsert({
+    where: { slug: 'lip-care' },
+    update: { image: '/images/categories/Lip_Care.png', sortOrder: 4, isActive: true },
     create: {
-      name: 'Bath & Body',
-      slug: 'bath-body',
-      description: 'Body washes, lotions, and spa products',
-      image: '/categories/bath-body.jpg',
+      name: 'Lip Care',
+      slug: 'lip-care',
+      description: 'Lip balms, lip tints, masks and lip care',
+      image: '/images/categories/Lip_Care.png',
       isActive: true,
       sortOrder: 4,
     },
   });
 
-  const nailCare = await prisma.category.upsert({
-    where: { slug: 'nail-care' },
-    update: {},
+  const sunscreen = await prisma.category.upsert({
+    where: { slug: 'sunscreen' },
+    update: { image: '/images/categories/Sunscreen.png', sortOrder: 5, isActive: true },
     create: {
-      name: 'Nail Care',
-      slug: 'nail-care',
-      description: 'Nail polish and nail care products',
-      image: '/categories/nail-care.jpg',
+      name: 'Sunscreen',
+      slug: 'sunscreen',
+      description: 'Sun creams, sun sticks, and UV protection',
+      image: '/images/categories/Sunscreen.png',
       isActive: true,
       sortOrder: 5,
     },
   });
 
-  const toolsBrushes = await prisma.category.upsert({
-    where: { slug: 'tools-brushes' },
-    update: {},
+  const serum = await prisma.category.upsert({
+    where: { slug: 'serum' },
+    update: { image: '/images/categories/Serum.png', sortOrder: 6, isActive: true },
     create: {
-      name: 'Tools & Brushes',
-      slug: 'tools-brushes',
-      description: 'Makeup brushes and beauty tools',
-      image: '/categories/tools-brushes.jpg',
+      name: 'Serum',
+      slug: 'serum',
+      description: 'Facial serums, essences, and ampoules',
+      image: '/images/categories/Serum.png',
       isActive: true,
       sortOrder: 6,
     },
   });
 
-  const giftSets = await prisma.category.upsert({
-    where: { slug: 'gift-sets' },
-    update: {},
+  const fragrances = await prisma.category.upsert({
+    where: { slug: 'fragrance' },
+    update: { image: '/images/categories/Fragrance.png', sortOrder: 7, isActive: true },
     create: {
-      name: 'Gift Sets',
-      slug: 'gift-sets',
-      description: 'Curated beauty gift sets',
-      image: '/categories/gift-sets.jpg',
+      name: 'Fragrance',
+      slug: 'fragrance',
+      description: 'Luxury perfumes, mists, and body sprays',
+      image: '/images/categories/Fragrance.png',
       isActive: true,
       sortOrder: 7,
+    },
+  });
+
+  const bathBody = await prisma.category.upsert({
+    where: { slug: 'bath-body' },
+    update: { image: '/images/categories/Bath_&_Body.png', sortOrder: 8, isActive: true },
+    create: {
+      name: 'Bath & Body',
+      slug: 'bath-body',
+      description: 'Body washes, body lotions, scrubs, and spa products',
+      image: '/images/categories/Bath_&_Body.png',
+      isActive: true,
+      sortOrder: 8,
+    },
+  });
+
+  const newArrivals = await prisma.category.upsert({
+    where: { slug: 'new-arrivals' },
+    update: { image: '/images/categories/New_Arrivals.png', sortOrder: 9, isActive: true },
+    create: {
+      name: 'New Arrivals',
+      slug: 'new-arrivals',
+      description: 'Freshly added beauty arrivals and trending items',
+      image: '/images/categories/New_Arrivals.png',
+      isActive: true,
+      sortOrder: 9,
+    },
+  });
+
+  const tools = await prisma.category.upsert({
+    where: { slug: 'tools' },
+    update: { image: '/images/categories/Tools.png', sortOrder: 10, isActive: true },
+    create: {
+      name: 'Tools',
+      slug: 'tools',
+      description: 'Makeup brushes, sponges, and beauty tools',
+      image: '/images/categories/Tools.png',
+      isActive: true,
+      sortOrder: 10,
+    },
+  });
+
+  const offers = await prisma.category.upsert({
+    where: { slug: 'offers' },
+    update: { image: '/images/categories/Offers.png', sortOrder: 11, isActive: true },
+    create: {
+      name: 'Offers',
+      slug: 'offers',
+      description: 'Exclusive discount offers and bundle deals',
+      image: '/images/categories/Offers.png',
+      isActive: true,
+      sortOrder: 11,
     },
   });
 

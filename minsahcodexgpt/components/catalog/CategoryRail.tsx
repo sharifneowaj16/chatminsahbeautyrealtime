@@ -77,27 +77,23 @@ export default function CategoryRail({
     fetch('/api/categories?activeOnly=true', { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.categories?.length) {
-          const existingNames = new Set(defaultCategoryRailItems.map((item) => item.name.toLowerCase()));
-          const newApiCats: CategoryRailItem[] = [];
-
-          data.categories.forEach((c: any) => {
-            if (!existingNames.has(c.name.toLowerCase())) {
-              const slug = c.slug || c.name.toLowerCase().replace(/\s+/g, '-');
-              const fileSlug = c.name.replace(/\s+/g, '_');
-              newApiCats.push({
-                id: c.id || slug,
-                name: c.name,
-                slug: slug,
-                href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
-                image: c.icon || c.image || `/images/categories/${fileSlug}.png`,
-              });
-            }
+        if (data?.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          const apiCats: CategoryRailItem[] = data.categories.map((c: any) => {
+            const slug = c.slug || c.name.toLowerCase().replace(/\s+/g, '-');
+            const fileSlug = c.name.replace(/\s+/g, '_');
+            return {
+              id: c.id || slug,
+              name: c.name,
+              slug: slug,
+              href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
+              image: c.icon || c.image || `/images/categories/${fileSlug}.png`,
+            };
           });
 
-          if (newApiCats.length > 0) {
-            setCategories([...defaultCategoryRailItems, ...newApiCats]);
-          }
+          setCategories([
+            { id: 'cat-for-you', name: 'For You', slug: 'for-you', href: '/#for-you', image: '/images/categories/For_You.svg' },
+            ...apiCats,
+          ]);
         }
       })
       .catch(() => {});

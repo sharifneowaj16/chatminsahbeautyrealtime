@@ -23,6 +23,38 @@ export default function SiteHeader() {
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const accountHref = !loading && user ? '/account' : '/login';
 
+  const [navCategories, setNavCategories] = useState<{ id: string; name: string; href: string }[]>([
+    { id: 'skincare', name: 'Skincare', href: '/shop?category=Skincare' },
+    { id: 'makeup', name: 'Makeup', href: '/shop?category=Makeup' },
+    { id: 'hair-care', name: 'Hair Care', href: '/shop?category=Hair%20Care' },
+    { id: 'fragrance', name: 'Fragrance', href: '/shop?category=Fragrance' },
+    { id: 'bath-body', name: 'Bath & Body', href: '/shop?category=Bath%20%26%20Body' },
+    { id: 'lip-care', name: 'Lip Care', href: '/shop?category=Lip%20Care' },
+    { id: 'sunscreen', name: 'Sunscreen', href: '/shop?category=Sunscreen' },
+    { id: 'serum', name: 'Serum', href: '/shop?category=Serum' },
+  ]);
+
+  // Dynamically sync sub-navigation with database categories
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/categories?activeOnly=true', { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.categories?.length) {
+          setNavCategories(
+            data.categories.map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, []);
+
   const closeMenu = () => setMenuOpen(false);
 
   return (
@@ -231,31 +263,13 @@ export default function SiteHeader() {
 
             <span className="nav-divider" aria-hidden="true" />
 
+            {/* Dynamic Category List (100% Controlled by Admin Database) */}
             <div className="category-list">
-              <Link className="category-link" href="/shop?category=Skincare">
-                Skincare
-              </Link>
-              <Link className="category-link" href="/shop?category=Makeup">
-                Makeup
-              </Link>
-              <Link className="category-link" href="/shop?category=Hair%20Care">
-                Hair Care
-              </Link>
-              <Link className="category-link" href="/shop?category=Fragrances">
-                Fragrances
-              </Link>
-              <Link className="category-link" href="/shop?category=Bath%20%26%20Body">
-                Bath &amp; Body
-              </Link>
-              <Link className="category-link" href="/shop?category=Nail%20Care">
-                Nail Care
-              </Link>
-              <Link className="category-link" href="/shop?category=Tools%20%26%20Brushes">
-                Tools &amp; Brushes
-              </Link>
-              <Link className="category-link" href="/shop?category=Gift%20Sets">
-                Gift Sets
-              </Link>
+              {navCategories.map((cat) => (
+                <Link key={cat.id} className="category-link" href={cat.href}>
+                  {cat.name}
+                </Link>
+              ))}
             </div>
           </div>
         </nav>
