@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import HomeSearch from '@/app/components/HomeSearch';
 import CategoryRail from '@/components/catalog/CategoryRail';
 import { useAuth } from '@/contexts/AuthContext';
