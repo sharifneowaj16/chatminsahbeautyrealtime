@@ -55,6 +55,9 @@ export default function CategoryRail({
 }: CategoryRailProps) {
   const [categories, setCategories] = useState<CategoryRailItem[]>(initialCategories);
   const [activeCategory, setActiveCategory] = useState<string>(defaultActiveCategory);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isDraggingState, setIsDraggingState] = useState(false);
 
   const [indicatorStyle, setIndicatorStyle] = useState<{ transform: string; width: string }>({
     transform: 'translateX(0px)',
@@ -67,9 +70,24 @@ export default function CategoryRail({
 
   const railRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
+
+  // Momentum & Drag physics refs
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+  const hasDragged = useRef(false);
+  const velX = useRef(0);
+  const lastX = useRef(0);
+  const lastTime = useRef(0);
+  const rafId = useRef<number | null>(null);
+
+  // Check scroll edge availability
+  const checkScrollEdges = useCallback(() => {
+    if (!railRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = railRef.current;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 4);
+  }, []);
 
   // Fetch dynamic categories from Admin API and synchronize with primary rail
   useEffect(() => {
@@ -122,37 +140,155 @@ export default function CategoryRail({
 
   useEffect(() => {
     updateIndicator();
+    checkScrollEdges();
     window.addEventListener('resize', updateIndicator);
-    return () => window.removeEventListener('resize', updateIndicator);
-  }, [updateIndicator, categories]);
+    window.addEventListener('resize', checkScrollEdges);
+    return () => {
+      window.removeEventListener('resize', updateIndicator);
+      window.removeEventListener('resize', checkScrollEdges);
+    };
+  }, [updateIndicator, checkScrollEdges, categories]);
 
-  // Mouse Drag Scroll for Category Rail
+  // Physics-based momentum glide loop
+  const stopMomentum = () => {
+    if (rafId.current) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
+  };
+
+  const applyMomentum = () => {
+    if (!railRef.current) return;
+    velX.current *= 0.94; // Friction deceleration
+    railRef.current.scrollLeft -= velX.current;
+    checkScrollEdges();
+
+    if (Math.abs(velX.current) > 0.4) {
+      rafId.current = requestAnimationFrame(applyMomentum);
+    } else {
+      stopMomentum();
+    }
+  };
+
+  // Mouse Drag Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!railRef.current) return;
-    setIsDragging(true);
-    setStartX(e.pageX - railRef.current.offsetLeft);
-    setScrollLeft(railRef.current.scrollLeft);
+    stopMomentum();
+    isDragging.current = true;
+    setIsDraggingState(true);
+    hasDragged.current = false;
+    startX.current = e.pageX - railRef.current.offsetLeft;
+    scrollLeftStart.current = railRef.current.scrollLeft;
+    lastX.current = e.pageX;
+    lastTime.current = performance.now();
+    velX.current = 0;
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !railRef.current) return;
+    if (!isDragging.current || !railRef.current) return;
     e.preventDefault();
-    const x = e.pageX - railRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5;
-    railRef.current.scrollLeft = scrollLeft - walk;
+    const currentX = e.pageX - railRef.current.offsetLeft;
+    const walk = (currentX - startX.current) * 1.25;
+
+    if (Math.abs(walk) > 4) {
+      hasDragged.current = true;
+    }
+
+    railRef.current.scrollLeft = scrollLeftStart.current - walk;
+    checkScrollEdges();
+
+    const now = performance.now();
+    const dt = now - lastTime.current;
+    if (dt > 8) {
+      velX.current = ((e.pageX - lastX.current) / dt) * 14;
+      lastX.current = e.pageX;
+      lastTime.current = now;
+    }
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseUp = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    setIsDraggingState(false);
+    if (Math.abs(velX.current) > 1) {
+      applyMomentum();
+    }
+  };
 
-  const handleCategoryClick = (cat: CategoryRailItem) => {
+  // Mouse Wheel Horizontal Passthrough
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!railRef.current) return;
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      stopMomentum();
+      railRef.current.scrollLeft += e.deltaY * 0.85;
+      checkScrollEdges();
+    }
+  };
+
+  // Click handler with drag safety
+  const handleCategoryClick = (e: React.MouseEvent, cat: CategoryRailItem) => {
+    if (hasDragged.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     setActiveCategory(cat.name);
     if (onSelectCategory) {
       onSelectCategory(cat);
     }
   };
 
+  // Arrow navigation
+  const scrollByDistance = (direction: 'left' | 'right') => {
+    if (!railRef.current) return;
+    stopMomentum();
+    const distance = direction === 'left' ? -320 : 320;
+    railRef.current.scrollBy({ left: distance, behavior: 'smooth' });
+    setTimeout(checkScrollEdges, 350);
+  };
+
   return (
-    <nav aria-label="Minsah Beauty categories" className={`mb-category-strip ${className}`}>
+    <nav aria-label="Minsah Beauty categories" className={`mb-category-strip group/rail ${className}`}>
+      {/* Left Edge Gradient Fade */}
+      <div
+        className={`mb-rail-fade mb-rail-fade-left ${canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        aria-hidden="true"
+      />
+
+      {/* Right Edge Gradient Fade */}
+      <div
+        className={`mb-rail-fade mb-rail-fade-right ${canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        aria-hidden="true"
+      />
+
+      {/* Desktop Left Chevron Button */}
+      {canScrollLeft && (
+        <button
+          type="button"
+          onClick={() => scrollByDistance('left')}
+          className="mb-rail-arrow mb-rail-arrow-left"
+          aria-label="Scroll categories left"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+      )}
+
+      {/* Desktop Right Chevron Button */}
+      {canScrollRight && (
+        <button
+          type="button"
+          onClick={() => scrollByDistance('right')}
+          className="mb-rail-arrow mb-rail-arrow-right"
+          aria-label="Scroll categories right"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      )}
+
       <div
         ref={railRef}
         id="mbCategoryRail"
@@ -160,7 +296,9 @@ export default function CategoryRail({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className={`mb-category-scroll ${isDragging ? 'dragging' : ''}`}
+        onWheel={handleWheel}
+        onScroll={checkScrollEdges}
+        className={`mb-category-scroll ${isDraggingState ? 'dragging' : ''}`}
       >
         <div aria-hidden="true" className="mb-active-bg" id="mbActiveBg" style={activeBgStyle} />
         <div aria-hidden="true" className="mb-indicator" id="mbIndicator" style={indicatorStyle} />
@@ -175,7 +313,7 @@ export default function CategoryRail({
                   else cellRefs.current.delete(cat.name);
                 }}
                 href={cat.href}
-                onClick={() => handleCategoryClick(cat)}
+                onClick={(e) => handleCategoryClick(e, cat)}
                 aria-current={isActive ? 'page' : undefined}
                 data-category={cat.name}
                 className={`mb-category ${isActive ? 'active' : ''}`}
