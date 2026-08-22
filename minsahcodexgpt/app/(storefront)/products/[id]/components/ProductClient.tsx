@@ -1007,24 +1007,7 @@ export default function ProductClient({
         addItem(cartItem, { track: false });
       });
 
-      trackAddToCartBundle({
-        mainProduct: {
-          id: product.id,
-          sku: selectedVariantObj?.sku ?? product.sku,
-          name: product.name,
-          price: currentPrice,
-          quantity,
-          variantId: selectedVariantObj?.id ?? null,
-        },
-        bundleProducts: selectedBundleProducts.map((bundleProduct) => ({
-          id: bundleProduct.id,
-          sku: bundleProduct.sku,
-          name: bundleProduct.name,
-          price: bundleProduct.price,
-          quantity: 1,
-        })),
-        totalPrice: bundleTotal,
-      });
+      trackAddToCartBundle(bundleCartItems, `${product.name} বান্ডেল`);
 
       openForSuccessfulAdd(
         intentId,
