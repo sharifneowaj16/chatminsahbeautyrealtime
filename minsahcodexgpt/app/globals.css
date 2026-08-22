@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  /* FCP-04.1 canonical semantic color contract */
-  --color-surface-page: #FFFDF9;
+  /* Option 1: Blush Velvet & Rose Gold (Soft Luxury Beauty Aesthetic) */
+  --color-surface-page: #FCFAF8;
   --color-surface-panel: #FFFFFF;
   --color-surface-elevated: #FFFFFF;
-  --color-surface-subtle: #FFF8F1;
-  --color-surface-soft: #FFF5EB;
-  --color-surface-highlight: #FFF7ED;
-  --color-surface-accent: #FFE6D2;
-  --color-surface-inverse: #421C00;
-  --color-surface-disabled: #F5F1EC;
+  --color-surface-subtle: #FFF4F7;
+  --color-surface-soft: #FDF0F4;
+  --color-surface-highlight: #FFF0F5;
+  --color-surface-accent: #FCE7ED;
+  --color-surface-inverse: #2A1720;
+  --color-surface-disabled: #F7F2F4;
 
-  --color-text-primary: #1A0D06;
-  --color-text-muted: #6B4C37;
-  --color-text-subtle: #8C735F;
+  --color-text-primary: #1C1917;
+  --color-text-muted: #786C72;
+  --color-text-subtle: #988A92;
   --color-text-inverse: #FFFFFF;
-  --color-text-disabled: #786A5E;
-  --color-text-link: #64320D;
+  --color-text-disabled: #A69BA0;
+  --color-text-link: #D84A78;
 
-  --color-border-default: #D6BEA7;
-  --color-border-strong: #B99374;
-  --color-border-subtle: #E8D5C0;
-  --color-border-focus: #8E6545;
+  --color-border-default: #EBDCE2;
+  --color-border-strong: #D9BDC8;
+  --color-border-subtle: #F5EAEF;
+  --color-border-focus: #D84A78;
 
-  --color-action-primary: #64320D;
-  --color-action-primary-hover: #421C00;
-  --color-action-secondary: #8E6545;
-  --color-action-secondary-hover: #64320D;
-  --color-action-disabled: #E7DED5;
+  --color-action-primary: #D84A78;
+  --color-action-primary-hover: #B8325E;
+  --color-action-secondary: #E88AA5;
+  --color-action-secondary-hover: #D84A78;
+  --color-action-disabled: #F2E3E8;
 
   --color-status-info-surface: #EFF6FF;
   --color-status-info-border: #BFDBFE;
@@ -44,12 +44,12 @@
   --color-status-danger-text: #B91C1C;
 
   --color-focus-ring: var(--color-border-focus);
-  --color-overlay-backdrop: rgba(26, 13, 6, 0.58);
+  --color-overlay-backdrop: rgba(28, 25, 23, 0.62);
 
-  --shadow-small: 0 4px 14px rgba(66, 28, 0, 0.06);
-  --shadow-panel: 0 14px 36px rgba(66, 28, 0, 0.08);
-  --shadow-elevated: 0 18px 40px rgba(66, 28, 0, 0.12);
-  --shadow-focus: 0 0 0 3px rgba(142, 101, 69, 0.24);
+  --shadow-small: 0 4px 14px rgba(216, 74, 120, 0.06);
+  --shadow-panel: 0 14px 36px rgba(42, 23, 32, 0.07);
+  --shadow-elevated: 0 18px 40px rgba(42, 23, 32, 0.11);
+  --shadow-focus: 0 0 0 3px rgba(216, 74, 120, 0.22);
   --shadow-success-pulse-start: 0 0 0 0 rgba(4, 120, 87, 0.22);
   --shadow-success-pulse-end: 0 0 0 8px rgba(4, 120, 87, 0);
 
