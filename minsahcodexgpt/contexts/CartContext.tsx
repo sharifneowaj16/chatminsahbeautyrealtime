@@ -668,7 +668,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removePromoCode = useCallback(() => {
     setDiscount(0);
     setPromoCode('');
-    pushToast({ title: 'Coupon removed', tone: 'neutral' });
+    pushToast({ title: 'Coupon removed', tone: 'info' });
   }, [pushToast]);
 
   // ── Address CRUD ────────────────────────────────────────────────
