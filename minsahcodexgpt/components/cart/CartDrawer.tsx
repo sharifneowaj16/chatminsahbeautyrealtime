@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Gift, Loader2, ShoppingBag, Sparkles, Tag, Truck, X } from "lucide-react";
+import { Gift, Loader2, ShoppingBag, Sparkles, Tag, Truck, X } from "lucide-react";
 
-import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -16,17 +15,9 @@ import { formatPrice } from "@/utils/currency";
 
 const FREE_DELIVERY_THRESHOLD = 2500; // Free delivery at ৳2,500 BDT
 
-function getVariantLabel(item: {
-  size?: string | null;
-  color?: string | null;
-  variantName?: string | null;
-}) {
-  return [item.size, item.color].filter(Boolean).join(" / ") || item.variantName || "";
-}
-
 export default function CartDrawer() {
   const router = useRouter();
-  const { isOpen, closeDrawer, lastAddedItem } = useCartDrawer();
+  const { isOpen, closeDrawer } = useCartDrawer();
   const {
     items,
     subtotal,
@@ -50,14 +41,6 @@ export default function CartDrawer() {
   const remainingForFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
   const progressPercent = Math.min(100, Math.round((subtotal / FREE_DELIVERY_THRESHOLD) * 100));
   const isFreeDeliveryUnlocked = subtotal >= FREE_DELIVERY_THRESHOLD;
-
-  const currentLastAddedItem = useMemo(() => {
-    if (!lastAddedItem) return null;
-    const matchedItem = items.find((item) => item.id === lastAddedItem.id);
-    return matchedItem
-      ? { ...matchedItem, addedQuantity: lastAddedItem.addedQuantity, addedAt: lastAddedItem.addedAt }
-      : lastAddedItem;
-  }, [items, lastAddedItem]);
 
   const markBusy = async (itemId: string, action: () => Promise<boolean>) => {
     if (busyItemIds.includes(itemId)) return;
@@ -263,24 +246,6 @@ export default function CartDrawer() {
               />
             </div>
           </div>
-
-          {currentLastAddedItem ? (
-            <Alert
-              tone="success"
-              announcement="polite"
-              title="Added to cart"
-              icon={<CheckCircle2 className="h-5 w-5" />}
-              className="minsah-success-pulse"
-            >
-              <span className="line-clamp-2">
-                {currentLastAddedItem.addedQuantity > 1 ? `${currentLastAddedItem.addedQuantity} × ` : ""}
-                {currentLastAddedItem.name}
-              </span>
-              {getVariantLabel(currentLastAddedItem) ? (
-                <span className="mt-1 block text-xs font-semibold">{getVariantLabel(currentLastAddedItem)}</span>
-              ) : null}
-            </Alert>
-          ) : null}
 
           <div className="space-y-3 pt-1">
             {items.map((item) => (
