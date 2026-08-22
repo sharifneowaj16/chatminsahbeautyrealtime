@@ -300,10 +300,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div lang="en" className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div lang="en" className="min-h-screen flex items-center justify-center bg-[#14141A]">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-16 h-16 border-4 border-[#D07A60] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#9A9691] text-sm">Loading admin workspace...</p>
         </div>
       </div>
     );
@@ -339,166 +339,166 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
 
   const renderSidebarContent = (instance: 'desktop' | 'mobile') => (
-    <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-20 items-center justify-between px-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-pink-600">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-purple-600 font-bold text-lg">MB</span>
-              </div>
-              <div>
-                <h2 className="text-white font-bold text-lg">Minsah Beauty</h2>
-                <p className="text-white/80 text-xs">Admin Panel</p>
-              </div>
-            </div>
-            <Button
-              type="button"
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10"
-              aria-label="Close admin sidebar"
-            >
-              <X className="w-5 h-5" />
-            </Button>
+    <div className="flex h-full flex-col bg-[#14141A] text-[#F5F3F0]">
+      {/* Logo Header */}
+      <div className="flex h-20 items-center justify-between px-6 border-b border-[#2A2A32] bg-[#14141A]">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-[#1E1E24] border border-[#2A2A32] rounded-xl flex items-center justify-center shadow-md">
+            <span className="text-[#D07A60] font-black text-lg">MB</span>
           </div>
-
-          {/* User info */}
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-semibold text-lg">
-                  {user?.name?.charAt(0).toUpperCase() || 'A'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
-                  {user?.name || 'Admin User'}
-                </p>
-                <p className="text-xs text-gray-500 truncate capitalize">
-                  {user?.role?.replace('_', ' ') || 'Super Admin'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {resolvedMenuItems.map((item) => {
-              const isExpanded = expandedItems.includes(item.title);
-              const hasChildren = item.children && item.children.length > 0;
-              const active = isActive(item.href);
-
-              return (
-                <div key={item.title}>
-                  <Link
-                    href={item.href}
-                    aria-expanded={hasChildren ? isExpanded : undefined}
-                    aria-controls={hasChildren ? `${navSectionId(item.title)}-${instance}` : undefined}
-                    onClick={(e: React.MouseEvent) => {
-                      if (hasChildren) {
-                        e.preventDefault();
-                        toggleExpanded(item.title);
-                      }
-                    }}
-                    className={clsx(
-                      'group flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200',
-                      active
-                        ? 'bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 border-l-4 border-purple-600 shadow-sm'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                    )}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <item.icon
-                        className={clsx(
-                          'w-5 h-5',
-                          active ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-600'
-                        )}
-                      />
-                      <span>{item.title}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {item.badge && (
-                        <span
-                          className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold"
-                          aria-label={`${item.badge} unread ${item.title.toLowerCase()} items`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                      {hasChildren && (
-                        <ChevronDown
-                          className={clsx(
-                            'w-4 h-4 transform transition-transform duration-200',
-                            isExpanded ? 'rotate-180' : '',
-                            active ? 'text-purple-600' : 'text-gray-400'
-                          )}
-                        />
-                      )}
-                    </div>
-                  </Link>
-
-                  {/* Submenu */}
-                  {hasChildren && isExpanded && (
-                    <div id={`${navSectionId(item.title)}-${instance}`} className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
-                      {item.children
-                        ?.filter(child => !child.permission || hasPermission(child.permission))
-                        .map((child) => {
-                          const childActive = pathname === child.href || pathname.startsWith(child.href + '/');
-                          return (
-                            <Link
-                              key={child.href}
-                              href={child.href}
-                              className={clsx(
-                                'group flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-200',
-                                childActive
-                                  ? 'bg-purple-50 text-purple-700 font-medium'
-                                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                {child.icon && (
-                                  <child.icon className="w-4 h-4 text-gray-400" />
-                                )}
-                                <span>{child.title}</span>
-                              </div>
-                              {child.badge && (
-                                <span
-                                  className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
-                                  aria-label={`${child.badge} ${child.title.toLowerCase()} items`}
-                                >
-                                  {child.badge}
-                                </span>
-                              )}
-                            </Link>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
-
-          {/* Logout */}
-          <div className="border-t border-gray-200 p-4">
-            <Button
-              type="button"
-              onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </Button>
+          <div>
+            <h2 className="text-[#F5F3F0] font-bold text-lg leading-tight">Minsah Beauty</h2>
+            <p className="text-[#9A9691] text-xs font-medium tracking-wide">Admin Workspace</p>
           </div>
         </div>
+        <Button
+          type="button"
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden p-2 rounded-md text-[#9A9691] hover:text-[#F5F3F0] hover:bg-[#1E1E24]"
+          aria-label="Close admin sidebar"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* User info */}
+      <div className="px-6 py-4 border-b border-[#2A2A32] bg-[#1E1E24]/60">
+        <div className="flex items-center space-x-3">
+          <div className="w-11 h-11 bg-gradient-to-br from-[#D07A60] to-[#E08D70] rounded-xl flex items-center justify-center shadow-md">
+            <span className="text-[#14141A] font-bold text-lg">
+              {user?.name?.charAt(0).toUpperCase() || 'A'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#F5F3F0] truncate">
+              {user?.name || 'Admin User'}
+            </p>
+            <p className="text-xs text-[#9A9691] truncate capitalize">
+              {user?.role?.replace('_', ' ') || 'Super Admin'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {resolvedMenuItems.map((item) => {
+          const isExpanded = expandedItems.includes(item.title);
+          const hasChildren = item.children && item.children.length > 0;
+          const active = isActive(item.href);
+
+          return (
+            <div key={item.title}>
+              <Link
+                href={item.href}
+                aria-expanded={hasChildren ? isExpanded : undefined}
+                aria-controls={hasChildren ? `${navSectionId(item.title)}-${instance}` : undefined}
+                onClick={(e: React.MouseEvent) => {
+                  if (hasChildren) {
+                    e.preventDefault();
+                    toggleExpanded(item.title);
+                  }
+                }}
+                className={clsx(
+                  'group flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all duration-150',
+                  active
+                    ? 'bg-[#1E1E24] text-[#D07A60] border-l-4 border-[#D07A60] shadow-sm font-semibold'
+                    : 'text-[#9A9691] hover:bg-[#1E1E24]/80 hover:text-[#F5F3F0]'
+                )}
+              >
+                <div className="flex items-center space-x-3">
+                  <item.icon
+                    className={clsx(
+                      'w-5 h-5 transition-colors',
+                      active ? 'text-[#D07A60]' : 'text-[#9A9691] group-hover:text-[#F5F3F0]'
+                    )}
+                  />
+                  <span>{item.title}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {item.badge && (
+                    <span
+                      className="px-2 py-0.5 bg-red-950/80 text-red-400 border border-red-800/40 rounded-full text-xs font-semibold"
+                      aria-label={`${item.badge} unread ${item.title.toLowerCase()} items`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                  {hasChildren && (
+                    <ChevronDown
+                      className={clsx(
+                        'w-4 h-4 transform transition-transform duration-200',
+                        isExpanded ? 'rotate-180' : '',
+                        active ? 'text-[#D07A60]' : 'text-[#9A9691]'
+                      )}
+                    />
+                  )}
+                </div>
+              </Link>
+
+              {/* Submenu */}
+              {hasChildren && isExpanded && (
+                <div id={`${navSectionId(item.title)}-${instance}`} className="mt-1 ml-4 space-y-1 border-l-2 border-[#2A2A32] pl-3">
+                  {item.children
+                    ?.filter(child => !child.permission || hasPermission(child.permission))
+                    .map((child) => {
+                      const childActive = pathname === child.href || pathname.startsWith(child.href + '/');
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={clsx(
+                            'group flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all duration-150',
+                            childActive
+                              ? 'bg-[#1E1E24] text-[#D07A60] font-semibold border-l-2 border-[#D07A60]'
+                              : 'text-[#9A9691] hover:bg-[#1E1E24]/60 hover:text-[#F5F3F0]'
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            {child.icon && (
+                              <child.icon className="w-3.5 h-3.5 text-[#9A9691]" />
+                            )}
+                            <span>{child.title}</span>
+                          </div>
+                          {child.badge && (
+                            <span
+                              className="px-1.5 py-0.5 bg-[#2A2A32] text-[#D07A60] rounded-full text-[10px] font-bold"
+                              aria-label={`${child.badge} ${child.title.toLowerCase()} items`}
+                            >
+                              {child.badge}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* Logout */}
+      <div className="border-t border-[#2A2A32] p-4 bg-[#14141A]">
+        <Button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300 rounded-xl transition-colors duration-150"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </Button>
+      </div>
+    </div>
   );
 
   return (
-    <div lang="en" className="min-h-screen bg-gray-100 flex">
+    <div lang="en" className="min-h-screen bg-[#0E0E12] flex">
       {!inboxChromeHidden ? (
         <>
           <aside
             aria-label="Admin navigation"
-            className="hidden h-screen w-72 shrink-0 bg-white shadow-2xl lg:block"
+            className="hidden h-screen w-72 shrink-0 bg-[#14141A] border-r border-[#2A2A32] shadow-2xl lg:block"
           >
             {renderSidebarContent('desktop')}
           </aside>
@@ -509,8 +509,8 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
             size="sm"
             ariaLabel="Admin navigation"
             showCloseButton={false}
-            bodyClassName="p-0 sm:p-0"
-            panelClassName="max-w-72"
+            bodyClassName="p-0 sm:p-0 bg-[#14141A]"
+            panelClassName="max-w-72 bg-[#14141A]"
           >
             {renderSidebarContent('mobile')}
           </Drawer>
@@ -519,14 +519,14 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:ml-0 min-w-0">
-        {/* Top header - Metronic Style */}
+        {/* Top header */}
         {!inboxChromeHidden && (
-          <header className="h-20 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 sticky top-0 z-30">
+          <header className="h-20 bg-[#14141A] border-b border-[#2A2A32] shadow-sm flex items-center justify-between px-6 sticky top-0 z-30">
             <div className="flex items-center space-x-4">
               <Button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                className="lg:hidden p-2 rounded-md text-[#9A9691] hover:text-[#F5F3F0] hover:bg-[#1E1E24]"
                 aria-label="Open admin sidebar"
               >
                 <Menu className="w-6 h-6" />
@@ -534,36 +534,36 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
               {/* Search */}
               <div className="hidden md:block relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9A9691]" />
                 <Input
                   type="text"
                   aria-label="Search products, orders, customers"
                   placeholder="Search products, orders, customers..."
-                  className="w-96 pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-96 pl-9 pr-4 py-2 bg-[#1E1E24] border border-[#2A2A32] text-[#F5F3F0] placeholder:text-[#9A9691] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#D07A60] focus:border-transparent"
                 />
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
               {/* System Status */}
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-green-700">All Systems Operational</span>
-                <Minus className="w-3 h-3 text-green-600 rotate-90" />
-                <span className="text-xs text-green-600">Last sync: 2 min ago</span>
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#1E1E24] border border-[#2A2A32] rounded-xl">
+                <div className="w-2 h-2 bg-[#4ADE80] rounded-full animate-pulse"></div>
+                <span className="text-xs font-semibold text-[#4ADE80]">Systems Operational</span>
+                <Minus className="w-3 h-3 text-[#9A9691] rotate-90" />
+                <span className="text-xs text-[#9A9691]">Live Sync</span>
               </div>
 
               {/* Notification Bell */}
               <AdminNotificationBell />
 
               {/* User menu */}
-              <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
+              <div className="flex items-center space-x-3 pl-4 border-l border-[#2A2A32]">
                 <div className="hidden md:block text-right">
-                  <p className="text-sm font-semibold text-gray-900">{user?.name || 'Admin User'}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user?.role?.replace('_', ' ') || 'Super Admin'}</p>
+                  <p className="text-sm font-semibold text-[#F5F3F0]">{user?.name || 'Admin User'}</p>
+                  <p className="text-xs text-[#9A9691] capitalize">{user?.role?.replace('_', ' ') || 'Super Admin'}</p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-md">
-                  <span className="text-white font-semibold">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#D07A60] to-[#E08D70] rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-[#14141A] font-bold">
                     {user?.name?.charAt(0).toUpperCase() || 'A'}
                   </span>
                 </div>
@@ -575,7 +575,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
         {/* Page content */}
         <main
           className={clsx(
-            'flex-1 overflow-y-auto bg-gray-50',
+            'flex-1 overflow-y-auto bg-[#0E0E12] text-[#F5F3F0]',
             inboxChromeHidden && 'bg-transparent'
           )}
         >

@@ -61,6 +61,18 @@
   --control-icon-size: 2.75rem;
   --font-size-minimum-readable: 0.75rem;
 
+  /* Admin panel design system */
+  --admin-bg: #14141A;          /* Deep Charcoal Black - sidebar/base */
+  --admin-panel: #1E1E24;       /* Slightly lighter panel/card bg */
+  --admin-primary: #D07A60;     /* brand Terracotta - CTA/active states */
+  --admin-primary-hover: #E08D70;
+  --admin-text: #F5F3F0;        /* off-white text on dark */
+  --admin-text-muted: #9A9691;
+  --admin-border: #2A2A32;
+  --admin-success: #4ADE80;
+  --admin-danger: #F87171;
+  --admin-warning: #FBBF24;
+
   /* Compatibility aliases. Remove only after all legacy consumers migrate. */
   --background: var(--color-surface-panel);
   --foreground: var(--color-text-primary);
@@ -87,6 +99,18 @@
   --color-foreground: var(--color-text-primary);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* Admin panel utilities */
+  --color-admin-bg: var(--admin-bg);
+  --color-admin-panel: var(--admin-panel);
+  --color-admin-primary: var(--admin-primary);
+  --color-admin-primary-hover: var(--admin-primary-hover);
+  --color-admin-text: var(--admin-text);
+  --color-admin-text-muted: var(--admin-text-muted);
+  --color-admin-border: var(--admin-border);
+  --color-admin-success: var(--admin-success);
+  --color-admin-danger: var(--admin-danger);
+  --color-admin-warning: var(--admin-warning);
 
   /* Semantic surface utilities */
   --color-minsah-surface-page: var(--color-surface-page);
