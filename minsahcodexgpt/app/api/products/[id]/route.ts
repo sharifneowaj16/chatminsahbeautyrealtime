@@ -6,6 +6,7 @@ import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 import { getDeliveryOfferBadgeText, isDeliveryOfferActive } from '@/lib/delivery-pricing';
 import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQueue';
 import { normalizeProductCondition } from '@/lib/products/product-condition';
+import { getProductDetail } from '@/lib/products/get-product';
 
 export const dynamic = 'force-dynamic';
 
