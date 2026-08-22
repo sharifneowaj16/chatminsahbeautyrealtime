@@ -44,7 +44,7 @@ export default async function CategoriesPage() {
                 <Link
                   key={category.id}
                   href={`/categories/${category.slug}`}
-                  className="relative bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg p-8 hover:shadow-lg transition group"
+                  className="relative bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg p-8 hover:shadow-lg transition group"
                 >
                   <div className="w-16 h-16 mb-4 rounded-full bg-white/70 flex items-center justify-center overflow-hidden">
                     {category.image ? (
@@ -52,7 +52,7 @@ export default async function CategoriesPage() {
                         <CatalogProductImage src={category.image} alt={category.name} sizes="64px" padding="sm" />
                       </span>
                     ) : (
-                      <Package className="w-9 h-9 text-pink-500" />
+                      <Package className="w-9 h-9 text-minsah-action-primary" />
                     )}
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">{category.name}</h2>
@@ -66,7 +66,7 @@ export default async function CategoriesPage() {
           ) : (
             <div className="text-center rounded-xl bg-white p-10 shadow-sm">
               <p className="text-gray-600">No active categories found.</p>
-              <Link href="/shop" className="mt-4 inline-block rounded-lg bg-pink-600 px-5 py-2 text-white">Shop all products</Link>
+              <Link href="/shop" className="mt-4 inline-block rounded-lg bg-minsah-action-primary hover:bg-minsah-action-primary-hover px-5 py-2 text-white">Shop all products</Link>
             </div>
           )}
         </div>

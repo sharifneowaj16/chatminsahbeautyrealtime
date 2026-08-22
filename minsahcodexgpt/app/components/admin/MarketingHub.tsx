@@ -733,11 +733,11 @@ export default function MarketingHub() {
 
             <div className="bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded-lg p-4 text-white">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-purple-100 text-sm font-medium">Avg Engagement</span>
+                <span className="text-admin-text/90 text-sm font-medium">Avg Engagement</span>
                 <Heart className="h-5 w-5" />
               </div>
               <p className="text-2xl font-bold">{totalEngagement.toFixed(1)}%</p>
-              <p className="text-purple-100 text-xs mt-1">Average engagement rate</p>
+              <p className="text-admin-text/90 text-xs mt-1">Average engagement rate</p>
             </div>
 
             <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">

@@ -556,7 +556,7 @@ export default function CategoriesPage() {
                             {item}
                             <Button
                               onClick={() => handleRemoveItem(index, itemIndex)}
-                              className="ml-2 text-admin-primary hover:text-purple-900"
+                              className="ml-2 text-admin-primary hover:text-admin-primary-hover"
                             >
                               <X className="w-3 h-3" />
                             </Button>

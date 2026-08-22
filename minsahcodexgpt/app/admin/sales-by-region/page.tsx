@@ -374,7 +374,7 @@ export default function SalesByRegionPage() {
                           setSelectedDistrict(location.name);
                         }
                       }}
-                      className="inline-flex items-center text-admin-primary hover:text-purple-900"
+                      className="inline-flex items-center text-admin-primary hover:text-admin-primary-hover"
                     >
                       <ChevronRight className="w-5 h-5" />
                       <span className="text-sm">View Details</span>
@@ -391,7 +391,7 @@ export default function SalesByRegionPage() {
       <div className="bg-white rounded-lg border p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Sales Heatmap - Bangladesh</h3>
         <div className="bg-gradient-to-br from-admin-panel to-admin-bg rounded-lg p-12 text-center">
-          <MapPin className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+          <MapPin className="w-16 h-16 text-admin-text-muted mx-auto mb-4" />
           <p className="text-gray-600">Interactive Bangladesh map with sales heatmap</p>
           <p className="text-sm text-gray-500 mt-2">
             Visual representation of sales density across divisions, districts, and thanas

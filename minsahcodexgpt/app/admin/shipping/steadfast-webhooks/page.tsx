@@ -227,12 +227,12 @@ export default function SteadfastWebhooksPage() {
           </div>
         )}
 
-        <div className="rounded-lg border border-violet-100 bg-violet-50/60 p-4 text-sm text-violet-950">
+        <div className="rounded-lg border border-admin-border bg-admin-panel/60 p-4 text-sm text-admin-text">
           <div className="flex items-start gap-2">
             <Package className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <p className="font-medium">Security</p>
-              <p className="mt-1 text-violet-900/90">
+              <p className="mt-1 text-admin-text/90">
                 Set <code className="rounded bg-white/80 px-1">STEADFAST_WEBHOOK_SECRET</code> and/or{' '}
                 <code className="rounded bg-white/80 px-1">STEADFAST_WEBHOOK_CUSTOMER_KEY</code> +{' '}
                 <code className="rounded bg-white/80 px-1">STEADFAST_WEBHOOK_AUTHORIZATION</code> on the server.

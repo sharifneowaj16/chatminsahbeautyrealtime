@@ -137,7 +137,7 @@ export default function AdminNotificationBell() {
                   size="sm"
                   onClick={markAllRead}
                   disabled={loading}
-                  className="px-2 text-xs text-admin-primary hover:bg-transparent hover:text-violet-800"
+                  className="px-2 text-xs text-admin-primary hover:bg-transparent hover:text-admin-primary-hover"
                 >
                   <Check className="w-3 h-3" aria-hidden="true" />
                   Mark all read
@@ -172,14 +172,14 @@ export default function AdminNotificationBell() {
                   fullWidth
                   onClick={() => handleNotificationClick(n)}
                   className={`min-h-0 justify-start rounded-none border-b border-gray-50 px-4 py-3 text-left font-normal ${
-                    !n.isRead ? 'bg-violet-50/50' : ''
+                    !n.isRead ? 'bg-admin-panel' : ''
                   }`}
                 >
                   {/* Icon */}
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                     n.type === 'GIFT_ORDER'
                       ? 'bg-admin-panel'
-                      : 'bg-violet-100'
+                      : 'bg-admin-panel'
                   }`}>
                     {n.type === 'GIFT_ORDER'
                       ? <Gift className="w-4 h-4 text-admin-primary" aria-hidden="true" />
@@ -203,7 +203,7 @@ export default function AdminNotificationBell() {
 
                   {/* Unread dot */}
                   {!n.isRead && (
-                    <div className="w-2 h-2 bg-violet-500 rounded-full mt-1 flex-shrink-0" />
+                    <div className="w-2 h-2 bg-admin-primary rounded-full mt-1 flex-shrink-0" />
                   )}
                 </Button>
               ))
@@ -218,7 +218,7 @@ export default function AdminNotificationBell() {
                 variant="ghost"
                 size="sm"
                 onClick={() => { router.push('/admin/orders'); setOpen(false); }}
-                className="px-2 text-xs font-medium text-admin-primary hover:bg-transparent hover:text-violet-800"
+                className="px-2 text-xs font-medium text-admin-primary hover:bg-transparent hover:text-admin-primary-hover"
               >
                 View all orders →
               </Button>

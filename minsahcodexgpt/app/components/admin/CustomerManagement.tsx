@@ -314,11 +314,11 @@ export default function CustomerManagement() {
 
         <div className="bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded-lg p-4 text-white">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-purple-100 text-sm font-medium">VIP Customers</span>
+            <span className="text-admin-text/90 text-sm font-medium">VIP Customers</span>
             <Crown className="h-5 w-5" />
           </div>
           <p className="text-2xl font-bold">{customers.filter(c => c.isVip).length}</p>
-          <p className="text-purple-100 text-xs mt-1">Top tier</p>
+          <p className="text-admin-text/90 text-xs mt-1">Top tier</p>
         </div>
 
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
@@ -916,7 +916,7 @@ export default function CustomerManagement() {
 
                 <div className="bg-admin-panel border border-admin-border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-purple-900">Current VIP Customers</h4>
+                    <h4 className="font-medium text-admin-text">Current VIP Customers</h4>
                     <span className="text-admin-primary font-bold">{customers.filter(c => c.isVip).length}</span>
                   </div>
                   <p className="text-sm text-admin-primary">These customers receive exclusive benefits and priority support.</p>

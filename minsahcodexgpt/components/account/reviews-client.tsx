@@ -228,7 +228,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                         <ProductImage src={review.productImage} name={review.productName} />
                         {/* Hidden fallback span */}
                         <span style={{ display: 'none' }}>
-                          <Package className="w-8 h-8 text-purple-400" aria-hidden="true" />
+                          <Package className="w-8 h-8 text-minsah-text-muted" aria-hidden="true" />
                         </span>
                       </div>
                       <div>

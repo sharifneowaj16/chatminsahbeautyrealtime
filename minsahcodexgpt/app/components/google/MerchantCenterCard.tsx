@@ -380,7 +380,7 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                          <div className="w-full h-full bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent flex items-center justify-center">
                             <ShoppingBag className="w-8 h-8 text-gray-400" />
                           </div>
                         )}
@@ -499,7 +499,7 @@ export default function MerchantCenterCard({ className = '' }: MerchantCenterCar
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent flex items-center justify-center">
                           <ShoppingBag className="w-12 h-12 text-gray-400" />
                         </div>
                       )}

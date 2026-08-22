@@ -70,7 +70,7 @@ function TimelineStep({
       <div className="flex flex-col items-center">
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-            'bg-violet-600 text-white shadow-lg shadow-violet-200'
+            'bg-minsah-action-primary text-white shadow-lg shadow-orange-950/10'
           }`}
         >
           {step.status.toLowerCase().includes('deliver') ? (
@@ -82,7 +82,7 @@ function TimelineStep({
           )}
         </div>
         {!isLast && (
-          <div className="w-0.5 flex-1 mt-1 bg-violet-300" style={{ minHeight: '2rem' }} />
+          <div className="w-0.5 flex-1 mt-1 bg-minsah-action-primary" style={{ minHeight: '2rem' }} />
         )}
       </div>
       <div className="pb-6 pt-2">
@@ -187,19 +187,19 @@ function TrackPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-minsah-surface-subtle via-white to-minsah-surface-soft">
       {/* Top bar */}
       <div className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-minsah-action-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">M</span>
             </div>
             <span className="font-semibold text-gray-900">Minsah Beauty</span>
           </Link>
           <Link
             href="/shop"
-            className="text-sm text-violet-600 hover:text-violet-800 font-medium"
+            className="text-sm text-minsah-action-primary hover:text-minsah-action-primary font-medium"
           >
             Continue Shopping →
           </Link>
@@ -209,7 +209,7 @@ function TrackPageContent() {
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Hero */}
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-violet-200">
+          <div className="w-16 h-16 bg-minsah-action-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-950/10">
             <Truck className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Track Your Order</h1>
@@ -228,7 +228,7 @@ function TrackPageContent() {
               onClick={() => { setMode('order'); setResult(null); setError(null); }}
               className={`flex-1 rounded-lg py-2 text-sm ${
                 mode === 'order'
-                  ? 'bg-white text-violet-700 shadow-sm'
+                  ? 'bg-white text-minsah-action-primary shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -240,7 +240,7 @@ function TrackPageContent() {
               onClick={() => { setMode('code'); setResult(null); setError(null); }}
               className={`flex-1 rounded-lg py-2 text-sm ${
                 mode === 'code'
-                  ? 'bg-white text-violet-700 shadow-sm'
+                  ? 'bg-white text-minsah-action-primary shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -257,7 +257,7 @@ function TrackPageContent() {
                 placeholder="e.g. MB1234567890ABCD"
                 label="Order Number"
                 labelClassName="text-xs font-semibold uppercase text-gray-500"
-                className="rounded-xl border-gray-200 py-3 font-mono focus:border-transparent focus:ring-2 focus:ring-violet-500"
+                className="rounded-xl border-gray-200 py-3 font-mono focus:border-transparent focus:ring-2 focus:ring-minsah-focus"
               />
               <Input
                 value={phone}
@@ -267,7 +267,7 @@ function TrackPageContent() {
                 label="Phone Number"
                 labelClassName="text-xs font-semibold uppercase text-gray-500"
                 leading={<Phone className="w-4 h-4" aria-hidden="true" />}
-                className="rounded-xl border-gray-200 py-3 focus:border-transparent focus:ring-2 focus:ring-violet-500"
+                className="rounded-xl border-gray-200 py-3 focus:border-transparent focus:ring-2 focus:ring-minsah-focus"
               />
             </div>
           ) : (
@@ -278,7 +278,7 @@ function TrackPageContent() {
               placeholder="e.g. SFB12345678 or PTH123456"
               label="Courier Tracking Code"
               labelClassName="text-xs font-semibold uppercase text-gray-500"
-              className="rounded-xl border-gray-200 py-3 font-mono focus:border-transparent focus:ring-2 focus:ring-violet-500"
+              className="rounded-xl border-gray-200 py-3 font-mono focus:border-transparent focus:ring-2 focus:ring-minsah-focus"
             />
           )}
 
@@ -295,7 +295,7 @@ function TrackPageContent() {
             fullWidth
             onClick={doTrack}
             disabled={loading}
-            className="mt-5 bg-violet-600 py-3.5 shadow-lg shadow-violet-200 hover:bg-violet-700"
+            className="mt-5 bg-minsah-action-primary py-3.5 shadow-lg shadow-orange-950/10 hover:bg-minsah-action-primary-hover"
           >
             {loading ? (
               <>
@@ -315,7 +315,7 @@ function TrackPageContent() {
         {result && (
           <div className="bg-white rounded-2xl shadow-lg shadow-gray-100 border border-gray-100 overflow-hidden">
             {/* Status header */}
-            <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-5">
+            <div className="bg-gradient-to-r from-minsah-action-primary to-minsah-action-secondary px-6 py-5">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="text-white/70 text-xs font-medium">ORDER NUMBER</p>
@@ -425,11 +425,11 @@ function TrackPageContent() {
             <div className="border-t border-gray-100 px-6 py-4 bg-gray-50">
               <p className="text-xs text-gray-500 text-center">
                 Need help?{' '}
-                <Link href="/contact" className="text-violet-600 hover:underline font-medium">
+                <Link href="/contact" className="text-minsah-action-primary hover:underline font-medium">
                   Contact Support
                 </Link>{' '}
                 or call us at{' '}
-                <a href="tel:+8801XXXXXXXXX" className="text-violet-600 hover:underline font-medium">
+                <a href="tel:+8801XXXXXXXXX" className="text-minsah-action-primary hover:underline font-medium">
                   01XXXXXXXXX
                 </a>
               </p>
@@ -449,7 +449,7 @@ export default function TrackPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-minsah-action-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <TrackPageContent />

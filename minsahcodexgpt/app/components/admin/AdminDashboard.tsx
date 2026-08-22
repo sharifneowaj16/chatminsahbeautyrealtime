@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-2">Marketing Hub</h2>
-            <p className="text-purple-100 mb-4">
+            <p className="text-admin-text/90 mb-4">
               Manage all your marketing channels - Social Media, Email, SMS, WhatsApp, and Google Services
             </p>
             <div className="flex items-center gap-4">

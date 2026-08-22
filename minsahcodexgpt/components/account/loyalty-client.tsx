@@ -74,28 +74,28 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
           <div>
             <div className="flex items-center space-x-2 mb-2">
               <Star className="w-5 h-5" />
-              <span className="text-sm text-purple-100">Current Points</span>
+              <span className="text-sm text-white/90">Current Points</span>
             </div>
             <p className="text-3xl font-bold">{formatPoints(userLoyalty.currentPoints)}</p>
           </div>
           <div>
             <div className="flex items-center space-x-2 mb-2">
               <Trophy className="w-5 h-5" />
-              <span className="text-sm text-purple-100">Lifetime Points</span>
+              <span className="text-sm text-white/90">Lifetime Points</span>
             </div>
             <p className="text-3xl font-bold">{formatPoints(userLoyalty.lifetimePoints)}</p>
           </div>
           <div>
             <div className="flex items-center space-x-2 mb-2">
               <RefreshCw className="w-5 h-5" />
-              <span className="text-sm text-purple-100">This Month</span>
+              <span className="text-sm text-white/90">This Month</span>
             </div>
             <p className="text-3xl font-bold">+{formatPoints(userLoyalty.monthlyEarned)}</p>
           </div>
           <div>
             <div className="flex items-center space-x-2 mb-2">
               <Clock className="w-5 h-5" />
-              <span className="text-sm text-purple-100">Expiring Soon</span>
+              <span className="text-sm text-white/90">Expiring Soon</span>
             </div>
             <p className="text-3xl font-bold">{formatPoints(userLoyalty.pointsExpiring)}</p>
           </div>
@@ -104,7 +104,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
         {/* Tier Progress */}
         {nextTier && (
           <div className="mt-6 pt-6 border-t border-minsah-action-primary">
-            <div className="flex justify-between text-sm text-purple-100 mb-2">
+            <div className="flex justify-between text-sm text-white/90 mb-2">
               <span>{userTier.name} Tier</span>
               <span>{formatPoints(userLoyalty.lifetimePoints)} / {formatPoints(nextTier.minPoints)} → {nextTier.name}</span>
             </div>
@@ -284,7 +284,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
                   <div
                     key={tier.name}
                     className={`flex items-center space-x-3 p-3 rounded-lg ${
-                      isActive ? 'bg-minsah-surface-subtle border border-purple-200' : ''
+                      isActive ? 'bg-minsah-surface-subtle border border-minsah-border-default' : ''
                     }`}
                   >
                     <div className={`p-2 rounded-full ${

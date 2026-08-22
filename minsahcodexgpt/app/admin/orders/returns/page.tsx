@@ -592,7 +592,7 @@ export default function ReturnsPage() {
         <div className="mb-6 rounded-xl border border-admin-border bg-admin-panel p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-purple-900">
+              <p className="text-sm font-semibold text-admin-text">
                 {selectedIds.length} return request{selectedIds.length === 1 ? '' : 's'} selected
               </p>
               <p className="text-sm text-admin-primary">

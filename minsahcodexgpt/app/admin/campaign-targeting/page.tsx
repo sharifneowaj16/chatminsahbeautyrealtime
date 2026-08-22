@@ -304,7 +304,7 @@ export default function CampaignTargetingPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <Button className="text-admin-primary hover:text-purple-900">
+                      <Button className="text-admin-primary hover:text-admin-primary-hover">
                         <Edit className="w-4 h-4" />
                       </Button>
                       {campaign.status === 'active' ? (
@@ -399,7 +399,7 @@ export default function CampaignTargetingPage() {
                     </p>
                     <p className="text-xs text-gray-600 mt-1">potential customers</p>
                   </div>
-                  <Target className="w-12 h-12 text-purple-400" />
+                  <Target className="w-12 h-12 text-admin-text-muted" />
                 </div>
               </div>
         </div>

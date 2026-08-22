@@ -234,7 +234,7 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
         </div>
 
         {/* Real-time Widget */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-gradient-to-r from-admin-panel to-admin-bg border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-blue-900">Real-time Users</h3>
@@ -381,7 +381,7 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
                 {data.topProducts.slice(0, 3).map((product, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg flex items-center justify-center">
                         <span className="text-2xl">💄</span>
                       </div>
                       <div>

@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
           <Select
             value={dateRange}
             onChange={(event) => setDateRange(event.target.value as DateRange)}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-purple-200"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-admin-primary/40"
           >
             {dateRanges.map((range) => (
               <option key={range.value} value={range.value}>{range.label}</option>
@@ -335,7 +335,7 @@ export default function AnalyticsPage() {
             onChange={(event) => setAdSpendInput(event.target.value)}
             inputMode="decimal"
             placeholder="Ad spend BDT optional"
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-purple-200"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-admin-primary/40"
           />
           <Button
             onClick={() => void loadAnalytics()}

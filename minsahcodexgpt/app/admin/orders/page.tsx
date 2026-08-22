@@ -213,8 +213,8 @@ const STATUS_CONFIG = {
   },
   processing: {
     label: "Processing",
-    color: "bg-violet-50 text-admin-primary border-admin-border",
-    dot: "bg-violet-400",
+    color: "bg-admin-panel text-admin-primary border-admin-border",
+    dot: "bg-admin-primary",
   },
   shipped: {
     label: "Shipped",
@@ -646,7 +646,7 @@ function OrderDetailDrawer({
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-3 text-sm font-medium capitalize border-b-2 transition-colors ${
                     activeTab === tab
-                      ? "border-violet-600 text-admin-primary"
+                      ? "border-admin-primary text-admin-primary"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -794,7 +794,7 @@ function OrderDetailDrawer({
               {/* Steadfast Status Block */}
               {(order.steadfastConsignmentId ||
                 order.steadfastTrackingCode) && (
-                <div className="bg-violet-50 border border-admin-border rounded-xl p-4">
+                <div className="bg-admin-panel border border-admin-border rounded-xl p-4">
                   <h3 className="text-xs font-semibold text-admin-primary uppercase mb-3 flex items-center gap-1.5">
                     <Truck className="w-3.5 h-3.5" /> Steadfast Courier
                   </h3>
@@ -818,7 +818,7 @@ function OrderDetailDrawer({
                           href={`/track?code=${order.steadfastTrackingCode}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-admin-primary hover:text-violet-800"
+                          className="text-admin-primary hover:text-admin-primary-hover"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -837,11 +837,11 @@ function OrderDetailDrawer({
                         Dispatched: {formatDateTime(order.steadfastSentAt)}
                       </p>
                     )}
-                    <p className="text-xs text-admin-primary pt-2 border-t border-violet-100 mt-2">
+                    <p className="text-xs text-admin-primary pt-2 border-t border-admin-border mt-2">
                       Live updates from Steadfast use the{" "}
                       <Link
                         href="/admin/shipping/steadfast-webhooks"
-                        className="font-medium underline hover:text-violet-900"
+                        className="font-medium underline hover:text-admin-text"
                       >
                         webhook log
                       </Link>
@@ -905,7 +905,7 @@ function OrderDetailDrawer({
                 <div className="relative">
                   <Button
                     onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 bg-white rounded-lg text-sm hover:border-violet-300 transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 bg-white rounded-lg text-sm hover:border-admin-border transition-colors"
                   >
                     <StatusBadge status={newStatus} />
                     <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -962,7 +962,7 @@ function OrderDetailDrawer({
                 <Button
                   onClick={handleNoteSave}
                   disabled={savingNote}
-                  className="flex items-center gap-2 text-sm text-admin-primary hover:text-violet-800 font-medium disabled:opacity-60"
+                  className="flex items-center gap-2 text-sm text-admin-primary hover:text-admin-primary-hover font-medium disabled:opacity-60"
                 >
                   {savingNote ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1072,7 +1072,7 @@ function OrderDetailDrawer({
               {timeline.map((event, idx) => (
                 <div key={idx} className="flex gap-3">
                   <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-admin-panel flex items-center justify-center flex-shrink-0">
                       <CheckCircle className="w-4 h-4 text-admin-primary" />
                     </div>
                     {idx < timeline.length - 1 && (
@@ -1682,7 +1682,7 @@ export default function OrdersPage() {
               value: stats.processing,
               icon: Layers,
               color: "text-admin-primary",
-              bg: "bg-violet-50",
+              bg: "bg-admin-panel",
               filter: "processing",
             },
             {
@@ -1734,7 +1734,7 @@ export default function OrdersPage() {
               }
               className={`bg-white border rounded-xl p-4 text-left hover:shadow-md transition-all ${
                 stat.filter && statusFilter === stat.filter
-                  ? "border-violet-400 ring-2 ring-violet-100"
+                  ? "border-admin-primary ring-2 ring-minsah-border-subtle"
                   : "border-gray-100 hover:border-gray-200"
               }`}
             >
@@ -1770,7 +1770,7 @@ export default function OrdersPage() {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm transition-colors ${
               showFilters || activeFilters > 0
-                ? "bg-violet-50 border-violet-300 text-admin-primary"
+                ? "bg-admin-panel border-admin-border text-admin-primary"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}
           >
@@ -1885,7 +1885,7 @@ export default function OrdersPage() {
         <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-              <Loader2 className="w-8 h-8 animate-spin mb-3 text-violet-300" />
+              <Loader2 className="w-8 h-8 animate-spin mb-3 text-admin-primary" />
               <p className="text-sm">Loading orders…</p>
             </div>
           ) : error ? (
@@ -1961,7 +1961,7 @@ export default function OrdersPage() {
                       key={order.id}
                       className={`group hover:bg-gray-50/50 transition-colors ${
                         selectedIds.has(order.dbId || order.id)
-                          ? "bg-violet-50/30"
+                          ? "bg-admin-panel/30"
                           : ""
                       }`}
                     >
@@ -2109,7 +2109,7 @@ export default function OrdersPage() {
                           {/* View detail */}
                           <Button
                             onClick={() => openOrderDetail(order)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-admin-primary bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-admin-primary bg-admin-panel border border-admin-border rounded-lg hover:bg-admin-panel transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             View
@@ -2213,7 +2213,7 @@ export default function OrdersPage() {
                     onClick={() => fetchOrders(page)}
                     className={`w-9 h-9 text-sm rounded-lg border transition-colors ${
                       page === pagination.page
-                        ? "bg-admin-primary text-white border-violet-600"
+                        ? "bg-admin-primary text-white border-admin-primary"
                         : "border-gray-200 hover:bg-gray-50"
                     }`}
                   >

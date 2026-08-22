@@ -10,7 +10,7 @@ const comboSlides = [
   {
     title: 'Curated Combo Deals',
     description: 'Better Value on Beauty Sets',
-    gradient: 'from-purple-600 via-pink-500 to-orange-400',
+    gradient: 'from-minsah-action-primary via-minsah-action-secondary to-orange-400',
   },
   {
     title: 'Complete Care Sets',

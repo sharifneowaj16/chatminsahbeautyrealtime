@@ -364,7 +364,7 @@ export default function UsersManagementPage() {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Role Permissions</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <h4 className="font-medium text-purple-900 mb-2">Super Admin</h4>
+            <h4 className="font-medium text-admin-text mb-2">Super Admin</h4>
             <ul className="text-sm text-gray-600 space-y-1">
               <li>&bull; All permissions</li>
               <li>&bull; User management</li>

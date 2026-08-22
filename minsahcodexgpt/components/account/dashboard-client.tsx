@@ -81,11 +81,11 @@ interface DashboardClientProps {
 
 // ── Color map ─────────────────────────────────────────────────────────────────
 const colorMap: Record<string, { bg: string; text: string; ring: string }> = {
-  purple: { bg: 'bg-violet-50',  text: 'text-violet-600',  ring: 'ring-violet-100'  },
+  purple: { bg: 'bg-minsah-surface-subtle',  text: 'text-minsah-action-primary',  ring: 'ring-minsah-border-subtle'  },
   yellow: { bg: 'bg-amber-50',   text: 'text-amber-500',   ring: 'ring-amber-100'   },
   blue:   { bg: 'bg-blue-50',    text: 'text-blue-500',    ring: 'ring-blue-100'    },
   green:  { bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-100' },
-  pink:   { bg: 'bg-pink-50',    text: 'text-pink-500',    ring: 'ring-pink-100'    },
+  pink:   { bg: 'bg-minsah-surface-subtle',    text: 'text-minsah-action-primary',    ring: 'ring-minsah-border-subtle'    },
 };
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -122,7 +122,7 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
 
       {/* ── Hero card ──────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 p-6 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#121915] via-[#1c2720] to-[#141d17] p-6 text-white shadow-lg">
         <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -bottom-10 right-12 h-24 w-24 rounded-full bg-white/5" />
 
@@ -134,14 +134,14 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
             <h1 className="text-xl font-semibold leading-tight">
               Welcome back, {user.firstName}! 👋
             </h1>
-            <p className="mt-1 text-sm text-purple-100">{memberSubtitle}</p>
+            <p className="mt-1 text-sm text-white/90">{memberSubtitle}</p>
             <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
               ⭐ {memberLabel}
             </span>
           </div>
 
           <div className="shrink-0 rounded-2xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm">
-            <p className="text-xs text-purple-100">Loyalty Points</p>
+            <p className="text-xs text-white/90">Loyalty Points</p>
             <p className="text-2xl font-bold">{user.loyaltyPoints.toLocaleString()}</p>
             {initialData.loyaltyPointsExpiring > 0 && (
               <p className="mt-0.5 text-xs text-yellow-200">
@@ -155,8 +155,8 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
       {/* ── Stats row ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icon: <Package size={18} />, label: 'Orders',    value: initialData.recentOrders.length, iconBg: 'bg-violet-50 text-violet-500'  },
-          { icon: <Heart size={18} />,   label: 'Wishlist',  value: initialData.wishlistItems,       iconBg: 'bg-pink-50 text-pink-500'      },
+          { icon: <Package size={18} />, label: 'Orders',    value: initialData.recentOrders.length, iconBg: 'bg-minsah-surface-subtle text-minsah-action-primary'  },
+          { icon: <Heart size={18} />,   label: 'Wishlist',  value: initialData.wishlistItems,       iconBg: 'bg-minsah-surface-accent text-minsah-action-primary'      },
           { icon: <MapPin size={18} />,  label: 'Addresses', value: initialData.savedAddresses,      iconBg: 'bg-emerald-50 text-emerald-600' },
         ].map((s) => (
           <div key={s.label} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white py-4 shadow-sm ring-1 ring-gray-100">
@@ -170,19 +170,19 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
       {/* ── Points redeem banner ───────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50">
-            <Trophy size={20} className="text-violet-600" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-minsah-surface-subtle">
+            <Trophy size={20} className="text-minsah-action-primary" />
           </div>
           <div>
             <p className="text-xs text-gray-400">Loyalty Points</p>
-            <p className="text-xl font-semibold leading-tight text-violet-600">
+            <p className="text-xl font-semibold leading-tight text-minsah-action-primary">
               {user.loyaltyPoints.toLocaleString()}
             </p>
           </div>
         </div>
         <Link
           href="/account/loyalty"
-          className="shrink-0 rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700"
+          className="shrink-0 rounded-xl bg-minsah-action-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-minsah-action-primary-hover"
         >
           Redeem
         </Link>
@@ -208,7 +208,7 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
               <Link
                 key={action.name}
                 href={action.href}
-                className="group flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 transition-all hover:border-violet-100 hover:shadow-sm"
+                className="group flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 transition-all hover:border-minsah-border-default hover:shadow-sm"
               >
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-4 transition-transform group-hover:scale-105 ${c.bg} ${c.text} ${c.ring}`}>
                   <DynamicIcon name={action.icon} className="h-5 w-5" />
@@ -227,7 +227,7 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
       <div>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Recent Orders</p>
-          <Link href="/account/orders" className="text-xs font-medium text-violet-600 hover:underline">
+          <Link href="/account/orders" className="text-xs font-medium text-minsah-action-primary hover:underline">
             View all
           </Link>
         </div>
@@ -238,7 +238,7 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
             <p className="text-sm text-gray-400">এখনো কোনো order নেই</p>
             <Link
               href="/shop"
-              className="rounded-xl bg-violet-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-violet-700"
+              className="rounded-xl bg-minsah-action-primary px-5 py-2 text-sm font-medium text-white transition hover:bg-minsah-action-primary-hover"
             >
               Shop করুন
             </Link>
@@ -249,7 +249,7 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
               <Link
                 key={order.id}
                 href={`/account/orders/${order.id}`}
-                className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3.5 transition-all hover:border-violet-100 hover:shadow-sm"
+                className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3.5 transition-all hover:border-minsah-border-default hover:shadow-sm"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-800">{order.orderNumber}</p>
@@ -301,15 +301,15 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
             <div key={feature.name} className="rounded-2xl border border-gray-100 bg-white px-4 py-4">
               <div className="mb-1 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <DynamicIcon name={feature.icon} className="h-4 w-4 text-violet-500" />
+                  <DynamicIcon name={feature.icon} className="h-4 w-4 text-minsah-action-primary" />
                   <p className="text-sm font-medium text-gray-800">{feature.name}</p>
                 </div>
-                <span className="text-xs font-medium text-violet-600">{feature.progress}%</span>
+                <span className="text-xs font-medium text-minsah-action-primary">{feature.progress}%</span>
               </div>
               <p className="mb-2.5 text-xs text-gray-400">{feature.description}</p>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-1.5 rounded-full bg-violet-500 transition-all duration-700"
+                  className="h-1.5 rounded-full bg-minsah-action-primary transition-all duration-700"
                   style={{ width: `${feature.progress}%` }}
                 />
               </div>
@@ -319,16 +319,16 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
       </div>
 
       {/* ── Beauty tip ─────────────────────────────────────────────────────── */}
-      <div className="rounded-3xl bg-gradient-to-br from-pink-50 to-purple-50 p-6">
+      <div className="rounded-3xl bg-gradient-to-br from-minsah-surface-subtle to-minsah-surface-soft p-6">
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-800">
-          <Sparkles size={18} className="text-violet-500" />
+          <Sparkles size={18} className="text-minsah-action-primary" />
           Beauty Tip of the Day
         </h2>
         <p className="text-sm leading-relaxed text-gray-600">
           Did you know? Applying serum to slightly damp skin can increase absorption by up to 50%.
           Pat your face gently after cleansing, then apply your serum while still slightly moist!
         </p>
-        <Link href="/blog" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-violet-600 hover:underline">
+        <Link href="/blog" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-minsah-action-primary hover:underline">
           Read more tips <ArrowRight size={14} />
         </Link>
       </div>

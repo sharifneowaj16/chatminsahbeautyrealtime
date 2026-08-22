@@ -399,11 +399,11 @@ export default function GoogleServicesIntegration() {
 
             <div className="bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded-lg p-4 text-white">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-purple-100 text-sm font-medium">Total Conversions</span>
+                <span className="text-admin-text/90 text-sm font-medium">Total Conversions</span>
                 <Users className="h-5 w-5" />
               </div>
               <p className="text-2xl font-bold">{totalMetrics.conversions}</p>
-              <p className="text-purple-100 text-xs mt-1">Conversions tracked</p>
+              <p className="text-admin-text/90 text-xs mt-1">Conversions tracked</p>
             </div>
 
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white">

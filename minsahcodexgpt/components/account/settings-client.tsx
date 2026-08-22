@@ -292,7 +292,7 @@ export function SettingsClient() {
               {/* Avatar Section */}
               <div className="flex items-center space-x-6 mb-8">
                 <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                  <div className="w-24 h-24 bg-gradient-to-br from-minsah-action-primary to-minsah-action-secondary rounded-full flex items-center justify-center text-white text-3xl font-bold">
                     {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
                   </div>
                   <Button

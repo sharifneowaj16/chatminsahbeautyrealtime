@@ -1050,7 +1050,7 @@ export default function EditProductPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
                   {formData.images.map((image, index) => (
                     <div key={image.id}
-                      className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-admin-primary ring-2 ring-purple-200' : 'border-gray-200'}`}>
+                      className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-admin-primary ring-2 ring-admin-primary/40' : 'border-gray-200'}`}>
                       <div className="aspect-square">
                         <img src={image.preview} alt={`Product ${index + 1}`} className="w-full h-full object-cover" />
                       </div>
@@ -1336,7 +1336,7 @@ export default function EditProductPage() {
                           ...prev,
                           secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
                         }))}
-                        className="text-purple-400 hover:text-admin-primary"
+                        className="text-admin-text-muted hover:text-admin-primary"
                       >
                         <X className="w-3 h-3" />
                       </Button>

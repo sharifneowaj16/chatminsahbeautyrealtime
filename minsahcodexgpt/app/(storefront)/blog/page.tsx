@@ -41,8 +41,8 @@ export default function BlogPage() {
               const Icon = post.icon;
               return (
               <article key={post.id} className="bg-white rounded-lg shadow-sm hover:shadow-lg transition overflow-hidden">
-                <div className="bg-gradient-to-br from-pink-100 to-purple-100 h-48 flex items-center justify-center">
-                  <Icon className="w-24 h-24 text-pink-400" />
+                <div className="bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent h-48 flex items-center justify-center">
+                  <Icon className="w-24 h-24 text-minsah-action-primary" />
                 </div>
                 <div className="p-6">
                   <p className="text-sm text-gray-500 mb-2">{post.date}</p>

@@ -417,7 +417,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                           {address.firstName} {address.lastName}
                         </h3>
                         {address.isDefault && (
-                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-purple-800">
+                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-admin-text">
                             <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
                             Default
                           </span>
@@ -491,7 +491,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                           {address.firstName} {address.lastName}
                         </h3>
                         {address.isDefault && (
-                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-purple-800">
+                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-admin-text">
                             <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
                             Default
                           </span>

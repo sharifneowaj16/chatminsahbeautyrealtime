@@ -777,7 +777,7 @@ export default function NewProductPage() {
       <div className={`mb-6 rounded-xl border-2 p-5 shadow-sm transition-all ${aiApplied ? 'border-green-400 bg-green-50' : 'border-admin-border bg-gradient-to-r from-admin-panel to-admin-bg'}`}>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className={`w-5 h-5 ${aiApplied ? 'text-green-600' : 'text-admin-primary'}`} />
-          <span className={`text-base font-semibold ${aiApplied ? 'text-green-800' : 'text-purple-900'}`}>
+          <span className={`text-base font-semibold ${aiApplied ? 'text-green-800' : 'text-admin-text'}`}>
             {aiApplied
               ? `✅ Generated with ${AI_MODELS.find(m => m.id === aiAppliedModel)?.badge || 'AI'} — review and adjust the result`
               : 'AI Product Generator'}
@@ -890,7 +890,7 @@ export default function NewProductPage() {
               {showAdAngle ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
             {showAdAngle && (
-              <div className="px-4 pb-4 space-y-3 border-t border-purple-100">
+              <div className="px-4 pb-4 space-y-3 border-t border-admin-border">
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-1">Headline</p>
                   <p className="text-sm bg-admin-panel rounded px-3 py-2 font-medium">{facebookAdAngle.headline}</p>
@@ -1025,7 +1025,7 @@ export default function NewProductPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
                 {formData.images.map((image, index) => (
                   <div key={image.id}
-                    className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-admin-primary ring-2 ring-purple-200' : 'border-gray-200'}`}>
+                    className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-admin-primary ring-2 ring-admin-primary/40' : 'border-gray-200'}`}>
                     <div className="aspect-square">
                       <img src={image.preview} alt={`Product image preview ${index + 1}`} className="w-full h-full object-cover" />
                     </div>
@@ -1278,7 +1278,7 @@ export default function NewProductPage() {
                           ...prev,
                           secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
                         }))}
-                        className="text-purple-400 hover:text-admin-primary"
+                        className="text-admin-text-muted hover:text-admin-primary"
                       >
                         <X className="w-3 h-3" />
                       </Button>

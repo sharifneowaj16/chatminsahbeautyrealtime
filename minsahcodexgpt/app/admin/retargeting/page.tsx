@@ -191,7 +191,7 @@ export default function RetargetingAudiencesPage() {
       case 'google':
         return 'bg-red-100 text-red-800';
       case 'tiktok':
-        return 'bg-admin-panel text-pink-800';
+        return 'bg-admin-panel text-admin-primary';
       case 'instagram':
         return 'bg-admin-panel text-admin-primary';
       case 'twitter':
@@ -389,7 +389,7 @@ export default function RetargetingAudiencesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <Button className="text-admin-primary hover:text-purple-900">
+                      <Button className="text-admin-primary hover:text-admin-primary-hover">
                         <Edit className="w-4 h-4" />
                       </Button>
                       {audience.status === 'active' ? (

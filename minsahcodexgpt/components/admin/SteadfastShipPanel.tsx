@@ -316,8 +316,8 @@ export default function SteadfastShipPanel({
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Webhook callback — same flow as “add parcel” in Steadfast portal */}
           {webhookCallbackUrl ? (
-            <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-violet-900 flex items-center gap-2">
+            <div className="rounded-2xl border border-admin-border bg-admin-panel p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-admin-text flex items-center gap-2">
                 <Webhook className="w-4 h-4 shrink-0" />
                 Webhook callback URL
               </h3>
@@ -327,7 +327,7 @@ export default function SteadfastShipPanel({
                 <code className="rounded bg-white/90 px-1 py-0.5 text-xs">STEADFAST_WEBHOOK_AUTHORIZATION</code>
                 ). Delivery updates will sync to this order automatically.
               </p>
-              <div className="flex items-start gap-2 rounded-xl bg-white border border-violet-100 px-3 py-2">
+              <div className="flex items-start gap-2 rounded-xl bg-white border border-admin-border px-3 py-2">
                 <code className="text-xs font-mono text-gray-800 flex-1 break-all leading-snug">
                   {webhookCallbackUrl}
                 </code>
@@ -345,7 +345,7 @@ export default function SteadfastShipPanel({
               </div>
               <Link
                 href="/admin/shipping/steadfast-webhooks"
-                className="inline-flex text-xs font-medium text-admin-primary hover:text-violet-900"
+                className="inline-flex text-xs font-medium text-admin-primary hover:text-admin-text"
               >
                 View webhook log →
               </Link>
@@ -507,7 +507,7 @@ export default function SteadfastShipPanel({
             </div>
           )}
           {copied && (
-            <div className="bg-violet-50 border border-admin-border rounded-xl px-4 py-3">
+            <div className="bg-admin-panel border border-admin-border rounded-xl px-4 py-3">
               <p className="text-sm text-admin-primary text-center">✓ Copied to clipboard</p>
             </div>
           )}
@@ -523,7 +523,7 @@ export default function SteadfastShipPanel({
               onClick={handleDispatch}
               disabled={loading}
               aria-busy={loading || undefined}
-              className="bg-gradient-to-r from-admin-primary to-admin-primary-hover py-3 shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-admin-primary to-admin-primary-hover py-3 shadow-lg shadow-black/20 hover:from-admin-primary-hover hover:to-admin-primary"
             >
               {loading ? (
                 <>

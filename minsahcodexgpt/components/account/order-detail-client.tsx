@@ -245,8 +245,8 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                   </span>
                 </div>
                 {currentCourierStatus && (
-                  <div className="mb-4 rounded-lg border border-violet-100 bg-violet-50/90 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
+                  <div className="mb-4 rounded-lg border border-minsah-border-subtle bg-minsah-surface-subtle px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-minsah-action-primary">
                       Courier update
                     </p>
                     <p className="mt-1 text-sm font-medium text-gray-900">

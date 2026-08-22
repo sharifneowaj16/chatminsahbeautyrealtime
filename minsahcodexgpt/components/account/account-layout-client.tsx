@@ -96,7 +96,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
       <div className="lg:hidden bg-white shadow-sm">
         <div className="px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 bg-gradient-to-br from-minsah-action-primary to-minsah-action-secondary rounded-full flex items-center justify-center text-white font-bold">
               {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
             </div>
             <div>
@@ -156,7 +156,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
             {/* User Profile Card */}
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                <div className="w-20 h-20 bg-gradient-to-br from-minsah-action-primary to-minsah-action-secondary rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                   {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -170,7 +170,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
                     user.role === 'premium'
                       ? 'bg-yellow-100 text-yellow-800'
                       : user.role === 'vip'
-                      ? 'bg-minsah-surface-accent text-purple-800'
+                      ? 'bg-minsah-surface-accent text-admin-text'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
                     {user.role === 'premium' && (
@@ -204,7 +204,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
                   <div className="grid grid-cols-2 gap-2">
                     <Link
                       href="/shop"
-                      className="flex items-center justify-center px-3 py-2 bg-minsah-surface-accent text-minsah-action-primary rounded-lg text-xs font-medium hover:bg-purple-200 transition"
+                      className="flex items-center justify-center px-3 py-2 bg-minsah-surface-accent text-minsah-action-primary rounded-lg text-xs font-medium hover:bg-admin-panel transition"
                     >
                       <ShoppingBag className="w-4 h-4 mr-1" />
                       Shop

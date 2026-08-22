@@ -196,7 +196,7 @@ export default function QuickActions({
 
             {/* SEO Opportunities */}
             {connectedServices.some(s => s.id === 'search-console') && (
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+              <div className="p-4 bg-gradient-to-r from-admin-panel to-admin-bg border border-blue-200 rounded-lg">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <TrendingUp className="h-5 w-5 text-blue-600" />

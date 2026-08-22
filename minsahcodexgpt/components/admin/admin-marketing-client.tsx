@@ -317,12 +317,12 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                     </p>
                     <p className="text-xl font-bold text-blue-900">{selectedReach.toLocaleString()}</p>
                   </div>
-                  <div className="rounded-lg bg-admin-panel border border-purple-100 p-4">
+                  <div className="rounded-lg bg-admin-panel border border-admin-border p-4">
                     <p className="text-xs text-admin-primary flex items-center gap-1">
                       <Target className="w-3 h-3" />
                       Suggested Strategy
                     </p>
-                    <p className="text-sm font-medium text-purple-900 capitalize">
+                    <p className="text-sm font-medium text-admin-text capitalize">
                       {metaSetup.objective} + retarget warm audience first
                     </p>
                   </div>

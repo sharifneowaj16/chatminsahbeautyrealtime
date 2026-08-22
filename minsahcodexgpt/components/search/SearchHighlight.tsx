@@ -87,7 +87,7 @@ export default function SearchHighlight({
   const safeHtml = typeof html === 'string' ? html : '';
 
   return (
-    <span className="[&_mark]:bg-yellow-100 [&_mark]:text-yellow-800 [&_mark]:rounded [&_em]:not-italic [&_em]:font-bold [&_em]:text-pink-600">
+    <span className="[&_mark]:bg-yellow-100 [&_mark]:text-yellow-800 [&_mark]:rounded [&_em]:not-italic [&_em]:font-bold [&_em]:text-minsah-action-primary">
       {safeHtml ? renderSafeHighlightParts(safeHtml) : fallback}
     </span>
   );

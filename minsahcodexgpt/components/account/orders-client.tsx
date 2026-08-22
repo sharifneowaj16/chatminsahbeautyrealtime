@@ -108,7 +108,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'processing': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       case 'confirmed': return 'bg-indigo-100 text-indigo-800';
-      case 'refunded': return 'bg-minsah-surface-accent text-purple-800';
+      case 'refunded': return 'bg-minsah-surface-accent text-minsah-action-primary';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -122,7 +122,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'processing':
         return 'bg-yellow-100 text-yellow-800';
       case 'failed': return 'bg-red-100 text-red-800';
-      case 'refunded': return 'bg-minsah-surface-accent text-purple-800';
+      case 'refunded': return 'bg-minsah-surface-accent text-minsah-action-primary';
       case 'cancelled': return 'bg-gray-200 text-gray-700';
       default: return 'bg-gray-100 text-gray-800';
     }

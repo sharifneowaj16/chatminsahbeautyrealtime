@@ -280,7 +280,7 @@ export default function InventoryPage() {
           {canEdit && selectedIds.length > 0 && (
             <div className="mb-4 rounded-xl border border-admin-border bg-admin-panel p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-purple-900">{selectedIds.length} products selected</p>
+                <p className="text-sm font-semibold text-admin-text">{selectedIds.length} products selected</p>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={() => openBulkModal('add')} className="rounded-lg border border-green-200 bg-white px-3 py-2 text-sm text-green-700">Bulk Add</Button>
                   <Button type="button" onClick={() => openBulkModal('remove')} className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-red-700">Bulk Remove</Button>

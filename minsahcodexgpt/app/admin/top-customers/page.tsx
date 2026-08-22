@@ -459,7 +459,7 @@ export default function TopCustomersPage() {
                               setSelectedCustomer(customer);
                               setShowGiftModal(true);
                             }}
-                            className="text-admin-primary hover:text-purple-900"
+                            className="text-admin-primary hover:text-admin-primary-hover"
                           >
                             <Gift className="w-5 h-5" />
                           </Button>

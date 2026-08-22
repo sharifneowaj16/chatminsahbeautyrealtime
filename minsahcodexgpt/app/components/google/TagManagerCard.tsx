@@ -220,7 +220,7 @@ export default function TagManagerCard({
 
         {/* Container Info */}
         {data.container && (
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-admin-panel to-admin-bg rounded-lg p-4">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 mb-1">{data.container.name}</h3>

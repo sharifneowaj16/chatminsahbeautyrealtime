@@ -91,7 +91,7 @@ export default async function CategorySlugPage({ params }: PageProps) {
             <span className="text-gray-900">{category.name}</span>
           </nav>
 
-          <header className="mb-10 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50 p-8">
+          <header className="mb-10 rounded-2xl bg-gradient-to-br from-minsah-surface-subtle to-minsah-surface-soft p-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-3">{category.name} Products</h1>
             <p className="max-w-3xl text-gray-600">
               {category.description || `Explore ${category.name} products available at Minsah Beauty.`}
@@ -128,7 +128,7 @@ export default async function CategorySlugPage({ params }: PageProps) {
           ) : (
             <div className="text-center rounded-xl bg-white p-10 shadow-sm">
               <p className="text-gray-600">No products found in this category yet.</p>
-              <Link href="/shop" className="mt-4 inline-block rounded-lg bg-pink-600 px-5 py-2 text-white">Shop all products</Link>
+              <Link href="/shop" className="mt-4 inline-block rounded-lg bg-minsah-action-primary hover:bg-minsah-action-primary-hover px-5 py-2 text-white">Shop all products</Link>
             </div>
           )}
         </div>
