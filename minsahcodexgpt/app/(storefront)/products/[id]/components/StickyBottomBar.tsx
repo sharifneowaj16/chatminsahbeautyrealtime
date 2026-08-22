@@ -142,7 +142,7 @@ export default function StickyBottomBar({
             </span>
           </div>
 
-          <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)_3rem] gap-2">
+          <div className="grid grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)_3rem] gap-2">
             <AddToCartStepper
               productId={productId}
               productName={productName}
@@ -158,7 +158,7 @@ export default function StickyBottomBar({
               variantImage={variantImage}
               hasRequiredVariants={requiresVariantSelection}
               variants={cartVariants}
-              className="min-w-0 border border-minsah-border-soft bg-minsah-surface-panel text-minsah-primary hover:bg-minsah-light"
+              className="min-w-0 border border-minsah-border-default bg-minsah-surface-subtle text-minsah-action-primary hover:bg-minsah-surface-soft font-bold rounded-2xl h-11"
               disabled={addToCartDisabled}
             />
 
@@ -168,9 +168,9 @@ export default function StickyBottomBar({
               onClick={handleBuyNow}
               disabled={buyNowDisabled}
               aria-describedby={helperText ? "sticky-purchase-helper" : undefined}
-              className="min-w-0 rounded-2xl"
+              className="min-w-0 rounded-2xl h-11 bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-black shadow-md"
             >
-              <ShoppingBag size={15} aria-hidden="true" />
+              <ShoppingBag size={15} aria-hidden="true" className="mr-1" />
               <span className="truncate">{buyNowLabel}</span>
             </Button>
 

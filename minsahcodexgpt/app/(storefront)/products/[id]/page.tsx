@@ -331,24 +331,24 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
   ].filter(Boolean) as Record<string, unknown>[];
 
   return (
-    <div className="min-h-screen bg-minsah-surface">
+    <div className="min-h-screen bg-minsah-surface-page">
       {/* Breadcrumb */}
-      <div className="max-w-6xl mx-auto px-4 py-2.5">
-        <nav className="flex items-center gap-1.5 text-xs text-minsah-text-subtle" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-minsah-dark transition">Home</Link>
-          <span aria-hidden="true">/</span>
+      <div className="max-w-6xl mx-auto px-4 py-3">
+        <nav className="flex items-center gap-1.5 text-xs text-minsah-text-muted font-medium" aria-label="Breadcrumb">
+          <Link href="/" className="hover:text-minsah-action-primary transition">Home</Link>
+          <span aria-hidden="true" className="text-minsah-border-default">/</span>
           {product.category && (
             <>
               <Link
                 href={`/shop?category=${product.categorySlug}`}
-                className="hover:text-minsah-dark transition"
+                className="hover:text-minsah-action-primary transition"
               >
                 {product.category}
               </Link>
-              <span aria-hidden="true">/</span>
+              <span aria-hidden="true" className="text-minsah-border-default">/</span>
             </>
           )}
-          <span className="text-minsah-dark font-medium line-clamp-1" aria-current="page">
+          <span className="text-minsah-text-primary font-bold line-clamp-1" aria-current="page">
             {product.name}
           </span>
         </nav>
