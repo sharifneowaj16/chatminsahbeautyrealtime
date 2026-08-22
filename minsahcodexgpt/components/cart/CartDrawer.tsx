@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ShoppingBag, Truck } from "lucide-react";
+import { CheckCircle2, Gift, Loader2, ShoppingBag, Sparkles, Tag, Truck, X } from "lucide-react";
 
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,8 @@ import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import CartItemRow from "@/features/cart/CartItemRow";
 import OrderSummary from "@/features/cart/OrderSummary";
 import { formatPrice } from "@/utils/currency";
+
+const FREE_DELIVERY_THRESHOLD = 2500; // Free delivery at ৳2,500 BDT
 
 function getVariantLabel(item: {
   size?: string | null;
@@ -25,11 +27,30 @@ function getVariantLabel(item: {
 export default function CartDrawer() {
   const router = useRouter();
   const { isOpen, closeDrawer, lastAddedItem } = useCartDrawer();
-  const { items, subtotal, updateQuantity, removeItem, cartLoading } = useCart();
+  const {
+    items,
+    subtotal,
+    updateQuantity,
+    removeItem,
+    cartLoading,
+    promoCode,
+    applyPromoCode,
+    removePromoCode,
+    discount,
+  } = useCart();
+
   const [busyItemIds, setBusyItemIds] = useState<string[]>([]);
+  const [couponInput, setCouponInput] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const hasItems = items.length > 0;
+
+  // Free delivery calculations
+  const remainingForFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
+  const progressPercent = Math.min(100, Math.round((subtotal / FREE_DELIVERY_THRESHOLD) * 100));
+  const isFreeDeliveryUnlocked = subtotal >= FREE_DELIVERY_THRESHOLD;
+
   const currentLastAddedItem = useMemo(() => {
     if (!lastAddedItem) return null;
     const matchedItem = items.find((item) => item.id === lastAddedItem.id);
@@ -48,37 +69,147 @@ export default function CartDrawer() {
     }
   };
 
+  const handleApplyCoupon = (codeToUse?: string) => {
+    const code = codeToUse || couponInput;
+    if (!code.trim()) return;
+    setCouponLoading(true);
+    try {
+      applyPromoCode(code);
+      setCouponInput("");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleCheckout = () => {
     if (!hasItems) return;
     closeDrawer();
     router.push("/checkout");
   };
 
+  const orderLines = [
+    { key: "subtotal", label: "Subtotal", value: formatPrice(subtotal), emphasis: true },
+    ...(discount > 0
+      ? [
+          {
+            key: "discount",
+            label: (
+              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                Coupon ({promoCode})
+              </span>
+            ),
+            value: <span className="font-bold text-emerald-700">-{formatPrice(discount)}</span>,
+            emphasis: true,
+          },
+        ]
+      : []),
+  ];
+
   const footer = hasItems ? (
-    <div className="w-full">
+    <div className="w-full space-y-4">
+      {/* ── Quick Coupon Box ── */}
+      <div className="rounded-2xl border border-gray-200/80 bg-gray-50/60 p-3">
+        {discount > 0 && promoCode ? (
+          <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-emerald-600" />
+              <span className="font-bold tracking-wider text-emerald-900">{promoCode}</span>
+              <span className="font-semibold text-emerald-700">(-{formatPrice(discount)} OFF)</span>
+            </div>
+            <button
+              type="button"
+              onClick={removePromoCode}
+              className="rounded-full p-1 text-gray-400 hover:bg-emerald-100 hover:text-red-600 transition-colors"
+              aria-label="Remove coupon"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Tag className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleApplyCoupon();
+                    }
+                  }}
+                  placeholder="Coupon code (e.g. SAVE10)"
+                  className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider text-gray-800 placeholder:normal-case placeholder:font-normal placeholder:text-gray-400 focus:border-[#cf5178] focus:outline-none focus:ring-1 focus:ring-[#cf5178]"
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!couponInput.trim() || couponLoading}
+                onClick={() => handleApplyCoupon()}
+                className="rounded-xl px-4 py-2 text-xs font-bold bg-[#1a1715] text-white hover:bg-[#cf5178] transition-colors"
+              >
+                {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
+              </Button>
+            </div>
+
+            {/* Quick Suggestions */}
+            <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5">
+              <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
+                <Gift className="h-3 w-3 text-[#cf5178]" /> Offers:
+              </span>
+              {["SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => handleApplyCoupon(code)}
+                  className="rounded-md border border-dashed border-rose-300 bg-rose-50/70 px-1.5 py-0.5 font-semibold text-[#cf5178] hover:bg-[#cf5178] hover:text-white transition-colors"
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Order Summary ── */}
       <OrderSummary
         compact
         title=""
-        lines={[{ key: "subtotal", label: "Subtotal", value: formatPrice(subtotal), emphasis: true }]}
+        lines={orderLines}
         notice={
-          <div className="rounded-3xl bg-minsah-surface-soft p-3">
-            <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+          <div className="rounded-2xl bg-minsah-surface-soft p-3">
+            <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
               <span className="inline-flex items-center gap-2 font-semibold text-minsah-action-primary">
-                <Truck size={16} aria-hidden="true" /> Delivery charge
+                <Truck size={16} aria-hidden="true" /> Delivery Charge
               </span>
-              <span className="text-xs font-semibold text-minsah-text-muted">Calculated at checkout</span>
+              <span className={`text-xs font-bold ${isFreeDeliveryUnlocked ? 'text-emerald-700' : 'text-minsah-text-muted'}`}>
+                {isFreeDeliveryUnlocked ? '🎉 FREE' : 'Calculated at checkout'}
+              </span>
             </div>
             <p className="text-xs leading-5 text-minsah-text-muted">
-              Final delivery cost uses your address, courier quote, and active product delivery offers.
+              {isFreeDeliveryUnlocked
+                ? 'Your order qualifies for 100% Free Standard Delivery across Bangladesh!'
+                : 'Final delivery cost uses your address, courier quote, and active product delivery offers.'}
             </p>
           </div>
         }
         action={
-          <div className="grid gap-2">
-            <Button type="button" fullWidth onClick={handleCheckout} disabled={cartLoading || !hasItems}>
-              Checkout
+          <div className="grid gap-2 pt-1">
+            <Button
+              type="button"
+              fullWidth
+              onClick={handleCheckout}
+              disabled={cartLoading || !hasItems}
+              className="bg-[#cf5178] hover:bg-[#a93659] text-white font-bold py-3 text-sm rounded-2xl shadow-lg shadow-rose-900/10 transition-all hover:shadow-rose-900/20"
+            >
+              Checkout ({formatPrice(Math.max(0, subtotal - discount))})
             </Button>
-            <Button type="button" variant="secondary" fullWidth onClick={closeDrawer}>
+            <Button type="button" variant="secondary" fullWidth onClick={closeDrawer} className="rounded-2xl text-xs font-semibold">
               Continue shopping
             </Button>
           </div>
@@ -98,10 +229,41 @@ export default function CartDrawer() {
       closeLabel="Close cart drawer"
       bodyClassName="p-0 sm:p-0"
       footer={footer}
-      footerClassName="block px-4 sm:px-5"
+      footerClassName="block px-4 sm:px-5 pb-5"
     >
       {hasItems ? (
-        <div className="space-y-4 px-4 py-4 sm:px-5">
+        <div className="space-y-3 px-4 py-3 sm:px-5">
+          {/* ── Free Delivery Progress Bar ── */}
+          <div className="rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50/90 via-pink-50/70 to-amber-50/50 p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-xs font-semibold text-gray-800">
+              <span className="flex items-center gap-1.5">
+                <Truck className={`h-4 w-4 ${isFreeDeliveryUnlocked ? 'text-emerald-600' : 'text-[#cf5178]'}`} />
+                {isFreeDeliveryUnlocked ? (
+                  <span className="font-bold text-emerald-800">
+                    🎉 Congratulations! You unlocked <span className="underline decoration-emerald-500">FREE Delivery</span>
+                  </span>
+                ) : (
+                  <span>
+                    Add <strong className="text-[#cf5178] font-bold">{formatPrice(remainingForFreeDelivery)}</strong> more for <strong className="text-emerald-700 font-bold">FREE Delivery</strong>
+                  </span>
+                )}
+              </span>
+              <span className="text-[11px] font-bold text-gray-500">{progressPercent}%</span>
+            </div>
+
+            {/* Progress Track */}
+            <div className="relative mt-2.5 h-2 w-full overflow-hidden rounded-full bg-rose-200/60">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ease-out ${
+                  isFreeDeliveryUnlocked
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-sm"
+                    : "bg-gradient-to-r from-[#a93659] via-[#cf5178] to-[#e88aa5]"
+                }`}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
           {currentLastAddedItem ? (
             <Alert
               tone="success"
@@ -120,7 +282,7 @@ export default function CartDrawer() {
             </Alert>
           ) : null}
 
-          <div className="space-y-3">
+          <div className="space-y-3 pt-1">
             {items.map((item) => (
               <CartItemRow
                 key={item.id}
@@ -141,7 +303,7 @@ export default function CartDrawer() {
           description="Add a product to see your cart preview, subtotal, and checkout action here."
           icon={<ShoppingBag className="h-7 w-7" />}
           action={
-            <Button type="button" onClick={closeDrawer}>
+            <Button type="button" onClick={closeDrawer} className="rounded-2xl bg-[#cf5178] hover:bg-[#a93659] text-white font-semibold px-6">
               Continue shopping
             </Button>
           }

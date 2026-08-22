@@ -70,10 +70,10 @@ interface CartContextType {
   subtotal: number;
   shippingCost: number;
   tax: number;
-  total: number;
   promoCode: string;
   setPromoCode: (code: string) => void;
-  applyPromoCode: () => void;
+  applyPromoCode: (codeOverride?: string) => void;
+  removePromoCode: () => void;
   discount: number;
   addresses: Address[];
   selectedAddress: Address | null;
@@ -643,18 +643,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // ── Promo code ──────────────────────────────────────────────────
 
-  const applyPromoCode = useCallback(() => {
+  const applyPromoCode = useCallback((codeOverride?: string) => {
+    const code = (codeOverride || promoCode).trim().toUpperCase();
+    if (!code) {
+      pushToast({ title: 'Please enter a coupon code', tone: 'danger' });
+      return;
+    }
     const valid: Record<string, number> = {
-      SAVE10: subtotal * 0.1,
-      SAVE20: subtotal * 0.2,
+      SAVE10: Math.round(subtotal * 0.1),
+      SAVE20: Math.round(subtotal * 0.2),
       FIRST50: 50,
+      MINSAH10: Math.round(subtotal * 0.1),
+      WELCOME: 100,
     };
-    if (valid[promoCode.toUpperCase()]) {
-      setDiscount(valid[promoCode.toUpperCase()]);
+    if (valid[code]) {
+      setDiscount(valid[code]);
+      setPromoCode(code);
+      pushToast({ title: `Coupon "${code}" applied successfully!`, tone: 'success' });
     } else {
-      pushToast({ title: 'Invalid promo code', tone: 'danger' });
+      pushToast({ title: 'Invalid or expired promo code', tone: 'danger' });
     }
   }, [promoCode, pushToast, subtotal]);
+
+  const removePromoCode = useCallback(() => {
+    setDiscount(0);
+    setPromoCode('');
+    pushToast({ title: 'Coupon removed', tone: 'neutral' });
+  }, [pushToast]);
 
   // ── Address CRUD ────────────────────────────────────────────────
 
@@ -770,6 +785,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       promoCode,
       setPromoCode,
       applyPromoCode,
+      removePromoCode,
       discount,
       addresses,
       selectedAddress,
@@ -787,6 +803,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addItem,
       addresses,
       applyPromoCode,
+      removePromoCode,
       cartLoading,
       clearCart,
       deleteAddress,
