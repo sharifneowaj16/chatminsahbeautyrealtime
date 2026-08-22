@@ -1002,9 +1002,9 @@ export default function ProductClient({
     ];
 
     try {
-      registerAddIntent();
+      const intentId = registerAddIntent();
       bundleCartItems.forEach((cartItem) => {
-        addItem(cartItem, cartItem.quantity);
+        addItem(cartItem, { track: false });
       });
 
       trackAddToCartBundle({
@@ -1027,6 +1027,7 @@ export default function ProductClient({
       });
 
       openForSuccessfulAdd(
+        intentId,
         bundleCartItems[0],
         bundleCartItems[0].quantity,
       );
