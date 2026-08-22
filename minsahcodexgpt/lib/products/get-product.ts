@@ -6,8 +6,15 @@ const PUBLIC_PRODUCT_FILTER = {
   isActive: true,
 } as const;
 
+export type ProductDetail = {
+  id: string;
+  name: string;
+  slug: string;
+  [key: string]: any;
+};
+
 export type ProductDetailData = {
-  product: Record<string, any>;
+  product: ProductDetail;
   reviews: Array<{
     id: string;
     userName: string;

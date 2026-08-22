@@ -357,7 +357,7 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
       {/* Main content */}
       <div className="max-w-6xl mx-auto">
         <ProductClient
-          product={product}
+          product={product as any}
           reviews={reviews}
           rating={rating}
           relatedProducts={relatedProducts}
