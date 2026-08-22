@@ -71,7 +71,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
         className="w-full min-h-0 justify-between rounded-none px-6 py-4 font-normal hover:bg-gray-50"
       >
         <div className="flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-purple-600" aria-hidden="true" />
+          <HelpCircle className="w-5 h-5 text-admin-primary" aria-hidden="true" />
           <div className="text-left">
             <h2 className="text-lg font-semibold text-gray-900">FAQ Section</h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -83,7 +83,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
         </div>
         <div className="flex items-center gap-3">
           {faqs.length > 0 && (
-            <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-1 rounded-full">
+            <span className="text-xs bg-admin-panel text-admin-primary font-semibold px-2 py-1 rounded-full">
               {faqs.length} FAQ
             </span>
           )}
@@ -110,7 +110,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                   className="border border-gray-200 rounded-lg p-4 bg-gray-50"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded">
+                    <span className="text-xs font-semibold text-admin-primary bg-admin-panel px-2 py-1 rounded">
                       Q{index + 1}
                     </span>
                     <Button
@@ -131,7 +131,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                       type="text"
                       value={faq.question}
                       onChange={(e) => updateFaq(index, 'question', e.target.value)}
-                      className="focus:ring-purple-500 text-sm"
+                      className="focus:ring-admin-primary text-sm"
                       placeholder="Example: Is this serum suitable for oily skin?"
                       label="Question"
                       labelClassName="text-xs font-medium text-gray-700"
@@ -141,7 +141,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                         value={faq.answer}
                         onChange={(e) => updateFaq(index, 'answer', e.target.value)}
                         rows={3}
-                        className="focus:ring-purple-500 text-sm resize-none"
+                        className="focus:ring-admin-primary text-sm resize-none"
                         placeholder="Write a clear, detailed answer…"
                         label="Answer"
                         labelClassName="text-xs font-medium text-gray-700"
@@ -165,7 +165,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
               type="button"
               variant="primary"
               onClick={addFaq}
-              className="bg-purple-600 text-sm hover:bg-purple-700"
+              className="bg-admin-primary text-sm hover:bg-admin-primary-hover"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               Add FAQ
@@ -177,7 +177,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
               aria-expanded={showSuggestions}
               aria-controls="product-faq-suggestions"
               onClick={() => setShowSuggestions((v) => !v)}
-              className="border-purple-300 text-purple-700 text-sm hover:bg-purple-50"
+              className="border-admin-border text-admin-primary text-sm hover:bg-admin-panel"
             >
               {showSuggestions ? 'Hide suggestions' : '✨ Suggested questions'}
             </Button>
@@ -185,8 +185,8 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
 
           {/* Suggested questions */}
           {showSuggestions && (
-            <div id="product-faq-suggestions" className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-              <p className="text-xs font-semibold text-purple-800 mb-3">
+            <div id="product-faq-suggestions" className="border border-admin-border rounded-lg p-4 bg-admin-panel">
+              <p className="text-xs font-semibold text-admin-primary mb-3">
                 Select a question to add it automatically:
               </p>
               <div className="flex flex-wrap gap-2" lang="bn-BD">
@@ -202,7 +202,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                       className={`rounded-full text-xs ${
                         alreadyAdded
                           ? 'border-gray-200 bg-gray-100 text-gray-400'
-                          : 'border-purple-300 bg-white text-purple-700 hover:border-purple-600 hover:bg-purple-600 hover:text-white'
+                          : 'border-admin-border bg-white text-admin-primary hover:border-admin-primary hover:bg-admin-primary hover:text-white'
                       }`}
                     >
                       {alreadyAdded ? '✓ ' : '+ '}{q}

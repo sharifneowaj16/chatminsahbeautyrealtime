@@ -22,7 +22,7 @@ export default function CategoriesManagementPage() {
   const [newCategory, setNewCategory] = useState<Partial<HomeSectionCategory>>({
     name: '',
     icon: 'ICON',
-    color: 'bg-pink-100',
+    color: 'bg-admin-panel',
     isVisible: true,
   });
 
@@ -74,7 +74,7 @@ export default function CategoriesManagementPage() {
     };
 
     setCategories([...categories, category]);
-    setNewCategory({ name: '', icon: 'ICON', color: 'bg-pink-100', isVisible: true });
+    setNewCategory({ name: '', icon: 'ICON', color: 'bg-admin-panel', isVisible: true });
     setShowAddForm(false);
   };
 
@@ -121,9 +121,9 @@ export default function CategoriesManagementPage() {
   };
 
   const colorOptions = [
-    'bg-pink-100',
+    'bg-admin-panel',
     'bg-blue-100',
-    'bg-purple-100',
+    'bg-admin-panel',
     'bg-yellow-100',
     'bg-green-100',
     'bg-red-100',

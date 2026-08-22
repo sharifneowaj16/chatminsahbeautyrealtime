@@ -162,7 +162,7 @@ export default function ReturnsPage() {
       case 'complete':
         return 'bg-green-500';
       case 'current':
-        return 'bg-purple-600';
+        return 'bg-admin-primary';
       case 'warning':
         return 'bg-amber-500';
       default:
@@ -522,7 +522,7 @@ export default function ReturnsPage() {
               <p className="text-sm font-medium text-gray-600">Total Returns</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{stats.total}</p>
             </div>
-            <RefreshCw className="w-8 h-8 text-purple-500" />
+            <RefreshCw className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
@@ -569,14 +569,14 @@ export default function ReturnsPage() {
               placeholder="Search by return ID, order ID, or customer..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
             />
           </div>
 
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -589,13 +589,13 @@ export default function ReturnsPage() {
       </div>
 
       {selectedIds.length > 0 && (
-        <div className="mb-6 rounded-xl border border-purple-200 bg-purple-50 p-4">
+        <div className="mb-6 rounded-xl border border-admin-border bg-admin-panel p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold text-purple-900">
                 {selectedIds.length} return request{selectedIds.length === 1 ? '' : 's'} selected
               </p>
-              <p className="text-sm text-purple-700">
+              <p className="text-sm text-admin-primary">
                 Apply one status update to all selected requests.
               </p>
             </div>
@@ -606,7 +606,7 @@ export default function ReturnsPage() {
                 value={bulkNote}
                 onChange={(event) => setBulkNote(event.target.value)}
                 placeholder="Optional bulk note or rejection reason"
-                className="w-full rounded-lg border border-purple-200 bg-white px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full rounded-lg border border-admin-border bg-white px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
               />
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -645,7 +645,7 @@ export default function ReturnsPage() {
                   type="button"
                   onClick={() => setSelectedIds([])}
                   disabled={bulkUpdating}
-                  className="rounded-lg border border-purple-200 bg-white px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-70"
+                  className="rounded-lg border border-admin-border bg-white px-4 py-2 text-sm font-medium text-admin-primary hover:bg-admin-panel disabled:opacity-70"
                 >
                   Clear
                 </Button>
@@ -669,7 +669,7 @@ export default function ReturnsPage() {
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <RefreshCw className="w-8 h-8 text-purple-500 animate-spin" />
+            <RefreshCw className="w-8 h-8 text-admin-primary animate-spin" />
             <span className="ml-3 text-gray-500">Loading returns...</span>
           </div>
         ) : (
@@ -682,7 +682,7 @@ export default function ReturnsPage() {
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      className="h-4 w-4 rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
                       aria-label="Select all visible returns"
                     />
                   </th>
@@ -704,7 +704,7 @@ export default function ReturnsPage() {
                         type="checkbox"
                         checked={selectedIds.includes(returnRequest.id)}
                         onChange={() => toggleSelected(returnRequest.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        className="h-4 w-4 rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
                         aria-label={`Select return ${returnRequest.id}`}
                       />
                     </td>
@@ -728,7 +728,7 @@ export default function ReturnsPage() {
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 max-w-xs truncate">{returnRequest.reason}</div>
                       {Boolean(returnRequest.images?.length) && (
-                        <div className="mt-1 inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
+                        <div className="mt-1 inline-flex items-center rounded-full bg-admin-panel px-2 py-0.5 text-xs font-medium text-admin-primary">
                           <ImageIcon className="mr-1 h-3 w-3" />
                           {returnRequest.images?.length} photo{returnRequest.images?.length === 1 ? '' : 's'}
                         </div>
@@ -752,7 +752,7 @@ export default function ReturnsPage() {
                       <div className="flex items-center space-x-2">
                         <Button
                           onClick={() => openReturnDetails(returnRequest)}
-                          className="text-purple-600 hover:text-purple-800"
+                          className="text-admin-primary hover:text-admin-primary"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -962,7 +962,7 @@ export default function ReturnsPage() {
                       onChange={(event) =>
                         setDetailStatus(event.target.value as ReturnRequest['status'])
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
                     >
                       <option value="pending">Pending</option>
                       <option value="approved">Approved</option>
@@ -980,7 +980,7 @@ export default function ReturnsPage() {
                       value={detailNote}
                       onChange={(event) => setDetailNote(event.target.value)}
                       placeholder="Add approval notes, rejection reason, or handling instructions..."
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
                     />
                   </div>
                 </div>
@@ -990,7 +990,7 @@ export default function ReturnsPage() {
                     type="button"
                     onClick={handleSaveDetails}
                     disabled={savingDetail}
-                    className="inline-flex items-center rounded-lg bg-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-70"
+                    className="inline-flex items-center rounded-lg bg-admin-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-admin-primary-hover disabled:opacity-70"
                   >
                     {savingDetail && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                     Save Decision

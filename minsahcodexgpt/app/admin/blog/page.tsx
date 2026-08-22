@@ -131,7 +131,7 @@ export default function BlogManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">Blog Posts</h1>
           <p className="text-gray-600">Create and manage blog content</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           New Post
         </Button>
@@ -145,7 +145,7 @@ export default function BlogManagementPage() {
               <p className="text-sm font-medium text-gray-600">Total Posts</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{posts.length}</p>
             </div>
-            <FileText className="w-8 h-8 text-purple-500" />
+            <FileText className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
@@ -196,14 +196,14 @@ export default function BlogManagementPage() {
               placeholder="Search blog posts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
             />
           </div>
 
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="published">Published</option>
@@ -253,7 +253,7 @@ export default function BlogManagementPage() {
                         {post.tags.map((tag, index) => (
                           <span
                             key={index}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-admin-panel text-admin-primary"
                           >
                             {tag}
                           </span>
@@ -293,7 +293,7 @@ export default function BlogManagementPage() {
                       <Link
                         href={`/blog/${post.slug}`}
                         target="_blank"
-                        className="text-purple-600 hover:text-purple-800"
+                        className="text-admin-primary hover:text-admin-primary"
                         title="View"
                       >
                         <Eye className="w-4 h-4" />

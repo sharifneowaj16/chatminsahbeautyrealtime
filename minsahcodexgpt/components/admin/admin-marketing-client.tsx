@@ -317,8 +317,8 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                     </p>
                     <p className="text-xl font-bold text-blue-900">{selectedReach.toLocaleString()}</p>
                   </div>
-                  <div className="rounded-lg bg-purple-50 border border-purple-100 p-4">
-                    <p className="text-xs text-purple-700 flex items-center gap-1">
+                  <div className="rounded-lg bg-admin-panel border border-purple-100 p-4">
+                    <p className="text-xs text-admin-primary flex items-center gap-1">
                       <Target className="w-3 h-3" />
                       Suggested Strategy
                     </p>

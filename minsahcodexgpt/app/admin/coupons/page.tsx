@@ -142,7 +142,7 @@ export default function CouponsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Coupons & Discounts</h1>
           <p className="text-gray-600">Create and manage promotional discount codes</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Create Coupon
         </Button>
@@ -156,7 +156,7 @@ export default function CouponsPage() {
               <p className="text-sm font-medium text-gray-600">Total Coupons</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{coupons.length}</p>
             </div>
-            <Tag className="w-8 h-8 text-purple-500" />
+            <Tag className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
@@ -207,14 +207,14 @@ export default function CouponsPage() {
               placeholder="Search coupons..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
             />
           </div>
 
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -231,7 +231,7 @@ export default function CouponsPage() {
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg font-mono font-bold text-sm">
+                  <div className="bg-admin-panel text-admin-primary px-3 py-1 rounded-lg font-mono font-bold text-sm">
                     {coupon.code}
                   </div>
                   <Button

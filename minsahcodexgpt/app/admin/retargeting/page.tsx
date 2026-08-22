@@ -191,9 +191,9 @@ export default function RetargetingAudiencesPage() {
       case 'google':
         return 'bg-red-100 text-red-800';
       case 'tiktok':
-        return 'bg-pink-100 text-pink-800';
+        return 'bg-admin-panel text-pink-800';
       case 'instagram':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-admin-panel text-admin-primary';
       case 'twitter':
         return 'bg-sky-100 text-sky-800';
       default:
@@ -214,7 +214,7 @@ export default function RetargetingAudiencesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Retargeting Audiences</h1>
           <p className="text-gray-600">Build and manage custom audiences for retargeting campaigns</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
           <Plus className="w-5 h-5 mr-2" />
           Create Audience
         </Button>
@@ -229,7 +229,7 @@ export default function RetargetingAudiencesPage() {
               <p className="text-2xl font-bold text-gray-900 mt-2">{audiences.length}</p>
               <p className="text-xs text-gray-600 mt-1">{activeAudiences} active</p>
             </div>
-            <Target className="w-10 h-10 text-purple-500" />
+            <Target className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
@@ -277,14 +277,14 @@ export default function RetargetingAudiencesPage() {
               placeholder="Search audiences..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
             />
           </div>
 
           <Select
             value={filterPlatform}
             onChange={(e) => setFilterPlatform(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="all">All Platforms</option>
             <option value="facebook">Facebook</option>
@@ -297,7 +297,7 @@ export default function RetargetingAudiencesPage() {
           <Select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -389,7 +389,7 @@ export default function RetargetingAudiencesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <Button className="text-purple-600 hover:text-purple-900">
+                      <Button className="text-admin-primary hover:text-purple-900">
                         <Edit className="w-4 h-4" />
                       </Button>
                       {audience.status === 'active' ? (
@@ -426,7 +426,7 @@ export default function RetargetingAudiencesPage() {
               : 'Create your first retargeting audience to get started'}
           </p>
           {!searchQuery && filterPlatform === 'all' && filterStatus === 'all' && (
-            <Button className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+            <Button className="inline-flex items-center px-6 py-3 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Audience
             </Button>

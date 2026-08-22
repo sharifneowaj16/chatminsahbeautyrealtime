@@ -150,7 +150,7 @@ export default function CampaignTargetingPage() {
         </div>
         <Button
           onClick={() => setShowCreateModal(true)}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover"
         >
           <Plus className="w-5 h-5 mr-2" />
           Create Campaign
@@ -166,7 +166,7 @@ export default function CampaignTargetingPage() {
               <p className="text-2xl font-bold text-gray-900 mt-2">{activeCampaigns}</p>
               <p className="text-xs text-gray-600 mt-1">of {campaigns.length} total</p>
             </div>
-            <Target className="w-10 h-10 text-purple-500" />
+            <Target className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
@@ -304,7 +304,7 @@ export default function CampaignTargetingPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <Button className="text-purple-600 hover:text-purple-900">
+                      <Button className="text-admin-primary hover:text-purple-900">
                         <Edit className="w-4 h-4" />
                       </Button>
                       {campaign.status === 'active' ? (
@@ -355,7 +355,7 @@ export default function CampaignTargetingPage() {
                   value={campaignName}
                   onChange={(e) => setCampaignName(e.target.value)}
                   placeholder="Enter campaign name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
                 />
               </div>
 
@@ -369,7 +369,7 @@ export default function CampaignTargetingPage() {
                         type="checkbox"
                         checked={selectedDivisions.includes(division)}
                         onChange={() => handleDivisionToggle(division)}
-                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        className="rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
                       />
                       <span className="text-sm text-gray-700">{division}</span>
                     </label>
@@ -385,16 +385,16 @@ export default function CampaignTargetingPage() {
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
                   placeholder="Enter budget amount"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
                 />
               </div>
 
               {/* Estimated Reach */}
-              <div className="bg-purple-50 rounded-lg p-4">
+              <div className="bg-admin-panel rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-700">Estimated Reach</p>
-                    <p className="text-2xl font-bold text-purple-600 mt-1">
+                    <p className="text-2xl font-bold text-admin-primary mt-1">
                       {calculateEstimatedReach().toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-600 mt-1">potential customers</p>

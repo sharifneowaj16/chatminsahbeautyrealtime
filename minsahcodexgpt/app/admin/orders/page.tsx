@@ -213,7 +213,7 @@ const STATUS_CONFIG = {
   },
   processing: {
     label: "Processing",
-    color: "bg-violet-50 text-violet-700 border-violet-200",
+    color: "bg-violet-50 text-admin-primary border-admin-border",
     dot: "bg-violet-400",
   },
   shipped: {
@@ -646,7 +646,7 @@ function OrderDetailDrawer({
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-3 text-sm font-medium capitalize border-b-2 transition-colors ${
                     activeTab === tab
-                      ? "border-violet-600 text-violet-600"
+                      ? "border-violet-600 text-admin-primary"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -677,7 +677,7 @@ function OrderDetailDrawer({
                     <Mail className="w-4 h-4 text-gray-400" />
                     <a
                       href={`mailto:${order.customer.email}`}
-                      className="hover:text-violet-600"
+                      className="hover:text-admin-primary"
                     >
                       {order.customer.email}
                     </a>
@@ -687,7 +687,7 @@ function OrderDetailDrawer({
                       <Phone className="w-4 h-4 text-gray-400" />
                       <a
                         href={`tel:${order.customer.phone}`}
-                        className="hover:text-violet-600"
+                        className="hover:text-admin-primary"
                       >
                         {order.customer.phone}
                       </a>
@@ -794,8 +794,8 @@ function OrderDetailDrawer({
               {/* Steadfast Status Block */}
               {(order.steadfastConsignmentId ||
                 order.steadfastTrackingCode) && (
-                <div className="bg-violet-50 border border-violet-200 rounded-xl p-4">
-                  <h3 className="text-xs font-semibold text-violet-700 uppercase mb-3 flex items-center gap-1.5">
+                <div className="bg-violet-50 border border-admin-border rounded-xl p-4">
+                  <h3 className="text-xs font-semibold text-admin-primary uppercase mb-3 flex items-center gap-1.5">
                     <Truck className="w-3.5 h-3.5" /> Steadfast Courier
                   </h3>
                   <div className="space-y-2">
@@ -818,7 +818,7 @@ function OrderDetailDrawer({
                           href={`/track?code=${order.steadfastTrackingCode}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-violet-600 hover:text-violet-800"
+                          className="text-admin-primary hover:text-violet-800"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -837,7 +837,7 @@ function OrderDetailDrawer({
                         Dispatched: {formatDateTime(order.steadfastSentAt)}
                       </p>
                     )}
-                    <p className="text-xs text-violet-700 pt-2 border-t border-violet-100 mt-2">
+                    <p className="text-xs text-admin-primary pt-2 border-t border-violet-100 mt-2">
                       Live updates from Steadfast use the{" "}
                       <Link
                         href="/admin/shipping/steadfast-webhooks"
@@ -931,12 +931,12 @@ function OrderDetailDrawer({
                   value={trackingInput}
                   onChange={(e) => setTrackingInput(e.target.value)}
                   placeholder="Tracking number (optional)"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
                 />
                 <Button
                   onClick={handleStatusSave}
                   disabled={updating}
-                  className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors disabled:opacity-60"
+                  className="w-full flex items-center justify-center gap-2 bg-admin-primary hover:bg-admin-primary-hover text-white text-sm font-medium py-2.5 rounded-lg transition-colors disabled:opacity-60"
                 >
                   {updating ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -957,12 +957,12 @@ function OrderDetailDrawer({
                   onChange={(e) => setNoteInput(e.target.value)}
                   rows={3}
                   placeholder="Internal note (not visible to customer)…"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-admin-primary"
                 />
                 <Button
                   onClick={handleNoteSave}
                   disabled={savingNote}
-                  className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-800 font-medium disabled:opacity-60"
+                  className="flex items-center gap-2 text-sm text-admin-primary hover:text-violet-800 font-medium disabled:opacity-60"
                 >
                   {savingNote ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1012,7 +1012,7 @@ function OrderDetailDrawer({
                     </p>
                     <p className="text-xs text-gray-500">SKU: {item.sku}</p>
                     {item.variant && (
-                      <p className="text-xs text-violet-600">
+                      <p className="text-xs text-admin-primary">
                         {item.variant.name}
                       </p>
                     )}
@@ -1073,7 +1073,7 @@ function OrderDetailDrawer({
                 <div key={idx} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-4 h-4 text-violet-600" />
+                      <CheckCircle className="w-4 h-4 text-admin-primary" />
                     </div>
                     {idx < timeline.length - 1 && (
                       <div className="w-px flex-1 bg-gray-200 my-1" />
@@ -1087,7 +1087,7 @@ function OrderDetailDrawer({
                       <p className="text-xs text-gray-500">{event.note}</p>
                     )}
                     {event.actor && (
-                      <p className="text-xs uppercase tracking-wide text-violet-600 mt-1">
+                      <p className="text-xs uppercase tracking-wide text-admin-primary mt-1">
                         {event.actor}
                       </p>
                     )}
@@ -1681,7 +1681,7 @@ export default function OrdersPage() {
               label: "Processing",
               value: stats.processing,
               icon: Layers,
-              color: "text-violet-500",
+              color: "text-admin-primary",
               bg: "bg-violet-50",
               filter: "processing",
             },
@@ -1763,21 +1763,21 @@ export default function OrdersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by order #, customer name or email…"
-              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent"
             />
           </div>
           <Button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm transition-colors ${
               showFilters || activeFilters > 0
-                ? "bg-violet-50 border-violet-300 text-violet-700"
+                ? "bg-violet-50 border-violet-300 text-admin-primary"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}
           >
             <Filter className="w-4 h-4" />
             Filters
             {activeFilters > 0 && (
-              <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center font-bold">
+              <span className="w-5 h-5 rounded-full bg-admin-primary text-white text-xs flex items-center justify-center font-bold">
                 {activeFilters}
               </span>
             )}
@@ -1790,7 +1790,7 @@ export default function OrdersPage() {
             <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
             >
               <option value="">All Statuses</option>
               {Object.entries(STATUS_CONFIG).map(([v, c]) => (
@@ -1802,7 +1802,7 @@ export default function OrdersPage() {
             <Select
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
             >
               <option value="">All Payments</option>
               <option value="pending">Pending</option>
@@ -1813,7 +1813,7 @@ export default function OrdersPage() {
             <Select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
             >
               <option value="">All Time</option>
               <option value="today">Today</option>
@@ -1824,7 +1824,7 @@ export default function OrdersPage() {
             <Select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
             >
               <option value="created">Newest First</option>
               <option value="updated">Recently Updated</option>
@@ -1852,7 +1852,7 @@ export default function OrdersPage() {
 
         {/* ── Bulk Action Bar ───────────────────────────────────────── */}
         {selectedIds.size > 0 && (
-          <div className="bg-violet-600 text-white rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="bg-admin-primary text-white rounded-xl px-4 py-3 flex items-center gap-3">
             <span className="text-sm font-medium">
               {selectedIds.size} selected
             </span>
@@ -1897,7 +1897,7 @@ export default function OrdersPage() {
               <p className="text-gray-400 text-sm mb-4">{error}</p>
               <Button
                 onClick={() => fetchOrders(1)}
-                className="text-sm text-violet-600 hover:underline"
+                className="text-sm text-admin-primary hover:underline"
               >
                 Try again
               </Button>
@@ -1923,7 +1923,7 @@ export default function OrdersPage() {
                           orders.length > 0
                         }
                         onChange={toggleSelectAll}
-                        className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                        className="rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
                       />
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -1971,7 +1971,7 @@ export default function OrdersPage() {
                           type="checkbox"
                           checked={selectedIds.has(order.dbId || order.id)}
                           onChange={() => toggleSelect(order.dbId || order.id)}
-                          className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                          className="rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
                         />
                       </td>
 
@@ -2109,7 +2109,7 @@ export default function OrdersPage() {
                           {/* View detail */}
                           <Button
                             onClick={() => openOrderDetail(order)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-violet-600 bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-admin-primary bg-violet-50 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             View
@@ -2213,7 +2213,7 @@ export default function OrdersPage() {
                     onClick={() => fetchOrders(page)}
                     className={`w-9 h-9 text-sm rounded-lg border transition-colors ${
                       page === pagination.page
-                        ? "bg-violet-600 text-white border-violet-600"
+                        ? "bg-admin-primary text-white border-violet-600"
                         : "border-gray-200 hover:bg-gray-50"
                     }`}
                   >

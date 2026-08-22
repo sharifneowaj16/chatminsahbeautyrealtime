@@ -652,7 +652,7 @@ export default function TrackingHealthPage() {
               <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <h2 className="flex items-center text-lg font-bold text-gray-900">
-                    <ReceiptText className="mr-2 h-5 w-5 text-purple-600" />
+                    <ReceiptText className="mr-2 h-5 w-5 text-admin-primary" />
                     GA4 Purchase / Refund / Referral QA
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">Measurement Protocol env, client ID capture, refund events, and payment gateway referral exclusions.</p>

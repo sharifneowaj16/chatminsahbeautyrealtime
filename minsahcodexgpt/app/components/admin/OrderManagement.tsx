@@ -262,7 +262,7 @@ export default function OrderManagement() {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'processing': return 'bg-purple-100 text-purple-800';
+      case 'processing': return 'bg-admin-panel text-admin-primary';
       case 'shipped': return 'bg-indigo-100 text-indigo-800';
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
@@ -277,7 +277,7 @@ export default function OrderManagement() {
       case 'paid': return 'bg-green-100 text-green-800';
       case 'failed': return 'bg-red-100 text-red-800';
       case 'refunded': return 'bg-orange-100 text-orange-800';
-      case 'partially_refunded': return 'bg-purple-100 text-purple-800';
+      case 'partially_refunded': return 'bg-admin-panel text-admin-primary';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -728,7 +728,7 @@ export default function OrderManagement() {
                 {selectedOrder.status === 'confirmed' && (
                   <Button
                     onClick={() => updateOrderStatus(selectedOrder.id, 'processing')}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm"
                   >
                     <Filter className="h-4 w-4" />
                     Start Processing

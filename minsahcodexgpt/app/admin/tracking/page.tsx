@@ -153,7 +153,7 @@ export default function TrackingAnalyticsPage() {
           </Select>
           <Button
             onClick={handleRefresh}
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover"
           >
             <RefreshCw className={clsx('w-5 h-5 mr-2', isLoading && 'animate-spin')} />
             Refresh
@@ -162,7 +162,7 @@ export default function TrackingAnalyticsPage() {
       </div>
 
       {/* Realtime Stats */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 text-white">
+      <div className="bg-gradient-to-r from-admin-primary to-admin-primary-hover rounded-lg p-6 text-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold flex items-center">
             <Activity className="w-6 h-6 mr-2 animate-pulse" />
@@ -231,7 +231,7 @@ export default function TrackingAnalyticsPage() {
                 {analytics.overview.sessions.toLocaleString()} sessions
               </p>
             </div>
-            <Users className="w-10 h-10 text-purple-500" />
+            <Users className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
@@ -323,8 +323,8 @@ export default function TrackingAnalyticsPage() {
               return (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-purple-600" />
+                    <div className="w-10 h-10 bg-admin-panel rounded-lg flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-admin-primary" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900 capitalize">{device.type}</p>
@@ -426,7 +426,7 @@ export default function TrackingAnalyticsPage() {
               <div key={index} className="border-b border-gray-200 pb-3 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-900">{product.name}</span>
-                  <span className="text-sm font-bold text-purple-600">
+                  <span className="text-sm font-bold text-admin-primary">
                     {formatPrice(convertUSDtoBDT(product.revenue))}
                   </span>
                 </div>

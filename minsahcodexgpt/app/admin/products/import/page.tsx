@@ -918,7 +918,7 @@ export default function ImportProductPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
-        <Link href="/admin/products" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-4">
+        <Link href="/admin/products" className="inline-flex items-center text-admin-primary hover:text-admin-primary mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Product Import — SEO 1-22 Ready</h1>
@@ -942,7 +942,7 @@ export default function ImportProductPage() {
       {step === 'paste' && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <ClipboardPaste className="w-5 h-5 text-purple-600" />
+            <ClipboardPaste className="w-5 h-5 text-admin-primary" />
             <h2 className="text-lg font-semibold text-gray-900">Paste import JSON</h2>
           </div>
 
@@ -953,7 +953,7 @@ export default function ImportProductPage() {
               setParseError('');
             }}
             rows={16}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-mono text-sm resize-y"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary font-mono text-sm resize-y"
             placeholder={`Paste here:\n\n[IMPORT_DATA]\n{\n  "name": "Sunsilk Power Shot Hair Treatment",\n  "category": "Hair care",\n  "brand": "Sunsilk",\n  "pageH1": "Sunsilk Power Shot Hair Treatment Price in Bangladesh"\n}\n[/IMPORT_DATA]\n\nOr paste the complete final SEO JSON.`}
           />
 
@@ -969,7 +969,7 @@ export default function ImportProductPage() {
               type="button"
               onClick={handleParse}
               disabled={!pasteText.trim()}
-              className="inline-flex items-center px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
+              className="inline-flex items-center px-6 py-2.5 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 font-medium"
             >
               <Sparkles className="w-4 h-4 mr-2" /> Parse JSON
             </Button>
@@ -1037,7 +1037,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<Package className="w-5 h-5 text-purple-600" />}
+            icon={<Package className="w-5 h-5 text-admin-primary" />}
             title="Basic Information"
             sectionKey="basic"
             expanded={expandedSections.basic}
@@ -1052,7 +1052,7 @@ export default function ImportProductPage() {
                   <Select
                     value={importData.category}
                     onChange={(e) => updateField('category', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   >
                     <option value="">Select category</option>
                     {categoriesData.map((category) => (
@@ -1075,7 +1075,7 @@ export default function ImportProductPage() {
                   <Select
                     value={importData.originCountry}
                     onChange={(e) => updateField('originCountry', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   >
                     {countries.map((country) => (
                       <option key={country} value={country}>{country}</option>
@@ -1092,7 +1092,7 @@ export default function ImportProductPage() {
                   type="checkbox"
                   checked={importData.featured}
                   onChange={(e) => updateField('featured', e.target.checked)}
-                  className="w-4 h-4 text-purple-600 rounded"
+                  className="w-4 h-4 text-admin-primary rounded"
                 />
                 <span className="text-sm text-gray-700">Featured Product</span>
               </label>
@@ -1114,8 +1114,8 @@ export default function ImportProductPage() {
                       onClick={() => toggleSkinType(type)}
                       className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
                         importData.skinType.includes(type)
-                          ? 'bg-purple-600 border-purple-600 text-white'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400'
+                          ? 'bg-admin-primary border-admin-primary text-white'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-admin-border'
                       }`}
                     >
                       {type}
@@ -1129,7 +1129,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<Tag className="w-5 h-5 text-purple-600" />}
+            icon={<Tag className="w-5 h-5 text-admin-primary" />}
             title="Variants — Price & Stock"
             sectionKey="variants"
             expanded={expandedSections.variants}
@@ -1157,7 +1157,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<Search className="w-5 h-5 text-purple-600" />}
+            icon={<Search className="w-5 h-5 text-admin-primary" />}
             title="SEO Core — Title, Meta, Canonical, OG"
             sectionKey="seo"
             expanded={expandedSections.seo}
@@ -1197,7 +1197,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<Sparkles className="w-5 h-5 text-purple-600" />}
+            icon={<Sparkles className="w-5 h-5 text-admin-primary" />}
             title="Semantic SEO"
             sectionKey="semantic"
             expanded={expandedSections.semantic}
@@ -1233,7 +1233,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<FileJson className="w-5 h-5 text-purple-600" />}
+            icon={<FileJson className="w-5 h-5 text-admin-primary" />}
             title="Structured Content + SEO Tables"
             sectionKey="content"
             expanded={expandedSections.content}
@@ -1265,7 +1265,7 @@ export default function ImportProductPage() {
                   type="checkbox"
                   checked={importData.faqSchemaReady}
                   onChange={(e) => updateField('faqSchemaReady', e.target.checked)}
-                  className="w-4 h-4 text-purple-600 rounded"
+                  className="w-4 h-4 text-admin-primary rounded"
                 />
                 <span className="text-sm text-gray-700">FAQ schema ready</span>
               </label>
@@ -1273,14 +1273,14 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<Link2 className="w-5 h-5 text-purple-600" />}
+            icon={<Link2 className="w-5 h-5 text-admin-primary" />}
             title="Technical SEO JSON-LD / Sitemap / Variant URL Strategy"
             sectionKey="techSeo"
             expanded={expandedSections.techSeo}
             onToggle={() => toggleSection('techSeo')}
           >
             <div className="space-y-4">
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
+              <div className="bg-admin-panel border border-admin-border rounded-lg p-3 text-sm text-admin-primary">
                 These fields are saved to the database. The storefront product page must render them correctly to receive the full SEO benefit.
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1295,7 +1295,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<Upload className="w-5 h-5 text-purple-600" />}
+            icon={<Upload className="w-5 h-5 text-admin-primary" />}
             title="Product Images"
             sectionKey="images"
             expanded={expandedSections.images}
@@ -1310,7 +1310,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<TruckIcon className="w-5 h-5 text-purple-600" />}
+            icon={<TruckIcon className="w-5 h-5 text-admin-primary" />}
             title="Shipping"
             sectionKey="shipping"
             expanded={expandedSections.shipping}
@@ -1327,7 +1327,7 @@ export default function ImportProductPage() {
                       type="text"
                       value={importData.dimensions[dimension]}
                       onChange={(e) => updateDimension(dimension, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-admin-primary"
                       placeholder={dimension.charAt(0).toUpperCase()}
                     />
                   ))}
@@ -1339,7 +1339,7 @@ export default function ImportProductPage() {
                 type="checkbox"
                 checked={importData.isFragile}
                 onChange={(e) => updateField('isFragile', e.target.checked)}
-                className="w-4 h-4 text-purple-600 rounded"
+                className="w-4 h-4 text-admin-primary rounded"
               />
               <span className="text-sm text-gray-700">Fragile Item</span>
             </label>
@@ -1426,7 +1426,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<Upload className="w-5 h-5 text-purple-600" />}
+            icon={<Upload className="w-5 h-5 text-admin-primary" />}
             title="Additional Options"
             sectionKey="options"
             expanded={expandedSections.options}
@@ -1444,7 +1444,7 @@ export default function ImportProductPage() {
                     type="checkbox"
                     checked={Boolean(importData[key])}
                     onChange={(e) => updateField(key, e.target.checked as never)}
-                    className="w-4 h-4 text-purple-600 rounded"
+                    className="w-4 h-4 text-admin-primary rounded"
                   />
                   <span className="text-sm text-gray-700">{label}</span>
                 </label>
@@ -1456,7 +1456,7 @@ export default function ImportProductPage() {
           </Section>
 
           <Section
-            icon={<HelpCircle className="w-5 h-5 text-purple-600" />}
+            icon={<HelpCircle className="w-5 h-5 text-admin-primary" />}
             title="Product FAQs"
             sectionKey="faqs"
             expanded={expandedSections.faqs}
@@ -1483,7 +1483,7 @@ export default function ImportProductPage() {
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="inline-flex items-center px-8 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium shadow-lg"
+              className="inline-flex items-center px-8 py-2.5 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 font-medium shadow-lg"
             >
               {isSubmitting ? (
                 <>
@@ -1569,7 +1569,7 @@ function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-400 ${small ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
+        className={`w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary disabled:bg-gray-100 disabled:text-gray-400 ${small ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
         placeholder={placeholder}
       />
     </div>
@@ -1596,7 +1596,7 @@ function TextareaInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
         placeholder={placeholder}
       />
     </div>
@@ -1619,7 +1619,7 @@ function ArrayTextarea({
         value={value.join(', ')}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
         placeholder="Comma separated"
       />
     </div>
@@ -1644,7 +1644,7 @@ function JsonEditor({
         defaultValue={jsonString(value, Array.isArray(value) ? [] : {})}
         onBlur={(e) => onBlur(e.target.value)}
         rows={rows}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-xs font-mono"
       />
     </div>
   );

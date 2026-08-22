@@ -132,7 +132,7 @@ export default function CustomerManagement() {
 
   const getSegmentColor = (score: string) => {
     switch (score) {
-      case 'vip': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'vip': return 'bg-admin-panel text-admin-primary border-admin-border';
       case 'loyal': return 'bg-green-100 text-green-800 border-green-200';
       case 'at-risk': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'lost': return 'bg-red-100 text-red-800 border-red-200';
@@ -312,7 +312,7 @@ export default function CustomerManagement() {
           <p className="text-blue-100 text-xs mt-1">+12% from last month</p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+        <div className="bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded-lg p-4 text-white">
           <div className="flex items-center justify-between mb-2">
             <span className="text-purple-100 text-sm font-medium">VIP Customers</span>
             <Crown className="h-5 w-5" />
@@ -483,7 +483,7 @@ export default function CustomerManagement() {
                 <Tag className="h-4 w-4" />
                 Add Tags
               </Button>
-              <Button className="flex items-center gap-2 px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+              <Button className="flex items-center gap-2 px-3 py-1 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm">
                 <Gift className="h-4 w-4" />
                 Send Coupon
               </Button>
@@ -572,7 +572,7 @@ export default function CustomerManagement() {
                   )}
                   <Button
                     onClick={() => sendNotification(customer.id, 'push')}
-                    className="p-1 text-purple-600 hover:text-purple-700"
+                    className="p-1 text-admin-primary hover:text-admin-primary"
                     title="Send Push"
                   >
                     <Bell className="h-4 w-4" />
@@ -840,7 +840,7 @@ export default function CustomerManagement() {
                     Send SMS
                   </Button>
                 )}
-                <Button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+                <Button className="flex items-center gap-2 px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm">
                   <Gift className="h-4 w-4" />
                   Send Coupon
                 </Button>
@@ -914,12 +914,12 @@ export default function CustomerManagement() {
               <div className="space-y-4">
                 <p className="text-gray-600">Manage your VIP customers and exclusive benefits.</p>
 
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="bg-admin-panel border border-admin-border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium text-purple-900">Current VIP Customers</h4>
-                    <span className="text-purple-600 font-bold">{customers.filter(c => c.isVip).length}</span>
+                    <span className="text-admin-primary font-bold">{customers.filter(c => c.isVip).length}</span>
                   </div>
-                  <p className="text-sm text-purple-700">These customers receive exclusive benefits and priority support.</p>
+                  <p className="text-sm text-admin-primary">These customers receive exclusive benefits and priority support.</p>
                 </div>
 
                 <div className="space-y-3">
@@ -942,7 +942,7 @@ export default function CustomerManagement() {
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <Button className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+                <Button className="flex-1 px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm">
                   Manage VIP Rules
                 </Button>
                 <Button

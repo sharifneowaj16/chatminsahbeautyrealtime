@@ -505,7 +505,7 @@ export default function MarketingHub() {
         <div className="w-6 h-6 bg-blue-600 rounded text-white flex items-center justify-center text-xs font-bold">f</div>
       );
       case 'instagram': return (
-        <div className="w-6 h-6 bg-gradient-to-br from-purple-600 to-pink-500 rounded text-white flex items-center justify-center text-xs font-bold">ig</div>
+        <div className="w-6 h-6 bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded text-white flex items-center justify-center text-xs font-bold">ig</div>
       );
       case 'tiktok': return (
         <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs font-bold">tt</div>
@@ -731,7 +731,7 @@ export default function MarketingHub() {
               <p className="text-blue-100 text-xs mt-1">Across all platforms</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+            <div className="bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded-lg p-4 text-white">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-purple-100 text-sm font-medium">Avg Engagement</span>
                 <Heart className="h-5 w-5" />
@@ -1300,7 +1300,7 @@ export default function MarketingHub() {
               <div className="space-y-3">
                 {[
                   { name: 'Facebook', color: 'bg-blue-600' },
-                  { name: 'Instagram', color: 'bg-gradient-to-br from-purple-600 to-pink-500' },
+                  { name: 'Instagram', color: 'bg-gradient-to-br from-admin-primary to-admin-primary-hover' },
                   { name: 'TikTok', color: 'bg-black' },
                   { name: 'Twitter/X', color: 'bg-sky-500' },
                   { name: 'LinkedIn', color: 'bg-blue-700' },

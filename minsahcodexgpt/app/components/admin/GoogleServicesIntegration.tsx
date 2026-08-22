@@ -397,7 +397,7 @@ export default function GoogleServicesIntegration() {
               <p className="text-green-100 text-xs mt-1">Visitors this period</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+            <div className="bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded-lg p-4 text-white">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-purple-100 text-sm font-medium">Total Conversions</span>
                 <Users className="h-5 w-5" />
@@ -537,7 +537,7 @@ export default function GoogleServicesIntegration() {
                 <span className="text-sm font-medium text-gray-900">Setup Alerts</span>
               </Button>
               <Button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <Plus className="h-8 w-8 text-purple-600" />
+                <Plus className="h-8 w-8 text-admin-primary" />
                 <span className="text-sm font-medium text-gray-900">Add New Service</span>
               </Button>
             </div>

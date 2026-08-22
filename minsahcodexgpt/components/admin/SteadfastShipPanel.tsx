@@ -92,7 +92,7 @@ const STATUS_CONFIG: Record<
   },
   partial_delivered: {
     label: 'Partially Delivered',
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    color: 'bg-admin-panel text-admin-primary border-admin-border',
     icon: <Package className="w-3.5 h-3.5" />,
   },
   delivered: {
@@ -272,7 +272,7 @@ export default function SteadfastShipPanel({
       {/* Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-[480px] bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-600 to-purple-700 px-6 py-5 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-admin-primary to-admin-primary-hover px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
               <Truck className="w-5 h-5 text-white" />
@@ -336,7 +336,7 @@ export default function SteadfastShipPanel({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleCopy(webhookCallbackUrl)}
-                  className="shrink-0 text-gray-400 hover:bg-violet-50 hover:text-violet-600"
+                  className="shrink-0 text-gray-400 hover:bg-admin-panel hover:text-admin-primary"
                   aria-label="Copy webhook callback URL"
                   title="Copy URL"
                 >
@@ -345,7 +345,7 @@ export default function SteadfastShipPanel({
               </div>
               <Link
                 href="/admin/shipping/steadfast-webhooks"
-                className="inline-flex text-xs font-medium text-violet-700 hover:text-violet-900"
+                className="inline-flex text-xs font-medium text-admin-primary hover:text-violet-900"
               >
                 View webhook log →
               </Link>
@@ -428,7 +428,7 @@ export default function SteadfastShipPanel({
           {/* Recipient Info */}
           <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <User className="w-4 h-4 text-violet-500" />
+              <User className="w-4 h-4 text-admin-primary" />
               Recipient Details
             </h3>
             <div className="space-y-2">
@@ -464,7 +464,7 @@ export default function SteadfastShipPanel({
                 placeholder="0.00"
                 label={
                   <span className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-violet-500" aria-hidden="true" />
+                    <DollarSign className="w-4 h-4 text-admin-primary" aria-hidden="true" />
                     COD Amount (৳)
                   </span>
                 }
@@ -474,7 +474,7 @@ export default function SteadfastShipPanel({
                     ? '💳 Prepaid — no cash collection'
                     : `💵 Collect ৳${codAmount.toFixed(2)} on delivery`
                 }
-                className="focus:ring-violet-500"
+                className="focus:ring-admin-primary"
               />
 
               {/* Optional note */}
@@ -488,7 +488,7 @@ export default function SteadfastShipPanel({
                     Delivery Note <span className="text-gray-400 font-normal">(optional)</span>
                   </>
                 }
-                className="resize-none focus:ring-violet-500"
+                className="resize-none focus:ring-admin-primary"
               />
             </>
           )}
@@ -507,8 +507,8 @@ export default function SteadfastShipPanel({
             </div>
           )}
           {copied && (
-            <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-3">
-              <p className="text-sm text-violet-700 text-center">✓ Copied to clipboard</p>
+            <div className="bg-violet-50 border border-admin-border rounded-xl px-4 py-3">
+              <p className="text-sm text-admin-primary text-center">✓ Copied to clipboard</p>
             </div>
           )}
         </div>
@@ -523,7 +523,7 @@ export default function SteadfastShipPanel({
               onClick={handleDispatch}
               disabled={loading}
               aria-busy={loading || undefined}
-              className="bg-gradient-to-r from-violet-600 to-purple-600 py-3 shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-admin-primary to-admin-primary-hover py-3 shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-purple-700"
             >
               {loading ? (
                 <>
@@ -545,7 +545,7 @@ export default function SteadfastShipPanel({
                 fullWidth
                 onClick={handleSync}
                 disabled={syncing}
-                className="border-violet-200 text-violet-700 hover:bg-violet-50"
+                className="border-admin-border text-admin-primary hover:bg-admin-panel"
               >
                 <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} aria-hidden="true" />
                 Sync Status

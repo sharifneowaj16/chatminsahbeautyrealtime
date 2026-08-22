@@ -251,7 +251,7 @@ export default function NewProductPage() {
       id: 'claude-sonnet-4-20250514',
       label: 'Sonnet — balanced (~12s)',
       badge: 'Recommended',
-      badgeColor: 'bg-purple-100 text-purple-700',
+      badgeColor: 'bg-admin-panel text-admin-primary',
       cost: '~$0.09/product',
       note: 'Best quality-cost balance',
     },
@@ -766,7 +766,7 @@ export default function NewProductPage() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/admin/products" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-4">
+        <Link href="/admin/products" className="inline-flex items-center text-admin-primary hover:text-admin-primary mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
         <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
@@ -774,9 +774,9 @@ export default function NewProductPage() {
       </div>
 
       {/* ─── AI GENERATE PANEL ───────────────────────────────────────────── */}
-      <div className={`mb-6 rounded-xl border-2 p-5 shadow-sm transition-all ${aiApplied ? 'border-green-400 bg-green-50' : 'border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50'}`}>
+      <div className={`mb-6 rounded-xl border-2 p-5 shadow-sm transition-all ${aiApplied ? 'border-green-400 bg-green-50' : 'border-admin-border bg-gradient-to-r from-admin-panel to-admin-bg'}`}>
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className={`w-5 h-5 ${aiApplied ? 'text-green-600' : 'text-purple-600'}`} />
+          <Sparkles className={`w-5 h-5 ${aiApplied ? 'text-green-600' : 'text-admin-primary'}`} />
           <span className={`text-base font-semibold ${aiApplied ? 'text-green-800' : 'text-purple-900'}`}>
             {aiApplied
               ? `✅ Generated with ${AI_MODELS.find(m => m.id === aiAppliedModel)?.badge || 'AI'} — review and adjust the result`
@@ -795,13 +795,13 @@ export default function NewProductPage() {
 
         {!aiApplied && (
           <>
-            <p className="text-sm text-purple-700 mb-3">
+            <p className="text-sm text-admin-primary mb-3">
               Enter a product name or keyword. AI will fill the supported fields automatically; you only need to provide the price and images.
             </p>
 
             {/* Model selector */}
             <div className="mb-4">
-              <p className="text-xs font-semibold text-purple-800 mb-2">Choose an AI model:</p>
+              <p className="text-xs font-semibold text-admin-primary mb-2">Choose an AI model:</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {AI_MODELS.map((m) => (
                   <Button
@@ -810,8 +810,8 @@ export default function NewProductPage() {
                     onClick={() => setAiModel(m.id)}
                     className={`text-left px-3 py-2.5 rounded-lg border-2 transition-all ${
                       aiModel === m.id
-                        ? 'border-purple-500 bg-white shadow-md'
-                        : 'border-purple-200 bg-white/60 hover:border-purple-400'
+                        ? 'border-admin-primary bg-white shadow-md'
+                        : 'border-admin-border bg-white/60 hover:border-admin-border'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -823,7 +823,7 @@ export default function NewProductPage() {
                       <span className="text-xs font-mono text-gray-400">{m.cost}</span>
                     </div>
                     {aiModel === m.id && (
-                      <div className="mt-1.5 h-0.5 bg-purple-500 rounded" />
+                      <div className="mt-1.5 h-0.5 bg-admin-panel0 rounded" />
                     )}
                   </Button>
                 ))}
@@ -836,14 +836,14 @@ export default function NewProductPage() {
                 onChange={(e) => setAiInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleAiGenerate()}
                 placeholder="e.g., Vitamin C Serum, Korean Sheet Mask, Matte Lipstick..."
-                className="flex-1 px-4 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white"
+                className="flex-1 px-4 py-2.5 border-2 border-admin-border rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary text-sm bg-white"
                 disabled={isGenerating}
               />
               <Button
                 type="button"
                 onClick={handleAiGenerate}
                 disabled={isGenerating || !aiInput.trim()}
-                className="inline-flex items-center px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium text-sm shadow"
+                className="inline-flex items-center px-5 py-2.5 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 font-medium text-sm shadow"
               >
                 {isGenerating
                   ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating with {AI_MODELS.find(m => m.id === aiModel)?.badge}…</>
@@ -880,11 +880,11 @@ export default function NewProductPage() {
 
         {/* Facebook Ad Angle panel */}
         {facebookAdAngle && (
-          <div className="mt-4 border border-purple-200 rounded-lg bg-white overflow-hidden">
+          <div className="mt-4 border border-admin-border rounded-lg bg-white overflow-hidden">
             <Button
               type="button"
               onClick={() => setShowAdAngle((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-purple-800 hover:bg-purple-50"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-admin-primary hover:bg-admin-panel"
             >
               <span className="flex items-center gap-2"><Megaphone className="w-4 h-4" /> Facebook Ad Copy (AI Generated)</span>
               {showAdAngle ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -893,15 +893,15 @@ export default function NewProductPage() {
               <div className="px-4 pb-4 space-y-3 border-t border-purple-100">
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-1">Headline</p>
-                  <p className="text-sm bg-purple-50 rounded px-3 py-2 font-medium">{facebookAdAngle.headline}</p>
+                  <p className="text-sm bg-admin-panel rounded px-3 py-2 font-medium">{facebookAdAngle.headline}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-1">Primary Text</p>
-                  <p className="text-sm bg-purple-50 rounded px-3 py-2 whitespace-pre-line">{facebookAdAngle.primaryText}</p>
+                  <p className="text-sm bg-admin-panel rounded px-3 py-2 whitespace-pre-line">{facebookAdAngle.primaryText}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-1">Target Audience</p>
-                  <p className="text-sm bg-purple-50 rounded px-3 py-2">{facebookAdAngle.targetAudience}</p>
+                  <p className="text-sm bg-admin-panel rounded px-3 py-2">{facebookAdAngle.targetAudience}</p>
                 </div>
                 <p className="text-xs text-gray-400">Copy these before creating your Meta ad campaign.</p>
               </div>
@@ -916,14 +916,14 @@ export default function NewProductPage() {
         {/* 1. Basic Information */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Package className="w-5 h-5 text-purple-600 mr-2" />
+            <Package className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
           </div>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
               <Input type="text" name="name" value={formData.name} onChange={handleNameChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-admin-primary ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="e.g., Hydrating Face Serum with Hyaluronic Acid" />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
             </div>
@@ -933,7 +933,7 @@ export default function NewProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                 <Select name="category" value={formData.category}
                   onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value, subcategory: '', item: '' }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
                   {categoriesData.map((cat) => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
                 </Select>
               </div>
@@ -942,7 +942,7 @@ export default function NewProductPage() {
                 <Select name="subcategory" value={formData.subcategory}
                   onChange={(e) => setFormData((prev) => ({ ...prev, subcategory: e.target.value, item: '' }))}
                   disabled={!formData.category}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary disabled:opacity-50">
                   <option value="">Select subcategory</option>
                   {subcategories.map((s: { name: string }) => <option key={s.name} value={s.name}>{s.name}</option>)}
                 </Select>
@@ -954,7 +954,7 @@ export default function NewProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Type/Item</label>
                 <Select name="item" value={formData.item} onChange={handleChange}
                   disabled={!formData.subcategory || items.length === 0}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:opacity-50">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary disabled:opacity-50">
                   <option value="">Select item</option>
                   {items.map((item: string) => <option key={item} value={item}>{item}</option>)}
                 </Select>
@@ -962,7 +962,7 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Brand *</label>
                 <Input type="text" name="brand" value={formData.brand} onChange={handleChange} list="brands"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.brand ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-admin-primary ${errors.brand ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Select or type brand" />
                 <datalist id="brands">{brands.map((b) => <option key={b} value={b} />)}</datalist>
                 {errors.brand && <p className="mt-1 text-sm text-red-600">{errors.brand}</p>}
@@ -970,7 +970,7 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Origin Country</label>
                 <Select name="originCountry" value={formData.originCountry} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
                   {countries.map((c) => <option key={c} value={c}>{c}</option>)}
                 </Select>
               </div>
@@ -980,7 +980,7 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
                 <Select name="status" value={formData.status} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="out_of_stock">Out of Stock</option>
@@ -989,7 +989,7 @@ export default function NewProductPage() {
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
                   <Input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+                    className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Featured Product</span>
                 </label>
               </div>
@@ -998,7 +998,7 @@ export default function NewProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Description *</label>
               <Textarea name="description" value={formData.description} onChange={handleChange} rows={6}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-admin-primary ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Detailed product description..." />
               {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
             </div>
@@ -1008,14 +1008,14 @@ export default function NewProductPage() {
         {/* 2. Product Images */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-2">
-            <ImageIcon className="w-5 h-5 text-purple-600 mr-2" />
+            <ImageIcon className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Product Images</h2>
           </div>
           <p className="text-sm text-gray-500 mb-4">Max 10MB per image. First/main image is the display image.</p>
           <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
 
           <Button type="button" onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
+            className="inline-flex items-center px-5 py-2.5 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover font-medium">
             <Upload className="w-5 h-5 mr-2" /> Upload Images
           </Button>
           {errors.images && <p className="mt-2 text-sm text-red-600 flex items-center gap-1"><AlertCircle className="w-4 h-4" />{errors.images}</p>}
@@ -1025,11 +1025,11 @@ export default function NewProductPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
                 {formData.images.map((image, index) => (
                   <div key={image.id}
-                    className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200'}`}>
+                    className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-admin-primary ring-2 ring-purple-200' : 'border-gray-200'}`}>
                     <div className="aspect-square">
                       <img src={image.preview} alt={`Product image preview ${index + 1}`} className="w-full h-full object-cover" />
                     </div>
-                    {image.isMain && <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs font-semibold px-2 py-1 rounded">Main</div>}
+                    {image.isMain && <div className="absolute top-2 left-2 bg-admin-primary text-white text-xs font-semibold px-2 py-1 rounded">Main</div>}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                       {!image.isMain && (
                         <Button type="button" aria-label={`Set image ${index + 1} as main image`} onClick={() => handleSetMainImage(image.id)} className="p-2 bg-white rounded-full hover:bg-gray-100">
@@ -1054,7 +1054,7 @@ export default function NewProductPage() {
                         <label className="block text-xs font-medium text-gray-700 mb-1">Image {index + 1} {image.isMain && '(Main)'}</label>
                         <Input type="text" value={formData.imageAltTexts[index] || ''}
                           onChange={(e) => handleImageAltTextChange(index, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
                           placeholder="Rhode Peptide Lip Tint Ribbon Bangladesh" />
                       </div>
                     </div>
@@ -1069,14 +1069,14 @@ export default function NewProductPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <Tag className="w-5 h-5 text-purple-600 mr-2" />
+              <Tag className="w-5 h-5 text-admin-primary mr-2" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Product Variants</h2>
                 <p className="text-sm text-gray-500">Size, color, price, stock per variant</p>
               </div>
             </div>
             <Button type="button" onClick={handleAddVariant}
-              className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+              className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm font-medium">
               <Plus className="w-4 h-4 mr-1" /> Add Variant
             </Button>
           </div>
@@ -1109,7 +1109,7 @@ export default function NewProductPage() {
                         type={field === 'price' || field === 'stock' ? 'number' : 'text'}
                         value={variant[field] || ''}
                         onChange={(e) => handleVariantChange(variant.id, field, e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-sm ${errors[`variant_${variant.id}_${field}`] ? 'border-red-500' : 'border-gray-300'} ${field === 'price' && aiApplied ? 'bg-amber-50 border-amber-300' : ''}`}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-admin-primary text-sm ${errors[`variant_${variant.id}_${field}`] ? 'border-red-500' : 'border-gray-300'} ${field === 'price' && aiApplied ? 'bg-amber-50 border-amber-300' : ''}`}
                         placeholder={field === 'price' ? '0.00' : field === 'stock' ? '0' : ''}
                         step={field === 'price' ? '0.01' : undefined}
                         min={field === 'price' || field === 'stock' ? '0' : undefined}
@@ -1128,7 +1128,7 @@ export default function NewProductPage() {
         {/* 4. Specifications */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Settings className="w-5 h-5 text-purple-600 mr-2" />
+            <Settings className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Product Specifications</h2>
           </div>
           <div className="space-y-4">
@@ -1136,20 +1136,20 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume (numeric)</label>
                 <Input type="text" name="weight" value={formData.weight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="e.g., 30" />
                 {errors.weight && <p className="mt-1 text-sm text-red-600">{errors.weight}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
                 <Input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="e.g., 24 months" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
                 <Input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
             </div>
 
@@ -1160,8 +1160,8 @@ export default function NewProductPage() {
                   <Button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
                     className={`px-4 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
                       formData.skinType.includes(type)
-                        ? 'bg-purple-600 border-purple-600 text-white'
-                        : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400'
+                        ? 'bg-admin-primary border-admin-primary text-white'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-admin-border'
                     }`}>
                     {type}
                   </Button>
@@ -1173,7 +1173,7 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Condition</label>
                 <Select name="productCondition" value={formData.productCondition} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
                   <option value="NEW">New</option>
                   <option value="USED">Used</option>
                   <option value="REFURBISHED">Refurbished</option>
@@ -1182,7 +1182,7 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">GTIN/EAN/UPC</label>
                 <Input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="1234567890123" />
               </div>
             </div>
@@ -1192,19 +1192,19 @@ export default function NewProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Average Rating (0–5)</label>
                 <Input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
                   min="0" max="5" step="0.1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Review Count</label>
                 <Input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
-                  min="0" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  min="0" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients List</label>
               <Textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="Aqua, Glycerin, Hyaluronic Acid..." />
             </div>
           </div>
@@ -1213,7 +1213,7 @@ export default function NewProductPage() {
         {/* ── PLACE 3: 5. SEO Settings — updated UI ─────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Search className="w-5 h-5 text-purple-600 mr-2" />
+            <Search className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">SEO Settings</h2>
           </div>
           <div className="space-y-4">
@@ -1222,7 +1222,7 @@ export default function NewProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
               <Input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="SEO title — include focus keyword" />
               <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaTitle.length}/60</p>
             </div>
@@ -1231,7 +1231,7 @@ export default function NewProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
               <Textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder='150–160 chars. Include "Cash on Delivery" or price signal.' />
               <p className="text-xs text-gray-400 mt-1 text-right">{formData.metaDescription.length}/160</p>
             </div>
@@ -1241,13 +1241,13 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Product Name</label>
                 <Input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="বাংলা নাম" lang="bn-BD" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
                 <Input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="e.g., vitamin c serum bangladesh" />
                 <p className="text-xs text-gray-400 mt-1">Must appear in Meta Title, description first 100 words, and URL Slug</p>
               </div>
@@ -1263,13 +1263,13 @@ export default function NewProductPage() {
                 type="text"
                 value={formData.secondaryKeywords.join(', ')}
                 onChange={(e) => handleSecondaryKeywordsChange(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="lip oil for dry lips bangladesh, non sticky lip gloss bd price, tinted lip oil buy online bd"
               />
               {formData.secondaryKeywords.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {formData.secondaryKeywords.map((kw, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs text-purple-700">
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-admin-panel border border-admin-border rounded-full text-xs text-admin-primary">
                       {kw}
                       <Button
                         type="button"
@@ -1278,7 +1278,7 @@ export default function NewProductPage() {
                           ...prev,
                           secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
                         }))}
-                        className="text-purple-400 hover:text-purple-700"
+                        className="text-purple-400 hover:text-admin-primary"
                       >
                         <X className="w-3 h-3" />
                       </Button>
@@ -1300,7 +1300,7 @@ export default function NewProductPage() {
                   name="bengaliFocusKeyword"
                   value={formData.bengaliFocusKeyword}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="লিপ অয়েল দাম বাংলাদেশ"
                   lang="bn-BD"
                 />
@@ -1316,7 +1316,7 @@ export default function NewProductPage() {
                   value={formData.ogDescription}
                   onChange={handleChange}
                   maxLength={130}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="Glass lips in one swipe. Non-sticky & deeply nourishing."
                 />
                 <p className={`text-xs mt-1 text-right ${formData.ogDescription.length > 130 ? 'text-red-500' : 'text-gray-400'}`}>
@@ -1329,7 +1329,7 @@ export default function NewProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Meta Description</label>
               <Textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} maxLength={160} rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
             </div>
 
             {/* OG Title + URL Slug */}
@@ -1337,13 +1337,13 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
                 <Input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="Leave blank to use Meta Title" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
                 <Input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="product-url-slug" />
                 <p className="text-xs text-gray-400 mt-1">/products/<strong>{formData.urlSlug || 'product-url-slug'}</strong></p>
               </div>
@@ -1358,7 +1358,7 @@ export default function NewProductPage() {
                   name="canonicalUrl"
                   value={formData.canonicalUrl}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder={`${ADMIN_SITE_URL}/products/product-url-slug`}
                 />
                 <p className="text-xs text-gray-400 mt-1">Leave blank to auto-generate from slug.</p>
@@ -1370,7 +1370,7 @@ export default function NewProductPage() {
                   name="pageH1"
                   value={formData.pageH1}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="Sunsilk Power Shot Hair Treatment Price in Bangladesh"
                 />
               </div>
@@ -1383,7 +1383,7 @@ export default function NewProductPage() {
                 value={formData.seoIntro}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="Short visible intro with price, sizes, variants and Bangladesh buying intent."
               />
             </div>
@@ -1396,7 +1396,7 @@ export default function NewProductPage() {
                 name="ogImageUrl"
                 value={formData.ogImageUrl}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="https://cdn.example.com/products/og-image.webp"
               />
               <p className="text-xs text-gray-400 mt-1">Uploading a social image below will override this URL.</p>
@@ -1409,7 +1409,7 @@ export default function NewProductPage() {
                 <img src={formData.ogImagePreview} alt="OG" className="w-full max-w-md rounded-lg border mb-2" />
               )}
               <input type="file" accept="image/*" onChange={handleOgImageUpload}
-                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700" />
+                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-admin-panel file:text-admin-primary" />
             </div>
 
             {/* Tags */}
@@ -1419,7 +1419,7 @@ export default function NewProductPage() {
                 <span className="ml-2 text-xs font-normal text-gray-400">15–20 tags, priority order: focusKeyword first</span>
               </label>
               <Input type="text" name="tags" value={formData.tags} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="beauty glazed lip oil bangladesh, lip oil bd, লিপ অয়েল, ..." />
             </div>
 
@@ -1428,7 +1428,7 @@ export default function NewProductPage() {
 
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Sparkles className="w-5 h-5 text-purple-600 mr-2" />
+            <Sparkles className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Semantic SEO & Structured Content</h2>
           </div>
           <div className="space-y-4">
@@ -1436,24 +1436,24 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Search Intent</label>
                 <Input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Primary Concern</label>
                 <Input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                 <Input type="text" name="gender" value={formData.gender} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
               <Textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1464,7 +1464,7 @@ export default function NewProductPage() {
                   value={formData.faqSchemaNote}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
                   placeholder="FAQ content is for customers; Product/Merchant schema is SEO priority."
                 />
               </div>
@@ -1475,7 +1475,7 @@ export default function NewProductPage() {
                   value={formData.authenticityNote}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
                   placeholder="Imported product. Check packaging, expiry and batch/barcode after receiving."
                 />
               </div>
@@ -1488,7 +1488,7 @@ export default function NewProductPage() {
                 name="ingredientVerificationStatus"
                 value={formData.ingredientVerificationStatus}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="Pending physical packaging verification"
               />
             </div>
@@ -1510,7 +1510,7 @@ export default function NewProductPage() {
                 <Textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
                   onChange={(e) => handleArrayFieldChange(field as keyof ProductFormData, e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" />
               </div>
             ))}
 
@@ -1534,14 +1534,14 @@ export default function NewProductPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                   <Textarea name={field} value={formData[field as keyof ProductFormData] as string}
                     onChange={handleChange} rows={7}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-xs font-mono" />
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-xs font-mono" />
                 </div>
               ))}
             </div>
 
             <label className="flex items-center gap-2">
               <Input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
-                className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+                className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
               <span className="text-sm text-gray-700">FAQ schema ready</span>
             </label>
           </div>
@@ -1556,7 +1556,7 @@ export default function NewProductPage() {
         {/* 6. Shipping */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <TruckIcon className="w-5 h-5 text-purple-600 mr-2" />
+            <TruckIcon className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Shipping & Delivery</h2>
           </div>
           <div className="space-y-4">
@@ -1564,7 +1564,7 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Weight</label>
                 <Input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="e.g., 150g" />
               </div>
               <div>
@@ -1574,7 +1574,7 @@ export default function NewProductPage() {
                     <div key={dim}>
                       <Input type="text" value={formData.dimensions[dim]}
                         onChange={(e) => handleDimensionChange(dim, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
                         placeholder={dim.charAt(0).toUpperCase()} />
                       <p className="text-xs text-gray-400 mt-0.5 text-center">{dim.charAt(0).toUpperCase()} (cm)</p>
                     </div>
@@ -1584,7 +1584,7 @@ export default function NewProductPage() {
             </div>
             <label className="flex items-center">
               <Input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
-                className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+                className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
               <span className="ml-2 text-sm text-gray-700">Fragile Item</span>
             </label>
 
@@ -1676,7 +1676,7 @@ export default function NewProductPage() {
         {/* 7. Discount */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Percent className="w-5 h-5 text-purple-600 mr-2" />
+            <Percent className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Discount & Offers</h2>
           </div>
           <div className="space-y-4">
@@ -1686,20 +1686,20 @@ export default function NewProductPage() {
                 <Input type="number" value={formData.discountPercentage}
                   onChange={(e) => handleDiscountChange(e.target.value)}
                   min="0" max="100" step="0.01"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sale Price (৳)</label>
                 <Input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
                   step="1" min="0"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                   placeholder="Auto-calculated" />
               </div>
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
                   <Input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+                    className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Flash Sale Eligible</span>
                 </label>
               </div>
@@ -1708,12 +1708,12 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer Start</label>
                 <Input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer End</label>
                 <Input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
               </div>
             </div>
           </div>
@@ -1722,20 +1722,20 @@ export default function NewProductPage() {
         {/* 8. Stock */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <AlertCircle className="w-5 h-5 text-purple-600 mr-2" />
+            <AlertCircle className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Stock Management</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Low Stock Alert Threshold</label>
               <Input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="10" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Barcode/UPC</label>
               <Input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="Enter barcode" />
             </div>
           </div>
@@ -1744,7 +1744,7 @@ export default function NewProductPage() {
         {/* 9. Additional Options */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Settings className="w-5 h-5 text-purple-600 mr-2" />
+            <Settings className="w-5 h-5 text-admin-primary mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Additional Options</h2>
           </div>
           <div className="space-y-4">
@@ -1758,7 +1758,7 @@ export default function NewProductPage() {
                   <Input type="checkbox" name={opt.name}
                     checked={formData[opt.name as keyof ProductFormData] as boolean}
                     onChange={handleChange}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+                    className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">{opt.label}</span>
                 </label>
               ))}
@@ -1766,7 +1766,7 @@ export default function NewProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Related Products</label>
               <Input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
                 placeholder="Product IDs separated by commas" />
             </div>
           </div>
@@ -1779,7 +1779,7 @@ export default function NewProductPage() {
             <X className="w-5 h-5 mr-2" /> Cancel
           </Link>
           <Button type="submit" disabled={isSubmitting}
-            className="inline-flex items-center px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium shadow-lg">
+            className="inline-flex items-center px-8 py-3 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 font-medium shadow-lg">
             {isSubmitting
               ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creating...</>
               : <><Save className="w-5 h-5 mr-2" /> Create Product</>}

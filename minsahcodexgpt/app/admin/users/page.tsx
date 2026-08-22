@@ -138,7 +138,7 @@ export default function UsersManagementPage() {
   const getRoleColor = (role: AdminUser['role']) => {
     switch (role) {
       case 'super_admin':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-admin-panel text-admin-primary';
       case 'admin':
         return 'bg-blue-100 text-blue-800';
       case 'editor':
@@ -158,7 +158,7 @@ export default function UsersManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600">Manage admin users and their permissions</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Add User
         </Button>
@@ -172,7 +172,7 @@ export default function UsersManagementPage() {
               <p className="text-sm font-medium text-gray-600">Total Users</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{users.length}</p>
             </div>
-            <User className="w-8 h-8 text-purple-500" />
+            <User className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
@@ -223,14 +223,14 @@ export default function UsersManagementPage() {
               placeholder="Search users by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
             />
           </div>
 
           <Select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           >
             <option value="all">All Roles</option>
             <option value="super_admin">Super Admin</option>
@@ -272,8 +272,8 @@ export default function UsersManagementPage() {
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-purple-600 font-semibold">
+                      <div className="w-10 h-10 bg-admin-panel rounded-full flex items-center justify-center">
+                        <span className="text-admin-primary font-semibold">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       </div>

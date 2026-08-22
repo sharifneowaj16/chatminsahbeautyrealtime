@@ -97,8 +97,8 @@ export default function StatsSection({ stats }: { stats: Stats }) {
           icon="💵"
           label="Total Revenue"
           value={formatCurrency(stats.totalPotentialRevenue)}
-          bgColor="bg-purple-50"
-          textColor="text-purple-600"
+          bgColor="bg-admin-panel"
+          textColor="text-admin-primary"
         />
       </div>
 

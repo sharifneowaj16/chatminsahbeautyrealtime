@@ -223,7 +223,7 @@ export default function InventoryPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button type="button" onClick={() => setSupplierModalOpen(true)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Supplier Add</Button>
-          <Button type="button" onClick={() => setPurchaseOrderModalOpen(true)} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">Purchase Order</Button>
+          <Button type="button" onClick={() => setPurchaseOrderModalOpen(true)} className="rounded-lg bg-admin-primary px-4 py-2 text-sm font-medium text-white hover:bg-admin-primary-hover">Purchase Order</Button>
           <Button type="button" onClick={() => refreshWorkspace(true)} disabled={refreshing} className="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
             <RefreshCw className={clsx('mr-2 h-4 w-4', refreshing && 'animate-spin')} />
             Refresh
@@ -242,7 +242,7 @@ export default function InventoryPage() {
 
       <div className="mb-6 flex flex-wrap gap-3">
         {(['inventory', 'shortlist', 'suppliers', 'purchase-orders'] as InventoryTab[]).map((tab) => (
-          <Button key={tab} type="button" onClick={() => setActiveTab(tab)} className={clsx('rounded-full px-4 py-2 text-sm font-medium capitalize', activeTab === tab ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50')}>
+          <Button key={tab} type="button" onClick={() => setActiveTab(tab)} className={clsx('rounded-full px-4 py-2 text-sm font-medium capitalize', activeTab === tab ? 'bg-admin-primary text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50')}>
             {tab.replace('-', ' ')}
           </Button>
         ))}
@@ -260,16 +260,16 @@ export default function InventoryPage() {
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <Input value={filters.search} onChange={(event) => setFilters({ search: event.target.value })} placeholder="Search by product, SKU, brand, category..." className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-purple-500" />
+                <Input value={filters.search} onChange={(event) => setFilters({ search: event.target.value })} placeholder="Search by product, SKU, brand, category..." className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-admin-primary" />
               </div>
-              <Select value={filters.status} onChange={(event) => setFilters({ status: event.target.value })} className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-purple-500">
+              <Select value={filters.status} onChange={(event) => setFilters({ status: event.target.value })} className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-admin-primary">
                 <option value="all">All Status</option><option value="in_stock">In Stock</option><option value="low_stock">Low Stock</option><option value="out_of_stock">Out of Stock</option><option value="overstocked">Overstocked</option>
               </Select>
-              <Select value={filters.category} onChange={(event) => setFilters({ category: event.target.value })} className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-purple-500">
+              <Select value={filters.category} onChange={(event) => setFilters({ category: event.target.value })} className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-admin-primary">
                 <option value="all">All Categories</option>
                 {categories.map((category) => <option key={category} value={category}>{category}</option>)}
               </Select>
-              <Select value={filters.sort} onChange={(event) => setFilters({ sort: event.target.value })} className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-purple-500">
+              <Select value={filters.sort} onChange={(event) => setFilters({ sort: event.target.value })} className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-admin-primary">
                 <option value="stock">Stock Level</option><option value="lowStock">Low Stock Priority</option><option value="value">Value</option><option value="updated">Recently Updated</option><option value="name">Name</option>
               </Select>
               <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-700"><span className="font-semibold text-gray-900">{inventory.length}</span> visible items, <span className="font-semibold text-red-600">{lowStockVisible}</span> urgent.</div>
@@ -278,7 +278,7 @@ export default function InventoryPage() {
           </div>
 
           {canEdit && selectedIds.length > 0 && (
-            <div className="mb-4 rounded-xl border border-purple-200 bg-purple-50 p-4">
+            <div className="mb-4 rounded-xl border border-admin-border bg-admin-panel p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-purple-900">{selectedIds.length} products selected</p>
                 <div className="flex flex-wrap gap-2">
@@ -286,7 +286,7 @@ export default function InventoryPage() {
                   <Button type="button" onClick={() => openBulkModal('remove')} className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-red-700">Bulk Remove</Button>
                   <Button type="button" onClick={() => openBulkModal('set')} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-blue-700">Set Qty</Button>
                   <Button type="button" onClick={() => openBulkModal('reorder')} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-amber-700">Set Reorder</Button>
-                  <Button type="button" onClick={() => setSelectedIds([])} className="rounded-lg px-3 py-2 text-sm text-purple-700">Clear</Button>
+                  <Button type="button" onClick={() => setSelectedIds([])} className="rounded-lg px-3 py-2 text-sm text-admin-primary">Clear</Button>
                 </div>
               </div>
             </div>
@@ -340,7 +340,7 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <Button type="button" onClick={() => setDetailItem(item)} className="text-purple-600 hover:text-purple-800"><Eye className="h-4 w-4" /></Button>
+                        <Button type="button" onClick={() => setDetailItem(item)} className="text-admin-primary hover:text-admin-primary"><Eye className="h-4 w-4" /></Button>
                         {canEdit && <>
                           <Button type="button" onClick={() => openSingleModal(item, 'add')} className="text-green-600 hover:text-green-800"><Plus className="h-4 w-4" /></Button>
                           <Button type="button" onClick={() => openSingleModal(item, 'remove')} className="text-red-600 hover:text-red-800"><Minus className="h-4 w-4" /></Button>
@@ -528,7 +528,7 @@ export default function InventoryPage() {
 }
 
 function SummaryCard({ title, value, tone = 'default' }: { title: string; value: string; tone?: 'default' | 'warning' | 'danger' | 'info' | 'accent' }) {
-  const toneClass = tone === 'warning' ? 'text-yellow-600' : tone === 'danger' ? 'text-red-600' : tone === 'info' ? 'text-blue-600' : tone === 'accent' ? 'text-purple-600' : 'text-gray-900';
+  const toneClass = tone === 'warning' ? 'text-yellow-600' : tone === 'danger' ? 'text-red-600' : tone === 'info' ? 'text-blue-600' : tone === 'accent' ? 'text-admin-primary' : 'text-gray-900';
   return <div className="rounded-lg border border-gray-200 bg-white p-5"><p className="text-sm text-gray-600">{title}</p><p className={clsx('mt-2 text-2xl font-bold', toneClass)}>{value}</p></div>;
 }
 

@@ -109,7 +109,7 @@ export default function FAQManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">FAQ Management</h1>
           <p className="text-gray-600">Manage frequently asked questions</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Add FAQ
         </Button>
@@ -123,7 +123,7 @@ export default function FAQManagementPage() {
               <p className="text-sm font-medium text-gray-600">Total FAQs</p>
               <p className="text-2xl font-bold text-gray-900 mt-2">{faqs.length}</p>
             </div>
-            <HelpCircle className="w-8 h-8 text-purple-500" />
+            <HelpCircle className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
@@ -172,14 +172,14 @@ export default function FAQManagementPage() {
               placeholder="Search FAQs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
             />
           </div>
 
           <Select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           >
             <option value="all">All Categories</option>
             {categories.map(category => (
@@ -201,7 +201,7 @@ export default function FAQManagementPage() {
                     className="w-full text-left"
                   >
                     <div className="flex items-start space-x-3">
-                      <HelpCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-1" />
+                      <HelpCircle className="w-5 h-5 text-admin-primary flex-shrink-0 mt-1" />
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                           {faq.question}
@@ -212,7 +212,7 @@ export default function FAQManagementPage() {
                           )}
                         </h3>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-admin-panel text-admin-primary">
                             {faq.category}
                           </span>
                           <span>{faq.views} views</span>

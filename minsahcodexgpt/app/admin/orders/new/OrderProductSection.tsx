@@ -75,7 +75,7 @@ function genKey() {
 const PRODUCT_TYPE_META: Record<ProductType, { label: string; icon: React.ReactNode; color: string }> = {
   new:     { label: 'New',     icon: <Tag className="w-3 h-3" />,     color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
   old:     { label: 'Old',     icon: <Archive className="w-3 h-3" />, color: 'bg-amber-100 text-amber-700 border-amber-300' },
-  virtual: { label: 'Virtual', icon: <Cpu className="w-3 h-3" />,     color: 'bg-violet-100 text-violet-700 border-violet-300' },
+  virtual: { label: 'Virtual', icon: <Cpu className="w-3 h-3" />,     color: 'bg-violet-100 text-admin-primary border-violet-300' },
 };
 
 // ─── Variant Attribute Formatter ────────────────────────────────────────────
@@ -255,7 +255,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
             min={1}
             value={addQty}
             onChange={e => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
-            className="w-16 px-2 py-2.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-16 px-2 py-2.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-admin-primary"
           />
           {/* search input */}
           <div className="relative flex-1">
@@ -272,7 +272,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                   addCustomProduct();
                 }
               }}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
             />
           </div>
         </div>
@@ -314,7 +314,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                               onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: null }))}
                               className={`text-xs px-2 py-1 rounded border transition-colors ${
                                 selVariantId === null
-                                  ? 'bg-violet-600 text-white border-violet-600'
+                                  ? 'bg-admin-primary text-white border-violet-600'
                                   : 'bg-white text-gray-600 border-gray-300 hover:border-violet-400'
                               }`}
                             >
@@ -327,7 +327,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                                 onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: v.id }))}
                                 className={`text-xs px-2 py-1 rounded border transition-colors ${
                                   selVariantId === v.id
-                                    ? 'bg-violet-600 text-white border-violet-600'
+                                    ? 'bg-admin-primary text-white border-violet-600'
                                     : 'bg-white text-gray-600 border-gray-300 hover:border-violet-400'
                                 }`}
                                 title={`${formatPrice(v.price)} · Stock: ${v.stock}`}
@@ -344,7 +344,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     <Button
                       type="button"
                       onClick={() => addDbProduct(product, selVariantId)}
-                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs rounded-lg transition-colors"
+                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-admin-primary hover:bg-admin-primary-hover text-white text-xs rounded-lg transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Add{selVariant ? ` (${formatPrice(selVariant.price)})` : ''}
@@ -359,13 +359,13 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
               <Button
                 type="button"
                 onClick={addCustomProduct}
-                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-violet-50 border-t border-dashed border-violet-200 group"
+                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-admin-panel border-t border-dashed border-admin-border group"
               >
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-100 group-hover:bg-violet-200 flex items-center justify-center transition-colors">
-                  <Plus className="w-3.5 h-3.5 text-violet-600" />
+                  <Plus className="w-3.5 h-3.5 text-admin-primary" />
                 </span>
                 <span className="text-sm">
-                  Add <strong className="text-violet-700">"{query}"</strong> as custom product
+                  Add <strong className="text-admin-primary">"{query}"</strong> as custom product
                   <span className="text-xs text-gray-400 ml-1">(not in DB)</span>
                 </span>
               </Button>
@@ -419,7 +419,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       min={1}
                       value={item.quantity}
                       onChange={e => updateQty(item.key, parseInt(e.target.value) || 1)}
-                      className="w-14 px-1.5 py-1 border border-gray-200 rounded text-xs text-center bg-white focus:outline-none focus:ring-1 focus:ring-violet-500"
+                      className="w-14 px-1.5 py-1 border border-gray-200 rounded text-xs text-center bg-white focus:outline-none focus:ring-1 focus:ring-admin-primary"
                     />
 
                     {/* price */}
@@ -431,7 +431,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     <Button
                       type="button"
                       onClick={() => startEdit(item)}
-                      className="p-1.5 text-gray-400 hover:text-violet-600 hover:bg-violet-100 rounded transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-admin-primary hover:bg-violet-100 rounded transition-colors"
                       title="Edit price / type / variant"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -454,7 +454,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                         type="text"
                         value={editValues.name ?? item.name}
                         onChange={e => setEditValues(p => ({ ...p, name: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+                        className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
                       />
                     </div>
 
@@ -468,7 +468,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                           step="0.01"
                           value={editValues.price ?? item.price}
                           onChange={e => setEditValues(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-                          className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+                          className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
                         />
                       </div>
 
@@ -479,7 +479,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                           type="text"
                           value={editValues.sku ?? item.sku}
                           onChange={e => setEditValues(p => ({ ...p, sku: e.target.value }))}
-                          className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+                          className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
                         />
                       </div>
 
@@ -489,7 +489,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                         <Select
                           value={editValues.productType ?? item.productType}
                           onChange={e => setEditValues(p => ({ ...p, productType: e.target.value as ProductType }))}
-                          className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+                          className="w-full px-2.5 py-1.5 border border-violet-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
                         >
                           <option value="new">New</option>
                           <option value="old">Old</option>
@@ -510,7 +510,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       <Button
                         type="button"
                         onClick={() => commitEdit(item.key)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" /> Save
                       </Button>

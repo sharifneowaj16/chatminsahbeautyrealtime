@@ -20,7 +20,7 @@ export default function BannersPage() {
           <h1 className="text-2xl font-bold">Banners & Sliders</h1>
           <p className="text-gray-600">Manage homepage banners and promotional sliders</p>
         </div>
-        <Button className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <Button className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
           <Plus className="w-5 h-5 mr-2" />
           Add Banner
         </Button>
@@ -30,7 +30,7 @@ export default function BannersPage() {
         <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">No Banners Yet</h3>
         <p className="text-gray-600 mb-6">Create your first homepage banner</p>
-        <Button className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <Button className="px-6 py-3 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
           Add Banner
         </Button>
       </div>

@@ -145,7 +145,7 @@ export default function MediaLibraryPage() {
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover disabled:opacity-50"
           >
             <Upload className="w-5 h-5 mr-2" />
             {uploading ? 'Uploading...' : 'Upload Files'}
@@ -195,7 +195,7 @@ export default function MediaLibraryPage() {
             onClick={() => setFolder(f)}
             className={`px-3 py-1 rounded-full text-sm border ${
               folder === f
-                ? 'bg-purple-600 text-white border-purple-600'
+                ? 'bg-admin-primary text-white border-admin-primary'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
             }`}
           >
@@ -219,7 +219,7 @@ export default function MediaLibraryPage() {
           </p>
           <Button
             onClick={() => fileInputRef.current?.click()}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="px-6 py-3 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover"
           >
             Upload Files
           </Button>

@@ -137,7 +137,7 @@ export default function AdminNotificationBell() {
                   size="sm"
                   onClick={markAllRead}
                   disabled={loading}
-                  className="px-2 text-xs text-violet-600 hover:bg-transparent hover:text-violet-800"
+                  className="px-2 text-xs text-admin-primary hover:bg-transparent hover:text-violet-800"
                 >
                   <Check className="w-3 h-3" aria-hidden="true" />
                   Mark all read
@@ -178,12 +178,12 @@ export default function AdminNotificationBell() {
                   {/* Icon */}
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                     n.type === 'GIFT_ORDER'
-                      ? 'bg-pink-100'
+                      ? 'bg-admin-panel'
                       : 'bg-violet-100'
                   }`}>
                     {n.type === 'GIFT_ORDER'
-                      ? <Gift className="w-4 h-4 text-pink-600" aria-hidden="true" />
-                      : <ShoppingBag className="w-4 h-4 text-violet-600" aria-hidden="true" />
+                      ? <Gift className="w-4 h-4 text-admin-primary" aria-hidden="true" />
+                      : <ShoppingBag className="w-4 h-4 text-admin-primary" aria-hidden="true" />
                     }
                   </div>
 
@@ -192,7 +192,7 @@ export default function AdminNotificationBell() {
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-semibold text-gray-900 truncate">{n.title}</p>
                       {n.type === 'GIFT_ORDER' && (
-                        <span className="flex-shrink-0 text-xs bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="flex-shrink-0 text-xs bg-admin-panel text-admin-primary px-1.5 py-0.5 rounded-full font-medium">
                           🎁 Gift
                         </span>
                       )}
@@ -218,7 +218,7 @@ export default function AdminNotificationBell() {
                 variant="ghost"
                 size="sm"
                 onClick={() => { router.push('/admin/orders'); setOpen(false); }}
-                className="px-2 text-xs font-medium text-violet-600 hover:bg-transparent hover:text-violet-800"
+                className="px-2 text-xs font-medium text-admin-primary hover:bg-transparent hover:text-violet-800"
               >
                 View all orders →
               </Button>

@@ -55,9 +55,9 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-admin-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -66,7 +66,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
 
   if (isLoggedIn || user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
         <div className="text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Successful!</h2>
           <p className="text-gray-600 mb-4">Redirecting to admin dashboard...</p>
           <div className="w-64 bg-gray-200 rounded-full h-2 mx-auto">
-            <div className="bg-purple-600 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+            <div className="bg-admin-primary h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
           </div>
         </div>
       </div>
@@ -84,14 +84,14 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-purple-50 to-pink-50">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-600 to-pink-600 p-12 flex-col justify-between relative overflow-hidden">
+    <div className="min-h-screen flex bg-gradient-to-br from-admin-panel to-admin-bg">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-admin-primary to-admin-primary-hover p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-black/20"></div>
 
         <div className="relative z-10">
           <div className="flex items-center space-x-2 mb-8">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-purple-600 font-bold text-xl">M</span>
+              <span className="text-admin-primary font-bold text-xl">M</span>
             </div>
             <span className="text-white text-2xl font-semibold">Minsah Beauty Admin</span>
           </div>
@@ -143,10 +143,10 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center space-x-2 mb-8 lg:hidden">
-            <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-admin-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">M</span>
             </div>
-            <span className="text-purple-600 text-2xl font-semibold">Admin</span>
+            <span className="text-admin-primary text-2xl font-semibold">Admin</span>
           </div>
 
           <div className="text-center mb-8">
@@ -164,7 +164,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
               autoComplete="email"
               label="Email Address"
               leading={<Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-              className="focus:ring-purple-500"
+              className="focus:ring-admin-primary"
             />
 
             <Input
@@ -192,7 +192,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
                   )}
                 </Button>
               }
-              className="focus:ring-purple-500"
+              className="focus:ring-admin-primary"
             />
 
             {error && (
@@ -207,14 +207,14 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
               fullWidth
               disabled={isLoading}
               aria-busy={isLoading || undefined}
-              className="bg-purple-600 py-3 hover:bg-purple-700"
+              className="bg-admin-primary py-3 hover:bg-admin-primary-hover"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/" className="text-sm text-purple-600 hover:text-purple-500 transition-colors inline-flex items-center gap-1">
+            <Link href="/" className="text-sm text-admin-primary hover:text-admin-primary transition-colors inline-flex items-center gap-1">
               <ArrowLeft className="w-4 h-4" />
               Back to Main Site
             </Link>

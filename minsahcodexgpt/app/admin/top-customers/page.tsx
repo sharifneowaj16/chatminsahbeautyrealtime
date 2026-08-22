@@ -220,7 +220,7 @@ export default function TopCustomersPage() {
   const getTierBadge = (tier: string) => {
     const badges = {
       diamond: { color: 'bg-cyan-100 text-cyan-800', icon: 'D' },
-      platinum: { color: 'bg-purple-100 text-purple-800', icon: 'P' },
+      platinum: { color: 'bg-admin-panel text-admin-primary', icon: 'P' },
       gold: { color: 'bg-yellow-100 text-yellow-800', icon: 'G' },
       silver: { color: 'bg-gray-100 text-gray-800', icon: 'S' },
       bronze: { color: 'bg-orange-100 text-orange-800', icon: 'B' },
@@ -242,7 +242,7 @@ export default function TopCustomersPage() {
           <p className="text-gray-600">Identify and reward your most valuable customers</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          <Button className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          <Button className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
             <Gift className="w-5 h-5 mr-2" />
             Award Yearly Gifts
           </Button>
@@ -262,7 +262,7 @@ export default function TopCustomersPage() {
               <p className="text-2xl font-bold text-gray-900 mt-2">{filteredCustomers.length}</p>
               <p className="text-xs text-gray-600 mt-1">Active customers</p>
             </div>
-            <Crown className="w-10 h-10 text-purple-500" />
+            <Crown className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
@@ -310,7 +310,7 @@ export default function TopCustomersPage() {
           <Select
             value={filterDivision}
             onChange={(e) => setFilterDivision(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="all">All Divisions</option>
             {getAllDivisions().map(div => (
@@ -321,7 +321,7 @@ export default function TopCustomersPage() {
           <Select
             value={filterTier}
             onChange={(e) => setFilterTier(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="all">All Tiers</option>
             <option value="diamond">Diamond</option>
@@ -334,7 +334,7 @@ export default function TopCustomersPage() {
           <Select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="2024">2024 Gifts</option>
             <option value="2023">2023 Gifts</option>
@@ -404,7 +404,7 @@ export default function TopCustomersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <MapPin className="w-4 h-4 text-purple-500 mr-1" />
+                        <MapPin className="w-4 h-4 text-admin-primary mr-1" />
                         <div className="text-sm">
                           <p className="font-medium text-gray-900">{customer.location.thana}</p>
                           <p className="text-xs text-gray-500">{customer.location.district}, {customer.location.division}</p>
@@ -459,7 +459,7 @@ export default function TopCustomersPage() {
                               setSelectedCustomer(customer);
                               setShowGiftModal(true);
                             }}
-                            className="text-purple-600 hover:text-purple-900"
+                            className="text-admin-primary hover:text-purple-900"
                           >
                             <Gift className="w-5 h-5" />
                           </Button>

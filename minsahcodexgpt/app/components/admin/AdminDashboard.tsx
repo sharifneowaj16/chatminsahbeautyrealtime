@@ -62,8 +62,8 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-3 bg-admin-panel rounded-lg">
+              <svg className="w-6 h-6 text-admin-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Marketing Hub Card */}
-      <div className="bg-gradient-to-br from-purple-600 via-pink-500 to-blue-600 rounded-xl shadow-lg p-8 mb-8 text-white">
+      <div className="bg-gradient-to-br from-admin-panel via-admin-bg to-admin-panel border border-admin-border rounded-xl shadow-lg p-8 mb-8 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-2">Marketing Hub</h2>
@@ -99,13 +99,13 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-4">
               <a
                 href="/admin/marketing"
-                className="px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+                className="px-6 py-3 bg-white text-admin-primary rounded-lg font-semibold hover:bg-admin-panel transition-colors"
               >
                 Open Marketing Hub
               </a>
               <a
                 href="/admin/inbox"
-                className="px-6 py-3 bg-purple-700/50 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors border border-purple-400"
+                className="px-6 py-3 bg-admin-primary-hover/50 text-white rounded-lg font-semibold hover:bg-admin-primary-hover transition-colors border border-admin-border"
               >
                 Social Inbox (5)
               </a>
@@ -146,9 +146,9 @@ export default function AdminDashboard() {
             </a>
             <a
               href="/admin/customers"
-              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all group"
+              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-admin-panel hover:border-admin-border transition-all group"
             >
-              <svg className="w-8 h-8 text-purple-600 mx-auto mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-admin-primary mx-auto mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               <span className="text-sm font-medium text-gray-900">Customers</span>
@@ -205,11 +205,11 @@ export default function AdminDashboard() {
             </a>
             <a
               href="/admin/marketing?tab=social"
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all group"
+              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-admin-panel hover:border-admin-border transition-all group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-admin-panel rounded-lg flex items-center justify-center group-hover:bg-admin-panel transition-colors">
+                  <svg className="w-5 h-5 text-admin-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                   </svg>
                 </div>

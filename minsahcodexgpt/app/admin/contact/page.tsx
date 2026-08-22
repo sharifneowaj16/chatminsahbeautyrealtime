@@ -63,7 +63,7 @@ export default function ContactSubmissionsPage() {
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
                     <Button className="text-blue-600"><Eye className="w-4 h-4" /></Button>
-                    <Button className="text-purple-600"><Mail className="w-4 h-4" /></Button>
+                    <Button className="text-admin-primary"><Mail className="w-4 h-4" /></Button>
                     <Button className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </td>

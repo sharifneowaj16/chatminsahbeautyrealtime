@@ -161,7 +161,7 @@ export default function SteadfastWebhooksPage() {
                         {e.orderNumber ? (
                           <Link
                             href={`/admin/orders?search=${encodeURIComponent(e.orderNumber)}`}
-                            className="font-mono text-violet-700 hover:underline"
+                            className="font-mono text-admin-primary hover:underline"
                           >
                             {e.orderNumber}
                           </Link>
@@ -220,7 +220,7 @@ export default function SteadfastWebhooksPage() {
               type="button"
               disabled={loading}
               onClick={() => void loadPage({ append: true, cursor: nextCursor })}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+              className="rounded-lg bg-admin-primary px-4 py-2 text-sm font-medium text-white hover:bg-admin-primary-hover disabled:opacity-50"
             >
               Load more
             </Button>

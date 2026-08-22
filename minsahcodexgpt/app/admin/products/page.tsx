@@ -301,14 +301,14 @@ export default function ProductsPage() {
           <div className="mt-4 sm:mt-0 flex gap-3">
             <Link
               href="/admin/products/import"
-              className="inline-flex items-center px-4 py-2 bg-white border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-white border-2 border-admin-primary text-admin-primary rounded-lg hover:bg-admin-panel transition-colors duration-200"
             >
               <ClipboardPaste className="w-5 h-5 mr-2" />
               Claude Import
             </Link>
             <Link
               href="/admin/products/new"
-              className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200"
             >
               <Plus className="w-5 h-5 mr-2" />
               Add Product
@@ -328,7 +328,7 @@ export default function ProductsPage() {
                 placeholder="Search products..."
                 value={filters.search}
                 onChange={(e) => updateFilter('search', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
               />
             </div>
           </div>
@@ -339,13 +339,13 @@ export default function ProductsPage() {
           >
             <Filter className="w-5 h-5 mr-2" />
             Filters
-            {showFilters && <Layers className="w-4 h-4 ml-2 text-purple-600" />}
+            {showFilters && <Layers className="w-4 h-4 ml-2 text-admin-primary" />}
           </Button>
 
           <Select
             value={filters.sortBy}
             onChange={(e) => updateFilter('sortBy', e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -360,7 +360,7 @@ export default function ProductsPage() {
               <Select
                 value={filters.category}
                 onChange={(e) => updateFilter('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>{category}</option>
@@ -372,7 +372,7 @@ export default function ProductsPage() {
               <Select
                 value={filters.status}
                 onChange={(e) => updateFilter('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
               >
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
@@ -447,7 +447,7 @@ export default function ProductsPage() {
                       type="checkbox"
                       checked={selectedProducts.length === products.length && products.length > 0}
                       onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      className="rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
                     />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
@@ -467,7 +467,7 @@ export default function ProductsPage() {
                         type="checkbox"
                         checked={selectedProducts.includes(product.id)}
                         onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
-                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        className="rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
                       />
                     </td>
                     <td className="px-6 py-4">
@@ -558,7 +558,7 @@ export default function ProductsPage() {
                       <div className="flex items-center space-x-2">
                         <Link
                           href={`/admin/products/${productUrlKey(product)}`}
-                          className="text-purple-600 hover:text-purple-800"
+                          className="text-admin-primary hover:text-admin-primary"
                           title="View"
                         >
                           <Eye className="w-4 h-4" />
@@ -617,7 +617,7 @@ export default function ProductsPage() {
                   }));
                   setSelectedProducts([]);
                 }}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-admin-primary"
               >
                 <option value={25}>25 / page</option>
                 <option value={50}>50 / page</option>

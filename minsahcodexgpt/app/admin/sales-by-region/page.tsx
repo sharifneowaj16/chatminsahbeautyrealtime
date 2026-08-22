@@ -181,7 +181,7 @@ export default function SalesByRegionPage() {
           <h1 className="text-2xl font-bold text-gray-900">Sales by Region - Bangladesh</h1>
           <p className="text-gray-600">Track sales performance across divisions, districts, thanas, and areas</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
           <Download className="w-5 h-5 mr-2" />
           Export Report
         </Button>
@@ -220,7 +220,7 @@ export default function SalesByRegionPage() {
               <p className="text-2xl font-bold text-gray-900 mt-2">{totalCustomers.toLocaleString()}</p>
               <p className="text-xs text-gray-600 mt-1">From {regionalSalesData.divisions.length} divisions</p>
             </div>
-            <Users className="w-10 h-10 text-purple-500" />
+            <Users className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
@@ -248,7 +248,7 @@ export default function SalesByRegionPage() {
               setSelectedDivision('all');
               setSelectedDistrict('all');
             }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="division">View by Division</option>
             <option value="district">View by District</option>
@@ -262,7 +262,7 @@ export default function SalesByRegionPage() {
                 setSelectedDivision(e.target.value);
                 setSelectedDistrict('all');
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
             >
               <option value="all">Select Division</option>
               {getAllDivisions().map(div => (
@@ -275,7 +275,7 @@ export default function SalesByRegionPage() {
             <Select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
             >
               <option value="all">Select District</option>
               {getDistrictsByDivision(selectedDivision).map(dist => (
@@ -287,7 +287,7 @@ export default function SalesByRegionPage() {
           <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -331,7 +331,7 @@ export default function SalesByRegionPage() {
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <MapPin className="w-5 h-5 text-purple-500 mr-2" />
+                      <MapPin className="w-5 h-5 text-admin-primary mr-2" />
                       <span className="text-sm font-medium text-gray-900">{location.name}</span>
                     </div>
                   </td>
@@ -374,7 +374,7 @@ export default function SalesByRegionPage() {
                           setSelectedDistrict(location.name);
                         }
                       }}
-                      className="inline-flex items-center text-purple-600 hover:text-purple-900"
+                      className="inline-flex items-center text-admin-primary hover:text-purple-900"
                     >
                       <ChevronRight className="w-5 h-5" />
                       <span className="text-sm">View Details</span>
@@ -390,7 +390,7 @@ export default function SalesByRegionPage() {
       {/* Bangladesh Map Placeholder */}
       <div className="bg-white rounded-lg border p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Sales Heatmap - Bangladesh</h3>
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-12 text-center">
+        <div className="bg-gradient-to-br from-admin-panel to-admin-bg rounded-lg p-12 text-center">
           <MapPin className="w-16 h-16 text-purple-400 mx-auto mb-4" />
           <p className="text-gray-600">Interactive Bangladesh map with sales heatmap</p>
           <p className="text-sm text-gray-500 mt-2">
