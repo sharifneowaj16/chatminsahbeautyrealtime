@@ -1374,11 +1374,8 @@ export default function ProductClient({
                   productName={product.name}
                   productImage={variantImageOverride || variantImage || product.image}
                   price={currentPrice}
-                  weightKg={selectedVariantObj?.weight ?? product.weight ?? null}
-                  stock={activeStock}
+                  maxStock={activeStock}
                   variants={stickyBarVariants as any}
-                  initialVariantId={selectedVariantId}
-                  initialQuantity={quantity}
                   disabled={!activeInStock}
                   className="w-full h-12 rounded-2xl bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-bold shadow-md hover:shadow-lg transition-all"
                 />
