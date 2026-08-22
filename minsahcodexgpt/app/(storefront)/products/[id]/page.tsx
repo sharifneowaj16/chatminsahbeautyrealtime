@@ -6,6 +6,8 @@ import ProductClient from './components/ProductClient';
 import { productPath } from '@/lib/product-url';
 import { getSiteUrl, safeCanonicalUrl } from '@/lib/seo';
 
+import { getProductDetail } from '@/lib/products/get-product';
+
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -17,25 +19,7 @@ interface FaqItem {
 }
 
 async function fetchProduct(idOrSlug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  let res = await fetch(`${baseUrl}/api/products/${idOrSlug}`, {
-    next: { revalidate: 60 },
-  });
-  if (!res.ok) {
-    res = await fetch(`${baseUrl}/api/products?slug=${idOrSlug}&limit=1`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const product = data.products?.[0];
-    if (!product) return null;
-    const fullRes = await fetch(`${baseUrl}/api/products/${product.id}`, {
-      next: { revalidate: 60 },
-    });
-    if (!fullRes.ok) return null;
-    return fullRes.json();
-  }
-  return res.json();
+  return getProductDetail(idOrSlug);
 }
 
 const BASE_URL = getSiteUrl();
