@@ -125,7 +125,7 @@ export default function CartDrawer() {
                     }
                   }}
                   placeholder="Coupon code (e.g. SAVE10)"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider text-gray-800 placeholder:normal-case placeholder:font-normal placeholder:text-gray-400 focus:border-[#cf5178] focus:outline-none focus:ring-1 focus:ring-[#cf5178]"
+                  className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider text-gray-800 placeholder:normal-case placeholder:font-normal placeholder:text-gray-400 focus:border-[#D07A60] focus:outline-none focus:ring-1 focus:ring-[#D07A60]"
                 />
               </div>
               <Button
@@ -133,7 +133,7 @@ export default function CartDrawer() {
                 size="sm"
                 disabled={!couponInput.trim() || couponLoading}
                 onClick={() => handleApplyCoupon()}
-                className="rounded-xl px-4 py-2 text-xs font-bold bg-[#1a1715] text-white hover:bg-[#cf5178] transition-colors"
+                className="rounded-xl px-4 py-2 text-xs font-bold bg-[#181C1A] text-white hover:bg-[#D07A60] transition-colors"
               >
                 {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
               </Button>
@@ -142,14 +142,14 @@ export default function CartDrawer() {
             {/* Quick Suggestions */}
             <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5">
               <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
-                <Gift className="h-3 w-3 text-[#cf5178]" /> Offers:
+                <Gift className="h-3 w-3 text-[#D07A60]" /> Offers:
               </span>
               {["SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
                 <button
                   key={code}
                   type="button"
                   onClick={() => handleApplyCoupon(code)}
-                  className="rounded-md border border-dashed border-rose-300 bg-rose-50/70 px-1.5 py-0.5 font-semibold text-[#cf5178] hover:bg-[#cf5178] hover:text-white transition-colors"
+                  className="rounded-md border border-dashed border-[#D07A60]/40 bg-[#FAF9F6] px-1.5 py-0.5 font-semibold text-[#D07A60] hover:bg-[#D07A60] hover:text-white transition-colors"
                 >
                   {code}
                 </button>
@@ -188,7 +188,7 @@ export default function CartDrawer() {
               fullWidth
               onClick={handleCheckout}
               disabled={cartLoading || !hasItems}
-              className="bg-[#cf5178] hover:bg-[#a93659] text-white font-bold py-3 text-sm rounded-2xl shadow-lg shadow-rose-900/10 transition-all hover:shadow-rose-900/20"
+              className="bg-[#D07A60] hover:bg-[#B56148] text-white font-bold py-3 text-sm rounded-2xl shadow-lg shadow-orange-950/10 transition-all hover:shadow-orange-950/20"
             >
               Checkout ({formatPrice(Math.max(0, subtotal - discount))})
             </Button>
@@ -217,17 +217,17 @@ export default function CartDrawer() {
       {hasItems ? (
         <div className="space-y-3 px-4 py-3 sm:px-5">
           {/* ── Free Delivery Progress Bar ── */}
-          <div className="rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50/90 via-pink-50/70 to-amber-50/50 p-3.5 shadow-sm">
+          <div className="rounded-2xl border border-emerald-100/80 bg-gradient-to-r from-emerald-50/70 via-stone-50/60 to-orange-50/50 p-3.5 shadow-sm">
             <div className="flex items-center justify-between text-xs font-semibold text-gray-800">
               <span className="flex items-center gap-1.5">
-                <Truck className={`h-4 w-4 ${isFreeDeliveryUnlocked ? 'text-emerald-600' : 'text-[#cf5178]'}`} />
+                <Truck className={`h-4 w-4 ${isFreeDeliveryUnlocked ? 'text-emerald-600' : 'text-[#D07A60]'}`} />
                 {isFreeDeliveryUnlocked ? (
                   <span className="font-bold text-emerald-800">
                     🎉 Congratulations! You unlocked <span className="underline decoration-emerald-500">FREE Delivery</span>
                   </span>
                 ) : (
                   <span>
-                    Add <strong className="text-[#cf5178] font-bold">{formatPrice(remainingForFreeDelivery)}</strong> more for <strong className="text-emerald-700 font-bold">FREE Delivery</strong>
+                    Add <strong className="text-[#D07A60] font-bold">{formatPrice(remainingForFreeDelivery)}</strong> more for <strong className="text-emerald-700 font-bold">FREE Delivery</strong>
                   </span>
                 )}
               </span>
@@ -235,12 +235,12 @@ export default function CartDrawer() {
             </div>
 
             {/* Progress Track */}
-            <div className="relative mt-2.5 h-2 w-full overflow-hidden rounded-full bg-rose-200/60">
+            <div className="relative mt-2.5 h-2 w-full overflow-hidden rounded-full bg-emerald-100/60">
               <div
                 className={`h-full rounded-full transition-all duration-500 ease-out ${
                   isFreeDeliveryUnlocked
                     ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-sm"
-                    : "bg-gradient-to-r from-[#a93659] via-[#cf5178] to-[#e88aa5]"
+                    : "bg-gradient-to-r from-[#D07A60] via-[#4A7C59] to-[#88B296]"
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />

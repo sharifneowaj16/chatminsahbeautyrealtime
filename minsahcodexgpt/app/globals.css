@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  /* Option 1: Blush Velvet & Rose Gold (Soft Luxury Beauty Aesthetic) */
-  --color-surface-page: #FCFAF8;
+  /* Option 4: Clean Girl & Organic Glow (Sage, Matcha & Warm Peach Clay) */
+  --color-surface-page: #FAF9F6;
   --color-surface-panel: #FFFFFF;
   --color-surface-elevated: #FFFFFF;
-  --color-surface-subtle: #FFF4F7;
-  --color-surface-soft: #FDF0F4;
-  --color-surface-highlight: #FFF0F5;
-  --color-surface-accent: #FCE7ED;
-  --color-surface-inverse: #2A1720;
-  --color-surface-disabled: #F7F2F4;
+  --color-surface-subtle: #F2F7F4;
+  --color-surface-soft: #EBF3EF;
+  --color-surface-highlight: #FDF4F0;
+  --color-surface-accent: #E4EFE8;
+  --color-surface-inverse: #16221B;
+  --color-surface-disabled: #F0F3F1;
 
-  --color-text-primary: #1C1917;
-  --color-text-muted: #786C72;
-  --color-text-subtle: #988A92;
+  --color-text-primary: #181C1A;
+  --color-text-muted: #5E6D64;
+  --color-text-subtle: #829288;
   --color-text-inverse: #FFFFFF;
-  --color-text-disabled: #A69BA0;
-  --color-text-link: #D84A78;
+  --color-text-disabled: #9EAFA5;
+  --color-text-link: #D07A60;
 
-  --color-border-default: #EBDCE2;
-  --color-border-strong: #D9BDC8;
-  --color-border-subtle: #F5EAEF;
-  --color-border-focus: #D84A78;
+  --color-border-default: #D9E2DC;
+  --color-border-strong: #B5C4BB;
+  --color-border-subtle: #E8EFEA;
+  --color-border-focus: #D07A60;
 
-  --color-action-primary: #D84A78;
-  --color-action-primary-hover: #B8325E;
-  --color-action-secondary: #E88AA5;
-  --color-action-secondary-hover: #D84A78;
-  --color-action-disabled: #F2E3E8;
+  --color-action-primary: #D07A60;
+  --color-action-primary-hover: #B56148;
+  --color-action-secondary: #4A7C59;
+  --color-action-secondary-hover: #386145;
+  --color-action-disabled: #E4ECE7;
 
   --color-status-info-surface: #EFF6FF;
   --color-status-info-border: #BFDBFE;
@@ -44,12 +44,12 @@
   --color-status-danger-text: #B91C1C;
 
   --color-focus-ring: var(--color-border-focus);
-  --color-overlay-backdrop: rgba(28, 25, 23, 0.62);
+  --color-overlay-backdrop: rgba(22, 34, 27, 0.62);
 
-  --shadow-small: 0 4px 14px rgba(216, 74, 120, 0.06);
-  --shadow-panel: 0 14px 36px rgba(42, 23, 32, 0.07);
-  --shadow-elevated: 0 18px 40px rgba(42, 23, 32, 0.11);
-  --shadow-focus: 0 0 0 3px rgba(216, 74, 120, 0.22);
+  --shadow-small: 0 4px 14px rgba(208, 122, 96, 0.08);
+  --shadow-panel: 0 14px 36px rgba(22, 34, 27, 0.06);
+  --shadow-elevated: 0 18px 40px rgba(22, 34, 27, 0.10);
+  --shadow-focus: 0 0 0 3px rgba(208, 122, 96, 0.22);
   --shadow-success-pulse-start: 0 0 0 0 rgba(4, 120, 87, 0.22);
   --shadow-success-pulse-end: 0 0 0 8px rgba(4, 120, 87, 0);
 
@@ -744,24 +744,24 @@ img {
   --logo-hover: #FFE6D2;
   --white: #ffffff;
 
-  --mb-accent: #cf5178;
-  --mb-accent-dark: #a93659;
-  --mb-luxury-bg: #fff9fb;
-  --mb-highlight: #ddd2ff;
-  --mb-icon: #3b3135;
-  --mb-icon-deep: #241d20;
-  --mb-icon-accent-soft: #f5ccd8;
-  --mb-text: #2a2225;
-  --mb-border: #eadde1;
+  --mb-accent: #D07A60;
+  --mb-accent-dark: #B56148;
+  --mb-luxury-bg: #FAF9F6;
+  --mb-highlight: #E4EFE8;
+  --mb-icon: #2D3A32;
+  --mb-icon-deep: #18241D;
+  --mb-icon-accent-soft: #D5E5DC;
+  --mb-text: #181C1A;
+  --mb-border: #D9E2DC;
   --cell: 108px;
   --rail-h: 104px;
   --item-h: 94px;
   --indicator-h: 4px;
   --active-bg-w: 76px;
   --active-bg-offset: 16px;
-  --mb-rose-soft: #f7d3de;
-  --mb-rose-wash: #fff5f7;
-  --mb-ink-soft: #6d5b61;
+  --mb-rose-soft: #E8EFEA;
+  --mb-rose-wash: #F2F7F4;
+  --mb-ink-soft: #5E6D64;
 }
 
 .site-header {
@@ -769,9 +769,9 @@ img {
   top: 0;
   z-index: 100;
   color: var(--white);
-  background: linear-gradient(135deg, #151012 0%, #251a1e 55%, #171113 100%) !important;
+  background: linear-gradient(135deg, #121915 0%, #1c2720 55%, #141d17 100%) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 10px 30px rgba(45, 20, 28, 0.18);
+  box-shadow: 0 10px 30px rgba(18, 25, 21, 0.18);
 }
 
 .header-container,
@@ -808,15 +808,15 @@ img {
   place-items: center;
   border-radius: 12px;
   color: #fff !important;
-  background: linear-gradient(135deg, #cf5178, #e88aa5) !important;
-  box-shadow: 0 8px 20px rgba(207, 81, 120, 0.35);
+  background: linear-gradient(135deg, #D07A60, #4A7C59) !important;
+  box-shadow: 0 8px 20px rgba(208, 122, 96, 0.35);
   transition: 0.25s ease;
 }
 
 .brand:hover .brand-icon {
   transform: scale(1.05);
   color: var(--white);
-  background: linear-gradient(135deg, #e88aa5, #cf5178) !important;
+  background: linear-gradient(135deg, #4A7C59, #D07A60) !important;
 }
 
 .brand-copy {
@@ -835,7 +835,7 @@ img {
 .brand-tag {
   display: block;
   margin-top: 2px;
-  color: #e88aa5 !important;
+  color: #D07A60 !important;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -1376,7 +1376,7 @@ img {
 .mb-category.active .mb-cat-label,
 .mb-category:hover .mb-cat-label {
   font-weight: 700;
-  color: #a93659 !important;
+  color: #D07A60 !important;
 }
 
 /* One moving active background */
@@ -1388,7 +1388,7 @@ img {
   width: var(--active-bg-w);
   height: 80px;
   border-radius: 10px;
-  background: linear-gradient(180deg, #fde4eb 0%, rgba(253, 228, 235, 0.50) 55%, transparent 100%) !important;
+  background: linear-gradient(180deg, #eaf3ee 0%, rgba(234, 243, 238, 0.50) 55%, transparent 100%) !important;
   transform: translateX(var(--active-bg-offset));
   opacity: 1;
   pointer-events: none;
@@ -1403,8 +1403,8 @@ img {
   bottom: 0;
   width: var(--cell);
   height: var(--indicator-h);
-  background: linear-gradient(90deg, #a93659, #cf5178, #e88aa5) !important;
-  box-shadow: 0 -2px 10px rgba(207, 81, 120, 0.30);
+  background: linear-gradient(90deg, #D07A60, #4A7C59, #88B296) !important;
+  box-shadow: 0 -2px 10px rgba(208, 122, 96, 0.30);
   border-radius: 4px 4px 0 0;
   transform: translateX(0);
   pointer-events: none;
@@ -1420,7 +1420,7 @@ img {
 .mb-category:hover .mb-icon-accent-stroke,
 .mb-category.active .mb-icon-accent-stroke { stroke: var(--mb-accent-dark); }
 .mb-category:hover .mb-icon-accent-soft,
-.mb-category.active .mb-icon-accent-soft { fill: #f2bdcc; }
+.mb-category.active .mb-icon-accent-soft { fill: #D5E5DC; }
 
 /* Responsive adjustments */
 @media (max-width: 1023px) {
