@@ -256,7 +256,7 @@ function BkashPaymentContent() {
 
   return (
     <div className="min-h-screen bg-minsah-light">
-      <header className="bg-gradient-to-r from-pink-600 to-pink-700 text-white sticky top-0 z-50 shadow-md">
+      <header className="bg-gradient-to-r from-minsah-action-primary to-minsah-action-primary-hover text-white sticky top-0 z-50 shadow-md">
         <div className="px-4 py-4 flex items-center justify-between">
           <Link
             href="/checkout"
@@ -281,16 +281,16 @@ function BkashPaymentContent() {
         </div>
 
         <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl p-6 shadow-sm mb-6 border-2 border-pink-200">
-          <p className="text-sm text-pink-700 mb-1">Amount to Pay</p>
+          <p className="text-sm text-minsah-action-primary mb-1">Amount to Pay</p>
           {displayOrderNumber && (
-            <p className="text-xs text-pink-700 mb-2">
+            <p className="text-xs text-minsah-action-primary mb-2">
               Order #{displayOrderNumber}
             </p>
           )}
-          <p className="text-4xl font-bold text-pink-600">
+          <p className="text-4xl font-bold text-minsah-action-primary">
             {summaryLoading ? "Loading..." : displayAmount}
           </p>
-          <p className="mt-2 text-xs text-pink-700">
+          <p className="mt-2 text-xs text-minsah-action-primary">
             Amount is loaded from the server order, not from cart data.
           </p>
         </div>
@@ -310,7 +310,7 @@ function BkashPaymentContent() {
               </span>
             </div>
             {paymentExpiresAtLabel && (
-              <p className="mt-3 text-xs text-pink-700">
+              <p className="mt-3 text-xs text-minsah-action-primary">
                 Payment window expires: {paymentExpiresAtLabel}
               </p>
             )}
@@ -349,7 +349,7 @@ function BkashPaymentContent() {
               leading={<span className="text-minsah-secondary">+88</span>}
               error={phoneValidationMessage || undefined}
               description={!phoneValidationMessage ? "Enter your 11-digit bKash mobile number" : undefined}
-              className="rounded-xl border-2 border-minsah-accent py-4 text-lg font-semibold focus:border-transparent focus:ring-2 focus:ring-pink-500"
+              className="rounded-xl border-2 border-minsah-accent py-4 text-lg font-semibold focus:border-transparent focus:ring-2 focus:ring-minsah-focus"
             />
 
             {error && (
@@ -363,25 +363,25 @@ function BkashPaymentContent() {
             <h3 className="font-bold text-minsah-dark mb-3">Payment Steps:</h3>
             <ol className="space-y-3 text-sm text-minsah-secondary">
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center font-bold text-xs">
+                <span className="flex-shrink-0 w-6 h-6 bg-minsah-surface-accent text-minsah-action-primary rounded-full flex items-center justify-center font-bold text-xs">
                   1
                 </span>
                 <span>Checkout already created a valid order first</span>
               </li>
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center font-bold text-xs">
+                <span className="flex-shrink-0 w-6 h-6 bg-minsah-surface-accent text-minsah-action-primary rounded-full flex items-center justify-center font-bold text-xs">
                   2
                 </span>
                 <span>Enter your bKash mobile number above</span>
               </li>
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center font-bold text-xs">
+                <span className="flex-shrink-0 w-6 h-6 bg-minsah-surface-accent text-minsah-action-primary rounded-full flex items-center justify-center font-bold text-xs">
                   3
                 </span>
                 <span>Click "Proceed to Pay" button</span>
               </li>
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center font-bold text-xs">
+                <span className="flex-shrink-0 w-6 h-6 bg-minsah-surface-accent text-minsah-action-primary rounded-full flex items-center justify-center font-bold text-xs">
                   4
                 </span>
                 <span>Enter your bKash PIN to complete payment</span>
@@ -397,7 +397,7 @@ function BkashPaymentContent() {
             className={
               isProcessing || !canSubmit
                 ? "bg-gray-300 py-4 text-lg text-gray-500 shadow-lg"
-                : "bg-gradient-to-r from-pink-600 to-pink-700 py-4 text-lg shadow-lg hover:from-pink-700 hover:to-pink-800"
+                : "bg-gradient-to-r from-minsah-action-primary to-minsah-action-primary-hover py-4 text-lg shadow-lg hover:from-minsah-action-primary-hover hover:to-minsah-action-primary"
             }
           >
             {isProcessing ? (

@@ -77,7 +77,7 @@ export default function ProductCard({ product, onQuickView, index, listName = 'S
       ? { key: 'trending', label: 'Trending', className: 'bg-orange-500 text-white' }
       : null,
     product.isExclusive
-      ? { key: 'exclusive', label: 'Exclusive', className: 'bg-purple-600 text-white' }
+      ? { key: 'exclusive', label: 'Exclusive', className: 'bg-minsah-action-primary text-white' }
       : null,
   ].filter(Boolean).slice(0, 2) as { key: string; label: string; className: string }[];
 
@@ -93,7 +93,7 @@ export default function ProductCard({ product, onQuickView, index, listName = 'S
     product.isCODAvailable ? { key: 'cod', label: 'COD', className: 'bg-blue-50 text-blue-700' } : null,
     product.returnEligible ? { key: 'return', label: 'Return', className: 'bg-green-50 text-green-700' } : null,
     product.freeShippingEligible
-      ? { key: 'free-delivery', label: product.deliveryBadge || 'Free Delivery', className: 'bg-purple-50 text-purple-700' }
+      ? { key: 'free-delivery', label: product.deliveryBadge || 'Free Delivery', className: 'bg-emerald-50 text-emerald-800' }
       : product.deliveryBadge
         ? { key: 'delivery-offer', label: product.deliveryBadge, className: 'bg-green-50 text-green-700' }
         : null,

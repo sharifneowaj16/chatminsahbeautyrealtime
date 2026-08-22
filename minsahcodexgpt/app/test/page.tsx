@@ -32,11 +32,11 @@ export default async function TestPage() {
           <h3 className="font-bold">Brands</h3>
           <p className="text-2xl">{stats.totalBrands}</p>
         </div>
-        <div className="bg-purple-100 p-4 rounded">
+        <div className="bg-minsah-surface-accent p-4 rounded">
           <h3 className="font-bold">Categories</h3>
           <p className="text-2xl">{stats.totalCategories}</p>
         </div>
-        <div className="bg-pink-100 p-4 rounded">
+        <div className="bg-minsah-surface-accent p-4 rounded">
           <h3 className="font-bold">Customers</h3>
           <p className="text-2xl">{stats.totalCustomers}</p>
         </div>

@@ -131,7 +131,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
           <p className="text-gray-600 mb-6">The order you're looking for doesn't exist.</p>
           <Link
             href="/account/orders"
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            className="inline-flex items-center px-4 py-2 bg-minsah-action-primary text-white rounded-lg hover:bg-minsah-action-primary-hover transition"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Orders
@@ -155,7 +155,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
       case 'ordered':
         return <div className={`${baseClasses} bg-blue-500`}><Package className="w-3 h-3 text-white" aria-hidden="true" /></div>;
       case 'shipped':
-        return <div className={`${baseClasses} bg-purple-500`}><Truck className="w-3 h-3 text-white" /></div>;
+        return <div className={`${baseClasses} bg-minsah-surface-subtle0`}><Truck className="w-3 h-3 text-white" /></div>;
       default:
         return <div className={`${baseClasses} bg-gray-300`}><Clock className="w-3 h-3 text-white" /></div>;
     }
@@ -225,7 +225,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-gray-600">Order {order.orderNumber}</p>
             {printMode && (
-              <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
+              <span className="rounded-full bg-minsah-surface-accent px-3 py-1 text-xs font-medium text-minsah-action-primary">
                 Invoice Print View
               </span>
             )}
@@ -320,7 +320,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                       <ProductImage src={item.productImage} name={item.productName} />
                     </div>
                     <div className="flex-1">
-                      <Link href={productPath({ id: item.productId, slug: item.productSlug })} className="font-medium text-gray-900 hover:text-purple-600">
+                      <Link href={productPath({ id: item.productId, slug: item.productSlug })} className="font-medium text-gray-900 hover:text-minsah-action-primary">
                         {item.productName}
                       </Link>
                       <p className="text-sm text-gray-600">SKU: {item.sku}</p>
@@ -369,7 +369,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                 <div className="border-t pt-4">
                   <div className="flex justify-between">
                     <span className="text-lg font-bold text-gray-900">Total</span>
-                    <span className="text-lg font-bold text-purple-600">{formatPrice(order.total)}</span>
+                    <span className="text-lg font-bold text-minsah-action-primary">{formatPrice(order.total)}</span>
                   </div>
                 </div>
               </div>
@@ -464,7 +464,7 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                   type="button"
                   variant="primary"
                   fullWidth
-                  className="border border-purple-600 bg-purple-600 hover:bg-purple-700"
+                  className="border border-minsah-action-primary bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
                 >
                   <Mail className="w-4 h-4" aria-hidden="true" />
                   Contact Support

@@ -118,7 +118,7 @@ export function ReviewFormClient({
             <ProductImage src={product.image} alt={product.name} />
           </div>
           <div>
-            <p className="text-sm font-medium text-purple-600">
+            <p className="text-sm font-medium text-minsah-action-primary">
               {mode === 'edit' ? 'Updating your review for' : 'Reviewing'}
             </p>
             <h2 className="text-xl font-semibold text-gray-900">{product.name}</h2>
@@ -166,7 +166,7 @@ export function ReviewFormClient({
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Summarize your experience"
             label="Review Title"
-            className="focus:ring-purple-500"
+            className="focus:ring-minsah-focus"
           />
 
           <Textarea
@@ -176,7 +176,7 @@ export function ReviewFormClient({
             onChange={(event) => setComment(event.target.value)}
             placeholder="What did you like? How was the quality, packaging, or result?"
             label="Your Review"
-            className="focus:ring-purple-500"
+            className="focus:ring-minsah-focus"
           />
 
           <div className="flex flex-wrap items-center gap-3">
@@ -184,7 +184,7 @@ export function ReviewFormClient({
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="bg-purple-600 px-6 py-3 hover:bg-purple-700"
+              className="bg-minsah-action-primary px-6 py-3 hover:bg-minsah-action-primary-hover"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {mode === 'edit' ? 'Update Review' : 'Submit Review'}

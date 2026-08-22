@@ -309,7 +309,7 @@ export default function TagManagerCard({
 
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <BarChart className="h-5 w-5 text-purple-600" />
+                  <BarChart className="h-5 w-5 text-minsah-action-primary" />
                   <span className="text-sm text-gray-600">Tags Fired</span>
                 </div>
                 <div className="text-2xl font-bold text-gray-900">

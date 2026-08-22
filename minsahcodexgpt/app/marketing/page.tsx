@@ -170,8 +170,8 @@ export default function MarketingPage() {
                   <p className="text-sm font-medium text-gray-900">Admin User</p>
                   <p className="text-xs text-gray-600">admin@minsahbeauty.com</p>
                 </div>
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                  <span className="text-pink-600 font-medium text-sm">A</span>
+                <div className="w-8 h-8 bg-minsah-surface-accent rounded-full flex items-center justify-center">
+                  <span className="text-minsah-action-primary font-medium text-sm">A</span>
                 </div>
               </div>
             </div>

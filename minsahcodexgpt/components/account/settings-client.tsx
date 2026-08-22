@@ -270,7 +270,7 @@ export function SettingsClient() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`rounded-none border-b-2 px-6 py-3 ${
                     activeTab === tab.id
-                      ? 'border-purple-500 text-purple-600'
+                      ? 'border-minsah-action-primary text-minsah-action-primary'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
@@ -301,7 +301,7 @@ export function SettingsClient() {
                     size="icon"
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={savingSection === 'avatar'}
-                    className="absolute bottom-0 right-0 h-auto min-h-0 w-auto min-w-0 rounded-full bg-purple-600 p-2 hover:bg-purple-700"
+                    className="absolute bottom-0 right-0 h-auto min-h-0 w-auto min-w-0 rounded-full bg-minsah-action-primary p-2 hover:bg-minsah-action-primary-hover"
                     aria-label="Upload a new profile photo"
                   >
                     <Camera className="w-4 h-4" aria-hidden="true" />
@@ -345,14 +345,14 @@ export function SettingsClient() {
                     value={profileData.firstName}
                     onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
                     label="First Name"
-                    className="focus:ring-purple-500"
+                    className="focus:ring-minsah-focus"
                   />
                   <Input
                     type="text"
                     value={profileData.lastName}
                     onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
                     label="Last Name"
-                    className="focus:ring-purple-500"
+                    className="focus:ring-minsah-focus"
                   />
                 </div>
 
@@ -374,7 +374,7 @@ export function SettingsClient() {
                     onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
                     label="Phone Number"
                     trailing={<Phone className="w-5 h-5" aria-hidden="true" />}
-                    className="focus:ring-purple-500"
+                    className="focus:ring-minsah-focus"
                   />
                 </div>
 
@@ -384,14 +384,14 @@ export function SettingsClient() {
                     value={profileData.dateOfBirth}
                     onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                     label="Date of Birth"
-                    className="focus:ring-purple-500"
+                    className="focus:ring-minsah-focus"
                   />
                   <Select
                     value={profileData.gender}
                     onChange={(e) => setProfileData(prev => ({ ...prev, gender: e.target.value as any }))}
                     label="Gender"
                     placeholder="Select Gender"
-                    className="focus:ring-purple-500"
+                    className="focus:ring-minsah-focus"
                   >
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -404,7 +404,7 @@ export function SettingsClient() {
                     type="submit"
                     variant="primary"
                     disabled={savingSection === 'profile'}
-                    className="bg-purple-600 px-6 py-2 hover:bg-purple-700"
+                    className="bg-minsah-action-primary px-6 py-2 hover:bg-minsah-action-primary-hover"
                   >
                     {savingSection === 'profile' ? 'Saving...' : 'Save Changes'}
                   </Button>
@@ -462,7 +462,7 @@ export function SettingsClient() {
                     type="submit"
                     variant="primary"
                     disabled={savingSection === 'preferences'}
-                    className="bg-purple-600 px-6 py-2 hover:bg-purple-700"
+                    className="bg-minsah-action-primary px-6 py-2 hover:bg-minsah-action-primary-hover"
                   >
                     {savingSection === 'preferences' ? 'Saving...' : 'Save Preferences'}
                   </Button>
@@ -504,7 +504,7 @@ export function SettingsClient() {
                         onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                         required
                         label="Current Password"
-                        className="focus:ring-purple-500"
+                        className="focus:ring-minsah-focus"
                         trailing={
                           <Button
                             type="button"
@@ -530,7 +530,7 @@ export function SettingsClient() {
                         required
                         minLength={8}
                         label="New Password"
-                        className="focus:ring-purple-500"
+                        className="focus:ring-minsah-focus"
                         trailing={
                           <Button
                             type="button"
@@ -556,7 +556,7 @@ export function SettingsClient() {
                         required
                         minLength={8}
                         label="Confirm New Password"
-                        className="focus:ring-purple-500"
+                        className="focus:ring-minsah-focus"
                         trailing={
                           <Button
                             type="button"
@@ -594,7 +594,7 @@ export function SettingsClient() {
                           type="submit"
                           variant="primary"
                           disabled={savingSection === 'password'}
-                          className="bg-purple-600 hover:bg-purple-700"
+                          className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
                         >
                           {savingSection === 'password' ? 'Updating...' : 'Update Password'}
                         </Button>

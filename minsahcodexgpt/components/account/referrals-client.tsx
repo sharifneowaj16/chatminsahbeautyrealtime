@@ -101,7 +101,7 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-sm p-5">
           <div className="flex items-center space-x-3">
-            <Users className="w-7 h-7 text-purple-600" />
+            <Users className="w-7 h-7 text-minsah-action-primary" />
             <div>
               <p className="text-xs text-gray-500">Total Referrals</p>
               <p className="text-2xl font-bold">{referralData.totalReferrals}</p>
@@ -141,15 +141,15 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-semibold mb-6">Share Your Referral Code</h2>
 
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
+        <div className="bg-gradient-to-r from-minsah-surface-subtle to-minsah-surface-soft rounded-lg p-6 mb-6">
           <p className="text-sm text-gray-600 mb-2">Your referral code</p>
           <div className="flex items-center justify-between">
-            <p className="text-3xl font-bold text-purple-600">{referralData.referralCode}</p>
+            <p className="text-3xl font-bold text-minsah-action-primary">{referralData.referralCode}</p>
             <Button
               type="button"
               variant="primary"
               onClick={handleCopyCode}
-              className="bg-purple-600 text-sm hover:bg-purple-700"
+              className="bg-minsah-action-primary text-sm hover:bg-minsah-action-primary-hover"
             >
               {copied ? <CheckCircle className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
               {copied ? 'Copied!' : 'Copy Code'}
@@ -166,10 +166,10 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
               type="button"
               variant="secondary"
               onClick={() => handleShare(option.action)}
-              className="flex-col p-4 hover:border-purple-300 hover:bg-purple-50"
+              className="flex-col p-4 hover:border-minsah-border-strong hover:bg-minsah-surface-subtle"
             >
               {/* ✅ icon string → component */}
-              <DynamicIcon name={option.icon} className="w-6 h-6 mb-2 text-purple-600" />
+              <DynamicIcon name={option.icon} className="w-6 h-6 mb-2 text-minsah-action-primary" />
               <span className="text-sm text-gray-700">{option.name}</span>
             </Button>
           ))}
@@ -194,7 +194,7 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
                   {referral.status.replace('_', ' ')}
                 </span>
                 {referral.rewardPoints > 0 && (
-                  <p className="text-sm font-semibold text-purple-600">+{formatPoints(referral.rewardPoints)} pts</p>
+                  <p className="text-sm font-semibold text-minsah-action-primary">+{formatPoints(referral.rewardPoints)} pts</p>
                 )}
               </div>
             </div>
@@ -217,7 +217,7 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
               type="button"
               variant="primary"
               onClick={() => setShowEmailModal(false)}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
             >
               Send Email
             </Button>
@@ -232,7 +232,7 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
               type="button"
               variant={selectedTemplate.id === tmpl.id ? 'primary' : 'secondary'}
               onClick={() => setSelectedTemplate(tmpl)}
-              className={`rounded-full px-3 py-1 text-sm ${selectedTemplate.id === tmpl.id ? 'bg-purple-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+              className={`rounded-full px-3 py-1 text-sm ${selectedTemplate.id === tmpl.id ? 'bg-minsah-action-primary' : 'bg-gray-100 hover:bg-gray-200'}`}
             >
               {tmpl.name}
             </Button>
@@ -247,7 +247,7 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
           label="Recipient email"
           hideLabel
           containerClassName="mb-4"
-          className="focus:ring-purple-500"
+          className="focus:ring-minsah-focus"
         />
 
         <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto">

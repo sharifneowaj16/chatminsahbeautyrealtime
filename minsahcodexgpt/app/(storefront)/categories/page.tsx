@@ -57,7 +57,7 @@ export default async function CategoriesPage() {
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">{category.name}</h2>
                   {category.description && <p className="text-sm text-gray-600 mb-3 line-clamp-2">{category.description}</p>}
-                  <p className="text-gray-600 group-hover:text-pink-600 transition flex items-center">
+                  <p className="text-gray-600 group-hover:text-minsah-action-primary transition flex items-center">
                     {_countLabel(category._count.products)} <ArrowRight className="w-4 h-4 ml-2" />
                   </p>
                 </Link>

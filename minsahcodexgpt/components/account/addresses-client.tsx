@@ -229,7 +229,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                 type="button"
                 variant="primary"
                 onClick={() => setShowAddForm(true)}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
                 Add Address
@@ -389,7 +389,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                   type="submit"
                   variant="primary"
                   disabled={saving}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
                 >
                   {saving ? 'Saving...' : editingAddress ? 'Update Address' : 'Add Address'}
                 </Button>
@@ -417,7 +417,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                           {address.firstName} {address.lastName}
                         </h3>
                         {address.isDefault && (
-                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-purple-800">
                             <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
                             Default
                           </span>
@@ -441,7 +441,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleSetDefault(address.id, 'shipping')}
-                          className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                          className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
                           aria-label={`Set ${address.firstName} ${address.lastName}'s shipping address as default`}
                         >
                           <Star className="w-5 h-5" aria-hidden="true" />
@@ -452,7 +452,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(address)}
-                        className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                        className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
                         aria-label={`Edit ${address.firstName} ${address.lastName}'s shipping address`}
                       >
                         <Edit className="w-5 h-5" aria-hidden="true" />
@@ -491,7 +491,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                           {address.firstName} {address.lastName}
                         </h3>
                         {address.isDefault && (
-                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-purple-800">
                             <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
                             Default
                           </span>
@@ -515,7 +515,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleSetDefault(address.id, 'billing')}
-                          className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                          className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
                           aria-label={`Set ${address.firstName} ${address.lastName}'s billing address as default`}
                         >
                           <Star className="w-5 h-5" aria-hidden="true" />
@@ -526,7 +526,7 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(address)}
-                        className="text-gray-600 hover:bg-purple-50 hover:text-purple-600"
+                        className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
                         aria-label={`Edit ${address.firstName} ${address.lastName}'s billing address`}
                       >
                         <Edit className="w-5 h-5" aria-hidden="true" />

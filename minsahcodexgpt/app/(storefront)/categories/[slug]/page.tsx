@@ -86,8 +86,8 @@ export default async function CategorySlugPage({ params }: PageProps) {
       <div className="flex-grow py-12">
         <div className="container mx-auto px-4">
           <nav className="mb-6 text-sm text-gray-500">
-            <Link href="/" className="hover:text-pink-600">Home</Link> <span>/</span>{' '}
-            <Link href="/categories" className="hover:text-pink-600">Categories</Link> <span>/</span>{' '}
+            <Link href="/" className="hover:text-minsah-action-primary">Home</Link> <span>/</span>{' '}
+            <Link href="/categories" className="hover:text-minsah-action-primary">Categories</Link> <span>/</span>{' '}
             <span className="text-gray-900">{category.name}</span>
           </nav>
 
@@ -99,7 +99,7 @@ export default async function CategorySlugPage({ params }: PageProps) {
             {category.children.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">
                 {category.children.map((child) => (
-                  <Link key={child.id} href={`/shop?category=${encodeURIComponent(category.slug)}&subcategory=${encodeURIComponent(child.slug)}`} className="rounded-full bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:text-pink-600">
+                  <Link key={child.id} href={`/shop?category=${encodeURIComponent(category.slug)}&subcategory=${encodeURIComponent(child.slug)}`} className="rounded-full bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:text-minsah-action-primary">
                     {child.name}
                   </Link>
                 ))}

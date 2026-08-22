@@ -34,8 +34,8 @@ function groupLabel(type: ApiSuggestion['type']): string {
 function SuggestionImage({ src, alt }: { src?: string; alt: string }) {
   if (!src) {
     return (
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-pink-50">
-        <Package size={14} className="text-gray-400" />
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-minsah-surface-subtle">
+        <Package size={14} className="text-minsah-text-muted" />
       </div>
     );
   }
@@ -255,17 +255,17 @@ export default function ShopSearchBar() {
                     type="button"
                     variant="ghost"
                     onClick={() => activateSuggestion(s, globalIndex)}
-                    className={`w-full justify-start gap-3 rounded-none border-b border-gray-50 px-4 py-3 text-left last:border-0 hover:bg-pink-50 ${
-                      globalIndex === activeIndex ? 'bg-pink-50' : ''
+                    className={`w-full justify-start gap-3 rounded-none border-b border-gray-50 px-4 py-3 text-left last:border-0 hover:bg-minsah-surface-subtle ${
+                      globalIndex === activeIndex ? 'bg-minsah-surface-subtle' : ''
                     }`}
                   >
                     {s.type === 'trending' ? (
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-orange-50">
-                        <TrendingUp size={14} className="text-orange-400" aria-hidden="true" />
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-minsah-surface-accent">
+                        <TrendingUp size={14} className="text-minsah-action-primary" aria-hidden="true" />
                       </div>
                     ) : s.type === 'completion' ? (
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-purple-50">
-                        <Sparkles size={14} className="text-purple-500" aria-hidden="true" />
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-minsah-surface-accent">
+                        <Sparkles size={14} className="text-minsah-action-primary" aria-hidden="true" />
                       </div>
                     ) : (
                       <SuggestionImage src={s.image} alt={s.productName || s.text} />
@@ -277,7 +277,7 @@ export default function ShopSearchBar() {
                       )}
                     </div>
                     {s.type === 'trending' && (
-                      <span className="flex-shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs text-orange-500">🔥</span>
+                      <span className="flex-shrink-0 rounded-full bg-minsah-surface-accent px-2 py-0.5 text-xs text-minsah-action-primary">🔥</span>
                     )}
                   </Button>
                 );
@@ -291,8 +291,8 @@ export default function ShopSearchBar() {
             role="option"
             aria-selected={activeIndex === suggestions.length}
             onClick={() => executeSearch(inputValue, 'shop_search_final_option')}
-            className={`w-full justify-start rounded-none border-t border-gray-100 px-4 py-3 text-left text-sm text-minsah-primary hover:bg-pink-50 ${
-              activeIndex === suggestions.length ? 'bg-pink-50' : ''
+            className={`w-full justify-start rounded-none border-t border-gray-100 px-4 py-3 text-left text-sm text-minsah-action-primary hover:bg-minsah-surface-subtle ${
+              activeIndex === suggestions.length ? 'bg-minsah-surface-subtle' : ''
             }`}
           >
             Search &ldquo;{inputValue}&rdquo; in shop →

@@ -11,9 +11,9 @@ export interface HomeCategory {
 }
 
 const CATEGORY_COLORS = [
-  'bg-pink-100',
+  'bg-minsah-surface-accent',
   'bg-blue-100',
-  'bg-purple-100',
+  'bg-minsah-surface-accent',
   'bg-yellow-100',
   'bg-green-100',
   'bg-orange-100',

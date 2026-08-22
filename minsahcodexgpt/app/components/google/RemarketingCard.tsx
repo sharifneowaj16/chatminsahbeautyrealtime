@@ -226,7 +226,7 @@ export default function RemarketingCard({
 
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <MousePointer2 className="h-4 w-4 text-purple-600" />
+              <MousePointer2 className="h-4 w-4 text-minsah-action-primary" />
               <span className="text-xs text-gray-600">Clicks</span>
             </div>
             <div className="text-lg font-bold text-gray-900">
@@ -348,11 +348,11 @@ export default function RemarketingCard({
                   <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       activity.type === 'campaign' ? 'bg-blue-100' :
-                      activity.type === 'audience' ? 'bg-green-100' : 'bg-purple-100'
+                      activity.type === 'audience' ? 'bg-green-100' : 'bg-minsah-surface-accent'
                     }`}>
                       {activity.type === 'campaign' && <RefreshCw className="h-4 w-4 text-blue-600" />}
                       {activity.type === 'audience' && <Users className="h-4 w-4 text-green-600" />}
-                      {activity.type === 'conversion' && <ShoppingCart className="h-4 w-4 text-purple-600" />}
+                      {activity.type === 'conversion' && <ShoppingCart className="h-4 w-4 text-minsah-action-primary" />}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{activity.description}</p>

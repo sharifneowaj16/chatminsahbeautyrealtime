@@ -96,7 +96,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'shipped': return <Truck className="w-5 h-5 text-blue-500" />;
       case 'processing': return <Clock className="w-5 h-5 text-yellow-500" />;
       case 'cancelled': return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'refunded': return <XCircle className="w-5 h-5 text-purple-500" />;
+      case 'refunded': return <XCircle className="w-5 h-5 text-minsah-action-primary" />;
       default: return <Clock className="w-5 h-5 text-yellow-500" />;
     }
   };
@@ -108,7 +108,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'processing': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       case 'confirmed': return 'bg-indigo-100 text-indigo-800';
-      case 'refunded': return 'bg-purple-100 text-purple-800';
+      case 'refunded': return 'bg-minsah-surface-accent text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -122,7 +122,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'processing':
         return 'bg-yellow-100 text-yellow-800';
       case 'failed': return 'bg-red-100 text-red-800';
-      case 'refunded': return 'bg-purple-100 text-purple-800';
+      case 'refunded': return 'bg-minsah-surface-accent text-purple-800';
       case 'cancelled': return 'bg-gray-200 text-gray-700';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -219,7 +219,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           hideLabel
           leading={<Search className="w-4 h-4" aria-hidden="true" />}
           containerClassName="flex-1"
-          className="focus:ring-purple-500"
+          className="focus:ring-minsah-focus"
         />
         <Select
           value={statusFilter}
@@ -227,7 +227,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           label="Filter by status"
           hideLabel
           containerClassName="sm:w-56"
-          className="focus:ring-purple-500"
+          className="focus:ring-minsah-focus"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -252,7 +252,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           </p>
           <Link
             href="/shop"
-            className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="inline-flex items-center px-6 py-3 bg-minsah-action-primary text-white rounded-lg hover:bg-minsah-action-primary-hover"
           >
             Start Shopping
           </Link>
@@ -312,7 +312,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                 <div className="space-y-3">
                   {order.items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4">
-                      <div className="w-14 h-14 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <div className="w-14 h-14 bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                         <ProductImage src={item.productImage} name={item.productName} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -324,7 +324,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                         {order.canReview && (
                           <Link
                             href={`/account/reviews/write?productId=${item.productId}&orderId=${order.id}`}
-                            className="inline-flex items-center text-xs text-purple-600 hover:text-purple-500 mt-1"
+                            className="inline-flex items-center text-xs text-minsah-action-primary hover:text-minsah-action-primary mt-1"
                           >
                             <Star className="w-3 h-3 mr-1" />
                             Review
@@ -366,7 +366,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                         ? 'bg-gray-200 text-gray-500'
                         : reorderedOrderIds.includes(order.id)
                           ? 'bg-green-100 text-green-700'
-                          : 'bg-purple-600 hover:bg-purple-700'
+                          : 'bg-minsah-action-primary hover:bg-minsah-action-primary-hover'
                     }
                   >
                     <ShoppingBag className="w-4 h-4" aria-hidden="true" />

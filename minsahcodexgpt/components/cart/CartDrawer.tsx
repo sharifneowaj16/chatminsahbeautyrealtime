@@ -268,7 +268,7 @@ export default function CartDrawer() {
           description="Add a product to see your cart preview, subtotal, and checkout action here."
           icon={<ShoppingBag className="h-7 w-7" />}
           action={
-            <Button type="button" onClick={closeDrawer} className="rounded-2xl bg-[#cf5178] hover:bg-[#a93659] text-white font-semibold px-6">
+            <Button type="button" onClick={closeDrawer} className="rounded-2xl bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-semibold px-6">
               Continue shopping
             </Button>
           }

@@ -100,8 +100,8 @@ export default function QuickActions({
           </Button>
 
           <Button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <BookOpen className="h-5 w-5 text-purple-600" />
+            <div className="p-2 bg-minsah-surface-accent rounded-lg">
+              <BookOpen className="h-5 w-5 text-minsah-action-primary" />
             </div>
             <div className="text-left">
               <p className="font-medium text-gray-900">Reports</p>

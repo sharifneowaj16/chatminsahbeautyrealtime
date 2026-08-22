@@ -48,7 +48,7 @@ export default function BlogPage() {
                   <p className="text-sm text-gray-500 mb-2">{post.date}</p>
                   <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
                   <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                  <Link href="/shop" className="text-pink-600 font-semibold hover:underline inline-flex items-center gap-1">
+                  <Link href="/shop" className="text-minsah-action-primary font-semibold hover:underline inline-flex items-center gap-1">
                     Read more
                     <ArrowRight className="w-4 h-4" />
                   </Link>

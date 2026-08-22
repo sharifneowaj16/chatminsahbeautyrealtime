@@ -322,11 +322,11 @@ export default function AnalyticsDashboard({ className = '' }: AnalyticsDashboar
 
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <ShoppingCart className="h-5 w-5 text-purple-600" />
+                    <ShoppingCart className="h-5 w-5 text-minsah-action-primary" />
                     <span className="text-sm text-gray-600">Conversions</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{data.conversions}</p>
-                  <p className="text-sm text-purple-600">CR: {data.conversionRate.toFixed(1)}%</p>
+                  <p className="text-sm text-minsah-action-primary">CR: {data.conversionRate.toFixed(1)}%</p>
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-4">

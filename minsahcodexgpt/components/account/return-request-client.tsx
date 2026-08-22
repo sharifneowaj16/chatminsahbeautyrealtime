@@ -426,7 +426,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
 
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
-            <RotateCcw className="h-5 w-5 text-purple-600" />
+            <RotateCcw className="h-5 w-5 text-minsah-action-primary" />
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Choose items to return</h2>
               <p className="text-sm text-gray-600">Select full or partial quantities from this order.</p>
@@ -451,7 +451,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
                       <ProductImage src={item.productImage} alt={item.productName} />
                     </div>
                     <div className="flex-1">
-                      <Link href={productPath({ id: item.productId, slug: item.productSlug })} className="font-medium text-gray-900 hover:text-purple-600">
+                      <Link href={productPath({ id: item.productId, slug: item.productSlug })} className="font-medium text-gray-900 hover:text-minsah-action-primary">
                         {item.productName}
                       </Link>
                       <p className="text-sm text-gray-600">SKU: {item.sku}</p>
@@ -474,7 +474,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
                             }
                             label="Return Qty"
                             containerClassName="w-24"
-                            className="focus:ring-purple-500"
+                            className="focus:ring-minsah-focus"
                           />
                           <span className="text-sm text-gray-500">
                             Refund: {formatPrice(selectedQuantity * item.price)}
@@ -498,7 +498,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
                 type="button"
                 variant="secondary"
                 onClick={() => setReason(preset)}
-                className={`rounded-full px-3 py-2 text-sm ${reason === preset ? 'border-purple-600 bg-purple-50 text-purple-700' : 'hover:bg-gray-50'}`}
+                className={`rounded-full px-3 py-2 text-sm ${reason === preset ? 'border-minsah-action-primary bg-minsah-surface-subtle text-minsah-action-primary' : 'hover:bg-gray-50'}`}
               >
                 {preset}
               </Button>
@@ -511,7 +511,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
             placeholder="Tell us what went wrong, for example damaged item, wrong product, or quality issue."
             label="Reason for return"
             hideLabel
-            className="focus:ring-purple-500"
+            className="focus:ring-minsah-focus"
           />
 
           <div className="mt-6 rounded-lg border border-dashed border-gray-300 p-4">
@@ -578,7 +578,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="font-medium text-gray-900">Estimated refund</span>
-              <span className="text-lg font-bold text-purple-600">{formatPrice(estimatedRefund)}</span>
+              <span className="text-lg font-bold text-minsah-action-primary">{formatPrice(estimatedRefund)}</span>
             </div>
           </div>
 
@@ -587,7 +587,7 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="bg-purple-600 px-6 py-3 hover:bg-purple-700"
+              className="bg-minsah-action-primary px-6 py-3 hover:bg-minsah-action-primary-hover"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               Submit Return Request

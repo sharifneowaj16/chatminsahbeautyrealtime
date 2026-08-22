@@ -52,12 +52,12 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
     type === 'earned' ? (
       <RefreshCw className="w-5 h-5 text-green-500" />
     ) : (
-      <Gift className="w-5 h-5 text-purple-500" />
+      <Gift className="w-5 h-5 text-minsah-action-primary" />
     );
 
   const tierColorMap: Record<string, string> = {
     gray: 'bg-gray-100 text-gray-600',
-    purple: 'bg-purple-100 text-purple-600',
+    purple: 'bg-minsah-surface-accent text-minsah-action-primary',
     yellow: 'bg-yellow-100 text-yellow-600',
   };
 
@@ -69,7 +69,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
       </div>
 
       {/* Points Overview Card */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-lg p-8 text-white">
+      <div className="bg-gradient-to-r from-minsah-action-primary to-minsah-action-secondary rounded-lg shadow-lg p-8 text-white">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <div className="flex items-center space-x-2 mb-2">
@@ -103,12 +103,12 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
 
         {/* Tier Progress */}
         {nextTier && (
-          <div className="mt-6 pt-6 border-t border-purple-500">
+          <div className="mt-6 pt-6 border-t border-minsah-action-primary">
             <div className="flex justify-between text-sm text-purple-100 mb-2">
               <span>{userTier.name} Tier</span>
               <span>{formatPoints(userLoyalty.lifetimePoints)} / {formatPoints(nextTier.minPoints)} → {nextTier.name}</span>
             </div>
-            <div className="w-full bg-purple-500 rounded-full h-2">
+            <div className="w-full bg-minsah-surface-subtle0 rounded-full h-2">
               <div
                 className="bg-white h-2 rounded-full transition-all"
                 style={{ width: `${Math.min(userLoyalty.tierProgress, 100)}%` }}
@@ -129,7 +129,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
               onClick={() => setActiveTab(tab.id)}
               className={`rounded-none border-b-2 px-1 py-4 ${
                 activeTab === tab.id
-                  ? 'border-purple-600 text-purple-600'
+                  ? 'border-minsah-action-primary text-minsah-action-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -172,12 +172,12 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
                     { action: 'Birthday Bonus', points: '100 pts', icon: 'Trophy' },
                   ].map((item) => (
                     <div key={item.action} className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <div className="p-2 bg-purple-100 rounded-lg">
-                        <DynamicIcon name={item.icon} className="w-5 h-5 text-purple-600" />
+                      <div className="p-2 bg-minsah-surface-accent rounded-lg">
+                        <DynamicIcon name={item.icon} className="w-5 h-5 text-minsah-action-primary" />
                       </div>
                       <div>
                         <p className="font-medium text-gray-900 text-sm">{item.action}</p>
-                        <p className="text-purple-600 text-sm font-semibold">{item.points}</p>
+                        <p className="text-minsah-action-primary text-sm font-semibold">{item.points}</p>
                       </div>
                     </div>
                   ))}
@@ -204,7 +204,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
                         <p className="text-sm text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <div className={`text-lg font-bold ${transaction.type === 'earned' ? 'text-green-600' : 'text-purple-600'}`}>
+                    <div className={`text-lg font-bold ${transaction.type === 'earned' ? 'text-green-600' : 'text-minsah-action-primary'}`}>
                       {transaction.type === 'earned' ? '+' : '-'}{formatPoints(transaction.points)}
                     </div>
                   </div>
@@ -219,16 +219,16 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Available Rewards</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {rewards.map((reward: any) => (
-                  <div key={reward.id} className="border border-gray-200 rounded-lg p-6 hover:border-purple-300 transition">
+                  <div key={reward.id} className="border border-gray-200 rounded-lg p-6 hover:border-minsah-border-strong transition">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="font-medium text-gray-900">{reward.name}</h3>
                         <p className="text-gray-600 text-sm mt-1">{reward.description}</p>
                       </div>
-                      <Ticket className="w-6 h-6 text-purple-600 flex-shrink-0" />
+                      <Ticket className="w-6 h-6 text-minsah-action-primary flex-shrink-0" />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-purple-600">
+                      <span className="text-lg font-bold text-minsah-action-primary">
                         {formatPoints(reward.points)} pts
                       </span>
                       <Button
@@ -238,7 +238,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
                         disabled={reward.points > userLoyalty.currentPoints}
                         className={
                           reward.points <= userLoyalty.currentPoints
-                            ? 'bg-purple-600 hover:bg-purple-700'
+                            ? 'bg-minsah-action-primary hover:bg-minsah-action-primary-hover'
                             : 'bg-gray-200 text-gray-500'
                         }
                       >
@@ -284,11 +284,11 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
                   <div
                     key={tier.name}
                     className={`flex items-center space-x-3 p-3 rounded-lg ${
-                      isActive ? 'bg-purple-50 border border-purple-200' : ''
+                      isActive ? 'bg-minsah-surface-subtle border border-purple-200' : ''
                     }`}
                   >
                     <div className={`p-2 rounded-full ${
-                      isActive ? 'bg-purple-600 text-white'
+                      isActive ? 'bg-minsah-action-primary text-white'
                       : isCompleted ? 'bg-green-100 text-green-600'
                       : 'bg-gray-100 text-gray-400'
                     }`}>
@@ -300,7 +300,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
                       <p className="text-xs text-gray-600">{formatPoints(tier.minPoints)} points</p>
                     </div>
                     {isActive && (
-                      <span className="text-xs font-medium text-purple-600">Current</span>
+                      <span className="text-xs font-medium text-minsah-action-primary">Current</span>
                     )}
                   </div>
                 );
@@ -325,7 +325,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
               type="button"
               variant="primary"
               onClick={() => setSelectedReward(null)}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
             >
               Redeem Reward
             </Button>
@@ -339,7 +339,7 @@ export function LoyaltyClient({ userLoyalty, transactions, loyaltyTiers, rewards
               <p className="text-gray-600 text-sm mt-1">{selectedReward.description}</p>
               <div className="flex items-center justify-between mt-4">
                 <span className="text-sm text-gray-600">Cost</span>
-                <span className="font-semibold text-purple-600">{formatPoints(selectedReward.points)} points</span>
+                <span className="font-semibold text-minsah-action-primary">{formatPoints(selectedReward.points)} points</span>
               </div>
             </div>
             <div className="flex justify-between text-sm text-gray-600">

@@ -291,7 +291,7 @@ export default function SiteHeader() {
                   onClick={closeMenu}
                   aria-current={active ? 'page' : undefined}
                   className={`flex min-h-11 items-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-bold transition ${
-                    active ? 'bg-[#cf5178] text-white border-transparent' : 'bg-white/[0.04] text-white hover:bg-white/[0.08]'
+                    active ? 'bg-minsah-action-primary text-white border-transparent' : 'bg-white/[0.04] text-white hover:bg-white/[0.08]'
                   }`}
                 >
                   {item.label}

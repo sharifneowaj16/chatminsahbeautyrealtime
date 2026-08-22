@@ -155,7 +155,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                 onClick={() => setActiveTab(tab.id)}
                 className={`rounded-none border-b-2 px-6 py-3 ${
                   activeTab === tab.id
-                    ? 'border-purple-500 text-purple-600'
+                    ? 'border-minsah-action-primary text-minsah-action-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -185,7 +185,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
               hideLabel
               leading={<Search className="w-4 h-4" aria-hidden="true" />}
               containerClassName="flex-1"
-              className="focus:ring-purple-500"
+              className="focus:ring-minsah-focus"
             />
             <Select
               value={ratingFilter}
@@ -193,7 +193,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
               label="Filter by rating"
               hideLabel
               containerClassName="sm:w-40"
-              className="focus:ring-purple-500"
+              className="focus:ring-minsah-focus"
             >
               <option value="all">All Ratings</option>
               {[5, 4, 3, 2, 1].map((r) => (
@@ -211,7 +211,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                 type="button"
                 variant="primary"
                 onClick={() => setActiveTab('write-review')}
-                className="bg-purple-600 px-6 py-3 hover:bg-purple-700"
+                className="bg-minsah-action-primary px-6 py-3 hover:bg-minsah-action-primary-hover"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
                 Write Your First Review
@@ -224,7 +224,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-4">
                       {/* ✅ Smart image — renders <img> for string paths */}
-                      <div className="w-16 h-16 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <div className="w-16 h-16 bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                         <ProductImage src={review.productImage} name={review.productName} />
                         {/* Hidden fallback span */}
                         <span style={{ display: 'none' }}>
@@ -234,7 +234,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                       <div>
                         <Link
                           href={productPath({ id: review.productId, slug: review.productSlug })}
-                          className="text-lg font-medium hover:text-purple-600"
+                          className="text-lg font-medium hover:text-minsah-action-primary"
                         >
                           {review.productName}
                         </Link>
@@ -255,7 +255,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                     <div className="flex items-center space-x-1">
                       <Link
                         href={`/account/reviews/write?reviewId=${review.id}`}
-                        className="p-2 text-gray-400 hover:text-purple-600 rounded-lg transition"
+                        className="p-2 text-gray-400 hover:text-minsah-action-primary rounded-lg transition"
                         aria-label={`Edit review for ${review.productName}`}
                       >
                         <Edit className="w-4 h-4" aria-hidden="true" />
@@ -308,7 +308,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                 <p className="text-gray-600 mb-6">Once you make a purchase, you can review the products here</p>
                 <Link
                   href="/shop"
-                  className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  className="inline-flex items-center px-6 py-3 bg-minsah-action-primary text-white rounded-lg hover:bg-minsah-action-primary-hover"
                 >
                   Start Shopping
                 </Link>
@@ -318,7 +318,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                 {reviewableProducts.map((product) => (
                   <div key={product.id} className="border border-gray-200 rounded-lg p-6">
                     <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center overflow-hidden">
+                      <div className="w-12 h-12 bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg flex items-center justify-center overflow-hidden">
                         <ProductImage src={product.image} name={product.name} />
                       </div>
                       <div className="flex-1">
@@ -330,7 +330,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                     </div>
                     <Link
                       href={`/account/reviews/write?productId=${product.id}`}
-                      className="w-full inline-flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                      className="w-full inline-flex items-center justify-center px-4 py-2 bg-minsah-action-primary text-white rounded-lg hover:bg-minsah-action-primary-hover transition"
                     >
                       <Edit className="w-4 h-4 mr-2" />
                       Write Review

@@ -142,7 +142,7 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
           hideLabel
           leading={<Search className="w-4 h-4" aria-hidden="true" />}
           containerClassName="flex-1"
-          className="focus:ring-purple-500"
+          className="focus:ring-minsah-focus"
         />
         <Select
           value={statusFilter}
@@ -150,7 +150,7 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
           label="Filter by status"
           hideLabel
           containerClassName="sm:w-56"
-          className="focus:ring-purple-500"
+          className="focus:ring-minsah-focus"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -172,7 +172,7 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
           </p>
           <Link
             href="/account/orders"
-            className="inline-flex items-center rounded-lg bg-purple-600 px-6 py-3 text-sm font-medium text-white hover:bg-purple-700"
+            className="inline-flex items-center rounded-lg bg-minsah-action-primary px-6 py-3 text-sm font-medium text-white hover:bg-minsah-action-primary-hover"
           >
             View Orders
           </Link>
@@ -197,7 +197,7 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
 
                 <div className="text-left md:text-right">
                   <p className="text-sm text-gray-500">Estimated Refund</p>
-                  <p className="text-lg font-bold text-purple-600">
+                  <p className="text-lg font-bold text-minsah-action-primary">
                     {formatPrice(returnRequest.refundAmount)}
                   </p>
                 </div>
@@ -221,7 +221,7 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
                         className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-minsah-surface-accent text-minsah-action-primary">
                             <Package className="h-5 w-5" />
                           </div>
                           <div>

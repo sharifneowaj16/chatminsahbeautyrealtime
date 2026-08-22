@@ -205,8 +205,8 @@ export default function SocialDashboard({ className = '' }: SocialDashboardProps
                 <p className="text-2xl font-bold text-gray-900">{averageEngagement.toFixed(1)}%</p>
                 <p className="text-sm text-green-600">+2.3% improvement</p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <BarChart className="h-6 w-6 text-purple-600" />
+              <div className="p-3 bg-minsah-surface-accent rounded-lg">
+                <BarChart className="h-6 w-6 text-minsah-action-primary" />
               </div>
             </div>
           </div>
@@ -266,8 +266,8 @@ export default function SocialDashboard({ className = '' }: SocialDashboardProps
             </Button>
 
             <Button className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-300">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <BarChart className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-minsah-surface-accent rounded-lg">
+                <BarChart className="h-5 w-5 text-minsah-action-primary" />
               </div>
               <div className="text-left">
                 <p className="font-medium text-gray-900">Analytics</p>

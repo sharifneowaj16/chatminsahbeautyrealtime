@@ -134,7 +134,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
                     href={item.href}
                     className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition ${
                       isActive
-                        ? 'bg-purple-100 text-purple-700'
+                        ? 'bg-minsah-surface-accent text-minsah-action-primary'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
@@ -170,7 +170,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
                     user.role === 'premium'
                       ? 'bg-yellow-100 text-yellow-800'
                       : user.role === 'vip'
-                      ? 'bg-purple-100 text-purple-800'
+                      ? 'bg-minsah-surface-accent text-purple-800'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
                     {user.role === 'premium' && (
@@ -204,7 +204,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
                   <div className="grid grid-cols-2 gap-2">
                     <Link
                       href="/shop"
-                      className="flex items-center justify-center px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium hover:bg-purple-200 transition"
+                      className="flex items-center justify-center px-3 py-2 bg-minsah-surface-accent text-minsah-action-primary rounded-lg text-xs font-medium hover:bg-purple-200 transition"
                     >
                       <ShoppingBag className="w-4 h-4 mr-1" />
                       Shop
@@ -230,19 +230,19 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
                     href={item.href}
                     className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition ${
                       isActive
-                        ? 'bg-purple-100 text-purple-700 border-l-4 border-purple-600'
+                        ? 'bg-minsah-surface-accent text-minsah-action-primary border-l-4 border-minsah-action-primary'
                         : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                   >
                     <item.icon className={`w-5 h-5 mr-3 ${
-                      isActive ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-600'
+                      isActive ? 'text-minsah-action-primary' : 'text-gray-400 group-hover:text-gray-600'
                     }`} />
                     <div className="flex-1">
                       <div>{item.name}</div>
                       <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
                     </div>
                     {isActive && (
-                      <ChevronRight className="w-4 h-4 text-purple-600" />
+                      <ChevronRight className="w-4 h-4 text-minsah-action-primary" />
                     )}
                   </Link>
                 );
@@ -251,9 +251,9 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
 
             {/* Benefits for Premium/VIP */}
             {(isVip || isPremium) && (
-              <div className="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4">
+              <div className="mt-6 bg-gradient-to-r from-minsah-surface-subtle to-minsah-surface-soft rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-2 flex items-center">
-                  <Gift className="w-4 h-4 mr-2 text-purple-600" />
+                  <Gift className="w-4 h-4 mr-2 text-minsah-action-primary" />
                   Your Benefits
                 </h3>
                 <ul className="text-xs text-gray-700 space-y-1">
@@ -297,7 +297,7 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
                     <li>
                       <div className="flex items-center">
                         <ChevronRight className="w-4 h-4 text-gray-400" />
-                        <span className="ml-2 text-sm text-purple-600 font-medium">
+                        <span className="ml-2 text-sm text-minsah-action-primary font-medium">
                           {navigation.find(item => item.href === pathname)?.name}
                         </span>
                       </div>

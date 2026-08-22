@@ -345,11 +345,11 @@ export default function GoogleAdsManager({ className = '' }: GoogleAdsManagerPro
 
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-purple-700 font-medium">Total Spend</span>
-              <TrendingUp className="h-4 w-4 text-purple-600" />
+              <span className="text-minsah-action-primary font-medium">Total Spend</span>
+              <TrendingUp className="h-4 w-4 text-minsah-action-primary" />
             </div>
             <p className="text-2xl font-bold text-purple-900">{formatPrice(campaignStats.totalSpent)}</p>
-            <p className="text-xs text-purple-700">all campaigns</p>
+            <p className="text-xs text-minsah-action-primary">all campaigns</p>
           </div>
 
           <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4">
