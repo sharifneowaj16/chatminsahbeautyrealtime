@@ -1,4 +1,5 @@
 FROM node:22.23.1-bookworm-slim AS base
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 # npm 10.x has a known crash bug ("Exit handler never called!") when processing
 # large dependency trees under memory pressure. Upgrade to npm 12 which fixes it.
 RUN npm install -g npm@12
