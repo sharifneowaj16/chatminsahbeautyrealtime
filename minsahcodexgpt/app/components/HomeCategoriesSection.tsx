@@ -65,18 +65,18 @@ export default function HomeCategoriesSection({
   const visibleCategories = (filteredCategories.length > 0 ? filteredCategories.slice(0, limit) : getPlaceholderCategories().slice(0, limit));
 
   return (
-    <section className="bg-white px-4 py-6 lg:px-6">
+    <section className="bg-white px-4 py-10 lg:px-8 lg:py-14">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-black text-minsah-dark">{title}</h2>
-            {subtitle && <p className="mt-1 text-xs font-medium text-minsah-secondary">{subtitle}</p>}
+            <h2 className="text-xl font-bold tracking-tight text-minsah-dark">{title}</h2>
+            {subtitle && <p className="mt-1 text-xs font-normal text-minsah-secondary">{subtitle}</p>}
           </div>
           {showViewAll && (
             <Link
               href="/categories"
               aria-label="View all categories"
-              className="inline-flex items-center gap-1 rounded-full bg-minsah-light px-3 py-2 text-xs font-bold text-minsah-primary transition hover:bg-minsah-accent"
+              className="inline-flex items-center gap-1 rounded-full bg-minsah-surface-subtle px-3.5 py-1.5 text-xs font-semibold text-minsah-primary transition hover:bg-minsah-accent"
             >
               View All <ChevronRight size={14} />
             </Link>
@@ -88,11 +88,11 @@ export default function HomeCategoriesSection({
             <Link
               key={category.id || category.name}
               href={category.name ? getCategoryHref(category) : '#'}
-              className={`group flex w-20 flex-shrink-0 flex-col items-center gap-2 rounded-2xl p-2 transition hover:bg-minsah-light sm:w-auto ${category.name ? '' : 'pointer-events-none'}`}
+              className={`group flex w-20 flex-shrink-0 flex-col items-center gap-2 rounded-lg p-2 transition hover:bg-minsah-surface-subtle sm:w-auto ${category.name ? '' : 'pointer-events-none'}`}
               aria-hidden={!category.name}
               tabIndex={category.name ? undefined : -1}
             >
-              <div className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ${category.color} text-minsah-primary ring-1 ring-minsah-accent transition group-hover:scale-105`}>
+              <div className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ${category.color} text-minsah-primary ring-1 ring-stone-200/70 transition group-hover:scale-105`}>
                 {category.icon && isImageIcon(category.icon) ? (
                   <Image
                     src={category.icon}
@@ -102,12 +102,12 @@ export default function HomeCategoriesSection({
                     className="object-cover"
                   />
                 ) : category.name ? (
-                  <span className="text-lg font-black">{category.name.charAt(0).toUpperCase()}</span>
+                  <span className="text-lg font-bold">{category.name.charAt(0).toUpperCase()}</span>
                 ) : (
                   <Tag size={22} className="opacity-40" />
                 )}
               </div>
-              <span className="min-h-[28px] text-center text-xs font-bold leading-4 text-minsah-dark">
+              <span className="min-h-[28px] text-center text-xs font-medium leading-4 text-minsah-dark">
                 {category.name}
               </span>
             </Link>

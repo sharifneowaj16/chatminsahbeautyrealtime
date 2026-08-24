@@ -92,9 +92,9 @@ export default function CartDrawer() {
   const footer = hasItems ? (
     <div className="w-full space-y-4">
       {/* ── Quick Coupon Box ── */}
-      <div className="rounded-2xl border border-gray-200/80 bg-gray-50/60 p-3">
+      <div className="rounded-lg border border-stone-200 bg-minsah-surface-subtle p-3">
         {discount > 0 && promoCode ? (
-          <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+          <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-emerald-600" />
               <span className="font-bold tracking-wider text-emerald-900">{promoCode}</span>
@@ -125,7 +125,7 @@ export default function CartDrawer() {
                     }
                   }}
                   placeholder="Coupon code (e.g. SAVE10)"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider text-gray-800 placeholder:normal-case placeholder:font-normal placeholder:text-gray-400 focus:border-[#D07A60] focus:outline-none focus:ring-1 focus:ring-[#D07A60]"
+                  className="w-full rounded-md border border-stone-200 bg-white py-2 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider text-minsah-dark placeholder:normal-case placeholder:font-normal placeholder:text-stone-400 focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary"
                 />
               </div>
               <Button
@@ -133,7 +133,7 @@ export default function CartDrawer() {
                 size="sm"
                 disabled={!couponInput.trim() || couponLoading}
                 onClick={() => handleApplyCoupon()}
-                className="rounded-xl px-4 py-2 text-xs font-bold bg-[#181C1A] text-white hover:bg-[#D07A60] transition-colors"
+                className="rounded-full px-4 py-2 text-xs font-semibold bg-minsah-dark text-white hover:bg-minsah-primary transition-colors"
               >
                 {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
               </Button>
@@ -142,14 +142,14 @@ export default function CartDrawer() {
             {/* Quick Suggestions */}
             <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5">
               <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
-                <Gift className="h-3 w-3 text-[#D07A60]" /> Offers:
+                <Gift className="h-3 w-3 text-minsah-primary" /> Offers:
               </span>
               {["SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
                 <button
                   key={code}
                   type="button"
                   onClick={() => handleApplyCoupon(code)}
-                  className="rounded-md border border-dashed border-[#D07A60]/40 bg-[#FAF9F6] px-1.5 py-0.5 font-semibold text-[#D07A60] hover:bg-[#D07A60] hover:text-white transition-colors"
+                  className="rounded-full border border-dashed border-minsah-primary/40 bg-white px-2 py-0.5 font-semibold text-minsah-primary hover:bg-minsah-primary hover:text-white transition-colors"
                 >
                   {code}
                 </button>
@@ -165,7 +165,7 @@ export default function CartDrawer() {
         title=""
         lines={orderLines}
         notice={
-          <div className="rounded-2xl bg-minsah-surface-soft p-3">
+          <div className="rounded-lg bg-minsah-surface-soft p-3">
             <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
               <span className="inline-flex items-center gap-2 font-semibold text-minsah-action-primary">
                 <Truck size={16} aria-hidden="true" /> Delivery Charge
@@ -188,11 +188,11 @@ export default function CartDrawer() {
               fullWidth
               onClick={handleCheckout}
               disabled={cartLoading || !hasItems}
-              className="bg-[#D07A60] hover:bg-[#B56148] text-white font-bold py-3 text-sm rounded-2xl shadow-lg shadow-orange-950/10 transition-all hover:shadow-orange-950/20"
+              className="bg-minsah-primary hover:bg-minsah-dark text-white font-semibold py-3 text-sm rounded-full shadow-xs transition-all"
             >
               Checkout ({formatPrice(Math.max(0, subtotal - discount))})
             </Button>
-            <Button type="button" variant="secondary" fullWidth onClick={closeDrawer} className="rounded-2xl text-xs font-semibold">
+            <Button type="button" variant="secondary" fullWidth onClick={closeDrawer} className="rounded-full text-xs font-semibold">
               Continue shopping
             </Button>
           </div>

@@ -152,17 +152,17 @@ function SectionHeader({ title, subtitle, href, cta = 'View all', icon, showView
   showViewAll?: boolean;
 }) {
   return (
-    <div className="mb-4 flex items-center justify-between gap-4">
+    <div className="mb-6 flex items-center justify-between gap-4">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           {icon}
-          <h2 className="truncate text-lg font-bold text-minsah-dark">{title}</h2>
+          <h2 className="truncate text-xl font-bold tracking-tight text-minsah-dark">{title}</h2>
         </div>
-        {subtitle && <p className="mt-1 text-xs font-medium text-minsah-secondary">{subtitle}</p>}
+        {subtitle && <p className="mt-1 text-xs font-normal text-minsah-secondary">{subtitle}</p>}
       </div>
       {showViewAll && (
-        <Link href={href} aria-label={`${cta} ${title}`} className="minsah-tap-target minsah-touch-target min-h-11 inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold text-minsah-primary hover:bg-minsah-accent/60">
-          {cta} <ChevronRight size={16} />
+        <Link href={href} aria-label={`${cta} ${title}`} className="minsah-tap-target minsah-touch-target min-h-10 inline-flex shrink-0 items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-semibold text-minsah-primary hover:bg-minsah-surface-subtle">
+          {cta} <ChevronRight size={14} />
         </Link>
       )}
     </div>
@@ -242,9 +242,9 @@ function getProductsForSection({
 }
 
 function gridClass(section: HomeSection) {
-  if (section.settings.layout === 'grid-3') return 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6';
-  if (section.settings.layout === 'grid-4') return 'grid grid-cols-2 gap-3 md:grid-cols-4';
-  return 'grid grid-cols-2 gap-3 md:grid-cols-4';
+  if (section.settings.layout === 'grid-3') return 'grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6 md:gap-4';
+  if (section.settings.layout === 'grid-4') return 'grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-6';
+  return 'grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-6';
 }
 
 function ProductGrid({ section, products }: { section: HomeSection; products: HomeProductCardData[] }) {
@@ -252,7 +252,7 @@ function ProductGrid({ section, products }: { section: HomeSection; products: Ho
 
   if (section.settings.layout === 'horizontal-scroll') {
     return (
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
         {products.map((product) => (
           <div key={product.id} className="w-44 shrink-0 sm:w-52">
             <HomeProductCard product={product} showCategory={false} />
@@ -266,7 +266,7 @@ function ProductGrid({ section, products }: { section: HomeSection; products: Ho
 
   return (
     <div className={gridClass(section)}>
-      {products.map((product, index) => (
+      {products.map((product) => (
         <HomeProductCard
           key={product.id}
           product={product}
@@ -290,7 +290,7 @@ function BrandsSection({ section, brands }: { section: HomeSection; brands: Home
   if (filteredBrands.length === 0) return null;
 
   return (
-    <section className="minsah-fade-up px-4 py-6" style={{ backgroundColor: section.settings.backgroundColor || DESIGN_TOKEN_VALUES.surface.panel }}>
+    <section className="minsah-fade-up px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || DESIGN_TOKEN_VALUES.surface.panel }}>
       <SectionHeader
         title={section.title}
         subtitle={section.subtitle}
@@ -298,14 +298,14 @@ function BrandsSection({ section, brands }: { section: HomeSection; brands: Home
         cta={section.settings.ctaText || 'View all'}
         showViewAll={section.settings.showViewAll !== false}
       />
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-3.5">
         {filteredBrands.map((brand) => (
           <Link
             key={brand.id}
             href={`/brands/${brand.slug}`}
-            className="minsah-tap-target flex aspect-square items-center justify-center rounded-full border-2 border-minsah-accent bg-white p-2 transition hover:-translate-y-0.5 hover:border-minsah-primary hover:shadow-md"
+            className="minsah-tap-target flex aspect-square items-center justify-center rounded-lg border border-stone-200/70 bg-white p-3 transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-sm"
           >
-            <span className="whitespace-pre-line text-center text-xs font-bold text-minsah-dark">
+            <span className="whitespace-pre-line text-center text-xs font-semibold text-minsah-dark">
               {brand.logo || brand.name}
             </span>
           </Link>
@@ -348,14 +348,14 @@ export default function HomeProductSections({
       sectionProducts = sectionProducts
         .filter((product) => product.originalPrice != null && product.originalPrice > product.price)
         .slice(0, sectionLimit(section, 4));
-      icon = <Flame className="text-orange-500" size={24} />;
+      icon = <Flame className="text-orange-500" size={20} />;
       cta = section.settings.ctaText || 'Shop Now';
     }
 
     if (sectionProducts.length === 0) return null;
 
     return (
-      <section key={section.id} className="minsah-fade-up px-4 py-6" style={{ backgroundColor: section.settings.backgroundColor || undefined }}>
+      <section key={section.id} className="minsah-fade-up px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || undefined }}>
         <SectionHeader
           title={section.title}
           subtitle={section.subtitle}
@@ -366,10 +366,10 @@ export default function HomeProductSections({
         />
 
         {section.type === 'flash-sale' && (
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <HomeCountdownTimer endsAt={flashSaleEndsAt} />
-            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-orange-700 shadow-sm">
-              <TimerReset size={14} /> Active limited-time offers only
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-orange-700 border border-stone-200/70">
+              <TimerReset size={13} /> Active limited-time offers only
             </div>
           </div>
         )}
@@ -381,5 +381,5 @@ export default function HomeProductSections({
 
   if (renderedSections.length === 0) return null;
 
-  return <div className="bg-minsah-light pb-20">{renderedSections}</div>;
+  return <div className="bg-minsah-light pb-24">{renderedSections}</div>;
 }

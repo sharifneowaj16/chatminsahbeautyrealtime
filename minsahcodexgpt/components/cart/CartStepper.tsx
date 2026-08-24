@@ -14,6 +14,7 @@ import type {
 import { getCachedProductDetail } from './productDetailCache';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { formatPrice } from '@/utils/currency';
 
 const VariantModal = dynamic(() => import('./VariantModal'), {
   ssr: false,
@@ -480,11 +481,12 @@ export default function CartStepper({
   const showAddButton = qty === 0 && zeroStateMode === 'button';
   const showZeroStepper = qty === 0 && zeroStateMode === 'stepper';
   const plusDisabled = disabled || isBusy || isOutOfStock || (!isVariantProduct && qty >= safeMaxStock);
+  const priceSuffix = price > 0 ? ` • ৳${formatPrice(price)}` : '';
   const addButtonLabel = isOutOfStock
     ? 'Out of Stock'
     : hasRequiredVariants && !currentVariantId
       ? 'Choose Option'
-      : 'Add to Cart';
+      : `Add to Cart${priceSuffix}`;
   const addButtonAriaLabel = isOutOfStock
     ? `${productName} is out of stock`
     : `${addButtonLabel} for ${productName}`;
@@ -579,18 +581,18 @@ export default function CartStepper({
           onClick={() => void handleAddToCart()}
           disabled={disabled || isBusy || isOutOfStock}
           aria-label={addButtonAriaLabel}
-          className={className}
+          className={`rounded-full uppercase tracking-wider text-xs font-semibold ${className}`}
         >
           {isBusy ? (
             <Spinner size="sm" decorative />
           ) : (
-            <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+            <ShoppingCart className="h-3.5 w-3.5" aria-hidden="true" />
           )}
           {addButtonLabel}
         </Button>
       ) : (
         <div
-          className={`inline-flex min-h-11 items-center rounded-2xl border border-minsah-border-default bg-minsah-surface-panel ${className}`}
+          className={`inline-flex min-h-11 items-center rounded-full border border-minsah-border-default bg-minsah-surface-panel shadow-xs ${className}`}
           role="group"
           aria-label={`${productName} cart quantity`}
         >
@@ -607,7 +609,7 @@ export default function CartStepper({
                   ? `Decrease ${productName} quantity to zero`
                   : `Decrease ${productName} quantity`
             }
-            className="rounded-l-2xl rounded-r-none"
+            className="rounded-l-full rounded-r-none"
           >
             {showZeroStepper ? (
               <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -629,7 +631,7 @@ export default function CartStepper({
             onClick={() => void handleIncrease()}
             disabled={plusDisabled}
             aria-label={`Increase ${productName} quantity`}
-            className="rounded-l-none rounded-r-2xl"
+            className="rounded-l-none rounded-r-full"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </Button>

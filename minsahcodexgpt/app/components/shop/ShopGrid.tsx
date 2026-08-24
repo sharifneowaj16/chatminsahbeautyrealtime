@@ -839,7 +839,7 @@ export default function ShopGrid() {
   };
 
   const renderMobileStickyControls = () => (
-    <div className="sticky top-0 z-30 mb-4 rounded-2xl border border-minsah-accent bg-white/95 p-3 shadow-sm backdrop-blur md:hidden">
+    <div className="sticky top-0 z-30 mb-4 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-xs backdrop-blur md:hidden">
       <div className="space-y-3">
         <ShopSearchBar />
         <div className="flex items-center justify-between gap-3">
@@ -858,10 +858,10 @@ export default function ShopGrid() {
               onClick={() => openFilterPanel("mobile_sticky_filter")}
               aria-haspopup="dialog"
               aria-expanded={openPanel === "filter"}
-              className="px-3 text-sm"
+              className="rounded-full px-3.5 text-xs font-semibold"
               disabled={loading}
             >
-              <Filter size={16} aria-hidden="true" />
+              <Filter size={15} aria-hidden="true" />
               Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </Button>
             <Button
@@ -870,10 +870,10 @@ export default function ShopGrid() {
               onClick={() => openSortPanel("mobile_sticky_sort")}
               aria-haspopup="dialog"
               aria-expanded={openPanel === "sort"}
-              className="px-3 text-sm"
+              className="rounded-full px-3.5 text-xs font-semibold"
               disabled={loading}
             >
-              <SlidersHorizontal size={16} aria-hidden="true" />
+              <SlidersHorizontal size={15} aria-hidden="true" />
               Sort
             </Button>
           </div>
@@ -1041,7 +1041,7 @@ export default function ShopGrid() {
     <div
       className={
         mode === "sidebar"
-          ? "sticky top-40 rounded-2xl border border-minsah-accent bg-white p-4 shadow-sm"
+          ? "sticky top-32 rounded-xl border border-stone-200 bg-white p-5 shadow-xs"
           : "flex h-full flex-col"
       }
     >
@@ -1054,10 +1054,10 @@ export default function ShopGrid() {
       >
         {mode === "sidebar" && (
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
               Sort By
             </p>
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               {SHOP_SORT_OPTIONS.map((item) => (
                 <Button
                   key={item.id}
@@ -1068,10 +1068,10 @@ export default function ShopGrid() {
                   onClick={() => {
                     updateUrlFilters({ sort: item.id === 'featured' ? null : item.id })
                   }}
-                  className="justify-between rounded-xl px-3 py-2 text-left text-sm font-medium"
+                  className="justify-between rounded-lg px-3 py-2 text-left text-sm font-medium"
                 >
                   <span>{item.label}</span>
-                  {activeSort === item.id && <Check size={16} aria-hidden="true" />}
+                  {activeSort === item.id && <Check size={15} aria-hidden="true" />}
                 </Button>
               ))}
             </div>
@@ -1306,15 +1306,14 @@ export default function ShopGrid() {
         </aside>
 
         <section>
-          <div className="mb-4 rounded-2xl border border-minsah-accent bg-white p-4 shadow-sm">
+          <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 shadow-xs">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-minsah-dark">
                   Showing {totalCount} products
                 </p>
                 <p className="text-xs text-minsah-secondary">
-                  Authentic beauty, skincare and personal care products in
-                  Bangladesh
+                  Authentic beauty, skincare and personal care formulations in Bangladesh
                 </p>
               </div>
               <Button
@@ -1323,9 +1322,9 @@ export default function ShopGrid() {
                 onClick={() => openFilterPanel("content_filter_button")}
                 aria-haspopup="dialog"
                 aria-expanded={openPanel === "filter"}
-                className="px-3 text-sm lg:hidden"
+                className="rounded-full px-3 text-xs font-semibold lg:hidden"
               >
-                <Filter size={16} aria-hidden="true" />
+                <Filter size={15} aria-hidden="true" />
                 Filter
               </Button>
             </div>
@@ -1349,7 +1348,7 @@ export default function ShopGrid() {
                 totalProducts={totalCount}
               />
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3.5 sm:gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-3 2xl:grid-cols-4">
                 {displayProducts.map((product, index) => (
                   <ProductCard
                     key={product.id}
@@ -1361,7 +1360,7 @@ export default function ShopGrid() {
               </div>
 
               {hasMore && (
-                <div className="mt-8 flex justify-center">
+                <div className="mt-10 flex justify-center">
                   <Link
                     href={buildCatalogPath(new URLSearchParams({
                       ...Object.fromEntries(searchParams.entries()),
@@ -1373,10 +1372,10 @@ export default function ShopGrid() {
                         page: page + 1,
                       })
                     }
-                    className="flex min-h-11 items-center gap-2 rounded-xl bg-minsah-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-minsah-dark"
+                    className="flex min-h-12 items-center gap-2 rounded-full bg-minsah-primary px-8 py-3 font-semibold text-white shadow-xs transition-colors hover:bg-minsah-dark"
                   >
                     Next Page
-                    <ChevronRight size={20} />
+                    <ChevronRight size={18} />
                   </Link>
                 </div>
               )}

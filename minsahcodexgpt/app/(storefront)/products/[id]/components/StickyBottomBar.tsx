@@ -158,7 +158,7 @@ export default function StickyBottomBar({
               variantImage={variantImage}
               hasRequiredVariants={requiresVariantSelection}
               variants={cartVariants}
-              className="min-w-0 border border-minsah-border-default bg-minsah-surface-subtle text-minsah-action-primary hover:bg-minsah-surface-soft font-bold rounded-2xl h-11"
+              className="min-w-0 border border-minsah-border-default bg-minsah-surface-subtle text-minsah-action-primary hover:bg-minsah-surface-soft font-semibold rounded-full h-11"
               disabled={addToCartDisabled}
             />
 
@@ -168,7 +168,7 @@ export default function StickyBottomBar({
               onClick={handleBuyNow}
               disabled={buyNowDisabled}
               aria-describedby={helperText ? "sticky-purchase-helper" : undefined}
-              className="min-w-0 rounded-2xl h-11 bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-black shadow-md"
+              className="min-w-0 rounded-full h-11 bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-bold shadow-xs"
             >
               <ShoppingBag size={15} aria-hidden="true" className="mr-1" />
               <span className="truncate">{buyNowLabel}</span>
@@ -187,7 +187,7 @@ export default function StickyBottomBar({
                     : "WhatsApp অর্ডার বর্তমানে বন্ধ"
                 }
                 aria-describedby={helperText ? "sticky-purchase-helper" : undefined}
-                className="w-12 rounded-2xl"
+                className="w-12 rounded-full"
               >
                 <WhatsAppIcon />
               </Button>
@@ -197,7 +197,7 @@ export default function StickyBottomBar({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp-এ অর্ডার করুন"
-                className="minsah-control flex h-11 w-12 items-center justify-center rounded-2xl text-minsah-text-inverse shadow-sm hover:brightness-95"
+                className="minsah-control flex h-11 w-12 items-center justify-center rounded-full text-minsah-text-inverse shadow-xs hover:brightness-95"
                 style={{ backgroundColor: SOCIAL_PLATFORM_COLORS.whatsapp }}
               >
                 <WhatsAppIcon />

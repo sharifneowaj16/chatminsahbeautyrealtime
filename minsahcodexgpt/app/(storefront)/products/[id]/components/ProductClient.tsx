@@ -236,26 +236,26 @@ function DeliveryEstimate({
   const offerBadgeText = activeOffer?.badgeText?.trim();
 
   return (
-    <div className="rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle/70 p-3.5 space-y-2.5">
+    <div className="rounded-lg border border-stone-200 bg-minsah-surface-subtle p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-3">
-        <p className="flex items-center gap-1.5 text-xs font-black tracking-wide text-minsah-action-primary">
+        <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-minsah-action-primary">
           <Truck size={14} /> এক্সপ্রেস ডেলিভারি
         </p>
         {isFreeDelivery && (
-          <span className="rounded-full bg-emerald-500/15 text-emerald-800 ring-1 ring-emerald-300/40 px-2.5 py-0.5 text-xs font-black">
+          <span className="rounded-full bg-emerald-500/15 text-emerald-800 ring-1 ring-emerald-300/40 px-2.5 py-0.5 text-xs font-semibold">
             ফ্রি ডেলিভারি
           </span>
         )}
         {isFixedDelivery && (
-          <span className="rounded-full bg-amber-500/15 text-amber-800 ring-1 ring-amber-300/40 px-2.5 py-0.5 text-xs font-black">
+          <span className="rounded-full bg-amber-500/15 text-amber-800 ring-1 ring-amber-300/40 px-2.5 py-0.5 text-xs font-semibold">
             বিশেষ অফার
           </span>
         )}
       </div>
 
       {isFreeDelivery ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
-          <p className="text-xs font-black text-emerald-900">
+        <div className="rounded-md border border-emerald-200 bg-emerald-50/70 px-3 py-2">
+          <p className="text-xs font-bold text-emerald-900">
             {offerBadgeText || "এই পণ্যে ফ্রি ডেলিভারি"}
           </p>
           <p className="mt-0.5 text-[11px] leading-relaxed text-emerald-800">
@@ -263,8 +263,8 @@ function DeliveryEstimate({
           </p>
         </div>
       ) : isFixedDelivery ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2">
-          <p className="text-xs font-black text-amber-900">
+        <div className="rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2">
+          <p className="text-xs font-bold text-amber-900">
             {offerBadgeText ||
               `বিশেষ ডেলিভারি অফার: সর্বোচ্চ ৳${fixedDeliveryAmount?.toLocaleString("bn-BD")}`}
           </p>
@@ -275,25 +275,25 @@ function DeliveryEstimate({
       ) : null}
 
       <div className="grid grid-cols-2 gap-2 pt-1">
-        <div className="flex items-start gap-2 rounded-xl bg-white/80 p-2 border border-minsah-border-subtle/60">
+        <div className="flex items-start gap-2 rounded-md bg-white/80 p-2 border border-minsah-border-subtle/60">
           <MapPin size={14} className="mt-0.5 shrink-0 text-minsah-action-primary" />
           <div>
-            <p className="text-[11px] font-bold text-minsah-text-muted">ঢাকা সিটি</p>
-            <p className="text-xs font-black text-emerald-800">{dhakaLabel} ডেলিভারি</p>
+            <p className="text-[11px] font-medium text-minsah-text-muted">ঢাকা সিটি</p>
+            <p className="text-xs font-bold text-emerald-800">{dhakaLabel} ডেলিভারি</p>
             <p className="text-[10px] text-minsah-text-muted">চার্জ: ৳৬০</p>
           </div>
         </div>
-        <div className="flex items-start gap-2 rounded-xl bg-white/80 p-2 border border-minsah-border-subtle/60">
+        <div className="flex items-start gap-2 rounded-md bg-white/80 p-2 border border-minsah-border-subtle/60">
           <MapPin size={14} className="mt-0.5 shrink-0 text-minsah-action-secondary" />
           <div>
-            <p className="text-[11px] font-bold text-minsah-text-muted">সারাদেশে</p>
-            <p className="text-xs font-black text-minsah-action-secondary">{outsideLabel}</p>
+            <p className="text-[11px] font-medium text-minsah-text-muted">সারাদেশে</p>
+            <p className="text-xs font-bold text-minsah-action-secondary">{outsideLabel}</p>
             <p className="text-[10px] text-minsah-text-muted">চার্জ: ৳১২০</p>
           </div>
         </div>
       </div>
       {hour < 15 && !isWeekend && (
-        <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-900">
+        <div className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-900">
           <Clock size={12} className="shrink-0 text-amber-700" />
           <span>আজ বিকেল ৩টার মধ্যে অর্ডার করলে আজই পার্সেল বের হবে।</span>
         </div>
@@ -313,9 +313,9 @@ function StockUrgency({
 }) {
   if (!inStock) {
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 border border-red-200">
+      <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 border border-red-200">
         <div className="h-2.5 w-2.5 rounded-full bg-red-600" />
-        <span className="text-xs font-black text-red-700">স্টক শেষ (Out of stock)</span>
+        <span className="text-xs font-bold text-red-700">স্টক শেষ (Out of stock)</span>
       </div>
     );
   }
@@ -326,12 +326,12 @@ function StockUrgency({
       Math.round((stock / Math.max(threshold, 1)) * 100),
     );
     return (
-      <div className="space-y-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3 py-2">
+      <div className="space-y-1.5 rounded-md border border-red-200 bg-red-50/80 px-3 py-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-black text-red-800">
+          <span className="text-xs font-bold text-red-800">
             🔥 মাত্র {stock}টি বাকি আছে!
           </span>
-          <span className="text-[11px] font-bold text-red-700">
+          <span className="text-[11px] font-semibold text-red-700">
             দ্রুত শেষ হচ্ছে
           </span>
         </div>
@@ -346,9 +346,9 @@ function StockUrgency({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-1.5 border border-emerald-200/60 w-fit">
+    <div className="flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1.5 border border-emerald-200/60 w-fit">
       <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-600" />
-      <span className="text-xs font-black text-emerald-800">স্টকে পর্যাপ্ত আছে (In Stock)</span>
+      <span className="text-xs font-bold text-emerald-800">স্টকে পর্যাপ্ত আছে (In Stock)</span>
     </div>
   );
 }
@@ -1177,7 +1177,7 @@ export default function ProductClient({
         inStock={activeInStock}
       />
 
-      <div className="mx-auto max-w-6xl px-3 sm:px-4 lg:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Top Hero: 2-Column Grid */}
         <div className="lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-start lg:gap-12">
           {/* Left Column: Product Gallery */}
@@ -1255,9 +1255,9 @@ export default function ProductClient({
             </div>
 
             {/* Price Box with Savings Banner */}
-            <div className="rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle/50 p-4">
+            <div className="rounded-lg border border-stone-200 bg-minsah-surface-subtle p-4">
               <div className="flex flex-wrap items-baseline gap-3">
-                <span className="text-3xl font-black text-minsah-action-primary tracking-tight">
+                <span className="text-3xl font-bold text-minsah-action-primary tracking-tight">
                   {priceDisplayText}
                 </span>
 
@@ -1268,7 +1268,7 @@ export default function ProductClient({
                 )}
 
                 {discountPct && (
-                  <span className="rounded-full bg-minsah-action-primary px-3 py-1 text-xs font-black text-white shadow-sm">
+                  <span className="rounded-full bg-minsah-action-primary px-3 py-1 text-xs font-semibold text-white shadow-xs">
                     {discountPct}% সাশ্রয়
                   </span>
                 )}
@@ -1291,7 +1291,7 @@ export default function ProductClient({
             {/* Key Benefits Pills */}
             {product.keyBenefits && product.keyBenefits.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-xs font-black uppercase tracking-wider text-minsah-text-muted">
+                <p className="text-xs font-semibold uppercase tracking-wider text-minsah-text-muted">
                   🌿 প্রধান উপকারিতা
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -1322,8 +1322,8 @@ export default function ProductClient({
 
             {/* Stock Urgency Indicator */}
             {requiresVariantSelection ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3">
-                <p className="text-xs font-black text-amber-900">
+              <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3">
+                <p className="text-xs font-bold text-amber-900">
                   ভ্যারিয়েন্ট সিলেক্ট করুন
                 </p>
                 <p className="mt-0.5 text-[11px] text-amber-800">
@@ -1339,12 +1339,12 @@ export default function ProductClient({
             )}
 
             {/* Desktop / Tablet Primary Action Buttons */}
-            <div className="hidden lg:flex flex-col gap-3 rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle/40 p-4 shadow-sm">
+            <div className="hidden lg:flex flex-col gap-3 rounded-xl border border-stone-200 bg-minsah-surface-subtle p-5 shadow-xs">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-black uppercase tracking-wider text-minsah-text-muted">
+                <span className="text-xs font-semibold uppercase tracking-wider text-minsah-text-muted">
                   অর্ডার সামারি ({quantity} পিস)
                 </span>
-                <span className="text-lg font-black text-minsah-action-primary">
+                <span className="text-lg font-bold text-minsah-action-primary">
                   ৳{(currentPrice * quantity).toLocaleString("bn-BD")}
                 </span>
               </div>
@@ -1365,7 +1365,7 @@ export default function ProductClient({
                   variantImage={variantImage}
                   hasRequiredVariants={requiresVariantSelection}
                   variants={stickyBarVariants as any}
-                  className="w-full justify-center rounded-2xl border border-minsah-border-default bg-white text-minsah-action-primary hover:bg-minsah-surface-subtle font-bold shadow-sm h-12"
+                  className="w-full justify-center rounded-full border border-minsah-border-default bg-white text-minsah-action-primary hover:bg-minsah-surface-subtle font-semibold shadow-xs h-12"
                   disabled={!activeInStock}
                 />
 
@@ -1377,7 +1377,7 @@ export default function ProductClient({
                   maxStock={activeStock}
                   variants={stickyBarVariants as any}
                   disabled={!activeInStock}
-                  className="w-full h-12 rounded-2xl bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-bold shadow-md hover:shadow-lg transition-all"
+                  className="w-full h-12 rounded-full bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-semibold shadow-xs transition-all"
                 />
               </div>
             </div>
@@ -1488,7 +1488,7 @@ export default function ProductClient({
           </div>
 
           {/* Desktop Tab Contents */}
-          <div className="hidden lg:block rounded-3xl border border-minsah-border-subtle bg-minsah-surface-panel p-6 shadow-sm min-h-[220px]">
+          <div className="hidden lg:block rounded-xl border border-stone-200 bg-white p-6 shadow-xs min-h-[220px]">
             {activeStoryTab === "overview" && (
               <div className="space-y-4">
                 {product.seoIntro && (
@@ -1502,8 +1502,8 @@ export default function ProductClient({
                   </p>
                 )}
                 {product.bengaliDescription && product.bengaliDescription !== product.description && (
-                  <div className="mt-4 rounded-2xl bg-minsah-surface-subtle/60 p-4 border border-minsah-border-subtle">
-                    <p className="text-xs font-black uppercase tracking-wider text-minsah-action-primary mb-1">
+                  <div className="mt-4 rounded-lg bg-minsah-surface-subtle/60 p-4 border border-stone-200">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-minsah-action-primary mb-1">
                       বাংলায় বিস্তারিত
                     </p>
                     <p className="whitespace-pre-line text-sm leading-relaxed text-minsah-text-primary">
@@ -1517,7 +1517,7 @@ export default function ProductClient({
 
             {activeStoryTab === "usage" && (
               <div className="space-y-3">
-                <p className="text-sm font-black text-minsah-action-primary">
+                <p className="text-sm font-bold text-minsah-action-primary">
                   সঠিক ব্যবহারের ধাপসমূহ
                 </p>
                 <ol className="list-decimal space-y-2 pl-5 text-sm text-minsah-text-primary/90">
@@ -1534,9 +1534,9 @@ export default function ProductClient({
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-minsah-action-secondary">
                   <Package size={16} />
-                  <p className="text-sm font-black">সম্পূর্ণ উপাদান তালিকা</p>
+                  <p className="text-sm font-bold">সম্পূর্ণ উপাদান তালিকা</p>
                 </div>
-                <p className="whitespace-pre-line text-xs leading-relaxed text-minsah-text-muted bg-minsah-surface-subtle/50 p-4 rounded-2xl border border-minsah-border-subtle">
+                <p className="whitespace-pre-line text-xs leading-relaxed text-minsah-text-muted bg-minsah-surface-subtle/50 p-4 rounded-lg border border-stone-200">
                   {product.ingredients}
                 </p>
               </div>
@@ -1566,16 +1566,16 @@ export default function ProductClient({
 
           {/* Mobile Accordions */}
           <div className="space-y-3 lg:hidden">
-            <details className="group rounded-2xl border border-minsah-border-subtle bg-minsah-surface-panel p-4" open>
+            <details className="group rounded-lg border border-stone-200 bg-white p-4" open>
               <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
                 <span>🌿 বিবরণ ও সুবিধা</span>
                 <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
               </summary>
-              <div className="mt-3 pt-3 border-t border-minsah-border-subtle/60 text-sm leading-relaxed text-minsah-text-primary/90 space-y-3">
+              <div className="mt-3 pt-3 border-t border-stone-200/60 text-sm leading-relaxed text-minsah-text-primary/90 space-y-3">
                 {product.seoIntro && <p className="font-semibold text-minsah-action-primary">{product.seoIntro}</p>}
                 {product.description && <p className="whitespace-pre-line">{product.description}</p>}
                 {product.bengaliDescription && (
-                  <p className="whitespace-pre-line text-xs bg-minsah-surface-subtle p-3 rounded-xl">
+                  <p className="whitespace-pre-line text-xs bg-minsah-surface-subtle p-3 rounded-md">
                     {product.bengaliDescription}
                   </p>
                 )}
@@ -1584,12 +1584,12 @@ export default function ProductClient({
             </details>
 
             {(product.usageInstructions?.length || 0) > 0 && (
-              <details className="group rounded-2xl border border-minsah-border-subtle bg-minsah-surface-panel p-4">
+              <details className="group rounded-lg border border-stone-200 bg-white p-4">
                 <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
                   <span>💧 ব্যবহার বিধি (How to Use)</span>
                   <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
                 </summary>
-                <div className="mt-3 pt-3 border-t border-minsah-border-subtle/60 text-sm">
+                <div className="mt-3 pt-3 border-t border-stone-200/60 text-sm">
                   <ol className="list-decimal space-y-1.5 pl-4 text-minsah-text-muted">
                     {product.usageInstructions?.map((step, idx) => (
                       <li key={idx}>{step}</li>
@@ -1600,23 +1600,23 @@ export default function ProductClient({
             )}
 
             {product.ingredients && (
-              <details className="group rounded-2xl border border-minsah-border-subtle bg-minsah-surface-panel p-4">
+              <details className="group rounded-lg border border-stone-200 bg-white p-4">
                 <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
                   <span>🧪 উপাদান (Ingredients)</span>
                   <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
                 </summary>
-                <div className="mt-3 pt-3 border-t border-minsah-border-subtle/60 text-xs text-minsah-text-muted leading-relaxed">
+                <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-minsah-text-muted leading-relaxed">
                   {product.ingredients}
                 </div>
               </details>
             )}
 
-            <details className="group rounded-2xl border border-minsah-border-subtle bg-minsah-surface-panel p-4">
+            <details className="group rounded-lg border border-stone-200 bg-white p-4">
               <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
                 <span>📋 স্পেসিফিকেশন ও পণ্যের তথ্য</span>
                 <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
               </summary>
-              <div className="mt-3 pt-3 border-t border-minsah-border-subtle/60 space-y-3">
+              <div className="mt-3 pt-3 border-t border-stone-200/60 space-y-3">
                 <InfoRowsBlock title="উপযুক্ততা" rows={bestMatchRows} />
                 <InfoRowsBlock title="পণ্যের বিস্তারিত" rows={productInfoRows} />
                 <InfoRowsBlock title="স্পেসিফিকেশন" rows={specRows} />
@@ -1628,22 +1628,22 @@ export default function ProductClient({
         {/* Frequently Bought Together: Bundle Section */}
         {bundleProducts.length > 0 && (
           <section
-            className="mt-12 rounded-3xl border border-minsah-border-subtle bg-minsah-surface-panel p-5 sm:p-7 shadow-sm"
+            className="mt-12 rounded-xl border border-stone-200 bg-white p-5 sm:p-7 shadow-xs"
             aria-labelledby="frequently-bought-together-heading"
           >
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p
                   id="frequently-bought-together-heading"
-                  className="text-xs font-black uppercase tracking-wider text-minsah-action-primary"
+                  className="text-xs font-semibold uppercase tracking-wider text-minsah-action-primary"
                 >
                   স্মার্ট বান্ডেল ও কম্বো অফার
                 </p>
-                <h3 className="mt-1 text-lg font-black text-minsah-text-primary sm:text-xl">
+                <h3 className="mt-1 text-lg font-bold text-minsah-text-primary sm:text-xl">
                   একসাথে বেশি কেনা হয় (Frequently Bought Together)
                 </h3>
               </div>
-              <span className="rounded-full bg-minsah-action-secondary px-3 py-1 text-xs font-black text-white shadow-sm">
+              <span className="rounded-full bg-minsah-action-secondary px-3 py-1 text-xs font-semibold text-white shadow-xs">
                 বান্ডেল সেভিংস
               </span>
             </div>
@@ -1652,8 +1652,8 @@ export default function ProductClient({
               {/* Left: Bundle Items List */}
               <div className="space-y-3">
                 {/* Main Product Card */}
-                <div className="flex items-center gap-3 rounded-2xl border border-minsah-border-default bg-minsah-surface-subtle/60 p-3">
-                  <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white border border-minsah-border-subtle">
+                <div className="flex items-center gap-3 rounded-lg border border-stone-200 bg-minsah-surface-subtle/60 p-3">
+                  <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-white border border-stone-200">
                     <CatalogProductImage
                       src={variantImageOverride || variantImage || product.image}
                       alt={product.name}
@@ -1662,13 +1662,13 @@ export default function ProductClient({
                     />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
                       <CheckCircle size={10} /> এই পণ্য
                     </span>
                     <p className="truncate text-xs font-bold text-minsah-text-primary mt-0.5">
                       {product.name}
                     </p>
-                    <p className="text-xs font-black text-minsah-action-primary">
+                    <p className="text-xs font-bold text-minsah-action-primary">
                       ৳{bundleCurrentProductTotal.toLocaleString("bn-BD")}
                     </p>
                   </div>
@@ -1685,10 +1685,10 @@ export default function ProductClient({
                   return (
                     <div
                       key={bundleProduct.id}
-                      className={`flex items-center gap-3 rounded-2xl border p-3 transition-all ${
+                      className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
                         isSelected && isSelectable
-                          ? "border-minsah-action-primary bg-minsah-surface-subtle shadow-sm"
-                          : "border-minsah-border-subtle bg-white/60 opacity-80 hover:opacity-100"
+                          ? "border-minsah-action-primary bg-minsah-surface-subtle shadow-xs"
+                          : "border-stone-200 bg-white/60 opacity-80 hover:opacity-100"
                       }`}
                     >
                       <Checkbox
@@ -1698,7 +1698,7 @@ export default function ProductClient({
                         onChange={() => toggleBundleProduct(bundleProduct.id)}
                       />
 
-                      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white border border-minsah-border-subtle">
+                      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-white border border-stone-200">
                         <CatalogProductImage
                           src={bundleProduct.image}
                           alt={bundleProduct.name}
@@ -1715,7 +1715,7 @@ export default function ProductClient({
                           {bundleProduct.name}
                         </Link>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs font-black text-minsah-action-primary">
+                          <span className="text-xs font-bold text-minsah-action-primary">
                             ৳{bundleProduct.price.toLocaleString("bn-BD")}
                           </span>
                           {bundleProduct.originalPrice &&
@@ -1732,12 +1732,12 @@ export default function ProductClient({
               </div>
 
               {/* Right: Bundle CTA Card */}
-              <div className="rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle p-5 text-center space-y-3">
-                <p className="text-xs font-bold text-minsah-text-muted">
+              <div className="rounded-xl border border-stone-200 bg-minsah-surface-subtle p-5 text-center space-y-3">
+                <p className="text-xs font-semibold text-minsah-text-muted">
                   সর্বমোট মূল্য ({selectedBundleProducts.length + 1}টি আইটেম)
                 </p>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-2xl font-black text-minsah-action-primary">
+                  <span className="text-2xl font-bold text-minsah-action-primary">
                     ৳{bundleTotal.toLocaleString("bn-BD")}
                   </span>
                   {bundleSavings > 0 && (
@@ -1748,7 +1748,7 @@ export default function ProductClient({
                 </div>
 
                 {bundleSavings > 0 && (
-                  <span className="inline-block rounded-full bg-minsah-action-primary px-3 py-0.5 text-xs font-black text-white">
+                  <span className="inline-block rounded-full bg-minsah-action-primary px-3 py-0.5 text-xs font-semibold text-white shadow-xs">
                     মোট সাশ্রয় ৳{bundleSavings.toLocaleString("bn-BD")}
                   </span>
                 )}
@@ -1758,7 +1758,7 @@ export default function ProductClient({
                   fullWidth
                   onClick={handleAddBundleToCart}
                   disabled={!activeInStock}
-                  className="rounded-2xl h-11 bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-black shadow-md"
+                  className="rounded-full h-11 bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-semibold shadow-xs"
                 >
                   <ShoppingBag size={16} className="mr-1.5" />
                   বান্ডেল কার্টে যোগ করুন
@@ -1784,10 +1784,10 @@ export default function ProductClient({
         <section id="product-reviews" className="mt-12 scroll-mt-24 space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-wider text-minsah-action-primary">
+              <p className="text-xs font-semibold uppercase tracking-wider text-minsah-action-primary">
                 কাস্টমার রিভিউ
               </p>
-              <h3 className="text-lg font-black text-minsah-text-primary sm:text-xl">
+              <h3 className="text-lg font-bold text-minsah-text-primary sm:text-xl">
                 ক্রেতাদের অভিজ্ঞতা ও রেটিং
               </h3>
             </div>
@@ -1797,13 +1797,13 @@ export default function ProductClient({
 
         {/* Related Products Carousel */}
         {relatedProducts.length > 0 && (
-          <section className="mt-12 rounded-3xl border border-minsah-border-subtle bg-minsah-surface-panel p-5 sm:p-7 shadow-sm">
+          <section className="mt-12 rounded-xl border border-stone-200 bg-white p-5 sm:p-7 shadow-xs">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-minsah-action-primary">
+                <p className="text-xs font-semibold uppercase tracking-wider text-minsah-action-primary">
                   আপনার পছন্দ হতে পারে
                 </p>
-                <h3 className="text-lg font-black text-minsah-text-primary sm:text-xl">
+                <h3 className="text-lg font-bold text-minsah-text-primary sm:text-xl">
                   সম্পর্কিত পণ্যসমূহ (Related Products)
                 </h3>
               </div>
@@ -1832,9 +1832,9 @@ export default function ProductClient({
                   <Link
                     key={relatedProduct.id}
                     href={productPath(relatedProduct)}
-                    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle/50 transition-all hover:shadow-md hover:border-minsah-action-primary/50"
+                    className="group flex h-full flex-col overflow-hidden rounded-lg border border-stone-200/70 bg-white transition-all hover:border-stone-300 hover:shadow-xs"
                   >
-                    <div className="relative aspect-square bg-white p-2">
+                    <div className="relative aspect-square bg-minsah-surface-subtle p-2">
                       <CatalogProductImage
                         src={relatedProduct.image}
                         alt={relatedProduct.name}
@@ -1842,18 +1842,18 @@ export default function ProductClient({
                         className="group-hover:scale-105 transition-transform duration-300"
                       />
                       {relatedDiscount && (
-                        <span className="absolute right-2 top-2 rounded-full bg-minsah-action-primary px-2 py-0.5 text-[10px] font-black text-white shadow-sm">
+                        <span className="absolute right-2 top-2 rounded-full bg-minsah-action-primary px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs">
                           -{relatedDiscount}%
                         </span>
                       )}
                     </div>
 
                     <div className="flex flex-1 flex-col p-3">
-                      <p className="line-clamp-2 text-xs font-bold text-minsah-text-primary group-hover:text-minsah-action-primary transition">
+                      <p className="line-clamp-2 text-xs font-semibold text-minsah-text-primary group-hover:text-minsah-action-primary transition">
                         {relatedProduct.name}
                       </p>
                       <div className="mt-2 flex items-center gap-1.5">
-                        <span className="text-sm font-black text-minsah-action-primary">
+                        <span className="text-sm font-bold text-minsah-action-primary">
                           ৳{relatedProduct.price.toLocaleString("bn-BD")}
                         </span>
                         {relatedProduct.originalPrice &&
@@ -1873,12 +1873,12 @@ export default function ProductClient({
 
         {/* Recently Viewed Products */}
         {recentlyViewed.length > 0 && (
-          <section className="mt-12 rounded-3xl border border-minsah-border-subtle bg-minsah-surface-panel p-5 sm:p-7 shadow-sm">
+          <section className="mt-12 rounded-xl border border-stone-200 bg-white p-5 sm:p-7 shadow-xs">
             <div className="mb-4">
-              <p className="text-xs font-black uppercase tracking-wider text-minsah-action-primary">
+              <p className="text-xs font-semibold uppercase tracking-wider text-minsah-action-primary">
                 সম্প্রতি দেখা হয়েছে
               </p>
-              <h3 className="text-lg font-black text-minsah-text-primary">
+              <h3 className="text-lg font-bold text-minsah-text-primary">
                 Recently Viewed Products
               </h3>
             </div>
@@ -1888,9 +1888,9 @@ export default function ProductClient({
                 <Link
                   key={item.id}
                   href={`/products/${item.slug || item.id}`}
-                  className="group block overflow-hidden rounded-2xl border border-minsah-border-subtle bg-white p-2 transition hover:shadow-md"
+                  className="group block overflow-hidden rounded-lg border border-stone-200/70 bg-white p-2 transition hover:border-stone-300 hover:shadow-xs"
                 >
-                  <div className="relative aspect-square overflow-hidden rounded-xl bg-minsah-surface-subtle">
+                  <div className="relative aspect-square overflow-hidden rounded-md bg-minsah-surface-subtle">
                     <CatalogProductImage
                       src={item.image}
                       alt={item.name}
@@ -1898,10 +1898,10 @@ export default function ProductClient({
                       className="group-hover:scale-105 transition-transform"
                     />
                   </div>
-                  <p className="mt-2 line-clamp-1 text-xs font-bold text-minsah-text-primary group-hover:text-minsah-action-primary transition">
+                  <p className="mt-2 line-clamp-1 text-xs font-semibold text-minsah-text-primary group-hover:text-minsah-action-primary transition">
                     {item.name}
                   </p>
-                  <p className="text-xs font-black text-minsah-action-primary">
+                  <p className="text-xs font-bold text-minsah-action-primary">
                     ৳{item.price.toLocaleString("bn-BD")}
                   </p>
                 </Link>

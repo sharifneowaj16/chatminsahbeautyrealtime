@@ -24,7 +24,7 @@ export default function BottomNavigation() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-minsah-border-soft bg-white/95 shadow-[0_-8px_30px_rgba(66,28,0,0.10)] backdrop-blur-md minsah-bottom-safe md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200/70 bg-white/95 shadow-[0_-4px_20px_rgba(24,28,26,0.06)] backdrop-blur-md minsah-bottom-safe md:hidden"
       aria-label="Primary mobile navigation"
     >
       <div className="mx-auto grid h-[var(--minsah-bottom-nav-height)] max-w-lg grid-cols-5 items-stretch px-1">
@@ -43,14 +43,14 @@ export default function BottomNavigation() {
               href={href}
               aria-current={active ? 'page' : undefined}
               aria-label={`${label}${countLabel}`}
-              className={`minsah-touch-target relative flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-minsah-primary ${
-                active ? 'text-minsah-primary' : 'text-minsah-secondary hover:text-minsah-primary'
+              className={`minsah-touch-target relative flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition focus-visible:ring-2 focus-visible:ring-minsah-primary ${
+                active ? 'text-minsah-primary font-semibold' : 'text-minsah-secondary hover:text-minsah-primary'
               }`}
             >
-              <span className={`relative flex h-7 min-w-10 items-center justify-center rounded-full transition ${active ? 'bg-minsah-accent' : ''}`}>
-                <Icon size={21} strokeWidth={active ? 2.5 : 2} aria-hidden="true" />
+              <span className={`relative flex h-7 min-w-10 items-center justify-center rounded-full transition ${active ? 'bg-minsah-surface-subtle text-minsah-primary' : ''}`}>
+                <Icon size={20} strokeWidth={active ? 2.25 : 1.75} aria-hidden="true" />
                 {item.key === 'cart' && totalQuantity > 0 ? (
-                  <span className="absolute -right-0.5 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-minsah-danger px-1 text-xs font-bold leading-none text-white">
+                  <span className="absolute -right-0.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-minsah-primary px-1 text-[10px] font-bold leading-none text-white shadow-xs">
                     {totalQuantity > 99 ? '99+' : totalQuantity}
                   </span>
                 ) : null}

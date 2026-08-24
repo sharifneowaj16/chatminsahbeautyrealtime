@@ -37,77 +37,79 @@ export default function HomeCombosSection({
   const activeSlide = comboSlides[currentComboSlide];
 
   return (
-    <section className="px-4 py-6 bg-white">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-bold text-minsah-dark">{title}</h2>
-          {subtitle && <p className="mt-1 text-xs font-medium text-minsah-secondary">{subtitle}</p>}
+    <section className="bg-white px-4 py-10 lg:px-8 lg:py-14">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-minsah-dark">{title}</h2>
+            {subtitle && <p className="mt-1 text-xs font-normal text-minsah-secondary">{subtitle}</p>}
+          </div>
+          {showViewAll && (
+            <Link
+              href={viewAllHref}
+              aria-label="View all combos"
+              className="text-xs font-semibold text-minsah-primary flex items-center gap-1 hover:underline"
+            >
+              View all <ChevronRight size={14} />
+            </Link>
+          )}
         </div>
-        {showViewAll && (
-          <Link
-            href={viewAllHref}
-            aria-label="View all combos"
-            className="text-sm text-minsah-primary font-semibold flex items-center gap-1"
-          >
-            View all <ChevronRight size={16} />
+
+        <div className="relative" style={{ minHeight: '248px' }}>
+          <Link href={viewAllHref} className="block">
+            <div
+              className={`bg-gradient-to-br ${activeSlide.gradient} rounded-xl p-6 h-[200px] flex items-center justify-between overflow-hidden shadow-sm`}
+              style={{ transition: 'background 0.5s ease' }}
+            >
+              <div className="text-white z-10 flex min-h-[92px] flex-1 flex-col justify-center">
+                <h3 className="text-2xl font-bold tracking-tight mb-2">{activeSlide.title}</h3>
+                <p className="min-h-[20px] text-sm opacity-90">{activeSlide.description}</p>
+              </div>
+              <div className="relative h-20 w-20 flex-shrink-0 opacity-25" aria-hidden="true">
+                <div className="absolute inset-2 rounded-lg border-4 border-white/70" />
+                <div className="absolute left-1/2 top-1 h-[72px] w-3 -translate-x-1/2 rounded-full bg-white/70" />
+                <div className="absolute left-1 top-1/2 h-3 w-[72px] -translate-y-1/2 rounded-full bg-white/70" />
+                <div className="absolute left-5 top-0 h-5 w-7 -rotate-12 rounded-full border-4 border-white/70" />
+                <div className="absolute right-5 top-0 h-5 w-7 rotate-12 rounded-full border-4 border-white/70" />
+              </div>
+            </div>
           </Link>
-        )}
-      </div>
 
-      <div className="relative" style={{ minHeight: '248px' }}>
-        <Link href={viewAllHref} className="block">
-          <div
-            className={`bg-gradient-to-br ${activeSlide.gradient} rounded-3xl p-6 h-[200px] flex items-center justify-between overflow-hidden`}
-            style={{ transition: 'background 0.5s ease' }}
-          >
-            <div className="text-white z-10 flex min-h-[92px] flex-1 flex-col justify-center">
-              <h3 className="text-2xl font-bold mb-2">{activeSlide.title}</h3>
-              <p className="min-h-[20px] text-sm opacity-90">{activeSlide.description}</p>
-            </div>
-            <div className="relative h-20 w-20 flex-shrink-0 opacity-25" aria-hidden="true">
-              <div className="absolute inset-2 rounded-2xl border-4 border-white/70" />
-              <div className="absolute left-1/2 top-1 h-[72px] w-3 -translate-x-1/2 rounded-full bg-white/70" />
-              <div className="absolute left-1 top-1/2 h-3 w-[72px] -translate-y-1/2 rounded-full bg-white/70" />
-              <div className="absolute left-5 top-0 h-5 w-7 -rotate-12 rounded-full border-4 border-white/70" />
-              <div className="absolute right-5 top-0 h-5 w-7 rotate-12 rounded-full border-4 border-white/70" />
-            </div>
+          <div className="flex justify-center gap-1.5 mt-3">
+            {comboSlides.map((_, index) => (
+              <div key={index} className="h-1.5 w-6 overflow-hidden rounded-full">
+                <span
+                  className="block h-full w-full origin-center rounded-full bg-minsah-primary transition-[opacity,transform] duration-300 ease-out"
+                  style={{
+                    opacity: currentComboSlide === index ? 1 : 0.4,
+                    transform: currentComboSlide === index ? 'scaleX(1)' : 'scaleX(0.25)',
+                  }}
+                />
+              </div>
+            ))}
           </div>
-        </Link>
-
-        <div className="flex justify-center gap-1.5 mt-3">
-          {comboSlides.map((_, index) => (
-            <div key={index} className="h-1.5 w-6 overflow-hidden rounded-full">
-              <span
-                className="block h-full w-full origin-center rounded-full bg-minsah-primary transition-[opacity,transform] duration-300 ease-out"
-                style={{
-                  opacity: currentComboSlide === index ? 1 : 0.4,
-                  transform: currentComboSlide === index ? 'scaleX(1)' : 'scaleX(0.25)',
-                }}
-              />
-            </div>
-          ))}
         </div>
-      </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <Link href={viewAllHref} className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary">
-            M
-          </div>
-          <div>
-            <h4 className="font-semibold text-sm text-minsah-dark">Makeup Combos</h4>
-            <p className="text-xs font-medium text-minsah-dark/80">From Tk 1001</p>
-          </div>
-        </Link>
-        <Link href={viewAllHref} className="bg-minsah-accent rounded-xl p-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary">
-            S
-          </div>
-          <div>
-            <h4 className="font-semibold text-sm text-minsah-dark">Skincare Sets</h4>
-            <p className="text-xs font-medium text-minsah-dark/80">From Tk 1001</p>
-          </div>
-        </Link>
+        <div className="mt-6 grid grid-cols-2 gap-3.5">
+          <Link href={viewAllHref} className="bg-minsah-surface-subtle border border-stone-200/70 rounded-lg p-4 flex items-center gap-3 transition hover:border-stone-300 hover:shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary shadow-xs">
+              M
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm text-minsah-dark">Makeup Combos</h4>
+              <p className="text-xs font-normal text-stone-500">From Tk 1001</p>
+            </div>
+          </Link>
+          <Link href={viewAllHref} className="bg-minsah-surface-subtle border border-stone-200/70 rounded-lg p-4 flex items-center gap-3 transition hover:border-stone-300 hover:shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-minsah-primary shadow-xs">
+              S
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm text-minsah-dark">Skincare Sets</h4>
+              <p className="text-xs font-normal text-stone-500">From Tk 1001</p>
+            </div>
+          </Link>
+        </div>
       </div>
     </section>
   );

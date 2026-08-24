@@ -75,8 +75,8 @@ export default function ReviewSection({ reviews, rating }: ReviewSectionProps) {
     <div className="space-y-4" lang="bn">
       <section className="minsah-panel overflow-hidden">
         <div className="grid gap-4 p-4 md:grid-cols-[190px_1fr] md:items-center">
-          <div className="rounded-2xl bg-minsah-surface-soft p-4 text-center">
-            <p className="text-4xl font-black text-minsah-action-primary">{rating.average.toFixed(1)}</p>
+          <div className="rounded-lg bg-minsah-surface-soft p-4 text-center">
+            <p className="text-4xl font-bold text-minsah-action-primary">{rating.average.toFixed(1)}</p>
             <div className="my-2 flex justify-center gap-0.5" aria-label={`${rating.average.toFixed(1)} রেটিং, ৫-এর মধ্যে`}>
               {[1, 2, 3, 4, 5].map((star) => <StarRow key={star} filled={star <= Math.round(rating.average)} size={14} />)}
             </div>
@@ -85,16 +85,16 @@ export default function ReviewSection({ reviews, rating }: ReviewSectionProps) {
 
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <div className="rounded-xl bg-minsah-surface-soft px-3 py-2">
-                <p className="text-sm font-black text-minsah-text-primary">{positivePct}%</p>
+              <div className="rounded-lg bg-minsah-surface-soft px-3 py-2">
+                <p className="text-sm font-bold text-minsah-text-primary">{positivePct}%</p>
                 <p className="text-xs text-minsah-text-muted">৪★ বা বেশি</p>
               </div>
-              <div className="rounded-xl bg-minsah-surface-soft px-3 py-2">
-                <p className="text-sm font-black text-minsah-text-primary">{verifiedCount}</p>
+              <div className="rounded-lg bg-minsah-surface-soft px-3 py-2">
+                <p className="text-sm font-bold text-minsah-text-primary">{verifiedCount}</p>
                 <p className="text-xs text-minsah-text-muted">ভেরিফায়েড ক্রেতা</p>
               </div>
-              <div className="col-span-2 rounded-xl bg-minsah-status-success-surface px-3 py-2 sm:col-span-1">
-                <p className="flex items-center gap-1 text-sm font-black text-minsah-status-success-text">
+              <div className="col-span-2 rounded-lg bg-minsah-status-success-surface px-3 py-2 sm:col-span-1">
+                <p className="flex items-center gap-1 text-sm font-bold text-minsah-status-success-text">
                   <ShieldCheck className="h-4 w-4" aria-hidden="true" /> যাচাইকৃত
                 </p>
                 <p className="text-xs text-minsah-status-success-text">রিভিউ অরিজিনালিটি সংকেত</p>
@@ -130,10 +130,10 @@ export default function ReviewSection({ reviews, rating }: ReviewSectionProps) {
                 <div className="mb-1 flex gap-0.5" aria-label={`${review.rating} রেটিং, ৫-এর মধ্যে`}>
                   {[1, 2, 3, 4, 5].map((star) => <StarRow key={star} filled={star <= review.rating} />)}
                 </div>
-                {review.title ? <p className="text-sm font-black leading-snug text-minsah-text-primary">{review.title}</p> : null}
+                {review.title ? <p className="text-sm font-bold leading-snug text-minsah-text-primary">{review.title}</p> : null}
               </div>
               <div className="flex shrink-0 items-center gap-1 rounded-full bg-minsah-surface-soft px-2 py-1">
-                <span className="max-w-[120px] truncate text-xs font-black text-minsah-text-primary">{review.userName}</span>
+                <span className="max-w-[120px] truncate text-xs font-semibold text-minsah-text-primary">{review.userName}</span>
                 {review.verified ? <CheckCircle className="h-4 w-4 text-minsah-status-success-text" aria-label="ভেরিফায়েড ক্রেতা" /> : null}
               </div>
             </div>

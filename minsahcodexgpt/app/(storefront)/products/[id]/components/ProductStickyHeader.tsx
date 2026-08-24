@@ -78,7 +78,7 @@ export default function ProductStickyHeader({
 
         <Link
           href="/"
-          className={`absolute left-1/2 -translate-x-1/2 rounded-full px-3 py-1.5 text-sm font-black tracking-tight text-minsah-text-primary transition-all duration-300 ${
+          className={`absolute left-1/2 -translate-x-1/2 rounded-full px-3 py-1.5 text-sm font-bold tracking-tight text-minsah-text-primary transition-all duration-300 ${
             showDetails ? 'pointer-events-none opacity-0' : 'opacity-100'
           }`}
           aria-label="Minsah Beauty home"
@@ -95,7 +95,7 @@ export default function ProductStickyHeader({
         >
           <ShoppingBag size={19} aria-hidden="true" />
           {cartCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-minsah-action-primary px-1 text-[10px] font-black leading-none text-white shadow-sm">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-minsah-action-primary px-1 text-[10px] font-bold leading-none text-white shadow-xs">
               {cartCount > 99 ? '99+' : cartCount}
             </span>
           )}

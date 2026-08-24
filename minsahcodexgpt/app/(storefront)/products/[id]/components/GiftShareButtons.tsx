@@ -102,12 +102,12 @@ function GiftLinkResult({ result }: { result: GiftResult }) {
 
 function UserSummary({ user, action }: { user: LoggedInUser; action: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-minsah-surface-soft px-3 py-2">
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-minsah-action-primary text-xs font-black text-minsah-text-inverse" aria-hidden="true">
+    <div className="flex items-center gap-3 rounded-lg bg-minsah-surface-soft px-3 py-2">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-minsah-action-primary text-xs font-bold text-minsah-text-inverse" aria-hidden="true">
         {user.name.charAt(0).toUpperCase()}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-black text-minsah-text-primary">{user.name}</p>
+        <p className="truncate text-xs font-bold text-minsah-text-primary">{user.name}</p>
         <p className="text-xs text-minsah-text-muted">{action}</p>
       </div>
       <Check className="h-4 w-4 text-minsah-status-success-text" aria-hidden="true" />
@@ -284,7 +284,7 @@ function GetGiftForm({
         </>
       ) : (
         <>
-          <h4 className="flex items-center gap-2 text-sm font-black text-minsah-text-primary">
+          <h4 className="flex items-center gap-2 text-sm font-bold text-minsah-text-primary">
             <MapPin className="h-4 w-4" /> আপনার ডেলিভারি ঠিকানা
           </h4>
           <Input

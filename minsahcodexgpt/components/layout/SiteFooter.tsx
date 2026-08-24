@@ -29,39 +29,39 @@ export default function SiteFooter() {
   const payments = getEnabledPaymentMethodLabels();
 
   return (
-    <footer className="border-t border-minsah-accent bg-minsah-dark text-minsah-light">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <footer className="border-t border-minsah-accent/20 bg-minsah-dark text-minsah-light">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.35fr_0.8fr_0.8fr_1.15fr]">
           <section aria-labelledby="footer-brand-heading">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-minsah-accent text-xl font-black text-minsah-primary">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-minsah-accent text-lg font-bold text-minsah-primary">
                 M
               </span>
               <div>
-                <h2 id="footer-brand-heading" className="text-xl font-black">
+                <h2 id="footer-brand-heading" className="text-xl font-bold">
                   {identity.name}
                 </h2>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-minsah-accent/80">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-minsah-accent/80">
                   {identity.tagline}
                 </p>
               </div>
             </div>
-            <p className="mt-4 max-w-md text-sm leading-7 text-minsah-light/80">
+            <p className="mt-4 max-w-md text-sm font-normal leading-relaxed text-minsah-light/80">
               {identity.description}
             </p>
             <div className="mt-5 grid max-w-md gap-2 sm:grid-cols-2">
-              <div className="flex items-center gap-2 rounded-2xl bg-white/[0.08] px-3 py-2 text-sm font-semibold">
-                <ShieldCheck size={18} className="text-minsah-accent" aria-hidden="true" /> Authentic products
+              <div className="flex items-center gap-2 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-medium">
+                <ShieldCheck size={16} className="text-minsah-accent" aria-hidden="true" /> Authentic products
               </div>
-              <div className="flex items-center gap-2 rounded-2xl bg-white/[0.08] px-3 py-2 text-sm font-semibold">
-                <Truck size={18} className="text-minsah-accent" aria-hidden="true" /> Nationwide delivery
+              <div className="flex items-center gap-2 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-medium">
+                <Truck size={16} className="text-minsah-accent" aria-hidden="true" /> Nationwide delivery
               </div>
             </div>
             <NewsletterPreferenceCard />
           </section>
 
           <nav aria-labelledby="footer-shop-heading">
-            <h2 id="footer-shop-heading" className="text-sm font-black uppercase tracking-[0.16em] text-minsah-accent">
+            <h2 id="footer-shop-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-minsah-accent">
               Shop
             </h2>
             <ul className="mt-4 space-y-3 text-sm">
@@ -79,7 +79,7 @@ export default function SiteFooter() {
           </nav>
 
           <nav aria-labelledby="footer-help-heading">
-            <h2 id="footer-help-heading" className="text-sm font-black uppercase tracking-[0.16em] text-minsah-accent">
+            <h2 id="footer-help-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-minsah-accent">
               Help
             </h2>
             <ul className="mt-4 space-y-3 text-sm">
@@ -97,7 +97,7 @@ export default function SiteFooter() {
           </nav>
 
           <section aria-labelledby="footer-contact-heading">
-            <h2 id="footer-contact-heading" className="text-sm font-black uppercase tracking-[0.16em] text-minsah-accent">
+            <h2 id="footer-contact-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-minsah-accent">
               Contact
             </h2>
             <ul className="mt-4 space-y-3 text-sm text-minsah-light/80">

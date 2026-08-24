@@ -114,13 +114,13 @@ export default function ProductGallery({
                       setActiveIdx(index);
                     }}
                     aria-label={`${productName} ছবি ${index + 1} দেখুন`}
-                    className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-all duration-200 bg-minsah-surface-subtle p-1 ${
+                    className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border transition-all duration-200 bg-minsah-surface-subtle p-1 ${
                       isSelected
-                        ? 'border-minsah-action-primary shadow-sm scale-[1.02] ring-2 ring-minsah-action-primary/20'
+                        ? 'border-minsah-action-primary shadow-xs scale-[1.02] ring-2 ring-minsah-action-primary/20'
                         : 'border-minsah-border-subtle hover:border-minsah-border-default opacity-80 hover:opacity-100'
                     }`}
                   >
-                    <span className="relative block h-full w-full rounded-xl overflow-hidden">
+                    <span className="relative block h-full w-full rounded-md overflow-hidden">
                       <CatalogProductImage
                         src={image.url}
                         alt={image.alt || `${productName} ${index + 1}`}
@@ -137,7 +137,7 @@ export default function ProductGallery({
           {/* Main Large Image Viewport */}
           <div className="relative flex-1">
             <div
-              className="relative aspect-[4/3] sm:aspect-[1/1] w-full cursor-zoom-in select-none overflow-hidden rounded-3xl border border-minsah-border-subtle/80 bg-minsah-surface-subtle outline-none focus-visible:ring-2 focus-visible:ring-minsah-border-focus touch-pan-y shadow-[0_4px_24px_rgba(0,0,0,0.03)]"
+              className="relative aspect-[4/3] sm:aspect-[1/1] w-full cursor-zoom-in select-none overflow-hidden rounded-xl border border-stone-200/80 bg-minsah-surface-subtle outline-none focus-visible:ring-2 focus-visible:ring-minsah-border-focus touch-pan-y shadow-xs"
               role="button"
               tabIndex={0}
               aria-label={`${productName} ছবি বড় করে দেখুন। ${activeImageNumber}`}
@@ -157,25 +157,25 @@ export default function ProductGallery({
               {/* Floating Badges */}
               <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5 z-10">
                 {discountPct && discountPct > 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-minsah-action-primary px-2.5 py-1 text-xs font-black tracking-wide text-white shadow-sm">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-minsah-action-primary px-2.5 py-1 text-xs font-semibold tracking-wide text-white shadow-xs">
                     -{discountPct}% OFF
                   </span>
                 ) : null}
                 {isNew ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-minsah-action-secondary px-2.5 py-1 text-xs font-bold text-white shadow-sm">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-minsah-action-secondary px-2.5 py-1 text-xs font-semibold text-white shadow-xs">
                     <Sparkles className="h-3 w-3" /> নতুন
                   </span>
                 ) : null}
               </div>
 
               {variantUrl ? (
-                <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 rounded-full bg-minsah-surface-inverse/80 px-3.5 py-1 text-xs font-medium text-white shadow-sm backdrop-blur-sm">
+                <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 rounded-full bg-minsah-surface-inverse/80 px-3.5 py-1 text-xs font-medium text-white shadow-xs backdrop-blur-sm">
                   ভ্যারিয়েন্ট ছবি
                 </div>
               ) : null}
 
               {/* Zoom Trigger Pill */}
-              <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-minsah-text-primary shadow-sm backdrop-blur-md">
+              <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-minsah-text-primary shadow-xs backdrop-blur-md">
                 <ZoomIn className="h-3.5 w-3.5 text-minsah-action-primary" aria-hidden="true" />
                 <span className="hidden sm:inline">বড় করুন</span>
               </div>

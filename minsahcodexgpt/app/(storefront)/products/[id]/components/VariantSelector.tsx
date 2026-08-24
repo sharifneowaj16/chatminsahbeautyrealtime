@@ -77,7 +77,7 @@ function QuantityControl({
       >
         <Minus className="h-4 w-4" aria-hidden="true" />
       </Button>
-      <span className="w-8 text-center text-sm font-black text-minsah-text-primary" aria-live="polite">{quantity}</span>
+      <span className="w-8 text-center text-sm font-bold text-minsah-text-primary" aria-live="polite">{quantity}</span>
       <Button
         type="button"
         variant="ghost"
@@ -140,7 +140,7 @@ export default function VariantSelector({
     <div className="space-y-4" lang="bn">
       <section>
         <div className="mb-2 flex items-center justify-between gap-3">
-          <h3 className="text-xs font-black uppercase tracking-wide text-minsah-text-primary">অপশন বেছে নিন</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-minsah-text-primary">অপশন বেছে নিন</h3>
           <span className="text-xs font-semibold text-minsah-text-muted">
             {currentVariant ? toVariantLabel(currentVariant) : 'সাইজ বা শেড নির্বাচন করুন'}
           </span>
@@ -163,15 +163,15 @@ export default function VariantSelector({
                 disabled={outOfStock}
                 aria-pressed={isSelected}
                 aria-label={`${label}${outOfStock ? ' স্টক শেষ' : ''}`}
-                className={`relative min-h-[5.75rem] w-full justify-start rounded-2xl px-3 py-3 text-left ${
+                className={`relative min-h-[5.75rem] w-full justify-start rounded-lg px-3 py-3 text-left ${
                   isSelected
-                    ? 'border-minsah-border-strong bg-minsah-surface-soft shadow-sm'
+                    ? 'border-minsah-border-strong bg-minsah-surface-soft shadow-xs'
                     : outOfStock
                       ? 'bg-minsah-surface-disabled opacity-60'
                       : 'bg-minsah-surface-panel hover:bg-minsah-surface-subtle'
                 }`}
               >
-                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-minsah-surface-soft">
+                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-minsah-surface-soft">
                   {variant.image ? (
                     <CatalogProductImage src={variant.image} alt={label} sizes="56px" padding="sm" />
                   ) : (
@@ -183,7 +183,7 @@ export default function VariantSelector({
 
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
-                    <span className={`break-words text-sm font-black ${outOfStock ? 'text-minsah-text-disabled line-through' : 'text-minsah-text-primary'}`}>
+                    <span className={`break-words text-sm font-bold ${outOfStock ? 'text-minsah-text-disabled line-through' : 'text-minsah-text-primary'}`}>
                       {label}
                     </span>
                     {isSelected ? (
@@ -199,7 +199,7 @@ export default function VariantSelector({
                   </span>
 
                   <span className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-sm font-black text-minsah-action-primary">৳{variant.price.toLocaleString('bn-BD')}</span>
+                    <span className="text-sm font-bold text-minsah-action-primary">৳{variant.price.toLocaleString('bn-BD')}</span>
                     <Badge tone={outOfStock ? 'danger' : 'success'}>{outOfStock ? 'স্টক শেষ' : `${variant.stock}টি আছে`}</Badge>
                   </span>
                 </span>
@@ -210,7 +210,7 @@ export default function VariantSelector({
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-black uppercase tracking-wide text-minsah-text-primary">পরিমাণ</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-minsah-text-primary">পরিমাণ</span>
         <QuantityControl quantity={quantity} maxStock={maxStock} disabled={quantityDisabled} onChange={handleQtyChange} />
         {quantityDisabled ? (
           <Badge tone="warning">আগে একটি অপশন নির্বাচন করুন</Badge>

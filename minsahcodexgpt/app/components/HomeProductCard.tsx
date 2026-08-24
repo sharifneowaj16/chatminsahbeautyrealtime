@@ -78,66 +78,51 @@ function StockMessage({ product }: { product: HomeProductCardData }) {
 
 function CardBadges({ product }: { product: HomeProductCardData }) {
   const discount = calculateDiscount(product);
-  return (
-    <div className="absolute left-2 top-2 z-10 flex flex-col gap-1.5">
-      {discount > 0 && (
-        <span className="rounded-full bg-red-500 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+  if (discount > 0) {
+    return (
+      <div className="absolute left-2.5 top-2.5 z-10">
+        <span className="rounded-full bg-minsah-primary px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-xs">
           {discount}% off
         </span>
-      )}
-      {product.isNew && (
-        <span className="rounded-full bg-emerald-600 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+      </div>
+    );
+  }
+  if (product.isNew) {
+    return (
+      <div className="absolute left-2.5 top-2.5 z-10">
+        <span className="rounded-full bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-xs">
           New
         </span>
-      )}
-      {product.featured && !product.isNew && (
-        <span className="rounded-full bg-minsah-dark px-2 py-1 text-xs font-bold uppercase tracking-wide text-minsah-accent shadow-sm">
+      </div>
+    );
+  }
+  if (product.featured) {
+    return (
+      <div className="absolute left-2.5 top-2.5 z-10">
+        <span className="rounded-full bg-stone-800 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-minsah-accent shadow-xs">
           Popular
         </span>
-      )}
-    </div>
-  );
-}
-
-
-function FlashSaleProgress({ product, compact = false }: { product: HomeProductCardData; compact?: boolean }) {
-  if (!product.flashSaleEligible || (!product.soldCount && product.stock <= 0)) return null;
-
-  const sold = Math.max(0, product.soldCount ?? 0);
-  const remaining = Math.max(0, product.stock);
-  const total = sold + remaining;
-  const percentage = total > 0 ? Math.min(100, Math.max(8, Math.round((sold / total) * 100))) : 0;
-  const label = sold > 0 ? `${sold}+ sold` : 'Limited stock';
-
-  return (
-    <div className={`mt-2 ${compact ? 'space-y-1' : 'space-y-1.5'}`}>
-      <div className="flex items-center justify-between gap-2 text-xs font-bold uppercase tracking-wide text-orange-700">
-        <span>{label}</span>
-        {remaining > 0 && <span>{remaining} left</span>}
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-orange-100" aria-hidden="true">
-        <div className="h-full rounded-full bg-orange-500" style={{ width: `${percentage}%` }} />
-      </div>
-    </div>
-  );
+    );
+  }
+  return null;
 }
 
 function RatingRow({ product, compact = false }: { product: HomeProductCardData; compact?: boolean }) {
   const rating = clampRating(product.rating);
   const reviews = product.reviews ?? 0;
 
-  if (rating <= 0 && reviews <= 0 && !product.soldCount) return null;
+  if (rating <= 0 && reviews <= 0) return null;
 
   return (
-    <div className={`flex items-center gap-1.5 text-minsah-secondary ${compact ? 'text-xs' : 'text-xs'}`}>
+    <div className="flex items-center gap-1.5 text-minsah-secondary text-xs">
       {rating > 0 && (
-        <span className="inline-flex items-center gap-0.5 font-semibold text-amber-700">
-          <Star size={compact ? 11 : 13} className="fill-current" />
+        <span className="inline-flex items-center gap-0.5 font-medium text-amber-700">
+          <Star size={compact ? 11 : 12} className="fill-current" />
           {rating.toFixed(1)}
         </span>
       )}
-      {reviews > 0 && <span>({reviews})</span>}
-      {product.soldCount ? <span>• {product.soldCount}+ sold</span> : null}
+      {reviews > 0 && <span className="text-stone-400">({reviews})</span>}
     </div>
   );
 }
@@ -155,31 +140,31 @@ export default function HomeProductCard({
 
   if (variant === 'horizontal') {
     return (
-      <article className="group/card minsah-card-lift grid grid-cols-[112px,1fr] gap-3 rounded-2xl border border-stone-100 bg-white p-2.5 shadow-sm transition-all duration-300 ease-out motion-reduce:transition-none">
-        <Link href={href} className="relative block aspect-square overflow-hidden rounded-2xl bg-minsah-accent">
+      <article className="group/card minsah-card-lift grid grid-cols-[112px,1fr] gap-3 rounded-lg border border-stone-200/70 bg-white p-3 shadow-none transition-all duration-200 ease-out hover:border-stone-300 hover:shadow-sm motion-reduce:transition-none">
+        <Link href={href} className="relative block aspect-square overflow-hidden rounded-md bg-minsah-surface-subtle">
           <CatalogProductImage src={product.image} alt={product.name} priority={priority} sizes="112px" className="group-hover/card:scale-105" />
           <CardBadges product={product} />
         </Link>
-        <div className="min-w-0">
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <Link href={href} className="min-w-0">
-              <h3 className="line-clamp-2 text-sm font-bold text-minsah-dark transition-colors hover:text-minsah-primary">
-                {product.name}
-              </h3>
-            </Link>
-            <HomeWishlistButton productId={product.id} productName={product.name} size="sm" />
+        <div className="min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="mb-1 flex items-start justify-between gap-2">
+              <Link href={href} className="min-w-0">
+                <h3 className="line-clamp-2 text-sm font-semibold text-minsah-dark transition-colors hover:text-minsah-primary">
+                  {product.name}
+                </h3>
+              </Link>
+              <HomeWishlistButton productId={product.id} productName={product.name} size="sm" />
+            </div>
+            <RatingRow product={product} compact />
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="text-base font-bold text-minsah-primary">{formatPrice(product.price)}</span>
+              {product.originalPrice && product.originalPrice > product.price && (
+                <span className="text-xs font-normal text-stone-400 line-through">
+                  {formatPrice(product.originalPrice)}
+                </span>
+              )}
+            </div>
           </div>
-          <RatingRow product={product} compact />
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="text-base font-extrabold text-minsah-primary">{formatPrice(product.price)}</span>
-            {product.originalPrice && product.originalPrice > product.price && (
-              <span className="text-xs font-medium text-minsah-secondary line-through">
-                {formatPrice(product.originalPrice)}
-              </span>
-            )}
-          </div>
-          <div className="mt-1.5"><StockMessage product={product} /></div>
-          <FlashSaleProgress product={product} compact />
           <HomePrimaryCartAction
             productId={product.id}
             productName={product.name}
@@ -198,11 +183,11 @@ export default function HomeProductCard({
   }
 
   return (
-    <article className={`group/card minsah-card-lift flex h-full flex-col rounded-3xl border border-stone-100 bg-white shadow-sm transition-all duration-300 ease-out motion-reduce:transition-none ${isCompact ? 'p-2' : 'p-3'}`}>
+    <article className={`group/card minsah-card-lift flex h-full flex-col rounded-lg border border-stone-200/70 bg-white shadow-none transition-all duration-200 ease-out hover:border-stone-300 hover:shadow-sm motion-reduce:transition-none ${isCompact ? 'p-2.5' : 'p-3'}`}>
       <div className="relative">
         <Link
           href={href}
-          className={`relative block aspect-square overflow-hidden bg-minsah-accent ${isCompact ? 'rounded-2xl' : 'rounded-[1.35rem]'}`}
+          className={`relative block aspect-square overflow-hidden bg-minsah-surface-subtle ${isCompact ? 'rounded' : 'rounded-md'}`}
           aria-label={`View ${product.name}`}
         >
           <CatalogProductImage src={product.image} alt={product.name} priority={priority} sizes={imageSizes} className="group-hover/card:scale-105" />
@@ -219,57 +204,35 @@ export default function HomeProductCard({
         <div className="absolute right-2 top-2 z-20">
           <HomeWishlistButton productId={product.id} productName={product.name} size={isCompact ? 'sm' : 'md'} />
         </div>
-
-        {!isOutOfStock && (
-          <div className="absolute bottom-2 right-2 z-20">
-            <HomeOverlayCartAction
-              productId={product.id}
-              productName={product.name}
-              productImage={product.image}
-              price={product.price}
-              stock={product.stock}
-              hasVariants={product.hasVariants}
-              variants={product.variants}
-            variantCount={product.variantCount ?? undefined}
-            variantsFullyLoaded={product.variantsFullyLoaded ?? undefined}
-            />
-          </div>
-        )}
       </div>
 
       <div className={`flex flex-1 flex-col ${isCompact ? 'pt-2' : 'pt-3'}`}>
         {showCategory && product.category && (
-          <p className="mb-1 truncate text-xs font-semibold uppercase tracking-wide text-minsah-secondary">
+          <p className="mb-1 truncate text-[11px] font-semibold uppercase tracking-wider text-minsah-secondary">
             {product.category}
           </p>
         )}
 
         <Link href={href} className="block">
-          <h3 className={`${isCompact ? 'min-h-[2rem] text-xs' : 'min-h-[2.5rem] text-sm'} line-clamp-2 font-bold leading-snug text-minsah-dark transition-colors hover:text-minsah-primary`}>
+          <h3 className={`${isCompact ? 'min-h-[2rem] text-xs' : 'min-h-[2.5rem] text-sm'} line-clamp-2 font-semibold leading-snug text-minsah-dark transition-colors hover:text-minsah-primary`}>
             {product.name}
           </h3>
         </Link>
 
-        <div className="mt-2">
+        <div className="mt-1.5">
           <RatingRow product={product} compact={isCompact} />
         </div>
 
-        <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
-          <span className={`${isCompact ? 'text-sm' : 'text-base'} font-extrabold text-minsah-primary`}>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className={`${isCompact ? 'text-sm' : 'text-base'} font-bold text-minsah-primary`}>
             {formatPrice(product.price)}
           </span>
           {product.originalPrice && product.originalPrice > product.price && (
-            <span className={`${isCompact ? 'text-xs' : 'text-xs'} font-medium text-minsah-secondary line-through`}>
+            <span className="text-xs font-normal text-stone-400 line-through">
               {formatPrice(product.originalPrice)}
             </span>
           )}
         </div>
-
-        <div className="mt-1.5">
-          <StockMessage product={product} />
-        </div>
-
-        <FlashSaleProgress product={product} compact={isCompact} />
 
         <div className="mt-3 flex flex-1 items-end">
           <HomePrimaryCartAction
