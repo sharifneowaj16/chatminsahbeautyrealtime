@@ -41,6 +41,14 @@ import WishlistButton from "@/components/wishlist/WishlistButton";
 import ProductStickyHeader from "./ProductStickyHeader";
 import VariantSelector from "./VariantSelector";
 import StickyBottomBar from "./StickyBottomBar";
+import SeedClinicalStatStrip from "./SeedClinicalStatStrip";
+import SeedDeliveryTechnology from "./SeedDeliveryTechnology";
+import SeedFormulationMatrix from "./SeedFormulationMatrix";
+import SeedClinicalTrialData from "./SeedClinicalTrialData";
+import SeedWholeBodyExplorer from "./SeedWholeBodyExplorer";
+import SeedRefillRitual from "./SeedRefillRitual";
+import SeedAcclimationTimeline from "./SeedAcclimationTimeline";
+import SeedClinicalFAQ from "./SeedClinicalFAQ";
 import {
   trackAddToCartBundle,
   trackProductView,
@@ -1392,9 +1400,32 @@ export default function ProductClient({
             )}
           </div>
         </div>
+      </div>
 
+      {/* 01. Clinical Metric Ticker */}
+      <SeedClinicalStatStrip />
+
+      {/* 02. Dermal Delivery Technology */}
+      <SeedDeliveryTechnology />
+
+      {/* 03. Bio-Active Formulation Matrix */}
+      <SeedFormulationMatrix />
+
+      {/* 04. Human Clinical Trial Evidence */}
+      <SeedClinicalTrialData />
+
+      {/* 05. 4-System Whole-Dermal Explorer */}
+      <SeedWholeBodyExplorer />
+
+      {/* 06. Sustainable Vessel & Refill Ritual */}
+      <SeedRefillRitual />
+
+      {/* 07. 28-Day Cellular Renewal Timeline */}
+      <SeedAcclimationTimeline />
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Middle Section: Storytelling Tabs */}
-        <section className="mt-12 space-y-6">
+        <section className="mt-16 space-y-6">
           {/* Desktop Tab Switcher */}
           <div className="hidden lg:flex border-b border-minsah-border-subtle gap-2">
             <button
@@ -1769,19 +1800,22 @@ export default function ProductClient({
         )}
 
         {/* Customer Reviews Section */}
-        <section id="product-reviews" className="mt-12 scroll-mt-24 space-y-4">
+        <section id="product-reviews" className="mt-16 scroll-mt-24 space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-minsah-action-primary">
-                কাস্টমার রিভিউ
-              </p>
-              <h3 className="text-lg font-bold text-minsah-text-primary sm:text-xl">
-                ক্রেতাদের অভিজ্ঞতা ও রেটিং
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-minsah-primary">
+                VERIFIED BIOMETRIC REVIEWS
+              </span>
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-minsah-dark mt-1">
+                Customer Experiences &amp; Biometric Evaluations
               </h3>
             </div>
           </div>
           <ReviewSection reviews={reviews} rating={rating} />
         </section>
+
+        {/* Clinical Transparency & Formulation FAQ */}
+        <SeedClinicalFAQ />
 
         {/* Related Products Carousel */}
         {relatedProducts.length > 0 && (
