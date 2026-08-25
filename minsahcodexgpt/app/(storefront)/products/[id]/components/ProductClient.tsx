@@ -29,6 +29,9 @@ import {
   Heart,
   Share2,
   Check,
+  Droplets,
+  FlaskConical,
+  FileText,
 } from "lucide-react";
 import CartStepper from "@/components/cart/CartStepper";
 import CardBuyNowButton from "@/components/cart/CardBuyNowButton";
@@ -1193,121 +1196,116 @@ export default function ProductClient({
 
           {/* Right Column: Core Commerce & Details */}
           <div className="space-y-6 pt-4 pb-36 lg:pt-0 lg:pb-8">
-            {/* Category & Brand Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              {product.brand && (
-                <span className="rounded-full bg-minsah-surface-subtle px-3 py-1 text-xs font-bold text-minsah-action-primary border border-minsah-border-subtle">
-                  {product.brand}
+            {/* Category & Brand Taxonomy Eyebrow */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-minsah-primary">
+                  {product.brand || 'MINSAH BEAUTY'} {product.category ? `• ${product.category}` : ''}
                 </span>
-              )}
-              {product.category && (
-                <span className="rounded-full bg-minsah-surface-subtle px-3 py-1 text-xs font-semibold text-minsah-text-muted border border-minsah-border-subtle">
-                  {product.category}
-                </span>
-              )}
-              {product.isNew && (
-                <span className="rounded-full bg-minsah-action-secondary px-3 py-1 text-xs font-bold text-white shadow-sm flex items-center gap-1">
-                  <Sparkles size={12} /> New Arrival
-                </span>
-              )}
+                {product.isNew && (
+                  <span className="rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                    New Arrival
+                  </span>
+                )}
+              </div>
+
+              {/* Share & Wishlist Micro-Actions */}
+              <div className="flex items-center gap-2">
+                <WishlistButton
+                  productId={product.id}
+                  productName={product.name}
+                  presentation="icon"
+                />
+                <ShareButton productName={product.name} productUrl={productUrl} />
+              </div>
             </div>
 
             {/* Title & Bengali Subhead */}
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-minsah-text-primary sm:text-3xl leading-snug">
+              <h1 className="text-2xl font-bold tracking-tight text-minsah-dark sm:text-3xl lg:text-4xl leading-tight">
                 {displayTitle}
               </h1>
               {product.bengaliName && product.bengaliName !== displayTitle && (
-                <p className="mt-1 text-base font-semibold text-minsah-text-muted">
+                <p className="mt-1.5 text-sm font-normal text-stone-500">
                   {product.bengaliName}
                 </p>
               )}
 
               {/* Rating & Review Jump Link */}
-              <div className="mt-2.5 flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 border border-amber-200/60">
-                  <div className="flex gap-0.5 text-amber-500" aria-label={`${rating.average.toFixed(1)} out of 5 stars`}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        size={13}
-                        className={
-                          star <= Math.round(rating.average)
-                            ? "fill-amber-500 text-amber-500"
-                            : "text-neutral-300"
-                        }
-                        aria-hidden="true"
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs font-black text-amber-900">
-                    {rating.average > 0 ? rating.average.toFixed(1) : "নতুন"}
-                  </span>
+              <div className="mt-2.5 flex items-center gap-2 text-xs text-stone-500">
+                <div className="flex gap-0.5 text-stone-900" aria-label={`${rating.average.toFixed(1)} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={13}
+                      className={
+                        star <= Math.round(rating.average)
+                          ? "fill-stone-900 text-stone-900"
+                          : "text-stone-300"
+                      }
+                      aria-hidden="true"
+                    />
+                  ))}
                 </div>
-
+                <span className="font-semibold text-minsah-dark">
+                  {rating.average > 0 ? rating.average.toFixed(1) : "New"}
+                </span>
+                <span className="text-stone-300">·</span>
                 <a
                   href="#product-reviews"
-                  className="text-xs font-bold text-minsah-action-primary underline-offset-4 hover:underline"
+                  className="hover:text-minsah-primary hover:underline underline-offset-4 transition-colors"
                 >
-                  {rating.total > 0 ? `(${rating.total} কাস্টমার রিভিউ)` : "প্রথম রিভিউ দিন"}
+                  {rating.total > 0 ? `${rating.total} Verified Reviews` : "Be the first to review"}
                 </a>
               </div>
             </div>
 
-            {/* Price Box with Savings Banner */}
-            <div className="rounded-lg border border-stone-200 bg-minsah-surface-subtle p-4">
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="text-3xl font-bold text-minsah-action-primary tracking-tight">
-                  {priceDisplayText}
+            {/* Price Row (Seamless Canvas, Zero Box Clutter) */}
+            <div className="flex flex-wrap items-baseline gap-3 pt-1">
+              <span className="text-3xl font-bold text-minsah-dark tracking-tight">
+                {priceDisplayText}
+              </span>
+
+              {comparePrice && comparePrice > currentPrice && (
+                <span className="text-base text-stone-400 line-through font-normal">
+                  ৳{comparePrice.toLocaleString("bn-BD")}
                 </span>
+              )}
 
-                {comparePrice && comparePrice > currentPrice && (
-                  <span className="text-lg text-minsah-text-muted line-through font-medium">
-                    ৳{comparePrice.toLocaleString("bn-BD")}
-                  </span>
-                )}
-
-                {discountPct && (
-                  <span className="rounded-full bg-minsah-action-primary px-3 py-1 text-xs font-semibold text-white shadow-xs">
-                    {discountPct}% সাশ্রয়
-                  </span>
-                )}
-              </div>
-
-              {requiresVariantSelection && variantPriceMin && (
-                <p className="mt-1.5 text-xs font-bold text-amber-800">
-                  ⚠️ সাইজ বা শেড অপশন নির্বাচন করলে সুনির্দিষ্ট মূল্য দেখতে পাবেন।
-                </p>
+              {discountPct && (
+                <span className="rounded-full bg-stone-900 text-white px-2.5 py-0.5 text-[11px] font-semibold tracking-wide">
+                  {discountPct}% OFF
+                </span>
               )}
             </div>
 
             {/* Short Description */}
             {product.shortDescription && (
-              <p className="text-sm leading-relaxed text-minsah-text-primary/90">
+              <p className="text-sm leading-relaxed text-stone-600">
                 {product.shortDescription}
               </p>
             )}
 
-            {/* Key Benefits Pills */}
+            {/* Targeted Benefits */}
             {product.keyBenefits && product.keyBenefits.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-minsah-text-muted">
-                  🌿 প্রধান উপকারিতা
-                </p>
+              <div className="space-y-2 pt-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Targeted Benefits
+                </span>
                 <div className="flex flex-wrap gap-1.5">
                   {product.keyBenefits.slice(0, 5).map((benefit) => (
                     <span
                       key={benefit}
-                      className="rounded-full bg-minsah-surface-subtle px-3 py-1 text-xs font-semibold text-minsah-text-primary border border-minsah-border-subtle/80 flex items-center gap-1"
+                      className="rounded-full bg-minsah-surface-subtle px-3 py-1 text-xs font-medium text-minsah-dark border border-stone-200/80 flex items-center gap-1.5 shadow-xs"
                     >
-                      <Check size={12} className="text-minsah-action-secondary" /> {benefit}
+                      <Check size={12} className="text-minsah-primary" /> {benefit}
                     </span>
                   ))}
                 </div>
               </div>
             )}
 
-            <div className="h-px bg-minsah-border-subtle" />
+            <div className="h-px bg-stone-200/70" />
 
             {/* Variant Selector */}
             <div id="product-variant-selector" className="scroll-mt-24">
@@ -1320,16 +1318,11 @@ export default function ProductClient({
               />
             </div>
 
-            {/* Stock Urgency Indicator */}
+            {/* Selection Guidance or Stock */}
             {requiresVariantSelection ? (
-              <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3">
-                <p className="text-xs font-bold text-amber-900">
-                  ভ্যারিয়েন্ট সিলেক্ট করুন
-                </p>
-                <p className="mt-0.5 text-[11px] text-amber-800">
-                  কার্টে যোগ করা বা ১-ক্লিকে অর্ডারের আগে সঠিক অপশন নির্বাচন করুন।
-                </p>
-              </div>
+              <p className="text-xs text-stone-500 italic">
+                Please select an option above to confirm formulation &amp; immediate stock.
+              </p>
             ) : (
               <StockUrgency
                 stock={activeStock}
@@ -1338,13 +1331,13 @@ export default function ProductClient({
               />
             )}
 
-            {/* Desktop / Tablet Primary Action Buttons */}
-            <div className="hidden lg:flex flex-col gap-3 rounded-xl border border-stone-200 bg-minsah-surface-subtle p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-minsah-text-muted">
-                  অর্ডার সামারি ({quantity} পিস)
+            {/* Desktop / Tablet Primary Action Buttons & Reassurance */}
+            <div className="hidden lg:flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between gap-3 pb-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Selected Total ({quantity} {quantity > 1 ? 'items' : 'item'})
                 </span>
-                <span className="text-lg font-bold text-minsah-action-primary">
+                <span className="text-xl font-bold text-minsah-dark">
                   ৳{(currentPrice * quantity).toLocaleString("bn-BD")}
                 </span>
               </div>
@@ -1365,7 +1358,7 @@ export default function ProductClient({
                   variantImage={variantImage}
                   hasRequiredVariants={requiresVariantSelection}
                   variants={stickyBarVariants as any}
-                  className="w-full justify-center rounded-full border border-minsah-border-default bg-white text-minsah-action-primary hover:bg-minsah-surface-subtle font-semibold shadow-xs h-12"
+                  className="w-full justify-center rounded-full border border-stone-300 bg-white text-stone-900 hover:bg-stone-50 font-semibold shadow-xs h-12"
                   disabled={!activeInStock}
                 />
 
@@ -1377,44 +1370,26 @@ export default function ProductClient({
                   maxStock={activeStock}
                   variants={stickyBarVariants as any}
                   disabled={!activeInStock}
-                  className="w-full h-12 rounded-full bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-semibold shadow-xs transition-all"
+                  className="w-full h-12 rounded-full bg-minsah-primary hover:bg-minsah-dark text-white font-semibold shadow-xs transition-all tracking-wide"
                 />
+              </div>
+
+              {/* Single Consolidated Reassurance Line */}
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-stone-500 pt-2 border-t border-stone-100">
+                <span className="inline-flex items-center gap-1 text-emerald-800 font-medium">
+                  ✓ 100% Authentic Lab Sourced
+                </span>
+                <span className="hidden sm:inline text-stone-300">•</span>
+                <span>Cash on Delivery</span>
+                <span className="hidden sm:inline text-stone-300">•</span>
+                <span>Express Nationwide Shipping</span>
               </div>
             </div>
 
-            {/* Express Delivery Snapshot */}
+            {/* Delivery Estimate Snapshot */}
             {hasPurchasableStock && (
               <DeliveryEstimate activeOffer={product.activeDeliveryOffer} />
             )}
-
-            {/* Wishlist & Share Bar */}
-            <div className="flex flex-wrap items-center gap-3">
-              <WishlistButton
-                productId={product.id}
-                productName={product.name}
-                presentation="labeled"
-                className="flex-1 sm:flex-none"
-              />
-              <ShareButton productName={product.name} productUrl={productUrl} />
-            </div>
-
-            {/* Top Trust Snapshot */}
-            <TopTrustSnapshot
-              rating={rating}
-              verifiedReviewCount={verifiedReviewCount}
-              codAvailable={product.codAvailable}
-              returnEligible={product.returnEligible}
-            />
-
-            {/* Trust Promise Assurance */}
-            <TrustPromiseCard
-              authenticityNote={product.authenticityNote}
-              ingredientVerificationStatus={
-                product.ingredientVerificationStatus
-              }
-              codAvailable={product.codAvailable}
-              returnEligible={product.returnEligible}
-            />
           </div>
         </div>
 
@@ -1425,26 +1400,28 @@ export default function ProductClient({
             <button
               type="button"
               onClick={() => setActiveStoryTab("overview")}
-              className={`px-5 py-3 text-sm font-bold transition-all border-b-2 -mb-px flex items-center gap-2 ${
+              className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 -mb-px flex items-center gap-2 ${
                 activeStoryTab === "overview"
-                  ? "border-minsah-action-primary text-minsah-action-primary bg-minsah-surface-subtle/50 rounded-t-xl"
-                  : "border-transparent text-minsah-text-muted hover:text-minsah-text-primary"
+                  ? "border-minsah-primary text-minsah-dark bg-white font-bold rounded-t-lg"
+                  : "border-transparent text-stone-500 hover:text-stone-900"
               }`}
             >
-              🌿 বিবরণ ও সুবিধা
+              <Sparkles size={14} className="text-minsah-primary" />
+              Overview &amp; Benefits
             </button>
 
             {(product.usageInstructions?.length || 0) > 0 && (
               <button
                 type="button"
                 onClick={() => setActiveStoryTab("usage")}
-                className={`px-5 py-3 text-sm font-bold transition-all border-b-2 -mb-px flex items-center gap-2 ${
+                className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 -mb-px flex items-center gap-2 ${
                   activeStoryTab === "usage"
-                    ? "border-minsah-action-primary text-minsah-action-primary bg-minsah-surface-subtle/50 rounded-t-xl"
-                    : "border-transparent text-minsah-text-muted hover:text-minsah-text-primary"
+                    ? "border-minsah-primary text-minsah-dark bg-white font-bold rounded-t-lg"
+                    : "border-transparent text-stone-500 hover:text-stone-900"
                 }`}
               >
-                💧 ব্যবহার বিধি (How to Use)
+                <Droplets size={14} className="text-minsah-primary" />
+                Application Ritual
               </button>
             )}
 
@@ -1452,38 +1429,41 @@ export default function ProductClient({
               <button
                 type="button"
                 onClick={() => setActiveStoryTab("ingredients")}
-                className={`px-5 py-3 text-sm font-bold transition-all border-b-2 -mb-px flex items-center gap-2 ${
+                className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 -mb-px flex items-center gap-2 ${
                   activeStoryTab === "ingredients"
-                    ? "border-minsah-action-primary text-minsah-action-primary bg-minsah-surface-subtle/50 rounded-t-xl"
-                    : "border-transparent text-minsah-text-muted hover:text-minsah-text-primary"
+                    ? "border-minsah-primary text-minsah-dark bg-white font-bold rounded-t-lg"
+                    : "border-transparent text-stone-500 hover:text-stone-900"
                 }`}
               >
-                🧪 উপাদান (Ingredients)
+                <FlaskConical size={14} className="text-minsah-primary" />
+                Full INCI Ingredients
               </button>
             )}
 
             <button
               type="button"
               onClick={() => setActiveStoryTab("specs")}
-              className={`px-5 py-3 text-sm font-bold transition-all border-b-2 -mb-px flex items-center gap-2 ${
+              className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 -mb-px flex items-center gap-2 ${
                 activeStoryTab === "specs"
-                  ? "border-minsah-action-primary text-minsah-action-primary bg-minsah-surface-subtle/50 rounded-t-xl"
-                  : "border-transparent text-minsah-text-muted hover:text-minsah-text-primary"
+                  ? "border-minsah-primary text-minsah-dark bg-white font-bold rounded-t-lg"
+                  : "border-transparent text-stone-500 hover:text-stone-900"
               }`}
             >
-              📋 স্পেসিফিকেশন
+              <FileText size={14} className="text-minsah-primary" />
+              Specifications
             </button>
 
             <button
               type="button"
               onClick={() => setActiveStoryTab("shipping")}
-              className={`px-5 py-3 text-sm font-bold transition-all border-b-2 -mb-px flex items-center gap-2 ${
+              className={`px-5 py-3 text-sm font-semibold transition-all border-b-2 -mb-px flex items-center gap-2 ${
                 activeStoryTab === "shipping"
-                  ? "border-minsah-action-primary text-minsah-action-primary bg-minsah-surface-subtle/50 rounded-t-xl"
-                  : "border-transparent text-minsah-text-muted hover:text-minsah-text-primary"
+                  ? "border-minsah-primary text-minsah-dark bg-white font-bold rounded-t-lg"
+                  : "border-transparent text-stone-500 hover:text-stone-900"
               }`}
             >
-              🚚 ডেলিভারি ও রিটার্ন
+              <ShieldCheck size={14} className="text-minsah-primary" />
+              Authenticity &amp; Delivery
             </button>
           </div>
 
@@ -1492,21 +1472,21 @@ export default function ProductClient({
             {activeStoryTab === "overview" && (
               <div className="space-y-4">
                 {product.seoIntro && (
-                  <p className="text-base font-semibold leading-relaxed text-minsah-action-primary">
+                  <p className="text-base font-semibold leading-relaxed text-minsah-dark">
                     {product.seoIntro}
                   </p>
                 )}
                 {product.description && (
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-minsah-text-primary/90">
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-stone-600">
                     {product.description}
                   </p>
                 )}
                 {product.bengaliDescription && product.bengaliDescription !== product.description && (
                   <div className="mt-4 rounded-lg bg-minsah-surface-subtle/60 p-4 border border-stone-200">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-minsah-action-primary mb-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-minsah-primary mb-1">
                       বাংলায় বিস্তারিত
                     </p>
-                    <p className="whitespace-pre-line text-sm leading-relaxed text-minsah-text-primary">
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-stone-700">
                       {product.bengaliDescription}
                     </p>
                   </div>
@@ -1517,10 +1497,10 @@ export default function ProductClient({
 
             {activeStoryTab === "usage" && (
               <div className="space-y-3">
-                <p className="text-sm font-bold text-minsah-action-primary">
-                  সঠিক ব্যবহারের ধাপসমূহ
+                <p className="text-sm font-bold text-minsah-dark">
+                  Recommended Daily Ritual
                 </p>
-                <ol className="list-decimal space-y-2 pl-5 text-sm text-minsah-text-primary/90">
+                <ol className="list-decimal space-y-2 pl-5 text-sm text-stone-600">
                   {product.usageInstructions?.map((step, idx) => (
                     <li key={idx} className="leading-relaxed">
                       {step}
@@ -1532,11 +1512,11 @@ export default function ProductClient({
 
             {activeStoryTab === "ingredients" && (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-minsah-action-secondary">
-                  <Package size={16} />
-                  <p className="text-sm font-bold">সম্পূর্ণ উপাদান তালিকা</p>
+                <div className="flex items-center gap-2 text-stone-900">
+                  <FlaskConical size={16} className="text-minsah-primary" />
+                  <p className="text-sm font-bold">Complete Formulation (INCI)</p>
                 </div>
-                <p className="whitespace-pre-line text-xs leading-relaxed text-minsah-text-muted bg-minsah-surface-subtle/50 p-4 rounded-lg border border-stone-200">
+                <p className="whitespace-pre-line text-xs font-mono leading-relaxed text-stone-600 bg-minsah-surface-subtle/50 p-4 rounded-lg border border-stone-200">
                   {product.ingredients}
                 </p>
               </div>
@@ -1544,10 +1524,10 @@ export default function ProductClient({
 
             {activeStoryTab === "specs" && (
               <div className="grid gap-4 sm:grid-cols-2">
-                <InfoRowsBlock title="উপযুক্ততা (Best Match)" rows={bestMatchRows} />
-                <InfoRowsBlock title="পণ্যের বিস্তারিত" rows={productInfoRows} />
-                <InfoRowsBlock title="স্পেসিফিকেশন" rows={specRows} />
-                <InfoRowsBlock title="অ্যাট্রিবিউট" rows={attributeRows} />
+                <InfoRowsBlock title="Best Match &amp; Skin Types" rows={bestMatchRows} />
+                <InfoRowsBlock title="Product Profile" rows={productInfoRows} />
+                <InfoRowsBlock title="Specifications" rows={specRows} />
+                <InfoRowsBlock title="Attributes &amp; Origin" rows={attributeRows} />
               </div>
             )}
 
@@ -1567,15 +1547,17 @@ export default function ProductClient({
           {/* Mobile Accordions */}
           <div className="space-y-3 lg:hidden">
             <details className="group rounded-lg border border-stone-200 bg-white p-4" open>
-              <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
-                <span>🌿 বিবরণ ও সুবিধা</span>
-                <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
+              <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-sm text-minsah-dark">
+                <span className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-minsah-primary" /> Overview &amp; Benefits
+                </span>
+                <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-stone-400" />
               </summary>
-              <div className="mt-3 pt-3 border-t border-stone-200/60 text-sm leading-relaxed text-minsah-text-primary/90 space-y-3">
-                {product.seoIntro && <p className="font-semibold text-minsah-action-primary">{product.seoIntro}</p>}
+              <div className="mt-3 pt-3 border-t border-stone-100 text-sm leading-relaxed text-stone-600 space-y-3">
+                {product.seoIntro && <p className="font-semibold text-minsah-dark">{product.seoIntro}</p>}
                 {product.description && <p className="whitespace-pre-line">{product.description}</p>}
                 {product.bengaliDescription && (
-                  <p className="whitespace-pre-line text-xs bg-minsah-surface-subtle p-3 rounded-md">
+                  <p className="whitespace-pre-line text-xs bg-minsah-surface-subtle p-3 rounded-md text-stone-700">
                     {product.bengaliDescription}
                   </p>
                 )}
@@ -1585,12 +1567,14 @@ export default function ProductClient({
 
             {(product.usageInstructions?.length || 0) > 0 && (
               <details className="group rounded-lg border border-stone-200 bg-white p-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
-                  <span>💧 ব্যবহার বিধি (How to Use)</span>
-                  <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
+                <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-sm text-minsah-dark">
+                  <span className="flex items-center gap-2">
+                    <Droplets size={14} className="text-minsah-primary" /> Application Ritual
+                  </span>
+                  <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-stone-400" />
                 </summary>
-                <div className="mt-3 pt-3 border-t border-stone-200/60 text-sm">
-                  <ol className="list-decimal space-y-1.5 pl-4 text-minsah-text-muted">
+                <div className="mt-3 pt-3 border-t border-stone-100 text-sm">
+                  <ol className="list-decimal space-y-1.5 pl-4 text-stone-600">
                     {product.usageInstructions?.map((step, idx) => (
                       <li key={idx}>{step}</li>
                     ))}
@@ -1601,25 +1585,29 @@ export default function ProductClient({
 
             {product.ingredients && (
               <details className="group rounded-lg border border-stone-200 bg-white p-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
-                  <span>🧪 উপাদান (Ingredients)</span>
-                  <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
+                <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-sm text-minsah-dark">
+                  <span className="flex items-center gap-2">
+                    <FlaskConical size={14} className="text-minsah-primary" /> Full INCI Ingredients
+                  </span>
+                  <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-stone-400" />
                 </summary>
-                <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-minsah-text-muted leading-relaxed">
+                <div className="mt-3 pt-3 border-t border-stone-100 text-xs font-mono text-stone-600 leading-relaxed">
                   {product.ingredients}
                 </div>
               </details>
             )}
 
             <details className="group rounded-lg border border-stone-200 bg-white p-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between font-bold text-sm text-minsah-text-primary">
-                <span>📋 স্পেসিফিকেশন ও পণ্যের তথ্য</span>
-                <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-minsah-text-muted" />
+              <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-sm text-minsah-dark">
+                <span className="flex items-center gap-2">
+                  <FileText size={14} className="text-minsah-primary" /> Specifications &amp; Profile
+                </span>
+                <ChevronDown size={16} className="transition-transform group-open:rotate-180 text-stone-400" />
               </summary>
-              <div className="mt-3 pt-3 border-t border-stone-200/60 space-y-3">
-                <InfoRowsBlock title="উপযুক্ততা" rows={bestMatchRows} />
-                <InfoRowsBlock title="পণ্যের বিস্তারিত" rows={productInfoRows} />
-                <InfoRowsBlock title="স্পেসিফিকেশন" rows={specRows} />
+              <div className="mt-3 pt-3 border-t border-stone-100 space-y-3">
+                <InfoRowsBlock title="Best Match" rows={bestMatchRows} />
+                <InfoRowsBlock title="Product Profile" rows={productInfoRows} />
+                <InfoRowsBlock title="Specifications" rows={specRows} />
               </div>
             </details>
           </div>
