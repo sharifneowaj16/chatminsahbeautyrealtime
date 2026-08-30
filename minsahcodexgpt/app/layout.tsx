@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import localFont from 'next/font/local';
 import './globals.css';
 import AllPixels from '@/lib/tracking/pixels/AllPixels';
 import { TrackingProvider } from '@/contexts/TrackingContext';
@@ -8,6 +9,43 @@ import { CartDrawerProvider } from '@/contexts/CartDrawerContext';
 import { getSiteConfig } from '@/lib/site-config';
 import { getSiteUrl } from '@/lib/seo';
 import { ToastProvider } from '@/components/ui/ToastProvider';
+
+const seedSans = localFont({
+  src: [
+    {
+      path: '../fonts/SeedSans-Light-subset.woff2',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/SeedSans-LightItalic-subset.woff2',
+      weight: '300',
+      style: 'italic',
+    },
+    {
+      path: '../fonts/SeedSans-Regular-subset.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/SeedSans-RegularItalic-subset.woff2',
+      weight: '400',
+      style: 'italic',
+    },
+    {
+      path: '../fonts/SeedSans-Medium-subset.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/SeedSans-MediumItalic-subset.woff2',
+      weight: '500',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-seed-sans',
+  display: 'swap',
+});
 
 const BASE_URL = getSiteUrl();
 const siteConfig = getSiteConfig();
@@ -142,7 +180,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="font-sans">
+    <html lang="en" className={`${seedSans.variable} font-sans`}>
       <head>
         <script
           type="application/ld+json"
