@@ -787,6 +787,43 @@ async function main() {
 
   console.log('✅ Reviews created');
 
+  // ==========================================
+  // 9. Site Configuration (Delivery Messages)
+  // ==========================================
+  console.log('⚙️  Creating site configurations...');
+
+  await prisma.siteConfig.upsert({
+    where: { key: 'deliveryMessageConfig' },
+    update: {},
+    create: {
+      key: 'deliveryMessageConfig',
+      value: {
+        enabled: true,
+        height: '40px',
+        message1: {
+          text: '✨ এই প্রোডাক্টে সারা বাংলাদেশে ফ্রি ডেলিভারি।',
+          backgroundColor: '#d3fa99',
+          textColor: '#1c3a13',
+          active: true,
+        },
+        message2: {
+          text: '🎁 New customer delivery offer: ঢাকার ভিতরে ফ্রি, ঢাকার বাইরে ৳60 (৳500+ order), ৳1100+ হলে সারা বাংলাদেশে ফ্রি।',
+          backgroundColor: '#d3fa99',
+          textColor: '#1c3a13',
+          active: true,
+        },
+        message3: {
+          text: '👑 Welcome Back! আপনার জন্য প্রতিটি অর্ডারে ডেলিভারি চার্জে ৫০% বিশেষ ছাড়।',
+          backgroundColor: '#d3fa99',
+          textColor: '#1c3a13',
+          active: true,
+        },
+      },
+    },
+  });
+
+  console.log('✅ Site configurations created');
+
   console.log('');
   console.log('🎉 Minsah Beauty database seeding completed successfully!');
   console.log('');

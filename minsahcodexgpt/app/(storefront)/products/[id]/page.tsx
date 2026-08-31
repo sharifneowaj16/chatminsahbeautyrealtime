@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import ProductClient from './components/ProductClient';
+import ProductDeliveryTopBar from './components/ProductDeliveryTopBar';
 import { productPath } from '@/lib/product-url';
 import { getSiteUrl, safeCanonicalUrl } from '@/lib/seo';
 
@@ -330,8 +331,18 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
     parseJsonLd(product.merchantListingJsonLd),
   ].filter(Boolean) as Record<string, unknown>[];
 
+  const activeDeliveryOffer = product.activeDeliveryOffer as { type?: string; amount?: number | null } | null | undefined;
+  const isFreeDeliveryOffer = activeDeliveryOffer?.type === 'FREE';
+
   return (
     <div className="min-h-screen bg-minsah-surface-page">
+      {/* ── Product Delivery Top Bar (Product Page Only) ── */}
+      <ProductDeliveryTopBar
+        productId={product.id}
+        slug={product.slug}
+        isFreeDelivery={isFreeDeliveryOffer}
+      />
+
       {/* Breadcrumb */}
       <div className="max-w-6xl mx-auto px-4 py-3">
         <nav className="flex items-center gap-1.5 text-xs text-minsah-text-muted font-medium" aria-label="Breadcrumb">

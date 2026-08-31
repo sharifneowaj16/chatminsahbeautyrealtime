@@ -129,3 +129,66 @@ export function trackAddToWishlistEvent({
   }
   trackSafely('AddToWishlist', metaEvent.payload, metaEvent.eventId);
 }
+
+export function trackDeliveryMessageViewed({
+  messageType,
+  productId,
+  productSlug,
+}: {
+  messageType: 'PRODUCT_FREE' | 'NEW_CUSTOMER' | 'RETURNING_CUSTOMER';
+  productId?: string | null;
+  productSlug?: string | null;
+}) {
+  try {
+    if (typeof window !== 'undefined') {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'delivery_message_viewed',
+        message_type: messageType,
+        product_id: productId || undefined,
+        product_slug: productSlug || undefined,
+      });
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'delivery_message_viewed', {
+          message_type: messageType,
+          product_id: productId || undefined,
+          product_slug: productSlug || undefined,
+        });
+      }
+    }
+  } catch {
+    // Non-blocking
+  }
+}
+
+export function trackDeliveryMessageClicked({
+  messageType,
+  productId,
+  productSlug,
+}: {
+  messageType: 'PRODUCT_FREE' | 'NEW_CUSTOMER' | 'RETURNING_CUSTOMER';
+  productId?: string | null;
+  productSlug?: string | null;
+}) {
+  try {
+    if (typeof window !== 'undefined') {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'delivery_message_clicked',
+        message_type: messageType,
+        product_id: productId || undefined,
+        product_slug: productSlug || undefined,
+      });
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'delivery_message_clicked', {
+          message_type: messageType,
+          product_id: productId || undefined,
+          product_slug: productSlug || undefined,
+        });
+      }
+    }
+  } catch {
+    // Non-blocking
+  }
+}
+

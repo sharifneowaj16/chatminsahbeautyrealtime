@@ -19,6 +19,7 @@ import {
   PAYMENT_METHOD_CONFIG,
 } from '@/lib/payments/payment-methods';
 import { getSiteConfig } from '@/lib/site-config';
+import DeliveryMessageSettings from './DeliveryMessageSettings';
 
 function ValueRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
@@ -60,6 +61,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </header>
+
+      {/* ── Product Delivery Top-Bar Messages (Interactive Config) ── */}
+      <DeliveryMessageSettings />
 
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
         <div className="flex items-start gap-3">

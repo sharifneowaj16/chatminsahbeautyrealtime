@@ -1,6 +1,8 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import reactPlugin from "eslint-plugin-react";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -23,6 +25,9 @@ const eslintConfig = defineConfig([
 
   {
     files: ["app/admin/analytics/page.tsx"],
+    plugins: {
+      "react-hooks": reactHooksPlugin,
+    },
     rules: {
       // Legacy analytics mock page has a pre-existing conditional hook order issue.
       // Keep it visible while preventing this unrelated page from blocking tracking-health deploys.
@@ -30,6 +35,10 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    plugins: {
+      react: reactPlugin,
+      "react-hooks": reactHooksPlugin,
+    },
     rules: {
       // Legacy project cleanup: keep these visible, but do not block production deploys.
       "@typescript-eslint/no-explicit-any": "warn",
