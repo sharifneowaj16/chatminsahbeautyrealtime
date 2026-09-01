@@ -14,7 +14,16 @@ export function buildCatalogInventoryIdempotencyKey(catalogId: string | undefine
   return `catalog-inventory:${clean(catalogId)}:${utcWindowStart(now, 15).toISOString()}`;
 }
 
-export function buildCatalogIncrementalIdempotencyKey(catalogId: string | undefined, now = new Date()) {
+export function buildCatalogIncrementalIdempotencyKey(
+  catalogId: string | undefined,
+  now = new Date(),
+  productIds?: readonly string[]
+) {
+  if (productIds && productIds.length > 0) {
+    const sorted = [...productIds].sort().join(',');
+    const hash = crypto.createHash('sha256').update(sorted).digest('hex').slice(0, 12);
+    return `catalog-incremental:${clean(catalogId)}:items-${hash}:${utcWindowStart(now, 1).toISOString()}`;
+  }
   return `catalog-incremental:${clean(catalogId)}:${utcWindowStart(now, 60).toISOString()}`;
 }
 

@@ -163,6 +163,7 @@ export function enqueueMetaCatalogSyncJob(input: {
   catalogId?: string;
   mode: MetaCatalogSyncJobPayload['mode'];
   requestedBy?: string;
+  productIds?: string[];
   deletePlanId?: string;
   correlationId?: string;
 }) {
@@ -171,6 +172,7 @@ export function enqueueMetaCatalogSyncJob(input: {
     type: 'catalog_sync',
     catalogId: input.catalogId,
     mode: input.mode,
+    ...(input.productIds && input.productIds.length > 0 ? { productIds: input.productIds } : {}),
     deletePlanId: input.deletePlanId,
   };
   return enqueueMetaJob({ queueName: META_QUEUE_NAMES.CATALOG_SYNC, jobName: META_JOB_NAMES.CATALOG_SYNC, payload, requestedBy: input.requestedBy });

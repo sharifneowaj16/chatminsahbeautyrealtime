@@ -91,7 +91,7 @@ test('SKU rename changes the canonical ID and catalog reconciliation retains DEL
   assert.equal(after?.itemId, 'SKU-NEW');
   assert.notEqual(before?.itemId, after?.itemId);
 
-  const catalogSource = fs.readFileSync('lib/meta-business/catalog.ts', 'utf8');
+  const catalogSource = fs.readFileSync('lib/meta-platform/domains/catalog/orchestration.ts', 'utf8');
   const deleteAdapterSource = fs.readFileSync('lib/meta/catalog/adapters/items-batch.ts', 'utf8');
   assert.match(deleteAdapterSource, /method:\s*'DELETE'/);
   assert.match(catalogSource, /serializeItemsBatchDelete/);

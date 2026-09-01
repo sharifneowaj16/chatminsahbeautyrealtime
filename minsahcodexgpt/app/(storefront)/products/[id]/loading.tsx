@@ -7,8 +7,8 @@ export default function ProductLoading() {
       <div className="sticky top-0 z-40 bg-minsah-dark h-12" />
 
       <div className="max-w-6xl mx-auto px-4 py-3">
-        {/* Breadcrumb skeleton */}
-        <Skeleton className="h-3 w-48 rounded-full mb-4" />
+        {/* Breadcrumb skeleton (Desktop Only) */}
+        <Skeleton className="hidden md:block h-3 w-48 rounded-full mb-4" />
 
         <div className="lg:grid lg:grid-cols-2 lg:gap-10">
           {/* Image skeleton */}

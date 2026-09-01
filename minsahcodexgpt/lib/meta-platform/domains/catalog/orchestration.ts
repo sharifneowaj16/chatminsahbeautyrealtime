@@ -137,9 +137,13 @@ function catalogIdentity(input: { productId: string; productSku: string; variant
   return identity;
 }
 
-export async function buildCanonicalCatalogPlan(options: { inventoryOnly?: boolean; now?: Date } = {}) {
+export async function buildCanonicalCatalogPlan(options: { inventoryOnly?: boolean; productIds?: readonly string[]; now?: Date } = {}) {
   const config = getMetaBusinessConfig();
+  const productFilter = options.productIds && options.productIds.length > 0
+    ? { id: { in: [...options.productIds] } }
+    : {};
   const products = await prisma.product.findMany({
+    where: productFilter,
     include: {
       images: { orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }], take: 21 },
       variants: true,
@@ -299,13 +303,16 @@ async function submitCatalogBatches(input: {
   return Object.freeze({ batches: handles.length, batchHandles: Object.freeze(handles), responses: Object.freeze(responseRows) });
 }
 
-export async function syncCatalogProducts(input: { catalogId?: string; inventoryOnly?: boolean; correlationId?: string }) {
+export async function syncCatalogProducts(input: { catalogId?: string; inventoryOnly?: boolean; correlationId?: string; productIds?: readonly string[] }) {
   const provider = new MetaPlatformCatalogService();
   const catalogId = input.catalogId?.trim() || provider.config.catalogId;
   return withCatalogSyncLock(catalogId, async () => {
-    const plan = await buildCanonicalCatalogPlan({ inventoryOnly: input.inventoryOnly });
+    const plan = await buildCanonicalCatalogPlan({ inventoryOnly: input.inventoryOnly, productIds: input.productIds });
+    const productScopeFilter = input.productIds && input.productIds.length > 0
+      ? { sourceId: { in: [...input.productIds] } }
+      : {};
     const previouslyManaged = await db.metaCatalogSyncItem.findMany({
-      where: { catalogId },
+      where: { catalogId, ...productScopeFilter },
       select: { retailerId: true, sourceType: true, sourceId: true, payloadHash: true, status: true },
     });
     const managed = new Map(previouslyManaged.map((item) => [item.retailerId, item]));

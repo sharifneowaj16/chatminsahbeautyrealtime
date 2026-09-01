@@ -15,7 +15,7 @@ export function startMetaCatalogWorker() {
       requestData: { schemaVersion: data.schemaVersion, mode: data.mode, deletePlanId: data.deletePlanId ?? null },
       run: () => data.mode === 'delete'
         ? executeCatalogDeletePlan({ deletePlanId: data.deletePlanId!, correlationId: data.correlationId })
-        : syncCatalogProducts({ catalogId: data.catalogId, inventoryOnly, correlationId: data.correlationId }),
+        : syncCatalogProducts({ catalogId: data.catalogId, inventoryOnly, correlationId: data.correlationId, productIds: data.productIds }),
       count: (value) => 'deletedItemsSubmitted' in value ? value.deletedItemsSubmitted : value.submittedItems,
       status: () => 'SUBMITTED',
     });

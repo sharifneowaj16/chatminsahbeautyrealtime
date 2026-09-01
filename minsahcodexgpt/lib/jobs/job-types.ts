@@ -93,7 +93,13 @@ export type MetaSocialTransportEnvelope = Readonly<{
   }>;
 }>;
 export type MetaCapiOutboxJobPayload = MetaJobBase & { type: 'capi_outbox'; outboxId: string; leaseToken?: string };
-export type MetaCatalogSyncJobPayload = MetaJobBase & { type: 'catalog_sync'; catalogId?: string; mode: 'inventory' | 'incremental' | 'full' | 'reconcile' | 'delete'; deletePlanId?: string };
+export type MetaCatalogSyncJobPayload = MetaJobBase & {
+  type: 'catalog_sync';
+  catalogId?: string;
+  mode: 'inventory' | 'incremental' | 'full' | 'reconcile' | 'delete';
+  productIds?: string[];
+  deletePlanId?: string;
+};
 export type MetaCatalogStatusJobPayload = MetaJobBase & { type: 'catalog_status'; catalogId?: string; limit: number };
 export type MetaLeadFetchJobPayload = MetaJobBase & {
   type: 'lead_fetch';
@@ -286,6 +292,9 @@ export function validateMetaJobPayload(input: { queueName: MetaQueueName; jobNam
       if (!['inventory','incremental','full','reconcile','delete'].includes(String(payload.mode))) issues.push({ code: 'CATALOG_MODE_INVALID', field: 'mode', message: 'Catalog mode is invalid.' });
       if (payload.mode === 'delete' && !nonEmptyString(payload.deletePlanId)) issues.push({ code: 'CATALOG_DELETE_PLAN_ID_REQUIRED', field: 'deletePlanId', message: 'deletePlanId is required for delete mode.' });
       if (payload.mode !== 'delete' && payload.deletePlanId !== undefined) issues.push({ code: 'CATALOG_DELETE_PLAN_ID_FORBIDDEN', field: 'deletePlanId', message: 'deletePlanId is only allowed for delete mode.' });
+      if (payload.productIds !== undefined && (!Array.isArray(payload.productIds) || payload.productIds.some((id: unknown) => typeof id !== 'string' || !id.trim()))) {
+        issues.push({ code: 'CATALOG_PRODUCT_IDS_INVALID', field: 'productIds', message: 'productIds must be an array of non-empty strings.' });
+      }
       break;
     case 'catalog_status':
       if (!boundedInt(payload.limit, 1, 100)) issues.push({ code: 'CATALOG_STATUS_LIMIT_INVALID', field: 'limit', message: 'limit must be an integer from 1 to 100.' });

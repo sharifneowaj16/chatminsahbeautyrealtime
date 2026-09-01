@@ -343,8 +343,8 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
         isFreeDelivery={isFreeDeliveryOffer}
       />
 
-      {/* Breadcrumb */}
-      <div className="max-w-6xl mx-auto px-4 py-3">
+      {/* Breadcrumb (Desktop Only — Hidden on mobile for optimal above-the-fold viewport) */}
+      <div className="hidden md:block max-w-6xl mx-auto px-4 py-3">
         <nav className="flex items-center gap-1.5 text-xs text-minsah-text-muted font-medium" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-minsah-action-primary transition">Home</Link>
           <span aria-hidden="true" className="text-minsah-border-default">/</span>
