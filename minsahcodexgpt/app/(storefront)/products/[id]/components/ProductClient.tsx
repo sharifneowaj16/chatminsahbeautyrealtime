@@ -1186,6 +1186,19 @@ export default function ProductClient({
         requiresVariantSelection={requiresVariantSelection}
         stock={activeStock}
         inStock={activeInStock}
+        relatedProducts={
+          relatedProducts && relatedProducts.length > 0
+            ? relatedProducts.map((p) => ({
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                price: p.price,
+                originalPrice: p.originalPrice,
+                image: p.image,
+                category: product.category || 'Formulation',
+              }))
+            : undefined
+        }
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
