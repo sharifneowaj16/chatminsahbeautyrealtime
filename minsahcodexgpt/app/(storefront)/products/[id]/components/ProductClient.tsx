@@ -39,6 +39,7 @@ import ProductGallery from "./ProductGallery";
 import { GiftRequestButton, ShareButton } from "./GiftShareButtons";
 import WishlistButton from "@/components/wishlist/WishlistButton";
 import ProductStickyHeader from "./ProductStickyHeader";
+import SeedProductHero from "./hero/SeedProductHero";
 import VariantSelector from "./VariantSelector";
 import StickyBottomBar from "./StickyBottomBar";
 import SeedClinicalStatStrip from "./SeedClinicalStatStrip";
@@ -1201,219 +1202,47 @@ export default function ProductClient({
         }
       />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Top Hero: 2-Column Grid */}
-        <div className="lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-start lg:gap-12">
-          {/* Left Column: Product Gallery */}
-          <div className="lg:sticky lg:top-20">
-            <ProductGallery
-              images={galleryImages}
-              productName={displayTitle}
-              discountPct={discountPct}
-              isNew={product.isNew}
-              overrideImage={variantImageOverride ?? variantImage}
-            />
-          </div>
-
-          {/* Right Column: Core Commerce & Details */}
-          <div className="space-y-6 pt-4 pb-36 lg:pt-0 lg:pb-8">
-            {/* Category & Brand Taxonomy Eyebrow */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-minsah-primary">
-                  {product.brand || 'MINSAH BEAUTY'} {product.category ? `• ${product.category}` : ''}
-                </span>
-                {product.isNew && (
-                  <span className="rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-                    New Arrival
-                  </span>
-                )}
-              </div>
-
-              {/* Share & Wishlist Micro-Actions */}
-              <div className="flex items-center gap-2">
-                <WishlistButton
-                  productId={product.id}
-                  productName={product.name}
-                  presentation="icon"
-                />
-                <ShareButton productName={product.name} productUrl={productUrl} />
-              </div>
-            </div>
-
-            {/* Title & Bengali Subhead */}
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-minsah-dark sm:text-3xl lg:text-4xl leading-tight">
-                {displayTitle}
-              </h1>
-              {product.bengaliName && product.bengaliName !== displayTitle && (
-                <p className="mt-1.5 text-sm font-normal text-stone-500">
-                  {product.bengaliName}
-                </p>
-              )}
-
-              {/* Rating & Review Jump Link */}
-              <div className="mt-2.5 flex items-center gap-2 text-xs text-stone-500">
-                <div className="flex gap-0.5 text-stone-900" aria-label={`${rating.average.toFixed(1)} out of 5 stars`}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      size={13}
-                      className={
-                        star <= Math.round(rating.average)
-                          ? "fill-stone-900 text-stone-900"
-                          : "text-stone-300"
-                      }
-                      aria-hidden="true"
-                    />
-                  ))}
-                </div>
-                <span className="font-semibold text-minsah-dark">
-                  {rating.average > 0 ? rating.average.toFixed(1) : "New"}
-                </span>
-                <span className="text-stone-300">·</span>
-                <a
-                  href="#product-reviews"
-                  className="hover:text-minsah-primary hover:underline underline-offset-4 transition-colors"
-                >
-                  {rating.total > 0 ? `${rating.total} Verified Reviews` : "Be the first to review"}
-                </a>
-              </div>
-            </div>
-
-            {/* Price Row (Seamless Canvas, Zero Box Clutter) */}
-            <div className="flex flex-wrap items-baseline gap-3 pt-1">
-              <span className="text-3xl font-bold text-minsah-dark tracking-tight">
-                {priceDisplayText}
-              </span>
-
-              {comparePrice && comparePrice > currentPrice && (
-                <span className="text-base text-stone-400 line-through font-normal">
-                  ৳{comparePrice.toLocaleString("bn-BD")}
-                </span>
-              )}
-
-              {discountPct && (
-                <span className="rounded-full bg-stone-900 text-white px-2.5 py-0.5 text-[11px] font-semibold tracking-wide">
-                  {discountPct}% OFF
-                </span>
-              )}
-            </div>
-
-            {/* Short Description */}
-            {product.shortDescription && (
-              <p className="text-sm leading-relaxed text-stone-600">
-                {product.shortDescription}
-              </p>
-            )}
-
-            {/* Targeted Benefits */}
-            {product.keyBenefits && product.keyBenefits.length > 0 && (
-              <div className="space-y-2 pt-1">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                  Targeted Benefits
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {product.keyBenefits.slice(0, 5).map((benefit) => (
-                    <span
-                      key={benefit}
-                      className="rounded-full bg-minsah-surface-subtle px-3 py-1 text-xs font-medium text-minsah-dark border border-stone-200/80 flex items-center gap-1.5 shadow-xs"
-                    >
-                      <Check size={12} className="text-minsah-primary" /> {benefit}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="h-px bg-stone-200/70" />
-
-            {/* Variant Selector */}
-            <div id="product-variant-selector" className="scroll-mt-24">
-              <VariantSelector
-                variants={product.variants}
-                basePrice={baseDisplayPrice}
-                baseStock={product.stock}
-                onVariantChange={handleVariantChange}
-                onImageChange={handleVariantImageChange}
-              />
-            </div>
-
-            {/* Selection Guidance or Stock */}
-            {requiresVariantSelection ? (
-              <p className="text-xs text-stone-500 italic">
-                Please select an option above to confirm formulation &amp; immediate stock.
-              </p>
-            ) : (
-              <StockUrgency
-                stock={activeStock}
-                inStock={activeInStock}
-                threshold={lowStockThreshold}
-              />
-            )}
-
-            {/* Desktop / Tablet Primary Action Buttons & Reassurance */}
-            <div className="hidden lg:flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3 pb-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
-                  Selected Total ({quantity} {quantity > 1 ? 'items' : 'item'})
-                </span>
-                <span className="text-xl font-bold text-minsah-dark">
-                  ৳{(currentPrice * quantity).toLocaleString("bn-BD")}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <CartStepper
-                  productId={product.id}
-                  productName={product.name}
-                  productImage={variantImageOverride || variantImage || product.image}
-                  price={currentPrice}
-                  initialQuantity={quantity}
-                  maxStock={activeStock}
-                  variantId={selectedVariantId}
-                  variantName={variantNameLabel}
-                  sku={selectedVariantObj?.sku ?? product.sku}
-                  size={variantSize}
-                  color={variantColor}
-                  variantImage={variantImage}
-                  hasRequiredVariants={requiresVariantSelection}
-                  variants={stickyBarVariants as any}
-                  className="w-full justify-center rounded-full border border-stone-300 bg-white text-stone-900 hover:bg-stone-50 font-semibold shadow-xs h-12"
-                  disabled={!activeInStock}
-                />
-
-                <CardBuyNowButton
-                  productId={product.id}
-                  productName={product.name}
-                  productImage={variantImageOverride || variantImage || product.image}
-                  price={currentPrice}
-                  maxStock={activeStock}
-                  variants={stickyBarVariants as any}
-                  disabled={!activeInStock}
-                  className="w-full h-12 rounded-full bg-minsah-primary hover:bg-minsah-dark text-white font-semibold shadow-xs transition-all tracking-wide"
-                />
-              </div>
-
-              {/* Single Consolidated Reassurance Line */}
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-stone-500 pt-2 border-t border-stone-100">
-                <span className="inline-flex items-center gap-1 text-emerald-800 font-medium">
-                  ✓ 100% Authentic Lab Sourced
-                </span>
-                <span className="hidden sm:inline text-stone-300">•</span>
-                <span>Cash on Delivery</span>
-                <span className="hidden sm:inline text-stone-300">•</span>
-                <span>Express Nationwide Shipping</span>
-              </div>
-            </div>
-
-            {/* Delivery Estimate Snapshot */}
-            {hasPurchasableStock && (
-              <DeliveryEstimate activeOffer={product.activeDeliveryOffer} />
-            )}
-          </div>
-        </div>
-      </div>
+      {/* ========================================================================= */}
+      {/* SEED & DIEUX-INSPIRED MODULAR 7-PHASE MASTER HERO ARCHITECTURE             */}
+      {/* ========================================================================= */}
+      <SeedProductHero
+        product={{
+          id: product.id,
+          name: displayTitle,
+          sku: product.sku || 'DS-01®',
+          price: baseDisplayPrice,
+          compareAtPrice: comparePrice,
+          costPrice: (product as any).costPrice,
+          image: product.image,
+          images: galleryImages,
+          shortDescription: product.shortDescription,
+          keyBenefits: product.keyBenefits,
+          ingredients: product.ingredients,
+          skinType: (product as any).skinType,
+          shelfLife: (product as any).shelfLife,
+          originCountry: (product as any).originCountry,
+          deliveryOfferEnabled: Boolean(product.activeDeliveryOffer),
+          productSpecs: (product as any).productSpecs,
+          productAttributes: (product as any).productAttributes,
+          descriptionSections: product.descriptionSections as any,
+          relatedProducts: (product as any).relatedProducts,
+        }}
+        variants={product.variants as any}
+        relatedProductsList={
+          relatedProducts && relatedProducts.length > 0
+            ? relatedProducts.map((p) => ({
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                costPrice: (p as any).costPrice,
+                image: p.image,
+                stock: p.stock,
+                hasFreeDelivery: true,
+                category: product.category || 'Skincare',
+              }))
+            : undefined
+        }
+      />
 
       {/* 01. Clinical Metric Ticker */}
       <SeedClinicalStatStrip />

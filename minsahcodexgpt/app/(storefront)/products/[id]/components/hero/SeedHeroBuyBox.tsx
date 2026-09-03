@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   Star,
-  ShoppingBag,
   ShieldCheck,
-  MessageCircle,
-  Plus,
-  Minus,
+  Truck,
+  Sparkles,
+  ShoppingBag,
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
@@ -16,318 +15,254 @@ import SeedVariantRail, { ProductVariantItem } from './SeedVariantRail';
 
 export interface SeedHeroBuyBoxProps {
   productId: string;
-  productName: string;
-  code?: string;                        // Formulation Code e.g. "DS-01®", "NS-01™", "MB-01"
-  badge?: string;                       // Highlight pill e.g. "Bestseller", "Top Rated"
+  sku?: string;
+  name: string;
   price: number;
-  comparePrice?: number | null;
-  scientificPitch?: string | null;      // 2-line clinical value proposition
-  rating?: { average: number; total: number };
-  stock?: number;
-  inStock?: boolean;
+  compareAtPrice?: number | null;
+  shortDescription?: string;
+  keyBenefits?: string[];
   variants?: ProductVariantItem[];
-  productImage?: string;
-  onVariantChange?: (variantId: string | null, price: number, stock: number) => void;
+  defaultImage?: string;
+  onVariantChange?: (variantId: string | null, currentPrice: number, stock: number) => void;
   onImageChange?: (imageUrl: string | null) => void;
-  whatsappNumber?: string;
   className?: string;
 }
 
 export default function SeedHeroBuyBox({
   productId,
-  productName,
-  code = 'DS-01®',
-  badge = 'Bestseller',
+  sku = 'DS-01®',
+  name,
   price,
-  comparePrice,
-  scientificPitch,
-  rating = { average: 5.0, total: 15301 },
-  stock = 50,
-  inStock = true,
+  compareAtPrice,
+  shortDescription,
   variants = [],
-  productImage = '/images/categories/Skincare.png',
+  defaultImage = '/images/categories/Skincare.png',
   onVariantChange,
   onImageChange,
-  whatsappNumber = '8801700000000',
   className = '',
 }: SeedHeroBuyBoxProps) {
   const { addItem } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
 
-  // Selected Variant & Pricing state
-  const [activeVariantId, setActiveVariantId] = useState<string | null>(
-    variants.length > 0 ? variants[0].id : null
-  );
-  const [currentPrice, setCurrentPrice] = useState<number>(
-    variants.length > 0 && variants[0]?.price ? variants[0].price : price
-  );
-  const [activeStock, setActiveStock] = useState<number>(
-    variants.length > 0 && variants[0]?.stock !== undefined ? variants[0].stock : stock
-  );
-  const [quantity, setQuantity] = useState<number>(1);
-  const [isAdding, setIsAdding] = useState<boolean>(false);
+  // Selected Variant & Quantity State
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number>(price);
+  const [currentStock, setCurrentStock] = useState<number>(100);
+  const [currentImage, setCurrentImage] = useState<string>(defaultImage);
+  const [quantity, setQuantity] = useState(1);
 
-  // Synchronize price if props price changes
+  // Sync price if base price prop changes
   useEffect(() => {
-    if (variants.length === 0) {
+    if (!selectedVariantId) {
       setCurrentPrice(price);
-      setActiveStock(stock);
     }
-  }, [price, stock, variants.length]);
+  }, [price, selectedVariantId]);
 
-  const handleVariantSelect = (variantId: string | null, variantPrice: number, variantStock: number) => {
-    setActiveVariantId(variantId);
-    setCurrentPrice(variantPrice);
-    setActiveStock(variantStock);
-    onVariantChange?.(variantId, variantPrice, variantStock);
-  };
+  // Pricing calculation
+  const originalPrice = compareAtPrice ?? (currentPrice > 0 ? Math.round(currentPrice * 1.2) : 0);
 
-  // =========================================================================
-  // LIVE REAL-TIME DISPATCH LOGIC (Bangladesh Timezone, 3:00 PM Cutoff, Friday Deliveries)
-  // =========================================================================
-  const dispatchStatus = useMemo(() => {
-    const now = new Date();
-    // UTC+6 Bangladesh offset
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-    const bdTime = new Date(utc + 3600000 * 6);
+  // Real-time Bangladesh Dispatch Logic (UTC+6, 3:00 PM Cutoff, Friday Deliveries Enabled)
+  const [dispatchStatus, setDispatchStatus] = useState({
+    canDispatchToday: true,
+    message: 'Order before 3:00 PM for Same-Day Dispatch',
+    deliveryGuarantee: 'Guaranteed 24–48 hrs delivery (Friday delivery available)',
+  });
 
-    const currentHour = bdTime.getHours();
-    const isAvailable = activeStock > 0 && inStock;
+  useEffect(() => {
+    const calculateDispatch = () => {
+      const now = new Date();
+      // Convert to Bangladesh Time (UTC+6)
+      const bdTime = new Date(now.getTime() + (6 * 60 + now.getTimezoneOffset()) * 60000);
+      const hours = bdTime.getHours();
+      const minutes = bdTime.getMinutes();
 
-    if (isAvailable) {
-      if (currentHour < 15) {
-        // Before 3:00 PM
-        return {
-          type: 'same-day',
-          title: 'In Stock • Order before 3:00 PM for Same-Day Dispatch',
-          subtitle: 'Guaranteed 24–48 hrs delivery (Friday delivery available)',
-          indicatorColor: 'bg-emerald-500',
-        };
+      // Cutoff time: 3:00 PM (15:00)
+      const isBeforeCutoff = hours < 15;
+
+      if (isBeforeCutoff) {
+        const remainingHours = 14 - hours;
+        const remainingMinutes = 59 - minutes;
+        setDispatchStatus({
+          canDispatchToday: true,
+          message: `Order within ${remainingHours}h ${remainingMinutes}m for Same-Day Dispatch`,
+          deliveryGuarantee: 'Guaranteed 24–48 hrs delivery (Friday delivery available)',
+        });
       } else {
-        // After 3:00 PM
-        return {
-          type: 'next-morning',
-          title: 'In Stock • Dispatches tomorrow morning',
-          subtitle: 'Guaranteed 24–48 hrs fast nationwide delivery',
-          indicatorColor: 'bg-emerald-500',
-        };
+        setDispatchStatus({
+          canDispatchToday: false,
+          message: 'Orders placed after 3:00 PM will dispatch first thing tomorrow',
+          deliveryGuarantee: 'Guaranteed 24–48 hrs delivery (Friday delivery available)',
+        });
       }
-    } else {
-      // Out of stock / Pre-order
-      return {
-        type: 'backorder',
-        title: 'Available for Order • Dispatches on next working day (Sat–Thu)',
-        subtitle: 'Priority processing upon incoming lab batch',
-        indicatorColor: 'bg-amber-500',
-      };
-    }
-  }, [activeStock, inStock]);
+    };
 
-  // Default 2-line clinical pitch if none provided by admin
-  const displayPitch =
-    scientificPitch && scientificPitch.trim() !== ''
-      ? scientificPitch
-      : 'Active Dermal Formula clinically engineered to target pigmentation, strengthen moisture barrier, and restore radiant glass-skin glow.*';
+    calculateDispatch();
+    const interval = setInterval(calculateDispatch, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Handle Add to Cart
-  const handleAddToCart = async () => {
-    if (activeStock <= 0) return;
-    setIsAdding(true);
-    try {
-      const selectedVariantObj = variants.find((v) => v.id === activeVariantId);
-      addItem({
-        id: activeVariantId ? `${productId}-${activeVariantId}` : productId,
-        productId: productId,
-        name: selectedVariantObj ? `${productName} (${selectedVariantObj.name})` : productName,
-        price: currentPrice,
-        image: selectedVariantObj?.image || productImage,
-        quantity: quantity,
-      });
-      openCartDrawer();
-    } catch {
-      // Graceful fallback
-    } finally {
-      setIsAdding(false);
-    }
+  // Quantity Stepper
+  const increaseQty = () => setQuantity((prev) => prev + 1);
+  const decreaseQty = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+  // Variant change handler
+  const handleVariantChange = (varId: string | null, newPrice: number, stock: number) => {
+    setSelectedVariantId(varId);
+    setCurrentPrice(newPrice);
+    setCurrentStock(stock);
+    if (onVariantChange) onVariantChange(varId, newPrice, stock);
   };
 
-  // WhatsApp instant order message
-  const whatsappUrl = useMemo(() => {
-    const cleanNum = whatsappNumber.replace(/[^0-9]/g, '');
-    const selectedVariantObj = variants.find((v) => v.id === activeVariantId);
-    const msg = `Hello Minsah Beauty, I would like to order:\n\n*Product:* ${productName}\n${selectedVariantObj ? `*Variant:* ${selectedVariantObj.name}\n` : ''}*Quantity:* ${quantity}\n*Total Price:* ৳ ${(currentPrice * quantity).toLocaleString('en-US')}\n\nPlease confirm my delivery details.`;
-    return `https://wa.me/${cleanNum}?text=${encodeURIComponent(msg)}`;
-  }, [whatsappNumber, productName, activeVariantId, variants, quantity, currentPrice]);
+  const handleImageChange = (imgUrl: string | null) => {
+    if (imgUrl) setCurrentImage(imgUrl);
+    if (onImageChange) onImageChange(imgUrl);
+  };
+
+  // Add to Cart
+  const handleAddToCart = () => {
+    addItem({
+      id: selectedVariantId || productId,
+      productId: productId,
+      variantId: selectedVariantId || undefined,
+      name: name,
+      price: currentPrice,
+      image: currentImage,
+      quantity: quantity,
+    });
+    openCartDrawer();
+  };
 
   return (
-    <div className={`w-full max-w-[448px] space-y-0 ${className}`}>
+    <div className={`w-full flex flex-col font-sans ${className}`}>
       
       {/* ========================================================================= */}
-      {/* 1. CODE PILL & TITLE (Exact: Pill 12px 500, Title 32px line-height 1.15)  */}
+      {/* 1. SEED CODE PILL (12px md:13px / 500 / #163020)                          */}
       {/* ========================================================================= */}
-      <div>
-        {/* Code Badge Pill */}
-        {code && (
-          <div className="mb-2">
-            <span className="inline-flex items-center rounded-full border border-[#122A16]/30 dark:border-white/20 px-2.5 py-1 text-[12px] font-mono font-medium tracking-[0.05em] text-[#122A16] dark:text-emerald-400 bg-transparent">
-              {code}
-            </span>
-          </div>
-        )}
+      <div className="mb-2">
+        <span className="inline-flex items-center rounded-full border border-[#163020] dark:border-emerald-400/50 bg-transparent px-2.5 py-0.5 text-xs lg:text-[13px] font-medium tracking-wide text-[#163020] dark:text-emerald-300 select-none">
+          {sku} FORMULA
+        </span>
+      </div>
 
-        {/* Product Title */}
-        <h1 className="text-[32px] sm:text-[34px] font-normal leading-[1.15] tracking-[-0.02em] text-[#122A16] dark:text-white mb-3">
-          {productName}
-        </h1>
+      {/* ========================================================================= */}
+      {/* 2. PRODUCT TITLE H1 (26px Mobile / 28px Tablet / 32px Desktop / #163020)  */}
+      {/* ========================================================================= */}
+      <h1 className="text-[26px] md:text-[28px] lg:text-[32px] font-medium leading-[1.15] tracking-tight text-[#163020] dark:text-white mb-2.5">
+        {name}
+      </h1>
 
-        {/* 5-Star Rating & Review Count (Exact: 13px, gap 6px, stars 14px) */}
-        <div className="flex items-center gap-1.5 text-[13px] text-[#122A16] dark:text-stone-300 mb-4">
-          <div className="flex items-center gap-1 text-[#122A16] dark:text-emerald-400">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={`buybox-star-${star}`}
-                size={14}
-                className="fill-current text-current"
-              />
-            ))}
-          </div>
-          <a
-            href="#product-reviews"
-            className="font-normal hover:underline underline-offset-4 ml-1 transition-colors"
-          >
-            {rating.total.toLocaleString('en-US')} Reviews
-          </a>
+      {/* ========================================================================= */}
+      {/* 3. REVIEWS & TRUST LINE (13px md:14px / #163020)                          */}
+      {/* ========================================================================= */}
+      <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#163020] dark:text-emerald-200 mb-4">
+        <div className="flex text-[#163020] dark:text-emerald-400 text-sm tracking-widest">
+          ★★★★★
         </div>
+        <span className="font-bold">5.0</span>
+        <span className="text-[#163020]/40 dark:text-white/40">•</span>
+        <span className="underline underline-offset-2 cursor-pointer hover:opacity-80">
+          15,301 Reviews
+        </span>
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. SCIENTIFIC VALUE PITCH (Exact: 15px, line-height 1.45, color #122A16) */}
+      {/* 4. CLINICAL / VALUE PITCH (14px Mobile / 15px Tablet / 16px Desktop)      */}
       {/* ========================================================================= */}
-      <div className="mb-5">
-        <p className="text-[15px] leading-[1.45] text-[#122A16]/85 dark:text-stone-300 font-normal">
-          {displayPitch}
-        </p>
-      </div>
+      <p className="text-sm md:text-[15px] lg:text-base leading-[1.45] text-[#163020] dark:text-stone-300 mb-4 lg:mb-5">
+        {shortDescription ||
+          'Targeted botanical complex clinically engineered to fade hyperpigmentation, strengthen skin barrier, and restore radiant glass-skin glow.*'}
+      </p>
 
       {/* ========================================================================= */}
-      {/* 3. PRICE & BESTSELLER BADGE (Exact: Price 24px/500, Badge #CDE6B4/12px)   */}
+      {/* 5. PRICE ROW & BESTSELLER BADGE (#D4F6A2 Lime Pill)                       */}
       {/* ========================================================================= */}
-      <div className="flex items-center gap-3 mb-5">
-        <span className="text-[24px] sm:text-[26px] font-medium tracking-tight text-[#122A16] dark:text-white font-mono">
+      <div className="flex items-center gap-2.5 mb-4 lg:mb-5">
+        <span className="text-[22px] md:text-[24px] lg:text-[26px] font-medium text-[#163020] dark:text-white">
           ৳ {currentPrice.toLocaleString('en-US')}
         </span>
 
-        {badge && (
-          <span className="inline-flex items-center rounded-full bg-[#CDE6B4] text-[#122A16] px-2.5 py-0.5 text-[12px] font-semibold tracking-wide">
-            {badge}
-          </span>
-        )}
+        <span className="rounded-full bg-[#D4F6A2] text-[#163020] px-2.5 py-0.5 text-xs font-bold tracking-wide shadow-xs">
+          Bestseller
+        </span>
 
-        {comparePrice && comparePrice > currentPrice && (
-          <span className="text-[15px] text-stone-400 line-through font-mono">
-            ৳ {comparePrice.toLocaleString('en-US')}
+        {originalPrice > currentPrice && (
+          <span className="text-sm md:text-[15px] text-stone-400 line-through font-mono">
+            ৳ {originalPrice.toLocaleString('en-US')}
           </span>
         )}
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. MULTI-DIMENSIONAL VARIANT RAIL (Pack Size & Shade Swatches)             */}
+      {/* 6. MULTI-DIMENSIONAL VARIANT RAIL & PACK SIZES                            */}
       {/* ========================================================================= */}
-      {variants && variants.length > 0 && (
+      {variants && variants.length > 1 && (
         <div className="mb-4">
           <SeedVariantRail
             variants={variants}
             basePrice={price}
-            baseStock={stock}
-            onVariantChange={handleVariantSelect}
-            onImageChange={onImageChange}
+            baseStock={currentStock}
+            onVariantChange={handleVariantChange}
+            onImageChange={handleImageChange}
           />
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* 5. LIVE REAL-TIME DISPATCH STATUS (Bangladesh Cutoff & Delivery Logic)   */}
+      {/* 7. LIVE DISPATCH STATUS (3:00 PM Cutoff, Friday Deliveries)                */}
       {/* ========================================================================= */}
-      <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-stone-50/70 dark:bg-zinc-800/60 p-3 shadow-xs space-y-1 mb-6">
-        <div className="flex items-center gap-2 text-xs font-semibold text-stone-900 dark:text-white">
-          <span className={`h-2 w-2 rounded-full ${dispatchStatus.indicatorColor} shrink-0 animate-pulse`} />
-          <span>{dispatchStatus.title}</span>
+      <div className="rounded-2xl border border-[#163020]/12 dark:border-white/12 bg-white dark:bg-zinc-800/80 p-3 mb-4 lg:mb-5 shadow-xs">
+        <div className="flex items-center gap-2 text-xs font-bold text-[#163020] dark:text-emerald-300">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span>In Stock • {dispatchStatus.message}</span>
         </div>
-        <p className="text-[11px] text-stone-500 dark:text-stone-400 pl-4">
-          {dispatchStatus.subtitle}
+        <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 pl-4">
+          {dispatchStatus.deliveryGuarantee}
         </p>
       </div>
 
       {/* ========================================================================= */}
-      {/* 6. PRIMARY CTA BUTTON (Exact: Height 48px, Pill 9999px, Font 16px 600)    */}
+      {/* 8. CTA BUTTON (Exact Height 54px Desktop / 48px Mobile / #163020)         */}
       {/* ========================================================================= */}
-      <div className="space-y-3 mb-3">
-        <div className="flex items-center gap-2.5">
-          
-          {/* Quantity Stepper */}
-          <div className="flex h-12 items-center rounded-full border border-black/15 dark:border-white/20 bg-stone-100 dark:bg-zinc-800 px-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-              disabled={quantity <= 1}
-              aria-label="Decrease quantity"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-stone-700 dark:text-stone-300 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-all"
-            >
-              <Minus size={14} />
-            </button>
-            <span className="w-8 text-center text-sm font-mono font-bold text-stone-900 dark:text-white">
-              {quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() => setQuantity((prev) => Math.min(activeStock || 99, prev + 1))}
-              disabled={quantity >= activeStock}
-              aria-label="Increase quantity"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-stone-700 dark:text-stone-300 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-all"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-
-          {/* Seed-Style Solid Forest Green Start Now CTA Button */}
+      <div className="flex gap-2.5 mb-2.5">
+        {/* Quantity Stepper */}
+        <div className="flex items-center rounded-full border border-[#163020]/20 dark:border-white/20 bg-white dark:bg-zinc-800 px-2 h-12 lg:h-[54px] shrink-0">
           <button
             type="button"
-            onClick={handleAddToCart}
-            disabled={activeStock <= 0 || isAdding}
-            className="flex-1 flex h-12 items-center justify-center gap-2 rounded-full bg-[#122A16] hover:bg-[#0c1d0f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-semibold text-[16px] tracking-[0.01em] shadow-sm active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={decreaseQty}
+            aria-label="Decrease quantity"
+            className="flex h-7 w-7 items-center justify-center text-sm font-bold text-[#163020] dark:text-white hover:opacity-70 active:scale-90"
           >
-            <ShoppingBag size={17} />
-            <span>
-              {activeStock > 0
-                ? `Start Now • ৳ ${(currentPrice * quantity).toLocaleString('en-US')}`
-                : 'Currently Out of Stock'}
-            </span>
+            −
+          </button>
+          <span className="w-7 text-center font-mono text-sm font-bold text-[#163020] dark:text-white">
+            {quantity}
+          </span>
+          <button
+            type="button"
+            onClick={increaseQty}
+            aria-label="Increase quantity"
+            className="flex h-7 w-7 items-center justify-center text-sm font-bold text-[#163020] dark:text-white hover:opacity-70 active:scale-90"
+          >
+            +
           </button>
         </div>
 
-        {/* WhatsApp Fast Order Option */}
-        {whatsappNumber && (
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100/70 transition-all shadow-xs"
-          >
-            <MessageCircle size={15} className="text-emerald-600 dark:text-emerald-400" />
-            <span>Order via WhatsApp (Instant Checkout)</span>
-          </a>
-        )}
+        {/* Solid Forest Green Start Now CTA */}
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="flex-1 h-12 lg:h-[54px] rounded-full bg-[#163020] hover:bg-[#0D2B1D] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white text-[15px] lg:text-base font-semibold tracking-tight shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+        >
+          <span>Start Now • ৳ {(currentPrice * quantity).toLocaleString('en-US')}</span>
+        </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* 7. GUARANTEE LINE (Exact: 13px, color #556655, margin 12px 0 24px 0)      */}
+      {/* 9. TRUST & GUARANTEE NOTE (13px / #163020 text-muted)                      */}
       {/* ========================================================================= */}
-      <div className="pt-2 text-center">
-        <p className="flex items-center justify-center gap-1.5 text-[13px] text-[#556655] dark:text-stone-400 font-normal">
-          <ShieldCheck size={14} className="text-[#122A16] dark:text-emerald-400 shrink-0" />
-          <span>✓ Guaranteed 24 to 48 hrs delivery • Cash on Delivery Available</span>
-        </p>
-      </div>
+      <p className="text-xs lg:text-[13px] text-[#163020]/75 dark:text-stone-400 text-center mb-5">
+        ✓ Guaranteed 24 to 48 hrs delivery • Cash on Delivery Available
+      </p>
 
     </div>
   );
