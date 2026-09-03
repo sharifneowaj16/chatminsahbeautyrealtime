@@ -40,8 +40,8 @@ import { GiftRequestButton, ShareButton } from "./GiftShareButtons";
 import WishlistButton from "@/components/wishlist/WishlistButton";
 import ProductStickyHeader from "./ProductStickyHeader";
 import SeedProductHero from "./hero/SeedProductHero";
+import SeedMorphingStickyBar from "./hero/SeedMorphingStickyBar";
 import VariantSelector from "./VariantSelector";
-import StickyBottomBar from "./StickyBottomBar";
 import SeedClinicalStatStrip from "./SeedClinicalStatStrip";
 import SeedDeliveryTechnology from "./SeedDeliveryTechnology";
 import SeedFormulationMatrix from "./SeedFormulationMatrix";
@@ -1775,26 +1775,17 @@ export default function ProductClient({
         )}
       </div>
 
-      {/* Floating Mobile Bottom Action Bar */}
-      <StickyBottomBar
+      {/* Seed.com-Inspired Dynamic Scroll-Morphing Sticky Capsule Bar */}
+      <SeedMorphingStickyBar
         productId={product.id}
-        productName={product.name}
+        productName={displayTitle}
         productImage={variantImageOverride || variantImage || product.image}
-        price={currentPrice * quantity}
-        unitPrice={currentPrice}
-        weightKg={selectedVariantObj?.weight ?? product.weight ?? null}
+        price={currentPrice}
+        compareAtPrice={comparePrice}
+        sku={selectedVariantObj?.sku ?? product.sku}
         variantId={selectedVariantId}
         variantName={variantNameLabel}
-        sku={selectedVariantObj?.sku ?? product.sku}
-        size={variantSize}
-        color={variantColor}
-        variantImage={variantImage}
-        variants={stickyBarVariants as any}
-        quantity={quantity}
-        maxStock={activeStock}
         inStock={activeInStock}
-        requiresVariantSelection={requiresVariantSelection}
-        whatsappNumber={WHATSAPP_NUMBER}
       />
     </>
   );
