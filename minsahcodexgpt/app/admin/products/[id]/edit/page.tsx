@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
 import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
+import ProductHeroVisualController from '@/components/admin/ProductHeroVisualController';
 import { adminFetchJson } from '@/lib/adminFetch';
 import { DEFAULT_SITE_URL } from '@/lib/seo';
 import {
@@ -1498,6 +1499,25 @@ export default function EditProductPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" />
               </div>
             ))}
+            {/* 1-Click Product Hero Visual Controller (Phase 4, 5, 6 UI) */}
+            <div className="pt-2">
+              <ProductHeroVisualController
+                descriptionSectionsJson={formData.descriptionSectionsJson}
+                productSpecsJson={formData.productSpecsJson}
+                relatedProducts={formData.relatedProducts}
+                ingredients={formData.ingredients}
+                skinType={formData.skinType}
+                shelfLife={formData.shelfLife}
+                originCountry={formData.originCountry}
+                deliveryOfferEnabled={formData.deliveryOfferEnabled}
+                onDescriptionSectionsChange={(jsonStr) => setFormData((prev) => ({ ...prev, descriptionSectionsJson: jsonStr }))}
+                onProductSpecsChange={(jsonStr) => setFormData((prev) => ({ ...prev, productSpecsJson: jsonStr }))}
+                onRelatedProductsChange={(val) => setFormData((prev) => ({ ...prev, relatedProducts: val }))}
+                onDeliveryOfferToggle={(enabled) => setFormData((prev) => ({ ...prev, deliveryOfferEnabled: enabled }))}
+                onSkinTypeChange={(types) => setFormData((prev) => ({ ...prev, skinType: types }))}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 ['productSpecsJson', 'Product Specs JSON'],
