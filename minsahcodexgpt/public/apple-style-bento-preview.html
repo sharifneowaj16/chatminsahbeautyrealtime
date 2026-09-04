@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minsah Beauty — Apple-Inspired Cinematic Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ========================================================================== */
+    /* APPLE LUXURY DESIGN SYSTEM (Obsidian, Forest Green, Lime, Titanium Glass) */
+    /* ========================================================================== */
+    :root {
+      --bg-canvas: #0A0D0B;
+      --bg-card: #121714;
+      --bg-card-elevated: #18201B;
+      --forest-primary: #163020;
+      --forest-accent: #D4F6A2;
+      --forest-glow: rgba(212, 246, 162, 0.15);
+      --text-primary: #F5F7F5;
+      --text-secondary: #9BA39D;
+      --text-muted: #667069;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(212, 246, 162, 0.3);
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      padding: 40px 20px 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ─── Apple Headline Cinema Header ───────────────────────────────────── */
+    .apple-header {
+      text-align: center;
+      margin-bottom: 50px;
+      padding: 20px 0;
+    }
+
+    .apple-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(212, 246, 162, 0.1);
+      border: 1px solid rgba(212, 246, 162, 0.25);
+      color: var(--forest-accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .apple-title {
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      background: linear-gradient(180deg, #FFFFFF 0%, #A4B3A8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+    }
+
+    .apple-subtitle {
+      font-size: clamp(16px, 2vw, 20px);
+      font-weight: 400;
+      color: var(--text-secondary);
+      max-width: 640px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* ─── Stage 1: "Look Closer" Interactive Hotspot Stage ───────────────── */
+    .hotspot-stage {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      border-radius: 32px;
+      background: radial-gradient(circle at 50% 50%, #1A261E 0%, #0D130F 100%);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .stage-ambient-glow {
+      position: absolute;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(212, 246, 162, 0.18) 0%, rgba(22, 48, 32, 0) 70%);
+      border-radius: 50%;
+      filter: blur(40px);
+      pointer-events: none;
+    }
+
+    .stage-product-img {
+      max-height: 380px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.7));
+      z-index: 2;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hotspot-stage:hover .stage-product-img {
+      transform: scale(1.03);
+    }
+
+    /* Pulsating Hotspot Pins */
+    .hotspot-pin {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .hotspot-pin::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--forest-accent);
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+
+    .hotspot-pin-inner {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--forest-accent);
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.8); opacity: 0; }
+      100% { transform: scale(0.95); opacity: 0; }
+    }
+
+    /* Hotspot Tooltip Glass Card */
+    .hotspot-card {
+      position: absolute;
+      bottom: calc(100% + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      width: 240px;
+      background: rgba(18, 23, 20, 0.95);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 246, 162, 0.3);
+      padding: 14px;
+      border-radius: 16px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 20;
+    }
+
+    .hotspot-pin:hover .hotspot-card,
+    .hotspot-pin.active .hotspot-card {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hotspot-card h5 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      margin-bottom: 4px;
+    }
+
+    .hotspot-card p {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Pin Positions */
+    .pin-pump { top: 22%; left: 54%; }
+    .pin-core { top: 52%; left: 42%; }
+    .pin-base { top: 78%; left: 56%; }
+
+    /* ─── Stage 2: Apple Bento Grid ───────────────────────────────────────── */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+      width: 100%;
+    }
+
+    .bento-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 28px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .bento-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Bento Sizes */
+    .col-8 { grid-column: span 8; }
+    .col-7 { grid-column: span 7; }
+    .col-6 { grid-column: span 6; }
+    .col-5 { grid-column: span 5; }
+    .col-4 { grid-column: span 4; }
+
+    /* Bento 1: Macro Droplet Texture */
+    .bento-texture {
+      min-height: 380px;
+      background: linear-gradient(135deg, rgba(22, 48, 32, 0.4) 0%, rgba(18, 23, 20, 0.9) 100%);
+    }
+
+    .texture-bg-img {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 55%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.85;
+      border-radius: 0 28px 28px 0;
+      mask-image: linear-gradient(to right, transparent, black 40%);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 40%);
+    }
+
+    .bento-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--forest-accent);
+      margin-bottom: 8px;
+    }
+
+    .bento-title {
+      font-size: clamp(24px, 2.5vw, 32px);
+      font-weight: 700;
+      line-height: 1.15;
+      color: #FFF;
+      margin-bottom: 12px;
+      max-width: 320px;
+    }
+
+    .bento-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      max-width: 300px;
+    }
+
+    /* Bento 2: Massive Stat Card */
+    .bento-stat {
+      background: linear-gradient(180deg, #18201B 0%, #101612 100%);
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+      min-height: 380px;
+    }
+
+    .stat-number {
+      font-size: clamp(56px, 6vw, 76px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--forest-accent);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat-caption {
+      font-size: 16px;
+      font-weight: 600;
+      color: #FFF;
+      margin-bottom: 6px;
+    }
+
+    .stat-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+      max-width: 200px;
+    }
+
+    /* Bento 3: Exploded Layer Stack */
+    .layer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .layer-item:hover {
+      background: rgba(212, 246, 162, 0.08);
+      border-color: rgba(212, 246, 162, 0.25);
+    }
+
+    .layer-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #FFF;
+    }
+
+    .layer-tag {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--forest-accent);
+    }
+
+    /* Bento 4: 0% Formula Purity */
+    .purity-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .purity-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #DDD;
+    }
+
+    /* Bento 5: pH Balance Meter */
+    .ph-meter-box {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .ph-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #D4F6A2 0%, #163020 100%);
+      color: #0A0D0B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(212, 246, 162, 0.4);
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 900px) {
+      .col-8, .col-7, .col-6, .col-5, .col-4 {
+        grid-column: span 12;
+      }
+      .hotspot-stage {
+        height: 380px;
+      }
+      .texture-bg-img {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- ── Apple Cinema Headline ─────────────────────────────────────────── -->
+    <header class="apple-header">
+      <div class="apple-pill-badge">
+        <span>⚡ Precision Bio-Active Engineering</span>
+      </div>
+      <h1 class="apple-title">Engineered for Radiance.<br>Relentlessly Pure.</h1>
+      <p class="apple-subtitle">
+        Every molecule is titrated to clinical perfection. Zero fillers, zero dilution, pure dermal transformation.
+      </p>
+    </header>
+
+    <!-- ── Stage 1: Interactive "Look Closer" Hotspot Stage ───────────────── -->
+    <section class="hotspot-stage">
+      <div class="stage-ambient-glow"></div>
+      
+      <img 
+        src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=90" 
+        alt="Precision Bottle" 
+        class="stage-product-img"
+      >
+
+      <!-- Hotspot 1: Precision Pump -->
+      <div class="hotspot-pin pin-pump">
+        <div class="hotspot-pin-inner"></div>
+        <div class="hotspot-card">
+          <h5>Airless Vacuum Precision Pump</h5>
+          <p>Prevents air oxidation. Delivers an exact 0.25ml micro-dose with every single press.</p>
+        </div>
+      </div>
+
+      <!-- Hotspot 2: Active Core -->
+      <div class="hotspot-pin pin-core">
+        <div class="hotspot-pin-inner"></div>
+        <div class="hotspot-card">
+          <h5>96.3% Mucisome Active Core</h5>
+          <p>High-viscosity bio-fermented active molecules penetrate 8x deeper than standard creams.</p>
+        </div>
+      </div>
+
+      <!-- Hotspot 3: UV Glass Base -->
+      <div class="hotspot-pin pin-base">
+        <div class="hotspot-pin-inner"></div>
+        <div class="hotspot-card">
+          <h5>UV-Protective Heavyweight Glass</h5>
+          <p>Blocks 99.8% of photodegrading light rays to preserve live peptide potency indefinitely.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Stage 2: Apple Bento Grid (Feature Matrix) ─────────────────────── -->
+    <section class="bento-grid">
+      
+      <!-- Bento 1: Macro Cloud-Weight Texture (Span 8) -->
+      <div class="bento-card col-8 bento-texture">
+        <img 
+          src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80" 
+          alt="Texture Droplet" 
+          class="texture-bg-img"
+        >
+        <div>
+          <span class="bento-label">Sensory Profile</span>
+          <h3 class="bento-title">Cloud-weight micro emulsion.</h3>
+          <p class="bento-desc">
+            Absorbs completely in 8 seconds. Zero stickiness, leaving a velvet cashmere matte finish.
+          </p>
+        </div>
+        <div style="margin-top: 30px;">
+          <span style="font-family: var(--font-mono); font-size: 12px; color: var(--forest-accent);">
+            ⚡ 8.2s Rapid Absorption Index
+          </span>
+        </div>
+      </div>
+
+      <!-- Bento 2: Giant Stat (Span 4) -->
+      <div class="bento-card col-4 bento-stat">
+        <div class="stat-number">96.3%</div>
+        <div class="stat-caption">Bio-Active Purity</div>
+        <p class="stat-subtext">Clinically verified active concentration without water dilution.</p>
+      </div>
+
+      <!-- Bento 3: 4-Layer Exploded Stack (Span 6) -->
+      <div class="bento-card col-6">
+        <div>
+          <span class="bento-label">Structural Anatomy</span>
+          <h3 class="bento-title" style="font-size: 22px; margin-bottom: 16px;">Multi-Layer Formulation Stack</h3>
+        </div>
+        <div class="layer-list">
+          <div class="layer-item">
+            <span class="layer-name">Layer 1 • Anti-Oxidation Airless Seal</span>
+            <span class="layer-tag">[0.0% O₂]</span>
+          </div>
+          <div class="layer-item">
+            <span class="layer-name">Layer 2 • Hydro-Lipidic Penetration Carrier</span>
+            <span class="layer-tag">[140kDa]</span>
+          </div>
+          <div class="layer-item">
+            <span class="layer-name">Layer 3 • Pure Concentrated Peptide Matrix</span>
+            <span class="layer-tag">[96.3%]</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento 4: Zero Purity Matrix & pH (Span 6) -->
+      <div class="bento-card col-6">
+        <div>
+          <span class="bento-label">Biocompatibility</span>
+          <h3 class="bento-title" style="font-size: 22px;">0% Synthetic Additives.</h3>
+          <p class="bento-desc" style="max-width: 100%;">
+            Formulated strictly at optimal skin pH to protect and reinforce your acid mantle barrier.
+          </p>
+        </div>
+        
+        <div class="ph-meter-box">
+          <div class="ph-badge">5.5</div>
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #FFF;">pH 5.5 Skin-Identical Balance</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Non-comedogenic • Sensitive skin safe</div>
+          </div>
+        </div>
+
+        <div class="purity-pills">
+          <span class="purity-pill">✓ No Fragrance</span>
+          <span class="purity-pill">✓ No Alcohol</span>
+          <span class="purity-pill">✓ No Parabens</span>
+          <span class="purity-pill">✓ No Silicones</span>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+</body>
+</html>

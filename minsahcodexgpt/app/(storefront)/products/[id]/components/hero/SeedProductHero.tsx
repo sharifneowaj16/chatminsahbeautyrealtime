@@ -24,9 +24,10 @@ export interface SeedProductHeroProps {
     shortDescription?: string | null;
     keyBenefits?: string[] | null;
     ingredients?: string | null;
-    skinType?: string | null;
+    skinType?: string | string[] | null;
     shelfLife?: string | null;
-    originCountry?: string | null;
+    originCountry?: string | string[] | null;
+    shippingWeight?: string | null;
     deliveryOfferEnabled?: boolean | null;
     productSpecs?: Record<string, any> | null;
     productAttributes?: Record<string, any> | null;
@@ -99,6 +100,17 @@ export default function SeedProductHero({
     return null;
   }, [relatedProductsList]);
 
+  // Safe helper to format fields
+  const formatField = (val: unknown): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val.trim();
+    if (Array.isArray(val)) {
+      const items = val.filter((item) => typeof item === 'string' && item.trim() !== '').map((item) => item.trim());
+      return items.join(', ');
+    }
+    return String(val);
+  };
+
   return (
     <div
       className={`w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 ${className}`}
@@ -114,6 +126,7 @@ export default function SeedProductHero({
           <SeedHeroGallery
             images={normalizedGalleryImages}
             productName={product.name}
+            overrideImage={activeImageOverride}
           />
         </div>
 
@@ -142,10 +155,10 @@ export default function SeedProductHero({
             productName={product.name}
             keyBenefits={product.keyBenefits || undefined}
             specs={{
-              volume: product.skinType || '30*2 ml / 80*2 ml (Double Sealed Container)',
-              skinType: product.skinType || 'Suitable for All Skin Types (Sensitive Safe)',
-              shelfLife: product.shelfLife || '24–36 Months from Manufacturing Date',
-              originCountry: product.originCountry || 'Direct Authorized Channel',
+              volume: formatField(product.shippingWeight) || '30*2 ml / 80*2 ml (Double Sealed Container)',
+              skinType: formatField(product.skinType) || 'Suitable for All Skin Types (Sensitive Safe)',
+              shelfLife: formatField(product.shelfLife) || '24–36 Months from Manufacturing Date',
+              originCountry: formatField(product.originCountry) || 'Direct Authorized Channel',
             }}
             ingredients={product.ingredients || undefined}
           />

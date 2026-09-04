@@ -142,7 +142,7 @@ export default function SeedHeroBundleCard({
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="relative h-13 w-13 rounded-xl overflow-hidden bg-stone-100 dark:bg-zinc-700 shrink-0 border border-black/5 dark:border-white/10">
               <Image
-                src={mainProduct.image}
+                src={mainProduct.image || '/images/categories/Skincare.png'}
                 alt={mainProduct.name}
                 fill
                 className="object-cover"
@@ -170,7 +170,7 @@ export default function SeedHeroBundleCard({
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="relative h-13 w-13 rounded-xl overflow-hidden bg-stone-100 dark:bg-zinc-700 shrink-0 border border-black/5 dark:border-white/10">
               <Image
-                src={activePairedProduct.image}
+                src={activePairedProduct.image || '/images/categories/Skincare.png'}
                 alt={activePairedProduct.name}
                 fill
                 className="object-cover"

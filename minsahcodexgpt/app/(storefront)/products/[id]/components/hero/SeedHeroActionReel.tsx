@@ -463,7 +463,7 @@ export default function SeedHeroActionReel({
               <div className="flex items-center gap-2.5 truncate">
                 <div className="relative h-9 w-9 rounded-xl overflow-hidden bg-stone-100 shrink-0">
                   <Image
-                    src={productImage}
+                    src={productImage || '/images/categories/Skincare.png'}
                     alt={productName}
                     fill
                     className="object-cover"

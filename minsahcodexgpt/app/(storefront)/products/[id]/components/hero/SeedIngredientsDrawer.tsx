@@ -94,11 +94,22 @@ export default function SeedIngredientsDrawer({
     return [];
   }, [ingredients]);
 
+  // Safe helper to format string or array fields without runtime crashes
+  const formatField = (val: unknown, fallback: string): string => {
+    if (!val) return fallback;
+    if (typeof val === 'string' && val.trim() !== '') return val.trim();
+    if (Array.isArray(val)) {
+      const items = val.filter((item) => typeof item === 'string' && item.trim() !== '').map((item) => item.trim());
+      return items.length > 0 ? items.join(', ') : fallback;
+    }
+    return String(val) || fallback;
+  };
+
   // Clean Specs & Details from API fields with fallback defaults
-  const displayOrigin = originCountry && originCountry.trim() !== '' ? originCountry : 'Authentic Global Import (Verified Batch)';
-  const displaySkinType = skinType && skinType.trim() !== '' ? skinType : 'Suitable for All Skin Types (Sensitive Safe)';
-  const displayShelfLife = shelfLife && shelfLife.trim() !== '' ? shelfLife : '24–36 Months from Manufacturing Date';
-  const displayWeight = shippingWeight && shippingWeight.trim() !== '' ? shippingWeight : 'Standard Pack (Double Sealed)';
+  const displayOrigin = formatField(originCountry, 'Authentic Global Import (Verified Batch)');
+  const displaySkinType = formatField(skinType, 'Suitable for All Skin Types (Sensitive Safe)');
+  const displayShelfLife = formatField(shelfLife, '24–36 Months from Manufacturing Date');
+  const displayWeight = formatField(shippingWeight, 'Standard Pack (Double Sealed)');
 
   if (!isOpen) return null;
 

@@ -17,6 +17,7 @@ import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories } from '@/contexts/CategoriesContext';
 import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
 import ProductHeroVisualController from '@/components/admin/ProductHeroVisualController';
+import ProductTimelineVisualManager from '@/components/admin/ProductTimelineVisualManager';
 import { adminFetchJson } from '@/lib/adminFetch';
 import { DEFAULT_SITE_URL } from '@/lib/seo';
 import {
@@ -1515,6 +1516,15 @@ export default function EditProductPage() {
                 onRelatedProductsChange={(val) => setFormData((prev) => ({ ...prev, relatedProducts: val }))}
                 onDeliveryOfferToggle={(enabled) => setFormData((prev) => ({ ...prev, deliveryOfferEnabled: enabled }))}
                 onSkinTypeChange={(types) => setFormData((prev) => ({ ...prev, skinType: types }))}
+              />
+            </div>
+
+            {/* 1-Click Product Routine & Benefits Timeline Manager (Phase 2 UI) */}
+            <div className="pt-2">
+              <ProductTimelineVisualManager
+                productName={formData.name || 'This Product'}
+                descriptionSectionsJson={formData.descriptionSectionsJson}
+                onTimelineChange={(_stages, jsonStr) => setFormData((prev) => ({ ...prev, descriptionSectionsJson: jsonStr }))}
               />
             </div>
 
