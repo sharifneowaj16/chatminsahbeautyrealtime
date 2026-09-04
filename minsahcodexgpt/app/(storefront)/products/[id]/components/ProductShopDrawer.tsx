@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Sparkles, Tag, ChevronRight } from 'lucide-react';
+import { safeImageUrl, DEFAULT_SKINCARE_PLACEHOLDER } from '@/lib/safe-image';
 
 export interface ShopDrawerProduct {
   id: string;
@@ -83,26 +84,26 @@ export default function ProductShopDrawer({
   products = defaultShopProducts,
   currentProductId,
 }: ProductShopDrawerProps) {
-  const [items, setItems] = useState<ShopDrawerProduct[]>(products);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Synchronize dynamic items if passed or filter out current product
-  useEffect(() => {
-    if (products && products.length > 0) {
-      const filtered = currentProductId
-        ? products.filter((p) => p.id !== currentProductId && p.slug !== currentProductId)
-        : products;
-      setItems(filtered.length > 0 ? filtered : products);
-    }
+  // Synchronize dynamic items synchronously with guaranteed non-empty image strings
+  const items = useMemo(() => {
+    const list = products && Array.isArray(products) && products.length > 0 ? products : defaultShopProducts;
+    const filtered = currentProductId
+      ? list.filter((p) => p && p.id !== currentProductId && p.slug !== currentProductId)
+      : list;
+    const final = filtered.length > 0 ? filtered : defaultShopProducts;
+    return final.map((p) => ({
+      ...p,
+      image: safeImageUrl(p?.image, DEFAULT_SKINCARE_PLACEHOLDER),
+    }));
   }, [products, currentProductId]);
 
   // Handle escape key to close
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -114,27 +115,26 @@ export default function ProductShopDrawer({
     <div
       ref={containerRef}
       role="dialog"
-      aria-label="Shop featured products menu"
-      className="absolute top-[calc(100%+8px)] left-0 z-50 w-[330px] sm:w-[360px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
+      aria-label="Shop products menu"
+      className="absolute top-[calc(100%+8px)] left-0 z-50 w-[340px] sm:w-[380px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
       onMouseLeave={onClose}
     >
-      {/* Outer Frosted Glass Container (Seed.com style) */}
       <div className="overflow-hidden rounded-3xl border border-white/20 bg-[#122416]/95 backdrop-blur-2xl shadow-2xl shadow-black/60 text-white ring-1 ring-black/10">
         
-        {/* Subtle Ambient Header Label */}
+        {/* Header Bar */}
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 bg-white/[0.02]">
           <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300/80 font-semibold flex items-center gap-1.5">
             <Sparkles size={11} className="text-emerald-400" />
-            Featured Formulations
+            Curated Formulations
           </span>
           <span className="text-[10px] font-mono text-white/40">
             {items.length} items
           </span>
         </div>
 
-        {/* Scrollable Products Area with Custom Silky Scrollbar */}
+        {/* Scrollable Products List */}
         <div
-          className="max-h-[360px] overflow-y-auto overscroll-contain px-2.5 py-2 space-y-1"
+          className="max-h-[380px] overflow-y-auto overscroll-contain p-2 space-y-1"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: 'rgba(255, 255, 255, 0.35) transparent',
@@ -150,8 +150,8 @@ export default function ProductShopDrawer({
               {/* Product Thumbnail Box */}
               <div className="relative h-13 w-13 flex-shrink-0 overflow-hidden rounded-xl bg-white/10 border border-white/10 flex items-center justify-center p-1 group-hover:border-emerald-400/40 transition-colors">
                 <Image
-                  src={item.image}
-                  alt={item.name}
+                  src={safeImageUrl(item.image)}
+                  alt={item.name || 'Product'}
                   width={52}
                   height={52}
                   className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"

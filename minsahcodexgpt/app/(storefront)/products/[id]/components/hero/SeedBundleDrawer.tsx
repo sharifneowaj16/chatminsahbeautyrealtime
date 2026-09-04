@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { safeImageUrl } from '@/lib/safe-image';
 
 export interface BundleProductCandidate {
   id: string;
@@ -336,7 +337,7 @@ export default function SeedBundleDrawer({
                       <div className="flex items-center gap-3 truncate">
                         <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-stone-100 dark:bg-zinc-700 shrink-0 border border-black/5 dark:border-white/10">
                           <Image
-                            src={item.image}
+                            src={safeImageUrl(item.image)}
                             alt={item.name}
                             fill
                             className="object-cover"
@@ -425,7 +426,7 @@ export default function SeedBundleDrawer({
                         <div className="flex items-center gap-3 truncate">
                           <div className="relative h-11 w-11 rounded-xl overflow-hidden bg-stone-100 dark:bg-zinc-700 shrink-0 border border-black/5 dark:border-white/10">
                             <Image
-                              src={candidate.image}
+                              src={safeImageUrl(candidate.image)}
                               alt={candidate.name}
                               fill
                               className="object-cover"

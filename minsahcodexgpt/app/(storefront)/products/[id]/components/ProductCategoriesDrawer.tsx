@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Layers, Sparkles, ChevronRight } from 'lucide-react';
+import { safeImageUrl } from '@/lib/safe-image';
 
 export interface CategoryItem {
   id: string;
@@ -51,7 +52,7 @@ export default function ProductCategoriesDrawer({
             name: c.name,
             slug: c.slug,
             href: `/shop?category=${encodeURIComponent(c.name)}`,
-            image: c.image || c.icon || `/images/categories/${c.slug}.png`,
+            image: safeImageUrl(c.image || c.icon || `/images/categories/${c.slug}.png`),
             itemCount: c._count?.products || undefined,
           }));
           setItems(apiCats);
@@ -116,8 +117,8 @@ export default function ProductCategoriesDrawer({
             >
               <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white/10 p-1 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
                 <Image
-                  src={cat.image}
-                  alt={cat.name}
+                  src={safeImageUrl(cat.image)}
+                  alt={cat.name || 'Category'}
                   width={36}
                   height={36}
                   className="h-full w-full object-contain"

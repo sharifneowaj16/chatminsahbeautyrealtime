@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { ShopDrawerProduct } from './ProductShopDrawer';
 import { CategoryItem } from './ProductCategoriesDrawer';
+import { safeImageUrl } from '@/lib/safe-image';
 
 interface ProductMobileNavDrawerProps {
   isOpen: boolean;
@@ -160,8 +161,8 @@ export default function ProductMobileNavDrawer({
                 >
                   <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-white/10 p-1 flex items-center justify-center">
                     <Image
-                      src={item.image}
-                      alt={item.name}
+                      src={safeImageUrl(item.image)}
+                      alt={item.name || 'Product'}
                       width={48}
                       height={48}
                       className="h-full w-full object-contain"
@@ -214,8 +215,8 @@ export default function ProductMobileNavDrawer({
                 >
                   <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white/10 p-1 flex items-center justify-center mb-1">
                     <Image
-                      src={cat.image}
-                      alt={cat.name}
+                      src={safeImageUrl(cat.image)}
+                      alt={cat.name || 'Category'}
                       width={36}
                       height={36}
                       className="h-full w-full object-contain"

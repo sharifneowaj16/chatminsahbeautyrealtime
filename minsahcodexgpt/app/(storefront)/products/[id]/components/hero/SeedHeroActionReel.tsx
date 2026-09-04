@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { safeImageUrl } from '@/lib/safe-image';
 
 export interface ActionReelItem {
   id: string;
@@ -71,8 +72,8 @@ export default function SeedHeroActionReel({
         title: r.title || 'Texture & Application Demo',
         creator: r.creator || '@minsahbeauty',
         avatarText: r.avatarText || r.creator?.replace('@', '').slice(0, 1).toUpperCase() || 'M',
-        posterUrl: r.posterUrl || r.image || r.thumbnail || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
-        videoUrl: r.videoUrl || r.url || r.video || undefined,
+        posterUrl: safeImageUrl(r.posterUrl || r.image || r.thumbnail, 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80'),
+        videoUrl: (r.videoUrl && typeof r.videoUrl === 'string' && r.videoUrl.trim() !== '') ? r.videoUrl.trim() : (r.url && typeof r.url === 'string' && r.url.trim() !== '') ? r.url.trim() : undefined,
       }));
     }
 
@@ -86,8 +87,8 @@ export default function SeedHeroActionReel({
           title: r.title || 'Texture & Application Demo',
           creator: r.creator || '@minsahbeauty',
           avatarText: r.avatarText || r.creator?.replace('@', '').slice(0, 1).toUpperCase() || 'M',
-          posterUrl: r.posterUrl || r.image || r.thumbnail || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
-          videoUrl: r.videoUrl || r.url || r.video || undefined,
+          posterUrl: safeImageUrl(r.posterUrl || r.image || r.thumbnail, 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80'),
+          videoUrl: (r.videoUrl && typeof r.videoUrl === 'string' && r.videoUrl.trim() !== '') ? r.videoUrl.trim() : (r.url && typeof r.url === 'string' && r.url.trim() !== '') ? r.url.trim() : undefined,
         }));
       }
     }
@@ -306,7 +307,7 @@ export default function SeedHeroActionReel({
           >
             {/* Reel Poster Image */}
             <Image
-              src={reel.posterUrl}
+              src={safeImageUrl(reel.posterUrl)}
               alt={reel.title}
               fill
               sizes="(max-width: 640px) 125px, 135px"
@@ -427,7 +428,7 @@ export default function SeedHeroActionReel({
                 <video
                   ref={videoRef}
                   src={currentReel.videoUrl}
-                  poster={currentReel.posterUrl}
+                  poster={safeImageUrl(currentReel.posterUrl)}
                   playsInline
                   autoPlay
                   muted={isMuted}
@@ -436,7 +437,7 @@ export default function SeedHeroActionReel({
                 />
               ) : (
                 <Image
-                  src={currentReel.posterUrl}
+                  src={safeImageUrl(currentReel.posterUrl)}
                   alt={currentReel.title}
                   fill
                   priority
@@ -463,7 +464,7 @@ export default function SeedHeroActionReel({
               <div className="flex items-center gap-2.5 truncate">
                 <div className="relative h-9 w-9 rounded-xl overflow-hidden bg-stone-100 shrink-0">
                   <Image
-                    src={productImage || '/images/categories/Skincare.png'}
+                    src={safeImageUrl(productImage)}
                     alt={productName}
                     fill
                     className="object-cover"

@@ -149,8 +149,8 @@ export function SeedMediaMatrix({
           {/* HTML5 Video */}
           <video
             ref={videoRef}
-            src={videoUrl || ""}
-            poster={posterUrl}
+            src={videoUrl && videoUrl.trim() !== '' ? videoUrl.trim() : undefined}
+            poster={posterUrl && posterUrl.trim() !== '' ? posterUrl.trim() : undefined}
             autoPlay
             loop
             muted={isMuted}

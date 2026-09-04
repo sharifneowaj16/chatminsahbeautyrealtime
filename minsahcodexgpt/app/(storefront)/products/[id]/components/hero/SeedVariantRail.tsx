@@ -234,9 +234,9 @@ export default function SeedVariantRail({
                     }`}
                   >
                     {/* Variant Thumbnail Image */}
-                    {v.image ? (
+                    {v.image && typeof v.image === 'string' && v.image.trim() !== '' ? (
                       <Image
-                        src={v.image}
+                        src={v.image.trim()}
                         alt={v.name}
                         fill
                         sizes="52px"

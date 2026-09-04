@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
+import { safeImageUrl } from "@/lib/safe-image";
 
 export interface ReviewItem {
   id: string;
@@ -157,9 +158,9 @@ export function SeedReviewCardList({
               </p>
 
               {/* Verified Customer Photos Gallery */}
-              {review.photos && review.photos.length > 0 && (
+              {review.photos && review.photos.filter((p) => typeof p === 'string' && p.trim() !== '').length > 0 && (
                 <div className="flex flex-wrap gap-2.5 pt-1">
-                  {review.photos.map((photoUrl, pIdx) => (
+                  {review.photos.filter((p) => typeof p === 'string' && p.trim() !== '').map((photoUrl, pIdx) => (
                     <button
                       key={pIdx}
                       type="button"
@@ -167,7 +168,7 @@ export function SeedReviewCardList({
                       className="relative w-[72px] h-[72px] sm:w-[76px] sm:h-[76px] rounded-[8px] overflow-hidden border border-[#D8D7CF] hover:border-[#1C3A13] transition-all group shrink-0"
                     >
                       <Image
-                        src={photoUrl}
+                        src={safeImageUrl(photoUrl)}
                         alt={`Customer review photo by ${review.userName}`}
                         fill
                         sizes="76px"
@@ -253,7 +254,7 @@ export function SeedReviewCardList({
 
             <div className="relative w-[320px] sm:w-[480px] lg:w-[600px] h-[400px] sm:h-[500px]">
               <Image
-                src={lightboxPhoto}
+                src={safeImageUrl(lightboxPhoto)}
                 alt="Enlarged customer photo"
                 fill
                 className="object-contain"

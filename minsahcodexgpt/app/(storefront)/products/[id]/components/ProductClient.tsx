@@ -15,6 +15,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import ProductStickyHeader from "./ProductStickyHeader";
+import { safeImageUrl } from "@/lib/safe-image";
 import SeedProductHero from "./hero/SeedProductHero";
 import SeedMorphingStickyBar from "./hero/SeedMorphingStickyBar";
 import SeedBenefitsSection from "./benefits/SeedBenefitsSection";
@@ -578,14 +579,14 @@ export default function ProductClient({
         stock={activeStock}
         inStock={activeInStock}
         relatedProducts={
-          relatedProducts && relatedProducts.length > 0
+          relatedProducts && Array.isArray(relatedProducts) && relatedProducts.length > 0
             ? relatedProducts.map((p) => ({
                 id: p.id,
                 name: p.name,
                 slug: p.slug,
                 price: p.price,
                 originalPrice: p.originalPrice,
-                image: p.image,
+                image: safeImageUrl(p?.image),
                 category: product.category || 'Formulation',
               }))
             : undefined
@@ -603,7 +604,7 @@ export default function ProductClient({
           price: baseDisplayPrice,
           compareAtPrice: comparePrice,
           costPrice: (product as any).costPrice,
-          image: product.image,
+          image: product.image || '/images/categories/Skincare.png',
           images: galleryImages,
           shortDescription: product.shortDescription,
           keyBenefits: product.keyBenefits,
@@ -625,7 +626,7 @@ export default function ProductClient({
                 name: p.name,
                 price: p.price,
                 costPrice: (p as any).costPrice,
-                image: p.image,
+                image: p.image || '/images/categories/Skincare.png',
                 stock: p.stock,
                 hasFreeDelivery: true,
                 category: product.category || 'Skincare',

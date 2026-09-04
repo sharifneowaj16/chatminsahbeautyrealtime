@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ShoppingBag, ArrowRight, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { safeImageUrl } from '@/lib/safe-image';
 
 export interface SeedMorphingStickyBarProps {
   productId: string;
@@ -135,7 +136,7 @@ export default function SeedMorphingStickyBar({
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="relative h-9 w-9 md:h-10 md:w-10 rounded-full overflow-hidden bg-white/10 p-0.5 border border-white/10 shrink-0">
               <Image
-                src={productImage || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80'}
+                src={safeImageUrl(productImage)}
                 alt={productName}
                 fill
                 sizes="40px"
