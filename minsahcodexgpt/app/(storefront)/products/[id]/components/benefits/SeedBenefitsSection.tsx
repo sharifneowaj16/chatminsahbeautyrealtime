@@ -95,7 +95,7 @@ export function SeedBenefitsSection({
       aria-label="Benefits that build over time"
       className={`w-full bg-[#F4F3EE] py-14 sm:py-20 lg:py-24 border-y border-[#1C3A13]/8 transition-colors ${className}`}
     >
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Phase 1: Header Fold */}
         <SeedBenefitsHeader

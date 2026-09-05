@@ -74,7 +74,7 @@ export function SeedReviewCardList({
         <p className="text-[16px] font-medium text-[#1C3A13] mb-1">
           No reviews match your current filter criteria.
         </p>
-        <p className="text-[13px] text-[#163020]/70">
+        <p className="text-[13px] text-[#1c3a13]/70">
           Try resetting filters or searching with different keywords.
         </p>
       </div>

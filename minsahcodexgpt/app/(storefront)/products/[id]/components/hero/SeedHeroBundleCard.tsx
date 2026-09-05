@@ -218,6 +218,7 @@ export default function SeedHeroBundleCard({
           <button
             type="button"
             onClick={handleAddBaseBundle}
+            data-sticky-sentinel="bundle-cta"
             className="w-full h-12 flex items-center justify-center gap-2 rounded-full bg-[#122A16] hover:bg-[#0c1d0f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-semibold text-xs tracking-wide shadow-md active:scale-[0.99] transition-all"
           >
             <ShoppingBag size={14} />

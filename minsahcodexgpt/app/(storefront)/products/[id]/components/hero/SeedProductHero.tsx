@@ -8,6 +8,7 @@ import SeedHeroActionReel from './SeedHeroActionReel';
 import SeedHeroBundleCard from './SeedHeroBundleCard';
 import { ProductVariantItem } from './SeedVariantRail';
 import { BundleProductCandidate } from './SeedBundleDrawer';
+import { useSplitScrollTrigger } from './useSplitScrollTrigger';
 
 export type GalleryImageItem = string | { url: string; alt?: string };
 
@@ -45,6 +46,16 @@ export default function SeedProductHero({
   relatedProductsList = [],
   className = '',
 }: SeedProductHeroProps) {
+  // Desktop-Only Sequential Dual-Column Split Scroll Trigger
+  const {
+    containerRef,
+    leftColumnRef,
+    rightColumnRef,
+    isDesktop,
+    leftStyle,
+    rightStyle,
+  } = useSplitScrollTrigger();
+
   // Active Main Image (Synchronized with selected variant)
   const [activeImageOverride, setActiveImageOverride] = useState<string | null>(null);
 
@@ -113,6 +124,7 @@ export default function SeedProductHero({
 
   return (
     <div
+      ref={containerRef}
       className={`w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 ${className}`}
       aria-label="Product Hero Section"
     >
@@ -122,7 +134,11 @@ export default function SeedProductHero({
         {/* ===================================================================== */}
         {/* LEFT COLUMN (52%): PHASE 1 ASYMMETRIC 5-IMAGE GRID & MOBILE CAROUSEL */}
         {/* ===================================================================== */}
-        <div className="w-full">
+        <div
+          ref={leftColumnRef}
+          style={isDesktop ? leftStyle : undefined}
+          className="w-full"
+        >
           <SeedHeroGallery
             images={normalizedGalleryImages}
             productName={product.name}
@@ -131,9 +147,13 @@ export default function SeedProductHero({
         </div>
 
         {/* ===================================================================== */}
-        {/* RIGHT COLUMN (48%): PHASES 2 TO 6 COMPLETE COMMERCE STACK (Sticky)    */}
+        {/* RIGHT COLUMN (48%): PHASES 2 TO 6 COMPLETE COMMERCE STACK (Scrolls) */}
         {/* ===================================================================== */}
-        <div className="w-full max-w-[540px] lg:sticky lg:top-24 space-y-6">
+        <div
+          ref={rightColumnRef}
+          style={isDesktop ? rightStyle : undefined}
+          className="w-full max-w-[540px] space-y-6"
+        >
           
           {/* Phase 2: Seed Sticky Buy Box */}
           <SeedHeroBuyBox
@@ -185,3 +205,4 @@ export default function SeedProductHero({
     </div>
   );
 }
+

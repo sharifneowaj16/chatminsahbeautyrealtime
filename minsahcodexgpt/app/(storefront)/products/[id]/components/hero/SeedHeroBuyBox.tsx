@@ -136,30 +136,30 @@ export default function SeedHeroBuyBox({
     <div className={`w-full flex flex-col font-sans ${className}`}>
       
       {/* ========================================================================= */}
-      {/* 1. SEED CODE PILL (12px md:13px / 500 / #163020)                          */}
+      {/* 1. SEED CODE PILL (12px md:13px / 500 / #1c3a13)                          */}
       {/* ========================================================================= */}
       <div className="mb-2">
-        <span className="inline-flex items-center rounded-full border border-[#163020] dark:border-emerald-400/50 bg-transparent px-2.5 py-0.5 text-xs lg:text-[13px] font-medium tracking-wide text-[#163020] dark:text-emerald-300 select-none">
+        <span className="inline-flex items-center rounded-full border border-[#1c3a13] dark:border-emerald-400/50 bg-transparent px-2.5 py-0.5 text-xs lg:text-[13px] font-medium tracking-wide text-[#1c3a13] dark:text-emerald-300 select-none">
           {sku} FORMULA
         </span>
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. PRODUCT TITLE H1 (26px Mobile / 28px Tablet / 32px Desktop / #163020)  */}
+      {/* 2. PRODUCT TITLE H1 (26px Mobile / 28px Tablet / 32px Desktop / #1c3a13)  */}
       {/* ========================================================================= */}
-      <h1 className="text-[26px] md:text-[28px] lg:text-[32px] font-medium leading-[1.15] tracking-tight text-[#163020] dark:text-white mb-2.5">
+      <h1 className="text-[26px] md:text-[28px] lg:text-[32px] font-medium leading-[1.15] tracking-tight text-[#1c3a13] dark:text-white mb-2.5">
         {name}
       </h1>
 
       {/* ========================================================================= */}
-      {/* 3. REVIEWS & TRUST LINE (13px md:14px / #163020)                          */}
+      {/* 3. REVIEWS & TRUST LINE (13px md:14px / #1c3a13)                          */}
       {/* ========================================================================= */}
-      <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#163020] dark:text-emerald-200 mb-4">
-        <div className="flex text-[#163020] dark:text-emerald-400 text-sm tracking-widest">
+      <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#1c3a13] dark:text-emerald-200 mb-4">
+        <div className="flex text-[#1c3a13] dark:text-emerald-400 text-sm tracking-widest">
           ★★★★★
         </div>
         <span className="font-bold">5.0</span>
-        <span className="text-[#163020]/40 dark:text-white/40">•</span>
+        <span className="text-[#1c3a13]/40 dark:text-white/40">•</span>
         <span className="underline underline-offset-2 cursor-pointer hover:opacity-80">
           15,301 Reviews
         </span>
@@ -168,7 +168,7 @@ export default function SeedHeroBuyBox({
       {/* ========================================================================= */}
       {/* 4. CLINICAL / VALUE PITCH (14px Mobile / 15px Tablet / 16px Desktop)      */}
       {/* ========================================================================= */}
-      <p className="text-sm md:text-[15px] lg:text-base leading-[1.45] text-[#163020] dark:text-stone-300 mb-4 lg:mb-5">
+      <p className="text-sm md:text-[15px] lg:text-base leading-[1.45] text-[#1c3a13] dark:text-stone-300 mb-4 lg:mb-5">
         {shortDescription ||
           'Targeted botanical complex clinically engineered to fade hyperpigmentation, strengthen skin barrier, and restore radiant glass-skin glow.*'}
       </p>
@@ -177,11 +177,11 @@ export default function SeedHeroBuyBox({
       {/* 5. PRICE ROW & BESTSELLER BADGE (#D4F6A2 Lime Pill)                       */}
       {/* ========================================================================= */}
       <div className="flex items-center gap-2.5 mb-4 lg:mb-5">
-        <span className="text-[22px] md:text-[24px] lg:text-[26px] font-medium text-[#163020] dark:text-white">
+        <span className="text-[22px] md:text-[24px] lg:text-[26px] font-medium text-[#1c3a13] dark:text-white">
           ৳ {currentPrice.toLocaleString('en-US')}
         </span>
 
-        <span className="rounded-full bg-[#D4F6A2] text-[#163020] px-2.5 py-0.5 text-xs font-bold tracking-wide shadow-xs">
+        <span className="rounded-full bg-[#D4F6A2] text-[#1c3a13] px-2.5 py-0.5 text-xs font-bold tracking-wide shadow-xs">
           Bestseller
         </span>
 
@@ -210,8 +210,8 @@ export default function SeedHeroBuyBox({
       {/* ========================================================================= */}
       {/* 7. LIVE DISPATCH STATUS (3:00 PM Cutoff, Friday Deliveries)                */}
       {/* ========================================================================= */}
-      <div className="rounded-2xl border border-[#163020]/12 dark:border-white/12 bg-white dark:bg-zinc-800/80 p-3 mb-4 lg:mb-5 shadow-xs">
-        <div className="flex items-center gap-2 text-xs font-bold text-[#163020] dark:text-emerald-300">
+      <div className="rounded-2xl border border-[#1c3a13]/12 dark:border-white/12 bg-white dark:bg-zinc-800/80 p-3 mb-4 lg:mb-5 shadow-xs">
+        <div className="flex items-center gap-2 text-xs font-bold text-[#1c3a13] dark:text-emerald-300">
           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <span>In Stock • {dispatchStatus.message}</span>
         </div>
@@ -221,27 +221,27 @@ export default function SeedHeroBuyBox({
       </div>
 
       {/* ========================================================================= */}
-      {/* 8. CTA BUTTON (Exact Height 54px Desktop / 48px Mobile / #163020)         */}
+      {/* 8. CTA BUTTON (Exact Height 54px Desktop / 48px Mobile / #1c3a13)         */}
       {/* ========================================================================= */}
       <div className="flex gap-2.5 mb-2.5">
         {/* Quantity Stepper */}
-        <div className="flex items-center rounded-full border border-[#163020]/20 dark:border-white/20 bg-white dark:bg-zinc-800 px-2 h-12 lg:h-[54px] shrink-0">
+        <div className="flex items-center rounded-full border border-[#1c3a13]/20 dark:border-white/20 bg-white dark:bg-zinc-800 px-2 h-12 lg:h-[54px] shrink-0">
           <button
             type="button"
             onClick={decreaseQty}
             aria-label="Decrease quantity"
-            className="flex h-7 w-7 items-center justify-center text-sm font-bold text-[#163020] dark:text-white hover:opacity-70 active:scale-90"
+            className="flex h-7 w-7 items-center justify-center text-sm font-bold text-[#1c3a13] dark:text-white hover:opacity-70 active:scale-90"
           >
             −
           </button>
-          <span className="w-7 text-center font-mono text-sm font-bold text-[#163020] dark:text-white">
+          <span className="w-7 text-center font-mono text-sm font-bold text-[#1c3a13] dark:text-white">
             {quantity}
           </span>
           <button
             type="button"
             onClick={increaseQty}
             aria-label="Increase quantity"
-            className="flex h-7 w-7 items-center justify-center text-sm font-bold text-[#163020] dark:text-white hover:opacity-70 active:scale-90"
+            className="flex h-7 w-7 items-center justify-center text-sm font-bold text-[#1c3a13] dark:text-white hover:opacity-70 active:scale-90"
           >
             +
           </button>
@@ -251,16 +251,16 @@ export default function SeedHeroBuyBox({
         <button
           type="button"
           onClick={handleAddToCart}
-          className="flex-1 h-12 lg:h-[54px] rounded-full bg-[#163020] hover:bg-[#0D2B1D] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white text-[15px] lg:text-base font-semibold tracking-tight shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+          className="flex-1 h-12 lg:h-[54px] rounded-full bg-[#1c3a13] hover:bg-[#15300f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white text-[15px] lg:text-base font-semibold tracking-tight shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
         >
           <span>Start Now • ৳ {(currentPrice * quantity).toLocaleString('en-US')}</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* 9. TRUST & GUARANTEE NOTE (13px / #163020 text-muted)                      */}
+      {/* 9. TRUST & GUARANTEE NOTE (13px / #1c3a13 text-muted)                      */}
       {/* ========================================================================= */}
-      <p className="text-xs lg:text-[13px] text-[#163020]/75 dark:text-stone-400 text-center mb-5">
+      <p className="text-xs lg:text-[13px] text-[#1c3a13]/75 dark:text-stone-400 text-center mb-5">
         ✓ Guaranteed 24 to 48 hrs delivery • Cash on Delivery Available
       </p>
 

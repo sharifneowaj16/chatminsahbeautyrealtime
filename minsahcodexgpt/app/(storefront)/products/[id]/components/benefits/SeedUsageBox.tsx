@@ -63,7 +63,7 @@ export function SeedUsageBox({
             <h4 className="text-[14.5px] sm:text-[15.5px] font-bold text-[#1C3A13] tracking-tight mb-1">
               {title}
             </h4>
-            <p className="text-[13px] sm:text-[13.5px] text-[#163020]/80 leading-relaxed">
+            <p className="text-[13px] sm:text-[13.5px] text-[#1c3a13]/80 leading-relaxed">
               {dosageText}
             </p>
           </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { ShoppingBag, ArrowRight, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { safeImageUrl } from '@/lib/safe-image';
@@ -19,6 +19,29 @@ export interface SeedMorphingStickyBarProps {
   inStock?: boolean;
   className?: string;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * SeedMorphingStickyBar
+ * ──────────────────────────────────────────────────────────────────────────
+ * Premium bottom sticky pill bar — Seed.com-inspired design.
+ *
+ * Trigger:
+ *   The pill is hidden while the "ADD 2-STEP BUNDLE TO BAG" button (inside
+ *   SeedHeroBundleCard) is visible in the viewport. Once the user scrolls
+ *   past it and the button leaves the viewport, the pill slides in from
+ *   the RIGHT side with a premium spring animation.
+ *
+ * Visibility:
+ *   Stays fixed at the bottom of the viewport from that point until the
+ *   user scrolls all the way to the bottom of the page.
+ *
+ * Desktop Only:
+ *   Slide-from-right animation. Mobile: slide-from-bottom (natural thumb reach).
+ *
+ * Detection:
+ *   Uses IntersectionObserver on the BundleCard CTA button (sentinel) instead
+ *   of a fragile fixed scrollY threshold.
+ * ──────────────────────────────────────────────────────────────────────── */
 
 export default function SeedMorphingStickyBar({
   productId,
@@ -37,32 +60,148 @@ export default function SeedMorphingStickyBar({
   const { addItem } = useCart();
   const { openDrawer } = useCartDrawer();
 
-  // Scroll listener detecting when user scrolls past the primary hero section
+  // Detect bidirectional scroll boundaries:
+  // 1. Top Boundary: Appears ONLY after scrolling past "ADD 2-STEP BUNDLE TO BAG" button
+  //    (hidden when at or above the button; hides as soon as button re-enters viewport)
+  // 2. Bottom Boundary: Hides when reaching the end of reviews section or approaching footer
+  //    (re-appears when scrolling back up past footer into lower reviews section)
   useEffect(() => {
     let ticking = false;
+    let bundleBtn: Element | null = null;
+    let footerEl: Element | null = null;
+    let reviewSectionEl: Element | null = null;
 
-    const handleScroll = () => {
+    const findElements = () => {
+      if (!bundleBtn || !bundleBtn.isConnected) {
+        bundleBtn =
+          document.querySelector('[data-sticky-sentinel="bundle-cta"]') ||
+          Array.from(document.querySelectorAll('button')).find((btn) =>
+            btn.textContent?.includes('ADD 2-STEP BUNDLE')
+          ) ||
+          null;
+      }
+      if (!footerEl || !footerEl.isConnected) {
+        footerEl = document.querySelector('footer');
+      }
+      if (!reviewSectionEl || !reviewSectionEl.isConnected) {
+        reviewSectionEl = document.getElementById('reviews-section');
+      }
+    };
+
+    const updateVisibility = () => {
+      findElements();
+
+      // Top Sentinel check
+      if (!bundleBtn) {
+        setIsVisible(false);
+        return;
+      }
+
+      const bundleRect = bundleBtn.getBoundingClientRect();
+
+      // Rule 1: Strictly BELOW the bundle button.
+      // If bundleRect.bottom > 0, button is visible or below viewport (user is at or above button).
+      // When scrolling down, button leaves viewport top -> bundleRect.bottom <= 0
+      // When scrolling up, button re-enters from top -> bundleRect.bottom > 0 -> HIDE immediately!
+      const isPastBundle = bundleRect.bottom <= 0;
+      if (!isPastBundle) {
+        setIsVisible(false);
+        return;
+      }
+
+      // Rule 2: Bottom Boundary — Footer Top
+      // Hide before footer top touches or enters the viewport
+      if (footerEl) {
+        const footerRect = footerEl.getBoundingClientRect();
+        if (footerRect.top <= window.innerHeight + 24) {
+          setIsVisible(false);
+          return;
+        }
+      }
+
+      // Rule 3: Bottom Boundary — End of Reviews Section
+      // Hide when user reaches the end / scrolls past the reviews section
+      if (reviewSectionEl) {
+        const reviewRect = reviewSectionEl.getBoundingClientRect();
+        if (reviewRect.bottom <= window.innerHeight) {
+          setIsVisible(false);
+          return;
+        }
+      }
+
+      // Between the bottom of bundle CTA and end of reviews / top of footer: SHOW
+      setIsVisible(true);
+    };
+
+    const handleScrollOrResize = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const scrollY = window.scrollY || document.documentElement.scrollTop;
-          const isMobile = window.innerWidth < 768;
-          // Trigger threshold: Mobile ~800px, Desktop ~700px
-          const threshold = isMobile ? 800 : 700;
-
-          setIsVisible(scrollY >= threshold);
+          updateVisibility();
           ticking = false;
         });
         ticking = true;
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    // Immediate calculation + hydration buffer timers
+    updateVisibility();
+    const t1 = setTimeout(updateVisibility, 150);
+    const t2 = setTimeout(updateVisibility, 500);
+
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true });
+    window.addEventListener('resize', handleScrollOrResize, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('scroll', handleScrollOrResize);
+      window.removeEventListener('resize', handleScrollOrResize);
     };
   }, []);
+
+  // Animation Stage:
+  // 0 = hidden: bar is off-screen / collapsed
+  // 1 = icon: small circular badge popped in at bottom-right (Image 1)
+  // 2 = expanding: bubble morphs & expands from right-to-left into bottom-centered capsule (Image 2)
+  // 3 = text: product title words, price & stock status unmask and slide in
+  // 4 = ready: "Start Now" button scales in with spring bounce, full bar interactive
+  const [animStage, setAnimStage] = useState<0 | 1 | 2 | 3 | 4>(0);
+
+  // Staggered choreography when visibility changes (600ms expansion flow)
+  useEffect(() => {
+    let t1: NodeJS.Timeout;
+    let t2: NodeJS.Timeout;
+    let t3: NodeJS.Timeout;
+
+    if (isVisible) {
+      // Phase 1: Circular product icon appears at bottom right
+      setAnimStage(1);
+
+      // Phase 2: Bar begins expanding over 600ms from right to left
+      t1 = setTimeout(() => {
+        setAnimStage(2);
+      }, 350);
+
+      // Phase 3: Text & pricing reveals smoothly inside the expanding pill
+      t2 = setTimeout(() => {
+        setAnimStage(3);
+      }, 680);
+
+      // Phase 4: CTA button pops in with spring as expansion reaches full width
+      t3 = setTimeout(() => {
+        setAnimStage(4);
+      }, 950);
+    } else {
+      // User scrolled out of trigger zone -> clean, immediate reverse collapse
+      setAnimStage(0);
+    }
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isVisible]);
 
   // Split product title words for Seed-style Staggered WordMask
   const titleWords = useMemo(() => {
@@ -105,99 +244,163 @@ export default function SeedMorphingStickyBar({
     }
   };
 
+  // Responsive detection: Desktop vs Mobile
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Outer container positioning style for multi-phase morphing animation
+  // Desktop: Anchored to Bottom-Right (Seed.com alignment with Left Gap)
+  // Mobile: Centered at bottom for comfortable thumb reach
+  const containerStyle: React.CSSProperties = useMemo(() => {
+    if (animStage === 0) {
+      return {
+        opacity: 0,
+        pointerEvents: 'none',
+        transform: isDesktop ? 'translateY(24px) scale(0.9)' : 'translate(-50%, 24px) scale(0.9)',
+        width: '64px',
+        height: '64px',
+        right: isDesktop ? '28px' : 'auto',
+        left: isDesktop ? 'auto' : '50%',
+        transition: 'opacity 220ms ease, transform 220ms ease',
+      };
+    }
+
+    if (animStage === 1) {
+      // Phase 1: 64px circular orb at the bottom-right (Image 1)
+      return {
+        opacity: 1,
+        pointerEvents: 'auto',
+        transform: 'translateY(0) scale(1)',
+        width: '64px',
+        height: '64px',
+        right: isDesktop ? '28px' : '16px',
+        left: isDesktop ? 'auto' : 'auto',
+        transition:
+          'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), width 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+      };
+    }
+
+    // Phase 2, 3, 4: Full expanded 480 * 64 capsule
+    // Desktop: Right-anchored (leaves clean Left Gap across the viewport matching Seed.com)
+    // Mobile: Full-width centered up to 480px
+    if (isDesktop) {
+      return {
+        opacity: 1,
+        pointerEvents: 'auto',
+        transform: 'translateY(0) scale(1)',
+        right: '28px',
+        left: 'auto',
+        width: '480px',
+        height: '64px',
+        transition:
+          'width 600ms cubic-bezier(0.16, 1, 0.3, 1), height 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease, transform 350ms ease',
+      };
+    }
+
+    // Mobile: Centered
+    return {
+      opacity: 1,
+      pointerEvents: 'auto',
+      left: '50%',
+      right: 'auto',
+      transform: 'translateX(-50%) scale(1)',
+      width: 'calc(100vw - 24px)',
+      maxWidth: '480px',
+      height: '64px',
+      transition:
+        'width 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1), height 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease',
+    };
+  }, [animStage, isDesktop]);
+
   return (
     <div
-      aria-hidden={!isVisible}
-      className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        isVisible
-          ? 'translate-y-0 opacity-100 pointer-events-auto'
-          : 'translate-y-8 opacity-0 pointer-events-none'
-      } bottom-[calc(16px+env(safe-area-inset-bottom,0px))] md:bottom-5 w-[calc(100%-24px)] md:w-auto md:min-w-[420px] md:max-w-[480px] ${className}`}
+      aria-hidden={animStage === 0}
+      style={containerStyle}
+      className={`
+        fixed z-50
+        bottom-[calc(16px+env(safe-area-inset-bottom,0px))] md:bottom-6
+        ${className}
+      `}
     >
-      {/* 
-        Seed.com DOM Structure:
-        <div class="styles__Wrapper-sc-e29aa0d5-0">
-          <div class="styles__MotionPillBackground-sc-e29aa0d5-1" />
-          <div class="styles__DynamicElementsRow-sc-e29aa0d5-2">
-            <img class="styles__ProductImage-sc-e29aa0d5-3" />
-            <span class="styles__TitleMask-sc-e29aa0d5-4">...</span>
-            <div class="styles__CTAWrapper-sc-e29aa0d5-8">
-              <button class="styles__ButtonWrapper-sc-a309a1f4-1" />
-            </div>
-          </div>
-        </div>
-      */}
-      <div className="relative overflow-hidden rounded-full bg-[#163020]/92 backdrop-blur-xl saturate-180 border border-white/15 shadow-[0px_10px_30px_rgba(0,0,0,0.35)] p-1.5 md:p-2">
-        
+      <div
+        className="relative h-full w-full overflow-hidden rounded-full bg-[#575e5559] backdrop-blur-2xl saturate-180 border border-white/20 shadow-[0px_12px_36px_rgba(0,0,0,0.22)] p-2"
+        onClick={animStage === 1 ? handleCtaClick : undefined}
+      >
         {/* Dynamic Inner Row */}
-        <div className="flex items-center justify-between gap-2.5 md:gap-3.5 pl-1.5 pr-1">
-          
-          {/* Left: Product Thumbnail Image */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="relative h-9 w-9 md:h-10 md:w-10 rounded-full overflow-hidden bg-white/10 p-0.5 border border-white/10 shrink-0">
-              <Image
-                src={safeImageUrl(productImage)}
-                alt={productName}
-                fill
-                sizes="40px"
-                className="object-contain rounded-full"
-              />
-            </div>
-
-            {/* Middle: Title Mask & Animated Word Mask */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                {titleWords.map((word, idx) => (
-                  <span
-                    key={`${word}-${idx}`}
-                    className="text-xs md:text-sm font-semibold text-white tracking-tight leading-none"
-                  >
-                    {word}
-                  </span>
-                ))}
-              </div>
-
-              {/* Price & Status Sub-line */}
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[11px] md:text-xs font-bold text-[#D4F6A2] leading-none">
-                  ৳{price.toLocaleString('bn-BD')}
-                </span>
-                {compareAtPrice && compareAtPrice > price && (
-                  <span className="text-[10px] text-white/50 line-through leading-none">
-                    ৳{compareAtPrice.toLocaleString('bn-BD')}
-                  </span>
-                )}
-                <span className="text-white/30 text-[9px]">•</span>
-                <span className="text-[10px] text-white/80 font-medium">
-                  {inStock ? 'In Stock' : 'Out of Stock'}
-                </span>
-              </div>
-            </div>
+        <div className="h-full w-full flex items-center justify-between gap-3">
+          {/* Left: Product Thumbnail Image (Glides smoothly with the expanding left edge) */}
+          <div className="relative h-12 w-12 rounded-full overflow-hidden bg-white/20 p-0.5 border border-white/25 shrink-0">
+            <Image
+              src={safeImageUrl(productImage)}
+              alt={productName}
+              fill
+              sizes="48px"
+              className="object-contain rounded-full"
+            />
           </div>
 
-          {/* Right: Solid White High-Contrast CTA Button (Triggers Cart Drawer) */}
-          <div className="shrink-0">
+          {/* Middle: Product Name Only (#1c3a13 dark forest text) */}
+          <div
+            className={`
+              flex-1 min-w-0 px-2.5 overflow-hidden transition-all duration-300 ease-out
+              ${
+                animStage >= 3
+                  ? 'opacity-100 translate-x-0'
+                  : 'opacity-0 translate-x-3 pointer-events-none'
+              }
+            `}
+          >
+            <span
+              style={{
+                fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontWeight: 500,
+              }}
+              className="block text-sm md:text-base text-[#1c3a13] tracking-tight leading-snug truncate"
+            >
+              {productName}
+            </span>
+          </div>
+
+          {/* Right: Solid White High-Contrast CTA Button (Exact 120px * 48px) */}
+          <div
+            className={`
+              shrink-0 flex-none transition-all duration-300 cubic-bezier(0.34,1.56,0.64,1)
+              ${
+                animStage >= 4
+                  ? 'opacity-100 scale-100 overflow-visible w-[120px]'
+                  : 'opacity-0 scale-75 max-w-0 overflow-hidden pointer-events-none'
+              }
+            `}
+          >
             <button
               type="button"
               onClick={handleCtaClick}
               disabled={!inStock || isAdding}
-              className={`group flex items-center justify-center gap-1.5 h-9 md:h-10 px-4 md:px-5 rounded-full bg-white hover:bg-white/95 text-[#163020] text-xs md:text-sm font-bold shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap`}
+              style={{
+                fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontWeight: 650,
+              }}
+              className="group flex items-center justify-center gap-1.5 w-[120px] h-[48px] rounded-full bg-white hover:bg-white/95 text-[#1c3a13] text-xs md:text-sm tracking-tight shadow-[0_2px_10px_rgba(0,0,0,0.25)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
               aria-label="Start Order and Open Cart"
             >
               {isAdding ? (
                 <span className="flex items-center gap-1">
-                  <Check size={14} className="text-emerald-700 animate-bounce" />
+                  <Check size={16} className="text-emerald-700 animate-bounce" />
                   <span>Added!</span>
                 </span>
               ) : (
-                <>
-                  <span>Start Now</span>
-                  <ArrowRight size={13} className="text-[#163020] group-hover:translate-x-0.5 transition-transform" />
-                </>
+                <span>Start Now</span>
               )}
             </button>
           </div>
-
         </div>
       </div>
     </div>

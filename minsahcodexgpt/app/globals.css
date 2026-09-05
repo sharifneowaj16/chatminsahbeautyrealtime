@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-surface-page: #FAF9F6;
   --color-surface-panel: #FFFFFF;

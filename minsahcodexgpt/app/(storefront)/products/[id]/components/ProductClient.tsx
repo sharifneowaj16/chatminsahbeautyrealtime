@@ -20,12 +20,6 @@ import SeedProductHero from "./hero/SeedProductHero";
 import SeedMorphingStickyBar from "./hero/SeedMorphingStickyBar";
 import SeedBenefitsSection from "./benefits/SeedBenefitsSection";
 import SeedMemberReviewsSection from "./reviews/SeedMemberReviewsSection";
-import SeedClinicalStatStrip from "./SeedClinicalStatStrip";
-import SeedDeliveryTechnology from "./SeedDeliveryTechnology";
-import SeedFormulationMatrix from "./SeedFormulationMatrix";
-import SeedClinicalTrialData from "./SeedClinicalTrialData";
-import SeedWholeBodyExplorer from "./SeedWholeBodyExplorer";
-import SeedRefillRitual from "./SeedRefillRitual";
 import {
   trackAddToCartBundle,
   trackProductView,
@@ -642,28 +636,10 @@ export default function ProductClient({
         product={product as any}
       />
 
-      {/* 01. Clinical Metric Ticker */}
-      <SeedClinicalStatStrip />
-
-      {/* 02. Dermal Delivery Technology */}
-      <SeedDeliveryTechnology />
-
-      {/* 03. Bio-Active Formulation Matrix */}
-      <SeedFormulationMatrix />
-
-      {/* 04. Human Clinical Trial Evidence */}
-      <SeedClinicalTrialData />
-
-      {/* 05. 4-System Whole-Dermal Explorer */}
-      <SeedWholeBodyExplorer />
-
-      {/* 06. Sustainable Vessel & Refill Ritual */}
-      <SeedRefillRitual />
-
       {/* ========================================================================= */}
       {/* SEED.COM MEMBER REVIEWS & VERIFIED BUYER PHOTO MATRIX                    */}
       {/* ========================================================================= */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="mt-14 -mx-4 sm:-mx-6 lg:-mx-8">
           <SeedMemberReviewsSection
             product={product as any}

@@ -229,7 +229,7 @@ export function SeedMemberReviewsSection({
       aria-label="Member Reviews"
       className={`w-full bg-[#EEEDE6] py-16 sm:py-24 border-t border-[#D8D7CF] ${className}`}
     >
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
         
         {/* Phase 1: Header + 56px Score + 5-Star Distribution Bar Matrix */}
         <SeedMemberReviewsHeader

@@ -208,7 +208,7 @@ export function SeedMediaMatrix({
               Routine &amp; Science FAQ
             </h4>
           </div>
-          <span className="text-[11px] font-medium text-[#163020]/60">
+          <span className="text-[11px] font-medium text-[#1c3a13]/60">
             {displayFaqs.length} Questions
           </span>
         </div>
@@ -274,7 +274,7 @@ export function SeedMediaMatrix({
                     isExpanded ? "max-h-48 pb-3.5 sm:pb-4 opacity-100" : "max-h-0 pb-0 opacity-0"
                   }`}
                 >
-                  <p className="text-[12.5px] sm:text-[13.5px] text-[#163020]/80 leading-relaxed pl-7 sm:pl-8 border-t border-[#1C3A13]/8 pt-2.5">
+                  <p className="text-[12.5px] sm:text-[13.5px] text-[#1c3a13]/80 leading-relaxed pl-7 sm:pl-8 border-t border-[#1C3A13]/8 pt-2.5">
                     {faq.answer}
                   </p>
                 </div>
@@ -316,7 +316,7 @@ export function SeedMediaMatrix({
                 <div className="text-[12.5px] sm:text-[13.5px] font-bold text-[#1C3A13] group-hover:text-[#0E160C]">
                   Still have questions about this routine?
                 </div>
-                <div className="text-[11px] sm:text-[11.5px] text-[#163020]/70">
+                <div className="text-[11px] sm:text-[11.5px] text-[#1c3a13]/70">
                   Chat directly with our skincare specialist on WhatsApp
                 </div>
               </div>

@@ -39,7 +39,7 @@ export default function ProductOffersDrawer({
       ref={containerRef}
       role="dialog"
       aria-label="Offers and promotions menu"
-      className="absolute top-[calc(100%+8px)] left-0 z-50 w-[330px] sm:w-[360px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
+      className="absolute top-[calc(100%+8px)] left-0 z-50 w-[330px] sm:w-[360px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200 before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-['']"
       onMouseLeave={onClose}
     >
       <div className="overflow-hidden rounded-3xl border border-white/20 bg-[#122416]/95 backdrop-blur-2xl shadow-2xl shadow-black/60 text-white ring-1 ring-black/10">

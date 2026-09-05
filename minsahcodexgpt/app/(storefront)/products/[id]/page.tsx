@@ -335,7 +335,7 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
   const isFreeDeliveryOffer = activeDeliveryOffer?.type === 'FREE';
 
   return (
-    <div className="min-h-screen bg-minsah-surface-page">
+    <div className="min-h-screen bg-[#fcfcf7] text-[#1c3a13]">
       {/* ── Product Delivery Top Bar (Product Page Only) ── */}
       <ProductDeliveryTopBar
         productId={product.id}
@@ -344,29 +344,31 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
       />
 
       {/* Breadcrumb (Desktop Only — Hidden on mobile for optimal above-the-fold viewport) */}
-      <div className="hidden md:block max-w-6xl mx-auto px-4 py-3">
-        <nav className="flex items-center gap-1.5 text-xs text-minsah-text-muted font-medium" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-minsah-action-primary transition">Home</Link>
-          <span aria-hidden="true" className="text-minsah-border-default">/</span>
-          {product.category && (
-            <>
-              <Link
-                href={`/shop?category=${product.categorySlug}`}
-                className="hover:text-minsah-action-primary transition"
-              >
-                {product.category}
-              </Link>
-              <span aria-hidden="true" className="text-minsah-border-default">/</span>
-            </>
-          )}
-          <span className="text-minsah-text-primary font-bold line-clamp-1" aria-current="page">
-            {product.name}
-          </span>
-        </nav>
+      <div className="hidden md:block w-full bg-[#fcfcf7]">
+        <div className="w-full lg:w-[95%] 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <nav className="flex items-center gap-1.5 text-xs text-[#1c3a13]/70 font-medium" aria-label="Breadcrumb">
+            <Link href="/" className="hover:text-[#1c3a13] transition">Home</Link>
+            <span aria-hidden="true" className="text-[#1c3a13]/40">/</span>
+            {product.category && (
+              <>
+                <Link
+                  href={`/shop?category=${product.categorySlug}`}
+                  className="hover:text-[#1c3a13] transition"
+                >
+                  {product.category}
+                </Link>
+                <span aria-hidden="true" className="text-[#1c3a13]/40">/</span>
+              </>
+            )}
+            <span className="text-[#1c3a13] font-bold line-clamp-1" aria-current="page">
+              {product.name}
+            </span>
+          </nav>
+        </div>
       </div>
 
       {/* Main content */}
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full lg:w-[95%] 2xl:max-w-[1400px] mx-auto">
         <ProductClient
           product={product as any}
           reviews={reviews}
