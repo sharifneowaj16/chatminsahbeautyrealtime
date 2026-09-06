@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import AllPixels from '@/lib/tracking/pixels/AllPixels';
@@ -55,6 +55,13 @@ const businessSameAs = siteConfig.socialLinks.map((item) => item.href);
 const SITE_TITLE = 'Minsah Beauty - Authentic Beauty Products Bangladesh';
 const SITE_DESCRIPTION =
   'Shop authentic Korean skincare, lip tint, serum, sunscreen, makeup, and beauty products in Bangladesh with cash on delivery nationwide.';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

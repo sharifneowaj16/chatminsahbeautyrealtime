@@ -175,7 +175,16 @@ export function SeedTimelineList({
             ref={(el) => {
               stageRefs.current[index] = el;
             }}
+            role={isDesktop ? undefined : "button"}
+            tabIndex={isDesktop ? undefined : 0}
             onClick={isDesktop ? undefined : () => handleStageClick(stage.id, index)}
+            onKeyDown={isDesktop ? undefined : (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleStageClick(stage.id, index);
+              }
+            }}
+            style={isDesktop ? undefined : { touchAction: 'manipulation' }}
             className={`group transition-all duration-500 ease-out relative pl-7 sm:pl-9 select-none ${
               isDesktop ? "cursor-default" : "cursor-pointer"
             } ${

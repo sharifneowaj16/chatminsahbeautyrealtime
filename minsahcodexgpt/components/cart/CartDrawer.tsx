@@ -125,7 +125,7 @@ export default function CartDrawer() {
                     }
                   }}
                   placeholder="Coupon code (e.g. SAVE10)"
-                  className="w-full rounded-md border border-stone-200 bg-white py-2 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider text-minsah-dark placeholder:normal-case placeholder:font-normal placeholder:text-stone-400 focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary"
+                  className="w-full rounded-md border border-stone-200 bg-white py-2 pl-9 pr-3 text-base md:text-xs font-semibold uppercase tracking-wider text-minsah-dark placeholder:normal-case placeholder:font-normal placeholder:text-stone-400 focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary"
                 />
               </div>
               <Button

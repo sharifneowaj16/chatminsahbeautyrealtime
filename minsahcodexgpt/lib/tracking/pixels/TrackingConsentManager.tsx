@@ -31,11 +31,22 @@ export function TrackingConsentModeScript() {
           function gtag(){dataLayer.push(arguments);}
           function mbReadStoredTrackingConsent() {
             var match = document.cookie.match(new RegExp('(?:^|; )${TRACKING_CONSENT_COOKIE}=([^;]*)'));
-            if (!match) return 'denied';
-            var value = match[1];
+            var value = match ? match[1] : null;
+            if (!value) {
+              try {
+                value = window.localStorage.getItem('${TRACKING_CONSENT_COOKIE}');
+              } catch (e) {}
+            }
+            if (!value) return 'denied';
             try { value = decodeURIComponent(value); } catch (e) {}
             var versionMatch = document.cookie.match(new RegExp('(?:^|; )mb_tracking_consent_version=([^;]*)'));
-            return String(value).trim().toLowerCase() === 'granted' && versionMatch ? 'granted' : 'denied';
+            var versionVal = versionMatch ? versionMatch[1] : null;
+            if (!versionVal) {
+              try {
+                versionVal = window.localStorage.getItem('mb_tracking_consent_version');
+              } catch (e) {}
+            }
+            return String(value).trim().toLowerCase() === 'granted' && versionVal ? 'granted' : 'denied';
           }
           var mbInitialConsent = mbReadStoredTrackingConsent();
           gtag('consent', 'default', {

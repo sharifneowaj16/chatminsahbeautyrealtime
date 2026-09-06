@@ -227,6 +227,26 @@ html {
   text-size-adjust: 100%;
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari auto-zoom prevention: ensure at least 16px font-size on mobile touch inputs */
+@media screen and (max-width: 768px) {
+  .minsah-field,
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+
 
 /* FCP-03: centralized shell geometry and mobile safe-area ownership */
 :root {

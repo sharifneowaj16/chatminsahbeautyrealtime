@@ -145,7 +145,13 @@ export function SeedMediaMatrix({
           1. FULL-WIDTH SINGLE HD VIDEO PLAYER (When Video is Active)
           ───────────────────────────────────────────────────────────── */}
       {hasVideo && (
-        <div className="relative w-full aspect-[16/9.5] sm:aspect-[16/9] rounded-[24px] sm:rounded-[32px] overflow-hidden bg-[#111A10] shadow-[0_16px_36px_-8px_rgba(28,58,19,0.22)] group">
+        <div
+          className="relative w-full aspect-[16/9.5] sm:aspect-[16/9] rounded-[24px] sm:rounded-[32px] overflow-hidden bg-[#111A10] shadow-[0_16px_36px_-8px_rgba(28,58,19,0.22)] group isolate"
+          style={{
+            WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+            transform: 'translateZ(0)',
+          }}
+        >
           {/* HTML5 Video */}
           <video
             ref={videoRef}
@@ -196,9 +202,16 @@ export function SeedMediaMatrix({
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          2. CAPSULE FAQ SECTION (Top-to-Bottom Scroll & Hover Reveal)
+          2. CAPSULE FAQ SECTION (Method 1: Natural Flow & Smart Toggle)
           ───────────────────────────────────────────────────────────── */}
-      <div className="w-full flex flex-col space-y-3 pt-1">
+      <div
+        className="w-full flex flex-col space-y-3 pt-1"
+        onMouseLeave={() => {
+          // Rule 3b: If mouse leaves the FAQ section entirely, close any open answer
+          setExpandedFaqId(null);
+          setHoveredFaqId(null);
+        }}
+      >
         
         {/* Section Mini Header */}
         <div className="flex items-center justify-between px-1">
@@ -213,41 +226,45 @@ export function SeedMediaMatrix({
           </span>
         </div>
 
-        {/* Scrollable Capsule FAQ List */}
-        <div
-          className={`w-full flex flex-col space-y-2.5 overflow-y-auto pr-1 transition-all ${
-            hasVideo
-              ? "max-h-[320px] sm:max-h-[360px]"
-              : "max-h-[460px] sm:max-h-[520px]"
-          } scrollbar-thin scrollbar-thumb-[#1C3A13]/20 scrollbar-track-transparent`}
-        >
+        {/* Method 1: Natural Flowing Capsule FAQ List (No Inner Scroll-Trap) */}
+        <div className="w-full flex flex-col space-y-2.5">
           {displayFaqs.map((faq, index) => {
             const faqId = faq.id || `faq-${index}`;
-            const isExpanded = expandedFaqId === faqId || hoveredFaqId === faqId;
+            // Expansion is strictly click-driven (Rules 1 & 2)
+            const isExpanded = expandedFaqId === faqId;
+            const isHovered = hoveredFaqId === faqId;
             const isHiddenOnMobile = !showAllMobileFaqs && index >= mobileLimit;
 
             return (
               <div
                 key={faqId}
-                onMouseEnter={() => setHoveredFaqId(faqId)}
+                onMouseEnter={() => {
+                  setHoveredFaqId(faqId);
+                  // Rule 3a: If user hovers onto ANOTHER question while one is open, auto-close the previous one
+                  if (expandedFaqId && expandedFaqId !== faqId) {
+                    setExpandedFaqId(null);
+                  }
+                }}
                 onMouseLeave={() => setHoveredFaqId(null)}
                 onClick={() => handleFaqClick(faqId)}
-                className={`group w-full transition-all duration-300 rounded-[20px] sm:rounded-[32px] border cursor-pointer select-none overflow-hidden ${
+                className={`group w-full transition-all duration-[550ms] ease-out rounded-[20px] sm:rounded-[32px] border cursor-pointer select-none overflow-hidden ${
                   isHiddenOnMobile ? "hidden sm:block" : "block"
                 } ${
                   isExpanded
                     ? "bg-[#EEEDE6] border-[#1C3A13]/30 shadow-xs"
-                    : "bg-white/80 hover:bg-[#EEEDE6]/60 border-[#1C3A13]/12"
+                    : isHovered
+                      ? "bg-[#EEEDE6]/60 border-[#1C3A13]/25 shadow-xs"
+                      : "bg-white/80 border-[#1C3A13]/12"
                 }`}
               >
                 {/* Capsule Button Header */}
                 <div className="px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
                     <span
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
-                        isExpanded
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors duration-350 ease-out ${
+                        isExpanded || isHovered
                           ? "bg-[#1C3A13] text-[#FCFCF7]"
-                          : "bg-[#1C3A13]/10 text-[#1C3A13] group-hover:bg-[#1C3A13] group-hover:text-[#FCFCF7]"
+                          : "bg-[#1C3A13]/10 text-[#1C3A13]"
                       }`}
                     >
                       {index + 1}
@@ -258,19 +275,21 @@ export function SeedMediaMatrix({
                   </div>
 
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-[450ms] ease-out ${
                       isExpanded
                         ? "rotate-180 bg-[#1C3A13] text-white"
-                        : "bg-[#1C3A13]/8 text-[#1C3A13] group-hover:bg-[#1C3A13]/15"
+                        : isHovered
+                          ? "bg-[#1C3A13]/15 text-[#1C3A13]"
+                          : "bg-[#1C3A13]/8 text-[#1C3A13]"
                     }`}
                   >
                     <ChevronDown className="w-3.5 h-3.5" />
                   </div>
                 </div>
 
-                {/* Animated Answer Body (Hover / Click Reveal) */}
+                {/* Animated Answer Body (600ms Cubic-Bezier Deceleration) */}
                 <div
-                  className={`transition-all duration-300 ease-in-out px-4 sm:px-5 overflow-hidden ${
+                  className={`transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] px-4 sm:px-5 overflow-hidden ${
                     isExpanded ? "max-h-48 pb-3.5 sm:pb-4 opacity-100" : "max-h-0 pb-0 opacity-0"
                   }`}
                 >
@@ -306,7 +325,7 @@ export function SeedMediaMatrix({
             href={whatsappQueryUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-between gap-3 bg-[#EEEDE6] hover:bg-[#E4E3DB] border border-[#1C3A13]/15 hover:border-[#1C3A13]/30 px-4 py-3 sm:px-5 sm:py-3.5 rounded-[20px] sm:rounded-[32px] transition-all group shadow-xs text-left"
+            className="w-full flex items-center justify-between gap-3 bg-[#EEEDE6] hover:bg-[#E4E3DB] border border-[#1C3A13]/15 hover:border-[#1C3A13]/30 px-4 py-3 sm:px-5 sm:py-3.5 rounded-[20px] sm:rounded-[32px] transition-all duration-400 ease-out group shadow-xs text-left"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full bg-[#25D366] text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -322,7 +341,7 @@ export function SeedMediaMatrix({
               </div>
             </div>
 
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-[#1C3A13] group-hover:translate-x-1 transition-transform">
+            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-[#1C3A13] group-hover:translate-x-1.5 transition-transform duration-300 ease-out">
               Ask Now ➔
             </span>
           </a>

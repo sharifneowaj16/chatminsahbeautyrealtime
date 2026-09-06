@@ -28,6 +28,9 @@ export const NON_ESSENTIAL_TRACKING_STORAGE_KEYS = [
   'minsah_behavior',
 ] as const;
 
+export const TRACKING_CONSENT_STORAGE_KEY = 'mb_tracking_consent';
+export const TRACKING_CONSENT_VERSION_STORAGE_KEY = 'mb_tracking_consent_version';
+
 export type TrackingConsentState = 'granted' | 'denied' | 'withdrawn' | 'unknown';
 
 /**
@@ -59,6 +62,33 @@ function readCookie(name: string): string | undefined {
     return decodeURIComponent(match[1]);
   } catch {
     return match[1];
+  }
+}
+
+function getSafeLocalStorageItem(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function setSafeLocalStorageItem(key: string, value: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Storage may be unavailable in hardened/private browser contexts.
+  }
+}
+
+function removeSafeLocalStorageItem(key: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // ignore
   }
 }
 
@@ -114,11 +144,20 @@ export function clearNonEssentialTrackingStorage() {
 }
 
 export function getClientTrackingConsent(): TrackingConsentState {
-  return normalizeTrackingConsent(readCookie(TRACKING_CONSENT_COOKIE));
+  const cookieVal = readCookie(TRACKING_CONSENT_COOKIE);
+  const cookieConsent = normalizeTrackingConsent(cookieVal);
+  if (cookieConsent !== 'unknown') {
+    return cookieConsent;
+  }
+  const storageVal = getSafeLocalStorageItem(TRACKING_CONSENT_STORAGE_KEY);
+  return normalizeTrackingConsent(storageVal);
 }
 
 export function getClientTrackingConsentVersion() {
-  return readCookie(TRACKING_CONSENT_VERSION_COOKIE)?.trim() || null;
+  const cookieVersion = readCookie(TRACKING_CONSENT_VERSION_COOKIE)?.trim();
+  if (cookieVersion) return cookieVersion;
+  const storageVersion = getSafeLocalStorageItem(TRACKING_CONSENT_VERSION_STORAGE_KEY)?.trim();
+  return storageVersion || null;
 }
 
 export function canLoadNonEssentialTracking(
@@ -166,6 +205,10 @@ export function setClientTrackingConsent(consent: Exclude<TrackingConsentState, 
   document.cookie = `${TRACKING_CONSENT_COOKIE}=${encodeURIComponent(consent)};max-age=${TRACKING_CONSENT_MAX_AGE_SECONDS};path=/;SameSite=Lax${secure}`;
   document.cookie = `${TRACKING_CONSENT_VERSION_COOKIE}=${encodeURIComponent(CURRENT_TRACKING_CONSENT_VERSION)};max-age=${TRACKING_CONSENT_MAX_AGE_SECONDS};path=/;SameSite=Lax${secure}`;
 
+  // Dual-sync to localStorage for Safari ITP & in-app browser resilience
+  setSafeLocalStorageItem(TRACKING_CONSENT_STORAGE_KEY, consent);
+  setSafeLocalStorageItem(TRACKING_CONSENT_VERSION_STORAGE_KEY, CURRENT_TRACKING_CONSENT_VERSION);
+
   syncClientTrackingConsentSignals(consent);
 
   if (consent === 'denied') {
@@ -186,3 +229,4 @@ export function getServerTrackingConsentVersionFromCookie(value: string | undefi
 export function isConsentDenied(consent: TrackingConsentState) {
   return consent === 'denied' || consent === 'withdrawn';
 }
+

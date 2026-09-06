@@ -25,6 +25,7 @@ export default function BottomNavigation() {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200/70 bg-white/95 shadow-[0_-4px_20px_rgba(24,28,26,0.06)] backdrop-blur-md minsah-bottom-safe md:hidden"
+      style={{ WebkitBackdropFilter: 'blur(12px)' }}
       aria-label="Primary mobile navigation"
     >
       <div className="mx-auto grid h-[var(--minsah-bottom-nav-height)] max-w-lg grid-cols-5 items-stretch px-1">

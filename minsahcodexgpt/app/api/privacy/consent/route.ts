@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordTrackingConsent } from '@/lib/privacy/consent-record';
-import { CURRENT_TRACKING_CONSENT_VERSION } from '@/lib/tracking/tracking-consent';
+import {
+  CURRENT_TRACKING_CONSENT_VERSION,
+  TRACKING_CONSENT_COOKIE,
+  TRACKING_CONSENT_VERSION_COOKIE,
+  TRACKING_CONSENT_MAX_AGE_SECONDS,
+  NON_ESSENTIAL_TRACKING_COOKIES,
+} from '@/lib/tracking/tracking-consent';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null) as {
@@ -25,5 +31,50 @@ export async function POST(request: NextRequest) {
     source: 'CONSENT_UI',
     visitorId: request.cookies.get('mb_vid')?.value,
   });
-  return NextResponse.json({ ok: true, consent: result }, { status: 201 });
+
+  const response = NextResponse.json({ ok: true, consent: result }, { status: 201 });
+
+  const isHttps = request.headers.get('x-forwarded-proto') === 'https'
+    || request.nextUrl.protocol === 'https:'
+    || (process.env.NODE_ENV === 'production' && !request.headers.get('host')?.includes('localhost'));
+
+  const cookieBase = {
+    path: '/',
+    sameSite: 'lax' as const,
+    secure: isHttps,
+    httpOnly: false,
+  };
+
+  if (state === 'granted') {
+    response.cookies.set(TRACKING_CONSENT_COOKIE, 'granted', {
+      ...cookieBase,
+      maxAge: TRACKING_CONSENT_MAX_AGE_SECONDS,
+    });
+    response.cookies.set(TRACKING_CONSENT_VERSION_COOKIE, version, {
+      ...cookieBase,
+      maxAge: TRACKING_CONSENT_MAX_AGE_SECONDS,
+    });
+  } else {
+    response.cookies.set(TRACKING_CONSENT_COOKIE, 'denied', {
+      ...cookieBase,
+      maxAge: TRACKING_CONSENT_MAX_AGE_SECONDS,
+    });
+    response.cookies.set(TRACKING_CONSENT_VERSION_COOKIE, version, {
+      ...cookieBase,
+      maxAge: TRACKING_CONSENT_MAX_AGE_SECONDS,
+    });
+
+    for (const cookieName of NON_ESSENTIAL_TRACKING_COOKIES) {
+      response.cookies.set(cookieName, '', {
+        path: '/',
+        maxAge: 0,
+        sameSite: 'lax',
+        secure: isHttps,
+        httpOnly: false,
+      });
+    }
+  }
+
+  return response;
 }
+
