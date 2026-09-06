@@ -181,7 +181,7 @@ export default function SeedHeroBuyBox({
           ৳ {currentPrice.toLocaleString('en-US')}
         </span>
 
-        <span className="rounded-full bg-[#D4F6A2] text-[#1c3a13] px-2.5 py-0.5 text-xs font-bold tracking-wide shadow-xs">
+        <span className="rounded-full bg-[#D4F6A2] text-[#1c3a13] px-2.5 py-0.5 text-xs font-medium tracking-wide shadow-xs">
           Bestseller
         </span>
 

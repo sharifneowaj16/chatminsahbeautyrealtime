@@ -169,7 +169,7 @@ export default function SeedHeroGallery({
               alt={`${productName} - Main Formulation View`}
               fill
               priority
-              sizes="(max-width: 1280px) 68vw, 703px"
+              sizes="(max-width: 1280px) 65vw, 884px"
               className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               onError={() => handleImageError(0)}
             />
@@ -210,7 +210,7 @@ export default function SeedHeroGallery({
                       alt={`${productName} - Detail Showcase ${actualIndex + 1}`}
                       fill
                       loading="lazy"
-                      sizes="(max-width: 1280px) 34vw, 343px"
+                      sizes="(max-width: 1280px) 32vw, 430px"
                       className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                       onError={() => handleImageError(actualIndex)}
                     />

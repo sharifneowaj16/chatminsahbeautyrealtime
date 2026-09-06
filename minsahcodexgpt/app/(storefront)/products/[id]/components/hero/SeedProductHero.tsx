@@ -128,11 +128,11 @@ export default function SeedProductHero({
       className={`w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10 ${className}`}
       aria-label="Product Hero Section"
     >
-      {/* Master 2-Column Grid (Exact Seed.com 52% / 48% Split on Desktop) */}
-      <div className="flex flex-col lg:grid lg:grid-cols-[52%_48%] gap-8 lg:gap-10 items-start">
+      {/* Master 2-Column Grid (65% / 35% Split on Desktop — Gallery Dominant) */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[65%_35%] gap-8 lg:gap-10 items-start">
         
         {/* ===================================================================== */}
-        {/* LEFT COLUMN (52%): PHASE 1 ASYMMETRIC 5-IMAGE GRID & MOBILE CAROUSEL */}
+        {/* LEFT COLUMN (65%): PHASE 1 ASYMMETRIC 5-IMAGE GRID & MOBILE CAROUSEL */}
         {/* ===================================================================== */}
         <div
           ref={leftColumnRef}
@@ -147,12 +147,12 @@ export default function SeedProductHero({
         </div>
 
         {/* ===================================================================== */}
-        {/* RIGHT COLUMN (48%): PHASES 2 TO 6 COMPLETE COMMERCE STACK (Scrolls) */}
+        {/* RIGHT COLUMN (35%): PHASES 2 TO 6 COMPLETE COMMERCE STACK (Scrolls) */}
         {/* ===================================================================== */}
         <div
           ref={rightColumnRef}
           style={isDesktop ? rightStyle : undefined}
-          className="w-full max-w-[540px] space-y-6"
+          className="w-full max-w-[460px] space-y-6"
         >
           
           {/* Phase 2: Seed Sticky Buy Box */}
