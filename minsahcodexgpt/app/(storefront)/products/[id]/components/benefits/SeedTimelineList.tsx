@@ -71,14 +71,11 @@ export function SeedTimelineList({
   onSelectStage,
   className = "",
 }: SeedTimelineListProps) {
-  // Mobile active index (Option A)
+  // Mobile active index (Option A: Tap/Click Lock)
   const [mobileIndex, setMobileIndex] = useState<number>(0);
 
-  // Desktop scroll-driven index (Option B)
+  // Desktop scroll-driven index (Option B: Pure Scroll-Spy)
   const [desktopScrollIndex, setDesktopScrollIndex] = useState<number>(0);
-
-  // Hover state (primarily desktop mouse interaction)
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Viewport mode: Desktop/Laptop (>= 1024px) vs Mobile (< 1024px)
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
@@ -146,25 +143,18 @@ export function SeedTimelineList({
   }, [isDesktop]);
 
   // Calculate Effective Unlocked Milestone Level:
-  // - Desktop: Driven by scroll-spy (or hover preview)
+  // - Desktop: Purely 100% scroll-driven (Hover and Click disabled on Desktop/Laptop)
   // - Mobile: Driven by touch/click lock
-  const effectiveIndex = isDesktop
-    ? hoveredIndex !== null
-      ? Math.max(desktopScrollIndex, hoveredIndex)
-      : desktopScrollIndex
-    : mobileIndex;
+  const effectiveIndex = isDesktop ? desktopScrollIndex : mobileIndex;
 
   const handleStageClick = (stageId: string, index: number) => {
     if (isDesktop) {
-      // Desktop: Smoothly scroll and center the clicked stage in viewport
-      if (stageRefs.current[index]) {
-        stageRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      setDesktopScrollIndex(index);
-    } else {
-      // Mobile (Option A): Tapping locks in the stage cumulatively
-      setMobileIndex(index);
+      // Disabled on Desktop / Laptop mode (1:1 with Seed.com pure scroll)
+      return;
     }
+
+    // Mobile (Option A): Tapping locks in the stage cumulatively
+    setMobileIndex(index);
 
     if (onSelectStage) {
       onSelectStage(stageId);
@@ -178,7 +168,6 @@ export function SeedTimelineList({
         // Stage 0 (7 Days) is ALWAYS unlocked (0 <= effectiveIndex is always true).
         const isUnlocked = index <= effectiveIndex;
         const isCurrentMilestone = index === effectiveIndex;
-        const isHovered = isDesktop && hoveredIndex === index;
 
         return (
           <div
@@ -186,11 +175,11 @@ export function SeedTimelineList({
             ref={(el) => {
               stageRefs.current[index] = el;
             }}
-            onClick={() => handleStageClick(stage.id, index)}
-            onMouseEnter={() => (isDesktop ? setHoveredIndex(index) : undefined)}
-            onMouseLeave={() => (isDesktop ? setHoveredIndex(null) : undefined)}
-            className={`group cursor-pointer transition-all duration-500 ease-out relative pl-7 sm:pl-9 select-none ${
-              isUnlocked ? "opacity-100" : "opacity-45 hover:opacity-80"
+            onClick={isDesktop ? undefined : () => handleStageClick(stage.id, index)}
+            className={`group transition-all duration-500 ease-out relative pl-7 sm:pl-9 select-none ${
+              isDesktop ? "cursor-default" : "cursor-pointer"
+            } ${
+              isUnlocked ? "opacity-100" : isDesktop ? "opacity-45" : "opacity-45 hover:opacity-80"
             }`}
           >
             {/* Left Vertical Timeline Connector Line & Dot */}
@@ -212,7 +201,11 @@ export function SeedTimelineList({
                     }`}
                   />
                 ) : (
-                  <div className="w-2.5 h-2.5 rounded-full border-2 border-[#1C3A13]/35 bg-[#F4F3EE] group-hover:border-[#1C3A13]/70 group-hover:scale-110 transition-all duration-500 ease-out z-10" />
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full border-2 border-[#1C3A13]/35 bg-[#F4F3EE] transition-all duration-500 ease-out z-10 ${
+                      isDesktop ? "" : "group-hover:border-[#1C3A13]/70 group-hover:scale-110"
+                    }`}
+                  />
                 )}
               </div>
 
@@ -238,7 +231,9 @@ export function SeedTimelineList({
                     ? isCurrentMilestone
                       ? "bg-[#1C3A13] text-[#FCFCF7] shadow-sm ring-2 ring-[#1C3A13]/20"
                       : "bg-[#1C3A13] text-[#FCFCF7] shadow-xs"
-                    : "bg-[#1C3A13]/10 text-[#1C3A13] group-hover:bg-[#1C3A13]/20"
+                    : isDesktop
+                      ? "bg-[#1C3A13]/10 text-[#1C3A13]"
+                      : "bg-[#1C3A13]/10 text-[#1C3A13] group-hover:bg-[#1C3A13]/20"
                 }`}
               >
                 {stage.pillLabel}
@@ -255,11 +250,11 @@ export function SeedTimelineList({
                 {stage.headline}
               </span>
 
-              {/* Micro Live Indicator Tag on Hover or Active Tip */}
+              {/* Micro Indicator Tag on Active Tip */}
               {isCurrentMilestone && (
                 <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#2F6D20] bg-[#2F6D20]/10 px-2 py-0.5 rounded-full uppercase tracking-wider transition-all duration-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#2F6D20] animate-pulse" />
-                  {isHovered && hoveredIndex !== (isDesktop ? desktopScrollIndex : mobileIndex) ? "Live Preview" : "Target Milestone"}
+                  Active Milestone
                 </span>
               )}
             </div>
