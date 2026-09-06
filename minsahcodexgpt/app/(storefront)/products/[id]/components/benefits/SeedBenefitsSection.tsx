@@ -121,8 +121,8 @@ export function SeedBenefitsSection({
             />
           </div>
 
-          {/* Right Column: Single Video + Capsule FAQs + WhatsApp Trigger */}
-          <div className="flex flex-col order-1 lg:order-2">
+          {/* Right Column: Single Video + Capsule FAQs + WhatsApp Trigger (Sticky on Desktop) */}
+          <div className="flex flex-col order-1 lg:order-2 lg:sticky lg:top-28 lg:self-start">
             <SeedMediaMatrix
               videoUrl={videoUrl}
               posterUrl={posterUrl}

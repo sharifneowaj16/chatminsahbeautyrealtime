@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export interface TimelineStage {
   id: string;
@@ -16,7 +16,7 @@ export interface SeedTimelineListProps {
   className?: string;
 }
 
-const DEFAULT_STAGES: TimelineStage[] = [
+export const DEFAULT_STAGES: TimelineStage[] = [
   {
     id: "stage-7-days",
     pillLabel: "7 Days",
@@ -61,35 +61,9 @@ const DEFAULT_STAGES: TimelineStage[] = [
 
 /**
  * Phase 2: Seed-Style 4-Stage Progressive Benefits Timeline
- * 
- * Exact 1:1 Computed CSS from Seed.com:
- * 
- * Headline:
- * - color: rgb(0, 0, 0)
- * - font-size: 16px
- * - font-weight: 400
- * - line-height: 24px
- * - letter-spacing: normal
- * 
- * Pill Badge:
- * - background-color: rgb(28, 58, 19) (Active) / rgba(28, 58, 19, 0.08) (Inactive)
- * - color: rgb(252, 252, 247) (Active) / rgb(28, 58, 19) (Inactive)
- * - border-radius: 32px
- * - font-size: 14px
- * - font-weight: 400
- * - height: 30px
- * - letter-spacing: 0.56px
- * - line-height: 14px
- * - padding: 0 12px
- * - white-space: nowrap
- * 
- * Bullet Items:
- * - color: rgb(28, 58, 19) (Active) / rgba(28, 58, 19, 0.45) (Inactive)
- * - font-size: 16px
- * - font-weight: 400
- * - line-height: 24px
- * - list-style-type: disc
- * - list-style-position: outside
+ * Dual-Mode Architecture:
+ * - Desktop/Laptop (>= 1024px): Option B (Bidirectional Scroll-Spy + Sticky Right Column Pinning)
+ * - Mobile (< 1024px): Option A (Cumulative Tap / Click Lock)
  */
 export function SeedTimelineList({
   stages = DEFAULT_STAGES,
@@ -97,12 +71,101 @@ export function SeedTimelineList({
   onSelectStage,
   className = "",
 }: SeedTimelineListProps) {
-  const [internalActiveId, setInternalActiveId] = useState<string>(stages[0]?.id || "stage-7-days");
-  
-  const activeId = controlledActiveId !== undefined ? controlledActiveId : internalActiveId;
+  // Mobile active index (Option A)
+  const [mobileIndex, setMobileIndex] = useState<number>(0);
 
-  const handleStageClick = (stageId: string) => {
-    setInternalActiveId(stageId);
+  // Desktop scroll-driven index (Option B)
+  const [desktopScrollIndex, setDesktopScrollIndex] = useState<number>(0);
+
+  // Hover state (primarily desktop mouse interaction)
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // Viewport mode: Desktop/Laptop (>= 1024px) vs Mobile (< 1024px)
+  const [isDesktop, setIsDesktop] = useState<boolean>(false);
+
+  // DOM node references for each stage to calculate exact viewport positions
+  const stageRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // 1. Detect Desktop vs Mobile Screen Breakpoint
+  useEffect(() => {
+    const updateViewportMode = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+
+    updateViewportMode();
+    window.addEventListener("resize", updateViewportMode, { passive: true });
+    return () => window.removeEventListener("resize", updateViewportMode);
+  }, []);
+
+  // 2. Sync controlled activeStageId if provided externally
+  useEffect(() => {
+    if (controlledActiveId) {
+      const idx = stages.findIndex((s) => s.id === controlledActiveId);
+      if (idx !== -1) {
+        setMobileIndex(idx);
+        setDesktopScrollIndex(idx);
+      }
+    }
+  }, [controlledActiveId, stages]);
+
+  // 3. Desktop Option B: High-Performance Bidirectional Scroll-Spy
+  useEffect(() => {
+    if (!isDesktop) return;
+
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Trigger line: 45% down the viewport (optimal human eye-level reading zone)
+          const triggerLine = window.innerHeight * 0.45;
+          let highestActive = 0; // Baseline: 7 Days (index 0) is ALWAYS alive!
+
+          stageRefs.current.forEach((el, idx) => {
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            // As user scrolls down, when a stage's top reaches or passes the triggerLine, it activates
+            // As user scrolls back up (bottom-to-top), if it goes below triggerLine, it gracefully deactivates
+            if (rect.top <= triggerLine) {
+              highestActive = Math.max(highestActive, idx);
+            }
+          });
+
+          setDesktopScrollIndex(highestActive);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Run once on mount in case the page is already scrolled
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isDesktop]);
+
+  // Calculate Effective Unlocked Milestone Level:
+  // - Desktop: Driven by scroll-spy (or hover preview)
+  // - Mobile: Driven by touch/click lock
+  const effectiveIndex = isDesktop
+    ? hoveredIndex !== null
+      ? Math.max(desktopScrollIndex, hoveredIndex)
+      : desktopScrollIndex
+    : mobileIndex;
+
+  const handleStageClick = (stageId: string, index: number) => {
+    if (isDesktop) {
+      // Desktop: Smoothly scroll and center the clicked stage in viewport
+      if (stageRefs.current[index]) {
+        stageRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      setDesktopScrollIndex(index);
+    } else {
+      // Mobile (Option A): Tapping locks in the stage cumulatively
+      setMobileIndex(index);
+    }
+
     if (onSelectStage) {
       onSelectStage(stageId);
     }
@@ -111,63 +174,111 @@ export function SeedTimelineList({
   return (
     <div className={`w-full max-w-[580px] flex flex-col space-y-6 sm:space-y-8 ${className}`}>
       {stages.map((stage, index) => {
-        const isActive = stage.id === activeId;
+        // Stage is unlocked if it's within the cumulative progression (index <= effectiveIndex)
+        // Stage 0 (7 Days) is ALWAYS unlocked (0 <= effectiveIndex is always true).
+        const isUnlocked = index <= effectiveIndex;
+        const isCurrentMilestone = index === effectiveIndex;
+        const isHovered = isDesktop && hoveredIndex === index;
 
         return (
           <div
             key={stage.id}
-            onClick={() => handleStageClick(stage.id)}
-            className={`group cursor-pointer transition-all duration-300 relative pl-6 sm:pl-8 select-none ${
-              isActive ? "opacity-100" : "opacity-45 hover:opacity-75"
+            ref={(el) => {
+              stageRefs.current[index] = el;
+            }}
+            onClick={() => handleStageClick(stage.id, index)}
+            onMouseEnter={() => (isDesktop ? setHoveredIndex(index) : undefined)}
+            onMouseLeave={() => (isDesktop ? setHoveredIndex(null) : undefined)}
+            className={`group cursor-pointer transition-all duration-500 ease-out relative pl-7 sm:pl-9 select-none ${
+              isUnlocked ? "opacity-100" : "opacity-45 hover:opacity-80"
             }`}
           >
             {/* Left Vertical Timeline Connector Line & Dot */}
             <div className="absolute left-0 top-0 bottom-0 flex flex-col items-center">
-              {/* Milestone Dot */}
-              <div
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 mt-[10px] ${
-                  isActive
-                    ? "bg-[#1C3A13] ring-4 ring-[#1C3A13]/20 scale-110"
-                    : "bg-[#1C3A13]/30 group-hover:bg-[#1C3A13]/60"
-                }`}
-              />
+              {/* Milestone Marker Container */}
+              <div className="relative flex items-center justify-center mt-[10px] w-4 h-4">
+                {/* Glowing Aura Ring for Current/Active Milestone */}
+                {isCurrentMilestone && (
+                  <span className="absolute w-5 h-5 rounded-full bg-[#1C3A13]/20 animate-ping duration-1000 pointer-events-none" />
+                )}
+
+                {/* Milestone Dot */}
+                {isUnlocked ? (
+                  <div
+                    className={`rounded-full bg-[#1C3A13] transition-all duration-500 ease-out z-10 ${
+                      isCurrentMilestone
+                        ? "w-3 h-3 ring-4 ring-[#1C3A13]/25 shadow-sm scale-110"
+                        : "w-2.5 h-2.5 ring-2 ring-[#1C3A13]/20"
+                    }`}
+                  />
+                ) : (
+                  <div className="w-2.5 h-2.5 rounded-full border-2 border-[#1C3A13]/35 bg-[#F4F3EE] group-hover:border-[#1C3A13]/70 group-hover:scale-110 transition-all duration-500 ease-out z-10" />
+                )}
+              </div>
+
               {/* Connector Line (except for last item) */}
               {index < stages.length - 1 && (
-                <div className="w-[1.5px] flex-1 bg-[#1C3A13]/15 mt-2" />
+                <div className="relative w-[2px] flex-1 bg-[#1C3A13]/15 mt-2 overflow-hidden rounded-full">
+                  {/* Animated Active Progress Fill: 700ms Silky Liquid Flow */}
+                  <div
+                    className={`absolute top-0 left-0 w-full bg-[#1C3A13] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-full ${
+                      index < effectiveIndex ? "h-full" : "h-0"
+                    }`}
+                  />
+                </div>
               )}
             </div>
 
             {/* Stage Header Row: [Pill Badge] + [Headline] */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-2">
-              {/* Exact Pill Badge: 14px, weight 400, height 30px, tracking 0.56px, rounded 32px */}
+              {/* Pill Badge: 450ms smooth crossfade */}
               <span
-                className={`inline-flex items-center justify-center h-[30px] px-[12px] rounded-[32px] text-[14px] font-normal tracking-[0.56px] leading-[14px] whitespace-nowrap antialiased transition-all duration-300 ${
-                  isActive
-                    ? "bg-[#1C3A13] text-[#FCFCF7] shadow-sm"
-                    : "bg-[#1C3A13]/10 text-[#1C3A13]"
+                className={`inline-flex items-center justify-center h-[30px] px-[12px] rounded-[32px] text-[14px] font-medium tracking-[0.56px] leading-[14px] whitespace-nowrap antialiased transition-all duration-450 ease-out ${
+                  isUnlocked
+                    ? isCurrentMilestone
+                      ? "bg-[#1C3A13] text-[#FCFCF7] shadow-sm ring-2 ring-[#1C3A13]/20"
+                      : "bg-[#1C3A13] text-[#FCFCF7] shadow-xs"
+                    : "bg-[#1C3A13]/10 text-[#1C3A13] group-hover:bg-[#1C3A13]/20"
                 }`}
               >
                 {stage.pillLabel}
               </span>
 
-              {/* Exact Headline: color rgb(0,0,0), 16px, weight 400, leading 24px */}
+              {/* Headline */}
               <span
-                className={`text-[16px] font-normal leading-[24px] tracking-normal antialiased transition-colors duration-200 ${
-                  isActive ? "text-[#000000]" : "text-[#1C3A13]"
+                className={`text-[16px] leading-[24px] tracking-normal antialiased transition-colors duration-400 ease-out ${
+                  isUnlocked
+                    ? "text-[#000000] font-medium"
+                    : "text-[#1C3A13] font-normal"
                 }`}
               >
                 {stage.headline}
               </span>
+
+              {/* Micro Live Indicator Tag on Hover or Active Tip */}
+              {isCurrentMilestone && (
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#2F6D20] bg-[#2F6D20]/10 px-2 py-0.5 rounded-full uppercase tracking-wider transition-all duration-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#2F6D20] animate-pulse" />
+                  {isHovered && hoveredIndex !== (isDesktop ? desktopScrollIndex : mobileIndex) ? "Live Preview" : "Target Milestone"}
+                </span>
+              )}
             </div>
 
-            {/* Stage Benefits Bullet List: 16px, weight 400, color rgb(28,58,19), list-disc */}
-            <ul className="pl-6 space-y-1 mt-2 list-disc list-outside">
+            {/* Stage Benefits Bullet List: 400ms transition */}
+            <ul className="pl-3 sm:pl-4 space-y-1.5 mt-2.5">
               {stage.benefits.map((benefit, bIndex) => (
                 <li
                   key={bIndex}
-                  className="text-[15px] sm:text-[16px] font-normal text-[#1C3A13] leading-[24px] tracking-normal antialiased"
+                  className={`flex items-start gap-2.5 text-[14.5px] sm:text-[15.5px] leading-[23px] tracking-normal antialiased transition-colors duration-400 ease-out ${
+                    isUnlocked ? "text-[#1C3A13]" : "text-[#1C3A13]/60"
+                  }`}
                 >
-                  {benefit}
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 transition-colors duration-400 ease-out ${
+                      isUnlocked ? "bg-[#1C3A13]" : "bg-[#1C3A13]/30"
+                    }`}
+                  />
+                  <span>{benefit}</span>
                 </li>
               ))}
             </ul>
@@ -179,3 +290,4 @@ export function SeedTimelineList({
 }
 
 export default SeedTimelineList;
+
