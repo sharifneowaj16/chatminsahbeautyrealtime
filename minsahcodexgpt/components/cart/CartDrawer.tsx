@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Gift, Loader2, ShoppingBag, Sparkles, Tag, Truck, X } from "lucide-react";
 
@@ -90,75 +90,111 @@ export default function CartDrawer() {
       : []),
   ];
 
+  // Bundle and regular item breakdown for coupon applicability
+  const nonBundleItems = items.filter(
+    (item) =>
+      !item.isBundle &&
+      !item.bundleId &&
+      !(typeof item.id === 'string' && item.id.startsWith('bundle-'))
+  );
+  const hasBundleItems = items.some(
+    (item) =>
+      item.isBundle ||
+      item.bundleId ||
+      (typeof item.id === 'string' && item.id.startsWith('bundle-'))
+  );
+  const hasOnlyBundles = hasItems && nonBundleItems.length === 0;
+
+  // Auto-remove promo code if cart transitions to only bundles
+  useEffect(() => {
+    if (hasOnlyBundles && promoCode) {
+      removePromoCode();
+    }
+  }, [hasOnlyBundles, promoCode, removePromoCode]);
+
   const footer = hasItems ? (
     <div className="w-full space-y-4">
-      {/* ── Quick Coupon Box ── */}
-      <div className="rounded-lg border border-stone-200 bg-minsah-surface-subtle p-3">
-        {discount > 0 && promoCode ? (
-          <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-emerald-600" />
-              <span className="font-bold tracking-wider text-emerald-900">{promoCode}</span>
-              <span className="font-semibold text-emerald-700">(-{formatPrice(discount)} OFF)</span>
-            </div>
-            <button
-              type="button"
-              onClick={removePromoCode}
-              className="rounded-full p-1 text-gray-400 hover:bg-emerald-100 hover:text-red-600 transition-colors"
-              aria-label="Remove coupon"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Tag className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input
-                  type="text"
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleApplyCoupon();
-                    }
-                  }}
-                  placeholder="Coupon code (e.g. SAVE10)"
-                  className="w-full rounded-md border border-stone-200 bg-white py-2 pl-9 pr-3 text-base md:text-xs font-semibold uppercase tracking-wider text-minsah-dark placeholder:normal-case placeholder:font-normal placeholder:text-stone-400 focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary"
-                />
+      {/* ── Quick Coupon Box (Hidden when cart contains only bundle items) ── */}
+      {hasOnlyBundles ? (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-3 text-xs text-emerald-900">
+          <Sparkles className="h-4 w-4 shrink-0 text-emerald-600" />
+          <span className="leading-snug">
+            <strong className="font-semibold">Special Bundle Savings Applied:</strong> Additional promo coupons are not applicable to bundle packages.
+          </span>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-stone-200 bg-minsah-surface-subtle p-3">
+          {hasBundleItems && (
+            <p className="mb-2 text-[11px] text-stone-500 font-medium">
+              💡 Coupons apply to regular items (bundles have built-in savings)
+            </p>
+          )}
+          {discount > 0 && promoCode ? (
+            <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-emerald-600" />
+                <span className="font-bold tracking-wider text-emerald-900">{promoCode}</span>
+                <span className="font-semibold text-emerald-700">(-{formatPrice(discount)} OFF)</span>
               </div>
-              <Button
+              <button
                 type="button"
-                size="sm"
-                disabled={!couponInput.trim() || couponLoading}
-                onClick={() => handleApplyCoupon()}
-                className="rounded-full px-4 py-2 text-xs font-semibold bg-minsah-dark text-white hover:bg-minsah-primary transition-colors"
+                onClick={removePromoCode}
+                className="rounded-full p-1 text-gray-400 hover:bg-emerald-100 hover:text-red-600 transition-colors"
+                aria-label="Remove coupon"
               >
-                {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
-              </Button>
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
-
-            {/* Quick Suggestions */}
-            <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5">
-              <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
-                <Gift className="h-3 w-3 text-minsah-primary" /> Offers:
-              </span>
-              {["WELCOME10", "SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
-                <button
-                  key={code}
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Tag className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleApplyCoupon();
+                      }
+                    }}
+                    placeholder="Coupon code (e.g. SAVE10)"
+                    className="w-full rounded-md border border-stone-200 bg-white py-2 pl-9 pr-3 text-base md:text-xs font-semibold uppercase tracking-wider text-minsah-dark placeholder:normal-case placeholder:font-normal placeholder:text-stone-400 focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary"
+                  />
+                </div>
+                <Button
                   type="button"
-                  onClick={() => handleApplyCoupon(code)}
-                  className="rounded-full border border-dashed border-minsah-primary/40 bg-white px-2 py-0.5 font-semibold text-minsah-primary hover:bg-minsah-primary hover:text-white transition-colors"
+                  size="sm"
+                  disabled={!couponInput.trim() || couponLoading}
+                  onClick={() => handleApplyCoupon()}
+                  className="rounded-full px-4 py-2 text-xs font-semibold bg-minsah-dark text-white hover:bg-minsah-primary transition-colors"
                 >
-                  {code}
-                </button>
-              ))}
+                  {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
+                </Button>
+              </div>
+
+              {/* Quick Suggestions */}
+              <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5">
+                <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
+                  <Gift className="h-3 w-3 text-minsah-primary" /> Offers:
+                </span>
+                {["WELCOME10", "SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => handleApplyCoupon(code)}
+                    className="rounded-full border border-dashed border-minsah-primary/40 bg-white px-2 py-0.5 font-semibold text-minsah-primary hover:bg-minsah-primary hover:text-white transition-colors"
+                  >
+                    {code}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* ── Order Summary ── */}
       <OrderSummary
