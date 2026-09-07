@@ -38,6 +38,11 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const res = await fetch('/api/categories?activeOnly=false', { credentials: 'include' });
+      if (res.status === 401 || res.status === 403) {
+        // Unauthenticated or insufficient permissions (e.g. before login completes or during transition)
+        setCategories([]);
+        return;
+      }
       if (!res.ok) throw new Error('Failed to fetch categories');
       const data = await res.json();
       setCategories(data.categories || []);

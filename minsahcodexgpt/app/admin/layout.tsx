@@ -15,13 +15,11 @@ export default function AdminRootLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/admin/login';
 
-  // Don't wrap login page with AdminLayoutWrapper
+  // Don't wrap login page with AdminLayoutWrapper or data providers
   if (isLoginPage) {
     return (
       <AdminAuthProvider>
-        <CategoriesProvider>
-          {children}
-        </CategoriesProvider>
+        {children}
       </AdminAuthProvider>
     );
   }
