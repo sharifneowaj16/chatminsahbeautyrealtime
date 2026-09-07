@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { trackAddToCart } from '@/lib/tracking/ecommerce';
+import { calculateCartOffers, DELIVERY_CONFIG } from '@/lib/commerce/offer-engine';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export interface CartItem {
@@ -21,6 +22,11 @@ export interface CartItem {
   variantName?: string | null;
   size?: string | null;
   color?: string | null;
+  shade?: string | null;
+  bundleId?: string | null;
+  bundleName?: string | null;
+  bundleDiscountRatio?: number | null;
+  isBundle?: boolean | null;
   variantImage?: string | null;
   weight?: number | null;
   shippingWeight?: number | null;
@@ -85,6 +91,8 @@ interface CartContextType {
   selectedPaymentMethod: PaymentMethod | null;
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
   cartLoading: boolean;
+  freeDeliveryThreshold: number;
+  isFreeDeliveryUnlocked: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -231,6 +239,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const shippingCost = 0;
   const tax          = 0;
   const total        = subtotal + shippingCost - discount;
+
+  const offerEvaluation = useMemo(() => {
+    return calculateCartOffers({
+      items,
+      subtotal,
+      promoCode,
+      destinationCity: selectedAddress?.city || null,
+    });
+  }, [items, subtotal, promoCode, selectedAddress?.city]);
+
+  // Keep discount synchronized with offer evaluation when promoCode is active
+  useEffect(() => {
+    if (promoCode && offerEvaluation.appliedPromoRule) {
+      setDiscount(offerEvaluation.promoDiscount);
+    } else if (!promoCode && discount !== 0) {
+      setDiscount(0);
+    }
+  }, [promoCode, offerEvaluation.appliedPromoRule, offerEvaluation.promoDiscount, discount]);
 
   // ── DB helpers ─────────────────────────────────────────────────
 
@@ -649,21 +675,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       pushToast({ title: 'Please enter a coupon code', tone: 'danger' });
       return;
     }
-    const valid: Record<string, number> = {
-      SAVE10: Math.round(subtotal * 0.1),
-      SAVE20: Math.round(subtotal * 0.2),
-      FIRST50: 50,
-      MINSAH10: Math.round(subtotal * 0.1),
-      WELCOME: 100,
-    };
-    if (valid[code]) {
-      setDiscount(valid[code]);
+    const result = calculateCartOffers({
+      items,
+      subtotal,
+      promoCode: code,
+      destinationCity: selectedAddress?.city || null,
+    });
+
+    if (result.appliedPromoRule && !result.promoError) {
+      setDiscount(result.promoDiscount);
       setPromoCode(code);
       pushToast({ title: `Coupon "${code}" applied successfully!`, tone: 'success' });
     } else {
-      pushToast({ title: 'Invalid or expired promo code', tone: 'danger' });
+      pushToast({ title: result.promoError || 'Invalid or expired promo code', tone: 'danger' });
     }
-  }, [promoCode, pushToast, subtotal]);
+  }, [items, promoCode, pushToast, selectedAddress?.city, subtotal]);
 
   const removePromoCode = useCallback(() => {
     setDiscount(0);
@@ -797,6 +823,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       selectedPaymentMethod,
       setSelectedPaymentMethod,
       cartLoading,
+      freeDeliveryThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
+      isFreeDeliveryUnlocked: offerEvaluation.isFreeDeliveryUnlocked,
     }),
     [
       addAddress,
@@ -809,6 +837,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       deleteAddress,
       discount,
       items,
+      offerEvaluation.isFreeDeliveryUnlocked,
       paymentMethods,
       promoCode,
       removeItem,

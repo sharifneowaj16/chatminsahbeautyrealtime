@@ -13,8 +13,6 @@ import CartItemRow from "@/features/cart/CartItemRow";
 import OrderSummary from "@/features/cart/OrderSummary";
 import { formatPrice } from "@/utils/currency";
 
-const FREE_DELIVERY_THRESHOLD = 2500; // Free delivery at ৳2,500 BDT
-
 export default function CartDrawer() {
   const router = useRouter();
   const { isOpen, closeDrawer } = useCartDrawer();
@@ -28,6 +26,8 @@ export default function CartDrawer() {
     applyPromoCode,
     removePromoCode,
     discount,
+    freeDeliveryThreshold = 1100,
+    isFreeDeliveryUnlocked: isContextFreeUnlocked,
   } = useCart();
 
   const [busyItemIds, setBusyItemIds] = useState<string[]>([]);
@@ -37,10 +37,11 @@ export default function CartDrawer() {
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const hasItems = items.length > 0;
 
-  // Free delivery calculations
-  const remainingForFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
-  const progressPercent = Math.min(100, Math.round((subtotal / FREE_DELIVERY_THRESHOLD) * 100));
-  const isFreeDeliveryUnlocked = subtotal >= FREE_DELIVERY_THRESHOLD;
+  // Free delivery calculations (100% synchronized with Universal Offer Engine)
+  const targetThreshold = freeDeliveryThreshold;
+  const isFreeDeliveryUnlocked = Boolean(isContextFreeUnlocked || subtotal >= targetThreshold);
+  const remainingForFreeDelivery = isFreeDeliveryUnlocked ? 0 : Math.max(0, targetThreshold - subtotal);
+  const progressPercent = isFreeDeliveryUnlocked ? 100 : Math.min(100, Math.round((subtotal / targetThreshold) * 100));
 
   const markBusy = async (itemId: string, action: () => Promise<boolean>) => {
     if (busyItemIds.includes(itemId)) return;
@@ -144,7 +145,7 @@ export default function CartDrawer() {
               <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
                 <Gift className="h-3 w-3 text-minsah-primary" /> Offers:
               </span>
-              {["SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
+              {["WELCOME10", "SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
                 <button
                   key={code}
                   type="button"
@@ -177,7 +178,7 @@ export default function CartDrawer() {
             <p className="text-xs leading-5 text-minsah-text-muted">
               {isFreeDeliveryUnlocked
                 ? 'Your order qualifies for 100% Free Standard Delivery across Bangladesh!'
-                : 'Final delivery cost uses your address, courier quote, and active product delivery offers.'}
+                : 'Final delivery cost uses your address, courier quote, and active product delivery offers. Final amount will be shown before order placement.'}
             </p>
           </div>
         }
