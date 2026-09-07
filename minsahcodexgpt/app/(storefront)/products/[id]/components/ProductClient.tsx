@@ -26,7 +26,7 @@ import {
 } from "@/lib/tracking/ecommerce";
 import { useCart, type CartItem } from "@/contexts/CartContext";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
-import { createBundleCartItem } from "@/utils/cartItemHelper";
+import { createBundleCartItem, findStandaloneCartItems } from "@/utils/cartItemHelper";
 import { productPath } from "@/lib/product-url";
 import CatalogProductImage from "@/components/catalog/CatalogProductImage";
 import { Button } from "@/components/ui/Button";
@@ -289,7 +289,7 @@ export default function ProductClient({
   const [bundleStatus, setBundleStatus] = useState<BundleStatus>(null);
 
   const viewedProductKeysRef = useRef<Set<string>>(new Set());
-  const { addItem } = useCart();
+  const { items, addItem, removeItem } = useCart();
   const { registerAddIntent, openForSuccessfulAdd } = useCartDrawer();
 
   const selectedVariantObj =
@@ -473,6 +473,13 @@ export default function ProductClient({
     ];
 
     try {
+      // Smart Auto-Upgrade: Remove existing standalone (non-bundle) single items to prevent duplicate rows
+      const targetProductIds = [product.id, ...selectedBundleProducts.map((p) => p.id)];
+      const standaloneItems = findStandaloneCartItems(items, targetProductIds);
+      if (standaloneItems.length > 0) {
+        standaloneItems.forEach((item) => removeItem(item.id));
+      }
+
       const intentId = registerAddIntent();
       bundleCartItems.forEach((cartItem) => {
         addItem(cartItem, { track: false });
@@ -488,7 +495,10 @@ export default function ProductClient({
 
       setBundleStatus({
         type: "success",
-        message: `${selectedBundleProducts.length + 1}টি আইটেম কার্টে যোগ হয়েছে।`,
+        message:
+          standaloneItems.length > 0
+            ? `বান্ডেলে আপগ্রেড করা হয়েছে এবং ${selectedBundleProducts.length + 1}টি আইটেম কার্টে যোগ হয়েছে।`
+            : `${selectedBundleProducts.length + 1}টি আইটেম কার্টে যোগ হয়েছে।`,
       });
     } catch {
       setBundleStatus({
@@ -499,6 +509,8 @@ export default function ProductClient({
   }, [
     activeInStock,
     addItem,
+    items,
+    removeItem,
     openForSuccessfulAdd,
     registerAddIntent,
     currentPrice,

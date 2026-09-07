@@ -249,3 +249,24 @@ export function createBundleCartItem({
     bundleDiscountRatio: discountRatio,
   };
 }
+
+/**
+ * Finds any standalone (non-bundle) cart items matching given product IDs.
+ * Used to cleanly upgrade standalone single items to bundles without duplicate rows.
+ */
+export function findStandaloneCartItems(
+  cartItems: CartItem[],
+  productIds: (string | null | undefined)[]
+): CartItem[] {
+  const targetIds = new Set(productIds.filter(Boolean) as string[]);
+  return cartItems.filter((item) => {
+    const isBundle = Boolean(
+      item.isBundle ||
+      item.bundleId ||
+      (typeof item.id === 'string' && item.id.startsWith('bundle-'))
+    );
+    if (isBundle) return false;
+    const prodId = item.productId || item.id;
+    return targetIds.has(prodId);
+  });
+}

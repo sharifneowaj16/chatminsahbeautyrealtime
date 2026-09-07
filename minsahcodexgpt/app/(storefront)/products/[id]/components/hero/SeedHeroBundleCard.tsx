@@ -13,9 +13,10 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import SeedBundleDrawer, { BundleProductCandidate } from './SeedBundleDrawer';
 import { safeImageUrl } from '@/lib/safe-image';
-import { createBundleCartItem } from '@/utils/cartItemHelper';
+import { createBundleCartItem, findStandaloneCartItems } from '@/utils/cartItemHelper';
 
 export interface SeedHeroBundleCardProps {
   /** Anchor / Main Product */
@@ -36,8 +37,9 @@ export default function SeedHeroBundleCard({
   enabled = true,
   className = '',
 }: SeedHeroBundleCardProps) {
-  const { addItem } = useCart();
+  const { items, addItem, removeItem } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
+  const { pushToast } = useToast();
 
   // Bundle Drawer Open State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -92,7 +94,21 @@ export default function SeedHeroBundleCard({
 
     const bundleGroupId = `${mainProduct.id}-${activePairedProduct.id}`;
 
-    // Add Main Product
+    // Smart Auto-Upgrade: Remove existing standalone (non-bundle) single items to prevent duplicate rows
+    const standaloneItems = findStandaloneCartItems(items, [
+      mainProduct.id,
+      activePairedProduct.id,
+    ]);
+
+    if (standaloneItems.length > 0) {
+      standaloneItems.forEach((item) => removeItem(item.id));
+      pushToast({
+        title: 'Upgraded to 2-Step Routine Bundle with savings!',
+        tone: 'success',
+      });
+    }
+
+    // Add Main Product as Bundle Item
     const mainItem = createBundleCartItem({
       product: {
         id: mainProduct.id,
@@ -108,7 +124,7 @@ export default function SeedHeroBundleCard({
     });
     addItem(mainItem);
 
-    // Add Paired Product
+    // Add Paired Product as Bundle Item
     const pairedItem = createBundleCartItem({
       product: {
         id: activePairedProduct.id,

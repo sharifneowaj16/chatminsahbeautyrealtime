@@ -17,8 +17,9 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import { safeImageUrl } from '@/lib/safe-image';
-import { createBundleCartItem } from '@/utils/cartItemHelper';
+import { createBundleCartItem, findStandaloneCartItems } from '@/utils/cartItemHelper';
 
 export interface BundleProductCandidate {
   id: string;
@@ -54,8 +55,9 @@ export default function SeedBundleDrawer({
   catalogCandidates = [],
   className = '',
 }: SeedBundleDrawerProps) {
-  const { addItem } = useCart();
+  const { items, addItem, removeItem } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
+  const { pushToast } = useToast();
 
   // Selected Products in Custom Bundle (Main product is always anchor)
   const [selectedProducts, setSelectedProducts] = useState<BundleProductCandidate[]>([
@@ -233,6 +235,17 @@ export default function SeedBundleDrawer({
 
     const bundleGroupId = selectedProducts.map((p) => p.id).sort().join('-');
     const stepName = `${selectedProducts.length}-Step Bundle`;
+
+    // Smart Auto-Upgrade: Remove existing standalone (non-bundle) single items to prevent duplicate rows
+    const selectedIds = selectedProducts.map((p) => p.id);
+    const standaloneItems = findStandaloneCartItems(items, selectedIds);
+    if (standaloneItems.length > 0) {
+      standaloneItems.forEach((item) => removeItem(item.id));
+      pushToast({
+        title: `Upgraded to ${stepName} with savings!`,
+        tone: 'success',
+      });
+    }
 
     selectedProducts.forEach((p) => {
       const bundleItem = createBundleCartItem({
