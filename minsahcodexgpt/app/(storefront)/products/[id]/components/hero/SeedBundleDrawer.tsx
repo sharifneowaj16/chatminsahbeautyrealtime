@@ -18,6 +18,7 @@ import {
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { safeImageUrl } from '@/lib/safe-image';
+import { createBundleCartItem } from '@/utils/cartItemHelper';
 
 export interface BundleProductCandidate {
   id: string;
@@ -230,16 +231,24 @@ export default function SeedBundleDrawer({
         ? bundleCalculation.finalPayable / bundleCalculation.totalSellingPrice
         : 1;
 
+    const bundleGroupId = selectedProducts.map((p) => p.id).sort().join('-');
+    const stepName = `${selectedProducts.length}-Step Bundle`;
+
     selectedProducts.forEach((p) => {
-      const adjustedPrice = Math.round(p.price * discountRatio);
-      addItem({
-        id: `bundle-${p.id}`,
-        productId: p.id,
-        name: `${p.name} [Bundle Offer]`,
-        price: adjustedPrice,
-        image: p.image,
+      const bundleItem = createBundleCartItem({
+        product: {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          image: p.image,
+          stock: p.stock,
+        },
+        bundleId: bundleGroupId,
+        bundleName: stepName,
+        discountRatio,
         quantity: 1,
       });
+      addItem(bundleItem);
     });
 
     onClose();

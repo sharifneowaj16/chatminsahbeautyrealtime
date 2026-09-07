@@ -15,6 +15,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import SeedBundleDrawer, { BundleProductCandidate } from './SeedBundleDrawer';
 import { safeImageUrl } from '@/lib/safe-image';
+import { createBundleCartItem } from '@/utils/cartItemHelper';
 
 export interface SeedHeroBundleCardProps {
   /** Anchor / Main Product */
@@ -89,25 +90,39 @@ export default function SeedHeroBundleCard({
         ? calculation.finalPayable / calculation.totalSellingPrice
         : 1;
 
+    const bundleGroupId = `${mainProduct.id}-${activePairedProduct.id}`;
+
     // Add Main Product
-    addItem({
-      id: `bundle-${mainProduct.id}`,
-      productId: mainProduct.id,
-      name: `${mainProduct.name} [Bundle Offer]`,
-      price: Math.round(mainProduct.price * discountRatio),
-      image: mainProduct.image,
+    const mainItem = createBundleCartItem({
+      product: {
+        id: mainProduct.id,
+        name: mainProduct.name,
+        price: mainProduct.price,
+        image: mainProduct.image,
+        stock: 50,
+      },
+      bundleId: bundleGroupId,
+      bundleName: '2-Step Bundle',
+      discountRatio,
       quantity: 1,
     });
+    addItem(mainItem);
 
     // Add Paired Product
-    addItem({
-      id: `bundle-${activePairedProduct.id}`,
-      productId: activePairedProduct.id,
-      name: `${activePairedProduct.name} [Bundle Offer]`,
-      price: Math.round(activePairedProduct.price * discountRatio),
-      image: activePairedProduct.image,
+    const pairedItem = createBundleCartItem({
+      product: {
+        id: activePairedProduct.id,
+        name: activePairedProduct.name,
+        price: activePairedProduct.price,
+        image: activePairedProduct.image,
+        stock: activePairedProduct.stock ?? 50,
+      },
+      bundleId: bundleGroupId,
+      bundleName: '2-Step Bundle',
+      discountRatio,
       quantity: 1,
     });
+    addItem(pairedItem);
 
     openCartDrawer();
   };

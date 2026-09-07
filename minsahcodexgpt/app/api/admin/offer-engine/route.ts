@@ -234,7 +234,40 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    // 2. Synchronize Top Bar Delivery Config
+    // 2. Synchronize active coupons to relational prisma.coupon table for consistency
+    if (Array.isArray(payload.coupons)) {
+      for (const c of payload.coupons) {
+        if (!c || !c.code) continue;
+        const codeUpper = c.code.trim().toUpperCase();
+        const typeEnum = c.type === 'percentage' ? 'PERCENTAGE' : 'FIXED';
+        try {
+          await prisma.coupon.upsert({
+            where: { code: codeUpper },
+            create: {
+              code: codeUpper,
+              description: c.description || null,
+              type: typeEnum as any,
+              value: c.value,
+              minPurchase: c.minSubtotal || 0,
+              maxDiscount: c.maxDiscount || 0,
+              isActive: c.isActive !== false,
+            },
+            update: {
+              description: c.description || null,
+              type: typeEnum as any,
+              value: c.value,
+              minPurchase: c.minSubtotal || 0,
+              maxDiscount: c.maxDiscount || 0,
+              isActive: c.isActive !== false,
+            },
+          });
+        } catch (couponErr) {
+          console.warn(`Could not sync coupon ${codeUpper} to database table:`, couponErr);
+        }
+      }
+    }
+
+    // 3. Synchronize Top Bar Delivery Config
     if (payload.topBar) {
       const topBarPayload = {
         enabled: payload.topBar.enabled,

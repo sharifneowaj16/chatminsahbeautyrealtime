@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { createStandardCartItem } from '@/utils/cartItemHelper';
 import SeedVariantRail, { ProductVariantItem } from './SeedVariantRail';
 
 export interface SeedHeroBuyBoxProps {
@@ -25,6 +26,7 @@ export interface SeedHeroBuyBoxProps {
   defaultImage?: string;
   onVariantChange?: (variantId: string | null, currentPrice: number, stock: number) => void;
   onImageChange?: (imageUrl: string | null) => void;
+  onQuantityChange?: (quantity: number) => void;
   className?: string;
 }
 
@@ -39,17 +41,35 @@ export default function SeedHeroBuyBox({
   defaultImage = '/images/categories/Skincare.png',
   onVariantChange,
   onImageChange,
+  onQuantityChange,
   className = '',
 }: SeedHeroBuyBoxProps) {
   const { addItem } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
 
   // Selected Variant & Quantity State
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
-  const [currentPrice, setCurrentPrice] = useState<number>(price);
-  const [currentStock, setCurrentStock] = useState<number>(100);
-  const [currentImage, setCurrentImage] = useState<string>(defaultImage);
+  const initialVariant = variants.length > 0 ? variants[0] : null;
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    initialVariant?.id ?? null
+  );
+  const [currentPrice, setCurrentPrice] = useState<number>(
+    initialVariant?.price ?? price
+  );
+  const [currentStock, setCurrentStock] = useState<number>(
+    initialVariant?.stock ?? 100
+  );
+  const [currentImage, setCurrentImage] = useState<string>(
+    initialVariant?.image || defaultImage
+  );
   const [quantity, setQuantity] = useState(1);
+
+  // Notify initial variant on mount
+  useEffect(() => {
+    if (initialVariant && onVariantChange) {
+      onVariantChange(initialVariant.id, initialVariant.price, initialVariant.stock ?? 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Sync price if base price prop changes
   useEffect(() => {
@@ -101,9 +121,21 @@ export default function SeedHeroBuyBox({
     return () => clearInterval(interval);
   }, []);
 
-  // Quantity Stepper
-  const increaseQty = () => setQuantity((prev) => prev + 1);
-  const decreaseQty = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+// Quantity Stepper
+  const increaseQty = () => {
+    setQuantity((prev) => {
+      const next = currentStock ? Math.min(prev + 1, currentStock) : prev + 1;
+      onQuantityChange?.(next);
+      return next;
+    });
+  };
+  const decreaseQty = () => {
+    setQuantity((prev) => {
+      const next = prev > 1 ? prev - 1 : 1;
+      onQuantityChange?.(next);
+      return next;
+    });
+  };
 
   // Variant change handler
   const handleVariantChange = (varId: string | null, newPrice: number, stock: number) => {
@@ -118,17 +150,34 @@ export default function SeedHeroBuyBox({
     if (onImageChange) onImageChange(imgUrl);
   };
 
-  // Add to Cart
+  // Add to Cart with Standard Factory
   const handleAddToCart = () => {
-    addItem({
-      id: selectedVariantId || productId,
-      productId: productId,
-      variantId: selectedVariantId || undefined,
-      name: name,
-      price: currentPrice,
-      image: currentImage,
-      quantity: quantity,
+    const selectedVariant = variants.find((v) => v.id === selectedVariantId) || null;
+
+    const cartItem = createStandardCartItem({
+      product: {
+        id: productId,
+        name,
+        price,
+        image: defaultImage,
+        sku,
+        stock: currentStock,
+      },
+      variant: selectedVariant
+        ? {
+            id: selectedVariant.id,
+            name: selectedVariant.name,
+            price: currentPrice,
+            image: currentImage,
+            sku: selectedVariant.sku,
+            stock: currentStock,
+            attributes: selectedVariant.attributes,
+          }
+        : null,
+      quantity,
     });
+
+    addItem(cartItem);
     openCartDrawer();
   };
 

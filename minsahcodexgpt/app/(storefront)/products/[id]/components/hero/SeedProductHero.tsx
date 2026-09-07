@@ -37,6 +37,9 @@ export interface SeedProductHeroProps {
   };
   variants?: ProductVariantItem[];
   relatedProductsList?: BundleProductCandidate[];
+  onVariantChange?: (variantId: string | null, currentPrice: number, stock: number) => void;
+  onImageChange?: (imageUrl: string | null) => void;
+  onQuantityChange?: (quantity: number) => void;
   className?: string;
 }
 
@@ -44,6 +47,9 @@ export default function SeedProductHero({
   product,
   variants = [],
   relatedProductsList = [],
+  onVariantChange,
+  onImageChange,
+  onQuantityChange,
   className = '',
 }: SeedProductHeroProps) {
   // Desktop-Only Sequential Dual-Column Split Scroll Trigger
@@ -166,7 +172,12 @@ export default function SeedProductHero({
             keyBenefits={product.keyBenefits || undefined}
             variants={variants}
             defaultImage={product.image}
-            onImageChange={(img) => setActiveImageOverride(img)}
+            onImageChange={(img) => {
+              setActiveImageOverride(img);
+              onImageChange?.(img);
+            }}
+            onVariantChange={onVariantChange}
+            onQuantityChange={onQuantityChange}
           />
 
           {/* Phase 3 & 4: Accordions & Dedicated Drawers */}

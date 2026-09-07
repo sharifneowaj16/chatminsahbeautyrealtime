@@ -6,6 +6,7 @@ import { Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { safeImageUrl } from '@/lib/safe-image';
+import { createStandardCartItem } from '@/utils/cartItemHelper';
 
 export interface SeedMorphingStickyBarProps {
   productId: string;
@@ -17,6 +18,7 @@ export interface SeedMorphingStickyBarProps {
   variantId?: string | null;
   variantName?: string | null;
   inStock?: boolean;
+  quantity?: number;
   className?: string;
 }
 
@@ -53,6 +55,7 @@ export default function SeedMorphingStickyBar({
   variantId,
   variantName,
   inStock = true,
+  quantity = 1,
   className = '',
 }: SeedMorphingStickyBarProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -217,18 +220,28 @@ export default function SeedMorphingStickyBar({
     setIsAdding(true);
 
     try {
-      // Add item to cart context
-      addItem({
-        id: variantId ? `${productId}-${variantId}` : productId,
-        productId: productId,
-        name: productName,
-        price: price,
-        image: productImage,
-        quantity: 1,
-        variantId: variantId || undefined,
-        variantName: variantName || undefined,
-        sku: sku || undefined,
+      // Add item to cart context using canonical factory
+      const cartItem = createStandardCartItem({
+        product: {
+          id: productId,
+          name: productName,
+          price: price,
+          image: productImage,
+          sku: sku || undefined,
+        },
+        variant: variantId
+          ? {
+              id: variantId,
+              name: variantName,
+              price: price,
+              image: productImage,
+              sku: sku || undefined,
+            }
+          : null,
+        quantity: quantity || 1,
       });
+
+      addItem(cartItem);
 
       // Directly open Cart Drawer as requested by user
       openDrawer();

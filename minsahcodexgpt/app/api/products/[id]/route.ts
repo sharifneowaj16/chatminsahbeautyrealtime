@@ -10,6 +10,15 @@ import { getProductDetail } from '@/lib/products/get-product';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Canonical public active product query filter guard.
+ * Products must not be soft-deleted and must be active.
+ */
+const PUBLIC_PRODUCT_FILTER = {
+  deletedAt: null,
+  isActive: true,
+};
+
 function toOptionalNumber(value: unknown, fallback: unknown): unknown {
   if (value == null || value === '') return fallback;
   const numberValue = Number(value);

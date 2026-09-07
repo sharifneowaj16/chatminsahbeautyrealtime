@@ -232,6 +232,9 @@ function CheckoutContent() {
   const {
     items,
     subtotal,
+    discount,
+    promoCode,
+    isFreeDeliveryUnlocked,
     selectedPaymentMethod,
     setSelectedPaymentMethod,
     paymentMethods,
@@ -356,7 +359,8 @@ function CheckoutContent() {
     hasDeliveryLocation,
   );
 
-  const finalTotal = subtotal + deliveryCharge;
+  const effectiveDeliveryCharge = isFreeDeliveryUnlocked ? 0 : deliveryCharge;
+  const finalTotal = Math.max(0, subtotal - discount) + effectiveDeliveryCharge;
   const deliveryOfferMessage = getDeliveryOfferMessage(deliveryQuote);
 
   const fieldErrors = useMemo<CheckoutFieldErrors>(() => {
@@ -746,16 +750,24 @@ function CheckoutContent() {
             pathao_area_id: shippingForm.pathao_area_id,
           },
           paymentMethod: selectedPaymentMethod.type,
-          shippingCost: deliveryCharge,
-          customerDeliveryCharge:
-            deliveryQuote?.customerDeliveryCharge ?? deliveryCharge,
+          couponCode: promoCode || undefined,
+          shippingCost: effectiveDeliveryCharge,
+          customerDeliveryCharge: isFreeDeliveryUnlocked
+            ? 0
+            : (deliveryQuote?.customerDeliveryCharge ?? deliveryCharge),
           courierDeliveryCharge: deliveryQuote?.courierDeliveryCharge ?? null,
-          deliveryDiscountAmount: deliveryQuote?.deliveryDiscountAmount ?? 0,
+          deliveryDiscountAmount: isFreeDeliveryUnlocked
+            ? deliveryCharge
+            : (deliveryQuote?.deliveryDiscountAmount ?? 0),
           deliveryPricingSource:
             deliveryQuote?.deliveryPricingSource ?? "PATHAO",
-          deliveryOfferType: deliveryQuote?.deliveryOfferType ?? "DEFAULT",
+          deliveryOfferType: isFreeDeliveryUnlocked
+            ? "FREE"
+            : (deliveryQuote?.deliveryOfferType ?? "DEFAULT"),
           deliveryOfferProductId: deliveryQuote?.deliveryOfferProductId ?? null,
-          deliveryOfferBadgeText: deliveryQuote?.deliveryOfferBadgeText ?? null,
+          deliveryOfferBadgeText: isFreeDeliveryUnlocked
+            ? "ফ্রি ডেলিভারি অফার"
+            : (deliveryQuote?.deliveryOfferBadgeText ?? null),
           shippingMethod: "pathao",
           customerNote: "",
           sessionUserId,
@@ -1684,12 +1696,23 @@ function CheckoutContent() {
                   <span className="font-semibold text-[#2D1F18]">{formatPrice(subtotal)}</span>
                 </div>
 
+                {discount > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Sparkles size={13} className="text-emerald-600" /> কুপন ডিসকাউন্ট {promoCode ? `(${promoCode})` : ""}
+                    </span>
+                    <span className="font-bold">-{formatPrice(discount)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-[#7A6E65]">
                   <span className="flex items-center gap-1.5">
                     <Truck size={14} className="text-[#984B29]" /> Delivery Fee
                   </span>
                   <span className="font-semibold text-[#2D1F18]">
-                    {deliveryState === "loading"
+                    {isFreeDeliveryUnlocked ? (
+                      <span className="font-bold text-emerald-700">🎉 FREE</span>
+                    ) : deliveryState === "loading"
                       ? "Calculating..."
                       : deliveryState === "success"
                         ? formatCustomerDeliveryCharge(deliveryCharge)

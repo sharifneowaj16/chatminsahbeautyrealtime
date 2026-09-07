@@ -59,6 +59,10 @@ function capDiscount(value: number, maxDiscountableAmount: number): number {
   return roundMoney(Math.min(Math.max(0, value), Math.max(0, maxDiscountableAmount)));
 }
 
+import { PROMO_CATALOG } from '@/lib/commerce/offer-engine';
+
+const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
+
 export async function validateCouponForOrder(params: {
   prisma: PrismaClient;
   userId: string;
@@ -78,9 +82,70 @@ export async function validateCouponForOrder(params: {
     };
   }
 
-  const coupon = (await params.prisma.coupon.findUnique({
+  let coupon = (await params.prisma.coupon.findUnique({
     where: { code: couponCode },
   })) as CouponRecord | null;
+
+  // Fallback to Universal Offer Engine (siteConfig) or PROMO_CATALOG
+  if (!coupon) {
+    try {
+      const siteConfig = await params.prisma.siteConfig.findUnique({
+        where: { key: UNIVERSAL_OFFER_CONFIG_KEY },
+      });
+      if (siteConfig?.value && typeof siteConfig.value === 'object') {
+        const configCoupons = (siteConfig.value as { coupons?: Array<{
+          code: string;
+          type: 'percentage' | 'flat';
+          value: number;
+          minSubtotal?: number;
+          maxDiscount?: number;
+          isActive?: boolean;
+        }> }).coupons;
+
+        if (Array.isArray(configCoupons)) {
+          const matched = configCoupons.find(
+            (c) => c && c.code && c.code.trim().toUpperCase() === couponCode
+          );
+          if (matched && matched.isActive !== false) {
+            coupon = {
+              id: '',
+              code: couponCode,
+              type: matched.type === 'percentage' ? 'PERCENTAGE' : 'FIXED',
+              value: matched.value,
+              minPurchase: matched.minSubtotal ?? 0,
+              maxDiscount: matched.maxDiscount ?? 0,
+              usageLimit: null,
+              usageCount: 0,
+              perUserLimit: null,
+              startDate: null,
+              endDate: null,
+              isActive: true,
+            };
+          }
+        }
+      }
+    } catch {
+      // Continue to PROMO_CATALOG fallback
+    }
+
+    if (!coupon && PROMO_CATALOG[couponCode]) {
+      const promo = PROMO_CATALOG[couponCode];
+      coupon = {
+        id: '',
+        code: couponCode,
+        type: promo.type === 'percentage' ? 'PERCENTAGE' : 'FIXED',
+        value: promo.type === 'percentage' ? Math.round(promo.value * 100) : promo.value,
+        minPurchase: promo.minSubtotal ?? 0,
+        maxDiscount: promo.maxDiscount ?? 0,
+        usageLimit: null,
+        usageCount: 0,
+        perUserLimit: null,
+        startDate: null,
+        endDate: null,
+        isActive: true,
+      };
+    }
+  }
 
   if (!coupon || !coupon.isActive) {
     throw new CouponValidationError('Coupon is invalid or inactive', 'COUPON_NOT_FOUND');
@@ -138,7 +203,7 @@ export async function validateCouponForOrder(params: {
     : capDiscount(rawDiscount, params.subtotal);
 
   return {
-    couponId: coupon.id,
+    couponId: coupon.id || null,
     code: coupon.code,
     type: couponType,
     discountAmount,

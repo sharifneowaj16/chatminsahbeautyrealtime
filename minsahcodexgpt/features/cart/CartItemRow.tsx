@@ -26,10 +26,11 @@ function isDisplayableImage(src?: string | null) {
 }
 
 function getVariantLabel(
-  item: Pick<CartItem, "size" | "color" | "variantName">,
+  item: Pick<CartItem, "size" | "color" | "shade" | "variantName">,
 ) {
+  const colorOrShade = item.shade || item.color;
   return (
-    [item.size, item.color].filter(Boolean).join(" / ") ||
+    [item.size, colorOrShade].filter(Boolean).join(" / ") ||
     item.variantName ||
     ""
   );

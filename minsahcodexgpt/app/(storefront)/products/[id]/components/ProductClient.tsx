@@ -26,6 +26,7 @@ import {
 } from "@/lib/tracking/ecommerce";
 import { useCart, type CartItem } from "@/contexts/CartContext";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
+import { createBundleCartItem } from "@/utils/cartItemHelper";
 import { productPath } from "@/lib/product-url";
 import CatalogProductImage from "@/components/catalog/CatalogProductImage";
 import { Button } from "@/components/ui/Button";
@@ -250,18 +251,35 @@ export default function ProductClient({
 }: ProductClientProps) {
   const initialVariant =
     product.variants.length === 1 ? product.variants[0] : null;
-  const [selectedVariantId] = useState<string | null>(
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     initialVariant?.id ?? null,
   );
   const baseDisplayPrice =
     product.salePrice && product.salePrice > 0
       ? product.salePrice
       : product.price;
-  const [currentPrice] = useState(
+  const [currentPrice, setCurrentPrice] = useState(
     initialVariant?.price ?? baseDisplayPrice,
   );
-  const [quantity] = useState(1);
-  const [variantImageOverride] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [variantImageOverride, setVariantImageOverride] = useState<string | null>(null);
+
+  const handleVariantChange = useCallback(
+    (variantId: string | null, newPrice: number) => {
+      setSelectedVariantId(variantId);
+      setCurrentPrice(newPrice);
+    },
+    [],
+  );
+
+  const handleImageChange = useCallback((imageUrl: string | null) => {
+    setVariantImageOverride(imageUrl);
+  }, []);
+
+  const handleQuantityChange = useCallback((newQty: number) => {
+    setQuantity(newQty);
+  }, []);
+
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>(
     [],
   );
@@ -405,42 +423,53 @@ export default function ProductClient({
       return;
     }
 
-    const mainCartKey = selectedVariantObj?.id ?? product.id;
+    const bundleGroupId = `fbt-${product.id}-${selectedBundleProducts.map((p) => p.id).sort().join('-')}`;
     const bundleCartItems: CartItem[] = [
-      {
-        id: mainCartKey,
-        productId: product.id,
-        variantId: selectedVariantObj?.id ?? null,
-        variantName: variantNameLabel ?? null,
-        sku: selectedVariantObj?.sku ?? product.sku ?? undefined,
-        productSku: product.sku ?? undefined,
-        variantSku: selectedVariantObj?.sku ?? null,
-        size: variantSize ?? null,
-        color: variantColor ?? null,
-        variantImage: variantImage ?? null,
-        name: product.name,
-        price: currentPrice,
+      createBundleCartItem({
+        product: {
+          id: product.id,
+          name: product.name,
+          price: currentPrice,
+          image: variantImageOverride || variantImage || product.image,
+          sku: product.sku,
+          stock: activeStock,
+          trackInventory: (product as any).trackInventory ?? null,
+          allowBackorder: product.allowBackorder ?? null,
+          weight: selectedVariantObj?.weight ?? product.weight ?? null,
+          shippingWeight: product.shippingWeight ?? null,
+        },
+        variant: selectedVariantObj
+          ? {
+              id: selectedVariantObj.id,
+              name: variantNameLabel,
+              price: currentPrice,
+              image: variantImageOverride || variantImage || product.image,
+              sku: selectedVariantObj.sku,
+              stock: activeStock,
+              attributes: selectedVariantObj.attributes,
+            }
+          : null,
+        bundleId: bundleGroupId,
+        bundleName: 'Frequently Bought Together',
+        discountRatio: 1,
         quantity,
-        image: variantImageOverride || variantImage || product.image,
-        weight: selectedVariantObj?.weight ?? product.weight ?? null,
-        stock: activeStock,
-        maxQuantity: product.allowBackorder ? null : activeStock,
-      },
-      ...selectedBundleProducts.map((bundleProduct) => ({
-        id: bundleProduct.id,
-        productId: bundleProduct.id,
-        variantId: null,
-        variantName: null,
-        sku: bundleProduct.sku,
-        productSku: bundleProduct.sku,
-        variantSku: null,
-        name: bundleProduct.name,
-        price: bundleProduct.price,
-        quantity: 1,
-        image: bundleProduct.image,
-        stock: bundleProduct.stock,
-        maxQuantity: bundleProduct.stock,
-      })),
+      }),
+      ...selectedBundleProducts.map((bundleProduct) =>
+        createBundleCartItem({
+          product: {
+            id: bundleProduct.id,
+            name: bundleProduct.name,
+            price: bundleProduct.price,
+            image: bundleProduct.image,
+            sku: bundleProduct.sku,
+            stock: bundleProduct.stock,
+          },
+          bundleId: bundleGroupId,
+          bundleName: 'Frequently Bought Together',
+          discountRatio: 1,
+          quantity: 1,
+        })
+      ),
     ];
 
     try {
@@ -627,6 +656,9 @@ export default function ProductClient({
               }))
             : undefined
         }
+        onVariantChange={handleVariantChange}
+        onImageChange={handleImageChange}
+        onQuantityChange={handleQuantityChange}
       />
 
       {/* ========================================================================= */}
@@ -895,25 +927,25 @@ export default function ProductClient({
             </div>
 
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-              {recentlyViewed.slice(0, 6).map((item) => (
+              {recentlyViewed.slice(0, 6).map((recentProduct) => (
                 <Link
-                  key={item.id}
-                  href={`/products/${item.slug || item.id}`}
+                  key={recentProduct.id}
+                  href={productPath(recentProduct)}
                   className="group block overflow-hidden rounded-xl border border-stone-200 bg-white p-2.5 transition hover:border-stone-400 hover:shadow-xs"
                 >
                   <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-50">
                     <CatalogProductImage
-                      src={item.image}
-                      alt={item.name}
+                      src={recentProduct.image}
+                      alt={recentProduct.name}
                       sizes="120px"
                       className="group-hover:scale-105 transition-transform"
                     />
                   </div>
                   <p className="mt-2 line-clamp-1 text-xs font-semibold text-stone-900 group-hover:text-[#1C3A13] transition">
-                    {item.name}
+                    {recentProduct.name}
                   </p>
                   <p className="text-xs font-bold text-[#1C3A13]">
-                    ৳{item.price.toLocaleString("bn-BD")}
+                    ৳{recentProduct.price.toLocaleString("bn-BD")}
                   </p>
                 </Link>
               ))}
@@ -933,6 +965,7 @@ export default function ProductClient({
         variantId={selectedVariantId}
         variantName={variantNameLabel}
         inStock={activeInStock}
+        quantity={quantity}
       />
     </>
   );

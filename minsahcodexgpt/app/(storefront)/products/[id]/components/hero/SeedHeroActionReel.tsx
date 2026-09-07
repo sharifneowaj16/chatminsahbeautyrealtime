@@ -14,6 +14,7 @@ import {
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { safeImageUrl } from '@/lib/safe-image';
+import { createStandardCartItem } from '@/utils/cartItemHelper';
 
 export interface ActionReelItem {
   id: string;
@@ -257,14 +258,16 @@ export default function SeedHeroActionReel({
   // In-Video Quick Order Handler
   const handleOrderFromStory = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addItem({
-      id: productId,
-      productId: productId,
-      name: productName,
-      price: productPrice,
-      image: productImage,
+    const cartItem = createStandardCartItem({
+      product: {
+        id: productId,
+        name: productName,
+        price: productPrice,
+        image: productImage,
+      },
       quantity: 1,
     });
+    addItem(cartItem);
     closeStory();
     openCartDrawer();
   };
