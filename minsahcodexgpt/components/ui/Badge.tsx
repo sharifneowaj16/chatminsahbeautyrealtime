@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
 export type BadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
-export type BadgeSize = 'sm' | 'md';
+export type BadgeSize = 'xs' | 'sm' | 'md';
 
 export type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
   tone?: BadgeTone;
@@ -22,6 +22,7 @@ const tones: Record<BadgeTone, string> = {
 };
 
 const sizes: Record<BadgeSize, string> = {
+  xs: 'min-h-5 gap-1 px-1.5 py-0.5 text-[11px] leading-none',
   sm: 'min-h-6 gap-1 px-2 py-0.5 text-xs',
   md: 'min-h-7 gap-1.5 px-2.5 py-1 text-sm',
 };

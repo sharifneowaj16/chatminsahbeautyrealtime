@@ -341,39 +341,39 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   const renderSidebarContent = (instance: 'desktop' | 'mobile') => (
     <div className="flex h-full flex-col bg-[#08090A] text-[#F7F8F8]">
       {/* Logo Header */}
-      <div className="flex h-20 items-center justify-between px-6 border-b border-white/[0.08] bg-[#08090A]">
+      <div className="flex h-16 items-center justify-between px-5 border-b border-white/[0.08] bg-[#08090A]">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-[#151516] border border-white/[0.08] rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-white font-black text-lg">MB</span>
+          <div className="w-8 h-8 bg-[#151516] border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-xs tracking-wider">MB</span>
           </div>
           <div>
-            <h2 className="text-[#F7F8F8] font-bold text-lg leading-tight">Minsah Beauty</h2>
-            <p className="text-white/60 text-xs font-medium tracking-wide">Admin Workspace</p>
+            <h2 className="text-[#F7F8F8] font-bold text-sm leading-tight tracking-tight">Minsah Beauty</h2>
+            <p className="text-white/40 text-[11px] font-medium tracking-wide">Workspace</p>
           </div>
         </div>
         <Button
           type="button"
           onClick={() => setSidebarOpen(false)}
-          className="lg:hidden p-2 rounded-md text-white/60 hover:text-white hover:bg-[#151516]"
+          className="lg:hidden p-1.5 rounded-md text-white/60 hover:text-white hover:bg-[#151516] transition-all"
           aria-label="Close admin sidebar"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </Button>
       </div>
 
       {/* User info */}
-      <div className="px-6 py-4 border-b border-white/[0.08] bg-[#151516]/60">
+      <div className="px-5 py-3 border-b border-white/[0.08] bg-[#151516]/40">
         <div className="flex items-center space-x-3">
-          <div className="w-11 h-11 bg-white/[0.10] border border-white/[0.15] rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-lg">
+          <div className="w-9 h-9 bg-white/[0.08] border border-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center">
+            <span className="text-white font-semibold text-sm">
               {user?.name?.charAt(0).toUpperCase() || 'A'}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#F7F8F8] truncate">
+            <p className="text-xs font-semibold text-[#F7F8F8] truncate tracking-tight">
               {user?.name || 'Admin User'}
             </p>
-            <p className="text-xs text-white/60 truncate capitalize">
+            <p className="text-[11px] text-white/50 truncate capitalize">
               {user?.role?.replace('_', ' ') || 'Super Admin'}
             </p>
           </div>
@@ -381,7 +381,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
         {resolvedMenuItems.map((item) => {
           const isExpanded = expandedItems.includes(item.title);
           const hasChildren = item.children && item.children.length > 0;
@@ -400,25 +400,25 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                   }
                 }}
                 className={clsx(
-                  'group flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all duration-150',
+                  'group flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg transition-all duration-120 active:scale-[0.98]',
                   active
-                    ? 'bg-white/[0.08] text-white border-l-2 border-white shadow-sm font-semibold'
+                    ? 'bg-white/[0.08] text-white border-l-2 border-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] font-medium'
                     : 'text-white/60 hover:bg-white/[0.04] hover:text-white'
                 )}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2.5">
                   <item.icon
                     className={clsx(
-                      'w-5 h-5 transition-colors',
-                      active ? 'text-white' : 'text-white/60 group-hover:text-white'
+                      'w-4 h-4 transition-colors',
+                      active ? 'text-white' : 'text-white/50 group-hover:text-white'
                     )}
                   />
                   <span>{item.title}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {item.badge && (
                     <span
-                      className="px-2 py-0.5 bg-white/[0.10] text-white border border-white/[0.15] rounded-full text-xs font-semibold"
+                      className="px-1.5 py-0.2 text-[10px] font-semibold bg-white/[0.10] text-white border border-white/[0.15] rounded-full"
                       aria-label={`${item.badge} unread ${item.title.toLowerCase()} items`}
                     >
                       {item.badge}
@@ -427,9 +427,9 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                   {hasChildren && (
                     <ChevronDown
                       className={clsx(
-                        'w-4 h-4 transform transition-transform duration-200',
+                        'w-3.5 h-3.5 transform transition-transform duration-150',
                         isExpanded ? 'rotate-180' : '',
-                        active ? 'text-white' : 'text-white/60'
+                        active ? 'text-white' : 'text-white/50'
                       )}
                     />
                   )}
@@ -438,7 +438,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
 
               {/* Submenu */}
               {hasChildren && isExpanded && (
-                <div id={`${navSectionId(item.title)}-${instance}`} className="mt-1 ml-4 space-y-1 border-l-2 border-white/[0.08] pl-3">
+                <div id={`${navSectionId(item.title)}-${instance}`} className="mt-0.5 ml-3.5 space-y-0.5 border-l border-white/[0.08] pl-2.5">
                   {item.children
                     ?.filter(child => !child.permission || hasPermission(child.permission))
                     .map((child) => {
@@ -448,21 +448,21 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                           key={child.href}
                           href={child.href}
                           className={clsx(
-                            'group flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all duration-150',
+                            'group flex items-center justify-between px-2.5 py-1.5 text-[11px] rounded-md transition-all duration-120 active:scale-[0.98]',
                             childActive
-                              ? 'bg-white/[0.08] text-white font-semibold border-l-2 border-white'
-                              : 'text-white/60 hover:bg-white/[0.04] hover:text-white'
+                              ? 'bg-white/[0.08] text-white font-medium border-l-2 border-white'
+                              : 'text-white/50 hover:bg-white/[0.04] hover:text-white'
                           )}
                         >
                           <div className="flex items-center gap-2">
                             {child.icon && (
-                              <child.icon className="w-3.5 h-3.5 text-white/60" />
+                              <child.icon className="w-3 h-3 text-white/50" />
                             )}
                             <span>{child.title}</span>
                           </div>
                           {child.badge && (
                             <span
-                              className="px-1.5 py-0.5 bg-white/[0.10] text-white border border-white/[0.15] rounded-full text-[10px] font-bold"
+                              className="px-1.5 py-0.2 bg-white/[0.10] text-white border border-white/[0.15] rounded-full text-[9px] font-bold"
                               aria-label={`${child.badge} ${child.title.toLowerCase()} items`}
                             >
                               {child.badge}
@@ -479,13 +479,13 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
       </nav>
 
       {/* Logout */}
-      <div className="border-t border-white/[0.08] p-4 bg-[#08090A]">
+      <div className="border-t border-white/[0.08] p-3 bg-[#08090A]">
         <Button
           type="button"
           onClick={handleLogout}
-          className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/[0.06] hover:text-white rounded-xl transition-colors duration-150"
+          className="w-full flex items-center space-x-2.5 px-3 py-2 text-xs font-medium text-white/60 hover:bg-white/[0.06] hover:text-white rounded-lg transition-all duration-120 active:scale-[0.98]"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-3.5 h-3.5" />
           <span>Logout</span>
         </Button>
       </div>
@@ -498,7 +498,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
         <>
           <aside
             aria-label="Admin navigation"
-            className="hidden h-screen w-72 shrink-0 bg-[#08090A] border-r border-white/[0.08] shadow-2xl lg:block"
+            className="hidden h-screen w-64 shrink-0 bg-[#08090A] border-r border-white/[0.08] shadow-2xl lg:block"
           >
             {renderSidebarContent('desktop')}
           </aside>
@@ -510,7 +510,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
             ariaLabel="Admin navigation"
             showCloseButton={false}
             bodyClassName="p-0 sm:p-0 bg-[#08090A]"
-            panelClassName="max-w-72 bg-[#08090A]"
+            panelClassName="max-w-64 bg-[#08090A]"
           >
             {renderSidebarContent('mobile')}
           </Drawer>
@@ -521,49 +521,49 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
       <div className="flex-1 flex flex-col lg:ml-0 min-w-0">
         {/* Top header */}
         {!inboxChromeHidden && (
-          <header className="h-20 bg-[#08090A] border-b border-white/[0.08] shadow-sm flex items-center justify-between px-6 sticky top-0 z-30">
-            <div className="flex items-center space-x-4">
+          <header className="h-16 bg-[#08090A]/80 backdrop-blur-md border-b border-white/[0.08] shadow-xs flex items-center justify-between px-6 sticky top-0 z-30 transition-all">
+            <div className="flex items-center space-x-3">
               <Button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden p-2 rounded-md text-white/60 hover:text-white hover:bg-[#151516]"
                 aria-label="Open admin sidebar"
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="w-5 h-5" />
               </Button>
 
               {/* Search */}
               <div className="hidden md:block relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
                 <Input
                   type="text"
                   aria-label="Search products, orders, customers"
                   placeholder="Search products, orders, customers..."
-                  className="w-96 pl-9 pr-4 py-2 bg-[#151516] border border-white/[0.08] text-[#F7F8F8] placeholder:text-white/35 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20"
+                  className="w-80 h-8.5 pl-8.5 pr-4 py-1 bg-[#151516] border border-white/[0.08] text-[#F7F8F8] placeholder:text-white/35 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/25 shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] transition-all"
                 />
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               {/* System Status */}
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#151516] border border-white/[0.08] rounded-xl">
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                <span className="text-xs font-semibold text-white">Systems Operational</span>
-                <Minus className="w-3 h-3 text-white/40 rotate-90" />
-                <span className="text-xs text-white/60">Live Sync</span>
+              <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-[#151516] border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] rounded-md">
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                <span className="text-[11px] font-medium text-white/90">Operational</span>
+                <Minus className="w-2.5 h-2.5 text-white/30 rotate-90" />
+                <span className="text-[11px] text-white/50 font-mono">Sync</span>
               </div>
 
               {/* Notification Bell */}
               <AdminNotificationBell />
 
               {/* User menu */}
-              <div className="flex items-center space-x-3 pl-4 border-l border-white/[0.08]">
+              <div className="flex items-center space-x-2.5 pl-3 border-l border-white/[0.08]">
                 <div className="hidden md:block text-right">
-                  <p className="text-sm font-semibold text-[#F7F8F8]">{user?.name || 'Admin User'}</p>
-                  <p className="text-xs text-white/60 capitalize">{user?.role?.replace('_', ' ') || 'Super Admin'}</p>
+                  <p className="text-xs font-semibold text-[#F7F8F8] tracking-tight">{user?.name || 'Admin User'}</p>
+                  <p className="text-[10px] text-white/50 capitalize">{user?.role?.replace('_', ' ') || 'Super Admin'}</p>
                 </div>
-                <div className="w-10 h-10 bg-white/[0.10] border border-white/[0.15] rounded-xl flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold">
+                <div className="w-8 h-8 bg-white/[0.08] border border-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center">
+                  <span className="text-white font-semibold text-xs">
                     {user?.name?.charAt(0).toUpperCase() || 'A'}
                   </span>
                 </div>

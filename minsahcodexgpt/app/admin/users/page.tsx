@@ -125,28 +125,28 @@ export default function UsersManagementPage() {
   const getStatusColor = (status: AdminUser['status']) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20';
       case 'inactive':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
       case 'suspended':
-        return 'bg-red-100 text-red-800';
+        return 'bg-rose-500/10 text-rose-300 border border-rose-500/20';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
     }
   };
 
   const getRoleColor = (role: AdminUser['role']) => {
     switch (role) {
       case 'super_admin':
-        return 'bg-admin-panel text-white';
+        return 'bg-white/[0.12] text-white border border-white/[0.20]';
       case 'admin':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-500/10 text-blue-300 border border-blue-500/20';
       case 'editor':
-        return 'bg-green-100 text-green-800';
+        return 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20';
       case 'moderator':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
     }
   };
 
@@ -155,82 +155,90 @@ export default function UsersManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F7F8F8]">User Management</h1>
-          <p className="text-sm text-[#8A8F98] mt-1">Manage admin users and their permissions</p>
+          <h1 className="text-xl font-semibold tracking-tight text-[#F7F8F8]">User Management</h1>
+          <p className="text-xs text-[#8A8F98] mt-0.5">Manage admin users and their permissions</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg transition-colors duration-200">
-          <Plus className="w-5 h-5 mr-2" />
+        <Button className="mt-3 sm:mt-0 h-8.5 px-3.5 bg-white text-black font-medium text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.98] transition-all inline-flex items-center">
+          <Plus className="w-4 h-4 mr-1.5" />
           Add User
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#8A8F98]">Total Users</p>
-              <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{users.length}</p>
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Users</p>
+              <p className="text-xl font-semibold tracking-tight text-[#F7F8F8] mt-1">{users.length}</p>
             </div>
-            <User className="w-8 h-8 text-white" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <User className="w-3.5 h-3.5 text-white/70" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#8A8F98]">Active Users</p>
-              <p className="text-2xl font-bold text-white mt-2">
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Active Users</p>
+              <p className="text-xl font-semibold tracking-tight text-white mt-1">
                 {users.filter(u => u.status === 'active').length}
               </p>
             </div>
-            <Shield className="w-8 h-8 text-green-500" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#8A8F98]">Admins</p>
-              <p className="text-2xl font-bold text-blue-400 mt-2">
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Admins</p>
+              <p className="text-xl font-semibold tracking-tight text-blue-300 mt-1">
                 {users.filter(u => u.role === 'admin' || u.role === 'super_admin').length}
               </p>
             </div>
-            <Shield className="w-8 h-8 text-blue-500" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <Shield className="w-3.5 h-3.5 text-blue-400" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#8A8F98]">Inactive</p>
-              <p className="text-2xl font-bold text-[#8A8F98] mt-2">
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Inactive</p>
+              <p className="text-xl font-semibold tracking-tight text-[#8A8F98] mt-1">
                 {users.filter(u => u.status === 'inactive').length}
               </p>
             </div>
-            <Lock className="w-8 h-8 text-gray-500" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <Lock className="w-3.5 h-3.5 text-[#62666D]" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-3 mb-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#62666D]" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#62666D]" />
             <Input
               type="text"
               placeholder="Search users by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+              className="w-full pl-9 pr-3 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
             />
           </div>
 
           <Select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+            className="px-3 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-xs text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
           >
             <option value="all">All Roles</option>
             <option value="super_admin">Super Admin</option>
@@ -242,107 +250,107 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-[#151516] rounded-lg border border-white/[0.08] overflow-hidden">
+      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#08090A] border-b border-white/[0.08]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Last Login
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Created
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-right text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-[#151516] divide-y divide-white/[0.08]">
+            <tbody className="bg-[#08090A] divide-y divide-white/[0.06]">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
-                  <td className="px-6 py-4">
+                <tr key={user.id} className="hover:bg-white/[0.03] transition-colors">
+                  <td className="px-3.5 py-2.5">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#08090A] border border-white/[0.08] rounded-full flex items-center justify-center">
-                        <span className="text-white font-semibold">
+                      <div className="w-8 h-8 bg-white/[0.04] border border-white/[0.08] rounded-full flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10)]">
+                        <span className="text-white text-xs font-medium">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-[#F7F8F8]">{user.name}</div>
-                        <div className="text-xs text-[#8A8F98] flex items-center">
-                          <Mail className="w-3 h-3 mr-1" />
+                      <div className="ml-2.5">
+                        <div className="text-xs font-medium text-[#F7F8F8]">{user.name}</div>
+                        <div className="text-[10px] text-[#8A8F98] flex items-center">
+                          <Mail className="w-2.5 h-2.5 mr-1 text-[#62666D]" />
                           {user.email}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3.5 py-2.5">
                     <span className={clsx(
-                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium leading-none',
                       getRoleColor(user.role)
                     )}>
-                      <Shield className="w-3 h-3 mr-1" />
+                      <Shield className="w-2.5 h-2.5 mr-1" />
                       {user.role.replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3.5 py-2.5">
                     <span className={clsx(
-                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium leading-none capitalize',
                       getStatusColor(user.status)
                     )}>
                       {user.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-[#F7F8F8]">
-                      <Calendar className="w-4 h-4 mr-1 text-gray-400" />
+                  <td className="px-3.5 py-2.5">
+                    <div className="flex items-center text-xs text-[#8A8F98]">
+                      <Calendar className="w-3 h-3 mr-1 text-[#62666D]" />
                       {new Date(user.lastLogin).toLocaleDateString()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[#F7F8F8]">
+                  <td className="px-3.5 py-2.5 text-xs text-[#8A8F98]">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3.5 py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
                       <Button
-                        className="text-blue-400 hover:text-blue-300"
+                        className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
                         title="Edit"
                         disabled={user.id === '1'}
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         onClick={() => handleToggleStatus(user.id)}
                         className={clsx(
-                          'hover:opacity-80',
-                          user.status === 'active' ? 'text-red-600' : 'text-green-600'
+                          'h-7 w-7 p-0 flex items-center justify-center rounded-md border active:scale-[0.97] transition-all disabled:opacity-40',
+                          user.status === 'active' ? 'border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
                         )}
                         title={user.status === 'active' ? 'Deactivate' : 'Activate'}
                         disabled={user.id === '1'}
                       >
                         {user.status === 'active' ? (
-                          <Lock className="w-4 h-4" />
+                          <Lock className="w-3.5 h-3.5" />
                         ) : (
-                          <Unlock className="w-4 h-4" />
+                          <Unlock className="w-3.5 h-3.5" />
                         )}
                       </Button>
                       <Button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="text-rose-400 hover:text-rose-300"
+                        className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 active:scale-[0.97] transition-all disabled:opacity-40"
                         title="Delete"
                         disabled={user.id === '1'}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   </td>

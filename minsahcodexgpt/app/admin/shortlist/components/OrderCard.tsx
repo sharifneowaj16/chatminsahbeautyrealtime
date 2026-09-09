@@ -69,33 +69,34 @@ export default function OrderCard({ order }: { order: Order }) {
 
   return (
     <div
-      className={`bg-[#151516] border border-white/[0.08] border-l-4 ${borderAccent} rounded-xl overflow-hidden shadow-sm hover:border-white/[0.15] transition-all`}
+      className={`linear-card bg-[#151516] border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] border-l-4 ${borderAccent} rounded-xl overflow-hidden hover:border-white/[0.15] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all`}
     >
       {/* Header - Always Visible */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="p-4 sm:p-5 cursor-pointer hover:bg-[#1C1D1F]/50 transition-colors"
+        className="p-4 sm:p-4.5 cursor-pointer hover:bg-white/[0.02] transition-colors"
       >
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {/* Order Number & Badge */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-[#F7F8F8]">
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg font-bold tracking-tight text-[#F7F8F8]">
                 #{order.orderNumber}
               </span>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}`}>
+              <span className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium tracking-tight ${badgeColor}`}>
                 {order.isCompleted ? '✅ Completed' : '⏳ Pending'}
               </span>
             </div>
-            <Button
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
-              className="text-xl transition-transform text-[#8A8F98] hover:text-[#F7F8F8] bg-transparent border-none p-0"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-white/50 hover:text-white hover:bg-white/[0.06] active:scale-[0.96] transition-all text-xs"
             >
               {isExpanded ? '▼' : '▶'}
-            </Button>
+            </button>
           </div>
 
           {/* Customer Info */}

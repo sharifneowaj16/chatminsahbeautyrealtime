@@ -19,19 +19,24 @@ interface StatCardProps {
   label: string;
   value: string | number;
   subtext?: string;
-  borderAccent: string;
+  indicator?: string;
 }
 
-function StatCard({ icon, label, value, subtext, borderAccent }: StatCardProps) {
+function StatCard({ icon, label, value, subtext, indicator }: StatCardProps) {
   return (
-    <div className={`bg-[#08090A] border border-white/[0.08] rounded-xl p-4 border-l-4 ${borderAccent}`}>
+    <div className="linear-card bg-[#08090A] border border-white/[0.08] rounded-xl p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] relative overflow-hidden group hover:border-white/20 transition-all duration-150">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[#8A8F98] text-sm font-medium">{label}</p>
-          <p className="text-[#F7F8F8] text-2xl font-bold mt-1">{value}</p>
-          {subtext && <p className="text-[#62666D] text-xs mt-1">{subtext}</p>}
+          <div className="flex items-center gap-1.5">
+            {indicator && <span className="w-1.5 h-1.5 rounded-full bg-white/60" />}
+            <p className="text-[#8A8F98] text-xs font-medium tracking-tight uppercase">{label}</p>
+          </div>
+          <p className="text-[#F7F8F8] text-2xl font-semibold tracking-tight mt-1.5">{value}</p>
+          {subtext && <p className="text-[#62666D] text-xs mt-1 font-normal">{subtext}</p>}
         </div>
-        <div className="text-3xl">{icon}</div>
+        <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-sm">
+          {icon}
+        </div>
       </div>
     </div>
   );
@@ -43,10 +48,10 @@ export default function StatsSection({ stats }: { stats: Stats }) {
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-[#151516] border border-white/[0.08] rounded-xl shadow-sm space-y-4">
+    <div className="linear-card p-4 sm:p-6 bg-[#08090A] border border-white/[0.08] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-4">
       <div className="mb-2">
-        <h2 className="text-lg font-bold text-[#F7F8F8] flex items-center gap-2">
-          📊 Real-time Statistics
+        <h2 className="text-sm font-semibold tracking-tight text-[#F7F8F8] flex items-center gap-2">
+          <span>📊</span> Real-time Statistics
         </h2>
       </div>
 
@@ -56,26 +61,24 @@ export default function StatsSection({ stats }: { stats: Stats }) {
           icon="⏳"
           label="Pending Orders"
           value={stats.pendingOrders}
-          borderAccent="border-l-amber-500"
+          indicator="pending"
         />
         <StatCard
           icon="✅"
           label="Completed Orders"
           value={stats.completedOrders}
-          borderAccent="border-l-white"
+          indicator="completed"
         />
         <StatCard
           icon="📦"
           label="Products to Buy"
           value={stats.productsRemaining}
           subtext={`of ${stats.productsRemaining + stats.productsPurchased} total`}
-          borderAccent="border-l-rose-500"
         />
         <StatCard
           icon="✔️"
           label="Products Purchased"
           value={stats.productsPurchased}
-          borderAccent="border-l-blue-500"
         />
       </div>
 
@@ -85,23 +88,21 @@ export default function StatsSection({ stats }: { stats: Stats }) {
           icon="💰"
           label="Expected Profit"
           value={formatCurrency(stats.expectedProfit)}
-          borderAccent="border-l-emerald-400"
         />
         <StatCard
           icon="💵"
           label="Total Revenue"
           value={formatCurrency(stats.totalPotentialRevenue)}
-          borderAccent="border-l-white/40"
         />
       </div>
 
       {/* Completion Progress */}
-      <div className="bg-[#08090A] rounded-xl p-4 border border-white/[0.08]">
+      <div className="linear-card bg-[#0D0E11] rounded-xl p-4 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-[#8A8F98]">Overall Completion</p>
-          <span className="text-lg font-bold text-white">{stats.completionRate}%</span>
+          <p className="text-xs font-medium text-[#8A8F98] uppercase tracking-tight">Overall Completion</p>
+          <span className="text-sm font-bold text-white tracking-tight">{stats.completionRate}%</span>
         </div>
-        <progress className="h-2 w-full accent-[#F7F8F8] bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden" max={100} value={stats.completionRate} aria-label="Overall shortlist completion" />
+        <progress className="h-1.5 w-full accent-[#F7F8F8] bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden" max={100} value={stats.completionRate} aria-label="Overall shortlist completion" />
         <p className="text-xs text-[#62666D] mt-2">
           {stats.productsPurchased} of {stats.productsPurchased + stats.productsRemaining} products purchased
         </p>

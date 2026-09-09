@@ -24,10 +24,10 @@ export function MetricCard({
   }[tone];
 
   return (
-    <div className={`rounded-xl border p-4 ${toneClass}`}>
-      <p className="text-sm font-medium text-[#8A8F98]">{title}</p>
-      <p className={`mt-2 text-2xl font-bold ${valueClass}`}>{value}</p>
-      {subtitle ? <p className="mt-1 text-xs text-[#62666D]">{subtitle}</p> : null}
+    <div className={`linear-card rounded-xl border p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10)] hover:border-white/[0.15] transition-all duration-150 ${toneClass}`}>
+      <p className="text-xs font-medium text-white/50 tracking-tight">{title}</p>
+      <p className={`mt-1.5 text-xl font-bold tracking-tight ${valueClass}`}>{value}</p>
+      {subtitle ? <p className="mt-1 text-[11px] text-white/40">{subtitle}</p> : null}
     </div>
   );
 }

@@ -4,12 +4,12 @@
 
 
 
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
-import { useState } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import { useCategories, type Category, type Subcategory } from '@/contexts/CategoriesContext';
 import {
@@ -212,8 +212,8 @@ export default function CategoriesPage() {
 
   const getStatusColor = (status: Category['status']) => {
     return status === 'active'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-gray-100 text-gray-800';
+      ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+      : 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
   };
 
   return (
@@ -221,192 +221,200 @@ export default function CategoriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F7F8F8]">Categories Management</h1>
-          <p className="text-sm text-[#8A8F98] mt-1">Manage product categories, subcategories, and items</p>
+          <h1 className="text-xl font-semibold tracking-tight text-[#F7F8F8]">Categories Management</h1>
+          <p className="text-xs text-[#8A8F98] mt-0.5">Manage product categories, subcategories, and items</p>
         </div>
         <Button
           onClick={openAddModal}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg transition-colors duration-200"
+          className="mt-3 sm:mt-0 h-8.5 px-3.5 bg-white text-black font-medium text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.98] transition-all inline-flex items-center"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="w-4 h-4 mr-1.5" />
           Add Category
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#8A8F98]">Total Categories</p>
-              <p className="text-2xl font-bold text-[#F7F8F8]">{categories.length}</p>
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Categories</p>
+              <p className="text-xl font-semibold tracking-tight text-[#F7F8F8] mt-1">{categories.length}</p>
             </div>
-            <Folder className="w-8 h-8 text-white" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <Folder className="w-3.5 h-3.5 text-white/70" />
+            </div>
           </div>
         </div>
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-4">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#8A8F98]">Total Products</p>
-              <p className="text-2xl font-bold text-[#F7F8F8]">
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Products</p>
+              <p className="text-xl font-semibold tracking-tight text-[#F7F8F8] mt-1">
                 {categories.reduce((sum, cat) => sum + cat.productCount, 0)}
               </p>
             </div>
-            <FolderOpen className="w-8 h-8 text-blue-500" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <FolderOpen className="w-3.5 h-3.5 text-white/70" />
+            </div>
           </div>
         </div>
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-4">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#8A8F98]">Active Categories</p>
-              <p className="text-2xl font-bold text-[#F7F8F8]">
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Active Categories</p>
+              <p className="text-xl font-semibold tracking-tight text-[#F7F8F8] mt-1">
                 {categories.filter(cat => cat.status === 'active').length}
               </p>
             </div>
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_6px_rgba(52,211,153,0.5)]"></div>
+            </div>
           </div>
         </div>
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-4">
+        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#8A8F98]">Total Subcategories</p>
-              <p className="text-2xl font-bold text-[#F7F8F8]">
+              <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Subcategories</p>
+              <p className="text-xl font-semibold tracking-tight text-[#F7F8F8] mt-1">
                 {categories.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
               </p>
             </div>
-            <Tag className="w-8 h-8 text-orange-500" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <Tag className="w-3.5 h-3.5 text-white/70" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-3 mb-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#62666D]" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#62666D]" />
           <Input
             type="text"
             placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+            className="w-full pl-9 pr-3 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
           />
         </div>
       </div>
 
       {/* Categories List */}
-      <div className="bg-[#151516] rounded-lg border border-white/[0.08] overflow-hidden">
+      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#08090A] border-b border-white/[0.08]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Slug
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Subcategories
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Products
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
+                <th className="px-3.5 py-2.5 text-right text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-[#151516] divide-y divide-white/[0.08]">
+            <tbody className="bg-[#08090A] divide-y divide-white/[0.06]">
               {filteredCategories.map((category) => {
                 const isExpanded = expandedCategories.includes(category.id);
                 return (
-                  <>
-                    <tr key={category.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
-                      <td className="px-6 py-4">
+                  <React.Fragment key={category.id}>
+                    <tr className="hover:bg-white/[0.03] transition-colors">
+                      <td className="px-3.5 py-2.5">
                         <div className="flex items-center">
                           <Button
                             onClick={() => toggleExpanded(category.id)}
-                            className="mr-2 p-1 hover:bg-[#1C1D1F] rounded text-[#8A8F98]"
+                            className="mr-1.5 p-1 hover:bg-white/[0.06] rounded text-[#8A8F98] active:scale-[0.95] transition-transform"
                           >
                             {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 text-[#8A8F98]" />
+                              <ChevronDown className="w-3.5 h-3.5 text-[#8A8F98]" />
                             ) : (
-                              <ChevronRight className="w-4 h-4 text-[#8A8F98]" />
+                              <ChevronRight className="w-3.5 h-3.5 text-[#8A8F98]" />
                             )}
                           </Button>
                           <div>
-                            <div className="text-sm font-medium text-[#F7F8F8]">{category.name}</div>
-                            <div className="text-xs text-[#8A8F98]">Created: {new Date(category.createdAt).toLocaleDateString()}</div>
+                            <div className="text-xs font-medium text-[#F7F8F8]">{category.name}</div>
+                            <div className="text-[10px] text-[#62666D]">Created: {new Date(category.createdAt).toLocaleDateString()}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-[#8A8F98]">{category.slug}</td>
-                      <td className="px-6 py-4 text-sm text-[#F7F8F8]">{category.subcategories.length}</td>
-                      <td className="px-6 py-4 text-sm text-[#F7F8F8]">{category.productCount}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-3.5 py-2.5 text-xs text-[#8A8F98] font-mono">{category.slug}</td>
+                      <td className="px-3.5 py-2.5 text-xs text-[#F7F8F8]">{category.subcategories.length}</td>
+                      <td className="px-3.5 py-2.5 text-xs text-[#F7F8F8]">{category.productCount}</td>
+                      <td className="px-3.5 py-2.5">
                         <span className={clsx(
-                          'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                          'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium leading-none capitalize',
                           getStatusColor(category.status)
                         )}>
                           {category.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-3.5 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <Button
                             onClick={() => openEditModal(category)}
-                            className="text-blue-400 hover:text-blue-300"
+                            className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] active:scale-[0.97] transition-all"
                             title="Edit"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3.5 h-3.5" />
                           </Button>
                           <Button
                             onClick={() => handleDeleteCategory(category.id)}
-                            className="text-rose-400 hover:text-rose-300"
+                            className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 active:scale-[0.97] transition-all"
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr key={`${category.id}-expanded`}>
-                        <td colSpan={6} className="px-6 py-4 bg-[#08090A] border-y border-white/[0.08]">
-                          <div className="space-y-4">
-                            <h4 className="font-medium text-[#F7F8F8]">Subcategories & Items</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <td colSpan={6} className="px-5 py-3.5 bg-[#0D0E11] border-y border-white/[0.06]">
+                          <div className="space-y-3">
+                            <h4 className="text-xs font-medium text-[#F7F8F8]">Subcategories & Items</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                               {category.subcategories.map((subcat, index) => (
-                                <div key={index} className="border border-white/[0.08] rounded-lg p-4 bg-[#151516]">
-                                  <h5 className="font-semibold text-[#F7F8F8] mb-2 flex items-center">
-                                    <Tag className="w-4 h-4 mr-2 text-white" />
+                                <div key={index} className="border border-white/[0.08] rounded-lg p-3 bg-[#08090A] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+                                  <h5 className="text-xs font-semibold text-[#F7F8F8] mb-1.5 flex items-center">
+                                    <Tag className="w-3 h-3 mr-1.5 text-white/70" />
                                     {subcat.name}
                                   </h5>
                                   <ul className="space-y-1">
                                     {subcat.items.map((item, itemIndex) => (
-                                      <li key={itemIndex} className="text-sm text-[#8A8F98] flex items-center">
-                                        <span className="w-1.5 h-1.5 bg-admin-panel0 rounded-full mr-2"></span>
+                                      <li key={itemIndex} className="text-[11px] text-[#8A8F98] flex items-center">
+                                        <span className="w-1 h-1 bg-white/40 rounded-full mr-1.5"></span>
                                         {item}
                                       </li>
                                     ))}
                                   </ul>
                                   {subcat.items.length === 0 && (
-                                    <p className="text-xs text-gray-400 italic">No items yet</p>
+                                    <p className="text-[10px] text-[#62666D] italic">No items yet</p>
                                   )}
                                 </div>
                               ))}
                             </div>
                             {category.subcategories.length === 0 && (
-                              <p className="text-sm text-[#8A8F98] italic">No subcategories yet. Click Edit to add some!</p>
+                              <p className="text-xs text-[#8A8F98] italic">No subcategories yet. Click Edit to add some!</p>
                             )}
                           </div>
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>

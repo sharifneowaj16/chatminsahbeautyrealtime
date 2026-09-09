@@ -203,63 +203,63 @@ interface Pagination {
 const STATUS_CONFIG = {
   pending: {
     label: "Pending",
-    color: "bg-amber-50 text-amber-700 border-amber-200",
+    color: "bg-amber-500/10 text-amber-300 border-amber-500/20",
     dot: "bg-amber-400",
   },
   confirmed: {
     label: "Confirmed",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
+    color: "bg-blue-500/10 text-blue-300 border-blue-500/20",
     dot: "bg-blue-400",
   },
   processing: {
     label: "Processing",
-    color: "bg-admin-panel text-white border-admin-border",
-    dot: "bg-white text-black hover:bg-white/90",
+    color: "bg-white/[0.08] text-white border-white/20",
+    dot: "bg-white",
   },
   shipped: {
     label: "Shipped",
-    color: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    color: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
     dot: "bg-cyan-400",
   },
   completed: {
     label: "Completed",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    color: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
     dot: "bg-emerald-400",
   },
   delivered: {
     label: "Delivered",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    color: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
     dot: "bg-emerald-400",
   },
   cancelled: {
     label: "Cancelled",
-    color: "bg-red-50 text-red-700 border-red-200",
-    dot: "bg-red-400",
+    color: "bg-rose-500/10 text-rose-300 border-rose-500/20",
+    dot: "bg-rose-400",
   },
   refunded: {
     label: "Refunded",
-    color: "bg-slate-50 text-slate-600 border-slate-200",
-    dot: "bg-slate-400",
+    color: "bg-white/[0.06] text-[#8A8F98] border-white/[0.08]",
+    dot: "bg-[#8A8F98]",
   },
 } as const;
 
 const PAYMENT_STATUS_CONFIG = {
   pending: {
     label: "Pending",
-    color: "bg-amber-50 text-amber-700 border-amber-200",
+    color: "bg-amber-500/10 text-amber-300 border-amber-500/20",
   },
   paid: {
     label: "Paid",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    color: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
   },
   completed: {
     label: "Paid",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    color: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
   },
-  failed: { label: "Failed", color: "bg-red-50 text-red-700 border-red-200" },
+  failed: { label: "Failed", color: "bg-rose-500/10 text-rose-300 border-rose-500/20" },
   refunded: {
     label: "Refunded",
-    color: "bg-slate-50 text-slate-600 border-slate-200",
+    color: "bg-white/[0.06] text-[#8A8F98] border-white/[0.08]",
   },
 } as const;
 
@@ -349,10 +349,10 @@ const copyToClipboard = (text: string) => {
 
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG];
-  if (!cfg) return <span className="text-xs text-gray-500">{status}</span>;
+  if (!cfg) return <span className="text-[11px] text-[#8A8F98]">{status}</span>;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${cfg.color}`}
+      className={`inline-flex items-center gap-1.5 h-5 px-2 rounded-full text-[11px] font-medium tracking-tight border ${cfg.color}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
@@ -363,10 +363,10 @@ function StatusBadge({ status }: { status: string }) {
 function PaymentBadge({ status }: { status: string }) {
   const cfg =
     PAYMENT_STATUS_CONFIG[status as keyof typeof PAYMENT_STATUS_CONFIG];
-  if (!cfg) return <span className="text-xs text-gray-500">{status}</span>;
+  if (!cfg) return <span className="text-[11px] text-[#8A8F98]">{status}</span>;
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${cfg.color}`}
+      className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium tracking-tight border ${cfg.color}`}
     >
       {cfg.label}
     </span>
@@ -1631,13 +1631,13 @@ export default function OrdersPage() {
   return (
     <div className="p-6 space-y-6">
       {/* ── Top Header ────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
-        <div className="px-6 py-4 flex items-center justify-between">
+      <div className="bg-[#08090A]/80 backdrop-blur-md border-b border-white/[0.08] sticky top-0 z-30">
+        <div className="px-6 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-[#F7F8F8] tracking-tight">
+            <h1 className="text-base font-semibold text-[#F7F8F8] tracking-tight">
               Orders
             </h1>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-[#8A8F98] mt-0.5 font-normal">
               {pagination.total > 0
                 ? `${pagination.total.toLocaleString()} orders total`
                 : "Manage and track all orders"}
@@ -1647,7 +1647,7 @@ export default function OrdersPage() {
             <Button
               onClick={() => fetchOrders(pagination.page, true)}
               disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-[#1C1D1F] transition-colors"
+              className="h-8 flex items-center gap-1.5 px-3 text-xs font-medium text-[#D0D6E0] bg-white/[0.05] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] hover:text-white transition-all active:scale-[0.98]"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
@@ -1656,7 +1656,7 @@ export default function OrdersPage() {
             </Button>
             <Button
               onClick={exportCSV}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-[#1C1D1F] transition-colors"
+              className="h-8 flex items-center gap-1.5 px-3 text-xs font-medium text-[#D0D6E0] bg-white/[0.05] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] hover:text-white transition-all active:scale-[0.98]"
             >
               <Download className="w-3.5 h-3.5" />
               Export
@@ -1673,85 +1673,70 @@ export default function OrdersPage() {
               label: "Pending",
               value: stats.pending,
               icon: Clock,
-              color: "text-amber-500",
-              bg: "bg-amber-50",
               filter: "pending",
             },
             {
               label: "Processing",
               value: stats.processing,
               icon: Layers,
-              color: "text-white",
-              bg: "bg-admin-panel",
               filter: "processing",
             },
             {
               label: "Shipped",
               value: stats.shipped,
               icon: Truck,
-              color: "text-cyan-500",
-              bg: "bg-cyan-50",
               filter: "shipped",
             },
             {
               label: "Total Revenue",
               value: formatPrice(stats.totalRevenue),
               icon: TrendingUp,
-              color: "text-emerald-500",
-              bg: "bg-emerald-50",
               filter: "",
             },
             {
               label: "Delivery Collected",
               value: formatPrice(stats.customerDeliveryCollected),
               icon: DollarSign,
-              color: "text-blue-500",
-              bg: "bg-blue-50",
               filter: "",
             },
             {
               label: "Courier Actual",
               value: formatPrice(stats.courierDeliveryActual),
               icon: Truck,
-              color: "text-orange-500",
-              bg: "bg-orange-50",
               filter: "",
             },
             {
               label: "Delivery Subsidy",
               value: formatPrice(stats.deliverySubsidy),
               icon: DollarSign,
-              color: "text-rose-500",
-              bg: "bg-rose-50",
               filter: "",
             },
           ].map((stat) => (
-            <Button
+            <button
+              type="button"
               key={stat.label}
               onClick={() =>
                 stat.filter &&
                 setStatusFilter(statusFilter === stat.filter ? "" : stat.filter)
               }
-              className={`bg-white border rounded-xl p-4 text-left hover:shadow-md transition-all ${
+              className={`linear-card bg-[#08090A] border rounded-xl p-3.5 text-left transition-all duration-150 group shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] active:scale-[0.98] ${
                 stat.filter && statusFilter === stat.filter
-                  ? "border-admin-primary ring-2 ring-minsah-border-subtle"
-                  : "border-gray-100 hover:border-gray-200"
+                  ? "border-white/40 ring-1 ring-white/30 bg-[#121316]"
+                  : "border-white/[0.08] hover:border-white/20 hover:bg-[#0D0E11]"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center`}
-                >
-                  <stat.icon className={`w-4.5 h-4.5 ${stat.color}`} />
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/70">
+                  <stat.icon className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <p className="text-xs text-[#8A8F98]">{stat.label}</p>
-                  <p className="text-lg font-bold text-[#F7F8F8]">
+                  <p className="text-[11px] font-medium text-[#8A8F98] uppercase tracking-tight">{stat.label}</p>
+                  <p className="text-base font-semibold text-[#F7F8F8] tracking-tight">
                     {stat.value}
                   </p>
                 </div>
               </div>
-            </Button>
+            </button>
           ))}
         </div>
 
@@ -1763,21 +1748,21 @@ export default function OrdersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by order #, customer name or email…"
-              className="w-full pl-9 pr-4 py-2.5 border border-white/[0.08] rounded-xl text-sm bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2 border border-white/[0.08] rounded-lg text-xs bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20"
             />
           </div>
           <Button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm transition-colors ${
+            className={`h-8.5 flex items-center gap-1.5 px-3 border rounded-lg text-xs font-medium transition-all active:scale-[0.98] ${
               showFilters || activeFilters > 0
-                ? "bg-white text-black hover:bg-white/90/20 border-white/50 text-white"
-                : "bg-[#151516] border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]"
+                ? "bg-white text-black border-white shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)]"
+                : "bg-white/[0.05] border-white/[0.08] text-[#8A8F98] hover:bg-white/[0.08] hover:text-[#F7F8F8]"
             }`}
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-3.5 h-3.5" />
             Filters
             {activeFilters > 0 && (
-              <span className="w-5 h-5 rounded-full bg-white text-black hover:bg-white/90 text-xs flex items-center justify-center font-bold">
+              <span className="w-4 h-4 rounded-full bg-black/20 text-[10px] flex items-center justify-center font-semibold">
                 {activeFilters}
               </span>
             )}
@@ -1786,11 +1771,11 @@ export default function OrdersPage() {
 
         {/* Expanded Filters */}
         {showFilters && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-[#151516] border border-white/[0.08] rounded-xl">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3.5 linear-card bg-[#08090A] border border-white/[0.08] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
             <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="px-2.5 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-[#F7F8F8] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-white/20"
             >
               <option value="">All Statuses</option>
               {Object.entries(STATUS_CONFIG).map(([v, c]) => (
@@ -1802,7 +1787,7 @@ export default function OrdersPage() {
             <Select
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              className="px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="px-2.5 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-[#F7F8F8] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-white/20"
             >
               <option value="">All Payments</option>
               <option value="pending">Pending</option>
@@ -1813,7 +1798,7 @@ export default function OrdersPage() {
             <Select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="px-2.5 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-[#F7F8F8] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-white/20"
             >
               <option value="">All Time</option>
               <option value="today">Today</option>
@@ -1824,7 +1809,7 @@ export default function OrdersPage() {
             <Select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="px-2.5 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-[#F7F8F8] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-white/20"
             >
               <option value="created">Newest First</option>
               <option value="updated">Recently Updated</option>
@@ -1841,7 +1826,7 @@ export default function OrdersPage() {
                     setDateRange("");
                     setSortBy("created");
                   }}
-                  className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                  className="text-xs text-[#8A8F98] hover:text-white flex items-center gap-1 active:scale-[0.98]"
                 >
                   <X className="w-3 h-3" /> Clear filters
                 </Button>
@@ -1852,8 +1837,8 @@ export default function OrdersPage() {
 
         {/* ── Bulk Action Bar ───────────────────────────────────────── */}
         {selectedIds.size > 0 && (
-          <div className="bg-white text-black hover:bg-white/90 rounded-xl px-4 py-3 flex items-center gap-3">
-            <span className="text-sm font-medium">
+          <div className="linear-card bg-[#0D0E11] border border-white/[0.12] rounded-xl px-4 py-2.5 flex items-center gap-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+            <span className="text-xs font-medium text-[#F7F8F8]">
               {selectedIds.size} selected
             </span>
             <div className="flex items-center gap-2 ml-auto flex-wrap">
@@ -1867,22 +1852,22 @@ export default function OrdersPage() {
               />
               <Button
                 onClick={exportCSV}
-                className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors"
+                className="text-xs bg-white/[0.08] hover:bg-white/[0.12] text-white px-3 py-1 rounded-md transition-all active:scale-[0.98]"
               >
                 Export Selected
               </Button>
               <Button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-white/70 hover:text-white"
+                className="text-[#8A8F98] hover:text-white"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>
         )}
 
         {/* ── Orders Table ──────────────────────────────────────────── */}
-        <div className="bg-[#151516] border border-white/[0.08] rounded-xl overflow-hidden shadow-sm">
+        <div className="linear-card bg-[#08090A] border border-white/[0.08] rounded-xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 text-gray-400">
               <Loader2 className="w-8 h-8 animate-spin mb-3 text-white" />
@@ -1915,7 +1900,7 @@ export default function OrdersPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/[0.08] bg-[#08090A]">
-                    <th className="px-4 py-3 text-left">
+                    <th className="px-3.5 py-2.5 text-left w-10">
                       <Input
                         type="checkbox"
                         checked={
@@ -1926,47 +1911,47 @@ export default function OrdersPage() {
                         className="rounded border-white/[0.15] bg-[#08090A] text-white focus:ring-white/20"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                       Order
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                       Customer
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide hidden md:table-cell">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider hidden md:table-cell">
                       Items
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                       Total
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                       Courier
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide hidden lg:table-cell">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider hidden lg:table-cell">
                       Payment
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#8A8F98] uppercase tracking-wide hidden lg:table-cell">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider hidden lg:table-cell">
                       Date
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#8A8F98] uppercase tracking-wide">
+                    <th className="px-3.5 py-2.5 text-right text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.08] bg-[#151516]">
+                <tbody className="divide-y divide-white/[0.06] bg-[#08090A]">
                   {orders.map((order) => (
                     <tr
                       key={order.id}
-                      className={`group hover:bg-[#1C1D1F]/70 transition-colors ${
+                      className={`group hover:bg-white/[0.03] transition-colors ${
                         selectedIds.has(order.dbId || order.id)
-                          ? "bg-admin-panel/30"
+                          ? "bg-white/[0.04]"
                           : ""
                       }`}
                     >
                       {/* Checkbox */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-3.5 py-2.5">
                         <Input
                           type="checkbox"
                           checked={selectedIds.has(order.dbId || order.id)}
@@ -1976,30 +1961,30 @@ export default function OrdersPage() {
                       </td>
 
                       {/* Order # */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-3.5 py-2.5">
                         <div className="flex items-center gap-1">
-                          <span className="text-sm font-mono font-semibold text-[#F7F8F8]">
+                          <span className="text-xs font-mono font-medium text-[#F7F8F8]">
                             #{order.id.slice(-8).toUpperCase()}
                           </span>
                           <CopyButton text={order.id} />
                         </div>
                         {order.tracking && (
-                          <p className="text-xs text-gray-400 mt-0.5 font-mono">
+                          <p className="text-[11px] text-[#62666D] mt-0.5 font-mono">
                             🚚 {order.tracking.slice(0, 12)}
                           </p>
                         )}
                       </td>
 
                       {/* Customer */}
-                      <td className="px-4 py-3.5">
-                        <p className="text-sm font-medium text-[#F7F8F8] truncate max-w-[140px]">
+                      <td className="px-3.5 py-2.5">
+                        <p className="text-xs font-medium text-[#F7F8F8] truncate max-w-[140px]">
                           {order.customer.name}
                         </p>
-                        <p className="text-xs text-gray-400 truncate max-w-[140px]">
+                        <p className="text-[11px] text-[#62666D] truncate max-w-[140px]">
                           {order.customer.email}
                         </p>
                         {order.shipping?.city && (
-                          <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
+                          <p className="text-[11px] text-[#62666D] flex items-center gap-0.5 mt-0.5">
                             <MapPin className="w-2.5 h-2.5" />
                             {order.shipping.city}
                           </p>
@@ -2007,8 +1992,8 @@ export default function OrdersPage() {
                       </td>
 
                       {/* Items */}
-                      <td className="px-4 py-3.5 hidden md:table-cell">
-                        <p className="text-sm text-[#8A8F98] truncate max-w-[160px]">
+                      <td className="px-3.5 py-2.5 hidden md:table-cell">
+                        <p className="text-xs text-[#8A8F98] truncate max-w-[160px]">
                           {order.items[0]?.name}
                           {order.items.length > 1
                             ? ` +${order.items.length - 1}`
@@ -2017,22 +2002,22 @@ export default function OrdersPage() {
                       </td>
 
                       {/* Total */}
-                      <td className="px-4 py-3.5">
-                        <p className="text-sm font-bold text-[#F7F8F8]">
+                      <td className="px-3.5 py-2.5">
+                        <p className="text-xs font-semibold text-[#F7F8F8]">
                           {formatPrice(order.total)}
                         </p>
-                        <p className="text-xs text-gray-400 capitalize">
+                        <p className="text-[11px] text-[#62666D] capitalize">
                           {PAYMENT_METHOD_LABELS[order.paymentMethod] ||
                             order.paymentMethod}
                         </p>
                         <div className="mt-1 flex flex-wrap gap-1">
                           <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${toSafeMoney(order.shippingCost) <= 0 ? "bg-white/[0.12] text-white border border-white/[0.20]" : "bg-[#08090A] text-[#8A8F98] border border-white/[0.08]"}`}
+                            className={`inline-flex items-center rounded-full px-1.5 py-0.2 text-[10px] font-medium ${toSafeMoney(order.shippingCost) <= 0 ? "bg-white/[0.12] text-white border border-white/[0.20]" : "bg-[#151516] text-[#8A8F98] border border-white/[0.08]"}`}
                           >
                             Delivery: {deliveryAmountLabel(order.shippingCost)}
                           </span>
                           {hasDeliverySubsidy(order) && (
-                            <span className="inline-flex items-center rounded-full bg-white/[0.06] text-white/80 border border-white/[0.10] px-2 py-0.5 text-xs font-medium">
+                            <span className="inline-flex items-center rounded-full bg-white/[0.06] text-white/80 border border-white/[0.10] px-1.5 py-0.2 text-[10px] font-medium">
                               Subsidy{" "}
                               {formatPrice(order.deliveryDiscountAmount || 0)}
                             </span>
@@ -2041,24 +2026,24 @@ export default function OrdersPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-3.5 py-2.5">
                         <StatusBadge status={order.status} />
                       </td>
 
                       {/* Courier */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-3.5 py-2.5">
                         {order.shippingMethod === "pathao" ? (
                           <div className="space-y-1">
-                            <span className="inline-flex items-center rounded-full bg-white/[0.08] text-white border border-white/[0.12] px-2 py-0.5 text-xs font-medium">
+                            <span className="inline-flex items-center rounded-full bg-white/[0.08] text-white border border-white/[0.12] px-2 py-0.5 text-[11px] font-medium">
                               Pathao
                             </span>
                             {order.pathaoStatus && (
-                              <p className="text-xs text-gray-700">
+                              <p className="text-[11px] text-[#8A8F98]">
                                 {order.pathaoStatus}
                               </p>
                             )}
                             {(order.pathaoTrackingCode || order.tracking) && (
-                              <p className="text-xs font-mono text-gray-500">
+                              <p className="text-[11px] font-mono text-[#62666D]">
                                 {(
                                   order.pathaoTrackingCode || order.tracking
                                 )?.slice(0, 12)}
@@ -2071,7 +2056,7 @@ export default function OrdersPage() {
                             trackingCode={order.steadfastTrackingCode}
                           />
                         )}
-                        <div className="mt-1 space-y-0.5 text-xs text-gray-500">
+                        <div className="mt-1 space-y-0.5 text-[11px] text-[#62666D]">
                           <p>
                             Actual:{" "}
                             {order.courierDeliveryCharge === null ||
@@ -2080,7 +2065,7 @@ export default function OrdersPage() {
                               : formatPrice(order.courierDeliveryCharge)}
                           </p>
                           {hasDeliverySubsidy(order) && (
-                            <p className="text-orange-700">
+                            <p className="text-white/80">
                               Subsidy:{" "}
                               {formatPrice(order.deliveryDiscountAmount || 0)}
                             </p>
@@ -2089,29 +2074,29 @@ export default function OrdersPage() {
                       </td>
 
                       {/* Payment */}
-                      <td className="px-4 py-3.5 hidden lg:table-cell">
+                      <td className="px-3.5 py-2.5 hidden lg:table-cell">
                         <PaymentBadge status={order.paymentStatus} />
                       </td>
 
                       {/* Date */}
-                      <td className="px-4 py-3.5 hidden lg:table-cell">
-                        <p className="text-xs text-gray-600">
+                      <td className="px-3.5 py-2.5 hidden lg:table-cell">
+                        <p className="text-xs text-[#8A8F98]">
                           {formatDate(order.createdAt)}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-[11px] text-[#62666D]">
                           {timeAgo(order.createdAt)}
                         </p>
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-3.5 py-2.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* View detail */}
                           <Button
                             onClick={() => openOrderDetail(order)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-[#08090A] border border-white/[0.08] rounded-lg hover:bg-[#1C1D1F] transition-colors"
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 text-xs font-medium text-[#D0D6E0] bg-white/[0.05] border border-white/[0.08] rounded-md hover:bg-white/[0.08] hover:text-white hover:border-white/20 transition-all active:scale-[0.97]"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3 h-3" />
                             View
                           </Button>
                           <Button
@@ -2120,26 +2105,26 @@ export default function OrdersPage() {
                               Boolean(order.pathaoConsignmentId) ||
                               pathaoSendingOrderId === order.id
                             }
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                            className={`h-7 inline-flex items-center gap-1.5 px-2.5 text-xs font-medium rounded-md border transition-all active:scale-[0.97] ${
                               order.pathaoConsignmentId
-                                ? "cursor-not-allowed border-blue-200 bg-blue-50 text-blue-700"
-                                : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                ? "cursor-not-allowed border-white/[0.06] bg-white/[0.02] text-[#62666D]"
+                                : "border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:bg-white/[0.08] hover:text-white hover:border-white/20"
                             } disabled:opacity-70`}
                           >
                             {pathaoSendingOrderId === order.id ? (
                               <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <Loader2 className="w-3 h-3 animate-spin" />
                                 Sending...
                               </>
                             ) : order.pathaoConsignmentId ? (
                               <>
-                                <Check className="w-3.5 h-3.5" />
-                                Pathao Sent
+                                <Check className="w-3 h-3" />
+                                Sent
                               </>
                             ) : (
                               <>
-                                <Send className="w-3.5 h-3.5" />
-                                Send to Pathao
+                                <Send className="w-3 h-3" />
+                                Pathao
                               </>
                             )}
                           </Button>
@@ -2149,20 +2134,16 @@ export default function OrdersPage() {
                               setShipPanelOrder(order);
                               setShipPanelOpen(true);
                             }}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                              order.steadfastConsignmentId
-                                ? "text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
-                                : "text-gray-600 bg-[#08090A] border-gray-200 hover:bg-gray-100"
-                            }`}
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 text-xs font-medium rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:bg-white/[0.08] hover:text-white hover:border-white/20 transition-all active:scale-[0.97]"
                           >
                             {order.steadfastConsignmentId ? (
                               <>
-                                <Truck className="w-3.5 h-3.5" />
+                                <Truck className="w-3 h-3" />
                                 Track
                               </>
                             ) : (
                               <>
-                                <Send className="w-3.5 h-3.5" />
+                                <Send className="w-3 h-3" />
                                 Parcel
                               </>
                             )}
@@ -2170,10 +2151,10 @@ export default function OrdersPage() {
                           {/* Delete button */}
                           <Button
                             onClick={() => setDeleteConfirmOrder(order)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-rose-400 bg-rose-950/40 border border-rose-800/40 rounded-lg hover:bg-rose-900/60 transition-colors"
+                            className="w-7 h-7 p-0 flex items-center justify-center rounded-md border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all active:scale-[0.97]"
                             title="Delete order"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </td>
