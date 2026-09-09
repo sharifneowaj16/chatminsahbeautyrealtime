@@ -477,8 +477,8 @@ export default function SeedHeroActionReel({
                   <p className="text-xs font-bold text-[#122A16] dark:text-white truncate">
                     {productName}
                   </p>
-                  <p className="text-xs font-mono font-extrabold text-[#122A16] dark:text-emerald-400">
-                    ৳ {productPrice.toLocaleString('en-US')}
+                  <p className="text-xs font-inter font-bold text-[#122A16] dark:text-emerald-400">
+                    ৳{Math.round(productPrice)}
                   </p>
                 </div>
               </div>

@@ -9,6 +9,7 @@ import SeedHeroBundleCard from './SeedHeroBundleCard';
 import { ProductVariantItem } from './SeedVariantRail';
 import { BundleProductCandidate } from './SeedBundleDrawer';
 import { useSplitScrollTrigger } from './useSplitScrollTrigger';
+import { cleanProductName } from './cleanProductName';
 
 export type GalleryImageItem = string | { url: string; alt?: string };
 
@@ -64,6 +65,8 @@ export default function SeedProductHero({
 
   // Active Main Image (Synchronized with selected variant)
   const [activeImageOverride, setActiveImageOverride] = useState<string | null>(null);
+  // Active Variant Price (Synchronized with selected variant)
+  const [activeVariantPrice, setActiveVariantPrice] = useState<number>(product.price);
 
   // Gallery Images Array (Ensuring 5 high-res string URLs for Seed Asymmetric Grid)
   const normalizedGalleryImages: string[] = useMemo(() => {
@@ -98,16 +101,20 @@ export default function SeedProductHero({
     return list;
   }, [product.image, product.images, activeImageOverride]);
 
+  // Clean product name (strips (Standard Delivery) or (Free Delivery) forever)
+  const cleanName = cleanProductName(product.name);
+
   // Main Bundle Candidate for Phase 6
   const mainBundleItem: BundleProductCandidate = useMemo(() => ({
     id: product.id,
-    name: product.name,
-    price: product.price,
+    name: cleanName,
+    price: activeVariantPrice || product.price,
     costPrice: product.costPrice,
-    image: product.image || '/images/categories/Skincare.png',
+    image: activeImageOverride || product.image || '/images/categories/Skincare.png',
     stock: 100,
     hasFreeDelivery: Boolean(product.deliveryOfferEnabled),
-  }), [product]);
+    variants: variants,
+  }), [product.id, cleanName, product.costPrice, product.image, product.deliveryOfferEnabled, activeVariantPrice, activeImageOverride, variants]);
 
   // Paired Product Candidate
   const pairedBundleItem: BundleProductCandidate | null = useMemo(() => {
@@ -147,7 +154,7 @@ export default function SeedProductHero({
         >
           <SeedHeroGallery
             images={normalizedGalleryImages}
-            productName={product.name}
+            productName={cleanName}
             overrideImage={activeImageOverride}
           />
         </div>
@@ -165,7 +172,7 @@ export default function SeedProductHero({
           <SeedHeroBuyBox
             productId={product.id}
             sku={product.sku || 'DS-01®'}
-            name={product.name}
+            name={cleanName}
             price={product.price}
             compareAtPrice={product.compareAtPrice}
             shortDescription={product.shortDescription || undefined}
@@ -176,14 +183,17 @@ export default function SeedProductHero({
               setActiveImageOverride(img);
               onImageChange?.(img);
             }}
-            onVariantChange={onVariantChange}
+            onVariantChange={(vId, pPrice, vStock) => {
+              setActiveVariantPrice(pPrice);
+              onVariantChange?.(vId, pPrice, vStock);
+            }}
             onQuantityChange={onQuantityChange}
           />
 
           {/* Phase 3 & 4: Accordions & Dedicated Drawers */}
           <SeedHeroAccordions
             productId={product.id}
-            productName={product.name}
+            productName={cleanName}
             keyBenefits={product.keyBenefits || undefined}
             specs={{
               volume: formatField(product.shippingWeight) || '30*2 ml / 80*2 ml (Double Sealed Container)',
@@ -197,7 +207,7 @@ export default function SeedProductHero({
           {/* Phase 5: "SEE IT IN ACTION" Video Reels */}
           <SeedHeroActionReel
             productId={product.id}
-            productName={product.name}
+            productName={cleanName}
             productPrice={product.price}
             productImage={product.image}
             reels={product.descriptionSections}
@@ -208,6 +218,10 @@ export default function SeedProductHero({
             mainProduct={mainBundleItem}
             pairedProduct={pairedBundleItem}
             catalogCandidates={relatedProductsList}
+            onMainVariantChange={(vId, pPrice, vStock) => {
+              setActiveVariantPrice(pPrice);
+              onVariantChange?.(vId, pPrice, vStock);
+            }}
           />
 
         </div>

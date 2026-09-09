@@ -43,7 +43,7 @@ async function main() {
   const product1 = await prisma.product.upsert({
     where: { sku: p1Sku },
     update: {
-      name: 'Seed Glow Daily Essence (Free Delivery Offer)',
+      name: 'Seed Glow Daily Essence',
       slug: p1Slug,
       price: 650,
       compareAtPrice: 850,
@@ -63,7 +63,7 @@ async function main() {
     },
     create: {
       sku: p1Sku,
-      name: 'Seed Glow Daily Essence (Free Delivery Offer)',
+      name: 'Seed Glow Daily Essence',
       slug: p1Slug,
       price: 650,
       compareAtPrice: 850,
@@ -172,7 +172,7 @@ async function main() {
   const product2 = await prisma.product.upsert({
     where: { sku: p2Sku },
     update: {
-      name: 'Seed Barrier Moisture Cream (Standard Delivery)',
+      name: 'Seed Barrier Moisture Cream',
       slug: p2Slug,
       price: 550,
       compareAtPrice: 750,
@@ -192,7 +192,7 @@ async function main() {
     },
     create: {
       sku: p2Sku,
-      name: 'Seed Barrier Moisture Cream (Standard Delivery)',
+      name: 'Seed Barrier Moisture Cream',
       slug: p2Slug,
       price: 550,
       compareAtPrice: 750,

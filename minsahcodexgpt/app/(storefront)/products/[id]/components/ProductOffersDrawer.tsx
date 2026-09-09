@@ -122,7 +122,7 @@ export default function ProductOffersDrawer({
             </div>
             <div>
               <p className="text-xs font-semibold text-white">Free Nationwide Shipping</p>
-              <p className="text-[11px] text-white/60">On all orders over ৳1,100 (Dhaka ৳500+)</p>
+              <p className="text-[11px] text-white/60 font-inter">On all orders over ৳1100 (Dhaka ৳500+)</p>
             </div>
           </div>
 

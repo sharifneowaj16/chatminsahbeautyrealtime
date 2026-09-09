@@ -13,6 +13,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { createStandardCartItem } from '@/utils/cartItemHelper';
 import SeedVariantRail, { ProductVariantItem } from './SeedVariantRail';
+import { cleanProductName } from './cleanProductName';
 
 export interface SeedHeroBuyBoxProps {
   productId: string;
@@ -197,20 +198,20 @@ export default function SeedHeroBuyBox({
       {/* 2. PRODUCT TITLE H1 (26px Mobile / 28px Tablet / 32px Desktop / #1c3a13)  */}
       {/* ========================================================================= */}
       <h1 className="text-[26px] md:text-[28px] lg:text-[32px] font-medium leading-[1.15] tracking-tight text-[#1c3a13] dark:text-white mb-2.5">
-        {name}
+        {cleanProductName(name)}
       </h1>
 
       {/* ========================================================================= */}
-      {/* 3. REVIEWS & TRUST LINE (13px md:14px / #1c3a13)                          */}
+      {/* 3. REVIEWS & TRUST LINE (Enlarged & Comma-Free: 15301 Reviews)              */}
       {/* ========================================================================= */}
-      <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#1c3a13] dark:text-emerald-200 mb-4">
-        <div className="flex text-[#1c3a13] dark:text-emerald-400 text-sm tracking-widest">
+      <div className="flex items-center gap-2 text-sm sm:text-base text-[#1c3a13] dark:text-emerald-200 mb-4 lg:mb-5">
+        <div className="flex text-[#1c3a13] dark:text-emerald-400 text-base sm:text-lg tracking-wider">
           ★★★★★
         </div>
-        <span className="font-bold">5.0</span>
+        <span className="font-bold font-inter text-sm sm:text-base">5.0</span>
         <span className="text-[#1c3a13]/40 dark:text-white/40">•</span>
-        <span className="underline underline-offset-2 cursor-pointer hover:opacity-80">
-          15,301 Reviews
+        <span className="font-inter underline underline-offset-4 cursor-pointer hover:opacity-80">
+          15301 Reviews
         </span>
       </div>
 
@@ -226,8 +227,8 @@ export default function SeedHeroBuyBox({
       {/* 5. PRICE ROW & BESTSELLER BADGE (#D4F6A2 Lime Pill)                       */}
       {/* ========================================================================= */}
       <div className="flex items-center gap-2.5 mb-4 lg:mb-5">
-        <span className="text-[22px] md:text-[24px] lg:text-[26px] font-medium text-[#1c3a13] dark:text-white">
-          ৳ {currentPrice.toLocaleString('en-US')}
+        <span className="font-inter font-bold text-[22px] md:text-[24px] lg:text-[26px] text-[#1c3a13] dark:text-white leading-none">
+          ৳{Math.round(currentPrice)}
         </span>
 
         <span className="rounded-full bg-[#D4F6A2] text-[#1c3a13] px-2.5 py-0.5 text-xs font-medium tracking-wide shadow-xs">
@@ -235,8 +236,8 @@ export default function SeedHeroBuyBox({
         </span>
 
         {originalPrice > currentPrice && (
-          <span className="text-sm md:text-[15px] text-stone-400 line-through font-mono">
-            ৳ {originalPrice.toLocaleString('en-US')}
+          <span className="font-inter text-sm md:text-[15px] text-stone-400 line-through">
+            ৳{Math.round(originalPrice)}
           </span>
         )}
       </div>
@@ -302,7 +303,7 @@ export default function SeedHeroBuyBox({
           onClick={handleAddToCart}
           className="flex-1 h-12 lg:h-[54px] rounded-full bg-[#1c3a13] hover:bg-[#15300f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white text-[15px] lg:text-base font-semibold tracking-tight shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
         >
-          <span>Start Now • ৳ {(currentPrice * quantity).toLocaleString('en-US')}</span>
+          <span className="font-inter font-bold">Start Now • ৳{Math.round(currentPrice * quantity)}</span>
         </button>
       </div>
 

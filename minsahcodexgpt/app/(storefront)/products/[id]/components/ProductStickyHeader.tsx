@@ -78,8 +78,8 @@ export default function ProductStickyHeader({
   const subtitle = requiresVariantSelection
     ? 'অপশন নির্বাচন করুন'
     : variantName
-      ? `${variantName} • ৳${price.toLocaleString('bn-BD')}`
-      : `৳${price.toLocaleString('bn-BD')}`;
+      ? `${variantName} • ৳${Math.round(price)}`
+      : `৳${Math.round(price)}`;
 
   const navTextColor = isScrolled ? 'text-[#fcfcf7]' : 'text-[#1c3a13]';
   const navHoverBg = isScrolled ? 'hover:bg-[#fcfcf730]' : 'hover:bg-[#1c3a1310]';

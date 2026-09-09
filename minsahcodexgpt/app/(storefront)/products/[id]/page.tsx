@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import ProductClient from './components/ProductClient';
 import ProductDeliveryTopBar from './components/ProductDeliveryTopBar';
+import { cleanProductName } from './components/hero/cleanProductName';
 import { productPath } from '@/lib/product-url';
 import { getSiteUrl, safeCanonicalUrl } from '@/lib/seo';
 
@@ -361,7 +362,7 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
               </>
             )}
             <span className="text-[#1c3a13] font-bold line-clamp-1" aria-current="page">
-              {product.name}
+              {cleanProductName(product.name)}
             </span>
           </nav>
         </div>

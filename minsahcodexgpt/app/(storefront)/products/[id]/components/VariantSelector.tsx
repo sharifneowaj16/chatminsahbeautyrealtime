@@ -199,7 +199,7 @@ export default function VariantSelector({
                   </span>
 
                   <span className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-minsah-action-primary">৳{variant.price.toLocaleString('bn-BD')}</span>
+                    <span className="text-sm font-inter font-bold text-minsah-action-primary">৳{Math.round(variant.price)}</span>
                     <Badge tone={outOfStock ? 'danger' : 'success'}>{outOfStock ? 'স্টক শেষ' : `${variant.stock}টি আছে`}</Badge>
                   </span>
                 </span>

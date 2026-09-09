@@ -29,6 +29,7 @@ realtime-service/prisma/generated/
 .vercel/
 .claude/
 .cursor/
+.agents/
 .git-push-staging/
 
 # Generated repository and runtime discovery reports

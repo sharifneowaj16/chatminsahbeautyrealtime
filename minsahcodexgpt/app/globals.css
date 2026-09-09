@@ -220,6 +220,24 @@ body {
                sans-serif;
 }
 
+/* Plus Jakarta Sans Font */
+.font-jakarta {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Google Font Inter with Bengali Taka Glyphs */
+.font-inter,
+[class*="font-inter"] {
+  font-family: 'Inter', 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+/* Price & Currency Font Standard (Mandatory Project Rule: Always Inter with Matching Taka) */
+.font-price,
+[class*="font-price"] {
+  font-family: 'Inter', 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-feature-settings: 'tnum' on, 'cv05' on !important;
+}
+
 html {
   height: 100%;
   -webkit-text-size-adjust: 100%;

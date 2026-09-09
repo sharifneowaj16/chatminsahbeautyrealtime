@@ -23,6 +23,43 @@ export interface SeedVariantRailProps {
   className?: string;
 }
 
+function getVariantSize(v: ProductVariantItem): string | null {
+  if (v.attributes && typeof v.attributes === 'object') {
+    const sizeKeys = ['size', 'Size', 'packSize', 'pack_size', 'volume', 'Volume', 'capacity', 'weight', 'Weight'];
+    for (const key of sizeKeys) {
+      if (v.attributes[key]) {
+        return String(v.attributes[key]).trim();
+      }
+    }
+    for (const [key, val] of Object.entries(v.attributes)) {
+      if (val && typeof val === 'string' && ['size', 'volume', 'pack_size', 'weight'].includes(key.toLowerCase())) {
+        return val.trim();
+      }
+    }
+  }
+
+  if (v.name) {
+    if (v.name.includes('30*2') || v.name.toLowerCase().includes('30ml')) return '30*2 ml';
+    if (v.name.includes('80*2') || v.name.toLowerCase().includes('80ml')) return '80*2 ml';
+    const match = v.name.match(/\b(\d+(?:\*\d+)?\s*(?:ml|g|oz|kg|l|pcs?|pack))\b/i);
+    if (match) return match[1].trim();
+  }
+
+  return null;
+}
+
+function getVariantShade(v: ProductVariantItem): string | null {
+  if (v.attributes && typeof v.attributes === 'object') {
+    const shadeKeys = ['shade', 'Shade', 'shadeName', 'color', 'Color', 'colour'];
+    for (const key of shadeKeys) {
+      if (v.attributes[key]) {
+        return String(v.attributes[key]).trim();
+      }
+    }
+  }
+  return v.name || null;
+}
+
 export default function SeedVariantRail({
   variants = [],
   basePrice,
@@ -40,26 +77,37 @@ export default function SeedVariantRail({
   const detectedSizes = React.useMemo(() => {
     const sizeSet = new Set<string>();
     variants.forEach((v) => {
-      const sizeAttr =
-        v.attributes?.size ||
-        v.attributes?.Size ||
-        v.attributes?.volume ||
-        v.attributes?.Volume ||
-        (v.name.includes('30*2') || v.name.includes('30ml') ? '30*2 ml' : null) ||
-        (v.name.includes('80*2') || v.name.includes('80ml') ? '80*2 ml' : null);
+      const sizeAttr = getVariantSize(v);
       if (sizeAttr) sizeSet.add(sizeAttr);
     });
     return Array.from(sizeSet);
   }, [variants]);
 
   // Active Selected State
-  const [selectedSize, setSelectedSize] = useState<string | null>(
-    detectedSizes.length > 0 ? detectedSizes[0] : null
-  );
+  const initialSize = React.useMemo(() => {
+    if (detectedSizes.length === 0) return null;
+    const firstVarSize = variants[0] ? getVariantSize(variants[0]) : null;
+    return firstVarSize && detectedSizes.includes(firstVarSize) ? firstVarSize : detectedSizes[0];
+  }, [detectedSizes, variants]);
+
+  const [selectedSize, setSelectedSize] = useState<string | null>(initialSize);
   const [selectedVariantId, setSelectedVariantId] = useState<string>(
     variants[0]?.id || ''
   );
   const [hoveredVariant, setHoveredVariant] = useState<ProductVariantItem | null>(null);
+
+  // Synchronize when variants prop changes
+  useEffect(() => {
+    if (variants.length > 0) {
+      const current = variants.find((v) => v.id === selectedVariantId);
+      if (!current) {
+        const initial = variants[0];
+        setSelectedVariantId(initial.id);
+        const initialSizeVal = getVariantSize(initial);
+        if (initialSizeVal) setSelectedSize(initialSizeVal);
+      }
+    }
+  }, [variants, selectedVariantId]);
 
   const railRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -68,15 +116,7 @@ export default function SeedVariantRail({
   // Filter variants by selected size if multi-dimensional, otherwise show all
   const filteredVariants = React.useMemo(() => {
     if (!selectedSize || detectedSizes.length === 0) return variants;
-    const matching = variants.filter((v) => {
-      const sizeAttr =
-        v.attributes?.size ||
-        v.attributes?.Size ||
-        v.attributes?.volume ||
-        (v.name.includes('30*2') || v.name.includes('30ml') ? '30*2 ml' : null) ||
-        (v.name.includes('80*2') || v.name.includes('80ml') ? '80*2 ml' : null);
-      return sizeAttr === selectedSize;
-    });
+    const matching = variants.filter((v) => getVariantSize(v) === selectedSize);
     return matching.length > 0 ? matching : variants;
   }, [variants, selectedSize, detectedSizes.length]);
 
@@ -101,9 +141,38 @@ export default function SeedVariantRail({
     setTimeout(checkScroll, 300);
   };
 
-  // Handle variant selection
+  // Handle pack size selection (immediately switches active variant & notifies parent)
+  const handleSizeSelect = (size: string) => {
+    setSelectedSize(size);
+
+    // Find all variants that match this size
+    const matching = variants.filter((v) => getVariantSize(v) === size);
+    if (matching.length === 0) return;
+
+    // Check if the currently selected variant already matches this size
+    const currentMatches = matching.find((v) => v.id === selectedVariantId);
+    const currentVariant = variants.find((v) => v.id === selectedVariantId);
+    const currentShade = currentVariant ? getVariantShade(currentVariant) : null;
+    const shadeMatch = currentShade ? matching.find((v) => getVariantShade(v) === currentShade) : null;
+
+    const targetVariant = currentMatches || shadeMatch || matching[0];
+
+    if (targetVariant) {
+      setSelectedVariantId(targetVariant.id);
+      onVariantChange(targetVariant.id, targetVariant.price, targetVariant.stock);
+      if (targetVariant.image) {
+        onImageChange?.(targetVariant.image);
+      }
+    }
+  };
+
+  // Handle swatch selection
   const handleSelect = (v: ProductVariantItem) => {
     setSelectedVariantId(v.id);
+    const vSize = getVariantSize(v);
+    if (vSize && vSize !== selectedSize) {
+      setSelectedSize(vSize);
+    }
     onVariantChange(v.id, v.price, v.stock);
     if (v.image) {
       onImageChange?.(v.image);
@@ -128,11 +197,7 @@ export default function SeedVariantRail({
             </span>
             {selectedSize && (
               <span className="font-mono text-xs font-semibold text-[#1c3a13] dark:text-emerald-400">
-                {selectedSize === '30*2 ml'
-                  ? '30*2 ml Standard Kit'
-                  : selectedSize === '80*2 ml'
-                  ? '80*2 ml Salon Value Pack'
-                  : selectedSize}
+                {selectedSize}
               </span>
             )}
           </div>
@@ -140,32 +205,37 @@ export default function SeedVariantRail({
           <div className="grid grid-cols-2 gap-2.5">
             {detectedSizes.map((size) => {
               const isSelected = selectedSize === size;
-              const isBigPack = size.includes('80') || size.toLowerCase().includes('big') || size.toLowerCase().includes('large');
+              const isBigPack = size.includes('80') || size.toLowerCase().includes('big') || size.toLowerCase().includes('large') || size.toLowerCase().includes('salon');
+              const matchingForSize = variants.filter((v) => getVariantSize(v) === size);
+              const sizePrice = matchingForSize[0]?.price ?? basePrice;
+
               return (
                 <button
                   key={`size-btn-${size}`}
                   type="button"
-                  onClick={() => setSelectedSize(size)}
+                  onClick={() => handleSizeSelect(size)}
                   className={`relative flex items-center justify-between p-2.5 px-3.5 rounded-2xl border text-left transition-all duration-200 ${
                     isSelected
                       ? 'border-[#1c3a13] bg-[#1c3a13]/5 dark:border-emerald-400 dark:bg-emerald-950/30 ring-1 ring-[#1c3a13] dark:ring-emerald-400'
                       : 'border-black/10 dark:border-white/10 bg-white/60 dark:bg-zinc-800/60 hover:border-black/25 dark:hover:border-white/25'
                   }`}
                 >
-                  <div>
-                    <p className="text-xs font-bold text-[#1c3a13] dark:text-white">
+                  <div className="min-w-0 flex-1 pr-2">
+                    <p className="text-xs font-bold text-[#1c3a13] dark:text-white truncate">
                       {size === '30*2 ml' ? '30*2 ml (Small Pack)' : size === '80*2 ml' ? '80*2 ml (Big Pack)' : size}
-                    </p>
-                    <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5">
-                      {isBigPack ? 'Salon Value Size' : 'Regular Trial Kit'}
                     </p>
                   </div>
 
-                  {isBigPack && (
-                    <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800 dark:text-emerald-300">
-                      Save 20%
-                    </span>
-                  )}
+                  <div className="text-right shrink-0">
+                    <p className="font-inter font-bold text-xs text-[#1c3a13] dark:text-emerald-300">
+                      ৳{Math.round(sizePrice)}
+                    </p>
+                    {isBigPack && (
+                      <span className="inline-block mt-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-800 dark:text-emerald-300">
+                        Save 20%
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -274,27 +344,6 @@ export default function SeedVariantRail({
             </button>
           )}
 
-        </div>
-
-        {/* ========================================================================= */}
-        {/* 3. DYNAMIC HOVER UNDERNEATH CARD (Live Name, Price & Stock Snapshot)      */}
-        {/* ========================================================================= */}
-        <div className="min-h-[28px] flex items-center justify-between px-2.5 py-1 rounded-xl bg-[#1c3a13]/5 dark:bg-emerald-950/20 border border-[#1c3a13]/10 dark:border-emerald-400/20 text-xs transition-all duration-200">
-          <div className="flex items-center gap-1.5 truncate">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#1c3a13] dark:bg-emerald-400 shrink-0" />
-            <span className="font-semibold text-[#1c3a13] dark:text-emerald-300 truncate">
-              {hoveredVariant ? hoveredVariant.name : activeVariant?.name}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 ml-2 font-mono">
-            <span className="font-bold text-[#1c3a13] dark:text-white">
-              ৳ {(hoveredVariant ? hoveredVariant.price : activeVariant?.price || basePrice).toLocaleString('en-US')}
-            </span>
-            <span className="text-[10px] text-stone-500 dark:text-stone-400">
-              {(hoveredVariant ? hoveredVariant.stock : activeVariant?.stock || baseStock) > 0 ? '● In Stock' : '○ Out of Stock'}
-            </span>
-          </div>
         </div>
 
       </div>

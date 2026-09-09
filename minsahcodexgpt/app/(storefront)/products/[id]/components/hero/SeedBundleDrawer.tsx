@@ -20,6 +20,8 @@ import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { safeImageUrl } from '@/lib/safe-image';
 import { createBundleCartItem, findStandaloneCartItems } from '@/utils/cartItemHelper';
+import type { ProductVariantItem } from './SeedVariantRail';
+import { cleanProductName } from './cleanProductName';
 
 export interface BundleProductCandidate {
   id: string;
@@ -30,6 +32,7 @@ export interface BundleProductCandidate {
   stock: number;
   hasFreeDelivery?: boolean;
   category?: string;
+  variants?: ProductVariantItem[];
 }
 
 export interface SeedBundleDrawerProps {
@@ -248,6 +251,7 @@ export default function SeedBundleDrawer({
     }
 
     selectedProducts.forEach((p) => {
+      const activeVar = p.variants && p.variants.length > 0 ? p.variants[0] : null;
       const bundleItem = createBundleCartItem({
         product: {
           id: p.id,
@@ -256,6 +260,17 @@ export default function SeedBundleDrawer({
           image: p.image,
           stock: p.stock,
         },
+        variant: activeVar
+          ? {
+              id: activeVar.id,
+              name: activeVar.name,
+              price: p.price,
+              image: p.image,
+              sku: activeVar.sku,
+              stock: activeVar.stock,
+              attributes: activeVar.attributes,
+            }
+          : null,
         bundleId: bundleGroupId,
         bundleName: stepName,
         discountRatio,
@@ -373,11 +388,11 @@ export default function SeedBundleDrawer({
                               </span>
                             )}
                             <p className="text-xs font-bold text-[#122A16] dark:text-white truncate">
-                              {item.name}
+                              {cleanProductName(item.name)}
                             </p>
                           </div>
-                          <p className="text-xs font-mono font-bold text-stone-600 dark:text-stone-300 mt-0.5">
-                            ৳ {item.price.toLocaleString('en-US')}
+                          <p className="text-xs font-inter font-bold text-stone-600 dark:text-stone-300 mt-0.5">
+                            ৳{Math.round(item.price)}
                           </p>
                         </div>
                       </div>
@@ -456,11 +471,11 @@ export default function SeedBundleDrawer({
                           </div>
                           <div className="truncate">
                             <p className="text-xs font-bold text-[#122A16] dark:text-white truncate">
-                              {candidate.name}
+                              {cleanProductName(candidate.name)}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs font-mono font-bold text-[#122A16] dark:text-emerald-400">
-                                ৳ {candidate.price.toLocaleString('en-US')}
+                              <span className="text-xs font-inter font-bold text-[#122A16] dark:text-emerald-400">
+                                ৳{Math.round(candidate.price)}
                               </span>
                               {candidate.hasFreeDelivery && (
                                 <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-sm">
@@ -517,21 +532,21 @@ export default function SeedBundleDrawer({
                 </span>
               </div>
 
-              <div className="space-y-1 text-xs text-emerald-900 dark:text-emerald-300/90 font-mono">
+              <div className="space-y-1 text-xs text-emerald-900 dark:text-emerald-300/90 font-inter">
                 <div className="flex justify-between">
                   <span className="text-stone-600 dark:text-stone-400 font-sans">Total Selling Value:</span>
-                  <span>৳ {bundleCalculation.totalSellingPrice.toLocaleString('en-US')}</span>
+                  <span className="font-bold">৳{Math.round(bundleCalculation.totalSellingPrice)}</span>
                 </div>
                 {bundleCalculation.customerSavings > 0 && (
                   <div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-bold">
                     <span className="font-sans">Your Real Profit Discount:</span>
-                    <span>− ৳ {bundleCalculation.customerSavings.toLocaleString('en-US')}</span>
+                    <span>−৳{Math.round(bundleCalculation.customerSavings)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-stone-600 dark:text-stone-400 font-sans">Nationwide Delivery:</span>
                   <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                    {bundleCalculation.hasAnyFreeDelivery ? 'FREE (৳ 0)' : 'Standard'}
+                    {bundleCalculation.hasAnyFreeDelivery ? 'FREE (৳0)' : 'Standard'}
                   </span>
                 </div>
               </div>
@@ -540,8 +555,8 @@ export default function SeedBundleDrawer({
                 <span className="text-xs font-bold text-stone-900 dark:text-white">
                   Final Payable Amount:
                 </span>
-                <span className="text-lg font-mono font-extrabold text-[#122A16] dark:text-emerald-400">
-                  ৳ {bundleCalculation.finalPayable.toLocaleString('en-US')}
+                <span className="text-lg font-inter font-extrabold text-[#122A16] dark:text-emerald-400">
+                  ৳{Math.round(bundleCalculation.finalPayable)}
                 </span>
               </div>
             </div>
@@ -558,8 +573,8 @@ export default function SeedBundleDrawer({
               className="w-full h-12 flex items-center justify-center gap-2 rounded-full bg-[#122A16] hover:bg-[#0c1d0f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-semibold text-xs tracking-wide shadow-lg shadow-[#122A16]/20 transition-all active:scale-[0.99]"
             >
               <ShoppingBag size={15} />
-              <span>
-                ADD COMPLETE BUNDLE ({bundleCalculation.itemCount} ITEMS • ৳ {bundleCalculation.finalPayable.toLocaleString('en-US')})
+              <span className="font-inter font-bold">
+                ADD COMPLETE BUNDLE ({bundleCalculation.itemCount} ITEMS • ৳{Math.round(bundleCalculation.finalPayable)})
               </span>
             </button>
             <p className="text-[10px] text-center text-stone-500 dark:text-stone-400">

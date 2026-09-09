@@ -18,6 +18,7 @@ import ProductStickyHeader from "./ProductStickyHeader";
 import { safeImageUrl } from "@/lib/safe-image";
 import SeedProductHero from "./hero/SeedProductHero";
 import SeedMorphingStickyBar from "./hero/SeedMorphingStickyBar";
+import { cleanProductName } from "./hero/cleanProductName";
 import SeedBenefitsSection from "./benefits/SeedBenefitsSection";
 import SeedMemberReviewsSection from "./reviews/SeedMemberReviewsSection";
 import {
@@ -82,6 +83,7 @@ interface RelatedProduct {
   slug: string;
   stock: number;
   hasVariants: boolean;
+  variants?: Variant[];
 }
 
 interface FrequentlyBoughtProduct {
@@ -96,6 +98,7 @@ interface FrequentlyBoughtProduct {
   hasVariants: boolean;
   orderCount: number;
   totalUnits: number;
+  variants?: Variant[];
 }
 
 interface RecentlyViewedProduct {
@@ -286,7 +289,17 @@ export default function ProductClient({
   const [selectedBundleProductIds, setSelectedBundleProductIds] = useState<
     string[]
   >([]);
+  const [selectedCompanionVariantIds, setSelectedCompanionVariantIds] = useState<
+    Record<string, string>
+  >({});
   const [bundleStatus, setBundleStatus] = useState<BundleStatus>(null);
+
+  const handleCompanionVariantChange = useCallback((productId: string, variantId: string) => {
+    setSelectedCompanionVariantIds((prev) => ({
+      ...prev,
+      [productId]: variantId,
+    }));
+  }, []);
 
   const viewedProductKeysRef = useRef<Set<string>>(new Set());
   const { items, addItem, removeItem } = useCart();
@@ -333,7 +346,7 @@ export default function ProductClient({
     () =>
       bundleProducts.filter(
         (bundleProduct) =>
-          bundleProduct.stock > 0 && !bundleProduct.hasVariants,
+          bundleProduct.stock > 0 || (bundleProduct.variants && bundleProduct.variants.some((v) => v.stock > 0)),
       ),
     [bundleProducts],
   );
@@ -345,7 +358,11 @@ export default function ProductClient({
     [selectableBundleProducts, selectedBundleProductIds],
   );
   const bundleAddOnsTotal = selectedBundleProducts.reduce(
-    (sum, bundleProduct) => sum + bundleProduct.price,
+    (sum, bundleProduct) => {
+      const chosenVar = bundleProduct.variants?.find((v) => v.id === selectedCompanionVariantIds[bundleProduct.id]);
+      const pPrice = chosenVar ? chosenVar.price : bundleProduct.price;
+      return sum + pPrice;
+    },
     0,
   );
   const bundleCurrentProductTotal = currentPrice * quantity;
@@ -356,12 +373,12 @@ export default function ProductClient({
       : currentPrice) *
       quantity +
     selectedBundleProducts.reduce(
-      (sum, bundleProduct) =>
-        sum +
-        (bundleProduct.originalPrice &&
-        bundleProduct.originalPrice > bundleProduct.price
-          ? bundleProduct.originalPrice
-          : bundleProduct.price),
+      (sum, bundleProduct) => {
+        const chosenVar = bundleProduct.variants?.find((v) => v.id === selectedCompanionVariantIds[bundleProduct.id]);
+        const pPrice = chosenVar ? chosenVar.price : bundleProduct.price;
+        const pOrigPrice = bundleProduct.originalPrice;
+        return sum + (pOrigPrice && pOrigPrice > pPrice ? pOrigPrice : pPrice);
+      },
       0,
     );
   const bundleSavings = Math.max(0, bundleCompareTotal - bundleTotal);
@@ -454,22 +471,39 @@ export default function ProductClient({
         discountRatio: 1,
         quantity,
       }),
-      ...selectedBundleProducts.map((bundleProduct) =>
-        createBundleCartItem({
+      ...selectedBundleProducts.map((bundleProduct) => {
+        const selectedVar =
+          bundleProduct.variants?.find((v) => v.id === selectedCompanionVariantIds[bundleProduct.id]) ||
+          (bundleProduct.variants && bundleProduct.variants.length > 0 ? bundleProduct.variants[0] : null);
+        const effectivePrice = selectedVar ? selectedVar.price : bundleProduct.price;
+        const effectiveImage = selectedVar?.image || bundleProduct.image;
+        const effectiveStock = selectedVar ? selectedVar.stock : bundleProduct.stock;
+        return createBundleCartItem({
           product: {
             id: bundleProduct.id,
             name: bundleProduct.name,
-            price: bundleProduct.price,
-            image: bundleProduct.image,
-            sku: bundleProduct.sku,
-            stock: bundleProduct.stock,
+            price: effectivePrice,
+            image: effectiveImage,
+            sku: selectedVar?.sku || bundleProduct.sku,
+            stock: effectiveStock,
           },
+          variant: selectedVar
+            ? {
+                id: selectedVar.id,
+                name: selectedVar.name,
+                price: effectivePrice,
+                image: effectiveImage,
+                sku: selectedVar.sku,
+                stock: effectiveStock,
+                attributes: selectedVar.attributes,
+              }
+            : null,
           bundleId: bundleGroupId,
           bundleName: 'Frequently Bought Together',
           discountRatio: 1,
           quantity: 1,
-        })
-      ),
+        });
+      }),
     ];
 
     try {
@@ -560,7 +594,7 @@ export default function ProductClient({
     selectedVariantObj,
   ]);
 
-  const displayTitle = product.pageH1 || product.name;
+  const displayTitle = cleanProductName(product.pageH1 || product.name);
 
   useEffect(() => {
     const storageKey = "minsah_recently_viewed_products";
@@ -665,6 +699,7 @@ export default function ProductClient({
                 stock: p.stock,
                 hasFreeDelivery: true,
                 category: product.category || 'Skincare',
+                variants: (p.variants as any) || [],
               }))
             : undefined
         }
@@ -738,19 +773,26 @@ export default function ProductClient({
                     <p className="truncate text-xs font-bold text-[#1C3A13] mt-0.5">
                       {product.name}
                     </p>
-                    <p className="text-xs font-bold text-[#1C3A13]">
-                      ৳{bundleCurrentProductTotal.toLocaleString("bn-BD")}
+                    <p className="text-xs font-inter font-bold text-[#1C3A13]">
+                      ৳{Math.round(bundleCurrentProductTotal)}
                     </p>
                   </div>
                 </div>
 
                 {/* Bundle Addons */}
                 {bundleProducts.map((bundleProduct) => {
-                  const isSelectable =
-                    bundleProduct.stock > 0 && !bundleProduct.hasVariants;
+                  const hasStock =
+                    bundleProduct.stock > 0 ||
+                    (bundleProduct.variants && bundleProduct.variants.some((v) => v.stock > 0));
+                  const isSelectable = Boolean(hasStock);
                   const isSelected = selectedBundleProductIds.includes(
                     bundleProduct.id,
                   );
+                  const chosenVar =
+                    bundleProduct.variants?.find((v) => v.id === selectedCompanionVariantIds[bundleProduct.id]) ||
+                    (bundleProduct.variants && bundleProduct.variants.length > 0 ? bundleProduct.variants[0] : null);
+                  const effectivePrice = chosenVar ? chosenVar.price : bundleProduct.price;
+                  const effectiveImage = chosenVar?.image || bundleProduct.image;
 
                   return (
                     <div
@@ -770,7 +812,7 @@ export default function ProductClient({
 
                       <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-stone-50 border border-stone-200">
                         <CatalogProductImage
-                          src={bundleProduct.image}
+                          src={effectiveImage}
                           alt={bundleProduct.name}
                           sizes="56px"
                           padding="none"
@@ -784,14 +826,33 @@ export default function ProductClient({
                         >
                           {bundleProduct.name}
                         </Link>
+
+                        {/* Variant selector dropdown for companion product */}
+                        {bundleProduct.variants && bundleProduct.variants.length > 1 && (
+                          <div className="mt-1">
+                            <select
+                              value={chosenVar?.id || ''}
+                              onChange={(e) => handleCompanionVariantChange(bundleProduct.id, e.target.value)}
+                              aria-label={`Select variant for ${bundleProduct.name}`}
+                              className="text-[11px] font-medium bg-stone-100 dark:bg-zinc-800 border border-stone-300 rounded px-1.5 py-0.5 text-[#1C3A13] focus:outline-none focus:ring-1 focus:ring-emerald-500 max-w-[220px] truncate cursor-pointer"
+                            >
+                              {bundleProduct.variants.map((v) => (
+                                <option key={`fbt-v-${v.id}`} value={v.id}>
+                                  {v.name} {v.price ? `(৳${Math.round(v.price)})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs font-bold text-[#1C3A13]">
-                            ৳{bundleProduct.price.toLocaleString("bn-BD")}
+                          <span className="text-xs font-inter font-bold text-[#1C3A13]">
+                            ৳{Math.round(effectivePrice)}
                           </span>
                           {bundleProduct.originalPrice &&
-                            bundleProduct.originalPrice > bundleProduct.price && (
-                              <span className="text-[11px] text-stone-400 line-through">
-                                ৳{bundleProduct.originalPrice.toLocaleString("bn-BD")}
+                            bundleProduct.originalPrice > effectivePrice && (
+                              <span className="text-[11px] font-inter text-stone-400 line-through">
+                                ৳{Math.round(bundleProduct.originalPrice)}
                               </span>
                             )}
                         </div>
@@ -807,19 +868,19 @@ export default function ProductClient({
                   সর্বমোট মূল্য ({selectedBundleProducts.length + 1}টি আইটেম)
                 </p>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-2xl font-bold text-[#1C3A13]">
-                    ৳{bundleTotal.toLocaleString("bn-BD")}
+                  <span className="text-2xl font-inter font-bold text-[#1C3A13]">
+                    ৳{Math.round(bundleTotal)}
                   </span>
                   {bundleSavings > 0 && (
-                    <span className="text-xs text-stone-400 line-through">
-                      ৳{bundleCompareTotal.toLocaleString("bn-BD")}
+                    <span className="text-xs font-inter text-stone-400 line-through">
+                      ৳{Math.round(bundleCompareTotal)}
                     </span>
                   )}
                 </div>
 
                 {bundleSavings > 0 && (
-                  <span className="inline-block rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-0.5 text-xs font-semibold">
-                    মোট সাশ্রয় ৳{bundleSavings.toLocaleString("bn-BD")}
+                  <span className="inline-block rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-0.5 text-xs font-semibold font-inter">
+                    মোট সাশ্রয় ৳{Math.round(bundleSavings)}
                   </span>
                 )}
 
@@ -908,13 +969,13 @@ export default function ProductClient({
                         {relatedProduct.name}
                       </p>
                       <div className="mt-2 flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-[#1C3A13]">
-                          ৳{relatedProduct.price.toLocaleString("bn-BD")}
+                        <span className="text-sm font-inter font-bold text-[#1C3A13]">
+                          ৳{Math.round(relatedProduct.price)}
                         </span>
                         {relatedProduct.originalPrice &&
                           relatedProduct.originalPrice > relatedProduct.price && (
-                            <span className="text-xs text-stone-400 line-through">
-                              ৳{relatedProduct.originalPrice.toLocaleString("bn-BD")}
+                            <span className="text-xs font-inter text-stone-400 line-through">
+                              ৳{Math.round(relatedProduct.originalPrice)}
                             </span>
                           )}
                       </div>
@@ -956,8 +1017,8 @@ export default function ProductClient({
                   <p className="mt-2 line-clamp-1 text-xs font-semibold text-stone-900 group-hover:text-[#1C3A13] transition">
                     {recentProduct.name}
                   </p>
-                  <p className="text-xs font-bold text-[#1C3A13]">
-                    ৳{recentProduct.price.toLocaleString("bn-BD")}
+                  <p className="text-xs font-inter font-bold text-[#1C3A13]">
+                    ৳{Math.round(recentProduct.price)}
                   </p>
                 </Link>
               ))}

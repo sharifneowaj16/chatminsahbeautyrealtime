@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { safeImageUrl } from '@/lib/safe-image';
 import { createStandardCartItem } from '@/utils/cartItemHelper';
+import { cleanProductName } from './cleanProductName';
 
 export interface SeedMorphingStickyBarProps {
   productId: string;
@@ -378,7 +379,7 @@ export default function SeedMorphingStickyBar({
               }}
               className="block text-sm md:text-base text-[#1c3a13] tracking-tight leading-snug truncate"
             >
-              {productName}
+              {cleanProductName(productName)}
             </span>
           </div>
 

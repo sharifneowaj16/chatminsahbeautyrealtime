@@ -6,10 +6,43 @@ const PUBLIC_PRODUCT_FILTER = {
   isActive: true,
 } as const;
 
+export interface CompanionVariantData {
+  id: string;
+  sku: string;
+  name: string;
+  price: number;
+  stock: number;
+  attributes: Record<string, string>;
+  image: string;
+}
+
 export type ProductDetail = {
   id: string;
   name: string;
   slug: string;
+  description: string;
+  shortDescription: string;
+  price: number;
+  originalPrice: number | null;
+  image: string;
+  images: Array<{ url: string; alt?: string; isDefault?: boolean }>;
+  sku: string;
+  stock: number;
+  category: string;
+  brand: string;
+  rating: number;
+  reviews: number;
+  inStock: boolean;
+  isNew: boolean;
+  variants: Array<{
+    id: string;
+    sku: string;
+    name: string;
+    price: number;
+    stock: number;
+    attributes: Record<string, string>;
+    image: string;
+  }>;
   [key: string]: any;
 };
 
@@ -38,6 +71,7 @@ export type ProductDetailData = {
     slug: string;
     stock: number;
     hasVariants: boolean;
+    variants?: CompanionVariantData[];
   }>;
   frequentlyBoughtTogether: Array<{
     id: string;
@@ -51,6 +85,7 @@ export type ProductDetailData = {
     hasVariants: boolean;
     orderCount: number;
     totalUnits: number;
+    variants?: CompanionVariantData[];
   }>;
 };
 
@@ -135,7 +170,18 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
           },
           include: {
             images: { where: { isDefault: true }, take: 1 },
-            variants: { select: { id: true }, take: 1 },
+            variants: {
+              where: { isActive: true, deletedAt: null },
+              select: {
+                id: true,
+                sku: true,
+                name: true,
+                price: true,
+                quantity: true,
+                attributes: true,
+                image: true,
+              },
+            },
           },
         })
       : [];
@@ -150,7 +196,18 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
           take: 4,
           include: {
             images: { where: { isDefault: true }, take: 1 },
-            variants: { select: { id: true }, take: 1 },
+            variants: {
+              where: { isActive: true, deletedAt: null },
+              select: {
+                id: true,
+                sku: true,
+                name: true,
+                price: true,
+                quantity: true,
+                attributes: true,
+                image: true,
+              },
+            },
           },
         })
       : [];
@@ -353,6 +410,15 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
           slug: p.slug,
           stock: p.quantity,
           hasVariants: p.variants.length > 0,
+          variants: (p.variants || []).map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            name: v.name,
+            price: v.price ? v.price.toNumber() : p.price.toNumber(),
+            stock: v.quantity,
+            attributes: (v.attributes as Record<string, string>) || {},
+            image: v.image || '',
+          })),
         };
       }),
       frequentlyBoughtTogether: frequentlyBoughtRows.map((row) => {
@@ -360,12 +426,13 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
         const pImage =
           companionProduct?.images.find((i) => i.isDefault) ||
           companionProduct?.images[0];
+        const companionPrice = companionProduct?.price ? companionProduct.price.toNumber() : 0;
         return {
           id: row.productId,
           sku: companionProduct?.sku || '',
           name: companionProduct?.name || '',
           slug: companionProduct?.slug || '',
-          price: companionProduct?.price ? companionProduct.price.toNumber() : 0,
+          price: companionPrice,
           originalPrice: companionProduct?.compareAtPrice
             ? companionProduct.compareAtPrice.toNumber()
             : null,
@@ -374,6 +441,15 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
           hasVariants: (companionProduct?.variants.length || 0) > 0,
           orderCount: row.orderCount,
           totalUnits: row.totalUnits,
+          variants: (companionProduct?.variants || []).map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            name: v.name,
+            price: v.price ? v.price.toNumber() : companionPrice,
+            stock: v.quantity,
+            attributes: (v.attributes as Record<string, string>) || {},
+            image: v.image || '',
+          })),
         };
       }),
     };

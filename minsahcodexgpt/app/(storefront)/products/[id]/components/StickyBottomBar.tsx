@@ -101,7 +101,7 @@ export default function StickyBottomBar({
       ? "অন্য উপলভ্য অপশন নিন"
       : needsOptionSelection
         ? "সাইজ/শেড নির্বাচন করুন"
-        : `৳${price.toLocaleString("bn-BD")}`;
+        : `৳${Math.round(price)}`;
   const buyNowLabel = shouldGuideToOption ? "অপশন নিয়ে কিনুন" : "এখনই কিনুন";
   const helperText = isUnavailable
     ? "এই পণ্যটি বর্তমানে স্টকে নেই।"
@@ -115,9 +115,7 @@ export default function StickyBottomBar({
     variantName ? `\nভ্যারিয়েন্ট: ${variantName}` : ""
   }${sku ? `\nSKU: ${sku}` : ""}${size ? `\nসাইজ: ${size}` : ""}${color ? `\nশেড/রং: ${color}` : ""}${
     variantId ? `\nভ্যারিয়েন্ট ID: ${variantId}` : ""
-  }\nপরিমাণ: ${quantity}\nমোট: ৳${price.toLocaleString(
-    "bn-BD",
-  )}\n\nঅনুগ্রহ করে এই অর্ডারটি confirm করুন।`;
+  }\nপরিমাণ: ${quantity}\nমোট: ৳${Math.round(price)}\n\nঅনুগ্রহ করে এই অর্ডারটি confirm করুন।`;
 
   const focusVariantSelector = () => {
     const selector = document.getElementById("product-variant-selector");
@@ -137,7 +135,7 @@ export default function StickyBottomBar({
             <span className="text-xs font-medium text-minsah-muted">
               {stickyLabel}
             </span>
-            <span className="truncate text-base font-semibold text-minsah-text">
+            <span className="truncate text-base font-semibold font-inter text-minsah-text">
               {stickyValue}
             </span>
           </div>
