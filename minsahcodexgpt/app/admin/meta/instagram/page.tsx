@@ -276,7 +276,7 @@ export default function InstagramSocialCrmPage() {
   return <main className="mx-auto max-w-7xl space-y-5 p-4 md:p-6">
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <Link href="/admin/meta" className="mb-2 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#F5F3F0]"><ArrowLeft className="h-4 w-4" /> Meta Operations Center</Link>
+        <Link href="/admin/meta" className="mb-2 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#F7F8F8]"><ArrowLeft className="h-4 w-4" /> Meta Operations Center</Link>
         <h1 className="flex items-center gap-2 text-2xl font-bold"><MessageCircle className="h-6 w-6" /> Instagram Social CRM</h1>
         <p className="mt-1 text-sm text-gray-600">Webhook, queue, permission, delivery, reconciliation and reply-policy state from the durable platform.</p>
       </div>

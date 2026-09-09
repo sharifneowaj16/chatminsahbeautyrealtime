@@ -130,15 +130,15 @@ const categoryLabels: Record<GateCheck['category'], string> = {
 };
 
 function statusClass(status: DeployGateStatus) {
-  if (status === 'READY') return 'border-emerald-800/40 bg-emerald-950/70 text-emerald-400';
-  if (status === 'WARN') return 'border-amber-800/40 bg-amber-950/70 text-amber-400';
-  return 'border-red-800/40 bg-red-950/70 text-red-400';
+  if (status === 'READY') return 'border-white/[0.15] bg-white/[0.08] text-white';
+  if (status === 'WARN') return 'border-white/[0.10] bg-white/[0.06] text-white/80';
+  return 'border-white/[0.08] bg-white/[0.04] text-white/60';
 }
 
 function severityClass(severity: GateSeverity) {
-  if (severity === 'PASS') return 'border-emerald-800/40 bg-emerald-950/70 text-emerald-400';
-  if (severity === 'WARN') return 'border-amber-800/40 bg-amber-950/70 text-amber-400';
-  return 'border-red-800/40 bg-red-950/70 text-red-400';
+  if (severity === 'PASS') return 'border-white/[0.15] bg-white/[0.08] text-white';
+  if (severity === 'WARN') return 'border-white/[0.10] bg-white/[0.06] text-white/80';
+  return 'border-white/[0.08] bg-white/[0.04] text-white/60';
 }
 
 function severityIcon(severity: GateSeverity) {
@@ -158,9 +158,9 @@ function formatDateTime(value: string | null) {
 
 function Metric({ label, value, note }: { label: string; value: string | number; note?: string }) {
   return (
-    <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#9A9691]">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-[#F5F3F0]">{value}</p>
+    <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#8A8F98]">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-[#F7F8F8]">{value}</p>
       {note ? <p className="mt-1 text-xs text-gray-500">{note}</p> : null}
     </div>
   );
@@ -212,7 +212,7 @@ export default function ProductionQaPage() {
   }, [data]);
 
   if (isLoading) {
-    return <div className="p-6 text-[#9A9691]">Checking admin permissions...</div>;
+    return <div className="p-6 text-[#8A8F98]">Checking admin permissions...</div>;
   }
 
   if (!isSuperAdmin) {
@@ -230,7 +230,7 @@ export default function ProductionQaPage() {
     <div className="space-y-6 p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="flex items-center text-2xl font-bold text-[#F5F3F0]">
+          <h1 className="flex items-center text-2xl font-bold text-[#F7F8F8]">
             <Rocket className="mr-2 h-7 w-7 text-blue-600" /> Production QA Deploy Gate
           </h1>
           <p className="mt-1 text-sm text-gray-500">Final pre-deploy gate for tracking, queue/worker, GA4, privacy/catalog, cron, and manual flow QA.</p>
@@ -240,7 +240,7 @@ export default function ProductionQaPage() {
             <Button
               key={hours}
               onClick={() => setRange(hours)}
-              className={`rounded-lg border px-3 py-2 text-sm font-semibold ${range === hours ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-[#2A2A32] bg-[#1E1E24] text-gray-700'}`}
+              className={`rounded-lg border px-3 py-2 text-sm font-semibold ${range === hours ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-white/[0.08] bg-[#151516] text-gray-700'}`}
             >
               {hours === 24 ? '24h' : hours === 168 ? '7d' : '30d'}
             </Button>
@@ -280,7 +280,7 @@ export default function ProductionQaPage() {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="rounded-xl border bg-white p-5">
-              <h2 className="flex items-center font-bold text-[#F5F3F0]"><ServerCog className="mr-2 h-5 w-5 text-blue-600" /> Queue / Worker</h2>
+              <h2 className="flex items-center font-bold text-[#F7F8F8]"><ServerCog className="mr-2 h-5 w-5 text-blue-600" /> Queue / Worker</h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between"><dt>Queue reachable</dt><dd className="font-semibold">{data.queue.reachable ? 'Yes' : 'No'}</dd></div>
                 <div className="flex justify-between"><dt>Waiting + delayed</dt><dd className="font-semibold">{data.queue.waiting + data.queue.delayed}</dd></div>
@@ -291,7 +291,7 @@ export default function ProductionQaPage() {
             </div>
 
             <div className="rounded-xl border bg-white p-5">
-              <h2 className="flex items-center font-bold text-[#F5F3F0]"><Clock className="mr-2 h-5 w-5 text-amber-600" /> Cron / Health</h2>
+              <h2 className="flex items-center font-bold text-[#F7F8F8]"><Clock className="mr-2 h-5 w-5 text-amber-600" /> Cron / Health</h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between"><dt>Latest saved check</dt><dd className="font-semibold">{data.latestHealthCheck ? data.latestHealthCheck.status : 'None'}</dd></div>
                 <div className="flex justify-between"><dt>Age</dt><dd className="font-semibold">{data.latestHealthCheck ? `${Math.round(data.latestHealthCheck.ageHours * 10) / 10}h` : 'N/A'}</dd></div>
@@ -302,7 +302,7 @@ export default function ProductionQaPage() {
             </div>
 
             <div className="rounded-xl border bg-white p-5">
-              <h2 className="flex items-center font-bold text-[#F5F3F0]"><ShieldCheck className="mr-2 h-5 w-5 text-emerald-600" /> Privacy / Catalog</h2>
+              <h2 className="flex items-center font-bold text-[#F7F8F8]"><ShieldCheck className="mr-2 h-5 w-5 text-emerald-600" /> Privacy / Catalog</h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between"><dt>Status</dt><dd className="font-semibold">{data.privacyCatalog.ok ? 'OK' : 'Needs QA'}</dd></div>
                 <div className="flex justify-between"><dt>Active products</dt><dd className="font-semibold">{data.privacyCatalog.metrics.activeProducts}</dd></div>
@@ -316,7 +316,7 @@ export default function ProductionQaPage() {
           </div>
 
           <div className="rounded-xl border bg-white p-5">
-            <h2 className="text-lg font-bold text-[#F5F3F0]">Deploy gate checks</h2>
+            <h2 className="text-lg font-bold text-[#F7F8F8]">Deploy gate checks</h2>
             <div className="mt-4 space-y-5">
               {groupedChecks.map(([category, checks]) => (
                 <div key={category}>
@@ -341,18 +341,18 @@ export default function ProductionQaPage() {
           </div>
 
           <div className="rounded-xl border bg-white p-5">
-            <h2 className="text-lg font-bold text-[#F5F3F0]">Full Phase 8 QA matrix</h2>
+            <h2 className="text-lg font-bold text-[#F7F8F8]">Full Phase 8 QA matrix</h2>
             <p className="mt-1 text-sm text-gray-500">Required items must be tested in staging or controlled production mode and marked with their QA_* environment flag before final live deploy.</p>
             <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
               {data.manualQaSteps.map((step) => (
-                <div key={step.key} className={`rounded-lg border p-4 ${step.blocker ? 'border-red-100 bg-red-50/40' : 'border-[#2A2A32] bg-[#1E1E24]'}`}>
+                <div key={step.key} className={`rounded-lg border p-4 ${step.blocker ? 'border-red-100 bg-red-50/40' : 'border-white/[0.08] bg-[#151516]'}`}>
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-semibold text-[#F5F3F0]">{step.title}</h3>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${step.verified ? 'bg-emerald-100 text-emerald-700' : step.blocker ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-[#9A9691]'}`}>{step.verified ? 'Verified' : step.blocker ? 'Required' : 'Recommended'}</span>
+                    <h3 className="font-semibold text-[#F7F8F8]">{step.title}</h3>
+                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${step.verified ? 'bg-emerald-100 text-emerald-700' : step.blocker ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-[#8A8F98]'}`}>{step.verified ? 'Verified' : step.blocker ? 'Required' : 'Recommended'}</span>
                   </div>
                   <p className="mt-2 text-sm text-gray-700"><strong>Expected:</strong> {step.expected}</p>
                   <p className="mt-1 text-sm text-gray-500"><strong>Evidence:</strong> {step.evidence}</p>
-                  <p className="mt-2 rounded bg-white/70 px-2 py-1 font-mono text-xs text-[#9A9691]">{step.envKey}=true</p>
+                  <p className="mt-2 rounded bg-white/70 px-2 py-1 font-mono text-xs text-[#8A8F98]">{step.envKey}=true</p>
                   {step.evidenceUrl ? <a href={step.evidenceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center text-xs font-semibold text-blue-700 hover:underline">Open evidence <ExternalLink className="ml-1 h-3 w-3" /></a> : <p className="mt-1 text-xs text-gray-400">Optional evidence URL env: {step.evidenceEnvKey}</p>}
                 </div>
               ))}
@@ -360,7 +360,7 @@ export default function ProductionQaPage() {
           </div>
         </>
       ) : loading ? (
-        <div className="rounded-xl border bg-white p-8 text-center text-[#9A9691]">Loading production QA gate...</div>
+        <div className="rounded-xl border bg-white p-8 text-center text-[#8A8F98]">Loading production QA gate...</div>
       ) : null}
     </div>
   );

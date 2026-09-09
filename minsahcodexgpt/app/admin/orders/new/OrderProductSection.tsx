@@ -75,7 +75,7 @@ function genKey() {
 const PRODUCT_TYPE_META: Record<ProductType, { label: string; icon: React.ReactNode; color: string }> = {
   new:     { label: 'New',     icon: <Tag className="w-3 h-3" />,     color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
   old:     { label: 'Old',     icon: <Archive className="w-3 h-3" />, color: 'bg-amber-100 text-amber-700 border-amber-300' },
-  virtual: { label: 'Virtual', icon: <Cpu className="w-3 h-3" />,     color: 'bg-admin-panel text-admin-primary border-admin-border' },
+  virtual: { label: 'Virtual', icon: <Cpu className="w-3 h-3" />,     color: 'bg-admin-panel text-white border-admin-border' },
 };
 
 // ─── Variant Attribute Formatter ────────────────────────────────────────────
@@ -240,9 +240,9 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
+    <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
       {/* Section header */}
-      <h2 className="text-lg font-bold text-[#F5F3F0] mb-4 flex items-center gap-2">
+      <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
         <Package className="w-5 h-5" /> Products
       </h2>
 
@@ -255,7 +255,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
             min={1}
             value={addQty}
             onChange={e => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
-            className="w-16 px-2 py-2.5 border border-[#2A2A32] rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-admin-primary"
+            className="w-16 px-2 py-2.5 border border-white/[0.08] rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-white/20"
           />
           {/* search input */}
           <div className="relative flex-1">
@@ -272,14 +272,14 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                   addCustomProduct();
                 }
               }}
-              className="w-full pl-10 pr-4 py-2.5 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+              className="w-full pl-10 pr-4 py-2.5 border border-white/[0.08] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
             />
           </div>
         </div>
 
         {/* ── Dropdown ──────────────────────────────────────────────────────── */}
         {showDrop && query.trim() && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-[#1E1E24] border border-[#2A2A32] rounded-xl shadow-xl text-[#F5F3F0] z-20 max-h-80 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-[#151516] border border-white/[0.08] rounded-xl shadow-xl text-[#F7F8F8] z-20 max-h-80 overflow-y-auto">
 
             {/* Loading */}
             {searching && (
@@ -299,9 +299,9 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
               return (
                 <div key={product.id} className="border-b border-gray-100 last:border-0">
                   {/* Product row */}
-                  <div className="px-4 py-3 hover:bg-[#26262E] flex items-start gap-3">
+                  <div className="px-4 py-3 hover:bg-[#1C1D1F] flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#F5F3F0] truncate">{product.name}</p>
+                      <p className="text-sm font-semibold text-[#F7F8F8] truncate">{product.name}</p>
                       <p className="text-xs text-gray-500">SKU: {product.sku} · Stock: {product.stock} · {formatPrice(product.price)}</p>
 
                       {/* Variants */}
@@ -314,7 +314,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                               onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: null }))}
                               className={`text-xs px-2 py-1 rounded border transition-colors ${
                                 selVariantId === null
-                                  ? 'bg-admin-primary text-white border-admin-primary'
+                                  ? 'bg-white text-black hover:bg-white/90 border-admin-primary'
                                   : 'bg-white text-gray-600 border-gray-300 hover:border-admin-primary'
                               }`}
                             >
@@ -327,7 +327,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                                 onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: v.id }))}
                                 className={`text-xs px-2 py-1 rounded border transition-colors ${
                                   selVariantId === v.id
-                                    ? 'bg-admin-primary text-white border-admin-primary'
+                                    ? 'bg-white text-black hover:bg-white/90 border-admin-primary'
                                     : 'bg-white text-gray-600 border-gray-300 hover:border-admin-primary'
                                 }`}
                                 title={`${formatPrice(v.price)} · Stock: ${v.stock}`}
@@ -344,7 +344,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     <Button
                       type="button"
                       onClick={() => addDbProduct(product, selVariantId)}
-                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-admin-primary hover:bg-admin-primary-hover text-white text-xs rounded-lg transition-colors"
+                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white text-black hover:bg-white/90 hover:bg-white/90 text-white text-xs rounded-lg transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Add{selVariant ? ` (${formatPrice(selVariant.price)})` : ''}
@@ -362,10 +362,10 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                 className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-admin-panel border-t border-dashed border-admin-border group"
               >
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-admin-panel group-hover:bg-admin-panel flex items-center justify-center transition-colors">
-                  <Plus className="w-3.5 h-3.5 text-admin-primary" />
+                  <Plus className="w-3.5 h-3.5 text-white" />
                 </span>
                 <span className="text-sm">
-                  Add <strong className="text-admin-primary">"{query}"</strong> as custom product
+                  Add <strong className="text-white">"{query}"</strong> as custom product
                   <span className="text-xs text-gray-400 ml-1">(not in DB)</span>
                 </span>
               </Button>
@@ -376,7 +376,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
 
       {/* ── Line Items ──────────────────────────────────────────────────────── */}
       {orderItems.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8 border-2 border-dashed border-[#2A2A32] rounded-lg">
+        <p className="text-sm text-gray-400 text-center py-8 border-2 border-dashed border-white/[0.08] rounded-lg">
           No products added yet
         </p>
       ) : (
@@ -391,7 +391,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                 className={`rounded-lg border transition-all ${
                   isEditing
                     ? 'border-admin-primary bg-admin-panel'
-                    : 'border-[#2A2A32] bg-[#14141A] hover:border-[#3E3E48]'
+                    : 'border-white/[0.08] bg-[#08090A] hover:border-white/[0.15]'
                 }`}
               >
                 {/* ── View mode ──────────────────────────────────────────── */}
@@ -408,7 +408,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                             Custom
                           </span>
                         )}
-                        <p className="text-sm font-medium text-[#F5F3F0] truncate">{item.name}</p>
+                        <p className="text-sm font-medium text-[#F7F8F8] truncate">{item.name}</p>
                       </div>
                       <p className="text-xs text-gray-400">SKU: {item.sku}</p>
                     </div>
@@ -419,11 +419,11 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       min={1}
                       value={item.quantity}
                       onChange={e => updateQty(item.key, parseInt(e.target.value) || 1)}
-                      className="w-14 px-1.5 py-1 border border-[#2A2A32] rounded text-xs text-center bg-[#1E1E24] text-[#F5F3F0] focus:outline-none focus:ring-1 focus:ring-admin-primary"
+                      className="w-14 px-1.5 py-1 border border-white/[0.08] rounded text-xs text-center bg-[#151516] text-[#F7F8F8] focus:outline-none focus:ring-1 focus:ring-white/20"
                     />
 
                     {/* price */}
-                    <span className="text-sm font-semibold text-[#F5F3F0] w-20 text-right shrink-0">
+                    <span className="text-sm font-semibold text-[#F7F8F8] w-20 text-right shrink-0">
                       {formatPrice(item.price * item.quantity)}
                     </span>
 
@@ -431,7 +431,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     <Button
                       type="button"
                       onClick={() => startEdit(item)}
-                      className="p-1.5 text-gray-400 hover:text-admin-primary hover:bg-admin-panel rounded transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-white hover:bg-admin-panel rounded transition-colors"
                       title="Edit price / type / variant"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -449,47 +449,47 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                   <div className="p-3 space-y-3">
                     {/* Name */}
                     <div>
-                      <label className="text-xs font-medium text-[#9A9691] mb-1 block">Name</label>
+                      <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Name</label>
                       <Input
                         type="text"
                         value={editValues.name ?? item.name}
                         onChange={e => setEditValues(p => ({ ...p, name: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
+                        className="w-full px-2.5 py-1.5 border border-white/[0.08] rounded text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                       />
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
                       {/* Price */}
                       <div>
-                        <label className="text-xs font-medium text-[#9A9691] mb-1 block">Unit Price (৳)</label>
+                        <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Unit Price (৳)</label>
                         <Input
                           type="number"
                           min={0}
                           step="0.01"
                           value={editValues.price ?? item.price}
                           onChange={e => setEditValues(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-                          className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
+                          className="w-full px-2.5 py-1.5 border border-white/[0.08] rounded text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                         />
                       </div>
 
                       {/* SKU */}
                       <div>
-                        <label className="text-xs font-medium text-[#9A9691] mb-1 block">SKU</label>
+                        <label className="text-xs font-medium text-[#8A8F98] mb-1 block">SKU</label>
                         <Input
                           type="text"
                           value={editValues.sku ?? item.sku}
                           onChange={e => setEditValues(p => ({ ...p, sku: e.target.value }))}
-                          className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
+                          className="w-full px-2.5 py-1.5 border border-white/[0.08] rounded text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                         />
                       </div>
 
                       {/* Product Type */}
                       <div>
-                        <label className="text-xs font-medium text-[#9A9691] mb-1 block">Type</label>
+                        <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Type</label>
                         <Select
                           value={editValues.productType ?? item.productType}
                           onChange={e => setEditValues(p => ({ ...p, productType: e.target.value as ProductType }))}
-                          className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
+                          className="w-full px-2.5 py-1.5 border border-white/[0.08] rounded text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                         >
                           <option value="new">New</option>
                           <option value="old">Old</option>
@@ -510,7 +510,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       <Button
                         type="button"
                         onClick={() => commitEdit(item.key)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white text-black hover:bg-white/90 rounded-lg transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" /> Save
                       </Button>
@@ -522,9 +522,9 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
           })}
 
           {/* Subtotal */}
-          <div className="flex justify-end pt-2 border-t border-[#2A2A32]">
+          <div className="flex justify-end pt-2 border-t border-white/[0.08]">
             <span className="text-sm font-semibold text-gray-700">
-              Items subtotal: <span className="text-[#F5F3F0] font-bold">{formatPrice(subtotal)}</span>
+              Items subtotal: <span className="text-[#F7F8F8] font-bold">{formatPrice(subtotal)}</span>
             </span>
           </div>
         </div>

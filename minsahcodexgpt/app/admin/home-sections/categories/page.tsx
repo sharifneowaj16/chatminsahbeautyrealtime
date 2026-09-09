@@ -156,7 +156,7 @@ export default function CategoriesManagementPage() {
           </Button>
           <Button
             onClick={saveCategories}
-            className="flex items-center gap-2 px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#E08D70] transition text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg transition text-sm font-medium"
           >
             <Save size={20} />
             Save Changes
@@ -166,25 +166,25 @@ export default function CategoriesManagementPage() {
 
       {/* Add Category Form */}
       {showAddForm && (
-        <div className="bg-[#1E1E24] border border-[#2A2A32] p-6 rounded-xl shadow-sm mb-6">
-          <h3 className="text-xl font-bold text-[#F5F3F0] mb-4">Add New Category</h3>
+        <div className="bg-[#151516] border border-white/[0.08] p-6 rounded-xl shadow-sm mb-6">
+          <h3 className="text-xl font-bold text-[#F7F8F8] mb-4">Add New Category</h3>
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#9A9691] mb-2">Name</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-2">Name</label>
               <Input
                 type="text"
                 value={newCategory.name}
                 onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                className="w-full px-3 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:outline-none focus:border-[#D07A60]"
+                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
                 placeholder="Category name"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#9A9691] mb-2">Icon</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-2">Icon</label>
               <Select
                 value={newCategory.icon}
                 onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
-                className="w-full px-3 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:outline-none focus:border-[#D07A60]"
+                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
               >
                 {iconOptions.map(icon => (
                   <option key={icon} value={icon}>{icon}</option>
@@ -192,11 +192,11 @@ export default function CategoriesManagementPage() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#9A9691] mb-2">Color</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-2">Color</label>
               <Select
                 value={newCategory.color}
                 onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
-                className="w-full px-3 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:outline-none focus:border-[#D07A60]"
+                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
               >
                 {colorOptions.map(color => (
                   <option key={color} value={color}>{color.replace('bg-', '').replace('-100', '')}</option>
@@ -216,8 +216,8 @@ export default function CategoriesManagementPage() {
       )}
 
       {/* Categories List */}
-      <div className="bg-[#1E1E24] border border-[#2A2A32] rounded-xl shadow-sm overflow-hidden">
-        <div className="bg-[#14141A] border-b border-[#2A2A32] text-[#9A9691] px-6 py-4 flex items-center gap-4 text-sm font-medium">
+      <div className="bg-[#151516] border border-white/[0.08] rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-[#08090A] border-b border-white/[0.08] text-[#8A8F98] px-6 py-4 flex items-center gap-4 text-sm font-medium">
           <span className="w-16 text-center font-semibold">Icon</span>
           <span className="flex-1 font-semibold">Name</span>
           <span className="w-32 text-center font-semibold">Color</span>
@@ -226,12 +226,12 @@ export default function CategoriesManagementPage() {
           <span className="w-48 text-center font-semibold">Actions</span>
         </div>
 
-        <div className="divide-y divide-[#2A2A32] bg-[#1E1E24]">
+        <div className="divide-y divide-white/[0.08] bg-[#151516]">
           {categories.map((category, index) => (
             <div
               key={category.id}
               className={`px-6 py-4 flex items-center gap-4 ${
-                !category.isVisible ? 'bg-[#14141A]/50 opacity-60' : 'hover:bg-[#26262E]/70'
+                !category.isVisible ? 'bg-[#08090A]/50 opacity-60' : 'hover:bg-[#1C1D1F]/70'
               }`}
             >
               {/* Icon */}
@@ -245,9 +245,9 @@ export default function CategoriesManagementPage() {
                   type="text"
                   value={category.name}
                   onChange={(e) => updateCategory(category.id, { name: e.target.value })}
-                  className="font-semibold text-lg text-[#F5F3F0] bg-transparent border-b border-transparent hover:border-[#D07A60] focus:border-[#D07A60] focus:outline-none transition w-full"
+                  className="font-semibold text-lg text-[#F7F8F8] bg-transparent border-b border-transparent hover:border-white focus:border-white focus:outline-none transition w-full"
                 />
-                <div className="text-xs text-[#9A9691] mt-1">
+                <div className="text-xs text-[#8A8F98] mt-1">
                   Slug: {category.slug} | Order: #{category.order}
                 </div>
               </div>
@@ -257,7 +257,7 @@ export default function CategoriesManagementPage() {
                 <Select
                   value={category.color}
                   onChange={(e) => updateCategory(category.id, { color: e.target.value })}
-                  className="w-full px-2 py-1 text-sm border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded focus:outline-none focus:border-[#D07A60]"
+                  className="w-full px-2 py-1 text-sm border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded focus:outline-none focus:border-white"
                 >
                   {colorOptions.map(color => (
                     <option key={color} value={color}>{color.replace('bg-', '')}</option>
@@ -266,7 +266,7 @@ export default function CategoriesManagementPage() {
               </div>
 
               {/* Product Count */}
-              <div className="w-24 text-center text-[#9A9691]">
+              <div className="w-24 text-center text-[#8A8F98]">
                 {category.productCount || 0}
               </div>
 
@@ -289,20 +289,20 @@ export default function CategoriesManagementPage() {
                 <Button
                   onClick={() => moveCategory(category.id, 'up')}
                   disabled={index === 0}
-                  className="p-2 rounded hover:bg-[#14141A] text-[#F5F3F0] border border-transparent hover:border-[#2A2A32] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-2 rounded hover:bg-[#08090A] text-[#F7F8F8] border border-transparent hover:border-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition"
                 >
                   <ChevronUp size={18} />
                 </Button>
                 <Button
                   onClick={() => moveCategory(category.id, 'down')}
                   disabled={index === categories.length - 1}
-                  className="p-2 rounded hover:bg-[#14141A] text-[#F5F3F0] border border-transparent hover:border-[#2A2A32] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-2 rounded hover:bg-[#08090A] text-[#F7F8F8] border border-transparent hover:border-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition"
                 >
                   <ChevronDown size={18} />
                 </Button>
                 <Button
                   onClick={() => deleteCategory(category.id)}
-                  className="p-2 rounded hover:bg-red-950/60 text-red-400 border border-transparent hover:border-red-800/40 transition"
+                  className="p-2 rounded hover:bg-red-950/60 text-white/60 border border-transparent hover:border-red-800/40 transition"
                 >
                   <Trash2 size={18} />
                 </Button>

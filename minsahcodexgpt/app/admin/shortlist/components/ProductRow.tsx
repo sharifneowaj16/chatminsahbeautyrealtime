@@ -77,7 +77,7 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
             type="checkbox"
             checked={item.purchased}
             onChange={onCheckboxChange}
-            className="w-5 h-5 rounded border border-[#2A2A32] bg-[#14141A] cursor-pointer text-[#D07A60] focus:ring-[#D07A60] transition-all"
+            className="w-5 h-5 rounded border border-white/[0.08] bg-[#08090A] cursor-pointer text-white focus:ring-white/20 transition-all"
           />
         </label>
 
@@ -87,13 +87,13 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
             className={`font-semibold text-sm sm:text-base transition-all ${
               item.purchased
                 ? 'text-green-700 line-through'
-                : 'text-[#F5F3F0]'
+                : 'text-[#F7F8F8]'
             }`}
           >
             {item.productName}
           </p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-xs bg-[#14141A] border border-[#2A2A32] text-[#9A9691] px-2 py-0.5 rounded">
+            <span className="text-xs bg-[#08090A] border border-white/[0.08] text-[#8A8F98] px-2 py-0.5 rounded">
               Qty: {item.quantity}
             </span>
             <span className={`text-xs px-2 py-0.5 rounded font-medium ${getPriorityColor(item.priority)}`}>
@@ -104,29 +104,29 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
       </div>
 
       {/* Financial Details Grid - Mobile Stack */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-9 text-xs sm:text-sm border-t border-[#2A2A32] pt-2 mt-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-9 text-xs sm:text-sm border-t border-white/[0.08] pt-2 mt-2">
         <div>
-          <p className="text-[#9A9691] text-xs">Buy Price</p>
-          <p className="font-bold text-[#F5F3F0]">{formatCurrency(item.buyPrice)}</p>
+          <p className="text-[#8A8F98] text-xs">Buy Price</p>
+          <p className="font-bold text-[#F7F8F8]">{formatCurrency(item.buyPrice)}</p>
         </div>
         <div>
-          <p className="text-[#9A9691] text-xs">Total Cost</p>
+          <p className="text-[#8A8F98] text-xs">Total Cost</p>
           <p className="font-bold text-rose-400">{formatCurrency(totalCost)}</p>
         </div>
         <div>
-          <p className="text-[#9A9691] text-xs">Sell Price</p>
-          <p className="font-bold text-[#F5F3F0]">{formatCurrency(item.sellPrice)}</p>
+          <p className="text-[#8A8F98] text-xs">Sell Price</p>
+          <p className="font-bold text-[#F7F8F8]">{formatCurrency(item.sellPrice)}</p>
         </div>
         <div>
-          <p className="text-[#9A9691] text-xs">Profit</p>
-          <p className="font-bold text-emerald-400">{formatCurrency(profit)}</p>
+          <p className="text-[#8A8F98] text-xs">Profit</p>
+          <p className="font-bold text-white">{formatCurrency(profit)}</p>
         </div>
       </div>
 
       {/* Purchase Status */}
       {item.purchased && item.purchasedAt && (
         <div className="pl-9 mt-2 pt-2 border-t border-emerald-800/40">
-          <p className="text-xs text-emerald-400">
+          <p className="text-xs text-white">
             ✅ Purchased on {new Date(item.purchasedAt).toLocaleDateString('bn-BD')}
           </p>
         </div>
@@ -134,8 +134,8 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
 
       {/* Notes */}
       {item.notes && (
-        <div className="pl-9 mt-2 pt-2 border-t border-[#2A2A32]">
-          <p className="text-xs text-[#9A9691] italic">
+        <div className="pl-9 mt-2 pt-2 border-t border-white/[0.08]">
+          <p className="text-xs text-[#8A8F98] italic">
             📝 {item.notes}
           </p>
         </div>

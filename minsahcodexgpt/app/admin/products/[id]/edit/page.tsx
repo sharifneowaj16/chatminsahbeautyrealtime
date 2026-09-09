@@ -903,7 +903,7 @@ export default function EditProductPage() {
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-64">
-        <Loader2 className="w-8 h-8 text-admin-primary animate-spin" />
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
         <span className="ml-3 text-gray-600">Loading product...</span>
       </div>
     );
@@ -914,7 +914,7 @@ export default function EditProductPage() {
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">{loadError}</p>
-          <Link href="/admin/products" className="mt-2 inline-block text-admin-primary hover:underline">← Back</Link>
+          <Link href="/admin/products" className="mt-2 inline-block text-white hover:underline">← Back</Link>
         </div>
       </div>
     );
@@ -928,12 +928,12 @@ export default function EditProductPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <Link href="/admin/products" className="inline-flex items-center text-admin-primary hover:text-admin-primary mb-4">
+        <Link href="/admin/products" className="inline-flex items-center text-white hover:text-white mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
-        <h1 className="text-3xl font-bold text-[#F5F3F0]">Edit Product</h1>
+        <h1 className="text-3xl font-bold text-[#F7F8F8]">Edit Product</h1>
         <p className="text-gray-600 text-sm mt-1">
-          Slug: <span className="font-mono text-admin-primary">{formData.urlSlug || '—'}</span>
+          Slug: <span className="font-mono text-white">{formData.urlSlug || '—'}</span>
           {dbProductId && <span className="ml-3 text-gray-400 text-xs">DB: {dbProductId}</span>}
         </p>
       </div>
@@ -941,16 +941,16 @@ export default function EditProductPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* ── 1. Basic Information ─────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Package className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Basic Information</h2>
+            <Package className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Basic Information</h2>
           </div>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
               <Input type="text" name="name" value={formData.name} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="e.g., Hydrating Face Serum" />
             </div>
 
@@ -959,7 +959,7 @@ export default function EditProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                 <Select name="category" value={formData.category}
                   onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value, subcategory: '', item: '' }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20">
                   <option value="">Select category</option>
                   {categoriesData.map((cat) => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
                 </Select>
@@ -969,7 +969,7 @@ export default function EditProductPage() {
                 <Select name="subcategory" value={formData.subcategory}
                   onChange={(e) => setFormData((prev) => ({ ...prev, subcategory: e.target.value, item: '' }))}
                   disabled={!formData.category}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary disabled:opacity-50">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 disabled:opacity-50">
                   <option value="">Select subcategory</option>
                   {subcategories.map((s: { name: string }) => <option key={s.name} value={s.name}>{s.name}</option>)}
                 </Select>
@@ -981,7 +981,7 @@ export default function EditProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Type/Item</label>
                 <Select name="item" value={formData.item} onChange={handleChange}
                   disabled={!formData.subcategory || items.length === 0}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary disabled:opacity-50">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 disabled:opacity-50">
                   <option value="">Select item</option>
                   {items.map((item: string) => <option key={item} value={item}>{item}</option>)}
                 </Select>
@@ -992,13 +992,13 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Brand *</label>
                 <Input type="text" name="brand" value={formData.brand} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder="Enter brand name" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Origin Country</label>
                 <Select name="originCountry" value={formData.originCountry} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20">
                   {countries.map((c) => <option key={c} value={c}>{c}</option>)}
                 </Select>
               </div>
@@ -1008,7 +1008,7 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
                 <Select name="status" value={formData.status} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20">
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="out_of_stock">Out of Stock</option>
@@ -1017,7 +1017,7 @@ export default function EditProductPage() {
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
                   <Input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
-                    className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
+                    className="w-4 h-4 text-white border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Featured Product</span>
                 </label>
               </div>
@@ -1026,24 +1026,24 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Description *</label>
               <Textarea name="description" value={formData.description} onChange={handleChange} rows={5}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="Detailed product description..." />
             </div>
           </div>
         </div>
 
         {/* ── 2. Product Images ────────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-2">
-            <ImageIcon className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Images</h2>
+            <ImageIcon className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Product Images</h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">Max 10MB per image. First/Main image is the display image.</p>
           <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
 
           <div className="space-y-4">
             <Button type="button" onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center px-6 py-3 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover font-medium">
+              className="inline-flex items-center px-6 py-3 bg-white text-black hover:bg-white/90 rounded-lg font-medium">
               <Upload className="w-5 h-5 mr-2" /> Upload Images
             </Button>
 
@@ -1057,7 +1057,7 @@ export default function EditProductPage() {
                         <img src={image.preview} alt={`Product ${index + 1}`} className="w-full h-full object-cover" />
                       </div>
                       {image.isMain && (
-                        <div className="absolute top-2 left-2 bg-admin-primary text-white text-xs font-semibold px-2 py-1 rounded shadow">Main</div>
+                        <div className="absolute top-2 left-2 bg-white text-black hover:bg-white/90 text-xs font-semibold px-2 py-1 rounded shadow">Main</div>
                       )}
                       {image.existingUrl && !image.file && (
                         <div className="absolute top-2 right-2 bg-gray-800/70 text-white text-xs px-1 rounded">Saved</div>
@@ -1079,7 +1079,7 @@ export default function EditProductPage() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold text-[#F5F3F0] mb-1">Image Alt Texts (for SEO)</h3>
+                  <h3 className="text-sm font-semibold text-[#F7F8F8] mb-1">Image Alt Texts (for SEO)</h3>
                   <p className="text-xs text-gray-500 mb-3">Alt text is saved with each image</p>
                   <div className="space-y-3">
                     {formData.images.map((image, index) => (
@@ -1091,7 +1091,7 @@ export default function EditProductPage() {
                           </label>
                           <Input type="text" value={formData.imageAltTexts[index] || ''}
                             onChange={(e) => handleImageAltTextChange(index, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
                             placeholder="e.g., Hydrating face serum bottle Bangladesh" />
                         </div>
                       </div>
@@ -1104,26 +1104,26 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 3. Product Variants ──────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <Tag className="w-5 h-5 text-admin-primary mr-2" />
+              <Tag className="w-5 h-5 text-white mr-2" />
               <div>
-                <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Variants</h2>
+                <h2 className="text-lg font-semibold text-[#F7F8F8]">Product Variants</h2>
                 <p className="text-sm text-gray-600">Add sizes, colors with individual images</p>
               </div>
             </div>
             <Button type="button" onClick={handleAddVariant}
-              className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm font-medium">
+              className="inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg text-sm font-medium">
               <Plus className="w-4 h-4 mr-1" /> Add Variant
             </Button>
           </div>
 
           <div className="space-y-5">
             {formData.variants.map((variant, index) => (
-              <div key={variant.id} className="border border-[#2A2A32] rounded-lg p-4 bg-[#14141A]">
+              <div key={variant.id} className="border border-white/[0.08] rounded-lg p-4 bg-[#08090A]">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-[#F5F3F0]">Variant #{index + 1}</h3>
+                  <h3 className="text-sm font-semibold text-[#F7F8F8]">Variant #{index + 1}</h3>
                   {formData.variants.length > 1 && (
                     <Button type="button" aria-label={`Remove variant ${index + 1}`} onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 className="w-4 h-4" />
@@ -1135,27 +1135,27 @@ export default function EditProductPage() {
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Size/Volume</label>
                     <Input type="text" value={variant.size || ''} onChange={(e) => handleVariantChange(variant.id, 'size', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="e.g., 30ml" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="e.g., 30ml" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Color/Shade</label>
                     <Input type="text" value={variant.color || ''} onChange={(e) => handleVariantChange(variant.id, 'color', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="e.g., Ribbon" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="e.g., Ribbon" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Price (BDT ৳) *</label>
                     <Input type="number" value={variant.price} onChange={(e) => handleVariantChange(variant.id, 'price', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="0.00" step="0.01" min="0" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="0.00" step="0.01" min="0" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Stock *</label>
                     <Input type="number" value={variant.stock} onChange={(e) => handleVariantChange(variant.id, 'stock', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="0" min="0" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="0" min="0" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">SKU *</label>
                     <Input type="text" value={variant.sku} onChange={(e) => handleVariantChange(variant.id, 'sku', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="SKU-001" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="SKU-001" />
                   </div>
                 </div>
 
@@ -1174,7 +1174,7 @@ export default function EditProductPage() {
                         </Button>
                       </div>
                     )}
-                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-admin-border rounded-lg cursor-pointer hover:bg-admin-panel text-xs text-admin-primary font-medium">
+                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-admin-border rounded-lg cursor-pointer hover:bg-admin-panel text-xs text-white font-medium">
                       <Upload className="w-4 h-4" />
                       {variant.imagePreview || variant.image ? 'Change Image' : 'Upload Image'}
                       <input type="file" accept="image/*" className="hidden"
@@ -1189,28 +1189,28 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 4. Product Specifications ────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Specifications</h2>
+            <Settings className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Product Specifications</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight/Volume (numeric)</label>
                 <Input type="text" name="weight" value={formData.weight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="e.g., 50" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="e.g., 50" />
                 <p className="mt-1 text-xs text-gray-500">Numeric only — no unit.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
                 <Input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="e.g., 24 months / 12 months after opening" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="e.g., 24 months / 12 months after opening" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
                 <Input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" />
               </div>
             </div>
 
@@ -1221,7 +1221,7 @@ export default function EditProductPage() {
                   <Button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
                     className={`px-4 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
                       formData.skinType.includes(type)
-                        ? 'bg-admin-primary border-admin-primary text-white'
+                        ? 'bg-white text-black hover:bg-white/90 border-admin-primary text-white'
                         : 'bg-white border-gray-300 text-gray-700 hover:border-admin-border'
                     }`}>
                     {type}
@@ -1234,7 +1234,7 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Condition</label>
                 <Select name="productCondition" value={formData.productCondition} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary">
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20">
                   <option value="NEW">New</option>
                   <option value="USED">Used</option>
                   <option value="REFURBISHED">Refurbished</option>
@@ -1243,7 +1243,7 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">GTIN/EAN/UPC</label>
                 <Input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="1234567890123" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="1234567890123" />
               </div>
             </div>
 
@@ -1252,29 +1252,29 @@ export default function EditProductPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Average Rating (0–5)</label>
                 <Input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
                   min="0" max="5" step="0.1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Review Count</label>
                 <Input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
-                  min="0" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
+                  min="0" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients List</label>
               <Textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="Aqua, Glycerin, Hyaluronic Acid..." />
             </div>
           </div>
         </div>
 
         {/* ── 5. SEO Settings ──────────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Search className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">SEO Settings</h2>
+            <Search className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">SEO Settings</h2>
           </div>
           <div className="space-y-4">
 
@@ -1282,7 +1282,7 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
               <Input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="SEO title — include focus keyword" />
               <p className="text-xs text-gray-500 mt-1 text-right">{formData.metaTitle.length}/60</p>
             </div>
@@ -1291,7 +1291,7 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
               <Textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder='150–160 chars. Include "Cash on Delivery" or price signal.' />
               <p className="text-xs text-gray-500 mt-1 text-right">{formData.metaDescription.length}/160</p>
             </div>
@@ -1301,13 +1301,13 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Product Name</label>
                 <Input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder="বাংলা নাম" lang="bn-BD" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Focus Keyword</label>
                 <Input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder="e.g., beauty glazed lip oil bangladesh" />
                 <p className="text-xs text-gray-400 mt-1">Must appear in Meta Title, description first 100 words, and URL Slug</p>
               </div>
@@ -1323,13 +1323,13 @@ export default function EditProductPage() {
                 type="text"
                 value={formData.secondaryKeywords.join(', ')}
                 onChange={(e) => handleSecondaryKeywordsChange(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="lip oil for dry lips bangladesh, non sticky lip gloss bd price, tinted lip oil buy online bd"
               />
               {formData.secondaryKeywords.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {formData.secondaryKeywords.map((kw, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-admin-panel border border-admin-border rounded-full text-xs text-admin-primary">
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-admin-panel border border-admin-border rounded-full text-xs text-white">
                       {kw}
                       <Button
                         type="button"
@@ -1338,7 +1338,7 @@ export default function EditProductPage() {
                           ...prev,
                           secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
                         }))}
-                        className="text-admin-text-muted hover:text-admin-primary"
+                        className="text-admin-text-muted hover:text-white"
                       >
                         <X className="w-3 h-3" />
                       </Button>
@@ -1360,7 +1360,7 @@ export default function EditProductPage() {
                   name="bengaliFocusKeyword"
                   value={formData.bengaliFocusKeyword}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder="লিপ অয়েল দাম বাংলাদেশ"
                   lang="bn-BD"
                 />
@@ -1378,7 +1378,7 @@ export default function EditProductPage() {
                   value={formData.ogDescription}
                   onChange={handleChange}
                   maxLength={130}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder="Glass lips in one swipe. Non-sticky & deeply nourishing."
                 />
                 <p className={`text-xs mt-1 text-right ${formData.ogDescription.length > 130 ? 'text-red-500' : 'text-gray-400'}`}>
@@ -1391,14 +1391,14 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bangla Meta Description</label>
               <Textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" />
             </div>
 
             {/* OG Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
               <Input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="Leave blank to use Meta Title" />
             </div>
 
@@ -1411,14 +1411,14 @@ export default function EditProductPage() {
                 </div>
               )}
               <input type="file" accept="image/*" onChange={handleOgImageUpload}
-                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-admin-panel file:text-admin-primary" />
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-admin-panel file:text-white" />
             </div>
 
             {/* URL Slug */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug</label>
               <Input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="product-url-slug" />
               <p className="mt-1 text-xs text-gray-500">URL: /products/<strong>{formData.urlSlug || 'product-url-slug'}</strong> — max 50 chars, include focus keyword</p>
             </div>
@@ -1428,14 +1428,14 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Canonical URL</label>
                 <Input type="text" name="canonicalUrl" value={formData.canonicalUrl} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder={`${ADMIN_SITE_URL}/products/product-url-slug`} />
                 <p className="mt-1 text-xs text-gray-500">Owner fill: final live product URL. Leave blank to let frontend use slug URL.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Page H1</label>
                 <Input type="text" name="pageH1" value={formData.pageH1} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder="Sunsilk Power Shot Hair Treatment Price in Bangladesh" />
                 <p className="mt-1 text-xs text-gray-500">Visible product page H1. Leave blank to use product name.</p>
               </div>
@@ -1444,7 +1444,7 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">SEO Intro / Top Visible Intro</label>
               <Textarea name="seoIntro" value={formData.seoIntro} onChange={handleChange} rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="Short visible intro with product, price, size, variant and Bangladesh buying intent." />
               <p className="mt-1 text-xs text-gray-500">This should render near the top of the product page.</p>
             </div>
@@ -1456,7 +1456,7 @@ export default function EditProductPage() {
                 <span className="ml-2 text-xs font-normal text-gray-400">15–20 tags, priority order: focusKeyword first</span>
               </label>
               <Input type="text" name="tags" value={formData.tags} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="beauty glazed lip oil bangladesh, lip oil bd, লিপ অয়েল, ..." />
             </div>
 
@@ -1464,22 +1464,22 @@ export default function EditProductPage() {
         </div>
 
         {/* ── FAQ Section ──────────────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Semantic SEO & Structured Content</h2>
+            <Settings className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Semantic SEO & Structured Content</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="Search intent" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="Search intent" />
               <Input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="Primary concern" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="Primary concern" />
               <Input type="text" name="gender" value={formData.gender} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="Gender" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="Gender" />
             </div>
             <Textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
               placeholder="Target audience" />
             {[
               ['keyBenefits', 'Key Benefits'],
@@ -1497,7 +1497,7 @@ export default function EditProductPage() {
                 <Textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
                   onChange={(e) => handleArrayFieldChange(field as keyof ProductFormData, e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" />
               </div>
             ))}
             {/* 1-Click Product Hero Visual Controller (Phase 4, 5, 6 UI) */}
@@ -1539,7 +1539,7 @@ export default function EditProductPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                   <Textarea name={field} value={formData[field as keyof ProductFormData] as string}
                     onChange={handleChange} rows={7}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-xs font-mono" />
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-xs font-mono" />
                 </div>
               ))}
             </div>
@@ -1547,13 +1547,13 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">FAQ Schema Note</label>
                 <Textarea name="faqSchemaNote" value={formData.faqSchemaNote} onChange={handleChange} rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
                   placeholder="FAQ content is for users. Product/Merchant listing schema is SEO priority." />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Authenticity Note</label>
                 <Textarea name="authenticityNote" value={formData.authenticityNote} onChange={handleChange} rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
                   placeholder="Imported Thailand product. Check packaging, expiry and batch/barcode after receiving." />
               </div>
             </div>
@@ -1562,7 +1562,7 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Ingredient Verification Status</label>
                 <Input type="text" name="ingredientVerificationStatus" value={formData.ingredientVerificationStatus} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                   placeholder="Pending physical packaging verification" />
               </div>
               <div>
@@ -1570,13 +1570,13 @@ export default function EditProductPage() {
                 <Textarea value={formData.seoValidationChecklist.join(', ')}
                   onChange={(e) => handleArrayFieldChange('seoValidationChecklist', e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
                   placeholder="Run Rich Results Test, Check canonical URL 200, Check images crawlable" />
               </div>
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-[#F5F3F0] mb-2">1–22 SEO Render Payloads</h3>
+              <h3 className="text-sm font-semibold text-[#F7F8F8] mb-2">1–22 SEO Render Payloads</h3>
               <p className="text-xs text-gray-500 mb-3">These JSON fields are saved for product-page rendering, ProductGroup/Merchant listing schema, breadcrumbs, variant URL strategy and internal links.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
@@ -1594,7 +1594,7 @@ export default function EditProductPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                     <Textarea name={field} value={formData[field as keyof ProductFormData] as string}
                       onChange={handleChange} rows={7}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-xs font-mono" />
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-xs font-mono" />
                   </div>
                 ))}
               </div>
@@ -1602,7 +1602,7 @@ export default function EditProductPage() {
 
             <label className="flex items-center gap-2">
               <Input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
-                className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
+                className="w-4 h-4 text-white border-gray-300 rounded" />
               <span className="text-sm text-gray-700">FAQ schema ready</span>
             </label>
           </div>
@@ -1614,17 +1614,17 @@ export default function EditProductPage() {
         />
 
         {/* ── 6. Shipping & Delivery ───────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <TruckIcon className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Shipping & Delivery</h2>
+            <TruckIcon className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Shipping & Delivery</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Weight (grams, numeric)</label>
                 <Input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="e.g., 50" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="e.g., 50" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Dimensions (L × W × H cm)</label>
@@ -1632,19 +1632,19 @@ export default function EditProductPage() {
                   <div>
                     <Input type="text" value={formData.dimensions.length}
                       onChange={(e) => handleDimensionChange('length', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="Length" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="Length" />
                     <p className="text-xs text-gray-400 mt-0.5 text-center">L (cm)</p>
                   </div>
                   <div>
                     <Input type="text" value={formData.dimensions.width}
                       onChange={(e) => handleDimensionChange('width', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="Width" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="Width" />
                     <p className="text-xs text-gray-400 mt-0.5 text-center">W (cm)</p>
                   </div>
                   <div>
                     <Input type="text" value={formData.dimensions.height}
                       onChange={(e) => handleDimensionChange('height', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary text-sm" placeholder="Height" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm" placeholder="Height" />
                     <p className="text-xs text-gray-400 mt-0.5 text-center">H (cm)</p>
                   </div>
                 </div>
@@ -1653,7 +1653,7 @@ export default function EditProductPage() {
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center">
                 <Input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
-                  className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
+                  className="w-4 h-4 text-white border-gray-300 rounded" />
                 <span className="ml-2 text-sm text-gray-700">Fragile Item</span>
               </label>
             </div>
@@ -1742,10 +1742,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 7. Discount & Offers ─────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Percent className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Discount & Offers</h2>
+            <Percent className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Discount & Offers</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1754,18 +1754,18 @@ export default function EditProductPage() {
                 <Input type="number" value={formData.discountPercentage}
                   onChange={(e) => handleDiscountChange(e.target.value)}
                   min="0" max="100" step="0.01"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="0" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sale Price (৳)</label>
                 <Input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
                   step="0.01" min="0"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="0.00" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="0.00" />
               </div>
               <div className="flex items-center pt-6">
                 <label className="flex items-center">
                   <Input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
-                    className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
+                    className="w-4 h-4 text-white border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">Flash Sale Eligible</span>
                 </label>
               </div>
@@ -1774,42 +1774,42 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer Start</label>
                 <Input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Offer End</label>
                 <Input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" />
               </div>
             </div>
           </div>
         </div>
 
         {/* ── 8. Stock Management ──────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <AlertCircle className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Stock Management</h2>
+            <AlertCircle className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Stock Management</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Low Stock Alert Threshold</label>
               <Input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="10" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="10" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Barcode/UPC</label>
               <Input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary" placeholder="Enter barcode" />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20" placeholder="Enter barcode" />
             </div>
           </div>
         </div>
 
         {/* ── 9. Additional Options ────────────────────────────────────── */}
-        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center mb-4">
-            <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-[#F5F3F0]">Additional Options</h2>
+            <Settings className="w-5 h-5 text-white mr-2" />
+            <h2 className="text-lg font-semibold text-[#F7F8F8]">Additional Options</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1822,7 +1822,7 @@ export default function EditProductPage() {
                   <Input type="checkbox" name={opt.name}
                     checked={formData[opt.name as keyof ProductFormData] as boolean}
                     onChange={handleChange}
-                    className="w-4 h-4 text-admin-primary border-gray-300 rounded" />
+                    className="w-4 h-4 text-white border-gray-300 rounded" />
                   <span className="ml-2 text-sm text-gray-700">{opt.label}</span>
                 </label>
               ))}
@@ -1830,20 +1830,20 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Related Products</label>
               <Input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
                 placeholder="Product IDs separated by commas" />
             </div>
           </div>
         </div>
 
         {/* ── Action Buttons ───────────────────────────────────────────── */}
-        <div className="flex items-center justify-between bg-[#1E1E24]/95 backdrop-blur rounded-lg border border-[#2A2A32] p-6 shadow-2xl sticky bottom-0 z-10">
+        <div className="flex items-center justify-between bg-[#151516]/95 backdrop-blur rounded-lg border border-white/[0.08] p-6 shadow-2xl sticky bottom-0 z-10">
           <Link href="/admin/products"
-            className="inline-flex items-center px-6 py-3 border border-[#2A2A32] rounded-lg text-[#9A9691] hover:text-[#F5F3F0] hover:bg-[#26262E] font-medium transition-colors">
+            className="inline-flex items-center px-6 py-3 border border-white/[0.08] rounded-lg text-[#8A8F98] hover:text-[#F7F8F8] hover:bg-[#1C1D1F] font-medium transition-colors">
             <X className="w-5 h-5 mr-2" /> Cancel
           </Link>
           <Button type="submit" disabled={isSubmitting}
-            className="inline-flex items-center px-8 py-3 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 font-medium shadow-lg">
+            className="inline-flex items-center px-8 py-3 bg-white text-black hover:bg-white/90 rounded-lg disabled:opacity-50 font-medium shadow-lg">
             {isSubmitting
               ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Saving...</>
               : <><Save className="w-5 h-5 mr-2" /> Save Changes</>}

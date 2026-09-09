@@ -204,13 +204,13 @@ export default function HomeSectionsPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-2xl font-bold text-[#F5F3F0]">Home Page Sections</h1>
-            <p className="text-[#9A9691] mt-1 text-sm">Manage all sections displayed on the homepage</p>
+            <h1 className="text-2xl font-bold text-[#F7F8F8]">Home Page Sections</h1>
+            <p className="text-[#8A8F98] mt-1 text-sm">Manage all sections displayed on the homepage</p>
           </div>
           <Button
             onClick={saveChanges}
             disabled={isSaving || isLoading || !hasUnsavedChanges}
-            className="flex min-h-11 items-center gap-2 rounded-lg bg-[#D07A60] px-4 py-2 text-white font-medium transition hover:bg-[#E08D70] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-11 items-center gap-2 rounded-lg bg-white text-black hover:bg-white/90 px-4 py-2 text-white font-medium transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
             {isSaving ? 'Saving…' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
@@ -218,18 +218,18 @@ export default function HomeSectionsPage() {
         </div>
 
         {/* Hero Builder */}
-        <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm">
+        <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-[#F5F3F0]">Hero / Banner Builder</h2>
-              <p className="text-sm text-[#9A9691]">Control homepage hero copy, image, and CTA links.</p>
+              <h2 className="text-lg font-bold text-[#F7F8F8]">Hero / Banner Builder</h2>
+              <p className="text-sm text-[#8A8F98]">Control homepage hero copy, image, and CTA links.</p>
             </div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-[#9A9691]">
+            <label className="flex items-center gap-2 text-sm font-semibold text-[#8A8F98]">
               <Input
                 type="checkbox"
                 checked={heroConfig.isVisible}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, isVisible: e.target.checked }); markDirty(); }}
-                className="h-4 w-4 rounded border-[#2A2A32] bg-[#14141A] text-[#D07A60] focus:ring-[#D07A60]"
+                className="h-4 w-4 rounded border-white/[0.08] bg-[#08090A] text-white focus:ring-white/20"
               />
               Show hero
             </label>
@@ -237,24 +237,24 @@ export default function HomeSectionsPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Eyebrow</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Eyebrow</label>
               <Input
                 value={heroConfig.eyebrow}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, eyebrow: e.target.value }); markDirty(); }}
-                className="w-full rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 focus:border-[#D07A60] focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 focus:border-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Featured image URL</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Featured image URL</label>
               <Input
                 value={heroConfig.imageUrl || ''}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, imageUrl: e.target.value }); markDirty(); }}
-                className="w-full rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 focus:border-[#D07A60] focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 focus:border-white focus:outline-none"
                 placeholder="/uploads/hero.jpg or https://..."
               />
             </div>
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Hero title</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Hero title</label>
               <Input
                 value={heroConfig.title}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, title: e.target.value }); markDirty(); }}
@@ -262,44 +262,44 @@ export default function HomeSectionsPage() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Subtitle</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Subtitle</label>
               <Textarea
                 value={heroConfig.subtitle}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, subtitle: e.target.value }); markDirty(); }}
                 rows={2}
-                className="w-full rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 focus:border-[#D07A60] focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 focus:border-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Primary CTA text</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Primary CTA text</label>
               <Input
                 value={heroConfig.primaryCtaText}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, primaryCtaText: e.target.value }); markDirty(); }}
-                className="w-full rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 focus:border-[#D07A60] focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 focus:border-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Primary CTA link</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Primary CTA link</label>
               <Input
                 value={heroConfig.primaryCtaHref}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, primaryCtaHref: e.target.value }); markDirty(); }}
-                className="w-full rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 focus:border-[#D07A60] focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 focus:border-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Secondary CTA text</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Secondary CTA text</label>
               <Input
                 value={heroConfig.secondaryCtaText}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, secondaryCtaText: e.target.value }); markDirty(); }}
-                className="w-full rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 focus:border-[#D07A60] focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 focus:border-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#9A9691]">Secondary CTA link</label>
+              <label className="mb-1 block text-sm font-medium text-[#8A8F98]">Secondary CTA link</label>
               <Input
                 value={heroConfig.secondaryCtaHref}
                 onChange={(e) => { setHeroConfig({ ...heroConfig, secondaryCtaHref: e.target.value }); markDirty(); }}
-                className="w-full rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 focus:border-[#D07A60] focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 focus:border-white focus:outline-none"
               />
             </div>
           </div>
@@ -337,59 +337,59 @@ export default function HomeSectionsPage() {
 
         {/* Quick Stats */}
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] shadow-sm">
-            <div className="text-2xl font-bold text-[#D07A60]">{sections.length}</div>
-            <div className="text-sm text-[#9A9691]">Total Sections</div>
+          <div className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] shadow-sm">
+            <div className="text-2xl font-bold text-white">{sections.length}</div>
+            <div className="text-sm text-[#8A8F98]">Total Sections</div>
           </div>
-          <div className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] shadow-sm">
+          <div className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] shadow-sm">
             <div className="text-2xl font-bold text-green-600">{sections.filter(s => s.isVisible).length}</div>
-            <div className="text-sm text-[#9A9691]">Visible</div>
+            <div className="text-sm text-[#8A8F98]">Visible</div>
           </div>
-          <div className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] shadow-sm">
+          <div className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] shadow-sm">
             <div className="text-2xl font-bold text-gray-600">{sections.filter(s => !s.isVisible).length}</div>
-            <div className="text-sm text-[#9A9691]">Hidden</div>
+            <div className="text-sm text-[#8A8F98]">Hidden</div>
           </div>
-          <div className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] shadow-sm">
+          <div className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] shadow-sm">
             <div className="text-2xl font-bold text-blue-600">
               {sections.reduce((sum, s) => sum + (s.settings.itemsToShow || 0), 0)}
             </div>
-            <div className="text-sm text-[#9A9691]">Total Items</div>
+            <div className="text-sm text-[#8A8F98]">Total Items</div>
           </div>
         </div>
       </div>
 
       {/* Management Links */}
       <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Link href="/admin/home-sections/categories" className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] hover:border-[#D07A60] transition text-center shadow-sm"
+        <Link href="/admin/home-sections/categories" className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] hover:border-white transition text-center shadow-sm"
         >
-          <div className="text-sm font-bold mb-2 text-[#D07A60]">CAT</div>
-          <div className="font-semibold text-[#F5F3F0] text-sm">Categories</div>
+          <div className="text-sm font-bold mb-2 text-white">CAT</div>
+          <div className="font-semibold text-[#F7F8F8] text-sm">Categories</div>
         </Link>
-        <Link href="/admin/home-sections/products" className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] hover:border-[#D07A60] transition text-center shadow-sm"
+        <Link href="/admin/home-sections/products" className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] hover:border-white transition text-center shadow-sm"
         >
-          <div className="text-sm font-bold mb-2 text-[#D07A60]">PROD</div>
-          <div className="font-semibold text-[#F5F3F0] text-sm">Products</div>
+          <div className="text-sm font-bold mb-2 text-white">PROD</div>
+          <div className="font-semibold text-[#F7F8F8] text-sm">Products</div>
         </Link>
-        <Link href="/admin/home-sections/combos" className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] hover:border-[#D07A60] transition text-center shadow-sm"
+        <Link href="/admin/home-sections/combos" className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] hover:border-white transition text-center shadow-sm"
         >
-          <div className="text-sm font-bold mb-2 text-[#D07A60]">COMBO</div>
-          <div className="font-semibold text-[#F5F3F0] text-sm">Combos</div>
+          <div className="text-sm font-bold mb-2 text-white">COMBO</div>
+          <div className="font-semibold text-[#F7F8F8] text-sm">Combos</div>
         </Link>
-        <Link href="/admin/home-sections/brands" className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] hover:border-[#D07A60] transition text-center shadow-sm"
+        <Link href="/admin/home-sections/brands" className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] hover:border-white transition text-center shadow-sm"
         >
-          <div className="text-sm font-bold mb-2 text-[#D07A60]">BRAND</div>
-          <div className="font-semibold text-[#F5F3F0] text-sm">Brands</div>
+          <div className="text-sm font-bold mb-2 text-white">BRAND</div>
+          <div className="font-semibold text-[#F7F8F8] text-sm">Brands</div>
         </Link>
-        <Link href="/admin/home-sections/slides" className="bg-[#1E1E24] p-4 rounded-xl border border-[#2A2A32] hover:border-[#D07A60] transition text-center shadow-sm"
+        <Link href="/admin/home-sections/slides" className="bg-[#151516] p-4 rounded-xl border border-white/[0.08] hover:border-white transition text-center shadow-sm"
         >
-          <div className="text-sm font-bold mb-2 text-[#D07A60]">SLIDE</div>
-          <div className="font-semibold text-[#F5F3F0] text-sm">Slides</div>
+          <div className="text-sm font-bold mb-2 text-white">SLIDE</div>
+          <div className="font-semibold text-[#F7F8F8] text-sm">Slides</div>
         </Link>
       </div>
 
       {/* Sections List */}
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] shadow-sm overflow-hidden">
-        <div className="bg-[#14141A] text-[#9A9691] px-6 py-4 flex items-center gap-4 text-sm font-semibold border-b border-[#2A2A32]">
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] shadow-sm overflow-hidden">
+        <div className="bg-[#08090A] text-[#8A8F98] px-6 py-4 flex items-center gap-4 text-sm font-semibold border-b border-white/[0.08]">
           <GripVertical size={20} />
           <span className="flex-1 font-semibold">Section</span>
           <span className="w-24 text-center font-semibold">Visibility</span>
@@ -398,18 +398,18 @@ export default function HomeSectionsPage() {
           <span className="w-36 text-center font-semibold">Actions</span>
         </div>
 
-        <div className="divide-y divide-[#2A2A32]">
+        <div className="divide-y divide-white/[0.08]">
           {sections.map((section, index) => (
             <div
               key={section.id}
               className={`relative px-6 py-4 flex items-center gap-4 transition ${
-                !section.isVisible ? 'bg-[#14141A]/50 opacity-60' : 'hover:bg-[#26262E]/50'
+                !section.isVisible ? 'bg-[#08090A]/50 opacity-60' : 'hover:bg-[#1C1D1F]/50'
               }`}
             >
               {/* Drag Handle & Icon */}
               <div className="flex items-center gap-3">
-                <GripVertical size={20} className="text-[#9A9691] cursor-move" />
-                <span className="text-xs font-bold px-2 py-1 bg-[#14141A] border border-[#2A2A32] rounded text-[#D07A60]">{getSectionIcon(section.type)}</span>
+                <GripVertical size={20} className="text-[#8A8F98] cursor-move" />
+                <span className="text-xs font-bold px-2 py-1 bg-[#08090A] border border-white/[0.08] rounded text-white">{getSectionIcon(section.type)}</span>
               </div>
 
               {/* Section Info */}
@@ -418,16 +418,16 @@ export default function HomeSectionsPage() {
                   type="text"
                   value={section.title}
                   onChange={(e) => updateSectionTitle(section.id, e.target.value)}
-                  className="font-semibold text-[#F5F3F0] bg-transparent border-b border-transparent hover:border-[#D07A60] focus:border-[#D07A60] focus:outline-none transition w-full"
+                  className="font-semibold text-[#F7F8F8] bg-transparent border-b border-transparent hover:border-white focus:border-white focus:outline-none transition w-full"
                 />
                 <Input
                   type="text"
                   value={section.subtitle || ''}
                   onChange={(e) => updateSectionSubtitle(section.id, e.target.value)}
                   placeholder="Optional subtitle"
-                  className="mt-1 w-full bg-transparent text-xs text-[#9A9691] border-b border-transparent hover:border-[#D07A60] focus:border-[#D07A60] focus:outline-none transition"
+                  className="mt-1 w-full bg-transparent text-xs text-[#8A8F98] border-b border-transparent hover:border-white focus:border-white focus:outline-none transition"
                 />
-                <div className="text-xs text-[#9A9691] mt-1">
+                <div className="text-xs text-[#8A8F98] mt-1">
                   Type: {section.type} | Order: #{section.order}
                 </div>
               </div>
@@ -502,12 +502,12 @@ export default function HomeSectionsPage() {
 
               {/* Advanced Settings Panel */}
               {showSettings === section.id && (
-                <div className="absolute right-6 mt-2 w-96 bg-[#1E1E24] border border-[#3E3E48] rounded-xl shadow-2xl p-4 z-20">
-                  <h4 className="font-bold text-[#F5F3F0] mb-3">Advanced Settings</h4>
+                <div className="absolute right-6 mt-2 w-96 bg-[#151516] border border-white/[0.15] rounded-xl shadow-2xl p-4 z-20">
+                  <h4 className="font-bold text-[#F7F8F8] mb-3">Advanced Settings</h4>
 
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-[#9A9691] mb-1">
+                      <label className="block text-sm font-medium text-[#8A8F98] mb-1">
                         Background Color
                       </label>
                       <input
@@ -519,7 +519,7 @@ export default function HomeSectionsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-[#9A9691] mb-1">
+                      <label className="block text-sm font-medium text-[#8A8F98] mb-1">
                         View All / CTA URL
                       </label>
                       <Input
@@ -532,7 +532,7 @@ export default function HomeSectionsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-[#9A9691] mb-1">
+                      <label className="block text-sm font-medium text-[#8A8F98] mb-1">
                         CTA Text
                       </label>
                       <Input
@@ -545,7 +545,7 @@ export default function HomeSectionsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-[#9A9691] mb-1">
+                      <label className="block text-sm font-medium text-[#8A8F98] mb-1">
                         {getSelectionLabel(section.type)}
                       </label>
                       <Textarea
@@ -573,7 +573,7 @@ export default function HomeSectionsPage() {
                     </div>
 
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#9A9691]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[#8A8F98]">
                         <Input
                           type="checkbox"
                           checked={section.settings.showViewAll !== false}
@@ -586,7 +586,7 @@ export default function HomeSectionsPage() {
 
                     <Button
                       onClick={() => setShowSettings(null)}
-                      className="w-full px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#E08D70] font-medium transition"
+                      className="w-full px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg font-medium transition"
                     >
                       Done
                     </Button>
@@ -603,7 +603,7 @@ export default function HomeSectionsPage() {
         <Button
           onClick={saveChanges}
           disabled={isSaving || isLoading || !hasUnsavedChanges}
-          className="flex min-h-11 items-center gap-2 rounded-lg bg-[#D07A60] px-6 py-3 font-semibold text-white transition hover:bg-[#E08D70] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-11 items-center gap-2 rounded-lg bg-white text-black hover:bg-white/90 px-6 py-3 font-semibold text-white transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
           {isSaving ? 'Saving…' : hasUnsavedChanges ? 'Save All Changes' : 'All Changes Saved'}

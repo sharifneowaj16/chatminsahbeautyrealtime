@@ -24,12 +24,12 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, subtext, borderAccent }: StatCardProps) {
   return (
-    <div className={`bg-[#14141A] border border-[#2A2A32] rounded-xl p-4 border-l-4 ${borderAccent}`}>
+    <div className={`bg-[#08090A] border border-white/[0.08] rounded-xl p-4 border-l-4 ${borderAccent}`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[#9A9691] text-sm font-medium">{label}</p>
-          <p className="text-[#F5F3F0] text-2xl font-bold mt-1">{value}</p>
-          {subtext && <p className="text-[#6B6864] text-xs mt-1">{subtext}</p>}
+          <p className="text-[#8A8F98] text-sm font-medium">{label}</p>
+          <p className="text-[#F7F8F8] text-2xl font-bold mt-1">{value}</p>
+          {subtext && <p className="text-[#62666D] text-xs mt-1">{subtext}</p>}
         </div>
         <div className="text-3xl">{icon}</div>
       </div>
@@ -43,9 +43,9 @@ export default function StatsSection({ stats }: { stats: Stats }) {
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-[#1E1E24] border border-[#2A2A32] rounded-xl shadow-sm space-y-4">
+    <div className="p-4 sm:p-6 bg-[#151516] border border-white/[0.08] rounded-xl shadow-sm space-y-4">
       <div className="mb-2">
-        <h2 className="text-lg font-bold text-[#F5F3F0] flex items-center gap-2">
+        <h2 className="text-lg font-bold text-[#F7F8F8] flex items-center gap-2">
           📊 Real-time Statistics
         </h2>
       </div>
@@ -62,7 +62,7 @@ export default function StatsSection({ stats }: { stats: Stats }) {
           icon="✅"
           label="Completed Orders"
           value={stats.completedOrders}
-          borderAccent="border-l-emerald-500"
+          borderAccent="border-l-white"
         />
         <StatCard
           icon="📦"
@@ -91,18 +91,18 @@ export default function StatsSection({ stats }: { stats: Stats }) {
           icon="💵"
           label="Total Revenue"
           value={formatCurrency(stats.totalPotentialRevenue)}
-          borderAccent="border-l-[#D07A60]"
+          borderAccent="border-l-white/40"
         />
       </div>
 
       {/* Completion Progress */}
-      <div className="bg-[#14141A] rounded-xl p-4 border border-[#2A2A32]">
+      <div className="bg-[#08090A] rounded-xl p-4 border border-white/[0.08]">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-[#9A9691]">Overall Completion</p>
-          <span className="text-lg font-bold text-[#D07A60]">{stats.completionRate}%</span>
+          <p className="text-sm font-semibold text-[#8A8F98]">Overall Completion</p>
+          <span className="text-lg font-bold text-white">{stats.completionRate}%</span>
         </div>
-        <progress className="h-2 w-full accent-[#D07A60] bg-[#2A2A32] rounded-full overflow-hidden" max={100} value={stats.completionRate} aria-label="Overall shortlist completion" />
-        <p className="text-xs text-[#6B6864] mt-2">
+        <progress className="h-2 w-full accent-[#F7F8F8] bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden" max={100} value={stats.completionRate} aria-label="Overall shortlist completion" />
+        <p className="text-xs text-[#62666D] mt-2">
           {stats.productsPurchased} of {stats.productsPurchased + stats.productsRemaining} products purchased
         </p>
       </div>

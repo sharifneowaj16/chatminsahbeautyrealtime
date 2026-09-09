@@ -317,7 +317,7 @@ export default function ProductHeroVisualController({
                 <button
                   type="button"
                   onClick={addReel}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 underline underline-offset-4"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-white underline underline-offset-4"
                 >
                   + Add 1st Reel Now
                 </button>
@@ -611,7 +611,7 @@ export default function ProductHeroVisualController({
                 <button
                   type="button"
                   onClick={addStep}
-                  className="flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 underline underline-offset-4"
+                  className="flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-white underline underline-offset-4"
                 >
                   + Add Step
                 </button>

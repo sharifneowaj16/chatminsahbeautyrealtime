@@ -17,20 +17,20 @@ export default function BannersPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F5F3F0]">Banners & Sliders</h1>
-          <p className="text-[#9A9691]">Manage homepage banners and promotional sliders</p>
+          <h1 className="text-2xl font-bold text-[#F7F8F8]">Banners & Sliders</h1>
+          <p className="text-[#8A8F98]">Manage homepage banners and promotional sliders</p>
         </div>
-        <Button className="inline-flex items-center px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#D07A60]-hover">
+        <Button className="inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg">
           <Plus className="w-5 h-5 mr-2" />
           Add Banner
         </Button>
       </div>
 
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-12 text-center">
-        <ImageIcon className="w-16 h-16 text-[#6B6864] mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-[#F5F3F0] mb-2">No Banners Yet</h3>
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-12 text-center">
+        <ImageIcon className="w-16 h-16 text-[#62666D] mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No Banners Yet</h3>
         <p className="text-gray-600 mb-6">Create your first homepage banner</p>
-        <Button className="px-6 py-3 bg-[#D07A60] text-white rounded-lg hover:bg-[#D07A60]-hover">
+        <Button className="px-6 py-3 bg-white text-black hover:bg-white/90 rounded-lg">
           Add Banner
         </Button>
       </div>

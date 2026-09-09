@@ -71,23 +71,23 @@
   --control-icon-size: 2.75rem;
   --font-size-minimum-readable: 0.75rem;
 
-  /* Admin panel design system */
-  --admin-bg: #14141A;          /* Deep Charcoal Black - sidebar/base */
-  --admin-canvas: #0E0E12;      /* Deep Content Canvas */
-  --admin-panel: #1E1E24;       /* Slightly lighter panel/card bg */
-  --admin-panel-hover: #26262E; /* Table row / Card hover */
-  --admin-primary: #D07A60;     /* brand Terracotta - CTA/active states */
-  --admin-primary-hover: #E08D70;
-  --admin-text: #F5F3F0;        /* off-white text on dark */
-  --admin-text-muted: #9A9691;
-  --admin-text-subtle: #6B6864;
-  --admin-border: #2A2A32;
-  --admin-border-subtle: #22222A;
-  --admin-border-strong: #3E3E48;
-  --admin-success: #4ADE80;
-  --admin-danger: #F87171;
-  --admin-warning: #FBBF24;
-  --admin-info: #60A5FA;
+  /* Admin panel design system - Linear Pure Monochrome */
+  --admin-bg: #08090A;          /* Linear Ultra Deep Black - sidebar/base */
+  --admin-canvas: #08090A;      /* Linear Content Canvas */
+  --admin-panel: #151516;       /* Linear Near-Black Card/Panel */
+  --admin-panel-hover: #1C1D1F; /* Linear Row / Card hover */
+  --admin-primary: #F7F8F8;     /* Linear Pure Monochrome White Action */
+  --admin-primary-hover: #FFFFFF;
+  --admin-text: #F7F8F8;        /* Linear Luminous White text */
+  --admin-text-muted: #8A8F98;  /* Linear 60% Alpha Muted text */
+  --admin-text-subtle: #62666D; /* Linear 35% Alpha Subtle/Disabled text */
+  --admin-border: rgba(255, 255, 255, 0.08);        /* Linear 8% Alpha White border */
+  --admin-border-subtle: rgba(255, 255, 255, 0.05); /* Linear 5% Alpha White divider */
+  --admin-border-strong: rgba(255, 255, 255, 0.15); /* Linear 15% Alpha White hover border */
+  --admin-success: #F7F8F8;
+  --admin-danger: #8A8F98;
+  --admin-warning: #D1D5DB;
+  --admin-info: #E5E7EB;
 
   /* Compatibility aliases. Remove only after all legacy consumers migrate. */
   --background: var(--color-surface-panel);

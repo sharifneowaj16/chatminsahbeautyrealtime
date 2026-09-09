@@ -92,7 +92,7 @@ const STATUS_CONFIG: Record<
   },
   partial_delivered: {
     label: 'Partially Delivered',
-    color: 'bg-admin-panel text-admin-primary border-admin-border',
+    color: 'bg-admin-panel text-white border-admin-border',
     icon: <Package className="w-3.5 h-3.5" />,
   },
   delivered: {
@@ -336,7 +336,7 @@ export default function SteadfastShipPanel({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleCopy(webhookCallbackUrl)}
-                  className="shrink-0 text-gray-400 hover:bg-admin-panel hover:text-admin-primary"
+                  className="shrink-0 text-gray-400 hover:bg-admin-panel hover:text-white"
                   aria-label="Copy webhook callback URL"
                   title="Copy URL"
                 >
@@ -345,7 +345,7 @@ export default function SteadfastShipPanel({
               </div>
               <Link
                 href="/admin/shipping/steadfast-webhooks"
-                className="inline-flex text-xs font-medium text-admin-primary hover:text-admin-text"
+                className="inline-flex text-xs font-medium text-white hover:text-admin-text"
               >
                 View webhook log →
               </Link>
@@ -428,7 +428,7 @@ export default function SteadfastShipPanel({
           {/* Recipient Info */}
           <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <User className="w-4 h-4 text-admin-primary" />
+              <User className="w-4 h-4 text-white" />
               Recipient Details
             </h3>
             <div className="space-y-2">
@@ -464,7 +464,7 @@ export default function SteadfastShipPanel({
                 placeholder="0.00"
                 label={
                   <span className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-admin-primary" aria-hidden="true" />
+                    <DollarSign className="w-4 h-4 text-white" aria-hidden="true" />
                     COD Amount (৳)
                   </span>
                 }
@@ -474,7 +474,7 @@ export default function SteadfastShipPanel({
                     ? '💳 Prepaid — no cash collection'
                     : `💵 Collect ৳${codAmount.toFixed(2)} on delivery`
                 }
-                className="focus:ring-admin-primary"
+                className="focus:ring-white/20"
               />
 
               {/* Optional note */}
@@ -488,7 +488,7 @@ export default function SteadfastShipPanel({
                     Delivery Note <span className="text-gray-400 font-normal">(optional)</span>
                   </>
                 }
-                className="resize-none focus:ring-admin-primary"
+                className="resize-none focus:ring-white/20"
               />
             </>
           )}
@@ -508,7 +508,7 @@ export default function SteadfastShipPanel({
           )}
           {copied && (
             <div className="bg-admin-panel border border-admin-border rounded-xl px-4 py-3">
-              <p className="text-sm text-admin-primary text-center">✓ Copied to clipboard</p>
+              <p className="text-sm text-white text-center">✓ Copied to clipboard</p>
             </div>
           )}
         </div>
@@ -545,7 +545,7 @@ export default function SteadfastShipPanel({
                 fullWidth
                 onClick={handleSync}
                 disabled={syncing}
-                className="border-admin-border text-admin-primary hover:bg-admin-panel"
+                className="border-admin-border text-white hover:bg-admin-panel"
               >
                 <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} aria-hidden="true" />
                 Sync Status

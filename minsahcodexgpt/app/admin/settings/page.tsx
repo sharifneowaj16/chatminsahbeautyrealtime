@@ -23,9 +23,9 @@ import DeliveryMessageSettings from './DeliveryMessageSettings';
 
 function ValueRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div className="flex flex-col gap-1 border-b border-[#2A2A32] py-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-      <dt className="text-sm font-semibold text-[#9A9691]">{label}</dt>
-      <dd className="break-all text-sm font-medium text-[#F5F3F0] sm:text-right">
+    <div className="flex flex-col gap-1 border-b border-white/[0.08] py-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+      <dt className="text-sm font-semibold text-[#8A8F98]">{label}</dt>
+      <dd className="break-all text-sm font-medium text-[#F7F8F8] sm:text-right">
         {value || <span className="text-amber-700">Not configured</span>}
       </dd>
     </div>
@@ -50,12 +50,12 @@ export default function SettingsPage() {
     <div className="space-y-6 p-4 sm:p-6">
       <header>
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1E1E24] border border-[#2A2A32] text-admin-primary">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#151516] border border-white/[0.08] text-white">
             <Settings2 className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h1 className="text-2xl font-black text-[#F5F3F0]">Effective store configuration</h1>
-            <p className="mt-1 text-sm text-[#9A9691]">
+            <h1 className="text-2xl font-black text-[#F7F8F8]">Effective store configuration</h1>
+            <p className="mt-1 text-sm text-[#8A8F98]">
               This page shows the values currently used by the public storefront.
             </p>
           </div>
@@ -78,10 +78,10 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="store-identity-heading">
+        <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm" aria-labelledby="store-identity-heading">
           <div className="flex items-center gap-2">
-            <Globe2 className="h-5 w-5 text-admin-primary" aria-hidden="true" />
-            <h2 id="store-identity-heading" className="text-lg font-black text-[#F5F3F0]">Store identity</h2>
+            <Globe2 className="h-5 w-5 text-white" aria-hidden="true" />
+            <h2 id="store-identity-heading" className="text-lg font-black text-[#F7F8F8]">Store identity</h2>
           </div>
           <dl className="mt-4">
             <ValueRow label="Site name" value={site.identity.name} />
@@ -92,10 +92,10 @@ export default function SettingsPage() {
           </dl>
         </section>
 
-        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="business-contact-heading">
+        <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm" aria-labelledby="business-contact-heading">
           <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-admin-primary" aria-hidden="true" />
-            <h2 id="business-contact-heading" className="text-lg font-black text-[#F5F3F0]">Business contact</h2>
+            <Mail className="h-5 w-5 text-white" aria-hidden="true" />
+            <h2 id="business-contact-heading" className="text-lg font-black text-[#F7F8F8]">Business contact</h2>
           </div>
           <dl className="mt-4">
             <ValueRow label="Support email" value={site.business.supportEmail} />
@@ -106,33 +106,33 @@ export default function SettingsPage() {
           </dl>
         </section>
 
-        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="payment-config-heading">
+        <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm" aria-labelledby="payment-config-heading">
           <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-admin-primary" aria-hidden="true" />
-            <h2 id="payment-config-heading" className="text-lg font-black text-[#F5F3F0]">Payment methods</h2>
+            <CreditCard className="h-5 w-5 text-white" aria-hidden="true" />
+            <h2 id="payment-config-heading" className="text-lg font-black text-[#F7F8F8]">Payment methods</h2>
           </div>
           <div className="mt-4 space-y-3">
             {enabledPayments.map((method) => (
               <div key={method.id} className="flex items-center justify-between rounded-xl border border-emerald-800/40 bg-emerald-950/30 px-4 py-3">
-                <span className="font-semibold text-[#F5F3F0]">{method.label}</span>
-                <span className="inline-flex items-center gap-1 text-sm font-bold text-emerald-400">
+                <span className="font-semibold text-[#F7F8F8]">{method.label}</span>
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-white">
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Enabled
                 </span>
               </div>
             ))}
             {disabledPayments.map((method) => (
-              <div key={method.id} className="flex items-center justify-between rounded-xl border border-[#2A2A32] bg-[#14141A] px-4 py-3">
-                <span className="font-semibold text-[#9A9691]">{method.label}</span>
-                <span className="text-sm font-semibold text-[#6B6864]">Disabled</span>
+              <div key={method.id} className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#08090A] px-4 py-3">
+                <span className="font-semibold text-[#8A8F98]">{method.label}</span>
+                <span className="text-sm font-semibold text-[#62666D]">Disabled</span>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="social-config-heading">
+        <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm" aria-labelledby="social-config-heading">
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-admin-primary" aria-hidden="true" />
-            <h2 id="social-config-heading" className="text-lg font-black text-[#F5F3F0]">Public channels</h2>
+            <MessageCircle className="h-5 w-5 text-white" aria-hidden="true" />
+            <h2 id="social-config-heading" className="text-lg font-black text-[#F7F8F8]">Public channels</h2>
           </div>
           <div className="mt-4 space-y-3">
             {site.socialLinks.length ? (
@@ -142,7 +142,7 @@ export default function SettingsPage() {
                   href={social.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex min-h-11 items-center justify-between rounded-xl border border-[#2A2A32] bg-[#14141A] px-4 py-3 text-sm font-semibold text-[#F5F3F0] transition hover:border-[#3E3E48] hover:bg-[#26262E]"
+                  className="flex min-h-11 items-center justify-between rounded-xl border border-white/[0.08] bg-[#08090A] px-4 py-3 text-sm font-semibold text-[#F7F8F8] transition hover:border-white/[0.15] hover:bg-[#1C1D1F]"
                 >
                   {social.label}
                   <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -158,7 +158,7 @@ export default function SettingsPage() {
                 href={site.business.whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex min-h-11 items-center justify-between rounded-xl border border-[#2A2A32] bg-[#14141A] px-4 py-3 text-sm font-semibold text-[#F5F3F0] transition hover:border-[#3E3E48] hover:bg-[#26262E]"
+                className="flex min-h-11 items-center justify-between rounded-xl border border-white/[0.08] bg-[#08090A] px-4 py-3 text-sm font-semibold text-[#F7F8F8] transition hover:border-white/[0.15] hover:bg-[#1C1D1F]"
               >
                 WhatsApp support
                 <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -168,8 +168,8 @@ export default function SettingsPage() {
         </section>
       </div>
 
-      <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="source-of-truth-heading">
-        <h2 id="source-of-truth-heading" className="text-lg font-black text-[#F5F3F0]">Configuration source of truth</h2>
+      <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm" aria-labelledby="source-of-truth-heading">
+        <h2 id="source-of-truth-heading" className="text-lg font-black text-[#F7F8F8]">Configuration source of truth</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: Mail, label: 'Contact', value: 'NEXT_PUBLIC_SUPPORT_*' },
@@ -177,10 +177,10 @@ export default function SettingsPage() {
             { icon: Phone, label: 'Social/support', value: 'NEXT_PUBLIC_* URL values' },
             { icon: Clock3, label: 'Runtime', value: '.env + deployment secrets' },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="rounded-xl bg-[#14141A] border border-[#2A2A32] p-4">
-              <Icon className="h-5 w-5 text-admin-primary" aria-hidden="true" />
-              <p className="mt-2 text-sm font-bold text-[#F5F3F0]">{label}</p>
-              <p className="mt-1 break-all text-xs leading-5 text-[#9A9691]">{value}</p>
+            <div key={label} className="rounded-xl bg-[#08090A] border border-white/[0.08] p-4">
+              <Icon className="h-5 w-5 text-white" aria-hidden="true" />
+              <p className="mt-2 text-sm font-bold text-[#F7F8F8]">{label}</p>
+              <p className="mt-1 break-all text-xs leading-5 text-[#8A8F98]">{value}</p>
             </div>
           ))}
         </div>

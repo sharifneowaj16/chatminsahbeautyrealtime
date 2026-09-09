@@ -117,7 +117,7 @@ const ORDER_STATUSES = [
 const PRODUCT_TYPE_META: Record<ProductType, { label: string; color: string }> = {
   new:     { label: 'New',     color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
   old:     { label: 'Old',     color: 'bg-amber-100  text-amber-700  border-amber-300'  },
-  virtual: { label: 'Virtual', color: 'bg-admin-panel text-admin-primary border-admin-border' },
+  virtual: { label: 'Virtual', color: 'bg-admin-panel text-white border-admin-border' },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -466,12 +466,12 @@ export default function CreateOrderPage() {
         <div className="mb-6">
           <Button
             onClick={() => router.back()}
-            className="text-sm text-admin-primary hover:text-admin-primary-hover mb-3 flex items-center gap-1"
+            className="text-sm text-white hover:text-white-hover mb-3 flex items-center gap-1"
           >
             ← Back to Orders
           </Button>
-          <h1 className="text-3xl font-bold text-[#F5F3F0]">Create Order</h1>
-          <p className="text-sm text-[#9A9691] mt-1">Add order for customer</p>
+          <h1 className="text-3xl font-bold text-[#F7F8F8]">Create Order</h1>
+          <p className="text-sm text-[#8A8F98] mt-1">Add order for customer</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -479,24 +479,24 @@ export default function CreateOrderPage() {
           {/* ════════════════════════════════════════
               CUSTOMER
           ════════════════════════════════════════ */}
-          <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
-            <h2 className="text-lg font-bold text-[#F5F3F0] mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-admin-primary" /> Customer
+          <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
+              <User className="w-5 h-5 text-white" /> Customer
             </h2>
 
             {/* Selected customer chip */}
             {selectedCustomer ? (
-              <div className="mb-4 p-3 bg-[#14141A] rounded-lg border border-[#2A2A32] flex items-center justify-between">
+              <div className="mb-4 p-3 bg-[#08090A] rounded-lg border border-white/[0.08] flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-[#F5F3F0]">
+                  <p className="font-medium text-[#F7F8F8]">
                     {selectedCustomer.firstName} {selectedCustomer.lastName}
                   </p>
-                  <p className="text-sm text-[#9A9691]">{selectedCustomer.email}</p>
+                  <p className="text-sm text-[#8A8F98]">{selectedCustomer.email}</p>
                 </div>
                 <Button
                   type="button"
                   onClick={() => { setSelectedCustomer(null); setCustomer({}); }}
-                  className="text-admin-primary hover:text-admin-primary-hover"
+                  className="text-white hover:text-white-hover"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -504,28 +504,28 @@ export default function CreateOrderPage() {
             ) : (
               /* Customer search */
               <div className="relative mb-4" ref={custDropRef}>
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6864]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#62666D]" />
                 <Input
                   type="text"
                   placeholder="Search existing customer…"
                   value={customerSearch}
                   onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDrop(true); }}
                   onFocus={() => setShowCustomerDrop(true)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 />
                 {showCustomerDrop && customerResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#1E1E24] border border-[#2A2A32] rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#151516] border border-white/[0.08] rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto">
                     {customerResults.map(cust => (
                       <Button
                         key={cust.id}
                         type="button"
                         onClick={() => handleSelectCustomer(cust)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-[#26262E] border-b border-[#2A2A32] last:border-0"
+                        className="w-full text-left px-4 py-2.5 hover:bg-[#1C1D1F] border-b border-white/[0.08] last:border-0"
                       >
-                        <p className="font-medium text-sm text-[#F5F3F0]">
+                        <p className="font-medium text-sm text-[#F7F8F8]">
                           {cust.firstName} {cust.lastName}
                         </p>
-                        <p className="text-xs text-[#9A9691]">{cust.email}</p>
+                        <p className="text-xs text-[#8A8F98]">{cust.email}</p>
                       </Button>
                     ))}
                   </div>
@@ -538,39 +538,39 @@ export default function CreateOrderPage() {
           {/* ════════════════════════════════════════
               DELIVERY ADDRESS
           ════════════════════════════════════════ */}
-          <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
-            <h2 className="text-lg font-bold text-[#F5F3F0] mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-admin-primary" /> Delivery Address
+          <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-white" /> Delivery Address
             </h2>
 
             {/* Full Name */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Full Name *</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Full Name *</label>
               <Input
                 type="text"
                 value={address.firstName || ''}
                 onChange={e => setAddress(p => ({ ...p, firstName: e.target.value, lastName: '' }))}
                 placeholder={`${customer.firstName || ''} ${customer.lastName || ''}`.trim()}
-                className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
 
             {/* Street */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Street Address *</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Street Address *</label>
               <Input
                 type="text"
                 value={address.street1 || ''}
                 onChange={e => setAddress(p => ({ ...p, street1: e.target.value }))}
                 required
                 placeholder="House no, road, area…"
-                className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
             {/* Pathao cascading */}
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">City *</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">City *</label>
                 <Select
                   value={address.pathaoCityId || ''}
                   onChange={e => setAddress(p => ({
@@ -581,14 +581,14 @@ export default function CreateOrderPage() {
                     pathaoAreaId: undefined,
                   }))}
                   required
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <option value="">Select city</option>
                   {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Zone *</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Zone *</label>
                 <Select
                   value={address.pathaoZoneId || ''}
                   onChange={e => setAddress(p => ({
@@ -599,14 +599,14 @@ export default function CreateOrderPage() {
                   }))}
                   disabled={!address.pathaoCityId}
                   required
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary disabled:opacity-50"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
                 >
                   <option value="">Select zone</option>
                   {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Area *</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Area *</label>
                 <Select
                   value={address.pathaoAreaId || ''}
                   onChange={e => setAddress(p => ({
@@ -615,7 +615,7 @@ export default function CreateOrderPage() {
                   }))}
                   disabled={!address.pathaoZoneId}
                   required
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary disabled:opacity-50"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
                 >
                   <option value="">Select area</option>
                   {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -625,13 +625,13 @@ export default function CreateOrderPage() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Phone *</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Phone *</label>
               <Input
                 type="tel"
                 value={address.phone || ''}
                 onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))}
                 placeholder={customer.phone}
-                className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
           </div>
@@ -639,9 +639,9 @@ export default function CreateOrderPage() {
           {/* ════════════════════════════════════════
               PRODUCTS
           ════════════════════════════════════════ */}
-          <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
-            <h2 className="text-lg font-bold text-[#F5F3F0] mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5 text-admin-primary" /> Products
+          <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5 text-white" /> Products
             </h2>
 
             {/* ── Search bar ── */}
@@ -653,12 +653,12 @@ export default function CreateOrderPage() {
                   min={1}
                   value={addQty}
                   onChange={e => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-16 px-2 py-2.5 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-16 px-2 py-2.5 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-white/20"
                   title="Quantity to add"
                 />
                 {/* Search */}
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6864]" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#62666D]" />
                   <Input
                     type="text"
                     placeholder="Search products — or type a custom name and press Enter"
@@ -671,18 +671,18 @@ export default function CreateOrderPage() {
                         addCustomProduct();
                       }
                     }}
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                   />
                 </div>
               </div>
 
               {/* ── Dropdown ── */}
               {showProductDrop && productQuery.trim() && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[#1E1E24] border border-[#2A2A32] rounded-xl shadow-xl z-20 max-h-96 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#151516] border border-white/[0.08] rounded-xl shadow-xl z-20 max-h-96 overflow-y-auto">
 
                   {/* Loading */}
                   {productSearching && (
-                    <div className="px-4 py-3 text-sm text-[#9A9691] flex items-center gap-2">
+                    <div className="px-4 py-3 text-sm text-[#8A8F98] flex items-center gap-2">
                       <span className="inline-block w-4 h-4 border-2 border-admin-primary border-t-transparent rounded-full animate-spin" />
                       Searching…
                     </div>
@@ -695,19 +695,19 @@ export default function CreateOrderPage() {
                     const displayPrice = selVariant ? selVariant.price : product.price;
 
                     return (
-                      <div key={product.id} className="border-b border-[#2A2A32] last:border-0">
-                        <div className="px-4 py-3 hover:bg-[#26262E] flex items-start gap-3">
+                      <div key={product.id} className="border-b border-white/[0.08] last:border-0">
+                        <div className="px-4 py-3 hover:bg-[#1C1D1F] flex items-start gap-3">
                           <div className="flex-1 min-w-0">
                             {/* Product name + meta */}
-                            <p className="text-sm font-semibold text-[#F5F3F0] truncate">{product.name}</p>
-                            <p className="text-xs text-[#9A9691] mt-0.5">
+                            <p className="text-sm font-semibold text-[#F7F8F8] truncate">{product.name}</p>
+                            <p className="text-xs text-[#8A8F98] mt-0.5">
                               SKU: {product.sku} &nbsp;·&nbsp; Stock: {product.stock} &nbsp;·&nbsp; {formatPrice(product.price)}
                             </p>
 
                             {/* Variant chips */}
                             {(product.variants ?? []).length > 0 && (
                               <div className="mt-2">
-                                <p className="text-xs text-[#9A9691] mb-1">Variant:</p>
+                                <p className="text-xs text-[#8A8F98] mb-1">Variant:</p>
                                 <div className="flex flex-wrap gap-1.5">
                                   {/* Base (no variant) */}
                                   <Button
@@ -715,8 +715,8 @@ export default function CreateOrderPage() {
                                     onClick={() => setDropVariants(p => ({ ...p, [product.id]: null }))}
                                     className={`text-xs px-2 py-1 rounded border transition-colors ${
                                       selVarId === null
-                                        ? 'bg-admin-primary text-white border-admin-primary'
-                                        : 'bg-[#14141A] text-[#9A9691] border-[#2A2A32] hover:border-admin-primary hover:text-[#F5F3F0]'
+                                        ? 'bg-white text-black hover:bg-white/90 border-admin-primary'
+                                        : 'bg-[#08090A] text-[#8A8F98] border-white/[0.08] hover:border-admin-primary hover:text-[#F7F8F8]'
                                     }`}
                                   >
                                     Base ({formatPrice(product.price)})
@@ -728,8 +728,8 @@ export default function CreateOrderPage() {
                                       onClick={() => setDropVariants(p => ({ ...p, [product.id]: v.id }))}
                                       className={`text-xs px-2 py-1 rounded border transition-colors ${
                                         selVarId === v.id
-                                          ? 'bg-admin-primary text-white border-admin-primary'
-                                          : 'bg-[#14141A] text-[#9A9691] border-[#2A2A32] hover:border-admin-primary hover:text-[#F5F3F0]'
+                                          ? 'bg-white text-black hover:bg-white/90 border-admin-primary'
+                                          : 'bg-[#08090A] text-[#8A8F98] border-white/[0.08] hover:border-admin-primary hover:text-[#F7F8F8]'
                                       }`}
                                       title={`Stock: ${v.stock}`}
                                     >
@@ -745,7 +745,7 @@ export default function CreateOrderPage() {
                           <Button
                             type="button"
                             onClick={() => addDbProduct(product, selVarId)}
-                            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-admin-primary hover:bg-admin-primary-hover text-white text-xs rounded-lg transition-colors"
+                            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white text-black hover:bg-white/90 hover:bg-white/90 text-white text-xs rounded-lg transition-colors"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             Add · {formatPrice(displayPrice)}
@@ -760,14 +760,14 @@ export default function CreateOrderPage() {
                     <Button
                       type="button"
                       onClick={addCustomProduct}
-                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[#26262E] border-t border-dashed border-[#2A2A32] group transition-colors"
+                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[#1C1D1F] border-t border-dashed border-white/[0.08] group transition-colors"
                     >
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#14141A] group-hover:bg-[#2A2A32] flex items-center justify-center transition-colors">
-                        <Plus className="w-3.5 h-3.5 text-admin-primary" />
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#08090A] group-hover:bg-[rgba(255,255,255,0.08)] flex items-center justify-center transition-colors">
+                        <Plus className="w-3.5 h-3.5 text-white" />
                       </span>
                       <span className="text-sm">
-                        Add <strong className="text-admin-primary">"{productQuery}"</strong> as{' '}
-                        <span className="text-[#9A9691]">custom / unlisted product</span>
+                        Add <strong className="text-white">"{productQuery}"</strong> as{' '}
+                        <span className="text-[#8A8F98]">custom / unlisted product</span>
                       </span>
                     </Button>
                   )}
@@ -777,7 +777,7 @@ export default function CreateOrderPage() {
 
             {/* ── Order Items List ── */}
             {orderItems.length === 0 ? (
-              <p className="text-sm text-[#6B6864] text-center py-10 border-2 border-dashed border-[#2A2A32] rounded-lg">
+              <p className="text-sm text-[#62666D] text-center py-10 border-2 border-dashed border-white/[0.08] rounded-lg">
                 No products added yet
               </p>
             ) : (
@@ -791,8 +791,8 @@ export default function CreateOrderPage() {
                       key={item.key}
                       className={`rounded-lg border transition-all ${
                         isEditing
-                          ? 'border-admin-primary bg-[#26262E]'
-                          : 'border-[#2A2A32] bg-[#14141A] hover:border-[#3E3E48]'
+                          ? 'border-admin-primary bg-[#1C1D1F]'
+                          : 'border-white/[0.08] bg-[#08090A] hover:border-white/[0.15]'
                       }`}
                     >
                       {/* View mode */}
@@ -809,9 +809,9 @@ export default function CreateOrderPage() {
                                   Custom
                                 </span>
                               )}
-                              <p className="text-sm font-medium text-[#F5F3F0] truncate">{item.name}</p>
+                              <p className="text-sm font-medium text-[#F7F8F8] truncate">{item.name}</p>
                             </div>
-                            <p className="text-xs text-[#9A9691]">
+                            <p className="text-xs text-[#8A8F98]">
                               SKU: {item.sku} &nbsp;·&nbsp; Unit: {formatPrice(item.price)}
                               {item.variant && <span className="ml-1">&nbsp;·&nbsp; {item.variant}</span>}
                               {item.size && <span className="ml-1">&nbsp;·&nbsp; Size: {item.size}</span>}
@@ -824,11 +824,11 @@ export default function CreateOrderPage() {
                             min={1}
                             value={item.quantity}
                             onChange={e => updateQty(item.key, parseInt(e.target.value) || 1)}
-                            className="w-14 px-1.5 py-1 border border-[#2A2A32] rounded text-xs text-center bg-[#1E1E24] text-[#F5F3F0] focus:outline-none focus:ring-1 focus:ring-admin-primary"
+                            className="w-14 px-1.5 py-1 border border-white/[0.08] rounded text-xs text-center bg-[#151516] text-[#F7F8F8] focus:outline-none focus:ring-1 focus:ring-white/20"
                           />
 
                           {/* Line total */}
-                          <span className="text-sm font-semibold text-[#F5F3F0] w-24 text-right shrink-0">
+                          <span className="text-sm font-semibold text-[#F7F8F8] w-24 text-right shrink-0">
                             {formatPrice(item.price * item.quantity)}
                           </span>
 
@@ -837,7 +837,7 @@ export default function CreateOrderPage() {
                             type="button"
                             onClick={() => startEdit(item)}
                             title="Edit"
-                            className="p-1.5 text-[#9A9691] hover:text-admin-primary hover:bg-[#26262E] rounded transition-colors"
+                            className="p-1.5 text-[#8A8F98] hover:text-white hover:bg-[#1C1D1F] rounded transition-colors"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </Button>
@@ -846,7 +846,7 @@ export default function CreateOrderPage() {
                           <Button
                             type="button"
                             onClick={() => removeItem(item.key)}
-                            className="p-1.5 text-[#9A9691] hover:text-red-400 hover:bg-red-950/50 rounded transition-colors"
+                            className="p-1.5 text-[#8A8F98] hover:text-white/60 hover:bg-red-950/50 rounded transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -856,45 +856,45 @@ export default function CreateOrderPage() {
                         <div className="p-4 space-y-3">
                           {/* Name */}
                           <div>
-                            <label className="text-xs font-medium text-[#9A9691] mb-1 block">Product Name</label>
+                            <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Product Name</label>
                             <Input
                               type="text"
                               value={editValues.name ?? item.name}
                               onChange={e => setEditValues(p => ({ ...p, name: e.target.value }))}
-                              className="w-full px-3 py-2 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-[#14141A] text-[#F5F3F0]"
+                              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                             />
                           </div>
 
                           <div className="grid grid-cols-3 gap-3">
                             {/* Price */}
                             <div>
-                              <label className="text-xs font-medium text-[#9A9691] mb-1 block">Unit Price (৳)</label>
+                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Unit Price (৳)</label>
                               <Input
                                 type="number"
                                 min={0}
                                 step="0.01"
                                 value={editValues.price ?? item.price}
                                 onChange={e => setEditValues(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-                                className="w-full px-3 py-2 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-[#14141A] text-[#F5F3F0]"
+                                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                               />
                             </div>
                             {/* SKU */}
                             <div>
-                              <label className="text-xs font-medium text-[#9A9691] mb-1 block">SKU</label>
+                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">SKU</label>
                               <Input
                                 type="text"
                                 value={editValues.sku ?? item.sku}
                                 onChange={e => setEditValues(p => ({ ...p, sku: e.target.value }))}
-                                className="w-full px-3 py-2 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-[#14141A] text-[#F5F3F0]"
+                                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                               />
                             </div>
                             {/* Product type */}
                             <div>
-                              <label className="text-xs font-medium text-[#9A9691] mb-1 block">Type</label>
+                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Type</label>
                               <Select
                                 value={editValues.productType ?? item.productType}
                                 onChange={e => setEditValues(p => ({ ...p, productType: e.target.value as ProductType }))}
-                                className="w-full px-3 py-2 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-[#14141A] text-[#F5F3F0]"
+                                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8]"
                               >
                                 <option value="new">New</option>
                                 <option value="old">Old</option>
@@ -905,23 +905,23 @@ export default function CreateOrderPage() {
                           {/* Variant + Size */}
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-xs font-medium text-[#9A9691] mb-1 block">Variant</label>
+                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Variant</label>
                               <Input
                                 type="text"
                                 placeholder="e.g. Red, 100ml"
                                 value={editValues.variant ?? item.variant ?? ''}
                                 onChange={e => setEditValues(p => ({ ...p, variant: e.target.value }))}
-                                className="w-full px-3 py-2 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864]"
+                                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D]"
                               />
                             </div>
                             <div>
-                              <label className="text-xs font-medium text-[#9A9691] mb-1 block">Size</label>
+                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Size</label>
                               <Input
                                 type="text"
                                 placeholder="e.g. S, M, L, XL"
                                 value={editValues.size ?? item.size ?? ''}
                                 onChange={e => setEditValues(p => ({ ...p, size: e.target.value }))}
-                                className="w-full px-3 py-2 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864]"
+                                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D]"
                               />
                             </div>
                           </div>
@@ -930,14 +930,14 @@ export default function CreateOrderPage() {
                             <Button
                               type="button"
                               onClick={cancelEdit}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs border border-[#2A2A32] text-[#9A9691] rounded-lg hover:bg-[#26262E] hover:text-[#F5F3F0] transition-colors"
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs border border-white/[0.08] text-[#8A8F98] rounded-lg hover:bg-[#1C1D1F] hover:text-[#F7F8F8] transition-colors"
                             >
                               <X className="w-3.5 h-3.5" /> Cancel
                             </Button>
                             <Button
                               type="button"
                               onClick={() => commitEdit(item.key)}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors"
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white text-black hover:bg-white/90 rounded-lg transition-colors"
                             >
                               <Check className="w-3.5 h-3.5" /> Save
                             </Button>
@@ -949,10 +949,10 @@ export default function CreateOrderPage() {
                 })}
 
                 {/* Items subtotal */}
-                <div className="flex justify-end pt-2 border-t border-[#2A2A32]">
-                  <span className="text-sm font-semibold text-[#9A9691]">
+                <div className="flex justify-end pt-2 border-t border-white/[0.08]">
+                  <span className="text-sm font-semibold text-[#8A8F98]">
                     Items subtotal:&nbsp;
-                    <span className="text-[#F5F3F0]">{formatPrice(subtotal)}</span>
+                    <span className="text-[#F7F8F8]">{formatPrice(subtotal)}</span>
                   </span>
                 </div>
               </div>
@@ -962,83 +962,83 @@ export default function CreateOrderPage() {
           {/* ════════════════════════════════════════
               ORDER SETTINGS
           ════════════════════════════════════════ */}
-          <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
-            <h2 className="text-lg font-bold text-[#F5F3F0] mb-4 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-admin-primary" /> Order Settings
+          <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-white" /> Order Settings
             </h2>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Payment Method</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Payment Method</label>
                 <Select
                   value={paymentMethod}
                   onChange={e => setPaymentMethod(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 >
                   {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Payment Status</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Payment Status</label>
                 <Select
                   value={paymentStatus}
                   onChange={e => setPaymentStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 >
                   {PAYMENT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Order Status</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Order Status</label>
                 <Select
                   value={orderStatus}
                   onChange={e => setOrderStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 >
                   {ORDER_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Shipping Cost</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Shipping Cost</label>
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
                   value={shippingCost}
                   onChange={e => setShippingCost(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Discount Amount</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Discount Amount</label>
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
                   value={discountAmount}
                   onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Coupon Code</label>
+                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Coupon Code</label>
                 <Input
                   type="text"
                   value={couponCode}
                   onChange={e => setCouponCode(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                  className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#9A9691] mb-1.5">Admin Note</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Admin Note</label>
               <Textarea
                 value={adminNote}
                 onChange={e => setAdminNote(e.target.value)}
                 rows={3}
                 placeholder="Internal notes…"
-                className="w-full px-3 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-3 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
           </div>
@@ -1046,27 +1046,27 @@ export default function CreateOrderPage() {
           {/* ════════════════════════════════════════
               ORDER SUMMARY
           ════════════════════════════════════════ */}
-          <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
-            <h2 className="text-lg font-bold text-[#F5F3F0] mb-4">Order Summary</h2>
+          <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4">Order Summary</h2>
 
             <div className="space-y-2 text-sm mb-4">
-              <div className="flex justify-between text-[#9A9691]">
+              <div className="flex justify-between text-[#8A8F98]">
                 <span>Subtotal</span>
-                <span className="text-[#F5F3F0]">{formatPrice(subtotal)}</span>
+                <span className="text-[#F7F8F8]">{formatPrice(subtotal)}</span>
               </div>
               {shippingCost > 0 && (
-                <div className="flex justify-between text-[#9A9691]">
+                <div className="flex justify-between text-[#8A8F98]">
                   <span>Shipping</span>
-                  <span className="text-[#F5F3F0]">{formatPrice(shippingCost)}</span>
+                  <span className="text-[#F7F8F8]">{formatPrice(shippingCost)}</span>
                 </div>
               )}
               {discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-400">
+                <div className="flex justify-between text-white">
                   <span>Discount</span>
                   <span>-{formatPrice(discountAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-[#F5F3F0] pt-2 border-t border-[#2A2A32] text-base">
+              <div className="flex justify-between font-bold text-[#F7F8F8] pt-2 border-t border-white/[0.08] text-base">
                 <span>Total</span>
                 <span>{formatPrice(total)}</span>
               </div>
@@ -1075,7 +1075,7 @@ export default function CreateOrderPage() {
             <Button
               type="submit"
               disabled={loading || orderItems.length === 0}
-              className="w-full flex items-center justify-center gap-2 bg-admin-primary hover:bg-admin-primary-hover text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-white text-black hover:bg-white/90 hover:bg-white/90 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>

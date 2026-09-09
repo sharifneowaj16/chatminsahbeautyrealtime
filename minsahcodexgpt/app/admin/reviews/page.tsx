@@ -72,27 +72,27 @@ export default function ReviewsManagementPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F5F3F0]">Reviews Management</h1>
-          <p className="text-sm text-[#9A9691]">Moderate product reviews</p>
+          <h1 className="text-2xl font-bold text-[#F7F8F8]">Reviews Management</h1>
+          <p className="text-sm text-[#8A8F98]">Moderate product reviews</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 shadow-sm">
-          <p className="text-sm text-[#9A9691]">Total Reviews</p>
-          <p className="text-2xl font-bold text-[#F5F3F0]">{reviews.length}</p>
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 shadow-sm">
+          <p className="text-sm text-[#8A8F98]">Total Reviews</p>
+          <p className="text-2xl font-bold text-[#F7F8F8]">{reviews.length}</p>
         </div>
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 shadow-sm">
-          <p className="text-sm text-[#9A9691]">Pending</p>
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 shadow-sm">
+          <p className="text-sm text-[#8A8F98]">Pending</p>
           <p className="text-2xl font-bold text-yellow-600">{reviews.filter(r => r.status === 'pending').length}</p>
         </div>
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 shadow-sm">
-          <p className="text-sm text-[#9A9691]">Approved</p>
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 shadow-sm">
+          <p className="text-sm text-[#8A8F98]">Approved</p>
           <p className="text-2xl font-bold text-green-600">{reviews.filter(r => r.status === 'approved').length}</p>
         </div>
       </div>
 
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 mb-6 shadow-sm">
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 mb-6 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -101,10 +101,10 @@ export default function ReviewsManagementPage() {
               placeholder="Search reviews..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg focus:ring-1 focus:ring-[#D07A60]"
+              className="w-full pl-10 pr-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20"
             />
           </div>
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-1 focus:ring-[#D07A60]">
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20">
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
@@ -113,23 +113,23 @@ export default function ReviewsManagementPage() {
         </div>
       </div>
 
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] overflow-hidden shadow-sm">
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden shadow-sm">
         <table className="w-full">
-          <thead className="bg-[#14141A]">
+          <thead className="bg-[#08090A]">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase">Product</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase">Customer</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase">Rating</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase">Review</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase">Product</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase">Customer</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase">Rating</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase">Review</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2A2A32]">
+          <tbody className="divide-y divide-white/[0.08]">
             {filteredReviews.map((review) => (
-              <tr key={review.id} className="hover:bg-[#26262E]/70 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-[#F5F3F0]">{review.product}</td>
-                <td className="px-6 py-4 text-sm text-[#9A9691]">{review.customer}</td>
+              <tr key={review.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                <td className="px-6 py-4 text-sm font-medium text-[#F7F8F8]">{review.product}</td>
+                <td className="px-6 py-4 text-sm text-[#8A8F98]">{review.customer}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
@@ -138,8 +138,8 @@ export default function ReviewsManagementPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-[#F5F3F0]">{review.title}</div>
-                  <div className="text-xs text-[#9A9691]">{review.content.substring(0, 50)}...</div>
+                  <div className="text-sm font-medium text-[#F7F8F8]">{review.title}</div>
+                  <div className="text-xs text-[#8A8F98]">{review.content.substring(0, 50)}...</div>
                 </td>
                 <td className="px-6 py-4">
                   <span className={clsx(

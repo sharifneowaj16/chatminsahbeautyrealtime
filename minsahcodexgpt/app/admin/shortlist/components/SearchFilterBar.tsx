@@ -32,7 +32,7 @@ export default function SearchFilterBar() {
   };
 
   return (
-    <div className="bg-[#1E1E24] border border-[#2A2A32] rounded-xl shadow-sm">
+    <div className="bg-[#151516] border border-white/[0.08] rounded-xl shadow-sm">
       <div className="p-4 sm:p-6 space-y-4">
         {/* Search Bar */}
         <div className="relative">
@@ -41,15 +41,15 @@ export default function SearchFilterBar() {
             placeholder="🔍 Search by order #, customer name, or phone..."
             value={filters.searchQuery}
             onChange={handleSearch}
-            className="w-full px-4 py-3 pl-10 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D07A60] text-sm sm:text-base"
+            className="w-full px-4 py-3 pl-10 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-sm sm:text-base"
           />
-          <span className="absolute left-3 top-3.5 text-[#6B6864]">🔍</span>
+          <span className="absolute left-3 top-3.5 text-[#62666D]">🔍</span>
         </div>
 
         {/* Filter Toggle Button */}
         <Button
           onClick={() => setShowFilters(!showFilters)}
-          className="w-full sm:w-auto px-4 py-2 bg-[#2A2A32] border border-[#3E3E48] text-[#F5F3F0] rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-[#3E3E48] transition-colors"
+          className="w-full sm:w-auto px-4 py-2 bg-[rgba(255,255,255,0.08)] border border-white/[0.15] text-[#F7F8F8] rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-[rgba(255,255,255,0.15)] transition-colors"
         >
           <span>⚙️ Filters</span>
           <span className="text-lg">{showFilters ? '▼' : '▶'}</span>
@@ -57,17 +57,17 @@ export default function SearchFilterBar() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="space-y-4 pt-4 border-t border-[#2A2A32]">
+          <div className="space-y-4 pt-4 border-t border-white/[0.08]">
             {/* Status Filter */}
             <div>
-              <p className="text-sm font-semibold text-[#9A9691] mb-2">Status</p>
+              <p className="text-sm font-semibold text-[#8A8F98] mb-2">Status</p>
               <div className="grid grid-cols-2 gap-2">
                 {['pending', 'completed'].map((status) => (
                   <Button
                     key={status}
                     onClick={() => handleStatusChange(status as 'pending' | 'completed')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.status === status ? 'bg-[#D07A60] text-white shadow-md' : 'bg-[#14141A] border border-[#2A2A32] text-[#9A9691] hover:bg-[#26262E] hover:text-[#F5F3F0]'
+                      filters.status === status ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {status === 'pending' ? '⏳ Pending' : '✅ Completed'}
@@ -78,14 +78,14 @@ export default function SearchFilterBar() {
 
             {/* Priority Filter */}
             <div>
-              <p className="text-sm font-semibold text-[#9A9691] mb-2">Priority</p>
+              <p className="text-sm font-semibold text-[#8A8F98] mb-2">Priority</p>
               <div className="grid grid-cols-2 gap-2">
                 {['ALL', 'URGENT', 'NORMAL', 'LOW_PRIORITY'].map((priority) => (
                   <Button
                     key={priority}
                     onClick={() => handlePriorityChange(priority)}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.priority === priority ? 'bg-[#D07A60] text-white shadow-md' : 'bg-[#14141A] border border-[#2A2A32] text-[#9A9691] hover:bg-[#26262E] hover:text-[#F5F3F0]'
+                      filters.priority === priority ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {priority === 'URGENT'
@@ -102,14 +102,14 @@ export default function SearchFilterBar() {
 
             {/* Date Range */}
             <div>
-              <p className="text-sm font-semibold text-[#9A9691] mb-2">Date Range</p>
+              <p className="text-sm font-semibold text-[#8A8F98] mb-2">Date Range</p>
               <div className="grid grid-cols-3 gap-2">
                 {['today', 'week', 'all'].map((range) => (
                   <Button
                     key={range}
                     onClick={() => handleDateRangeChange(range as 'today' | 'week' | 'all')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.dateRange === range ? 'bg-[#D07A60] text-white shadow-md' : 'bg-[#14141A] border border-[#2A2A32] text-[#9A9691] hover:bg-[#26262E] hover:text-[#F5F3F0]'
+                      filters.dateRange === range ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {range === 'today' ? '📅 Today' : range === 'week' ? '📆 Week' : 'All'}
@@ -120,14 +120,14 @@ export default function SearchFilterBar() {
 
             {/* Sort Options */}
             <div>
-              <p className="text-sm font-semibold text-[#9A9691] mb-2">Sort By</p>
+              <p className="text-sm font-semibold text-[#8A8F98] mb-2">Sort By</p>
               <div className="grid grid-cols-3 gap-2">
                 {['recent', 'urgent', 'progress'].map((sort) => (
                   <Button
                     key={sort}
                     onClick={() => handleSortChange(sort as 'recent' | 'urgent' | 'progress')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.sortBy === sort ? 'bg-[#D07A60] text-white shadow-md' : 'bg-[#14141A] border border-[#2A2A32] text-[#9A9691] hover:bg-[#26262E] hover:text-[#F5F3F0]'
+                      filters.sortBy === sort ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {sort === 'recent'

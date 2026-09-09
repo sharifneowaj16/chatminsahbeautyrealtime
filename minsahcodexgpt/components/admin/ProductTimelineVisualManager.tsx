@@ -488,7 +488,7 @@ export default function ProductTimelineVisualManager({
                       type="button"
                       title="Delete Stage"
                       onClick={() => handleRemoveStage(stage.id)}
-                      className="p-1.5 text-red-400 hover:text-red-600 rounded hover:bg-red-50"
+                      className="p-1.5 text-white/60 hover:text-red-600 rounded hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

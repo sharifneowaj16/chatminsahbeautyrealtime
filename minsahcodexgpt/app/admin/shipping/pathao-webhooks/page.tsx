@@ -172,14 +172,14 @@ export default function PathaoWebhooksPage() {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#F5F3F0]">Pathao webhooks</h1>
-            <p className="mt-1 text-sm text-[#9A9691]">Webhook setup requirements and recent Pathao callback events.</p>
+            <h1 className="text-2xl font-bold text-[#F7F8F8]">Pathao webhooks</h1>
+            <p className="mt-1 text-sm text-[#8A8F98]">Webhook setup requirements and recent Pathao callback events.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="rounded-lg border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0] px-3 py-2 text-sm"
+              className="rounded-lg border border-white/[0.08] bg-[#151516] text-[#F7F8F8] px-3 py-2 text-sm"
             >
               <option value="">All statuses</option>
               <option value="PROCESSED">Processed</option>
@@ -193,7 +193,7 @@ export default function PathaoWebhooksPage() {
               type="button"
               onClick={() => void loadPage({ append: false })}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#2A2A32] bg-[#1E1E24] px-4 py-2 text-sm font-medium text-[#F5F3F0] hover:bg-[#26262E] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-[#151516] px-4 py-2 text-sm font-medium text-[#F7F8F8] hover:bg-[#1C1D1F] disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -202,27 +202,27 @@ export default function PathaoWebhooksPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-4 shadow-sm lg:col-span-2">
-            <h2 className="text-sm font-semibold text-[#F5F3F0]">Merchant panel setup</h2>
-            <div className="mt-4 space-y-3 text-sm text-[#9A9691]">
+          <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-4 shadow-sm lg:col-span-2">
+            <h2 className="text-sm font-semibold text-[#F7F8F8]">Merchant panel setup</h2>
+            <div className="mt-4 space-y-3 text-sm text-[#8A8F98]">
               <div>
-                <p className="font-medium text-[#F5F3F0]">Callback URL</p>
+                <p className="font-medium text-[#F7F8F8]">Callback URL</p>
                 <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <code className="flex-1 rounded-lg bg-[#14141A] border border-[#2A2A32] px-3 py-2 text-xs text-[#F5F3F0]">{configStatus?.callbackUrl ?? callbackUrl}</code>
+                  <code className="flex-1 rounded-lg bg-[#08090A] border border-white/[0.08] px-3 py-2 text-xs text-[#F7F8F8]">{configStatus?.callbackUrl ?? callbackUrl}</code>
                   <Button
                     type="button"
                     onClick={copyCallback}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#D07A60] px-3 py-2 text-xs font-semibold text-white hover:bg-[#E08D70]"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-black hover:bg-white/90 px-3 py-2 text-xs font-semibold text-white hover:bg-white/90"
                   >
                     <Copy className="h-3.5 w-3.5" />
                     {copied ? 'Copied' : 'Copy'}
                   </Button>
                 </div>
               </div>
-              <p>Webhook secret in Pathao merchant panel must match server env <code className="rounded bg-[#14141A] border border-[#2A2A32] px-1 text-[#F5F3F0]">PATHAO_WEBHOOK_SECRET</code>.</p>
-              <p>Integration test must receive <code className="rounded bg-[#14141A] border border-[#2A2A32] px-1 text-[#F5F3F0]">202</code> and header <code className="rounded bg-[#14141A] border border-[#2A2A32] px-1 text-[#F5F3F0]">X-Pathao-Merchant-Webhook-Integration-Secret</code>.</p>
+              <p>Webhook secret in Pathao merchant panel must match server env <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">PATHAO_WEBHOOK_SECRET</code>.</p>
+              <p>Integration test must receive <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">202</code> and header <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">X-Pathao-Merchant-Webhook-Integration-Secret</code>.</p>
               {configStatus?.requiredIntegrationSecret ? (
-                <p>Required integration header value: <code className="rounded bg-[#14141A] border border-[#2A2A32] px-1 text-[#F5F3F0]">{configStatus.requiredIntegrationSecret}</code></p>
+                <p>Required integration header value: <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">{configStatus.requiredIntegrationSecret}</code></p>
               ) : (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">Set <code>PATHAO_WEBHOOK_INTEGRATION_SECRET</code> before running the merchant integration test.</p>
               )}
@@ -230,7 +230,7 @@ export default function PathaoWebhooksPage() {
                 type="button"
                 onClick={runIntegrationTest}
                 disabled={testing}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#2A2A32] border border-[#3E3E48] px-4 py-2 text-xs font-semibold text-[#F5F3F0] hover:bg-[#3E3E48] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-[rgba(255,255,255,0.08)] border border-white/[0.15] px-4 py-2 text-xs font-semibold text-[#F7F8F8] hover:bg-[rgba(255,255,255,0.15)] disabled:opacity-60"
               >
                 {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                 Test Webhook Integration
@@ -243,7 +243,7 @@ export default function PathaoWebhooksPage() {
               <Package className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <div>
                 <p className="font-semibold">Production checklist</p>
-                <p className="mt-2">API URL: <code className="rounded bg-[#14141A] border border-[#2A2A32] px-1 text-[#F5F3F0]">{configStatus?.baseUrl ?? 'https://api-hermes.pathao.com'}</code></p>
+                <p className="mt-2">API URL: <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">{configStatus?.baseUrl ?? 'https://api-hermes.pathao.com'}</code></p>
                 <p className="mt-2">If logs fail to load, run pending Prisma migrations on the live database.</p>
                 <div className="mt-3 space-y-1 text-xs">
                   <p>{configStatus?.credentialsConfigured ? 'OK' : 'Missing'}: Pathao credentials</p>
@@ -258,11 +258,11 @@ export default function PathaoWebhooksPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-[#F5F3F0]">Pathao events to select</h2>
+        <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-[#F7F8F8]">Pathao events to select</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {REQUIRED_EVENTS.map((event) => (
-              <span key={event} className="rounded-full bg-[#14141A] border border-[#2A2A32] px-2.5 py-1 text-xs font-medium text-[#9A9691]">
+              <span key={event} className="rounded-full bg-[#08090A] border border-white/[0.08] px-2.5 py-1 text-xs font-medium text-[#8A8F98]">
                 {event}
               </span>
             ))}
@@ -276,42 +276,42 @@ export default function PathaoWebhooksPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-[#2A2A32] bg-[#1E1E24] shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#151516] shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[#2A2A32] text-sm">
-              <thead className="bg-[#14141A]">
+            <table className="min-w-full divide-y divide-white/[0.08] text-sm">
+              <thead className="bg-[#08090A]">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-[#9A9691]">Received</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#9A9691]">Event</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#9A9691]">Order</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#9A9691]">Consignment</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#9A9691]">Signature</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#9A9691]">Result</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Received</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Event</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Order</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Consignment</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Signature</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Result</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#2A2A32]">
+              <tbody className="divide-y divide-white/[0.08]">
                 {events.length === 0 && !loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-[#9A9691]">
+                    <td colSpan={6} className="px-4 py-12 text-center text-[#8A8F98]">
                       No Pathao webhook events yet.
                     </td>
                   </tr>
                 ) : (
                   events.map((event) => (
-                    <tr key={event.id} className="hover:bg-[#26262E]/70 transition-colors">
-                      <td className="whitespace-nowrap px-4 py-3 text-[#9A9691]">{new Date(event.receivedAt).toLocaleString()}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-[#F5F3F0]">{event.eventType}</td>
+                    <tr key={event.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                      <td className="whitespace-nowrap px-4 py-3 text-[#8A8F98]">{new Date(event.receivedAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-[#F7F8F8]">{event.eventType}</td>
                       <td className="px-4 py-3">
                         {event.orderNumber ? (
-                          <Link href={`/admin/orders?search=${encodeURIComponent(event.orderNumber)}`} className="font-mono text-[#D07A60] hover:text-[#E08D70] hover:underline">
+                          <Link href={`/admin/orders?search=${encodeURIComponent(event.orderNumber)}`} className="font-mono text-white hover:text-[#FFFFFF] hover:underline">
                             {event.orderNumber}
                           </Link>
                         ) : (
-                          <span className="font-mono text-xs text-[#9A9691]">{event.orderRef ?? '-'}</span>
+                          <span className="font-mono text-xs text-[#8A8F98]">{event.orderRef ?? '-'}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-[#9A9691]">{event.consignmentId ?? '-'}</td>
-                      <td className="px-4 py-3 text-[#F5F3F0]">{event.hasSignature ? 'Present' : 'Missing'}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-[#8A8F98]">{event.consignmentId ?? '-'}</td>
+                      <td className="px-4 py-3 text-[#F7F8F8]">{event.hasSignature ? 'Present' : 'Missing'}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                           event.processingStatus === 'PROCESSED'
@@ -341,7 +341,7 @@ export default function PathaoWebhooksPage() {
               type="button"
               disabled={loading}
               onClick={() => void loadPage({ append: true, cursor: nextCursor })}
-              className="rounded-lg bg-[#D07A60] px-4 py-2 text-sm font-medium text-white hover:bg-[#E08D70] disabled:opacity-50"
+              className="rounded-lg bg-white text-black hover:bg-white/90 px-4 py-2 text-sm font-medium text-white hover:bg-white/90 disabled:opacity-50"
             >
               Load more
             </Button>

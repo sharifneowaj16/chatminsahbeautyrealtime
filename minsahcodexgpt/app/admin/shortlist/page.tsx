@@ -25,7 +25,7 @@ function ShortlistContent() {
       <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#F5F3F0]">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#F7F8F8]">
               📋 Purchase Shortlist
             </h1>
             <Button
@@ -88,10 +88,10 @@ function ShortlistContent() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
-                  <h2 className="text-lg font-bold text-[#F5F3F0]">
+                  <h2 className="text-lg font-bold text-[#F7F8F8]">
                     ⏳ Pending Orders
                   </h2>
-                  <span className="ml-auto px-2.5 py-0.5 bg-amber-950/70 text-amber-400 border border-amber-800/40 rounded-full text-sm font-semibold">
+                  <span className="ml-auto px-2.5 py-0.5 bg-white/[0.06] text-white/80 border border-white/[0.10] rounded-full text-sm font-semibold">
                     {orders.filter((o) => !o.isCompleted).length}
                   </span>
                 </div>
@@ -110,10 +110,10 @@ function ShortlistContent() {
               <div>
                 <div className="flex items-center gap-2 mb-3 mt-8">
                   <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                  <h2 className="text-lg font-bold text-[#F5F3F0]">
+                  <h2 className="text-lg font-bold text-[#F7F8F8]">
                     ✅ Completed Orders
                   </h2>
-                  <span className="ml-auto px-2.5 py-0.5 bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 rounded-full text-sm font-semibold">
+                  <span className="ml-auto px-2.5 py-0.5 bg-white/[0.12] text-white border border-white/[0.20] rounded-full text-sm font-semibold">
                     {orders.filter((o) => o.isCompleted).length}
                   </span>
                 </div>

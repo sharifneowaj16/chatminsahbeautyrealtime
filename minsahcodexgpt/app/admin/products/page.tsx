@@ -268,7 +268,7 @@ export default function ProductsPage() {
 
   const getStatusColor = (status: ApiProduct['status']) => {
     switch (status) {
-      case 'active':       return 'bg-emerald-950/70 text-emerald-400 border border-emerald-800/40';
+      case 'active':       return 'bg-white/[0.12] text-white border border-white/[0.20]';
       case 'inactive':     return 'bg-zinc-800/80 text-zinc-400 border border-zinc-700/50';
       case 'out_of_stock': return 'bg-rose-950/70 text-rose-400 border border-rose-800/40';
       default:             return 'bg-zinc-800/80 text-zinc-400 border border-zinc-700/50';
@@ -277,8 +277,8 @@ export default function ProductsPage() {
 
   const getStockColor = (stock: number) => {
     if (stock === 0)  return 'text-rose-400';
-    if (stock < 20)   return 'text-amber-400';
-    return 'text-emerald-400';
+    if (stock < 20)   return 'text-white/80';
+    return 'text-white';
   };
 
   const productUrlKey = (product: ApiProduct) => product.slug || product.id;
@@ -294,21 +294,21 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F5F3F0]">Products</h1>
-          <p className="text-sm text-[#9A9691] mt-1">Manage your product inventory</p>
+          <h1 className="text-2xl font-bold text-[#F7F8F8]">Products</h1>
+          <p className="text-sm text-[#8A8F98] mt-1">Manage your product inventory</p>
         </div>
         {hasPermission(PERMISSIONS.PRODUCTS_CREATE) && (
           <div className="mt-4 sm:mt-0 flex gap-3">
             <Link
               href="/admin/products/import"
-              className="inline-flex items-center px-4 py-2 bg-[#1E1E24] border border-[#D07A60] text-[#D07A60] rounded-lg hover:bg-[#26262E] transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-[#151516] border border-white/[0.15] text-white rounded-lg hover:bg-[#1C1D1F] transition-colors duration-200"
             >
               <ClipboardPaste className="w-5 h-5 mr-2" />
               Claude Import
             </Link>
             <Link
               href="/admin/products/new"
-              className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg transition-colors duration-200"
             >
               <Plus className="w-5 h-5 mr-2" />
               Add Product
@@ -318,34 +318,34 @@ export default function ProductsPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-4 mb-6">
+      <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B6864]" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#62666D]" />
               <Input
                 type="text"
                 placeholder="Search products..."
                 value={filters.search}
                 onChange={(e) => updateFilter('search', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#14141A] border border-[#2A2A32] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
               />
             </div>
           </div>
 
           <Button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg hover:bg-[#26262E] transition-colors duration-200"
+            className="inline-flex items-center px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg hover:bg-[#1C1D1F] transition-colors duration-200"
           >
-            <Filter className="w-5 h-5 mr-2 text-[#9A9691]" />
+            <Filter className="w-5 h-5 mr-2 text-[#8A8F98]" />
             Filters
-            {showFilters && <Layers className="w-4 h-4 ml-2 text-admin-primary" />}
+            {showFilters && <Layers className="w-4 h-4 ml-2 text-white" />}
           </Button>
 
           <Select
             value={filters.sortBy}
             onChange={(e) => updateFilter('sortBy', e.target.value)}
-            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
+            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -356,11 +356,11 @@ export default function ProductsPage() {
         {showFilters && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#9A9691] mb-1">Category</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-1">Category</label>
               <Select
                 value={filters.category}
                 onChange={(e) => updateFilter('category', e.target.value)}
-                className="w-full px-3 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>{category}</option>
@@ -368,11 +368,11 @@ export default function ProductsPage() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#9A9691] mb-1">Status</label>
+              <label className="block text-sm font-medium text-[#8A8F98] mb-1">Status</label>
               <Select
                 value={filters.status}
                 onChange={(e) => updateFilter('status', e.target.value)}
-                className="w-full px-3 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-admin-primary"
+                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
               >
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
@@ -414,7 +414,7 @@ export default function ProductsPage() {
         <div className="bg-red-950/40 border border-red-800/50 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-white/60 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
               <p className="text-sm text-red-200">
@@ -432,47 +432,47 @@ export default function ProductsPage() {
       )}
 
       {/* Products Table */}
-      <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] overflow-hidden">
+      <div className="bg-[#151516] rounded-lg border border-white/[0.08] overflow-hidden">
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-[#9A9691]">Loading products...</p>
+            <p className="text-[#8A8F98]">Loading products...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#14141A] border-b border-[#2A2A32]">
+              <thead className="bg-[#08090A] border-b border-white/[0.08]">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <Input
                       type="checkbox"
                       checked={selectedProducts.length === products.length && products.length > 0}
                       onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-[#3E3E48] bg-[#14141A] text-admin-primary focus:ring-admin-primary"
+                      className="rounded border-white/[0.15] bg-[#08090A] text-white focus:ring-white/20"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Product</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Price</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Stock</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Rating</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Product</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Price</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Stock</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Rating</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-[#1E1E24] divide-y divide-[#2A2A32]">
+              <tbody className="bg-[#151516] divide-y divide-white/[0.08]">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-[#26262E]/70 transition-colors">
+                  <tr key={product.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
                     <td className="px-6 py-4">
                       <Input
                         type="checkbox"
                         checked={selectedProducts.includes(product.id)}
                         onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
-                        className="rounded border-[#3E3E48] bg-[#14141A] text-admin-primary focus:ring-admin-primary"
+                        className="rounded border-white/[0.15] bg-[#08090A] text-white focus:ring-white/20"
                       />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-[#26262E] rounded-lg flex items-center justify-center overflow-hidden">
+                        <div className="w-10 h-10 bg-[#1C1D1F] rounded-lg flex items-center justify-center overflow-hidden">
                           {product.image ? (
                             <img
                               src={product.image}
@@ -483,22 +483,22 @@ export default function ProductsPage() {
                           ) : null}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-[#F5F3F0]">
+                          <div className="text-sm font-medium text-[#F7F8F8]">
                             {product.name}
                             {product.featured && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/40">
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/[0.06] text-white/80 border border-white/[0.10]">
                                 <Star className="w-3 h-3 mr-1" />
                                 Featured
                               </span>
                             )}
                             {product.isNew && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/[0.10] text-white border border-white/[0.15]">
                                 New
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-[#9A9691] font-mono">SKU: {product.sku}</div>
-                          <div className="text-xs text-[#6B6864] font-mono">{product.slug || product.id}</div>
+                          <div className="text-xs text-[#8A8F98] font-mono">SKU: {product.sku}</div>
+                          <div className="text-xs text-[#62666D] font-mono">{product.slug || product.id}</div>
                           {hasDeliveryOffer(product) && (
                             <span className="mt-1 inline-flex w-fit items-center rounded-full bg-emerald-950/70 px-2 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-800/40">
                               {getDeliveryOfferLabel(product)}
@@ -507,16 +507,16 @@ export default function ProductsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#F5F3F0]">{product.category}</td>
+                    <td className="px-6 py-4 text-sm text-[#F7F8F8]">{product.category}</td>
                     <td className="px-6 py-4">
                       <div className="text-sm">
-                        <span className="font-medium text-[#F5F3F0]">{formatPrice(product.price)}</span>
+                        <span className="font-medium text-[#F7F8F8]">{formatPrice(product.price)}</span>
                         {product.originalPrice != null && product.originalPrice > product.price && (
-                          <span className="ml-2 text-xs text-[#6B6864] line-through">{formatPrice(product.originalPrice)}</span>
+                          <span className="ml-2 text-xs text-[#62666D] line-through">{formatPrice(product.originalPrice)}</span>
                         )}
                       </div>
                       {product.originalPrice != null && product.originalPrice > product.price && (
-                        <div className="text-xs text-emerald-400">
+                        <div className="text-xs text-white">
                           {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
                         </div>
                       )}
@@ -526,7 +526,7 @@ export default function ProductsPage() {
                         {product.stock} units
                       </div>
                       {product.variants.length > 0 && (
-                        <div className="text-xs text-[#9A9691]">{product.variants.length} variant{product.variants.length === 1 ? '' : 's'}</div>
+                        <div className="text-xs text-[#8A8F98]">{product.variants.length} variant{product.variants.length === 1 ? '' : 's'}</div>
                       )}
                     </td>
 
@@ -549,16 +549,16 @@ export default function ProductsPage() {
 
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-1">
-                        <Star className="w-4 h-4 text-amber-400" />
-                        <span className="text-sm text-[#F5F3F0]">{product.rating}</span>
-                        <span className="text-xs text-[#9A9691]">({product.reviews})</span>
+                        <Star className="w-4 h-4 text-white/80" />
+                        <span className="text-sm text-[#F7F8F8]">{product.rating}</span>
+                        <span className="text-xs text-[#8A8F98]">({product.reviews})</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <Link
                           href={`/admin/products/${productUrlKey(product)}`}
-                          className="text-admin-primary hover:text-admin-primary-hover p-1 rounded hover:bg-[#26262E] transition-colors"
+                          className="text-white hover:text-white-hover p-1 rounded hover:bg-[#1C1D1F] transition-colors"
                           title="View"
                         >
                           <Eye className="w-4 h-4" />
@@ -566,7 +566,7 @@ export default function ProductsPage() {
                         {hasPermission(PERMISSIONS.PRODUCTS_EDIT) && (
                           <Link
                             href={`/admin/products/${productUrlKey(product)}/edit`}
-                            className="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-[#26262E] transition-colors"
+                            className="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-[#1C1D1F] transition-colors"
                             title="Edit"
                           >
                             <Edit className="w-4 h-4" />
@@ -597,13 +597,13 @@ export default function ProductsPage() {
 
         {!loading && products.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-[#6B6864]">No products found matching your criteria.</p>
+            <p className="text-[#62666D]">No products found matching your criteria.</p>
           </div>
         )}
 
         {!loading && products.length > 0 && (
-          <div className="flex flex-col gap-3 border-t border-[#2A2A32] bg-[#14141A]/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-[#9A9691]">
+          <div className="flex flex-col gap-3 border-t border-white/[0.08] bg-[#08090A]/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-[#8A8F98]">
               Showing {firstVisibleProduct}-{lastVisibleProduct} of {pagination.totalCount} products
             </div>
             <div className="flex items-center gap-3">
@@ -617,7 +617,7 @@ export default function ProductsPage() {
                   }));
                   setSelectedProducts([]);
                 }}
-                className="rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 text-sm focus:ring-2 focus:ring-admin-primary"
+                className="rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 text-sm focus:ring-2 focus:ring-white/20"
               >
                 <option value={25}>25 / page</option>
                 <option value={50}>50 / page</option>
@@ -628,19 +628,19 @@ export default function ProductsPage() {
                   type="button"
                   disabled={pagination.page <= 1}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-                  className="inline-flex items-center rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#26262E]"
+                  className="inline-flex items-center rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#1C1D1F]"
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" />
                   Previous
                 </Button>
-                <span className="text-sm text-[#9A9691]">
+                <span className="text-sm text-[#8A8F98]">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button
                   type="button"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
-                  className="inline-flex items-center rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#26262E]"
+                  className="inline-flex items-center rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#1C1D1F]"
                 >
                   Next
                   <ChevronRight className="ml-1 h-4 w-4" />

@@ -58,7 +58,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
       <div className="admin-workspace min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-admin-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#9A9691]">Loading...</p>
+          <p className="text-[#8A8F98]">Loading...</p>
         </div>
       </div>
     );
@@ -69,14 +69,14 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
       <div className="admin-workspace min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
         <div className="text-center">
           <div className="w-16 h-16 bg-emerald-950/80 border border-emerald-800/40 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-[#F5F3F0] mb-2">Login Successful!</h2>
-          <p className="text-[#9A9691] mb-4">Redirecting to admin dashboard...</p>
-          <div className="w-64 bg-[#2A2A32] rounded-full h-2 mx-auto">
-            <div className="bg-admin-primary h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+          <h2 className="text-2xl font-bold text-[#F7F8F8] mb-2">Login Successful!</h2>
+          <p className="text-[#8A8F98] mb-4">Redirecting to admin dashboard...</p>
+          <div className="w-64 bg-[rgba(255,255,255,0.08)] rounded-full h-2 mx-auto">
+            <div className="bg-white text-black hover:bg-white/90 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
         <div className="relative z-10">
           <div className="flex items-center space-x-2 mb-8">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-admin-primary font-bold text-xl">M</span>
+              <span className="text-white font-bold text-xl">M</span>
             </div>
             <span className="text-white text-2xl font-semibold">Minsah Beauty Admin</span>
           </div>
@@ -143,15 +143,15 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center space-x-2 mb-8 lg:hidden">
-            <div className="w-10 h-10 bg-admin-primary rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-white text-black hover:bg-white/90 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">M</span>
             </div>
-            <span className="text-admin-primary text-2xl font-semibold">Admin</span>
+            <span className="text-white text-2xl font-semibold">Admin</span>
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-[#F5F3F0] mb-2">Welcome Back</h1>
-            <p className="text-[#9A9691]">Sign in to your admin dashboard</p>
+            <h1 className="text-3xl font-bold text-[#F7F8F8] mb-2">Welcome Back</h1>
+            <p className="text-[#8A8F98]">Sign in to your admin dashboard</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,7 +164,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
               autoComplete="email"
               label="Email Address"
               leading={<Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-              className="focus:ring-admin-primary"
+              className="focus:ring-white/20"
             />
 
             <Input
@@ -183,7 +183,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
                   size="icon"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="pointer-events-auto text-[#9A9691] hover:text-[#F5F3F0]"
+                  className="pointer-events-auto text-[#8A8F98] hover:text-[#F7F8F8]"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" aria-hidden="true" />
@@ -192,11 +192,11 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
                   )}
                 </Button>
               }
-              className="focus:ring-admin-primary"
+              className="focus:ring-white/20"
             />
 
             {error && (
-              <div className="bg-red-950/80 border border-red-800/50 text-red-400 px-4 py-3 rounded-lg text-sm font-medium">
+              <div className="bg-red-950/80 border border-red-800/50 text-white/60 px-4 py-3 rounded-lg text-sm font-medium">
                 {error}
               </div>
             )}
@@ -207,14 +207,14 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
               fullWidth
               disabled={isLoading}
               aria-busy={isLoading || undefined}
-              className="bg-admin-primary py-3 hover:bg-admin-primary-hover"
+              className="bg-white text-black hover:bg-white/90 py-3 hover:bg-white/90"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/" className="text-sm text-admin-primary hover:text-admin-primary transition-colors inline-flex items-center gap-1">
+            <Link href="/" className="text-sm text-white hover:text-white transition-colors inline-flex items-center gap-1">
               <ArrowLeft className="w-4 h-4" />
               Back to Main Site
             </Link>

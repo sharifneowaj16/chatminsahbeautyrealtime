@@ -141,7 +141,7 @@ export default function ReturnsPage() {
   if (!hasPermission(PERMISSIONS.ORDERS_REFUND)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[#9A9691]">You don&apos;t have permission to manage returns.</p>
+        <p className="text-[#8A8F98]">You don&apos;t have permission to manage returns.</p>
       </div>
     );
   }
@@ -162,7 +162,7 @@ export default function ReturnsPage() {
       case 'complete':
         return 'bg-green-500';
       case 'current':
-        return 'bg-[#D07A60]';
+        return 'bg-white text-black hover:bg-white/90';
       case 'warning':
         return 'bg-amber-500';
       default:
@@ -501,13 +501,13 @@ export default function ReturnsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F5F3F0]">Returns &amp; Refunds</h1>
-          <p className="text-[#9A9691]">Manage customer return requests and refunds</p>
+          <h1 className="text-2xl font-bold text-[#F7F8F8]">Returns &amp; Refunds</h1>
+          <p className="text-[#8A8F98]">Manage customer return requests and refunds</p>
         </div>
         <Button
           onClick={fetchReturns}
           disabled={loading}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0] rounded-lg hover:bg-[#26262E] transition-colors duration-200"
+          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-white/[0.08] bg-[#151516] text-[#F7F8F8] rounded-lg hover:bg-[#1C1D1F] transition-colors duration-200"
         >
           <RefreshCw className={clsx('w-5 h-5 mr-2', loading && 'animate-spin')} />
           Refresh
@@ -516,41 +516,41 @@ export default function ReturnsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Total Returns</p>
-              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{stats.total}</p>
+              <p className="text-sm font-medium text-[#8A8F98]">Total Returns</p>
+              <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{stats.total}</p>
             </div>
-            <RefreshCw className="w-8 h-8 text-admin-primary" />
+            <RefreshCw className="w-8 h-8 text-white" />
           </div>
         </div>
 
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Pending</p>
+              <p className="text-sm font-medium text-[#8A8F98]">Pending</p>
               <p className="text-2xl font-bold text-yellow-600 mt-2">{stats.pending}</p>
             </div>
             <AlertCircle className="w-8 h-8 text-yellow-500" />
           </div>
         </div>
 
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Approved</p>
+              <p className="text-sm font-medium text-[#8A8F98]">Approved</p>
               <p className="text-2xl font-bold text-green-600 mt-2">{stats.approved}</p>
             </div>
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
         </div>
 
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Total Refund Amount</p>
-              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
+              <p className="text-sm font-medium text-[#8A8F98]">Total Refund Amount</p>
+              <p className="text-2xl font-bold text-[#F7F8F8] mt-2">
                 {formatPrice(convertUSDtoBDT(stats.totalRefundAmount))}
               </p>
             </div>
@@ -560,7 +560,7 @@ export default function ReturnsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 mb-6">
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -569,14 +569,14 @@ export default function ReturnsPage() {
               placeholder="Search by return ID, order ID, or customer..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
             />
           </div>
 
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -595,7 +595,7 @@ export default function ReturnsPage() {
               <p className="text-sm font-semibold text-admin-text">
                 {selectedIds.length} return request{selectedIds.length === 1 ? '' : 's'} selected
               </p>
-              <p className="text-sm text-admin-primary">
+              <p className="text-sm text-white">
                 Apply one status update to all selected requests.
               </p>
             </div>
@@ -606,7 +606,7 @@ export default function ReturnsPage() {
                 value={bulkNote}
                 onChange={(event) => setBulkNote(event.target.value)}
                 placeholder="Optional bulk note or rejection reason"
-                className="w-full rounded-lg border border-admin-border bg-white px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                className="w-full rounded-lg border border-admin-border bg-white px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
               />
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -645,7 +645,7 @@ export default function ReturnsPage() {
                   type="button"
                   onClick={() => setSelectedIds([])}
                   disabled={bulkUpdating}
-                  className="rounded-lg border border-admin-border bg-white px-4 py-2 text-sm font-medium text-admin-primary hover:bg-admin-panel disabled:opacity-70"
+                  className="rounded-lg border border-admin-border bg-white px-4 py-2 text-sm font-medium text-white hover:bg-admin-panel disabled:opacity-70"
                 >
                   Clear
                 </Button>
@@ -666,69 +666,69 @@ export default function ReturnsPage() {
       )}
 
       {/* Returns Table */}
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] overflow-hidden">
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <RefreshCw className="w-8 h-8 text-admin-primary animate-spin" />
-            <span className="ml-3 text-[#9A9691]">Loading returns...</span>
+            <RefreshCw className="w-8 h-8 text-white animate-spin" />
+            <span className="ml-3 text-[#8A8F98]">Loading returns...</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#14141A] border-b border-[#2A2A32] text-[#9A9691]">
+              <thead className="bg-[#08090A] border-b border-white/[0.08] text-[#8A8F98]">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <Input
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
+                      className="h-4 w-4 rounded border-gray-300 text-white focus:ring-white/20"
                       aria-label="Select all visible returns"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Return ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Order ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Items</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Reason</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Refund Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Return ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Order ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Items</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Reason</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Refund Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-[#1E1E24] divide-y divide-[#2A2A32] text-[#F5F3F0]">
+              <tbody className="bg-[#151516] divide-y divide-white/[0.08] text-[#F7F8F8]">
                 {returns.map((returnRequest) => (
-                  <tr key={returnRequest.id} className="hover:bg-[#26262E]">
+                  <tr key={returnRequest.id} className="hover:bg-[#1C1D1F]">
                     <td className="px-6 py-4">
                       <Input
                         type="checkbox"
                         checked={selectedIds.includes(returnRequest.id)}
                         onChange={() => toggleSelected(returnRequest.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-admin-primary focus:ring-admin-primary"
+                        className="h-4 w-4 rounded border-gray-300 text-white focus:ring-white/20"
                         aria-label={`Select return ${returnRequest.id}`}
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-[#F5F3F0]">{returnRequest.id}</div>
-                      <div className="text-xs text-[#9A9691]">
+                      <div className="text-sm font-medium text-[#F7F8F8]">{returnRequest.id}</div>
+                      <div className="text-xs text-[#8A8F98]">
                         {new Date(returnRequest.requestDate).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#F5F3F0]">{returnRequest.orderId}</td>
+                    <td className="px-6 py-4 text-sm text-[#F7F8F8]">{returnRequest.orderId}</td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-[#F5F3F0]">{returnRequest.customer.name}</div>
-                      <div className="text-xs text-[#9A9691]">{returnRequest.customer.email}</div>
+                      <div className="text-sm font-medium text-[#F7F8F8]">{returnRequest.customer.name}</div>
+                      <div className="text-xs text-[#8A8F98]">{returnRequest.customer.email}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-[#F5F3F0]">{returnRequest.items.length} item(s)</div>
+                      <div className="text-sm text-[#F7F8F8]">{returnRequest.items.length} item(s)</div>
                       {returnRequest.items.map((item, idx) => (
-                        <div key={idx} className="text-xs text-[#9A9691]">{item.name}</div>
+                        <div key={idx} className="text-xs text-[#8A8F98]">{item.name}</div>
                       ))}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-[#F5F3F0] max-w-xs truncate">{returnRequest.reason}</div>
+                      <div className="text-sm text-[#F7F8F8] max-w-xs truncate">{returnRequest.reason}</div>
                       {Boolean(returnRequest.images?.length) && (
-                        <div className="mt-1 inline-flex items-center rounded-full bg-admin-panel px-2 py-0.5 text-xs font-medium text-admin-primary">
+                        <div className="mt-1 inline-flex items-center rounded-full bg-admin-panel px-2 py-0.5 text-xs font-medium text-white">
                           <ImageIcon className="mr-1 h-3 w-3" />
                           {returnRequest.images?.length} photo{returnRequest.images?.length === 1 ? '' : 's'}
                         </div>
@@ -737,7 +737,7 @@ export default function ReturnsPage() {
                         <div className="text-xs text-blue-600 italic mt-1">{returnRequest.notes}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-[#F5F3F0]">
+                    <td className="px-6 py-4 text-sm font-medium text-[#F7F8F8]">
                       {formatPrice(convertUSDtoBDT(returnRequest.refundAmount))}
                     </td>
                     <td className="px-6 py-4">
@@ -752,7 +752,7 @@ export default function ReturnsPage() {
                       <div className="flex items-center space-x-2">
                         <Button
                           onClick={() => openReturnDetails(returnRequest)}
-                          className="text-admin-primary hover:text-admin-primary"
+                          className="text-white hover:text-white"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -791,7 +791,7 @@ export default function ReturnsPage() {
 
             {returns.length === 0 && !loading && (
               <div className="text-center py-12">
-                <p className="text-[#9A9691]">No return requests found matching your criteria.</p>
+                <p className="text-[#8A8F98]">No return requests found matching your criteria.</p>
               </div>
             )}
           </div>
@@ -819,26 +819,26 @@ export default function ReturnsPage() {
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-[#9A9691]">Customer</p>
-                  <p className="mt-2 font-medium text-[#F5F3F0]">{selectedReturn.customer.name}</p>
-                  <p className="text-sm text-[#9A9691]">{selectedReturn.customer.email}</p>
+                  <p className="text-xs uppercase tracking-wide text-[#8A8F98]">Customer</p>
+                  <p className="mt-2 font-medium text-[#F7F8F8]">{selectedReturn.customer.name}</p>
+                  <p className="text-sm text-[#8A8F98]">{selectedReturn.customer.email}</p>
                 </div>
                 <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-[#9A9691]">Requested</p>
-                  <p className="mt-2 font-medium text-[#F5F3F0]">
+                  <p className="text-xs uppercase tracking-wide text-[#8A8F98]">Requested</p>
+                  <p className="mt-2 font-medium text-[#F7F8F8]">
                     {new Date(selectedReturn.requestDate).toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-[#9A9691]">Refund</p>
-                  <p className="mt-2 font-medium text-[#F5F3F0]">
+                  <p className="text-xs uppercase tracking-wide text-[#8A8F98]">Refund</p>
+                  <p className="mt-2 font-medium text-[#F7F8F8]">
                     {formatPrice(convertUSDtoBDT(selectedReturn.refundAmount))}
                   </p>
                 </div>
               </div>
 
               <div className="rounded-xl border border-gray-200 p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                   Return Reason
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-gray-800">{selectedReturn.reason}</p>
@@ -846,8 +846,8 @@ export default function ReturnsPage() {
 
               <div className="rounded-xl border border-gray-200 p-5">
                 <div className="mb-4 flex items-center gap-2">
-                  <Package className="h-4 w-4 text-[#9A9691]" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
+                  <Package className="h-4 w-4 text-[#8A8F98]" />
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                     Returned Items
                   </h3>
                 </div>
@@ -858,10 +858,10 @@ export default function ReturnsPage() {
                       className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
                     >
                       <div>
-                        <p className="font-medium text-[#F5F3F0]">{item.name}</p>
-                        <p className="text-sm text-[#9A9691]">Qty: {item.quantity}</p>
+                        <p className="font-medium text-[#F7F8F8]">{item.name}</p>
+                        <p className="text-sm text-[#8A8F98]">Qty: {item.quantity}</p>
                       </div>
-                      <p className="text-sm font-medium text-[#F5F3F0]">
+                      <p className="text-sm font-medium text-[#F7F8F8]">
                         {formatPrice(convertUSDtoBDT(item.price * item.quantity))}
                       </p>
                     </div>
@@ -871,10 +871,10 @@ export default function ReturnsPage() {
 
               <div className="rounded-xl border border-gray-200 p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                     Evidence Photos
                   </h3>
-                  <span className="text-sm text-[#9A9691]">
+                  <span className="text-sm text-[#8A8F98]">
                     {selectedReturn.images?.length || 0} uploaded
                   </span>
                 </div>
@@ -897,7 +897,7 @@ export default function ReturnsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[#9A9691]">
+                  <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[#8A8F98]">
                     No evidence photos were uploaded by the customer.
                   </div>
                 )}
@@ -906,10 +906,10 @@ export default function ReturnsPage() {
               <div className="rounded-xl border border-gray-200 p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                       Refund Timeline
                     </h3>
-                    <p className="mt-1 text-sm text-[#9A9691]">
+                    <p className="mt-1 text-sm text-[#8A8F98]">
                       Derived from current order payment and return timestamps.
                     </p>
                   </div>
@@ -934,12 +934,12 @@ export default function ReturnsPage() {
                       </div>
                       <div className="pb-5">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="font-medium text-[#F5F3F0]">{event.title}</h4>
-                          <span className="text-xs text-[#9A9691]">
+                          <h4 className="font-medium text-[#F7F8F8]">{event.title}</h4>
+                          <span className="text-xs text-[#8A8F98]">
                             {formatDateTime(event.timestamp)}
                           </span>
                         </div>
-                        <p className="mt-1 text-sm leading-6 text-[#9A9691]">
+                        <p className="mt-1 text-sm leading-6 text-[#8A8F98]">
                           {event.description}
                         </p>
                       </div>
@@ -949,7 +949,7 @@ export default function ReturnsPage() {
               </div>
 
               <div className="rounded-xl border border-gray-200 p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                   Admin Decision
                 </h3>
                 <div className="mt-4 grid gap-4 md:grid-cols-[200px,1fr]">
@@ -962,7 +962,7 @@ export default function ReturnsPage() {
                       onChange={(event) =>
                         setDetailStatus(event.target.value as ReturnRequest['status'])
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
                     >
                       <option value="pending">Pending</option>
                       <option value="approved">Approved</option>
@@ -980,7 +980,7 @@ export default function ReturnsPage() {
                       value={detailNote}
                       onChange={(event) => setDetailNote(event.target.value)}
                       placeholder="Add approval notes, rejection reason, or handling instructions..."
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
                     />
                   </div>
                 </div>
@@ -990,21 +990,21 @@ export default function ReturnsPage() {
                     type="button"
                     onClick={handleSaveDetails}
                     disabled={savingDetail}
-                    className="inline-flex items-center rounded-lg bg-[#D07A60] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#D07A60]-hover disabled:opacity-70"
+                    className="inline-flex items-center rounded-lg bg-white text-black hover:bg-white/90 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/90 disabled:opacity-70"
                   >
                     {savingDetail && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                     Save Decision
                   </Button>
                   <a
                     href={`mailto:${selectedReturn.customer.email}?subject=Update on return ${selectedReturn.id}`}
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#26262E]"
+                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#1C1D1F]"
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Email Customer
                   </a>
                   <a
                     href="/admin/orders"
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#26262E]"
+                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#1C1D1F]"
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     Open Orders

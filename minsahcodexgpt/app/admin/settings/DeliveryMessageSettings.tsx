@@ -46,20 +46,20 @@ function MessageCard({
   canEdit,
 }: MessageCardProps) {
   return (
-    <div className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm transition hover:border-[#3E3E48]">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#2A2A32] pb-4">
+    <div className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm transition hover:border-white/[0.15]">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/[0.08] pb-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14141A] border border-[#2A2A32] text-admin-primary">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#08090A] border border-white/[0.08] text-white">
             <Icon className="h-5 w-5" />
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-[#F5F3F0]">
+              <h3 className="font-bold text-[#F7F8F8]">
                 Message {number}: {title}
               </h3>
               <Badge tone={badgeTone}>{badge}</Badge>
             </div>
-            <p className="mt-0.5 text-xs text-[#9A9691]">{description}</p>
+            <p className="mt-0.5 text-xs text-[#8A8F98]">{description}</p>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ function MessageCard({
             className="peer sr-only"
           />
           <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-disabled:cursor-not-allowed peer-disabled:opacity-60"></div>
-          <span className="text-xs font-semibold text-[#9A9691]">
+          <span className="text-xs font-semibold text-[#8A8F98]">
             {message.active ? 'Active' : 'Inactive'}
           </span>
         </label>
@@ -81,7 +81,7 @@ function MessageCard({
       <div className="mt-4 space-y-4">
         {/* Message Text Input */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-[#9A9691]">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#8A8F98]">
             Message Text
           </label>
           <textarea
@@ -89,7 +89,7 @@ function MessageCard({
             onChange={(e) => onChange('text', e.target.value)}
             disabled={!canEdit}
             rows={2}
-            className="mt-1.5 w-full rounded-xl border border-[#2A2A32] bg-[#14141A] p-3 text-sm font-medium text-[#F5F3F0] placeholder-[#6B6864] shadow-sm transition focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary disabled:bg-gray-50 disabled:text-[#9A9691]"
+            className="mt-1.5 w-full rounded-xl border border-white/[0.08] bg-[#08090A] p-3 text-sm font-medium text-[#F7F8F8] placeholder-[#62666D] shadow-sm transition focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary disabled:bg-gray-50 disabled:text-[#8A8F98]"
             placeholder="Enter promotional or delivery copy..."
           />
         </div>
@@ -97,7 +97,7 @@ function MessageCard({
         {/* Color Customization */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#9A9691]">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#8A8F98]">
               Background Color
             </label>
             <div className="mt-1.5 flex items-center gap-2">
@@ -113,14 +113,14 @@ function MessageCard({
                 value={message.backgroundColor}
                 onChange={(e) => onChange('backgroundColor', e.target.value)}
                 disabled={!canEdit}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm font-mono font-medium uppercase text-[#F5F3F0] bg-[#14141A] border-[#2A2A32] shadow-sm focus:border-[#D07A60] focus:outline-none focus:ring-1 focus:ring-[#D07A60] disabled:bg-[#1E1E24]"
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm font-mono font-medium uppercase text-[#F7F8F8] bg-[#08090A] border-white/[0.08] shadow-sm focus:border-white focus:outline-none focus:ring-1 focus:ring-white/20 disabled:bg-[#151516]"
                 placeholder="#d3fa99"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#9A9691]">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#8A8F98]">
               Text Color
             </label>
             <div className="mt-1.5 flex items-center gap-2">
@@ -136,7 +136,7 @@ function MessageCard({
                 value={message.textColor}
                 onChange={(e) => onChange('textColor', e.target.value)}
                 disabled={!canEdit}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm font-mono font-medium uppercase text-[#F5F3F0] bg-[#14141A] border-[#2A2A32] shadow-sm focus:border-[#D07A60] focus:outline-none focus:ring-1 focus:ring-[#D07A60] disabled:bg-[#1E1E24]"
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm font-mono font-medium uppercase text-[#F7F8F8] bg-[#08090A] border-white/[0.08] shadow-sm focus:border-white focus:outline-none focus:ring-1 focus:ring-white/20 disabled:bg-[#151516]"
                 placeholder="#1c3a13"
               />
             </div>
@@ -145,7 +145,7 @@ function MessageCard({
 
         {/* Live Preview Box */}
         <div className="mt-3 rounded-xl border border-dashed border-gray-300 bg-gray-50/50 p-3">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-[#9A9691]">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#8A8F98]">
             <Eye className="h-3.5 w-3.5" />
             <span>Storefront Live Preview</span>
           </div>
@@ -257,8 +257,8 @@ export default function DeliveryMessageSettings() {
 
   if (loading) {
     return (
-      <div className="flex h-36 items-center justify-center rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-6 text-[#9A9691]">
-        <div className="flex items-center gap-3 text-sm font-semibold text-[#9A9691]">
+      <div className="flex h-36 items-center justify-center rounded-2xl border border-white/[0.08] bg-[#151516] p-6 text-[#8A8F98]">
+        <div className="flex items-center gap-3 text-sm font-semibold text-[#8A8F98]">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-minsah-primary border-t-transparent"></div>
           <span>Loading delivery message configuration...</span>
         </div>
@@ -270,11 +270,11 @@ export default function DeliveryMessageSettings() {
     <section className="space-y-6" aria-labelledby="delivery-messages-heading">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 pb-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#14141A] border border-[#2A2A32] text-admin-primary">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#08090A] border border-white/[0.08] text-white">
             <Truck className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h2 id="delivery-messages-heading" className="text-xl font-black text-[#F5F3F0]">
+            <h2 id="delivery-messages-heading" className="text-xl font-black text-[#F7F8F8]">
               Product Delivery Top-Bar Messages
             </h2>
             <p className="mt-0.5 text-xs sm:text-sm text-gray-600">

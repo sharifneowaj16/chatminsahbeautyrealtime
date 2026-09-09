@@ -191,9 +191,9 @@ export default function RetargetingAudiencesPage() {
       case 'google':
         return 'bg-red-100 text-red-800';
       case 'tiktok':
-        return 'bg-admin-panel text-admin-primary';
+        return 'bg-admin-panel text-white';
       case 'instagram':
-        return 'bg-admin-panel text-admin-primary';
+        return 'bg-admin-panel text-white';
       case 'twitter':
         return 'bg-sky-100 text-sky-800';
       default:
@@ -211,10 +211,10 @@ export default function RetargetingAudiencesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#F5F3F0]">Retargeting Audiences</h1>
+          <h1 className="text-2xl font-bold text-[#F7F8F8]">Retargeting Audiences</h1>
           <p className="text-gray-600">Build and manage custom audiences for retargeting campaigns</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#E08D70]">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg">
           <Plus className="w-5 h-5 mr-2" />
           Create Audience
         </Button>
@@ -222,44 +222,44 @@ export default function RetargetingAudiencesPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Total Audiences</p>
-              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{audiences.length}</p>
-              <p className="text-xs text-[#6B6864] mt-1">{activeAudiences} active</p>
+              <p className="text-sm font-medium text-[#8A8F98]">Total Audiences</p>
+              <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{audiences.length}</p>
+              <p className="text-xs text-[#62666D] mt-1">{activeAudiences} active</p>
             </div>
-            <Target className="w-10 h-10 text-admin-primary" />
+            <Target className="w-10 h-10 text-white" />
           </div>
         </div>
 
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Total Reach</p>
-              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{totalAudienceSize.toLocaleString()}</p>
-              <p className="text-xs text-[#6B6864] mt-1">unique users</p>
+              <p className="text-sm font-medium text-[#8A8F98]">Total Reach</p>
+              <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{totalAudienceSize.toLocaleString()}</p>
+              <p className="text-xs text-[#62666D] mt-1">unique users</p>
             </div>
             <Users className="w-10 h-10 text-blue-500" />
           </div>
         </div>
 
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Total Impressions</p>
-              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{totalImpressions.toLocaleString()}</p>
+              <p className="text-sm font-medium text-[#8A8F98]">Total Impressions</p>
+              <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{totalImpressions.toLocaleString()}</p>
               <p className="text-xs text-green-600 mt-1">+23.4% this month</p>
             </div>
             <Eye className="w-10 h-10 text-green-500" />
           </div>
         </div>
 
-        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[#9A9691]">Avg ROAS</p>
-              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{avgROAS.toFixed(2)}x</p>
+              <p className="text-sm font-medium text-[#8A8F98]">Avg ROAS</p>
+              <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{avgROAS.toFixed(2)}x</p>
               <p className="text-xs text-green-600 mt-1">+12.5% vs last period</p>
             </div>
             <TrendingUp className="w-10 h-10 text-orange-500" />
@@ -268,7 +268,7 @@ export default function RetargetingAudiencesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 shadow-sm">
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -277,14 +277,14 @@ export default function RetargetingAudiencesPage() {
               placeholder="Search audiences..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg focus:ring-1 focus:ring-[#D07A60]"
+              className="w-full pl-10 pr-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20"
             />
           </div>
 
           <Select
             value={filterPlatform}
             onChange={(e) => setFilterPlatform(e.target.value)}
-            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-1 focus:ring-[#D07A60]"
+            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20"
           >
             <option value="all">All Platforms</option>
             <option value="facebook">Facebook</option>
@@ -297,7 +297,7 @@ export default function RetargetingAudiencesPage() {
           <Select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-1 focus:ring-[#D07A60]"
+            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -308,41 +308,41 @@ export default function RetargetingAudiencesPage() {
       </div>
 
       {/* Audiences List */}
-      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] overflow-hidden shadow-sm">
+      <div className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#14141A]">
+            <thead className="bg-[#08090A]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Audience
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Platform
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Size
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Performance
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   ROAS
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2A2A32]">
+            <tbody className="divide-y divide-white/[0.08]">
               {filteredAudiences.map((audience) => (
-                <tr key={audience.id} className="hover:bg-[#26262E]/70 transition-colors">
+                <tr key={audience.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
                   <td className="px-6 py-4">
                     <div>
-                      <p className="text-sm font-medium text-[#F5F3F0]">{audience.name}</p>
-                      <p className="text-xs text-[#6B6864]">{audience.description}</p>
+                      <p className="text-sm font-medium text-[#F7F8F8]">{audience.name}</p>
+                      <p className="text-xs text-[#62666D]">{audience.description}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -354,16 +354,16 @@ export default function RetargetingAudiencesPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <Users className="w-4 h-4 text-gray-400 mr-1" />
-                      <span className="text-sm text-[#F5F3F0]">{audience.size.toLocaleString()}</span>
+                      <span className="text-sm text-[#F7F8F8]">{audience.size.toLocaleString()}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-xs space-y-1">
-                      <div className="flex items-center text-[#9A9691]">
+                      <div className="flex items-center text-[#8A8F98]">
                         <Eye className="w-3 h-3 mr-1" />
                         {audience.performance.impressions.toLocaleString()} impressions
                       </div>
-                      <div className="flex items-center text-[#9A9691]">
+                      <div className="flex items-center text-[#8A8F98]">
                         <ShoppingCart className="w-3 h-3 mr-1" />
                         {audience.performance.conversions} conversions
                       </div>
@@ -389,7 +389,7 @@ export default function RetargetingAudiencesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <Button className="text-[#D07A60] hover:text-[#E08D70]">
+                      <Button className="text-white hover:text-[#FFFFFF]">
                         <Edit className="w-4 h-4" />
                       </Button>
                       {audience.status === 'active' ? (
@@ -419,14 +419,14 @@ export default function RetargetingAudiencesPage() {
       {filteredAudiences.length === 0 && (
         <div className="text-center py-12">
           <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-[#F5F3F0] mb-2">No audiences found</h3>
-          <p className="text-[#9A9691] mb-6">
+          <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No audiences found</h3>
+          <p className="text-[#8A8F98] mb-6">
             {searchQuery || filterPlatform !== 'all' || filterStatus !== 'all'
               ? 'Try adjusting your filters'
               : 'Create your first retargeting audience to get started'}
           </p>
           {!searchQuery && filterPlatform === 'all' && filterStatus === 'all' && (
-            <Button className="inline-flex items-center px-6 py-3 bg-[#D07A60] text-white rounded-lg hover:bg-[#E08D70]">
+            <Button className="inline-flex items-center px-6 py-3 bg-white text-black hover:bg-white/90 rounded-lg">
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Audience
             </Button>
