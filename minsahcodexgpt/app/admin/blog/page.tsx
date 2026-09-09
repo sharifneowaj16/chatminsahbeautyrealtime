@@ -90,7 +90,7 @@ export default function BlogManagementPage() {
   if (!hasPermission(PERMISSIONS.CONTENT_MANAGE)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to manage blog posts.</p>
+        <p className="text-[#9A9691]">You don't have permission to manage blog posts.</p>
       </div>
     );
   }
@@ -113,13 +113,13 @@ export default function BlogManagementPage() {
   const getStatusColor = (status: BlogPost['status']) => {
     switch (status) {
       case 'published':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-950/70 text-emerald-400 border border-emerald-800/40';
       case 'draft':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-[#14141A] text-[#9A9691] border border-[#2A2A32]';
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-950/70 text-blue-400 border border-blue-800/40';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-[#14141A] text-[#9A9691] border border-[#2A2A32]';
     }
   };
 
@@ -128,10 +128,10 @@ export default function BlogManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Blog Posts</h1>
-          <p className="text-gray-600">Create and manage blog content</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Blog Posts</h1>
+          <p className="text-[#9A9691]">Create and manage blog content</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#D07A60]-hover transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           New Post
         </Button>
@@ -139,20 +139,20 @@ export default function BlogManagementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Posts</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{posts.length}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total Posts</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{posts.length}</p>
             </div>
             <FileText className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Published</p>
+              <p className="text-sm font-medium text-[#9A9691]">Published</p>
               <p className="text-2xl font-bold text-green-600 mt-2">
                 {posts.filter(p => p.status === 'published').length}
               </p>
@@ -161,23 +161,23 @@ export default function BlogManagementPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Drafts</p>
-              <p className="text-2xl font-bold text-gray-600 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Drafts</p>
+              <p className="text-2xl font-bold text-[#9A9691] mt-2">
                 {posts.filter(p => p.status === 'draft').length}
               </p>
             </div>
-            <Edit className="w-8 h-8 text-gray-500" />
+            <Edit className="w-8 h-8 text-[#9A9691]" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Views</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Total Views</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {posts.reduce((sum, p) => sum + p.views, 0).toLocaleString()}
               </p>
             </div>
@@ -187,7 +187,7 @@ export default function BlogManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -214,41 +214,41 @@ export default function BlogManagementPage() {
       </div>
 
       {/* Blog Posts Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#14141A] border-b border-[#2A2A32] text-[#9A9691]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Title
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Author
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Views
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Published Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-[#1E1E24] divide-y divide-[#2A2A32] text-[#F5F3F0]">
               {filteredPosts.map((post) => (
-                <tr key={post.id} className="hover:bg-gray-50">
+                <tr key={post.id} className="hover:bg-[#26262E]">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{post.title}</div>
-                      <div className="text-xs text-gray-500">{post.excerpt.substring(0, 60)}...</div>
+                      <div className="text-sm font-medium text-[#F5F3F0]">{post.title}</div>
+                      <div className="text-xs text-[#9A9691]">{post.excerpt.substring(0, 60)}...</div>
                       <div className="flex items-center space-x-1 mt-1">
                         {post.tags.map((tag, index) => (
                           <span
@@ -261,9 +261,9 @@ export default function BlogManagementPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{post.category}</td>
+                  <td className="px-6 py-4 text-sm text-[#F5F3F0]">{post.category}</td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-gray-900">
+                    <div className="flex items-center text-sm text-[#F5F3F0]">
                       <User className="w-4 h-4 mr-1 text-gray-400" />
                       {post.author}
                     </div>
@@ -277,13 +277,13 @@ export default function BlogManagementPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-gray-900">
+                    <div className="flex items-center text-sm text-[#F5F3F0]">
                       <Eye className="w-4 h-4 mr-1 text-gray-400" />
                       {post.views.toLocaleString()}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-gray-900">
+                    <div className="flex items-center text-sm text-[#F5F3F0]">
                       <Calendar className="w-4 h-4 mr-1 text-gray-400" />
                       {new Date(post.publishedDate).toLocaleDateString()}
                     </div>
@@ -318,7 +318,7 @@ export default function BlogManagementPage() {
 
         {filteredPosts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No blog posts found matching your criteria.</p>
+            <p className="text-[#9A9691]">No blog posts found matching your criteria.</p>
           </div>
         )}
       </div>

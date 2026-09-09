@@ -59,29 +59,28 @@ export default function OrderCard({ order }: { order: Order }) {
     return date.toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: '2-digit' });
   };
 
-  const borderColor = order.isCompleted
-    ? 'border-l-4 border-green-500'
-    : 'border-l-4 border-orange-500';
-  
-  const bgColor = order.isCompleted ? 'bg-green-50' : 'bg-orange-50';
+  const borderAccent = order.isCompleted
+    ? 'border-l-emerald-500'
+    : 'border-l-[#D07A60]';
+
   const badgeColor = order.isCompleted
-    ? 'bg-green-100 text-green-700'
-    : 'bg-orange-100 text-orange-700';
+    ? 'bg-emerald-950/70 text-emerald-400 border border-emerald-800/40'
+    : 'bg-amber-950/70 text-amber-400 border border-amber-800/40';
 
   return (
     <div
-      className={`${bgColor} ${borderColor} rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow`}
+      className={`bg-[#1E1E24] border border-[#2A2A32] border-l-4 ${borderAccent} rounded-xl overflow-hidden shadow-sm hover:border-[#3E3E48] transition-all`}
     >
       {/* Header - Always Visible */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="p-4 sm:p-5 cursor-pointer hover:bg-opacity-60 transition-colors"
+        className="p-4 sm:p-5 cursor-pointer hover:bg-[#26262E]/50 transition-colors"
       >
         <div className="space-y-3">
           {/* Order Number & Badge */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-xl font-bold text-[#F5F3F0]">
                 #{order.orderNumber}
               </span>
               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}`}>
@@ -93,7 +92,7 @@ export default function OrderCard({ order }: { order: Order }) {
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
-              className="text-xl transition-transform"
+              className="text-xl transition-transform text-[#9A9691] hover:text-[#F5F3F0] bg-transparent border-none p-0"
             >
               {isExpanded ? '▼' : '▶'}
             </Button>
@@ -102,22 +101,22 @@ export default function OrderCard({ order }: { order: Order }) {
           {/* Customer Info */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <p className="font-semibold text-gray-900 text-sm">{order.customer.name}</p>
-              <p className="text-gray-600 text-xs">{order.customer.phone}</p>
+              <p className="font-semibold text-[#F5F3F0] text-sm">{order.customer.name}</p>
+              <p className="text-[#9A9691] text-xs">{order.customer.phone}</p>
             </div>
-            <p className="text-gray-500 text-xs">{formatDate(order.createdAt)}</p>
+            <p className="text-[#6B6864] text-xs">{formatDate(order.createdAt)}</p>
           </div>
 
           {/* Progress Bar */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-700">
+              <span className="text-xs font-medium text-[#9A9691]">
                 {order.purchasedProducts}/{order.totalProducts} Purchased
               </span>
-              <span className="text-xs font-bold text-gray-900">{order.progress}%</span>
+              <span className="text-xs font-bold text-[#F5F3F0]">{order.progress}%</span>
             </div>
             <progress
-              className="h-2 w-full accent-minsah-action-primary"
+              className="h-2 w-full accent-[#D07A60] bg-[#2A2A32] rounded-full overflow-hidden"
               max={100}
               value={order.progress}
               aria-label={`${order.customer.name} progress`}
@@ -125,14 +124,14 @@ export default function OrderCard({ order }: { order: Order }) {
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 sm:border-t-0">
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2A2A32] sm:border-t-0">
             <div>
-              <p className="text-xs text-gray-600">Profit</p>
-              <p className="font-bold text-gray-900">{formatCurrency(order.totalProfit)}</p>
+              <p className="text-xs text-[#9A9691]">Profit</p>
+              <p className="font-bold text-[#F5F3F0]">{formatCurrency(order.totalProfit)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-600">Remaining</p>
-              <p className="font-bold text-red-600">{order.unpurchasedProducts} items</p>
+              <p className="text-xs text-[#9A9691]">Remaining</p>
+              <p className="font-bold text-rose-400">{order.unpurchasedProducts} items</p>
             </div>
           </div>
         </div>
@@ -140,7 +139,7 @@ export default function OrderCard({ order }: { order: Order }) {
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="border-t border-gray-200 p-4 sm:p-5 bg-white space-y-3">
+        <div className="border-t border-[#2A2A32] p-4 sm:p-5 bg-[#14141A] space-y-3">
           {/* Product List */}
           <div className="space-y-2">
             {order.items.map((item) => (

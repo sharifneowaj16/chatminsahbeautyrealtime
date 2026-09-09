@@ -73,15 +73,21 @@
 
   /* Admin panel design system */
   --admin-bg: #14141A;          /* Deep Charcoal Black - sidebar/base */
+  --admin-canvas: #0E0E12;      /* Deep Content Canvas */
   --admin-panel: #1E1E24;       /* Slightly lighter panel/card bg */
+  --admin-panel-hover: #26262E; /* Table row / Card hover */
   --admin-primary: #D07A60;     /* brand Terracotta - CTA/active states */
   --admin-primary-hover: #E08D70;
   --admin-text: #F5F3F0;        /* off-white text on dark */
   --admin-text-muted: #9A9691;
+  --admin-text-subtle: #6B6864;
   --admin-border: #2A2A32;
+  --admin-border-subtle: #22222A;
+  --admin-border-strong: #3E3E48;
   --admin-success: #4ADE80;
   --admin-danger: #F87171;
   --admin-warning: #FBBF24;
+  --admin-info: #60A5FA;
 
   /* Compatibility aliases. Remove only after all legacy consumers migrate. */
   --background: var(--color-surface-panel);
@@ -112,15 +118,21 @@
 
   /* Admin panel utilities */
   --color-admin-bg: var(--admin-bg);
+  --color-admin-canvas: var(--admin-canvas);
   --color-admin-panel: var(--admin-panel);
+  --color-admin-panel-hover: var(--admin-panel-hover);
   --color-admin-primary: var(--admin-primary);
   --color-admin-primary-hover: var(--admin-primary-hover);
   --color-admin-text: var(--admin-text);
   --color-admin-text-muted: var(--admin-text-muted);
+  --color-admin-text-subtle: var(--admin-text-subtle);
   --color-admin-border: var(--admin-border);
+  --color-admin-border-subtle: var(--admin-border-subtle);
+  --color-admin-border-strong: var(--admin-border-strong);
   --color-admin-success: var(--admin-success);
   --color-admin-danger: var(--admin-danger);
   --color-admin-warning: var(--admin-warning);
+  --color-admin-info: var(--admin-info);
 
   /* Semantic surface utilities */
   --color-minsah-surface-page: var(--color-surface-page);
@@ -658,6 +670,54 @@ img {
 
 .minsah-field-trailing {
   inset-inline-end: 0.75rem;
+}
+
+/* ─── Admin Workspace Scoped Controls (Dark Mode) ─── */
+.admin-workspace {
+  color-scheme: dark;
+}
+
+.admin-workspace .minsah-field {
+  background: var(--admin-panel, #1E1E24);
+  border-color: var(--admin-border, #2A2A32);
+  color: var(--admin-text, #F5F3F0);
+}
+
+.admin-workspace .minsah-field::placeholder {
+  color: var(--admin-text-muted, #9A9691);
+  opacity: 0.85;
+}
+
+.admin-workspace .minsah-field:hover:not(:disabled):not([aria-invalid="true"]) {
+  border-color: var(--admin-border-strong, #3E3E48);
+}
+
+.admin-workspace .minsah-field:focus-visible {
+  border-color: var(--admin-primary, #D07A60);
+  box-shadow: 0 0 0 3px rgba(208, 122, 96, 0.25);
+}
+
+.admin-workspace .minsah-field:disabled {
+  background: #14141A;
+  border-color: #22222A;
+  color: #6B6864;
+}
+
+.admin-workspace .minsah-field-label {
+  color: var(--admin-text, #F5F3F0);
+}
+
+.admin-workspace .minsah-field-description {
+  color: var(--admin-text-muted, #9A9691);
+}
+
+.admin-workspace .minsah-field-error {
+  color: var(--admin-danger, #F87171);
+}
+
+.admin-workspace select option {
+  background-color: #1E1E24;
+  color: #F5F3F0;
 }
 
 .minsah-choice-label {

@@ -921,7 +921,7 @@ export default function ImportProductPage() {
         <Link href="/admin/products" className="inline-flex items-center text-admin-primary hover:text-admin-primary mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Product Import — SEO 1-22 Ready</h1>
+        <h1 className="text-2xl font-bold text-[#F5F3F0]">Product Import — SEO 1-22 Ready</h1>
         <p className="text-gray-500 text-sm mt-1">
           Paste an [IMPORT_DATA] block, flat JSON, or the complete final SEO JSON to auto-fill the form.
         </p>
@@ -943,7 +943,7 @@ export default function ImportProductPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <ClipboardPaste className="w-5 h-5 text-admin-primary" />
-            <h2 className="text-lg font-semibold text-gray-900">Paste import JSON</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Paste import JSON</h2>
           </div>
 
           <Textarea
@@ -1531,7 +1531,7 @@ function Section({
       >
         <div className="flex items-center gap-2">
           {icon}
-          <span className={`font-semibold ${highlight ? 'text-amber-800' : 'text-gray-900'}`}>{title}</span>
+          <span className={`font-semibold ${highlight ? 'text-amber-400' : 'text-[#F5F3F0]'}`}>{title}</span>
         </div>
         {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
       </Button>

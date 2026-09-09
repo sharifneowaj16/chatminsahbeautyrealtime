@@ -279,7 +279,7 @@ function formatDateTime(value: string) {
 
 function SignalPill({ label, ok }: { label: string; ok: boolean }) {
   return (
-    <span className={`rounded-full px-2 py-1 text-xs font-medium ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+    <span className={`rounded-full px-2 py-1 text-xs font-medium ${ok ? 'bg-emerald-950/70 text-emerald-400 border border-emerald-800/40' : 'bg-[#14141A] text-[#9A9691] border border-[#2A2A32]'}`}>
       {label}
     </span>
   );
@@ -510,20 +510,20 @@ export default function TrackingHealthPage() {
     <div className="space-y-6 p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tracking Health Dashboard</h1>
-          <p className="text-gray-600">Meta CAPI, GA4, TikTok Events API, retry queue, and failure monitoring.</p>
-          <p className="mt-1 inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Tracking Health Dashboard</h1>
+          <p className="text-[#9A9691]">Meta CAPI, GA4, TikTok Events API, retry queue, and failure monitoring.</p>
+          <p className="mt-1 inline-flex items-center rounded-full bg-[#14141A] border border-[#2A2A32] px-3 py-1 text-xs font-medium text-[#9A9691]">
             <Lock className="mr-1 h-3 w-3" /> SUPER_ADMIN access only
           </p>
           {data?.checkedAt ? (
-            <p className="mt-2 text-xs text-gray-500">Dashboard refreshed {formatDateTime(data.checkedAt)}{lastRequestId ? ` · Request ${lastRequestId}` : ''}</p>
+            <p className="mt-2 text-xs text-[#6B6864]">Dashboard refreshed {formatDateTime(data.checkedAt)}{lastRequestId ? ` · Request ${lastRequestId}` : ''}</p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Select
             value={hours}
             onChange={(event) => setHours(Number(event.target.value))}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            className="rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 text-sm"
           >
             <option value={6}>Last 6 hours</option>
             <option value={24}>Last 24 hours</option>
@@ -534,7 +534,7 @@ export default function TrackingHealthPage() {
           <Button
             onClick={() => void loadHealth()}
             disabled={isLoading}
-            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="inline-flex items-center rounded-lg border border-[#2A2A32] bg-[#1E1E24] px-4 py-2 text-sm font-medium text-[#F5F3F0] hover:bg-[#26262E] disabled:opacity-60"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -550,7 +550,7 @@ export default function TrackingHealthPage() {
           <Button
             onClick={() => void runFailureCleanup(true)}
             disabled={isRunningCleanup}
-            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="inline-flex items-center rounded-lg border border-[#2A2A32] bg-[#1E1E24] px-4 py-2 text-sm font-medium text-[#F5F3F0] hover:bg-[#26262E] disabled:opacity-60"
           >
             Dry-run Cleanup
           </Button>
@@ -568,7 +568,7 @@ export default function TrackingHealthPage() {
       {notice ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{notice}</div> : null}
 
       {isLoading && !snapshot ? (
-        <div className="rounded-xl border bg-white p-8 text-center text-gray-500">Loading tracking health...</div>
+        <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-8 text-center text-[#9A9691]">Loading tracking health...</div>
       ) : null}
 
       {snapshot ? (
@@ -648,14 +648,14 @@ export default function TrackingHealthPage() {
           <TikTokEventsApiHealth metrics={snapshot.metrics} />
 
           {data?.ga4Qa ? (
-            <div className="rounded-xl border bg-white p-5">
+            <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5">
               <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <h2 className="flex items-center text-lg font-bold text-gray-900">
+                  <h2 className="flex items-center text-lg font-bold text-[#F5F3F0]">
                     <ReceiptText className="mr-2 h-5 w-5 text-admin-primary" />
                     GA4 Purchase / Refund / Referral QA
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">Measurement Protocol env, client ID capture, refund events, and payment gateway referral exclusions.</p>
+                  <p className="mt-1 text-sm text-[#9A9691]">Measurement Protocol env, client ID capture, refund events, and payment gateway referral exclusions.</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${data.ga4Qa.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                   {data.ga4Qa.ok ? 'GA4 QA OK' : 'Needs QA'}
@@ -680,7 +680,7 @@ export default function TrackingHealthPage() {
 
               <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <div className="rounded-lg border p-4">
-                  <h3 className="font-semibold text-gray-900">Payment gateway referral domains</h3>
+                  <h3 className="font-semibold text-[#F5F3F0]">Payment gateway referral domains</h3>
                   <p className="mt-1 text-xs text-gray-500">Add exact production redirect hosts to GA4 unwanted referrals, then set GA4_PAYMENT_REFERRAL_EXCLUSIONS_VERIFIED=true.</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {data.ga4Qa.referralConfig.flattenedDomains.map((domain) => (
@@ -690,11 +690,11 @@ export default function TrackingHealthPage() {
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <h3 className="font-semibold text-gray-900">Pending GA4 refund events</h3>
+                  <h3 className="font-semibold text-[#F5F3F0]">Pending GA4 refund events</h3>
                   {data.ga4Qa.refundPendingOrders.length ? (
                     <div className="mt-3 max-h-48 space-y-2 overflow-y-auto text-sm">
                       {data.ga4Qa.refundPendingOrders.slice(0, 8).map((order) => (
-                        <a key={order.id} href={`/admin/orders/${order.id}`} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 hover:bg-gray-100">
+                        <a key={order.id} href={`/admin/orders/${order.id}`} className="flex items-center justify-between rounded-lg bg-[#14141A] border border-[#2A2A32] px-3 py-2 hover:bg-[#26262E]">
                           <span className="font-medium text-blue-700">{order.orderNumber}</span>
                           <span className="text-gray-600">৳{order.refundAmount.toLocaleString()}</span>
                         </a>
@@ -709,14 +709,14 @@ export default function TrackingHealthPage() {
           ) : null}
 
           {data?.privacyCatalogQa ? (
-            <div className="rounded-xl border bg-white p-5">
+            <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5">
               <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <h2 className="flex items-center text-lg font-bold text-gray-900">
+                  <h2 className="flex items-center text-lg font-bold text-[#F5F3F0]">
                     <SearchCheck className="mr-2 h-5 w-5 text-emerald-600" />
                     Privacy / Clarity / Meta Catalog QA
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">Tracking disclosure, Clarity masking, and product catalog readiness for dynamic ads.</p>
+                  <p className="mt-1 text-sm text-[#9A9691]">Tracking disclosure, Clarity masking, and product catalog readiness for dynamic ads.</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${data.privacyCatalogQa.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                   {data.privacyCatalogQa.ok ? 'Privacy/Catalog OK' : 'Needs QA'}
@@ -761,7 +761,7 @@ export default function TrackingHealthPage() {
 
               <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <div className="rounded-lg border p-4">
-                  <h3 className="font-semibold text-gray-900">Verification gates</h3>
+                  <h3 className="font-semibold text-[#F5F3F0]">Verification gates</h3>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <SignalPill label="Tracking disclosure" ok={data.privacyCatalogQa.env.trackingDisclosureVerified} />
                     <SignalPill label="Cookie disclosure" ok={data.privacyCatalogQa.env.cookieDisclosureVerified} />
@@ -780,14 +780,14 @@ export default function TrackingHealthPage() {
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <h3 className="flex items-center font-semibold text-gray-900">
+                  <h3 className="flex items-center font-semibold text-[#F5F3F0]">
                     <ShoppingBag className="mr-2 h-4 w-4 text-amber-600" />
                     Top catalog issue products
                   </h3>
                   {data.privacyCatalogQa.catalogIssueRows.length ? (
                     <div className="mt-3 max-h-56 space-y-2 overflow-y-auto text-sm">
                       {data.privacyCatalogQa.catalogIssueRows.slice(0, 8).map((product) => (
-                        <a key={product.id} href={`/admin/products/${product.id}`} className="block rounded-lg bg-gray-50 px-3 py-2 hover:bg-gray-100">
+                        <a key={product.id} href={`/admin/products/${product.id}`} className="block rounded-lg bg-[#14141A] border border-[#2A2A32] px-3 py-2 hover:bg-[#26262E]">
                           <div className="flex items-center justify-between gap-3">
                             <span className="truncate font-medium text-blue-700">{product.name}</span>
                             <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${product.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>{product.severity}</span>
@@ -805,9 +805,9 @@ export default function TrackingHealthPage() {
           ) : null}
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="rounded-xl border bg-white p-5">
+            <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="flex items-center text-lg font-bold text-gray-900">
+                <h2 className="flex items-center text-lg font-bold text-[#F5F3F0]">
                   <Activity className="mr-2 h-5 w-5 text-blue-600" />
                   Queue Status
                 </h2>
@@ -826,8 +826,8 @@ export default function TrackingHealthPage() {
               {snapshot.queue.error ? <p className="mt-3 text-sm text-amber-700">{snapshot.queue.error}</p> : null}
             </div>
 
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-4 flex items-center text-lg font-bold text-gray-900">
+            <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5">
+              <h2 className="mb-4 flex items-center text-lg font-bold text-[#F5F3F0]">
                 <ShieldAlert className="mr-2 h-5 w-5 text-amber-600" />
                 Active Issues
               </h2>
@@ -853,8 +853,8 @@ export default function TrackingHealthPage() {
           </div>
 
           {data?.retention ? (
-            <div className="rounded-xl border bg-white p-5">
-              <h2 className="mb-3 text-lg font-bold text-gray-900">Failure retention policy</h2>
+            <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5">
+              <h2 className="mb-3 text-lg font-bold text-[#F5F3F0]">Failure retention policy</h2>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <MetricCard title="Debug logs" value={`${data.retention.debugNonCriticalDays} days`} subtitle="non-final retry/debug failures" />
                 <MetricCard title="Final retryable" value={`${data.retention.finalRetryableDays} days`} subtitle="dead-letter style final rows" tone="warn" />
@@ -864,9 +864,9 @@ export default function TrackingHealthPage() {
             </div>
           ) : null}
 
-          <div className="rounded-xl border bg-white p-5">
+          <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center text-lg font-bold text-gray-900">
+              <h2 className="flex items-center text-lg font-bold text-[#F5F3F0]">
                 <ServerCrash className="mr-2 h-5 w-5 text-red-600" />
                 Recent Meta/GA4/TikTok Failures
               </h2>
@@ -874,7 +874,7 @@ export default function TrackingHealthPage() {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#14141A] border-b border-[#2A2A32]">
                   <tr>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Time</th>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Event</th>
@@ -885,7 +885,7 @@ export default function TrackingHealthPage() {
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-[#2A2A32] bg-[#1E1E24]">
                   {data?.failures.length ? (
                     data.failures.map((failure) => (
                       <tr key={failure.id} className="align-top">
@@ -936,14 +936,14 @@ export default function TrackingHealthPage() {
                             <Button
                               type="button"
                               onClick={() => setSelectedFailure(failure)}
-                              className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                              className="inline-flex items-center rounded-lg border border-[#2A2A32] bg-[#14141A] px-3 py-1.5 text-xs font-medium text-[#F5F3F0] hover:bg-[#26262E]"
                             >
                               Details
                             </Button>
                             <Button
                               onClick={() => void retryFailure(failure)}
                               disabled={!failure.orderId || retryingFailureId === failure.id}
-                              className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center rounded-lg border border-[#2A2A32] bg-[#14141A] px-3 py-1.5 text-xs font-medium text-[#F5F3F0] hover:bg-[#26262E] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <RotateCcw className={`mr-1 h-3 w-3 ${retryingFailureId === failure.id ? 'animate-spin' : ''}`} />
                               Retry
@@ -962,14 +962,14 @@ export default function TrackingHealthPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border bg-white p-5">
-            <h2 className="mb-4 flex items-center text-lg font-bold text-gray-900">
+          <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5">
+            <h2 className="mb-4 flex items-center text-lg font-bold text-[#F5F3F0]">
               <TrendingUp className="mr-2 h-5 w-5 text-blue-600" />
               Saved Health Check History
             </h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#14141A] border-b border-[#2A2A32]">
                   <tr>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Checked</th>
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Status</th>
@@ -982,7 +982,7 @@ export default function TrackingHealthPage() {
                     <th className="px-3 py-2 text-left font-semibold text-gray-600">Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-[#2A2A32] bg-[#1E1E24]">
                   {data?.history.length ? (
                     data.history.map((row) => (
                       <tr key={row.id}>
@@ -1023,8 +1023,8 @@ export default function TrackingHealthPage() {
           size="lg"
         >
             <div className="space-y-4 text-sm">
-              <div className="rounded-lg border bg-gray-50 p-4">
-                <p className="font-semibold text-gray-900">{selectedFailure.provider}:{selectedFailure.eventName}</p>
+              <div className="rounded-lg border border-[#2A2A32] bg-[#14141A] p-4">
+                <p className="font-semibold text-[#F5F3F0]">{selectedFailure.provider}:{selectedFailure.eventName}</p>
                 <p className="mt-1 break-all text-gray-600">Event ID: {selectedFailure.eventId || '-'}</p>
                 <p className="mt-1 text-gray-600">Created: {formatDateTime(selectedFailure.createdAt)}</p>
                 <p className="mt-1 text-gray-600">Updated: {formatDateTime(selectedFailure.updatedAt)}</p>
@@ -1039,7 +1039,7 @@ export default function TrackingHealthPage() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <h3 className="mb-2 font-semibold text-gray-900">Matching signals</h3>
+                <h3 className="mb-2 font-semibold text-[#F5F3F0]">Matching signals</h3>
                 <div className="flex flex-wrap gap-2">
                   {getFailureSignalLabels(selectedFailure).map((signal) => (
                     <SignalPill key={signal.label} label={signal.label} ok={signal.ok} />
@@ -1048,14 +1048,14 @@ export default function TrackingHealthPage() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <h3 className="mb-2 font-semibold text-gray-900">Error</h3>
+                <h3 className="mb-2 font-semibold text-[#F5F3F0]">Error</h3>
                 <p className="text-gray-700">Code: {selectedFailure.errorCode || '-'}</p>
                 <p className="text-gray-700">Subcode: {selectedFailure.errorSubcode || '-'}</p>
                 <p className="mt-2 whitespace-pre-wrap break-words text-gray-600">{selectedFailure.errorMessage || 'No message'}</p>
               </div>
 
               <div className="rounded-lg border p-4">
-                <h3 className="mb-2 font-semibold text-gray-900">Safe payload summary</h3>
+                <h3 className="mb-2 font-semibold text-[#F5F3F0]">Safe payload summary</h3>
                 <pre className="max-h-64 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">
                   {JSON.stringify(selectedFailure.safePayload ?? {}, null, 2) /* failure.safePayload */}
                 </pre>
@@ -1065,7 +1065,7 @@ export default function TrackingHealthPage() {
                 {selectedFailure.orderId ? (
                   <a
                     href={`/admin/orders/${selectedFailure.orderId}`}
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="inline-flex items-center rounded-lg border border-[#2A2A32] bg-[#1E1E24] px-4 py-2 text-sm font-medium text-[#F5F3F0] hover:bg-[#26262E]"
                   >
                     Open order
                     <ExternalLink className="ml-2 h-4 w-4" />

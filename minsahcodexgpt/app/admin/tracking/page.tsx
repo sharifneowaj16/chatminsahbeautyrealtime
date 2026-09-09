@@ -122,7 +122,7 @@ export default function TrackingAnalyticsPage() {
   if (!hasPermission(PERMISSIONS.ANALYTICS_VIEW)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to view tracking analytics.</p>
+        <p className="text-[#6B6864]">You don't have permission to view tracking analytics.</p>
       </div>
     );
   }
@@ -137,7 +137,7 @@ export default function TrackingAnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tracking & Analytics Dashboard</h1>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Tracking & Analytics Dashboard</h1>
           <p className="text-gray-600">Comprehensive tracking across all platforms</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
@@ -192,11 +192,11 @@ export default function TrackingAnalyticsPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Total Revenue</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {formatPrice(convertUSDtoBDT(analytics.overview.revenue))}
               </p>
               <p className="text-xs text-green-600 mt-1">+12.5% vs last period</p>
@@ -205,14 +205,14 @@ export default function TrackingAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Conversions</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Conversions</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {analytics.overview.conversions.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-[#6B6864] mt-1">
                 {analytics.overview.conversionRate}% conversion rate
               </p>
             </div>
@@ -220,26 +220,26 @@ export default function TrackingAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Total Users</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {analytics.overview.users.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-[#6B6864] mt-1">
                 {analytics.overview.sessions.toLocaleString()} sessions
               </p>
             </div>
-            <Users className="w-10 h-10 text-admin-primary" />
+            <Users className="w-10 h-10 text-[#D07A60]" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Avg Order Value</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {formatPrice(convertUSDtoBDT(analytics.overview.avgOrderValue))}
               </p>
               <p className="text-xs text-green-600 mt-1">+8.3% vs last period</p>
@@ -252,27 +252,27 @@ export default function TrackingAnalyticsPage() {
       {/* Traffic Sources & Campaigns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Traffic Sources */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Traffic Sources</h3>
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Traffic Sources</h3>
           <div className="space-y-3">
             {analytics.traffic.sources.map((source, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900">{source.source}</span>
-                    <span className="text-sm text-gray-600">{source.sessions.toLocaleString()} sessions</span>
+                    <span className="text-sm font-medium text-[#F5F3F0]">{source.source}</span>
+                    <span className="text-sm text-[#9A9691]">{source.sessions.toLocaleString()} sessions</span>
                   </div>
                   <progress
-                    className="h-2 w-full accent-minsah-action-primary"
+                    className="h-2 w-full accent-[#D07A60] bg-[#2A2A32]"
                     max={100}
                     value={source.percentage}
                     aria-label={`${source.source} traffic percentage`}
                   />
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-[#6B6864]">
                       {source.conversions} conversions &bull; {formatPrice(convertUSDtoBDT(source.revenue))}
                     </span>
-                    <span className="text-xs font-medium text-gray-600">{source.percentage.toFixed(1)}%</span>
+                    <span className="text-xs font-medium text-[#9A9691]">{source.percentage.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
@@ -281,29 +281,29 @@ export default function TrackingAnalyticsPage() {
         </div>
 
         {/* Top Campaigns */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Top Campaigns</h3>
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Top Campaigns</h3>
           <div className="space-y-4">
             {analytics.traffic.campaigns.map((campaign, index) => (
-              <div key={index} className="border-b border-gray-200 pb-3 last:border-0">
+              <div key={index} className="border-b border-[#2A2A32] pb-3 last:border-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900">{campaign.campaign}</span>
-                  <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                  <span className="text-sm font-medium text-[#F5F3F0]">{campaign.campaign}</span>
+                  <span className="text-xs px-2 py-1 bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 rounded-full">
                     ROAS: {campaign.roas.toFixed(2)}x
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                <div className="grid grid-cols-3 gap-2 text-xs text-[#9A9691]">
                   <div>
-                    <p className="text-gray-500">Revenue</p>
-                    <p className="font-medium text-gray-900">{formatPrice(convertUSDtoBDT(campaign.revenue))}</p>
+                    <p className="text-[#6B6864]">Revenue</p>
+                    <p className="font-medium text-[#F5F3F0]">{formatPrice(convertUSDtoBDT(campaign.revenue))}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Conversions</p>
-                    <p className="font-medium text-gray-900">{campaign.conversions}</p>
+                    <p className="text-[#6B6864]">Conversions</p>
+                    <p className="font-medium text-[#F5F3F0]">{campaign.conversions}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Cost</p>
-                    <p className="font-medium text-gray-900">{formatPrice(convertUSDtoBDT(campaign.cost))}</p>
+                    <p className="text-[#6B6864]">Cost</p>
+                    <p className="font-medium text-[#F5F3F0]">{formatPrice(convertUSDtoBDT(campaign.cost))}</p>
                   </div>
                 </div>
               </div>
@@ -315,27 +315,27 @@ export default function TrackingAnalyticsPage() {
       {/* Devices & Platforms */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Device Breakdown */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Device Breakdown</h3>
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Device Breakdown</h3>
           <div className="space-y-4">
             {analytics.devices.map((device, index) => {
               const Icon = device.type === 'mobile' ? Smartphone : device.type === 'desktop' ? Monitor : Tablet;
               return (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-admin-panel rounded-lg flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-admin-primary" />
+                    <div className="w-10 h-10 bg-[#14141A] border border-[#2A2A32] rounded-lg flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-[#D07A60]" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900 capitalize">{device.type}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-[#F5F3F0] capitalize">{device.type}</p>
+                      <p className="text-xs text-[#6B6864]">
                         {device.conversions} conversions &bull; {formatPrice(convertUSDtoBDT(device.revenue))}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">{device.percentage.toFixed(1)}%</p>
-                    <p className="text-xs text-gray-500">{device.sessions.toLocaleString()} sessions</p>
+                    <p className="text-sm font-bold text-[#F5F3F0]">{device.percentage.toFixed(1)}%</p>
+                    <p className="text-xs text-[#6B6864]">{device.sessions.toLocaleString()} sessions</p>
                   </div>
                 </div>
               );
@@ -344,8 +344,8 @@ export default function TrackingAnalyticsPage() {
         </div>
 
         {/* Platform Performance */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Platform Performance</h3>
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Platform Performance</h3>
           <div className="space-y-4">
             {Object.entries(analytics.platforms).map(([platform, data]) => (
               <div key={platform} className="flex items-center justify-between">
@@ -354,21 +354,21 @@ export default function TrackingAnalyticsPage() {
                     'w-3 h-3 rounded-full',
                     data.enabled ? 'bg-green-500' : 'bg-gray-300'
                   )} />
-                  <span className="text-sm font-medium text-gray-900 capitalize">{platform}</span>
+                  <span className="text-sm font-medium text-[#F5F3F0] capitalize">{platform}</span>
                 </div>
                 {data.enabled ? (
                   <div className="text-right">
                     {platform === 'tiktok' ? (
                       <>
-                        <p className="text-sm font-bold text-gray-900">ROAS hidden</p>
-                        <p className="text-xs text-gray-500">Use Tracking Health for verified Purchase status</p>
+                        <p className="text-sm font-bold text-[#F5F3F0]">ROAS hidden</p>
+                        <p className="text-xs text-[#6B6864]">Use Tracking Health for verified Purchase status</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm font-bold text-gray-900">
+                        <p className="text-sm font-bold text-[#F5F3F0]">
                           {formatPrice(convertUSDtoBDT(data.revenue))}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[#6B6864]">
                           {data.conversions} conv &bull; {data.roas.toFixed(1)}x ROAS
                         </p>
                       </>
@@ -378,7 +378,7 @@ export default function TrackingAnalyticsPage() {
                     ) : null}
                   </div>
                 ) : (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-[#6B6864]">
                     {'status' in data && data.status ? data.status : 'Not configured'}
                   </span>
                 )}
@@ -389,18 +389,18 @@ export default function TrackingAnalyticsPage() {
       </div>
 
       {/* Conversion Funnel */}
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Conversion Funnel</h3>
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Conversion Funnel</h3>
         <div className="space-y-2">
           {analytics.funnel.map((step, index) => (
             <div key={index} className="relative">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-900">{step.step}</span>
-                <span className="text-sm text-gray-600">{step.users.toLocaleString()} users</span>
+                <span className="text-sm font-medium text-[#F5F3F0]">{step.step}</span>
+                <span className="text-sm text-[#9A9691]">{step.users.toLocaleString()} users</span>
               </div>
               <div className="flex items-center gap-3">
                 <progress
-                  className="h-3 w-full accent-minsah-action-primary"
+                  className="h-3 w-full accent-[#D07A60] bg-[#2A2A32]"
                   max={Math.max(analytics.funnel[0].users, 1)}
                   value={step.users}
                   aria-label={`${step.step} funnel users`}
@@ -419,33 +419,33 @@ export default function TrackingAnalyticsPage() {
       {/* Top Products & Pages */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Top Products</h3>
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Top Products</h3>
           <div className="space-y-3">
             {analytics.topProducts.map((product, index) => (
-              <div key={index} className="border-b border-gray-200 pb-3 last:border-0">
+              <div key={index} className="border-b border-[#2A2A32] pb-3 last:border-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900">{product.name}</span>
-                  <span className="text-sm font-bold text-admin-primary">
+                  <span className="text-sm font-medium text-[#F5F3F0]">{product.name}</span>
+                  <span className="text-sm font-bold text-[#D07A60]">
                     {formatPrice(convertUSDtoBDT(product.revenue))}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-2 text-xs text-gray-600">
+                <div className="grid grid-cols-4 gap-2 text-xs text-[#9A9691]">
                   <div>
-                    <p className="text-gray-500">Views</p>
-                    <p className="font-medium">{product.views}</p>
+                    <p className="text-[#6B6864]">Views</p>
+                    <p className="font-medium text-[#F5F3F0]">{product.views}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Add to Cart</p>
-                    <p className="font-medium">{product.addToCarts}</p>
+                    <p className="text-[#6B6864]">Add to Cart</p>
+                    <p className="font-medium text-[#F5F3F0]">{product.addToCarts}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Purchases</p>
-                    <p className="font-medium">{product.purchases}</p>
+                    <p className="text-[#6B6864]">Purchases</p>
+                    <p className="font-medium text-[#F5F3F0]">{product.purchases}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Conv Rate</p>
-                    <p className="font-medium">{product.conversionRate.toFixed(2)}%</p>
+                    <p className="text-[#6B6864]">Conv Rate</p>
+                    <p className="font-medium text-[#F5F3F0]">{product.conversionRate.toFixed(2)}%</p>
                   </div>
                 </div>
               </div>
@@ -454,27 +454,27 @@ export default function TrackingAnalyticsPage() {
         </div>
 
         {/* Top Pages */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Top Pages</h3>
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Top Pages</h3>
           <div className="space-y-3">
             {analytics.topPages.map((page, index) => (
-              <div key={index} className="border-b border-gray-200 pb-3 last:border-0">
+              <div key={index} className="border-b border-[#2A2A32] pb-3 last:border-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900">{page.page}</span>
-                  <span className="text-sm text-gray-600">{page.views.toLocaleString()} views</span>
+                  <span className="text-sm font-medium text-[#F5F3F0]">{page.page}</span>
+                  <span className="text-sm text-[#9A9691]">{page.views.toLocaleString()} views</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                <div className="grid grid-cols-3 gap-2 text-xs text-[#9A9691]">
                   <div>
-                    <p className="text-gray-500">Unique Views</p>
-                    <p className="font-medium">{page.uniqueViews.toLocaleString()}</p>
+                    <p className="text-[#6B6864]">Unique Views</p>
+                    <p className="font-medium text-[#F5F3F0]">{page.uniqueViews.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Avg Time</p>
-                    <p className="font-medium">{page.avgTime}s</p>
+                    <p className="text-[#6B6864]">Avg Time</p>
+                    <p className="font-medium text-[#F5F3F0]">{page.avgTime}s</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Exit Rate</p>
-                    <p className="font-medium">{page.exitRate.toFixed(1)}%</p>
+                    <p className="text-[#6B6864]">Exit Rate</p>
+                    <p className="font-medium text-[#F5F3F0]">{page.exitRate.toFixed(1)}%</p>
                   </div>
                 </div>
               </div>

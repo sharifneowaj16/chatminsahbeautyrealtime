@@ -23,9 +23,9 @@ import DeliveryMessageSettings from './DeliveryMessageSettings';
 
 function ValueRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div className="flex flex-col gap-1 border-b border-gray-100 py-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-      <dt className="text-sm font-semibold text-gray-600">{label}</dt>
-      <dd className="break-all text-sm font-medium text-gray-900 sm:text-right">
+    <div className="flex flex-col gap-1 border-b border-[#2A2A32] py-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+      <dt className="text-sm font-semibold text-[#9A9691]">{label}</dt>
+      <dd className="break-all text-sm font-medium text-[#F5F3F0] sm:text-right">
         {value || <span className="text-amber-700">Not configured</span>}
       </dd>
     </div>
@@ -50,12 +50,12 @@ export default function SettingsPage() {
     <div className="space-y-6 p-4 sm:p-6">
       <header>
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-minsah-light text-minsah-primary">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1E1E24] border border-[#2A2A32] text-admin-primary">
             <Settings2 className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h1 className="text-2xl font-black text-gray-900">Effective store configuration</h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <h1 className="text-2xl font-black text-[#F5F3F0]">Effective store configuration</h1>
+            <p className="mt-1 text-sm text-[#9A9691]">
               This page shows the values currently used by the public storefront.
             </p>
           </div>
@@ -65,7 +65,7 @@ export default function SettingsPage() {
       {/* ── Product Delivery Top-Bar Messages (Interactive Config) ── */}
       <DeliveryMessageSettings />
 
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+      <div className="rounded-2xl border border-amber-800/40 bg-amber-950/30 p-4 text-amber-300">
         <div className="flex items-start gap-3">
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
           <div>
@@ -78,10 +78,10 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="store-identity-heading">
+        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="store-identity-heading">
           <div className="flex items-center gap-2">
-            <Globe2 className="h-5 w-5 text-minsah-primary" aria-hidden="true" />
-            <h2 id="store-identity-heading" className="text-lg font-black text-gray-900">Store identity</h2>
+            <Globe2 className="h-5 w-5 text-admin-primary" aria-hidden="true" />
+            <h2 id="store-identity-heading" className="text-lg font-black text-[#F5F3F0]">Store identity</h2>
           </div>
           <dl className="mt-4">
             <ValueRow label="Site name" value={site.identity.name} />
@@ -92,10 +92,10 @@ export default function SettingsPage() {
           </dl>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="business-contact-heading">
+        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="business-contact-heading">
           <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-minsah-primary" aria-hidden="true" />
-            <h2 id="business-contact-heading" className="text-lg font-black text-gray-900">Business contact</h2>
+            <Mail className="h-5 w-5 text-admin-primary" aria-hidden="true" />
+            <h2 id="business-contact-heading" className="text-lg font-black text-[#F5F3F0]">Business contact</h2>
           </div>
           <dl className="mt-4">
             <ValueRow label="Support email" value={site.business.supportEmail} />
@@ -106,33 +106,33 @@ export default function SettingsPage() {
           </dl>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="payment-config-heading">
+        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="payment-config-heading">
           <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-minsah-primary" aria-hidden="true" />
-            <h2 id="payment-config-heading" className="text-lg font-black text-gray-900">Payment methods</h2>
+            <CreditCard className="h-5 w-5 text-admin-primary" aria-hidden="true" />
+            <h2 id="payment-config-heading" className="text-lg font-black text-[#F5F3F0]">Payment methods</h2>
           </div>
           <div className="mt-4 space-y-3">
             {enabledPayments.map((method) => (
-              <div key={method.id} className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                <span className="font-semibold text-gray-900">{method.label}</span>
-                <span className="inline-flex items-center gap-1 text-sm font-bold text-green-700">
+              <div key={method.id} className="flex items-center justify-between rounded-xl border border-emerald-800/40 bg-emerald-950/30 px-4 py-3">
+                <span className="font-semibold text-[#F5F3F0]">{method.label}</span>
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Enabled
                 </span>
               </div>
             ))}
             {disabledPayments.map((method) => (
-              <div key={method.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <span className="font-semibold text-gray-600">{method.label}</span>
-                <span className="text-sm font-semibold text-gray-500">Disabled</span>
+              <div key={method.id} className="flex items-center justify-between rounded-xl border border-[#2A2A32] bg-[#14141A] px-4 py-3">
+                <span className="font-semibold text-[#9A9691]">{method.label}</span>
+                <span className="text-sm font-semibold text-[#6B6864]">Disabled</span>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="social-config-heading">
+        <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="social-config-heading">
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-minsah-primary" aria-hidden="true" />
-            <h2 id="social-config-heading" className="text-lg font-black text-gray-900">Public channels</h2>
+            <MessageCircle className="h-5 w-5 text-admin-primary" aria-hidden="true" />
+            <h2 id="social-config-heading" className="text-lg font-black text-[#F5F3F0]">Public channels</h2>
           </div>
           <div className="mt-4 space-y-3">
             {site.socialLinks.length ? (
@@ -142,7 +142,7 @@ export default function SettingsPage() {
                   href={social.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex min-h-11 items-center justify-between rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 transition hover:border-minsah-secondary hover:bg-minsah-light"
+                  className="flex min-h-11 items-center justify-between rounded-xl border border-[#2A2A32] bg-[#14141A] px-4 py-3 text-sm font-semibold text-[#F5F3F0] transition hover:border-[#3E3E48] hover:bg-[#26262E]"
                 >
                   {social.label}
                   <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -158,7 +158,7 @@ export default function SettingsPage() {
                 href={site.business.whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex min-h-11 items-center justify-between rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 transition hover:border-minsah-secondary hover:bg-minsah-light"
+                className="flex min-h-11 items-center justify-between rounded-xl border border-[#2A2A32] bg-[#14141A] px-4 py-3 text-sm font-semibold text-[#F5F3F0] transition hover:border-[#3E3E48] hover:bg-[#26262E]"
               >
                 WhatsApp support
                 <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -168,8 +168,8 @@ export default function SettingsPage() {
         </section>
       </div>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="source-of-truth-heading">
-        <h2 id="source-of-truth-heading" className="text-lg font-black text-gray-900">Configuration source of truth</h2>
+      <section className="rounded-2xl border border-[#2A2A32] bg-[#1E1E24] p-5 shadow-sm" aria-labelledby="source-of-truth-heading">
+        <h2 id="source-of-truth-heading" className="text-lg font-black text-[#F5F3F0]">Configuration source of truth</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: Mail, label: 'Contact', value: 'NEXT_PUBLIC_SUPPORT_*' },
@@ -177,10 +177,10 @@ export default function SettingsPage() {
             { icon: Phone, label: 'Social/support', value: 'NEXT_PUBLIC_* URL values' },
             { icon: Clock3, label: 'Runtime', value: '.env + deployment secrets' },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="rounded-xl bg-gray-50 p-4">
-              <Icon className="h-5 w-5 text-minsah-primary" aria-hidden="true" />
-              <p className="mt-2 text-sm font-bold text-gray-900">{label}</p>
-              <p className="mt-1 break-all text-xs leading-5 text-gray-600">{value}</p>
+            <div key={label} className="rounded-xl bg-[#14141A] border border-[#2A2A32] p-4">
+              <Icon className="h-5 w-5 text-admin-primary" aria-hidden="true" />
+              <p className="mt-2 text-sm font-bold text-[#F5F3F0]">{label}</p>
+              <p className="mt-1 break-all text-xs leading-5 text-[#9A9691]">{value}</p>
             </div>
           ))}
         </div>

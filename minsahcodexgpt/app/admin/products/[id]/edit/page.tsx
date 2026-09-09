@@ -931,7 +931,7 @@ export default function EditProductPage() {
         <Link href="/admin/products" className="inline-flex items-center text-admin-primary hover:text-admin-primary mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900">Edit Product</h1>
+        <h1 className="text-3xl font-bold text-[#F5F3F0]">Edit Product</h1>
         <p className="text-gray-600 text-sm mt-1">
           Slug: <span className="font-mono text-admin-primary">{formData.urlSlug || '—'}</span>
           {dbProductId && <span className="ml-3 text-gray-400 text-xs">DB: {dbProductId}</span>}
@@ -941,10 +941,10 @@ export default function EditProductPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* ── 1. Basic Information ─────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Package className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Basic Information</h2>
           </div>
           <div className="space-y-4">
             <div>
@@ -1033,10 +1033,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 2. Product Images ────────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-2">
             <ImageIcon className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Product Images</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Images</h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">Max 10MB per image. First/Main image is the display image.</p>
           <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
@@ -1079,7 +1079,7 @@ export default function EditProductPage() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Image Alt Texts (for SEO)</h3>
+                  <h3 className="text-sm font-semibold text-[#F5F3F0] mb-1">Image Alt Texts (for SEO)</h3>
                   <p className="text-xs text-gray-500 mb-3">Alt text is saved with each image</p>
                   <div className="space-y-3">
                     {formData.images.map((image, index) => (
@@ -1104,12 +1104,12 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 3. Product Variants ──────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <Tag className="w-5 h-5 text-admin-primary mr-2" />
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Product Variants</h2>
+                <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Variants</h2>
                 <p className="text-sm text-gray-600">Add sizes, colors with individual images</p>
               </div>
             </div>
@@ -1121,9 +1121,9 @@ export default function EditProductPage() {
 
           <div className="space-y-5">
             {formData.variants.map((variant, index) => (
-              <div key={variant.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div key={variant.id} className="border border-[#2A2A32] rounded-lg p-4 bg-[#14141A]">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900">Variant #{index + 1}</h3>
+                  <h3 className="text-sm font-semibold text-[#F5F3F0]">Variant #{index + 1}</h3>
                   {formData.variants.length > 1 && (
                     <Button type="button" aria-label={`Remove variant ${index + 1}`} onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 className="w-4 h-4" />
@@ -1189,10 +1189,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 4. Product Specifications ────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Product Specifications</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Specifications</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1271,10 +1271,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 5. SEO Settings ──────────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Search className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">SEO Settings</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">SEO Settings</h2>
           </div>
           <div className="space-y-4">
 
@@ -1464,10 +1464,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── FAQ Section ──────────────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Semantic SEO & Structured Content</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Semantic SEO & Structured Content</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1576,7 +1576,7 @@ export default function EditProductPage() {
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">1–22 SEO Render Payloads</h3>
+              <h3 className="text-sm font-semibold text-[#F5F3F0] mb-2">1–22 SEO Render Payloads</h3>
               <p className="text-xs text-gray-500 mb-3">These JSON fields are saved for product-page rendering, ProductGroup/Merchant listing schema, breadcrumbs, variant URL strategy and internal links.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
@@ -1614,10 +1614,10 @@ export default function EditProductPage() {
         />
 
         {/* ── 6. Shipping & Delivery ───────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <TruckIcon className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Shipping & Delivery</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Shipping & Delivery</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1742,10 +1742,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 7. Discount & Offers ─────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Percent className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Discount & Offers</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Discount & Offers</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1786,10 +1786,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 8. Stock Management ──────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <AlertCircle className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Stock Management</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Stock Management</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1806,10 +1806,10 @@ export default function EditProductPage() {
         </div>
 
         {/* ── 9. Additional Options ────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Additional Options</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Additional Options</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1837,9 +1837,9 @@ export default function EditProductPage() {
         </div>
 
         {/* ── Action Buttons ───────────────────────────────────────────── */}
-        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-6 shadow-sm sticky bottom-0">
+        <div className="flex items-center justify-between bg-[#1E1E24]/95 backdrop-blur rounded-lg border border-[#2A2A32] p-6 shadow-2xl sticky bottom-0 z-10">
           <Link href="/admin/products"
-            className="inline-flex items-center px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+            className="inline-flex items-center px-6 py-3 border border-[#2A2A32] rounded-lg text-[#9A9691] hover:text-[#F5F3F0] hover:bg-[#26262E] font-medium transition-colors">
             <X className="w-5 h-5 mr-2" /> Cancel
           </Link>
           <Button type="submit" disabled={isSubmitting}

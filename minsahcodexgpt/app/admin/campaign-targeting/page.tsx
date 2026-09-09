@@ -113,7 +113,7 @@ export default function CampaignTargetingPage() {
   if (!hasPermission(PERMISSIONS.CONTENT_MANAGE)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to manage campaign targeting.</p>
+        <p className="text-[#9A9691]">You don't have permission to manage campaign targeting.</p>
       </div>
     );
   }
@@ -145,12 +145,12 @@ export default function CampaignTargetingPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Location-Based Campaign Targeting</h1>
-          <p className="text-gray-600">Create targeted campaigns for specific regions in Bangladesh</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Location-Based Campaign Targeting</h1>
+          <p className="text-[#9A9691]">Create targeted campaigns for specific regions in Bangladesh</p>
         </div>
         <Button
           onClick={() => setShowCreateModal(true)}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover"
+          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#D07A60]-hover"
         >
           <Plus className="w-5 h-5 mr-2" />
           Create Campaign
@@ -159,44 +159,44 @@ export default function CampaignTargetingPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{activeCampaigns}</p>
-              <p className="text-xs text-gray-600 mt-1">of {campaigns.length} total</p>
+              <p className="text-sm font-medium text-[#9A9691]">Active Campaigns</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{activeCampaigns}</p>
+              <p className="text-xs text-[#9A9691] mt-1">of {campaigns.length} total</p>
             </div>
             <Target className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Reach</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{totalReach.toLocaleString()}</p>
-              <p className="text-xs text-gray-600 mt-1">estimated customers</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total Reach</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{totalReach.toLocaleString()}</p>
+              <p className="text-xs text-[#9A9691] mt-1">estimated customers</p>
             </div>
             <Users className="w-10 h-10 text-blue-500" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Budget</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">৳{totalBudget.toLocaleString()}</p>
-              <p className="text-xs text-gray-600 mt-1">allocated</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total Budget</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">৳{totalBudget.toLocaleString()}</p>
+              <p className="text-xs text-[#9A9691] mt-1">allocated</p>
             </div>
             <DollarSign className="w-10 h-10 text-green-500" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Spent</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">৳{totalSpent.toLocaleString()}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Spent</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">৳{totalSpent.toLocaleString()}</p>
               <p className="text-xs text-orange-600 mt-1">
                 {((totalSpent / totalBudget) * 100).toFixed(1)}% of budget
               </p>
@@ -207,44 +207,44 @@ export default function CampaignTargetingPage() {
       </div>
 
       {/* Campaigns List */}
-      <div className="bg-white rounded-lg border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">Active Campaigns</h3>
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#2A2A32]">
+          <h3 className="text-lg font-bold text-[#F5F3F0]">Active Campaigns</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#14141A] border-b border-[#2A2A32] text-[#9A9691]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Campaign
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Target Locations
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Reach
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Budget
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Performance
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#2A2A32]">
               {campaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-gray-50">
+                <tr key={campaign.id} className="hover:bg-[#26262E]">
                   <td className="px-6 py-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{campaign.name}</p>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
+                      <p className="text-sm font-medium text-[#F5F3F0]">{campaign.name}</p>
+                      <div className="flex items-center text-xs text-[#9A9691] mt-1">
                         <Calendar className="w-3 h-3 mr-1" />
                         {campaign.startDate.toLocaleDateString()} - {campaign.endDate.toLocaleDateString()}
                       </div>
@@ -253,7 +253,7 @@ export default function CampaignTargetingPage() {
                   <td className="px-6 py-4">
                     <div className="text-xs space-y-1">
                       {campaign.targetLocations.divisions.length > 0 && (
-                        <div className="flex items-center text-gray-600">
+                        <div className="flex items-center text-[#9A9691]">
                           <MapPin className="w-3 h-3 mr-1" />
                           {campaign.targetLocations.divisions.length === getAllDivisions().length
                             ? 'All Bangladesh'
@@ -261,23 +261,23 @@ export default function CampaignTargetingPage() {
                         </div>
                       )}
                       {campaign.targetLocations.districts.length > 0 && (
-                        <p className="text-gray-600">{campaign.targetLocations.districts.length} district(s)</p>
+                        <p className="text-[#9A9691]">{campaign.targetLocations.districts.length} district(s)</p>
                       )}
                       {campaign.targetLocations.thanas.length > 0 && (
-                        <p className="text-gray-600">{campaign.targetLocations.thanas.length} thana(s)</p>
+                        <p className="text-[#9A9691]">{campaign.targetLocations.thanas.length} thana(s)</p>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <Users className="w-4 h-4 text-gray-400 mr-1" />
-                      <span className="text-sm text-gray-900">{campaign.estimatedReach.toLocaleString()}</span>
+                      <span className="text-sm text-[#F5F3F0]">{campaign.estimatedReach.toLocaleString()}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm">
-                      <p className="font-medium text-gray-900">৳{campaign.budget.toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">Spent: ৳{campaign.spent.toLocaleString()}</p>
+                      <p className="font-medium text-[#F5F3F0]">৳{campaign.budget.toLocaleString()}</p>
+                      <p className="text-xs text-[#9A9691]">Spent: ৳{campaign.spent.toLocaleString()}</p>
                       <progress
                         className="mt-1 h-2 w-full accent-minsah-action-primary"
                         max={Math.max(campaign.budget, 1)}
@@ -288,8 +288,8 @@ export default function CampaignTargetingPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-xs space-y-1">
-                      <p className="text-gray-600">{campaign.performance.impressions.toLocaleString()} impressions</p>
-                      <p className="text-gray-600">{campaign.performance.clicks.toLocaleString()} clicks</p>
+                      <p className="text-[#9A9691]">{campaign.performance.impressions.toLocaleString()} impressions</p>
+                      <p className="text-[#9A9691]">{campaign.performance.clicks.toLocaleString()} clicks</p>
                       <p className="text-green-600 font-medium">{campaign.performance.conversions} conversions</p>
                     </div>
                   </td>
@@ -397,7 +397,7 @@ export default function CampaignTargetingPage() {
                     <p className="text-2xl font-bold text-admin-primary mt-1">
                       {calculateEstimatedReach().toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-600 mt-1">potential customers</p>
+                    <p className="text-xs text-[#9A9691] mt-1">potential customers</p>
                   </div>
                   <Target className="w-12 h-12 text-admin-text-muted" />
                 </div>

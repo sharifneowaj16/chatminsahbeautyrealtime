@@ -240,9 +240,9 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
       {/* Section header */}
-      <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+      <h2 className="text-lg font-bold text-[#F5F3F0] mb-4 flex items-center gap-2">
         <Package className="w-5 h-5" /> Products
       </h2>
 
@@ -255,7 +255,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
             min={1}
             value={addQty}
             onChange={e => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
-            className="w-16 px-2 py-2.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-admin-primary"
+            className="w-16 px-2 py-2.5 border border-[#2A2A32] rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-admin-primary"
           />
           {/* search input */}
           <div className="relative flex-1">
@@ -272,14 +272,14 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                   addCustomProduct();
                 }
               }}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
+              className="w-full pl-10 pr-4 py-2.5 border border-[#2A2A32] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary"
             />
           </div>
         </div>
 
         {/* ── Dropdown ──────────────────────────────────────────────────────── */}
         {showDrop && query.trim() && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-20 max-h-80 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-[#1E1E24] border border-[#2A2A32] rounded-xl shadow-xl text-[#F5F3F0] z-20 max-h-80 overflow-y-auto">
 
             {/* Loading */}
             {searching && (
@@ -299,9 +299,9 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
               return (
                 <div key={product.id} className="border-b border-gray-100 last:border-0">
                   {/* Product row */}
-                  <div className="px-4 py-3 hover:bg-gray-50 flex items-start gap-3">
+                  <div className="px-4 py-3 hover:bg-[#26262E] flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
+                      <p className="text-sm font-semibold text-[#F5F3F0] truncate">{product.name}</p>
                       <p className="text-xs text-gray-500">SKU: {product.sku} · Stock: {product.stock} · {formatPrice(product.price)}</p>
 
                       {/* Variants */}
@@ -376,7 +376,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
 
       {/* ── Line Items ──────────────────────────────────────────────────────── */}
       {orderItems.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+        <p className="text-sm text-gray-400 text-center py-8 border-2 border-dashed border-[#2A2A32] rounded-lg">
           No products added yet
         </p>
       ) : (
@@ -391,7 +391,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                 className={`rounded-lg border transition-all ${
                   isEditing
                     ? 'border-admin-primary bg-admin-panel'
-                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                    : 'border-[#2A2A32] bg-[#14141A] hover:border-[#3E3E48]'
                 }`}
               >
                 {/* ── View mode ──────────────────────────────────────────── */}
@@ -408,7 +408,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                             Custom
                           </span>
                         )}
-                        <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                        <p className="text-sm font-medium text-[#F5F3F0] truncate">{item.name}</p>
                       </div>
                       <p className="text-xs text-gray-400">SKU: {item.sku}</p>
                     </div>
@@ -419,11 +419,11 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       min={1}
                       value={item.quantity}
                       onChange={e => updateQty(item.key, parseInt(e.target.value) || 1)}
-                      className="w-14 px-1.5 py-1 border border-gray-200 rounded text-xs text-center bg-white focus:outline-none focus:ring-1 focus:ring-admin-primary"
+                      className="w-14 px-1.5 py-1 border border-[#2A2A32] rounded text-xs text-center bg-[#1E1E24] text-[#F5F3F0] focus:outline-none focus:ring-1 focus:ring-admin-primary"
                     />
 
                     {/* price */}
-                    <span className="text-sm font-semibold text-gray-900 w-20 text-right shrink-0">
+                    <span className="text-sm font-semibold text-[#F5F3F0] w-20 text-right shrink-0">
                       {formatPrice(item.price * item.quantity)}
                     </span>
 
@@ -449,47 +449,47 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                   <div className="p-3 space-y-3">
                     {/* Name */}
                     <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">Name</label>
+                      <label className="text-xs font-medium text-[#9A9691] mb-1 block">Name</label>
                       <Input
                         type="text"
                         value={editValues.name ?? item.name}
                         onChange={e => setEditValues(p => ({ ...p, name: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 border border-admin-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
+                        className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
                       />
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
                       {/* Price */}
                       <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">Unit Price (৳)</label>
+                        <label className="text-xs font-medium text-[#9A9691] mb-1 block">Unit Price (৳)</label>
                         <Input
                           type="number"
                           min={0}
                           step="0.01"
                           value={editValues.price ?? item.price}
                           onChange={e => setEditValues(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-                          className="w-full px-2.5 py-1.5 border border-admin-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
+                          className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
                         />
                       </div>
 
                       {/* SKU */}
                       <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">SKU</label>
+                        <label className="text-xs font-medium text-[#9A9691] mb-1 block">SKU</label>
                         <Input
                           type="text"
                           value={editValues.sku ?? item.sku}
                           onChange={e => setEditValues(p => ({ ...p, sku: e.target.value }))}
-                          className="w-full px-2.5 py-1.5 border border-admin-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
+                          className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
                         />
                       </div>
 
                       {/* Product Type */}
                       <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">Type</label>
+                        <label className="text-xs font-medium text-[#9A9691] mb-1 block">Type</label>
                         <Select
                           value={editValues.productType ?? item.productType}
                           onChange={e => setEditValues(p => ({ ...p, productType: e.target.value as ProductType }))}
-                          className="w-full px-2.5 py-1.5 border border-admin-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-admin-primary bg-white"
+                          className="w-full px-2.5 py-1.5 border border-[#2A2A32] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#D07A60] bg-[#14141A] text-[#F5F3F0]"
                         >
                           <option value="new">New</option>
                           <option value="old">Old</option>
@@ -522,9 +522,9 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
           })}
 
           {/* Subtotal */}
-          <div className="flex justify-end pt-2 border-t border-gray-200">
+          <div className="flex justify-end pt-2 border-t border-[#2A2A32]">
             <span className="text-sm font-semibold text-gray-700">
-              Items subtotal: <span className="text-gray-900">{formatPrice(subtotal)}</span>
+              Items subtotal: <span className="text-[#F5F3F0] font-bold">{formatPrice(subtotal)}</span>
             </span>
           </div>
         </div>

@@ -55,7 +55,7 @@ export default function CategoriesPage() {
   if (!hasPermission(PERMISSIONS.CONTENT_MANAGE)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to manage categories.</p>
+        <p className="text-[#9A9691]">You don't have permission to manage categories.</p>
       </div>
     );
   }
@@ -221,8 +221,8 @@ export default function CategoriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categories Management</h1>
-          <p className="text-gray-600">Manage product categories, subcategories, and items</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Categories Management</h1>
+          <p className="text-sm text-[#9A9691] mt-1">Manage product categories, subcategories, and items</p>
         </div>
         <Button
           onClick={openAddModal}
@@ -235,42 +235,42 @@ export default function CategoriesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Categories</p>
-              <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
+              <p className="text-sm text-[#9A9691]">Total Categories</p>
+              <p className="text-2xl font-bold text-[#F5F3F0]">{categories.length}</p>
             </div>
             <Folder className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-[#9A9691]">Total Products</p>
+              <p className="text-2xl font-bold text-[#F5F3F0]">
                 {categories.reduce((sum, cat) => sum + cat.productCount, 0)}
               </p>
             </div>
             <FolderOpen className="w-8 h-8 text-blue-500" />
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active Categories</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-[#9A9691]">Active Categories</p>
+              <p className="text-2xl font-bold text-[#F5F3F0]">
                 {categories.filter(cat => cat.status === 'active').length}
               </p>
             </div>
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Subcategories</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-[#9A9691]">Total Subcategories</p>
+              <p className="text-2xl font-bold text-[#F5F3F0]">
                 {categories.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
               </p>
             </div>
@@ -282,70 +282,70 @@ export default function CategoriesPage() {
       {/* Search */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B6864]" />
           <Input
             type="text"
             placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           />
         </div>
       </div>
 
       {/* Categories List */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#14141A] border-b border-[#2A2A32]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Slug
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Subcategories
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Products
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-[#1E1E24] divide-y divide-[#2A2A32]">
               {filteredCategories.map((category) => {
                 const isExpanded = expandedCategories.includes(category.id);
                 return (
                   <>
-                    <tr key={category.id} className="hover:bg-gray-50">
+                    <tr key={category.id} className="hover:bg-[#26262E]/70 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <Button
                             onClick={() => toggleExpanded(category.id)}
-                            className="mr-2 p-1 hover:bg-gray-100 rounded"
+                            className="mr-2 p-1 hover:bg-[#26262E] rounded text-[#9A9691]"
                           >
                             {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 text-gray-600" />
+                              <ChevronDown className="w-4 h-4 text-[#9A9691]" />
                             ) : (
-                              <ChevronRight className="w-4 h-4 text-gray-600" />
+                              <ChevronRight className="w-4 h-4 text-[#9A9691]" />
                             )}
                           </Button>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                            <div className="text-xs text-gray-500">Created: {new Date(category.createdAt).toLocaleDateString()}</div>
+                            <div className="text-sm font-medium text-[#F5F3F0]">{category.name}</div>
+                            <div className="text-xs text-[#9A9691]">Created: {new Date(category.createdAt).toLocaleDateString()}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{category.slug}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{category.subcategories.length}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{category.productCount}</td>
+                      <td className="px-6 py-4 text-sm text-[#9A9691]">{category.slug}</td>
+                      <td className="px-6 py-4 text-sm text-[#F5F3F0]">{category.subcategories.length}</td>
+                      <td className="px-6 py-4 text-sm text-[#F5F3F0]">{category.productCount}</td>
                       <td className="px-6 py-4">
                         <span className={clsx(
                           'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
@@ -358,14 +358,14 @@ export default function CategoriesPage() {
                         <div className="flex items-center space-x-2">
                           <Button
                             onClick={() => openEditModal(category)}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-400 hover:text-blue-300"
                             title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
                             onClick={() => handleDeleteCategory(category.id)}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-rose-400 hover:text-rose-300"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -375,19 +375,19 @@ export default function CategoriesPage() {
                     </tr>
                     {isExpanded && (
                       <tr key={`${category.id}-expanded`}>
-                        <td colSpan={6} className="px-6 py-4 bg-gray-50">
+                        <td colSpan={6} className="px-6 py-4 bg-[#14141A] border-y border-[#2A2A32]">
                           <div className="space-y-4">
-                            <h4 className="font-medium text-gray-900">Subcategories & Items</h4>
+                            <h4 className="font-medium text-[#F5F3F0]">Subcategories & Items</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                               {category.subcategories.map((subcat, index) => (
-                                <div key={index} className="border border-gray-300 rounded-lg p-4 bg-white">
-                                  <h5 className="font-semibold text-gray-900 mb-2 flex items-center">
+                                <div key={index} className="border border-[#2A2A32] rounded-lg p-4 bg-[#1E1E24]">
+                                  <h5 className="font-semibold text-[#F5F3F0] mb-2 flex items-center">
                                     <Tag className="w-4 h-4 mr-2 text-admin-primary" />
                                     {subcat.name}
                                   </h5>
                                   <ul className="space-y-1">
                                     {subcat.items.map((item, itemIndex) => (
-                                      <li key={itemIndex} className="text-sm text-gray-600 flex items-center">
+                                      <li key={itemIndex} className="text-sm text-[#9A9691] flex items-center">
                                         <span className="w-1.5 h-1.5 bg-admin-panel0 rounded-full mr-2"></span>
                                         {item}
                                       </li>
@@ -400,7 +400,7 @@ export default function CategoriesPage() {
                               ))}
                             </div>
                             {category.subcategories.length === 0 && (
-                              <p className="text-sm text-gray-500 italic">No subcategories yet. Click Edit to add some!</p>
+                              <p className="text-sm text-[#9A9691] italic">No subcategories yet. Click Edit to add some!</p>
                             )}
                           </div>
                         </td>
@@ -415,7 +415,7 @@ export default function CategoriesPage() {
 
         {filteredCategories.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No categories found matching your criteria.</p>
+            <p className="text-[#9A9691]">No categories found matching your criteria.</p>
           </div>
         )}
       </div>
@@ -497,7 +497,7 @@ export default function CategoriesPage() {
                   {formData.subcategories.map((subcat, index) => (
                     <div key={index} className="border border-gray-300 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-gray-900">{subcat.name}</h4>
+                        <h4 className="font-semibold text-[#F5F3F0]">{subcat.name}</h4>
                         <Button
                           onClick={() => handleRemoveSubcategory(index)}
                           className="text-red-600 hover:text-red-800"
@@ -572,7 +572,7 @@ export default function CategoriesPage() {
                 </div>
 
                 {formData.subcategories.length === 0 && (
-                  <p className="text-sm text-gray-500 italic">No subcategories yet. Add one above!</p>
+                  <p className="text-sm text-[#9A9691] italic">No subcategories yet. Add one above!</p>
                 )}
               </div>
         </div>

@@ -493,7 +493,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   );
 
   return (
-    <div lang="en" className="min-h-screen bg-[#0E0E12] flex">
+    <div lang="en" className="admin-workspace min-h-screen bg-[#0E0E12] flex">
       {!inboxChromeHidden ? (
         <>
           <aside
@@ -587,11 +587,11 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
         <Button
           type="button"
           onClick={() => setInboxChromeHidden(false)}
-          className="fixed right-4 top-1/2 z-[60] -translate-y-1/2 rounded-full bg-white/95 border border-gray-200 p-3 text-gray-700 shadow-lg hover:bg-white"
+          className="fixed right-4 top-1/2 z-[60] -translate-y-1/2 rounded-full bg-[#1E1E24]/95 border border-[#2A2A32] p-3 text-[#F5F3F0] shadow-xl hover:bg-[#26262E]"
           title="Show admin panel"
           aria-label="Show admin panel"
         >
-          <PanelRightOpen className="h-5 w-5" />
+          <PanelRightOpen className="h-5 w-5 text-[#D07A60]" />
         </Button>
       )}
     </div>

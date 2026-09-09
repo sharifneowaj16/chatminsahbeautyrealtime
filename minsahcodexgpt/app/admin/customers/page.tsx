@@ -174,25 +174,25 @@ export default function CustomersPage() {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-minsah-dark">Customers</h1>
-          <p className="text-minsah-secondary mt-1">
+          <h1 className="text-3xl font-bold text-[#F5F3F0]">Customers</h1>
+          <p className="text-[#9A9691] mt-1">
             {pagination.totalCount} total customers
           </p>
         </div>
         <div className="flex gap-3">
           <Button
             onClick={() => fetchCustomers(pagination.page)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition"
+            className="flex items-center gap-2 px-4 py-2 border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0] rounded-lg text-sm hover:bg-[#26262E] transition"
           >
             <RefreshCw size={16} />
             Refresh
           </Button>
           {hasPermission(PERMISSIONS.CUSTOMERS_EDIT) && (
-            <Button className="flex items-center gap-2 px-4 py-2 bg-minsah-primary text-white rounded-lg text-sm hover:bg-minsah-dark transition">
+            <Button className="flex items-center gap-2 px-4 py-2 bg-[#D07A60] text-white rounded-lg text-sm hover:bg-[#E08D70] transition">
               <UserPlus size={16} />
               Add Customer
             </Button>
@@ -202,44 +202,44 @@ export default function CustomersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-minsah-accent">
-          <p className="text-sm text-minsah-secondary">Total Customers</p>
-          <p className="text-2xl font-bold text-minsah-dark">{stats.totalCustomers.toLocaleString()}</p>
+        <div className="bg-[#1E1E24] rounded-xl p-4 shadow-sm border border-[#2A2A32]">
+          <p className="text-sm text-[#9A9691]">Total Customers</p>
+          <p className="text-2xl font-bold text-[#F5F3F0]">{stats.totalCustomers.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-minsah-accent">
-          <p className="text-sm text-minsah-secondary">Active</p>
+        <div className="bg-[#1E1E24] rounded-xl p-4 shadow-sm border border-[#2A2A32]">
+          <p className="text-sm text-[#9A9691]">Active</p>
           <p className="text-2xl font-bold text-green-600">{stats.activeCustomers.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-minsah-accent">
-          <p className="text-sm text-minsah-secondary">Suspended</p>
+        <div className="bg-[#1E1E24] rounded-xl p-4 shadow-sm border border-[#2A2A32]">
+          <p className="text-sm text-[#9A9691]">Suspended</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.suspendedCustomers.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-minsah-accent">
-          <p className="text-sm text-minsah-secondary">Total Revenue</p>
-          <p className="text-2xl font-bold text-minsah-primary">
+        <div className="bg-[#1E1E24] rounded-xl p-4 shadow-sm border border-[#2A2A32]">
+          <p className="text-sm text-[#9A9691]">Total Revenue</p>
+          <p className="text-2xl font-bold text-[#D07A60]">
             {formatPrice(convertUSDtoBDT(stats.totalRevenue))}
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-minsah-accent mb-6 p-4">
+      <div className="bg-[#1E1E24] rounded-xl shadow-sm border border-[#2A2A32] mb-6 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="flex-1 min-w-[200px] relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6864]" />
             <Input
               type="text"
               placeholder="Search by name, email, phone..."
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-minsah-primary"
+              className="w-full pl-9 pr-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:border-admin-primary"
             />
           </div>
 
           <Select
             value={filters.status}
             onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-minsah-primary"
+            className="px-3 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:border-admin-primary"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -251,7 +251,7 @@ export default function CustomersPage() {
           <Select
             value={filters.sortBy}
             onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-minsah-primary"
+            className="px-3 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg text-sm focus:outline-none focus:border-admin-primary"
           >
             <option value="createdAt">Join Date</option>
             <option value="lastLoginAt">Last Login</option>
@@ -263,15 +263,15 @@ export default function CustomersPage() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
+        <div className="bg-red-950/70 border border-red-800/40 text-red-400 px-4 py-3 rounded-xl mb-4 text-sm">
           {error}
         </div>
       )}
 
       {/* Bulk actions */}
       {selectedCustomers.length > 0 && hasPermission(PERMISSIONS.CUSTOMERS_EDIT) && (
-        <div className="bg-minsah-accent border border-minsah-primary rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
-          <span className="text-sm font-medium text-minsah-dark">
+        <div className="bg-[#14141A] border border-[#2A2A32] rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
+          <span className="text-sm font-medium text-[#F5F3F0]">
             {selectedCustomers.length} customer(s) selected
           </span>
           <div className="flex gap-2">
@@ -280,7 +280,7 @@ export default function CustomersPage() {
                 selectedCustomers.forEach(id => handleStatusUpdate(id, 'suspended'));
                 setSelectedCustomers([]);
               }}
-              className="px-3 py-1.5 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition"
+              className="px-3 py-1.5 text-xs bg-amber-950/70 text-amber-400 border border-amber-800/40 rounded-lg hover:bg-amber-900/60 transition"
             >
               Suspend Selected
             </Button>
@@ -289,7 +289,7 @@ export default function CustomersPage() {
                 selectedCustomers.forEach(id => handleStatusUpdate(id, 'active'));
                 setSelectedCustomers([]);
               }}
-              className="px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+              className="px-3 py-1.5 text-xs bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 rounded-lg hover:bg-emerald-900/60 transition"
             >
               Activate Selected
             </Button>
@@ -298,20 +298,20 @@ export default function CustomersPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-minsah-accent overflow-hidden">
+      <div className="bg-[#1E1E24] rounded-xl shadow-sm border border-[#2A2A32] overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-4 border-minsah-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : customers.length === 0 ? (
-          <div className="text-center py-20 text-minsah-secondary">
+          <div className="text-center py-20 text-[#9A9691]">
             <p className="text-lg font-medium">No customers found</p>
             <p className="text-sm mt-1">Try adjusting your search or filters</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-minsah-accent border-b border-minsah-secondary/20">
+              <thead className="bg-[#14141A] border-b border-[#2A2A32]">
                 <tr>
                   <th className="px-4 py-3 text-left">
                     <Input
@@ -321,19 +321,19 @@ export default function CustomersPage() {
                       className="rounded"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-minsah-dark">Customer</th>
-                  <th className="px-4 py-3 text-left font-semibold text-minsah-dark">Contact</th>
-                  <th className="px-4 py-3 text-left font-semibold text-minsah-dark">Status</th>
-                  <th className="px-4 py-3 text-right font-semibold text-minsah-dark">Orders</th>
-                  <th className="px-4 py-3 text-right font-semibold text-minsah-dark">Total Spent</th>
-                  <th className="px-4 py-3 text-right font-semibold text-minsah-dark">Points</th>
-                  <th className="px-4 py-3 text-left font-semibold text-minsah-dark">Joined</th>
-                  <th className="px-4 py-3 text-center font-semibold text-minsah-dark">Actions</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#F5F3F0]">Customer</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#F5F3F0]">Contact</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#F5F3F0]">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold text-[#F5F3F0]">Orders</th>
+                  <th className="px-4 py-3 text-right font-semibold text-[#F5F3F0]">Total Spent</th>
+                  <th className="px-4 py-3 text-right font-semibold text-[#F5F3F0]">Points</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#F5F3F0]">Joined</th>
+                  <th className="px-4 py-3 text-center font-semibold text-[#F5F3F0]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#2A2A32] bg-[#1E1E24]">
                 {customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-minsah-accent/30 transition">
+                  <tr key={customer.id} className="hover:bg-[#26262E]/70 transition">
                     <td className="px-4 py-3">
                       <Input
                         type="checkbox"
@@ -346,7 +346,7 @@ export default function CustomersPage() {
                     {/* Customer Info */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-minsah-accent flex items-center justify-center text-minsah-primary font-bold text-sm flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#14141A] border border-[#2A2A32] flex items-center justify-center text-[#D07A60] font-bold text-sm flex-shrink-0">
                           {customer.avatar ? (
                             <img
                               src={customer.avatar}
@@ -358,9 +358,9 @@ export default function CustomersPage() {
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-minsah-dark">{customer.name}</p>
+                          <p className="font-semibold text-[#F5F3F0]">{customer.name}</p>
                           {customer.address?.city && (
-                            <p className="text-xs text-minsah-secondary">
+                            <p className="text-xs text-[#9A9691]">
                               {customer.address.city}, {customer.address.country}
                             </p>
                           )}
@@ -371,12 +371,12 @@ export default function CustomersPage() {
                     {/* Contact */}
                     <td className="px-4 py-3">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-minsah-secondary">
+                        <div className="flex items-center gap-1.5 text-[#9A9691]">
                           <Mail size={12} />
                           <span className="text-xs truncate max-w-[160px]">{customer.email}</span>
                         </div>
                         {customer.phone && (
-                          <div className="flex items-center gap-1.5 text-minsah-secondary">
+                          <div className="flex items-center gap-1.5 text-[#9A9691]">
                             <Phone size={12} />
                             <span className="text-xs">{customer.phone}</span>
                           </div>
@@ -411,24 +411,24 @@ export default function CustomersPage() {
                     </td>
 
                     {/* Orders */}
-                    <td className="px-4 py-3 text-right font-medium text-minsah-dark">
+                    <td className="px-4 py-3 text-right font-medium text-[#F5F3F0]">
                       {customer.totalOrders}
                     </td>
 
                     {/* Total Spent */}
                     <td className="px-4 py-3 text-right">
-                      <span className="font-semibold text-minsah-primary">
+                      <span className="font-semibold text-[#D07A60]">
                         {formatPrice(convertUSDtoBDT(customer.totalSpent))}
                       </span>
                     </td>
 
                     {/* Loyalty Points */}
-                    <td className="px-4 py-3 text-right text-minsah-secondary text-xs">
+                    <td className="px-4 py-3 text-right text-[#9A9691] text-xs">
                       {customer.loyaltyPoints.toLocaleString()} pts
                     </td>
 
                     {/* Join Date */}
-                    <td className="px-4 py-3 text-xs text-minsah-secondary">
+                    <td className="px-4 py-3 text-xs text-[#9A9691]">
                       {new Date(customer.joinDate).toLocaleDateString('en-US', {
                         year: 'numeric', month: 'short', day: 'numeric',
                       })}
@@ -438,28 +438,28 @@ export default function CustomersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <Button
-                          className="p-1.5 hover:bg-minsah-accent rounded-lg transition"
+                          className="p-1.5 hover:bg-[#14141A] border border-[#2A2A32] rounded-lg transition"
                           title="View Profile"
                         >
-                          <Eye size={15} className="text-minsah-secondary" />
+                          <Eye size={15} className="text-[#9A9691]" />
                         </Button>
                         {hasPermission(PERMISSIONS.CUSTOMERS_EDIT) && (
                           <Button
-                            className="p-1.5 hover:bg-minsah-accent rounded-lg transition"
+                            className="p-1.5 hover:bg-[#14141A] border border-[#2A2A32] rounded-lg transition"
                             title="Edit"
                           >
-                            <Edit size={15} className="text-minsah-secondary" />
+                            <Edit size={15} className="text-[#9A9691]" />
                           </Button>
                         )}
                         <Button
-                          className="p-1.5 hover:bg-minsah-accent rounded-lg transition"
+                          className="p-1.5 hover:bg-[#14141A] border border-[#2A2A32] rounded-lg transition"
                           title="Orders"
                         >
-                          <FileText size={15} className="text-minsah-secondary" />
+                          <FileText size={15} className="text-[#9A9691]" />
                         </Button>
                         {hasPermission(PERMISSIONS.CUSTOMERS_DELETE) && (
                           <Button
-                            className="p-1.5 hover:bg-red-50 rounded-lg transition"
+                            className="p-1.5 hover:bg-red-950/60 border border-[#2A2A32] rounded-lg transition"
                             title="Delete"
                           >
                             <Trash2 size={15} className="text-red-400" />
@@ -478,7 +478,7 @@ export default function CustomersPage() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-minsah-secondary">
+          <p className="text-sm text-[#9A9691]">
             Showing {(pagination.page - 1) * pagination.limit + 1}–
             {Math.min(pagination.page * pagination.limit, pagination.totalCount)} of{' '}
             {pagination.totalCount} customers
@@ -487,7 +487,7 @@ export default function CustomersPage() {
             <Button
               onClick={() => fetchCustomers(pagination.page - 1)}
               disabled={pagination.page <= 1}
-              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-minsah-accent transition"
+              className="px-3 py-1.5 text-sm border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0] rounded-lg disabled:opacity-40 hover:bg-[#26262E] transition"
             >
               Previous
             </Button>
@@ -502,7 +502,7 @@ export default function CustomersPage() {
                     'px-3 py-1.5 text-sm rounded-lg transition',
                     p === pagination.page
                       ? 'bg-minsah-primary text-white'
-                      : 'border border-gray-200 hover:bg-minsah-accent'
+                      : 'border border-gray-200 hover:bg-[#14141A] border border-[#2A2A32]'
                   )}
                 >
                   {p}
@@ -512,7 +512,7 @@ export default function CustomersPage() {
             <Button
               onClick={() => fetchCustomers(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-minsah-accent transition"
+              className="px-3 py-1.5 text-sm border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0] rounded-lg disabled:opacity-40 hover:bg-[#26262E] transition"
             >
               Next
             </Button>

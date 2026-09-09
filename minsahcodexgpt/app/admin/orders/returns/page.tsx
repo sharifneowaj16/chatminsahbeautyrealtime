@@ -141,7 +141,7 @@ export default function ReturnsPage() {
   if (!hasPermission(PERMISSIONS.ORDERS_REFUND)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don&apos;t have permission to manage returns.</p>
+        <p className="text-[#9A9691]">You don&apos;t have permission to manage returns.</p>
       </div>
     );
   }
@@ -162,7 +162,7 @@ export default function ReturnsPage() {
       case 'complete':
         return 'bg-green-500';
       case 'current':
-        return 'bg-admin-primary';
+        return 'bg-[#D07A60]';
       case 'warning':
         return 'bg-amber-500';
       default:
@@ -501,13 +501,13 @@ export default function ReturnsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Returns &amp; Refunds</h1>
-          <p className="text-gray-600">Manage customer return requests and refunds</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Returns &amp; Refunds</h1>
+          <p className="text-[#9A9691]">Manage customer return requests and refunds</p>
         </div>
         <Button
           onClick={fetchReturns}
           disabled={loading}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0] rounded-lg hover:bg-[#26262E] transition-colors duration-200"
         >
           <RefreshCw className={clsx('w-5 h-5 mr-2', loading && 'animate-spin')} />
           Refresh
@@ -516,41 +516,41 @@ export default function ReturnsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Returns</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{stats.total}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total Returns</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{stats.total}</p>
             </div>
             <RefreshCw className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-sm font-medium text-[#9A9691]">Pending</p>
               <p className="text-2xl font-bold text-yellow-600 mt-2">{stats.pending}</p>
             </div>
             <AlertCircle className="w-8 h-8 text-yellow-500" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Approved</p>
+              <p className="text-sm font-medium text-[#9A9691]">Approved</p>
               <p className="text-2xl font-bold text-green-600 mt-2">{stats.approved}</p>
             </div>
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Refund Amount</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Total Refund Amount</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {formatPrice(convertUSDtoBDT(stats.totalRefundAmount))}
               </p>
             </div>
@@ -560,7 +560,7 @@ export default function ReturnsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -666,16 +666,16 @@ export default function ReturnsPage() {
       )}
 
       {/* Returns Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <RefreshCw className="w-8 h-8 text-admin-primary animate-spin" />
-            <span className="ml-3 text-gray-500">Loading returns...</span>
+            <span className="ml-3 text-[#9A9691]">Loading returns...</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#14141A] border-b border-[#2A2A32] text-[#9A9691]">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <Input
@@ -686,19 +686,19 @@ export default function ReturnsPage() {
                       aria-label="Select all visible returns"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Refund Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Return ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Order ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Items</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Reason</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Refund Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[#1E1E24] divide-y divide-[#2A2A32] text-[#F5F3F0]">
                 {returns.map((returnRequest) => (
-                  <tr key={returnRequest.id} className="hover:bg-gray-50">
+                  <tr key={returnRequest.id} className="hover:bg-[#26262E]">
                     <td className="px-6 py-4">
                       <Input
                         type="checkbox"
@@ -709,24 +709,24 @@ export default function ReturnsPage() {
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{returnRequest.id}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-sm font-medium text-[#F5F3F0]">{returnRequest.id}</div>
+                      <div className="text-xs text-[#9A9691]">
                         {new Date(returnRequest.requestDate).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{returnRequest.orderId}</td>
+                    <td className="px-6 py-4 text-sm text-[#F5F3F0]">{returnRequest.orderId}</td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{returnRequest.customer.name}</div>
-                      <div className="text-xs text-gray-500">{returnRequest.customer.email}</div>
+                      <div className="text-sm font-medium text-[#F5F3F0]">{returnRequest.customer.name}</div>
+                      <div className="text-xs text-[#9A9691]">{returnRequest.customer.email}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{returnRequest.items.length} item(s)</div>
+                      <div className="text-sm text-[#F5F3F0]">{returnRequest.items.length} item(s)</div>
                       {returnRequest.items.map((item, idx) => (
-                        <div key={idx} className="text-xs text-gray-500">{item.name}</div>
+                        <div key={idx} className="text-xs text-[#9A9691]">{item.name}</div>
                       ))}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">{returnRequest.reason}</div>
+                      <div className="text-sm text-[#F5F3F0] max-w-xs truncate">{returnRequest.reason}</div>
                       {Boolean(returnRequest.images?.length) && (
                         <div className="mt-1 inline-flex items-center rounded-full bg-admin-panel px-2 py-0.5 text-xs font-medium text-admin-primary">
                           <ImageIcon className="mr-1 h-3 w-3" />
@@ -737,7 +737,7 @@ export default function ReturnsPage() {
                         <div className="text-xs text-blue-600 italic mt-1">{returnRequest.notes}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 text-sm font-medium text-[#F5F3F0]">
                       {formatPrice(convertUSDtoBDT(returnRequest.refundAmount))}
                     </td>
                     <td className="px-6 py-4">
@@ -791,7 +791,7 @@ export default function ReturnsPage() {
 
             {returns.length === 0 && !loading && (
               <div className="text-center py-12">
-                <p className="text-gray-500">No return requests found matching your criteria.</p>
+                <p className="text-[#9A9691]">No return requests found matching your criteria.</p>
               </div>
             )}
           </div>
@@ -819,26 +819,26 @@ export default function ReturnsPage() {
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Customer</p>
-                  <p className="mt-2 font-medium text-gray-900">{selectedReturn.customer.name}</p>
-                  <p className="text-sm text-gray-600">{selectedReturn.customer.email}</p>
+                  <p className="text-xs uppercase tracking-wide text-[#9A9691]">Customer</p>
+                  <p className="mt-2 font-medium text-[#F5F3F0]">{selectedReturn.customer.name}</p>
+                  <p className="text-sm text-[#9A9691]">{selectedReturn.customer.email}</p>
                 </div>
                 <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Requested</p>
-                  <p className="mt-2 font-medium text-gray-900">
+                  <p className="text-xs uppercase tracking-wide text-[#9A9691]">Requested</p>
+                  <p className="mt-2 font-medium text-[#F5F3F0]">
                     {new Date(selectedReturn.requestDate).toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Refund</p>
-                  <p className="mt-2 font-medium text-gray-900">
+                  <p className="text-xs uppercase tracking-wide text-[#9A9691]">Refund</p>
+                  <p className="mt-2 font-medium text-[#F5F3F0]">
                     {formatPrice(convertUSDtoBDT(selectedReturn.refundAmount))}
                   </p>
                 </div>
               </div>
 
               <div className="rounded-xl border border-gray-200 p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
                   Return Reason
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-gray-800">{selectedReturn.reason}</p>
@@ -846,8 +846,8 @@ export default function ReturnsPage() {
 
               <div className="rounded-xl border border-gray-200 p-5">
                 <div className="mb-4 flex items-center gap-2">
-                  <Package className="h-4 w-4 text-gray-500" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                  <Package className="h-4 w-4 text-[#9A9691]" />
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
                     Returned Items
                   </h3>
                 </div>
@@ -858,10 +858,10 @@ export default function ReturnsPage() {
                       className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                        <p className="font-medium text-[#F5F3F0]">{item.name}</p>
+                        <p className="text-sm text-[#9A9691]">Qty: {item.quantity}</p>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-[#F5F3F0]">
                         {formatPrice(convertUSDtoBDT(item.price * item.quantity))}
                       </p>
                     </div>
@@ -871,10 +871,10 @@ export default function ReturnsPage() {
 
               <div className="rounded-xl border border-gray-200 p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
                     Evidence Photos
                   </h3>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-[#9A9691]">
                     {selectedReturn.images?.length || 0} uploaded
                   </span>
                 </div>
@@ -897,7 +897,7 @@ export default function ReturnsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
+                  <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[#9A9691]">
                     No evidence photos were uploaded by the customer.
                   </div>
                 )}
@@ -906,10 +906,10 @@ export default function ReturnsPage() {
               <div className="rounded-xl border border-gray-200 p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
                       Refund Timeline
                     </h3>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-[#9A9691]">
                       Derived from current order payment and return timestamps.
                     </p>
                   </div>
@@ -934,12 +934,12 @@ export default function ReturnsPage() {
                       </div>
                       <div className="pb-5">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="font-medium text-gray-900">{event.title}</h4>
-                          <span className="text-xs text-gray-500">
+                          <h4 className="font-medium text-[#F5F3F0]">{event.title}</h4>
+                          <span className="text-xs text-[#9A9691]">
                             {formatDateTime(event.timestamp)}
                           </span>
                         </div>
-                        <p className="mt-1 text-sm leading-6 text-gray-600">
+                        <p className="mt-1 text-sm leading-6 text-[#9A9691]">
                           {event.description}
                         </p>
                       </div>
@@ -949,7 +949,7 @@ export default function ReturnsPage() {
               </div>
 
               <div className="rounded-xl border border-gray-200 p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#9A9691]">
                   Admin Decision
                 </h3>
                 <div className="mt-4 grid gap-4 md:grid-cols-[200px,1fr]">
@@ -990,21 +990,21 @@ export default function ReturnsPage() {
                     type="button"
                     onClick={handleSaveDetails}
                     disabled={savingDetail}
-                    className="inline-flex items-center rounded-lg bg-admin-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-admin-primary-hover disabled:opacity-70"
+                    className="inline-flex items-center rounded-lg bg-[#D07A60] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#D07A60]-hover disabled:opacity-70"
                   >
                     {savingDetail && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                     Save Decision
                   </Button>
                   <a
                     href={`mailto:${selectedReturn.customer.email}?subject=Update on return ${selectedReturn.id}`}
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#26262E]"
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Email Customer
                   </a>
                   <a
                     href="/admin/orders"
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#26262E]"
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     Open Orders

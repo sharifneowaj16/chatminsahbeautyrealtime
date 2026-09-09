@@ -206,7 +206,7 @@ export default function TopCustomersPage() {
   if (!hasPermission(PERMISSIONS.CUSTOMERS_VIEW)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to view top customers.</p>
+        <p className="text-[#9A9691]">You don't have permission to view top customers.</p>
       </div>
     );
   }
@@ -238,15 +238,15 @@ export default function TopCustomersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Top Customers by Region</h1>
-          <p className="text-gray-600">Identify and reward your most valuable customers</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Top Customers by Region</h1>
+          <p className="text-sm text-[#9A9691] mt-1">Identify and reward your most valuable customers</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
           <Button className="inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
             <Gift className="w-5 h-5 mr-2" />
             Award Yearly Gifts
           </Button>
-          <Button className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white rounded-lg hover:bg-gray-50">
+          <Button className="inline-flex items-center px-4 py-2 border border-[#2A2A32] bg-[#1E1E24] text-[#9A9691] hover:text-[#F5F3F0] rounded-lg hover:bg-[#26262E]">
             <Download className="w-5 h-5 mr-2" />
             Export
           </Button>
@@ -255,22 +255,22 @@ export default function TopCustomersPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Top Customers</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{filteredCustomers.length}</p>
-              <p className="text-xs text-gray-600 mt-1">Active customers</p>
+              <p className="text-sm font-medium text-[#9A9691]">Top Customers</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{filteredCustomers.length}</p>
+              <p className="text-xs text-[#9A9691] mt-1">Active customers</p>
             </div>
             <Crown className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Total Revenue</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {formatPrice(convertUSDtoBDT(totalSpent))}
               </p>
               <p className="text-xs text-green-600 mt-1">From top customers</p>
@@ -279,24 +279,24 @@ export default function TopCustomersPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg Customer Value</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Avg Customer Value</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {formatPrice(convertUSDtoBDT(avgSpent))}
               </p>
-              <p className="text-xs text-gray-600 mt-1">Per customer</p>
+              <p className="text-xs text-[#9A9691] mt-1">Per customer</p>
             </div>
             <TrendingUp className="w-10 h-10 text-blue-500" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Gift Eligible</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{eligibleForGift}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Gift Eligible</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{eligibleForGift}</p>
               <p className="text-xs text-orange-600 mt-1">For {filterYear} gifts</p>
             </div>
             <Gift className="w-10 h-10 text-orange-500" />
@@ -305,12 +305,12 @@ export default function TopCustomersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border p-4">
+      <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Select
             value={filterDivision}
             onChange={(e) => setFilterDivision(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
+            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="all">All Divisions</option>
             {getAllDivisions().map(div => (
@@ -321,7 +321,7 @@ export default function TopCustomersPage() {
           <Select
             value={filterTier}
             onChange={(e) => setFilterTier(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
+            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="all">All Tiers</option>
             <option value="diamond">Diamond</option>
@@ -334,7 +334,7 @@ export default function TopCustomersPage() {
           <Select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
+            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
           >
             <option value="2024">2024 Gifts</option>
             <option value="2023">2023 Gifts</option>
@@ -344,33 +344,33 @@ export default function TopCustomersPage() {
       </div>
 
       {/* Top Customers Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#14141A] border-b border-[#2A2A32]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Rank
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Location
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Total Spent
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Orders
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Tier
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Yearly Gift
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -379,24 +379,24 @@ export default function TopCustomersPage() {
               {filteredCustomers.map((customer, index) => {
                 const tierBadge = getTierBadge(customer.tier);
                 return (
-                  <tr key={customer.id} className="hover:bg-gray-50">
+                  <tr key={customer.id} className="hover:bg-[#26262E]/70 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {index < 3 ? (
                           <Crown className="w-6 h-6 text-yellow-500 mr-2" />
                         ) : (
-                          <span className="text-sm font-semibold text-gray-600 mr-2">#{index + 1}</span>
+                          <span className="text-sm font-semibold text-[#9A9691] mr-2">#{index + 1}</span>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{customer.name}</p>
-                        <div className="flex items-center text-xs text-gray-500 mt-1">
+                        <p className="text-sm font-medium text-[#F5F3F0]">{customer.name}</p>
+                        <div className="flex items-center text-xs text-[#9A9691] mt-1">
                           <Mail className="w-3 h-3 mr-1" />
                           {customer.email}
                         </div>
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-[#9A9691]">
                           <Phone className="w-3 h-3 mr-1" />
                           {customer.phone}
                         </div>
@@ -406,25 +406,25 @@ export default function TopCustomersPage() {
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 text-admin-primary mr-1" />
                         <div className="text-sm">
-                          <p className="font-medium text-gray-900">{customer.location.thana}</p>
-                          <p className="text-xs text-gray-500">{customer.location.district}, {customer.location.division}</p>
+                          <p className="font-medium text-[#F5F3F0]">{customer.location.thana}</p>
+                          <p className="text-xs text-[#9A9691]">{customer.location.district}, {customer.location.division}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-[#F5F3F0]">
                         {formatPrice(convertUSDtoBDT(customer.totalSpent))}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-[#9A9691]">
                         Avg: {formatPrice(convertUSDtoBDT(customer.avgOrderValue))}
                       </p>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <ShoppingCart className="w-4 h-4 text-gray-400 mr-1" />
-                        <span className="text-sm text-gray-900">{customer.totalOrders}</span>
+                        <span className="text-sm text-[#F5F3F0]">{customer.totalOrders}</span>
                       </div>
-                      <p className="text-xs text-gray-500">{customer.loyaltyPoints} pts</p>
+                      <p className="text-xs text-[#9A9691]">{customer.loyaltyPoints} pts</p>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${tierBadge.color}`}>
@@ -440,7 +440,7 @@ export default function TopCustomersPage() {
                               <Award className="w-3 h-3 mr-1" />
                               Awarded {customer.yearlyGiftAwarded.year}
                             </p>
-                            <p className="text-gray-500">{customer.yearlyGiftAwarded.giftName}</p>
+                            <p className="text-[#9A9691]">{customer.yearlyGiftAwarded.giftName}</p>
                           </div>
                         ) : (
                           <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
@@ -480,8 +480,8 @@ export default function TopCustomersPage() {
       {filteredCustomers.length === 0 && (
         <div className="text-center py-12">
           <Crown className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No customers found</h3>
-          <p className="text-gray-600">Try adjusting your filters</p>
+          <h3 className="text-lg font-semibold text-[#F5F3F0] mb-2">No customers found</h3>
+          <p className="text-[#9A9691]">Try adjusting your filters</p>
         </div>
       )}
     </div>

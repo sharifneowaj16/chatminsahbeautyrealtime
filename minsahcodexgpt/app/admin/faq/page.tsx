@@ -80,7 +80,7 @@ export default function FAQManagementPage() {
   if (!hasPermission(PERMISSIONS.CONTENT_MANAGE)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to manage FAQs.</p>
+        <p className="text-[#9A9691]">You don't have permission to manage FAQs.</p>
       </div>
     );
   }
@@ -106,10 +106,10 @@ export default function FAQManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">FAQ Management</h1>
-          <p className="text-gray-600">Manage frequently asked questions</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">FAQ Management</h1>
+          <p className="text-[#9A9691]">Manage frequently asked questions</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#D07A60]-hover transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Add FAQ
         </Button>
@@ -117,20 +117,20 @@ export default function FAQManagementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total FAQs</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{faqs.length}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total FAQs</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{faqs.length}</p>
             </div>
             <HelpCircle className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Published</p>
+              <p className="text-sm font-medium text-[#9A9691]">Published</p>
               <p className="text-2xl font-bold text-green-600 mt-2">
                 {faqs.filter(f => f.status === 'published').length}
               </p>
@@ -139,21 +139,21 @@ export default function FAQManagementPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Categories</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{categories.length}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Categories</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{categories.length}</p>
             </div>
             <HelpCircle className="w-8 h-8 text-blue-500" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Views</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Total Views</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {faqs.reduce((sum, f) => sum + f.views, 0)}
               </p>
             </div>
@@ -163,7 +163,7 @@ export default function FAQManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -190,7 +190,7 @@ export default function FAQManagementPage() {
       </div>
 
       {/* FAQs List */}
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32]">
         <div className="divide-y divide-gray-200">
           {filteredFaqs.map((faq) => (
             <div key={faq.id} className="p-6">
@@ -203,7 +203,7 @@ export default function FAQManagementPage() {
                     <div className="flex items-start space-x-3">
                       <HelpCircle className="w-5 h-5 text-admin-primary flex-shrink-0 mt-1" />
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                        <h3 className="text-lg font-semibold text-[#F5F3F0] mb-2 flex items-center">
                           {faq.question}
                           {expandedFaq === faq.id ? (
                             <ChevronUp className="w-5 h-5 ml-2" />
@@ -211,7 +211,7 @@ export default function FAQManagementPage() {
                             <ChevronDown className="w-5 h-5 ml-2" />
                           )}
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="flex items-center space-x-4 text-sm text-[#9A9691]">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-admin-panel text-admin-primary">
                             {faq.category}
                           </span>
@@ -253,7 +253,7 @@ export default function FAQManagementPage() {
 
         {filteredFaqs.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No FAQs found matching your criteria.</p>
+            <p className="text-[#9A9691]">No FAQs found matching your criteria.</p>
           </div>
         )}
       </div>

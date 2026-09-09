@@ -178,10 +178,10 @@ export default function SalesByRegionPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sales by Region - Bangladesh</h1>
-          <p className="text-gray-600">Track sales performance across divisions, districts, thanas, and areas</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">Sales by Region - Bangladesh</h1>
+          <p className="text-[#9A9691]">Track sales performance across divisions, districts, thanas, and areas</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#D07A60] text-white rounded-lg hover:bg-[#E08D70]">
           <Download className="w-5 h-5 mr-2" />
           Export Report
         </Button>
@@ -189,22 +189,22 @@ export default function SalesByRegionPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{totalOrders.toLocaleString()}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total Orders</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{totalOrders.toLocaleString()}</p>
               <p className="text-xs text-green-600 mt-1">+18.5% vs last period</p>
             </div>
             <ShoppingCart className="w-10 h-10 text-blue-500" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Total Revenue</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {formatPrice(totalRevenue)}
               </p>
               <p className="text-xs text-green-600 mt-1">+22.3% vs last period</p>
@@ -213,22 +213,22 @@ export default function SalesByRegionPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Customers</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{totalCustomers.toLocaleString()}</p>
-              <p className="text-xs text-gray-600 mt-1">From {regionalSalesData.divisions.length} divisions</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total Customers</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{totalCustomers.toLocaleString()}</p>
+              <p className="text-xs text-[#6B6864] mt-1">From {regionalSalesData.divisions.length} divisions</p>
             </div>
             <Users className="w-10 h-10 text-admin-primary" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Avg Order Value</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">
                 {formatPrice(avgOrderValue)}
               </p>
               <p className="text-xs text-green-600 mt-1">+5.2% vs last period</p>
@@ -239,7 +239,7 @@ export default function SalesByRegionPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border p-4">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-4 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Select
             value={viewType}
@@ -248,7 +248,7 @@ export default function SalesByRegionPage() {
               setSelectedDivision('all');
               setSelectedDistrict('all');
             }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
+            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-[#D07A60]"
           >
             <option value="division">View by Division</option>
             <option value="district">View by District</option>
@@ -262,7 +262,7 @@ export default function SalesByRegionPage() {
                 setSelectedDivision(e.target.value);
                 setSelectedDistrict('all');
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
+              className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-[#D07A60]"
             >
               <option value="all">Select Division</option>
               {getAllDivisions().map(div => (
@@ -275,7 +275,7 @@ export default function SalesByRegionPage() {
             <Select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
+              className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-[#D07A60]"
             >
               <option value="all">Select District</option>
               {getDistrictsByDivision(selectedDivision).map(dist => (
@@ -287,7 +287,7 @@ export default function SalesByRegionPage() {
           <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary"
+            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-[#D07A60]"
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -298,59 +298,59 @@ export default function SalesByRegionPage() {
       </div>
 
       {/* Regional Sales Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#14141A]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Location
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Orders
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Revenue
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Customers
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Avg Order Value
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Growth
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#2A2A32]">
               {dataToDisplay.map((location: any, index: number) => (
-                <tr key={index} className="hover:bg-gray-50">
+                <tr key={index} className="hover:bg-[#26262E]/70 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <MapPin className="w-5 h-5 text-admin-primary mr-2" />
-                      <span className="text-sm font-medium text-gray-900">{location.name}</span>
+                      <span className="text-sm font-medium text-[#F5F3F0]">{location.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{location.totalOrders.toLocaleString()}</span>
+                    <span className="text-sm text-[#F5F3F0]">{location.totalOrders.toLocaleString()}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-[#F5F3F0]">
                       {formatPrice(location.totalRevenue)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <Users className="w-4 h-4 text-gray-400 mr-1" />
-                      <span className="text-sm text-gray-900">{location.totalCustomers.toLocaleString()}</span>
+                      <span className="text-sm text-[#F5F3F0]">{location.totalCustomers.toLocaleString()}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">
+                    <span className="text-sm text-[#F5F3F0]">
                       {formatPrice(location.avgOrderValue)}
                     </span>
                   </td>
@@ -374,7 +374,7 @@ export default function SalesByRegionPage() {
                           setSelectedDistrict(location.name);
                         }
                       }}
-                      className="inline-flex items-center text-admin-primary hover:text-admin-primary-hover"
+                      className="inline-flex items-center text-[#D07A60] hover:text-[#E08D70]"
                     >
                       <ChevronRight className="w-5 h-5" />
                       <span className="text-sm">View Details</span>
@@ -388,12 +388,12 @@ export default function SalesByRegionPage() {
       </div>
 
       {/* Bangladesh Map Placeholder */}
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Sales Heatmap - Bangladesh</h3>
-        <div className="bg-gradient-to-br from-admin-panel to-admin-bg rounded-lg p-12 text-center">
+      <div className="bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-[#F5F3F0] mb-4">Sales Heatmap - Bangladesh</h3>
+        <div className="bg-[#14141A] border border-[#2A2A32] rounded-lg p-12 text-center">
           <MapPin className="w-16 h-16 text-admin-text-muted mx-auto mb-4" />
-          <p className="text-gray-600">Interactive Bangladesh map with sales heatmap</p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-[#9A9691]">Interactive Bangladesh map with sales heatmap</p>
+          <p className="text-sm text-[#6B6864] mt-2">
             Visual representation of sales density across divisions, districts, and thanas
           </p>
         </div>

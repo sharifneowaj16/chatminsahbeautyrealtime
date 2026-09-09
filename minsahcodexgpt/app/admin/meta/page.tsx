@@ -233,7 +233,7 @@ export default function MetaOperationsCenterPage() {
   return <div className="space-y-6 p-4 md:p-6">
     <header className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
       <div>
-        <div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Meta Operations Center</h1><Badge tone="info">Phase 13</Badge></div>
+        <div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-bold text-[#F5F3F0]">Meta Operations Center</h1><Badge tone="info">Phase 13</Badge></div>
         <p className="mt-1 max-w-3xl text-sm text-gray-600">Read-only Ads Insights, approval-based ad automation, deterministic product sets, first-party attribution, diagnostics, incidents, approvals and immutable audits in one redacted control plane.</p>
       </div>
       <div className="flex flex-wrap gap-2"><Link href="/admin/meta-business"><Button variant="secondary">Legacy Meta tools</Button></Link><Button variant="secondary" onClick={() => void load()} disabled={busy}><RefreshCw className="h-4 w-4" /> Refresh</Button></div>

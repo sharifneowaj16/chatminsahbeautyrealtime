@@ -226,11 +226,11 @@ export default function MetaLeadCrmPage() {
 
   return <div className="space-y-6 p-4 md:p-6">
     <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div><h1 className="text-2xl font-bold text-gray-900">Meta Lead Ads CRM</h1><p className="mt-1 text-sm text-gray-600">Receipt → processing attempt → normalized lead → CRM handoff and duplicate trace, with masked contact data.</p></div>
+      <div><h1 className="text-2xl font-bold text-[#F5F3F0]">Meta Lead Ads CRM</h1><p className="mt-1 text-sm text-[#9A9691]">Receipt → processing attempt → normalized lead → CRM handoff and duplicate trace, with masked contact data.</p></div>
       <Button variant="secondary" onClick={() => void load()} disabled={busy}><RefreshCw className="h-4 w-4" /> Refresh</Button>
     </header>
 
-    {message && <div className="rounded-xl border bg-white px-4 py-3 text-sm" role="status">{message}</div>}
+    {message && <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] px-4 py-3 text-sm text-[#F5F3F0]" role="status">{message}</div>}
 
     <div className="grid gap-4 sm:grid-cols-4">
       <Summary icon={Users} label="Loaded leads" value={leads.length} />
@@ -239,33 +239,33 @@ export default function MetaLeadCrmPage() {
       <Summary icon={Workflow} label="Webhook failures" value={failures.length} />
     </div>
 
-    <section className="flex flex-wrap items-center gap-3 rounded-2xl border bg-white p-4">
+    <section className="flex flex-wrap items-center gap-3 rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-4 text-[#F5F3F0]">
       <label className="text-sm font-medium">Pipeline status</label>
-      <select className="rounded-lg border px-3 py-2 text-sm" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
+      <select className="rounded-lg border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] px-3 py-2 text-sm" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
         <option value="">All</option>{STATUSES.map((item) => <option key={item}>{item}</option>)}
       </select>
-      <span className="text-sm text-gray-500">{pagination.total} total · page {pagination.page} of {Math.max(1, pagination.pages)}</span>
+      <span className="text-sm text-[#9A9691]">{pagination.total} total · page {pagination.page} of {Math.max(1, pagination.pages)}</span>
       <div className="ml-auto flex gap-2"><Button variant="secondary" disabled={busy || page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</Button><Button variant="secondary" disabled={busy || page >= pagination.pages} onClick={() => setPage((value) => value + 1)}>Next</Button></div>
     </section>
 
     <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
-      <section className="overflow-hidden rounded-2xl border bg-white">
+      <section className="overflow-hidden rounded-xl border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0]">
         <div className="overflow-x-auto"><table className="min-w-full text-sm">
-          <thead className="bg-gray-50"><tr>{['Lead', 'Source', 'Contact', 'Status', 'Assigned', 'SLA', 'Duplicates'].map((heading) => <th key={heading} className="px-4 py-3 text-left">{heading}</th>)}</tr></thead>
-          <tbody className="divide-y">{leads.map((lead) => <tr key={lead.id} className={selectedId === lead.id ? 'bg-gray-50' : ''} onClick={() => setSelectedId(lead.id)}>
-            <td className="cursor-pointer px-4 py-3"><div className="flex items-center gap-2 font-medium">{safeText(lead.fullName)}{lead.isTestLead && <Badge tone="info">TEST</Badge>}</div><div className="text-xs text-gray-500">{lead.leadgenId}</div></td>
-            <td className="px-4 py-3"><div>{safeText(lead.campaignName ?? lead.campaignId)}</div><div className="text-xs text-gray-500">Form {safeText(lead.formId)} · Ad {safeText(lead.adId)}</div></td>
-            <td className="px-4 py-3"><div>{safeText(lead.phoneMasked)}</div><div className="text-xs text-gray-500">{safeText(lead.emailMasked)}</div></td>
-            <td className="px-4 py-3"><Badge tone={tone(lead.status)}>{lead.status}</Badge><div className="mt-1 text-xs text-gray-500">{lead.retrievalStatus}</div></td>
-            <td className="px-4 py-3">{safeText(lead.assignedToId)}<div className="text-xs text-gray-500">{safeText(lead.assignmentReason)}</div></td>
+          <thead className="bg-[#14141A] border-b border-[#2A2A32] text-[#9A9691]"><tr>{['Lead', 'Source', 'Contact', 'Status', 'Assigned', 'SLA', 'Duplicates'].map((heading) => <th key={heading} className="px-4 py-3 text-left">{heading}</th>)}</tr></thead>
+          <tbody className="divide-y">{leads.map((lead) => <tr key={lead.id} className={selectedId === lead.id ? 'bg-[#14141A]' : ''} onClick={() => setSelectedId(lead.id)}>
+            <td className="cursor-pointer px-4 py-3"><div className="flex items-center gap-2 font-medium">{safeText(lead.fullName)}{lead.isTestLead && <Badge tone="info">TEST</Badge>}</div><div className="text-xs text-[#9A9691]">{lead.leadgenId}</div></td>
+            <td className="px-4 py-3"><div>{safeText(lead.campaignName ?? lead.campaignId)}</div><div className="text-xs text-[#9A9691]">Form {safeText(lead.formId)} · Ad {safeText(lead.adId)}</div></td>
+            <td className="px-4 py-3"><div>{safeText(lead.phoneMasked)}</div><div className="text-xs text-[#9A9691]">{safeText(lead.emailMasked)}</div></td>
+            <td className="px-4 py-3"><Badge tone={tone(lead.status)}>{lead.status}</Badge><div className="mt-1 text-xs text-[#9A9691]">{lead.retrievalStatus}</div></td>
+            <td className="px-4 py-3">{safeText(lead.assignedToId)}<div className="text-xs text-[#9A9691]">{safeText(lead.assignmentReason)}</div></td>
             <td className="px-4 py-3">{time(lead.receivedAt)}</td><td className="px-4 py-3">{lead.duplicateCount}</td>
           </tr>)}</tbody>
         </table></div>
       </section>
 
-      <section className="space-y-4 rounded-2xl border bg-white p-5">
+      <section className="space-y-4 rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5 text-[#F5F3F0]">
         <div className="flex items-center justify-between gap-2"><h2 className="font-semibold">Lead lifecycle</h2>{testLead && <Badge tone="info" leadingVisual={<TestTube2 className="h-3 w-3" />}>TEST LEAD</Badge>}</div>
-        {!selected && <p className="text-sm text-gray-500">Select a lead.</p>}
+        {!selected && <p className="text-sm text-[#9A9691]">Select a lead.</p>}
         {selected && <>
           <div className="grid grid-cols-2 gap-2 text-sm"><span>City/area</span><strong>{safeText(selected.city)} / {safeText(selected.area)}</strong><span>Interest</span><strong>{safeText(selected.productInterest)}</strong><span>Contacts</span><strong>{selected.contactAttemptCount}</strong><span>Order</span><strong>{safeText(selected.convertedOrderId)}</strong></div>
           <div className="flex flex-wrap gap-2">{['CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'LOST'].map((next) => <Button key={next} variant="secondary" disabled={busy || selected.status === next} onClick={() => void patchLead({ status: next }, `Lead marked ${next}.`)}>{next}</Button>)}</div>
@@ -279,36 +279,36 @@ export default function MetaLeadCrmPage() {
 
     {detail && <section className="grid gap-4 xl:grid-cols-2">
       <TracePanel title="Receipt and processing" icon={Workflow}>
-        {!detail.trace.receipt ? <p className="text-sm text-gray-500">No unified receipt linked to this lead.</p> : <div className="space-y-3">
+        {!detail.trace.receipt ? <p className="text-sm text-[#9A9691]">No unified receipt linked to this lead.</p> : <div className="space-y-3">
           <div className="flex flex-wrap gap-2"><Badge tone={tone(detail.trace.receipt.state)}>{detail.trace.receipt.state}</Badge><Badge>{detail.trace.receipt.replayEligibility}</Badge>{detail.trace.receipt.deadLetteredAt && <Badge tone="danger">DEAD LETTER</Badge>}</div>
           <div className="grid gap-2 text-sm sm:grid-cols-2"><KeyValue label="Received" value={time(detail.trace.receipt.receivedAt)} /><KeyValue label="Next retry" value={time(detail.trace.receipt.nextRetryAt)} /><KeyValue label="Attempts" value={String(detail.trace.receipt.attemptCount)} /><KeyValue label="Duplicates" value={String(detail.trace.receipt.duplicateCount)} /><KeyValue label="Correlation" value={safeText(detail.trace.receipt.correlationId)} /><KeyValue label="Replay attempts" value={String(detail.trace.receipt.replayAttempt)} /></div>
-          {detail.trace.receipt.identity && <div className="rounded-xl border p-3 text-sm"><strong>{detail.trace.receipt.identity.objectType}</strong><div className="mt-1 flex flex-wrap gap-2"><Badge tone={tone(detail.trace.receipt.identity.identityStatus)}>{detail.trace.receipt.identity.identityStatus}</Badge><Badge tone={tone(detail.trace.receipt.identity.permissionHealth)}>{detail.trace.receipt.identity.permissionHealth}</Badge></div><p className="mt-2 text-xs text-gray-500">Provider {safeText(detail.trace.receipt.identity.providerId)} · verified {time(detail.trace.receipt.identity.lastVerifiedAt)}</p></div>}
-          {detail.trace.receipt.failure && <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{failureText(detail.trace.receipt.failure)}</p>}
+          {detail.trace.receipt.identity && <div className="rounded-xl border p-3 text-sm"><strong>{detail.trace.receipt.identity.objectType}</strong><div className="mt-1 flex flex-wrap gap-2"><Badge tone={tone(detail.trace.receipt.identity.identityStatus)}>{detail.trace.receipt.identity.identityStatus}</Badge><Badge tone={tone(detail.trace.receipt.identity.permissionHealth)}>{detail.trace.receipt.identity.permissionHealth}</Badge></div><p className="mt-2 text-xs text-[#9A9691]">Provider {safeText(detail.trace.receipt.identity.providerId)} · verified {time(detail.trace.receipt.identity.lastVerifiedAt)}</p></div>}
+          {detail.trace.receipt.failure && <p className="rounded-xl border border-red-800/40 bg-red-950/70 p-3 text-sm text-red-400">{failureText(detail.trace.receipt.failure)}</p>}
         </div>}
-        <div className="space-y-2">{detail.trace.fetchAttempts.map((attempt) => <article key={attempt.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap gap-2"><Badge tone={tone(attempt.retrievalStatus)}>{attempt.retrievalStatus}</Badge>{attempt.isTestLead && <Badge tone="info">TEST</Badge>}<span>Attempt {attempt.retrievalAttempt}</span></div><p className="mt-2 text-xs text-gray-500">Last {time(attempt.lastRetrievalAt)} · next {time(attempt.nextRetrievalAt)}</p>{attempt.failure && <p className="mt-2 text-red-700">{failureText(attempt.failure)}</p>}</article>)}</div>
+        <div className="space-y-2">{detail.trace.fetchAttempts.map((attempt) => <article key={attempt.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap gap-2"><Badge tone={tone(attempt.retrievalStatus)}>{attempt.retrievalStatus}</Badge>{attempt.isTestLead && <Badge tone="info">TEST</Badge>}<span>Attempt {attempt.retrievalAttempt}</span></div><p className="mt-2 text-xs text-[#9A9691]">Last {time(attempt.lastRetrievalAt)} · next {time(attempt.nextRetrievalAt)}</p>{attempt.failure && <p className="mt-2 text-red-700">{failureText(attempt.failure)}</p>}</article>)}</div>
       </TracePanel>
 
       <TracePanel title="CRM handoff and duplicates" icon={CheckCircle2}>
-        <div className="space-y-2">{detail.trace.handoffs.length === 0 ? <p className="text-sm text-gray-500">No CRM handoff records.</p> : detail.trace.handoffs.map((handoff) => <article key={handoff.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap gap-2"><Badge tone={tone(handoff.status)}>{handoff.status}</Badge><strong>{handoff.destination}</strong></div><p className="mt-2 text-xs text-gray-500">{safeText(handoff.targetType)} {safeText(handoff.targetId)} · attempts {handoff.attemptCount} · next {time(handoff.nextRetryAt)}</p>{handoff.failure && <p className="mt-2 text-red-700">{failureText(handoff.failure)}</p>}</article>)}</div>
-        <div className="space-y-2">{detail.trace.duplicates.length === 0 ? <p className="text-sm text-gray-500">No duplicate lead records.</p> : detail.trace.duplicates.map((duplicate) => <article key={duplicate.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap gap-2"><Badge>{duplicate.reason}</Badge><span>{safeText(duplicate.sourceLeadgenId)}</span></div><p className="mt-1 text-xs text-gray-500">Receipt {safeText(duplicate.receiptId)} · {time(duplicate.createdAt)}</p></article>)}</div>
+        <div className="space-y-2">{detail.trace.handoffs.length === 0 ? <p className="text-sm text-[#9A9691]">No CRM handoff records.</p> : detail.trace.handoffs.map((handoff) => <article key={handoff.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap gap-2"><Badge tone={tone(handoff.status)}>{handoff.status}</Badge><strong>{handoff.destination}</strong></div><p className="mt-2 text-xs text-[#9A9691]">{safeText(handoff.targetType)} {safeText(handoff.targetId)} · attempts {handoff.attemptCount} · next {time(handoff.nextRetryAt)}</p>{handoff.failure && <p className="mt-2 text-red-700">{failureText(handoff.failure)}</p>}</article>)}</div>
+        <div className="space-y-2">{detail.trace.duplicates.length === 0 ? <p className="text-sm text-[#9A9691]">No duplicate lead records.</p> : detail.trace.duplicates.map((duplicate) => <article key={duplicate.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap gap-2"><Badge>{duplicate.reason}</Badge><span>{safeText(duplicate.sourceLeadgenId)}</span></div><p className="mt-1 text-xs text-[#9A9691]">Receipt {safeText(duplicate.receiptId)} · {time(duplicate.createdAt)}</p></article>)}</div>
       </TracePanel>
     </section>}
 
-    <section className="overflow-hidden rounded-2xl border bg-white">
+    <section className="overflow-hidden rounded-xl border border-[#2A2A32] bg-[#1E1E24] text-[#F5F3F0]">
       <div className="border-b px-5 py-4"><h2 className="font-semibold">Webhook failures & rejected notifications</h2></div>
-      <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-gray-50"><tr>{['Received', 'Lead', 'Status', 'Attempts', 'Last attempt', 'Safe failure'].map((heading) => <th key={heading} className="px-4 py-3 text-left">{heading}</th>)}</tr></thead><tbody className="divide-y">{failures.map((item) => <tr key={item.id}><td className="px-4 py-3">{time(item.receivedAt)}</td><td className="px-4 py-3">{safeText(item.leadgenId)}</td><td className="px-4 py-3"><Badge tone={tone(item.status)}>{item.status}</Badge></td><td className="px-4 py-3">{item.attemptCount}</td><td className="px-4 py-3">{time(item.lastAttemptAt)}</td><td className="max-w-lg px-4 py-3">{failureText(item.failure)}</td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-[#14141A] border-b border-[#2A2A32] text-[#9A9691]"><tr>{['Received', 'Lead', 'Status', 'Attempts', 'Last attempt', 'Safe failure'].map((heading) => <th key={heading} className="px-4 py-3 text-left">{heading}</th>)}</tr></thead><tbody className="divide-y">{failures.map((item) => <tr key={item.id}><td className="px-4 py-3">{time(item.receivedAt)}</td><td className="px-4 py-3">{safeText(item.leadgenId)}</td><td className="px-4 py-3"><Badge tone={tone(item.status)}>{item.status}</Badge></td><td className="px-4 py-3">{item.attemptCount}</td><td className="px-4 py-3">{time(item.lastAttemptAt)}</td><td className="max-w-lg px-4 py-3">{failureText(item.failure)}</td></tr>)}</tbody></table></div>
     </section>
   </div>;
 }
 
 function Summary({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: number }) {
-  return <div className="rounded-2xl border bg-white p-4"><Icon className="h-5 w-5 text-gray-500" /><div className="mt-3 text-2xl font-bold">{value}</div><div className="text-sm text-gray-500">{label}</div></div>;
+  return <div className="rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-4 text-[#F5F3F0]"><Icon className="h-5 w-5 text-[#9A9691]" /><div className="mt-3 text-2xl font-bold">{value}</div><div className="text-sm text-[#9A9691]">{label}</div></div>;
 }
 
 function TracePanel({ title, icon: Icon, children }: { title: string; icon: typeof Workflow; children: React.ReactNode }) {
-  return <section className="space-y-4 rounded-2xl border bg-white p-5"><h2 className="flex items-center gap-2 font-semibold"><Icon className="h-5 w-5 text-gray-500" />{title}</h2>{children}</section>;
+  return <section className="space-y-4 rounded-xl border border-[#2A2A32] bg-[#1E1E24] p-5 text-[#F5F3F0]"><h2 className="flex items-center gap-2 font-semibold"><Icon className="h-5 w-5 text-[#9A9691]" />{title}</h2>{children}</section>;
 }
 
 function KeyValue({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border p-3"><div className="text-xs uppercase tracking-wide text-gray-500">{label}</div><div className="mt-1 break-all font-medium">{value}</div></div>;
+  return <div className="rounded-xl border p-3"><div className="text-xs uppercase tracking-wide text-[#9A9691]">{label}</div><div className="mt-1 break-all font-medium">{value}</div></div>;
 }

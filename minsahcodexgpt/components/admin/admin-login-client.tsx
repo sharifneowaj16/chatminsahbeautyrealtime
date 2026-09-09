@@ -55,10 +55,10 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
+      <div className="admin-workspace min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-admin-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-[#9A9691]">Loading...</p>
         </div>
       </div>
     );
@@ -66,16 +66,16 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
 
   if (isLoggedIn || user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
+      <div className="admin-workspace min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
         <div className="text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 bg-emerald-950/80 border border-emerald-800/40 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Successful!</h2>
-          <p className="text-gray-600 mb-4">Redirecting to admin dashboard...</p>
-          <div className="w-64 bg-gray-200 rounded-full h-2 mx-auto">
+          <h2 className="text-2xl font-bold text-[#F5F3F0] mb-2">Login Successful!</h2>
+          <p className="text-[#9A9691] mb-4">Redirecting to admin dashboard...</p>
+          <div className="w-64 bg-[#2A2A32] rounded-full h-2 mx-auto">
             <div className="bg-admin-primary h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
           </div>
         </div>
@@ -84,7 +84,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-admin-panel to-admin-bg">
+    <div className="admin-workspace min-h-screen flex bg-gradient-to-br from-admin-panel to-admin-bg">
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-admin-primary to-admin-primary-hover p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-black/20"></div>
 
@@ -150,8 +150,8 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p className="text-gray-600">Sign in to your admin dashboard</p>
+            <h1 className="text-3xl font-bold text-[#F5F3F0] mb-2">Welcome Back</h1>
+            <p className="text-[#9A9691]">Sign in to your admin dashboard</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -183,7 +183,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
                   size="icon"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="pointer-events-auto text-gray-400 hover:text-gray-500"
+                  className="pointer-events-auto text-[#9A9691] hover:text-[#F5F3F0]"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" aria-hidden="true" />
@@ -196,7 +196,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
             />
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="bg-red-950/80 border border-red-800/50 text-red-400 px-4 py-3 rounded-lg text-sm font-medium">
                 {error}
               </div>
             )}

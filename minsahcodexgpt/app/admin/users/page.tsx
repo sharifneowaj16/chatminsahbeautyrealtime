@@ -155,8 +155,8 @@ export default function UsersManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600">Manage admin users and their permissions</p>
+          <h1 className="text-2xl font-bold text-[#F5F3F0]">User Management</h1>
+          <p className="text-sm text-[#9A9691] mt-1">Manage admin users and their permissions</p>
         </div>
         <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
@@ -166,21 +166,21 @@ export default function UsersManagementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{users.length}</p>
+              <p className="text-sm font-medium text-[#9A9691]">Total Users</p>
+              <p className="text-2xl font-bold text-[#F5F3F0] mt-2">{users.length}</p>
             </div>
             <User className="w-8 h-8 text-admin-primary" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="text-2xl font-bold text-green-600 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Active Users</p>
+              <p className="text-2xl font-bold text-emerald-400 mt-2">
                 {users.filter(u => u.status === 'active').length}
               </p>
             </div>
@@ -188,11 +188,11 @@ export default function UsersManagementPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Admins</p>
-              <p className="text-2xl font-bold text-blue-600 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Admins</p>
+              <p className="text-2xl font-bold text-blue-400 mt-2">
                 {users.filter(u => u.role === 'admin' || u.role === 'super_admin').length}
               </p>
             </div>
@@ -200,11 +200,11 @@ export default function UsersManagementPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Inactive</p>
-              <p className="text-2xl font-bold text-gray-600 mt-2">
+              <p className="text-sm font-medium text-[#9A9691]">Inactive</p>
+              <p className="text-2xl font-bold text-[#9A9691] mt-2">
                 {users.filter(u => u.status === 'inactive').length}
               </p>
             </div>
@@ -214,23 +214,23 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B6864]" />
             <Input
               type="text"
               placeholder="Search users by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
             />
           </div>
 
           <Select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
+            className="px-4 py-2 border border-[#2A2A32] bg-[#14141A] text-[#F5F3F0] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-transparent"
           >
             <option value="all">All Roles</option>
             <option value="super_admin">Super Admin</option>
@@ -242,44 +242,44 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#14141A] border-b border-[#2A2A32]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Last Login
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Created
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#9A9691] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-[#1E1E24] divide-y divide-[#2A2A32]">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+                <tr key={user.id} className="hover:bg-[#26262E]/70 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-admin-panel rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-[#14141A] border border-[#2A2A32] rounded-full flex items-center justify-center">
                         <span className="text-admin-primary font-semibold">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-xs text-gray-500 flex items-center">
+                        <div className="text-sm font-medium text-[#F5F3F0]">{user.name}</div>
+                        <div className="text-xs text-[#9A9691] flex items-center">
                           <Mail className="w-3 h-3 mr-1" />
                           {user.email}
                         </div>
@@ -304,18 +304,18 @@ export default function UsersManagementPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-gray-900">
+                    <div className="flex items-center text-sm text-[#F5F3F0]">
                       <Calendar className="w-4 h-4 mr-1 text-gray-400" />
                       {new Date(user.lastLogin).toLocaleDateString()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-[#F5F3F0]">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <Button
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-400 hover:text-blue-300"
                         title="Edit"
                         disabled={user.id === '1'}
                       >
@@ -338,7 +338,7 @@ export default function UsersManagementPage() {
                       </Button>
                       <Button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-rose-400 hover:text-rose-300"
                         title="Delete"
                         disabled={user.id === '1'}
                       >
@@ -360,36 +360,36 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Permissions Reference */}
-      <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Role Permissions</h3>
+      <div className="mt-6 bg-[#1E1E24] rounded-xl border border-[#2A2A32] p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-[#F5F3F0] mb-4">Role Permissions</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <h4 className="font-medium text-admin-text mb-2">Super Admin</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <h4 className="font-medium text-[#D07A60] mb-2">Super Admin</h4>
+            <ul className="text-sm text-[#9A9691] space-y-1">
               <li>&bull; All permissions</li>
               <li>&bull; User management</li>
               <li>&bull; Settings control</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-blue-900 mb-2">Admin</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <h4 className="font-medium text-blue-400 mb-2">Admin</h4>
+            <ul className="text-sm text-[#9A9691] space-y-1">
               <li>&bull; Products & Orders</li>
               <li>&bull; Customers</li>
               <li>&bull; Analytics</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-green-900 mb-2">Editor</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <h4 className="font-medium text-emerald-400 mb-2">Editor</h4>
+            <ul className="text-sm text-[#9A9691] space-y-1">
               <li>&bull; Blog posts</li>
               <li>&bull; Content management</li>
               <li>&bull; Media library</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-yellow-900 mb-2">Moderator</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <h4 className="font-medium text-amber-400 mb-2">Moderator</h4>
+            <ul className="text-sm text-[#9A9691] space-y-1">
               <li>&bull; Reviews moderation</li>
               <li>&bull; Comments</li>
               <li>&bull; User reports</li>

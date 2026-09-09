@@ -771,15 +771,15 @@ export default function NewProductPage() {
         <Link href="/admin/products" className="inline-flex items-center text-admin-primary hover:text-admin-primary mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
-        <p className="text-gray-600">Create a comprehensive beauty product listing</p>
+        <h1 className="text-3xl font-bold text-[#F5F3F0]">Add New Product</h1>
+        <p className="text-sm text-[#9A9691] mt-1">Create a comprehensive beauty product listing</p>
       </div>
 
       {/* ─── AI GENERATE PANEL ───────────────────────────────────────────── */}
-      <div className={`mb-6 rounded-xl border-2 p-5 shadow-sm transition-all ${aiApplied ? 'border-green-400 bg-green-50' : 'border-admin-border bg-gradient-to-r from-admin-panel to-admin-bg'}`}>
+      <div className={`mb-6 rounded-xl border-2 p-5 shadow-sm transition-all ${aiApplied ? 'border-emerald-500/50 bg-emerald-950/40' : 'border-[#2A2A32] bg-[#1E1E24]'}`}>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className={`w-5 h-5 ${aiApplied ? 'text-green-600' : 'text-admin-primary'}`} />
-          <span className={`text-base font-semibold ${aiApplied ? 'text-green-800' : 'text-admin-text'}`}>
+          <span className={`text-base font-semibold ${aiApplied ? 'text-emerald-300' : 'text-[#F5F3F0]'}`}>
             {aiApplied
               ? `✅ Generated with ${AI_MODELS.find(m => m.id === aiAppliedModel)?.badge || 'AI'} — review and adjust the result`
               : 'AI Product Generator'}
@@ -812,12 +812,12 @@ export default function NewProductPage() {
                     onClick={() => setAiModel(m.id)}
                     className={`text-left px-3 py-2.5 rounded-lg border-2 transition-all ${
                       aiModel === m.id
-                        ? 'border-admin-primary bg-white shadow-md'
-                        : 'border-admin-border bg-white/60 hover:border-admin-border'
+                        ? 'border-admin-primary bg-[#26262E] shadow-md'
+                        : 'border-[#2A2A32] bg-[#14141A] hover:border-[#3E3E48]'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-gray-800">{m.label}</span>
+                      <span className="text-xs font-semibold text-[#F5F3F0]">{m.label}</span>
                       <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${m.badgeColor}`}>{m.badge}</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -838,7 +838,7 @@ export default function NewProductPage() {
                 onChange={(e) => setAiInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleAiGenerate()}
                 placeholder="e.g., Vitamin C Serum, Korean Sheet Mask, Matte Lipstick..."
-                className="flex-1 px-4 py-2.5 border-2 border-admin-border rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary text-sm bg-white"
+                className="flex-1 px-4 py-2.5 border-2 border-[#2A2A32] rounded-lg focus:ring-2 focus:ring-admin-primary focus:border-admin-primary text-sm bg-[#14141A] text-[#F5F3F0] placeholder-[#6B6864]"
                 disabled={isGenerating}
               />
               <Button
@@ -882,7 +882,7 @@ export default function NewProductPage() {
 
         {/* Facebook Ad Angle panel */}
         {facebookAdAngle && (
-          <div className="mt-4 border border-admin-border rounded-lg bg-white overflow-hidden">
+          <div className="mt-4 border border-[#2A2A32] rounded-lg bg-[#14141A] overflow-hidden">
             <Button
               type="button"
               onClick={() => setShowAdAngle((v) => !v)}
@@ -916,10 +916,10 @@ export default function NewProductPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* 1. Basic Information */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Package className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Basic Information</h2>
           </div>
           <div className="space-y-4">
             <div>
@@ -1008,10 +1008,10 @@ export default function NewProductPage() {
         </div>
 
         {/* 2. Product Images */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-2">
             <ImageIcon className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Product Images</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Images</h2>
           </div>
           <p className="text-sm text-gray-500 mb-4">Max 10MB per image. First/main image is the display image.</p>
           <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
@@ -1047,7 +1047,7 @@ export default function NewProductPage() {
                 ))}
               </div>
               <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Image Alt Texts (SEO)</h3>
+                <h3 className="text-sm font-semibold text-[#F5F3F0] mb-3">Image Alt Texts (SEO)</h3>
                 <div className="space-y-3">
                   {formData.images.map((image, index) => (
                     <div key={image.id} className="flex gap-3">
@@ -1068,12 +1068,12 @@ export default function NewProductPage() {
         </div>
 
         {/* 3. Variants */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <Tag className="w-5 h-5 text-admin-primary mr-2" />
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Product Variants</h2>
+                <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Variants</h2>
                 <p className="text-sm text-gray-500">Size, color, price, stock per variant</p>
               </div>
             </div>
@@ -1092,9 +1092,9 @@ export default function NewProductPage() {
 
           <div className="space-y-4">
             {formData.variants.map((variant, index) => (
-              <div key={variant.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div key={variant.id} className="border border-[#2A2A32] rounded-lg p-4 bg-[#14141A]">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900">Variant #{index + 1}</h3>
+                  <h3 className="text-sm font-semibold text-[#F5F3F0]">Variant #{index + 1}</h3>
                   {formData.variants.length > 1 && (
                     <Button type="button" aria-label={`Remove variant ${index + 1}`} onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 className="w-4 h-4" />
@@ -1128,10 +1128,10 @@ export default function NewProductPage() {
         </div>
 
         {/* 4. Specifications */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Product Specifications</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Product Specifications</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1213,10 +1213,10 @@ export default function NewProductPage() {
         </div>
 
         {/* ── PLACE 3: 5. SEO Settings — updated UI ─────────────────────────── */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Search className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">SEO Settings</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">SEO Settings</h2>
           </div>
           <div className="space-y-4">
 
@@ -1428,10 +1428,10 @@ export default function NewProductPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Sparkles className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Semantic SEO & Structured Content</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Semantic SEO & Structured Content</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1584,10 +1584,10 @@ export default function NewProductPage() {
         />
 
         {/* 6. Shipping */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <TruckIcon className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Shipping & Delivery</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Shipping & Delivery</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1704,10 +1704,10 @@ export default function NewProductPage() {
         </div>
 
         {/* 7. Discount */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Percent className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Discount & Offers</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Discount & Offers</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1750,10 +1750,10 @@ export default function NewProductPage() {
         </div>
 
         {/* 8. Stock */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <AlertCircle className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Stock Management</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Stock Management</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1772,10 +1772,10 @@ export default function NewProductPage() {
         </div>
 
         {/* 9. Additional Options */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#1E1E24] rounded-lg border border-[#2A2A32] p-6 shadow-sm">
           <div className="flex items-center mb-4">
             <Settings className="w-5 h-5 text-admin-primary mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Additional Options</h2>
+            <h2 className="text-lg font-semibold text-[#F5F3F0]">Additional Options</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1803,9 +1803,9 @@ export default function NewProductPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-6 shadow-sm sticky bottom-0">
+        <div className="flex items-center justify-between bg-[#1E1E24]/95 backdrop-blur rounded-lg border border-[#2A2A32] p-6 shadow-2xl sticky bottom-0 z-10">
           <Link href="/admin/products"
-            className="inline-flex items-center px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+            className="inline-flex items-center px-6 py-3 border border-[#2A2A32] rounded-lg text-[#9A9691] hover:text-[#F5F3F0] hover:bg-[#26262E] font-medium transition-colors">
             <X className="w-5 h-5 mr-2" /> Cancel
           </Link>
           <Button type="submit" disabled={isSubmitting}

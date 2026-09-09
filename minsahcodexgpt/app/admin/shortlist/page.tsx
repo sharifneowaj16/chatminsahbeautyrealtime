@@ -20,12 +20,12 @@ function ShortlistContent() {
   }, [filters, fetchOrders]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#F5F3F0]">
               📋 Purchase Shortlist
             </h1>
             <Button
@@ -72,7 +72,7 @@ function ShortlistContent() {
       <SearchFilterBar />
 
       {/* Main Content */}
-      <div className="p-4 sm:p-6 pb-20">
+      <div className="space-y-6 pb-20">
         {isLoading && !orders.length ? (
           <LoadingState label="Loading shortlist data…" description="Please wait while we fetch your orders" />
         ) : orders.length === 0 ? (
@@ -88,10 +88,10 @@ function ShortlistContent() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-lg font-bold text-[#F5F3F0]">
                     ⏳ Pending Orders
                   </h2>
-                  <span className="ml-auto px-2.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
+                  <span className="ml-auto px-2.5 py-0.5 bg-amber-950/70 text-amber-400 border border-amber-800/40 rounded-full text-sm font-semibold">
                     {orders.filter((o) => !o.isCompleted).length}
                   </span>
                 </div>
@@ -110,10 +110,10 @@ function ShortlistContent() {
               <div>
                 <div className="flex items-center gap-2 mb-3 mt-8">
                   <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-lg font-bold text-[#F5F3F0]">
                     ✅ Completed Orders
                   </h2>
-                  <span className="ml-auto px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                  <span className="ml-auto px-2.5 py-0.5 bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 rounded-full text-sm font-semibold">
                     {orders.filter((o) => o.isCompleted).length}
                   </span>
                 </div>
