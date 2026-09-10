@@ -221,8 +221,8 @@ export default function TopCustomersPage() {
     const badges = {
       diamond: { color: 'bg-cyan-100 text-cyan-800', icon: 'D' },
       platinum: { color: 'bg-admin-panel text-white', icon: 'P' },
-      gold: { color: 'bg-yellow-100 text-yellow-800', icon: 'G' },
-      silver: { color: 'bg-gray-100 text-gray-800', icon: 'S' },
+      gold: { color: 'bg-amber-500/10 text-amber-300', icon: 'G' },
+      silver: { color: 'bg-[#10121b] text-[#f7f8f8]', icon: 'S' },
       bronze: { color: 'bg-orange-100 text-orange-800', icon: 'B' },
     };
     return badges[tier as keyof typeof badges] || badges.bronze;
@@ -242,11 +242,11 @@ export default function TopCustomersPage() {
           <p className="text-sm text-[#8A8F98] mt-1">Identify and reward your most valuable customers</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          <Button className="inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg">
+          <Button className="inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg">
             <Gift className="w-5 h-5 mr-2" />
             Award Yearly Gifts
           </Button>
-          <Button className="inline-flex items-center px-4 py-2 border border-white/[0.08] bg-[#151516] text-[#8A8F98] hover:text-[#F7F8F8] rounded-lg hover:bg-[#1C1D1F]">
+          <Button className="inline-flex items-center px-4 py-2 border border-[#232636] bg-[#161824] text-[#8A8F98] hover:text-[#F7F8F8] rounded-lg hover:bg-[#1b1e2c]">
             <Download className="w-5 h-5 mr-2" />
             Export
           </Button>
@@ -255,7 +255,7 @@ export default function TopCustomersPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Top Customers</p>
@@ -266,7 +266,7 @@ export default function TopCustomersPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Revenue</p>
@@ -279,7 +279,7 @@ export default function TopCustomersPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Avg Customer Value</p>
@@ -292,7 +292,7 @@ export default function TopCustomersPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Gift Eligible</p>
@@ -305,12 +305,12 @@ export default function TopCustomersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#151516] rounded-lg border border-white/[0.08] p-4">
+      <div className="bg-[#161824] rounded-lg border border-[#232636] p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Select
             value={filterDivision}
             onChange={(e) => setFilterDivision(e.target.value)}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-admin-primary"
+            className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-admin-primary"
           >
             <option value="all">All Divisions</option>
             {getAllDivisions().map(div => (
@@ -321,7 +321,7 @@ export default function TopCustomersPage() {
           <Select
             value={filterTier}
             onChange={(e) => setFilterTier(e.target.value)}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-admin-primary"
+            className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-admin-primary"
           >
             <option value="all">All Tiers</option>
             <option value="diamond">Diamond</option>
@@ -334,7 +334,7 @@ export default function TopCustomersPage() {
           <Select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-admin-primary"
+            className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-admin-primary"
           >
             <option value="2024">2024 Gifts</option>
             <option value="2023">2023 Gifts</option>
@@ -344,10 +344,10 @@ export default function TopCustomersPage() {
       </div>
 
       {/* Top Customers Table */}
-      <div className="bg-[#151516] rounded-lg border border-white/[0.08] overflow-hidden">
+      <div className="bg-[#161824] rounded-lg border border-[#232636] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#08090A] border-b border-white/[0.08]">
+            <thead className="bg-[#10121b] border-b border-[#232636]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Rank
@@ -375,11 +375,11 @@ export default function TopCustomersPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#232636]">
               {filteredCustomers.map((customer, index) => {
                 const tierBadge = getTierBadge(customer.tier);
                 return (
-                  <tr key={customer.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                  <tr key={customer.id} className="hover:bg-[#1b1e2c]/70 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {index < 3 ? (
@@ -421,7 +421,7 @@ export default function TopCustomersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <ShoppingCart className="w-4 h-4 text-gray-400 mr-1" />
+                        <ShoppingCart className="w-4 h-4 text-[#62666d] mr-1" />
                         <span className="text-sm text-[#F7F8F8]">{customer.totalOrders}</span>
                       </div>
                       <p className="text-xs text-[#8A8F98]">{customer.loyaltyPoints} pts</p>
@@ -448,7 +448,7 @@ export default function TopCustomersPage() {
                           </span>
                         )
                       ) : (
-                        <span className="text-xs text-gray-400">Not eligible</span>
+                        <span className="text-xs text-[#62666d]">Not eligible</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -464,7 +464,7 @@ export default function TopCustomersPage() {
                             <Gift className="w-5 h-5" />
                           </Button>
                         )}
-                        <Button className="text-blue-600 hover:text-blue-900">
+                        <Button className="text-[#5e6ad2] hover:text-blue-900">
                           <Send className="w-5 h-5" />
                         </Button>
                       </div>
@@ -479,7 +479,7 @@ export default function TopCustomersPage() {
 
       {filteredCustomers.length === 0 && (
         <div className="text-center py-12">
-          <Crown className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <Crown className="w-16 h-16 text-[#d0d6e0] mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No customers found</h3>
           <p className="text-[#8A8F98]">Try adjusting your filters</p>
         </div>

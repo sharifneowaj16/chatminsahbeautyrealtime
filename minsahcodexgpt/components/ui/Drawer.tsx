@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -8,6 +9,7 @@ import { joinClassNames } from '@/components/ui/Field';
 
 export type DrawerSide = 'left' | 'right' | 'bottom';
 export type DrawerSize = 'sm' | 'md' | 'lg' | 'full';
+export type DrawerVariant = 'default' | 'admin';
 
 type DrawerAccessibleName =
   | { title: ReactNode; ariaLabel?: never }
@@ -21,11 +23,13 @@ export type DrawerProps = DrawerAccessibleName & {
   footer?: ReactNode;
   side?: DrawerSide;
   size?: DrawerSize;
+  variant?: DrawerVariant;
   dismissible?: boolean;
   showCloseButton?: boolean;
   showHandle?: boolean;
   closeLabel?: string;
   className?: string;
+  backdropClassName?: string;
   panelClassName?: string;
   headerClassName?: string;
   bodyClassName?: string;
@@ -67,16 +71,20 @@ export function Drawer({
   footer,
   side = 'right',
   size = 'md',
+  variant,
   dismissible = true,
   showCloseButton = true,
   showHandle = true,
   closeLabel = 'Close drawer',
   className,
+  backdropClassName,
   panelClassName,
   headerClassName,
   bodyClassName,
   footerClassName,
 }: DrawerProps) {
+  const pathname = usePathname();
+  const isAdmin = variant === 'admin' || (variant !== 'default' && Boolean(pathname?.startsWith('/admin')));
   const hasHeader = Boolean(title || description || (dismissible && showCloseButton));
 
   return (
@@ -86,40 +94,61 @@ export function Drawer({
       dismissible={dismissible}
       ariaLabel={ariaLabel}
       className={className}
+      backdropClassName={joinClassNames(
+        isAdmin && 'bg-black/75 backdrop-blur-[3px]',
+        backdropClassName,
+      )}
       viewportClassName="overflow-hidden"
       containerClassName={getContainerClassName(side)}
       panelClassName={joinClassNames(
-        'flex flex-col overflow-hidden border-minsah-border-subtle bg-minsah-surface-elevated text-minsah-text-primary shadow-[var(--shadow-elevated)] duration-[250ms]',
-        side === 'left' && 'border-r',
-        side === 'right' && 'border-l',
-        side === 'bottom' && 'border-t',
+        isAdmin
+          ? 'flex flex-col overflow-hidden border-[#232636] bg-[#090a0f] text-[#f7f8f8] shadow-[0_24px_64px_rgba(0,0,0,0.75)] duration-[250ms]'
+          : 'flex flex-col overflow-hidden border-minsah-border-subtle bg-minsah-surface-elevated text-minsah-text-primary shadow-[var(--shadow-elevated)] duration-[250ms]',
+        side === 'left' && (isAdmin ? 'border-r border-[#232636]' : 'border-r'),
+        side === 'right' && (isAdmin ? 'border-l border-[#232636]' : 'border-l'),
+        side === 'bottom' && (isAdmin ? 'border-t border-[#232636]' : 'border-t'),
         getPanelClassName(side, size),
         panelClassName,
       )}
     >
       {side === 'bottom' && showHandle ? (
         <div className="shrink-0 pt-3" aria-hidden="true">
-          <span className="mx-auto block h-1.5 w-12 rounded-full bg-minsah-border-default" />
+          <span
+            className={joinClassNames(
+              'mx-auto block h-1.5 w-12 rounded-full',
+              isAdmin ? 'bg-[#232636]' : 'bg-minsah-border-default',
+            )}
+          />
         </div>
       ) : null}
 
       {hasHeader ? (
         <header
           className={joinClassNames(
-            'flex shrink-0 items-start gap-4 border-b border-minsah-border-subtle px-5 py-4 sm:px-6',
+            isAdmin
+              ? 'flex shrink-0 items-start gap-4 border-b border-[#232636] px-5 py-4 sm:px-6 bg-[#090a0f]'
+              : 'flex shrink-0 items-start gap-4 border-b border-minsah-border-subtle px-5 py-4 sm:px-6',
             headerClassName,
           )}
         >
           <div className="min-w-0 flex-1">
             {title ? (
-              <DialogTitle className="text-lg font-black leading-7 text-minsah-text-primary">
+              <DialogTitle
+                className={
+                  isAdmin
+                    ? 'text-base font-semibold leading-6 text-[#f7f8f8] tracking-tight'
+                    : 'text-lg font-black leading-7 text-minsah-text-primary'
+                }
+              >
                 {title}
               </DialogTitle>
             ) : null}
             {description ? (
               <DialogDescription
                 className={joinClassNames(
-                  'text-sm leading-6 text-minsah-text-muted',
+                  isAdmin
+                    ? 'text-xs text-[#8a8f98]'
+                    : 'text-sm leading-6 text-minsah-text-muted',
                   Boolean(title) && 'mt-1',
                 )}
               >
@@ -135,7 +164,10 @@ export function Drawer({
               size="icon"
               onClick={onClose}
               aria-label={closeLabel}
-              className="-m-2 shrink-0"
+              className={joinClassNames(
+                '-m-2 shrink-0',
+                isAdmin && 'text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.06] rounded-md transition-colors',
+              )}
             >
               <X className="h-5 w-5" aria-hidden="true" />
             </Button>
@@ -144,7 +176,13 @@ export function Drawer({
       ) : null}
 
       {children ? (
-        <div className={joinClassNames('min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6', bodyClassName)}>
+        <div
+          className={joinClassNames(
+            'flex-1 overflow-y-auto px-5 py-5 sm:px-6',
+            isAdmin && 'text-[#f7f8f8]',
+            bodyClassName,
+          )}
+        >
           {children}
         </div>
       ) : null}
@@ -152,7 +190,9 @@ export function Drawer({
       {footer ? (
         <footer
           className={joinClassNames(
-            'minsah-sticky-action-safe flex shrink-0 flex-col-reverse gap-3 border-t border-minsah-border-subtle bg-minsah-surface-subtle px-5 pt-4 sm:flex-row sm:justify-end sm:px-6',
+            isAdmin
+              ? 'flex shrink-0 flex-col-reverse gap-2.5 border-t border-[#232636] bg-[#12131b]/60 px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6'
+              : 'flex shrink-0 flex-col-reverse gap-3 border-t border-minsah-border-subtle bg-minsah-surface-subtle px-5 py-4 sm:flex-row sm:justify-end sm:px-6',
             footerClassName,
           )}
         >

@@ -10,7 +10,7 @@ export default function BannersPage() {
   const { hasPermission } = useAdminAuth();
 
   if (!hasPermission(PERMISSIONS.CONTENT_MANAGE)) {
-    return <div className="flex items-center justify-center h-64"><p className="text-gray-500">No permission</p></div>;
+    return <div className="flex items-center justify-center h-64"><p className="text-[#8a8f98]">No permission</p></div>;
   }
 
   return (
@@ -20,17 +20,17 @@ export default function BannersPage() {
           <h1 className="text-2xl font-bold text-[#F7F8F8]">Banners & Sliders</h1>
           <p className="text-[#8A8F98]">Manage homepage banners and promotional sliders</p>
         </div>
-        <Button className="inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg">
+        <Button className="inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg">
           <Plus className="w-5 h-5 mr-2" />
           Add Banner
         </Button>
       </div>
 
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-12 text-center">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-12 text-center">
         <ImageIcon className="w-16 h-16 text-[#62666D] mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No Banners Yet</h3>
-        <p className="text-gray-600 mb-6">Create your first homepage banner</p>
-        <Button className="px-6 py-3 bg-white text-black hover:bg-white/90 rounded-lg">
+        <p className="text-[#8a8f98] mb-6">Create your first homepage banner</p>
+        <Button className="px-6 py-3 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg">
           Add Banner
         </Button>
       </div>

@@ -10,7 +10,7 @@ export default function ContactSubmissionsPage() {
   const { hasPermission } = useAdminAuth();
 
   if (!hasPermission(PERMISSIONS.CONTENT_MANAGE)) {
-    return <div className="flex items-center justify-center h-64"><p className="text-gray-500">No permission</p></div>;
+    return <div className="flex items-center justify-center h-64"><p className="text-[#8a8f98]">No permission</p></div>;
   }
 
   const submissions = [
@@ -22,47 +22,47 @@ export default function ContactSubmissionsPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Contact Submissions</h1>
-        <p className="text-gray-600">View and respond to customer inquiries</p>
+        <p className="text-[#8a8f98]">View and respond to customer inquiries</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-lg border p-4">
-          <p className="text-sm text-gray-600">Total Submissions</p>
+        <div className="bg-[#161824] rounded-lg border p-4">
+          <p className="text-sm text-[#8a8f98]">Total Submissions</p>
           <p className="text-2xl font-bold">{submissions.length}</p>
         </div>
-        <div className="bg-white rounded-lg border p-4">
-          <p className="text-sm text-gray-600">New Messages</p>
-          <p className="text-2xl font-bold text-blue-600">{submissions.filter(s => s.status === 'new').length}</p>
+        <div className="bg-[#161824] rounded-lg border p-4">
+          <p className="text-sm text-[#8a8f98]">New Messages</p>
+          <p className="text-2xl font-bold text-[#5e6ad2]">{submissions.filter(s => s.status === 'new').length}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-[#161824] rounded-lg border overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-[#10121b]">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Subject</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {submissions.map((sub) => (
-              <tr key={sub.id} className="hover:bg-gray-50">
+              <tr key={sub.id} className="hover:bg-[#10121b]">
                 <td className="px-6 py-4 text-sm">{sub.name}</td>
                 <td className="px-6 py-4 text-sm">{sub.email}</td>
                 <td className="px-6 py-4 text-sm">{sub.subject}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{sub.date}</td>
+                <td className="px-6 py-4 text-sm text-[#8a8f98]">{sub.date}</td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs ${sub.status === 'new' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs ${sub.status === 'new' ? 'bg-[#5e6ad2]/20 text-[#f7f8f8]' : 'bg-emerald-500/10 text-emerald-300'}`}>
                     {sub.status}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
-                    <Button className="text-blue-600"><Eye className="w-4 h-4" /></Button>
+                    <Button className="text-[#5e6ad2]"><Eye className="w-4 h-4" /></Button>
                     <Button className="text-white"><Mail className="w-4 h-4" /></Button>
                     <Button className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
                   </div>

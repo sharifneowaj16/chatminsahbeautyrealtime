@@ -95,7 +95,7 @@ export default function MetaBusinessPage() {
         </Button>
       </div>
 
-      {message && <div className="rounded-xl border border-white/[0.08] bg-[#151516] px-4 py-3 text-sm text-[#F7F8F8]">{message}</div>}
+      {message && <div className="rounded-xl border border-[#232636] bg-[#161824] px-4 py-3 text-sm text-[#F7F8F8]">{message}</div>}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Summary icon={ShieldCheck} label="Connection status" value={text(connection?.status ?? 'UNVERIFIED')} />
@@ -104,7 +104,7 @@ export default function MetaBusinessPage() {
         <Summary icon={BarChart3} label="Stored leads" value={`${leads.length}`} />
       </div>
 
-      <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5">
+      <section className="rounded-2xl border border-[#232636] bg-[#161824] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-semibold text-[#F7F8F8]">Connection, token & API version health</h2>
@@ -125,7 +125,7 @@ export default function MetaBusinessPage() {
             ['tokenRef', connection?.tokenRef],
             ['warningCount', Array.isArray(connection?.warnings) ? connection?.warnings.length : 0],
           ].map(([key, value]) => (
-            <div key={String(key)} className="rounded-xl bg-[#08090A] border border-white/[0.08] p-3">
+            <div key={String(key)} className="rounded-xl bg-[#10121b] border border-[#232636] p-3">
               <div className="text-xs text-[#8A8F98]">{String(key)}</div>
               <div className="mt-1 break-all text-sm font-medium text-[#F7F8F8]">{text(value)}</div>
             </div>
@@ -135,7 +135,7 @@ export default function MetaBusinessPage() {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5">
+        <section className="rounded-2xl border border-[#232636] bg-[#161824] p-5">
           <h2 className="font-semibold text-[#F7F8F8]">Create Sales Campaign</h2>
           <p className="mt-1 text-sm text-[#8A8F98]">Safety default: নতুন campaign PAUSED থাকে।</p>
           <div className="mt-4 space-y-3">
@@ -145,7 +145,7 @@ export default function MetaBusinessPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5">
+        <section className="rounded-2xl border border-[#232636] bg-[#161824] p-5">
           <h2 className="font-semibold text-[#F7F8F8]">Audience & retargeting</h2>
           <div className="mt-4 space-y-3">
             <Input label="Custom audience name" value={audienceName} onChange={(event) => setAudienceName(event.target.value)} />
@@ -157,13 +157,13 @@ export default function MetaBusinessPage() {
         </section>
       </div>
 
-      <section className="rounded-2xl border border-white/[0.08] bg-[#151516] p-5">
+      <section className="rounded-2xl border border-[#232636] bg-[#161824] p-5">
         <h2 className="font-semibold text-[#F7F8F8]">Catalog, inventory, Lead Ads</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button onClick={() => runAction('catalog', () => adminFetchJson('/api/admin/meta/catalogs/sync', { method: 'POST', json: { inventoryOnly: false } }), 'Full product catalog sync submitted.')} disabled={busy === 'catalog'}><Database className="h-4 w-4" /> Full Catalog Sync</Button>
           <Button variant="secondary" onClick={() => runAction('inventory', () => adminFetchJson('/api/admin/meta/catalogs/sync', { method: 'POST', json: { inventoryOnly: true } }), 'Commerce inventory sync submitted.')} disabled={busy === 'inventory'}>Inventory Only Sync</Button>
           <Button variant="secondary" onClick={() => runAction('subscribe', () => adminFetchJson('/api/admin/meta/leads/subscribe', { method: 'POST', json: {} }), 'Page leadgen webhook subscription updated.')} disabled={busy === 'subscribe'}>Subscribe Lead Webhook</Button>
-          <a href="/admin/meta-business/leads" className="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-[#F7F8F8] hover:bg-gray-50">Open Lead CRM</a>
+          <a href="/admin/meta-business/leads" className="inline-flex items-center rounded-lg border border-[#232636] px-4 py-2 text-sm font-medium text-[#F7F8F8] hover:bg-[#10121b]">Open Lead CRM</a>
         </div>
       </section>
 
@@ -176,17 +176,17 @@ export default function MetaBusinessPage() {
 }
 
 function Summary({ icon: Icon, label, value }: { icon: typeof ShieldCheck; label: string; value: string }) {
-  return <div className="rounded-2xl border border-white/[0.08] bg-[#151516] p-4"><Icon className="h-5 w-5 text-[#8A8F98]" /><div className="mt-3 text-2xl font-bold text-[#F7F8F8]">{value}</div><div className="text-sm text-[#8A8F98]">{label}</div></div>;
+  return <div className="rounded-2xl border border-[#232636] bg-[#161824] p-4"><Icon className="h-5 w-5 text-[#8A8F98]" /><div className="mt-3 text-2xl font-bold text-[#F7F8F8]">{value}</div><div className="text-sm text-[#8A8F98]">{label}</div></div>;
 }
 
 function DataTable({ title, rows, columns, moneyColumns = [] }: { title: string; rows: RecordData[]; columns: string[]; moneyColumns?: string[] }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#151516]">
-      <div className="border-b border-white/[0.08] px-5 py-4"><h2 className="font-semibold text-[#F7F8F8]">{title}</h2></div>
+    <section className="overflow-hidden rounded-xl border border-[#232636] bg-[#161824]">
+      <div className="border-b border-[#232636] px-5 py-4"><h2 className="font-semibold text-[#F7F8F8]">{title}</h2></div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-[#08090A] border-b border-white/[0.08] text-[#8A8F98]"><tr>{columns.map((column) => <th key={column} className="px-4 py-3 text-left font-medium text-[#8A8F98]">{column}</th>)}</tr></thead>
-          <tbody className="divide-y divide-white/[0.08] text-[#F7F8F8]">
+          <thead className="bg-[#10121b] border-b border-[#232636] text-[#8A8F98]"><tr>{columns.map((column) => <th key={column} className="px-4 py-3 text-left font-medium text-[#8A8F98]">{column}</th>)}</tr></thead>
+          <tbody className="divide-y divide-[#232636] text-[#F7F8F8]">
             {rows.slice(0, 50).map((row, index) => <tr key={String(row.id ?? index)}>{columns.map((column) => <td key={column} className="whitespace-nowrap px-4 py-3 text-[#F7F8F8]">{moneyColumns.includes(column) ? moneyMinor(row[column]) : text(row[column])}</td>)}</tr>)}
             {!rows.length && <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-[#8A8F98]">No data</td></tr>}
           </tbody>

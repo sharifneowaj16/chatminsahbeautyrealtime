@@ -109,7 +109,7 @@ export default function FAQManagementPage() {
           <h1 className="text-2xl font-bold text-[#F7F8F8]">FAQ Management</h1>
           <p className="text-[#8A8F98]">Manage frequently asked questions</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           Add FAQ
         </Button>
@@ -117,7 +117,7 @@ export default function FAQManagementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total FAQs</p>
@@ -127,7 +127,7 @@ export default function FAQManagementPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Published</p>
@@ -139,7 +139,7 @@ export default function FAQManagementPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Categories</p>
@@ -149,7 +149,7 @@ export default function FAQManagementPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Views</p>
@@ -163,23 +163,23 @@ export default function FAQManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 mb-6">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#62666d]" />
             <Input
               type="text"
               placeholder="Search FAQs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
             />
           </div>
 
           <Select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+            className="px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
           >
             <option value="all">All Categories</option>
             {categories.map(category => (
@@ -190,8 +190,8 @@ export default function FAQManagementPage() {
       </div>
 
       {/* FAQs List */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08]">
-        <div className="divide-y divide-gray-200">
+      <div className="bg-[#161824] rounded-xl border border-[#232636]">
+        <div className="divide-y divide-[#232636]">
           {filteredFaqs.map((faq) => (
             <div key={faq.id} className="p-6">
               <div className="flex items-start justify-between">
@@ -218,7 +218,7 @@ export default function FAQManagementPage() {
                           <span>{faq.views} views</span>
                           <span className={clsx(
                             'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                            faq.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            faq.status === 'published' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-[#10121b] text-[#f7f8f8]'
                           )}>
                             {faq.status}
                           </span>
@@ -228,19 +228,19 @@ export default function FAQManagementPage() {
                   </Button>
 
                   {expandedFaq === faq.id && (
-                    <div className="mt-4 ml-8 text-gray-700 bg-gray-50 p-4 rounded-lg">
+                    <div className="mt-4 ml-8 text-[#d0d6e0] bg-[#10121b] p-4 rounded-lg">
                       {faq.answer}
                     </div>
                   )}
                 </div>
 
                 <div className="flex items-center space-x-2 ml-4">
-                  <Button className="text-blue-600 hover:text-blue-800" title="Edit">
+                  <Button className="text-[#5e6ad2] hover:text-[#f7f8f8]" title="Edit">
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button
                     onClick={() => handleDeleteFaq(faq.id)}
-                    className="text-red-600 hover:text-red-800"
+                    className="text-red-600 hover:text-rose-300"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />

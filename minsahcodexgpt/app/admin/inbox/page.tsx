@@ -24,8 +24,8 @@ export default function InboxPage() {
 function InboxSkeleton() {
   return (
     <div className="flex h-full w-full animate-pulse">
-      <div className="w-80 shrink-0 border-r border-minsah-accent bg-white" />
-      <div className="flex-1 bg-minsah-light" />
+      <div className="w-80 shrink-0 border-r border-[#232636] bg-[#161824]" />
+      <div className="flex-1 bg-[#0b0c10]" />
     </div>
   );
 }

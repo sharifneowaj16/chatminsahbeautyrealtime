@@ -218,7 +218,7 @@ export default function ProductHeroVisualController({
   };
 
   return (
-    <div className={`rounded-2xl border border-emerald-500/30 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden ${className}`}>
+    <div className={`rounded-2xl border border-emerald-500/30 bg-[#161824] dark:bg-zinc-900 shadow-sm overflow-hidden ${className}`}>
       
       {/* Visual Controller Header */}
       <div className="bg-[#163020] text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
@@ -284,13 +284,13 @@ export default function ProductHeroVisualController({
           <div className="space-y-4 animate-in fade-in-0 duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <h4 className="text-sm font-bold text-[#f7f8f8] dark:text-white flex items-center gap-2">
                   <span>"SEE IT IN ACTION" 9:15 Portrait Video Reels</span>
-                  <span className="text-xs font-normal text-gray-500">
+                  <span className="text-xs font-normal text-[#8a8f98]">
                     (Shows under Accordions with Instagram Story Modal)
                   </span>
                 </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-xs text-[#8a8f98] dark:text-[#62666d] mt-0.5">
                   Add video clips or image posters with creator handles. If left empty, section automatically hides.
                 </p>
               </div>
@@ -306,12 +306,12 @@ export default function ProductHeroVisualController({
             </div>
 
             {reels.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-300 dark:border-zinc-700 p-8 text-center space-y-2">
-                <Video size={28} className="mx-auto text-gray-400" />
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+              <div className="rounded-xl border border-dashed border-[#232636] dark:border-zinc-700 p-8 text-center space-y-2">
+                <Video size={28} className="mx-auto text-[#62666d]" />
+                <p className="text-xs font-semibold text-[#8a8f98] dark:text-[#d0d6e0]">
                   No video clips added yet for this product.
                 </p>
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[11px] text-[#62666d]">
                   Click "Add Video Reel" to display 9:16 portrait video cards with story player.
                 </p>
                 <button
@@ -327,7 +327,7 @@ export default function ProductHeroVisualController({
                 {reels.map((reel, idx) => (
                   <div
                     key={reel.id}
-                    className="p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50/70 dark:bg-zinc-800/60 space-y-3 relative group"
+                    className="p-3.5 rounded-xl border border-[#232636] dark:border-zinc-700 bg-[#10121b]/70 dark:bg-zinc-800/60 space-y-3 relative group"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md">
@@ -336,7 +336,7 @@ export default function ProductHeroVisualController({
                       <button
                         type="button"
                         onClick={() => removeReel(reel.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        className="text-[#62666d] hover:text-red-500 transition-colors p-1"
                         aria-label="Remove Reel"
                       >
                         <Trash2 size={14} />
@@ -345,7 +345,7 @@ export default function ProductHeroVisualController({
 
                     <div className="grid grid-cols-1 gap-2.5 text-xs">
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-[11px] font-semibold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                           Reel Title / Caption
                         </label>
                         <input
@@ -353,13 +353,13 @@ export default function ProductHeroVisualController({
                           value={reel.title}
                           onChange={(e) => updateReelField(reel.id, 'title', e.target.value)}
                           placeholder="e.g. Texture & Glass-Glow"
-                          className="w-full h-8 px-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs"
+                          className="w-full h-8 px-2.5 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          <label className="block text-[11px] font-semibold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                             Creator Handle
                           </label>
                           <input
@@ -367,11 +367,11 @@ export default function ProductHeroVisualController({
                             value={reel.creator || ''}
                             onChange={(e) => updateReelField(reel.id, 'creator', e.target.value)}
                             placeholder="@minsahbeauty"
-                            className="w-full h-8 px-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs"
+                            className="w-full h-8 px-2.5 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs"
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          <label className="block text-[11px] font-semibold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                             Avatar Initial
                           </label>
                           <input
@@ -380,13 +380,13 @@ export default function ProductHeroVisualController({
                             value={reel.avatarText || ''}
                             onChange={(e) => updateReelField(reel.id, 'avatarText', e.target.value.toUpperCase())}
                             placeholder="M"
-                            className="w-full h-8 px-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs text-center font-bold font-mono"
+                            className="w-full h-8 px-2.5 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs text-center font-bold font-mono"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-[11px] font-semibold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                           Poster Image URL (9:16 Portrait)
                         </label>
                         <input
@@ -394,12 +394,12 @@ export default function ProductHeroVisualController({
                           value={reel.posterUrl}
                           onChange={(e) => updateReelField(reel.id, 'posterUrl', e.target.value)}
                           placeholder="https://..."
-                          className="w-full h-8 px-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs"
+                          className="w-full h-8 px-2.5 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-[11px] font-semibold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                           Video URL (Optional MP4 / Stream)
                         </label>
                         <input
@@ -407,7 +407,7 @@ export default function ProductHeroVisualController({
                           value={reel.videoUrl || ''}
                           onChange={(e) => updateReelField(reel.id, 'videoUrl', e.target.value)}
                           placeholder="https://...mp4 (Optional)"
-                          className="w-full h-8 px-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs"
+                          className="w-full h-8 px-2.5 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs"
                         />
                       </div>
                     </div>
@@ -424,10 +424,10 @@ export default function ProductHeroVisualController({
         {activeTab === 'bundle' && (
           <div className="space-y-4 animate-in fade-in-0 duration-200">
             <div>
-              <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <h4 className="text-sm font-bold text-[#f7f8f8] dark:text-white flex items-center gap-2">
                 <span>"Frequently Paired With" & Custom Combo Configuration</span>
               </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="text-xs text-[#8a8f98] dark:text-[#62666d] mt-0.5">
                 Set paired product IDs for 1-click routine combos. System automatically applies the 15%/25%/30% Real Profit discount rule!
               </p>
             </div>
@@ -435,8 +435,8 @@ export default function ProductHeroVisualController({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               {/* Paired Product IDs */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50/70 dark:bg-zinc-800/60 space-y-3">
-                <label className="block text-xs font-bold text-gray-800 dark:text-gray-200">
+              <div className="p-4 rounded-xl border border-[#232636] dark:border-zinc-700 bg-[#10121b]/70 dark:bg-zinc-800/60 space-y-3">
+                <label className="block text-xs font-bold text-[#f7f8f8] dark:text-gray-200">
                   Paired Product IDs (Comma Separated)
                 </label>
                 <input
@@ -444,21 +444,21 @@ export default function ProductHeroVisualController({
                   value={relatedProducts || ''}
                   onChange={(e) => onRelatedProductsChange(e.target.value)}
                   placeholder="e.g. prod_cm21, prod_cm84"
-                  className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs font-mono"
+                  className="w-full h-10 px-3 rounded-lg border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs font-mono"
                 />
-                <p className="text-[11px] text-gray-500">
+                <p className="text-[11px] text-[#8a8f98]">
                   Tip: If left blank, the system uses Smart Routine pairing (Cleanser ➔ Toner ➔ Serum ➔ Cream ➔ SPF).
                 </p>
               </div>
 
               {/* Free Delivery Perk Toggle */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50/70 dark:bg-zinc-800/60 space-y-3">
+              <div className="p-4 rounded-xl border border-[#232636] dark:border-zinc-700 bg-[#10121b]/70 dark:bg-zinc-800/60 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-xs font-bold text-gray-800 dark:text-gray-200">
+                    <label className="block text-xs font-bold text-[#f7f8f8] dark:text-gray-200">
                       Free Delivery Campaign (Double Benefit)
                     </label>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
+                    <p className="text-[11px] text-[#8a8f98] mt-0.5">
                       If enabled, customers get 100% Free Nationwide Delivery on this item & bundles!
                     </p>
                   </div>
@@ -466,12 +466,12 @@ export default function ProductHeroVisualController({
                     type="checkbox"
                     checked={deliveryOfferEnabled}
                     onChange={(e) => onDeliveryOfferToggle(e.target.checked)}
-                    className="h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    className="h-5 w-5 rounded border-[#232636] text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                   />
                 </div>
 
                 <div className={`p-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${
-                  deliveryOfferEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200/70 text-gray-600'
+                  deliveryOfferEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-white/[0.12]/70 text-[#8a8f98]'
                 }`}>
                   <Truck size={14} />
                   <span>{deliveryOfferEnabled ? 'Free Delivery Active • Shows Green Badge on Hero' : 'Standard Courier Delivery'}</span>
@@ -488,13 +488,13 @@ export default function ProductHeroVisualController({
         {activeTab === 'ritual' && (
           <div className="space-y-4 animate-in fade-in-0 duration-200">
             <div>
-              <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <h4 className="text-sm font-bold text-[#f7f8f8] dark:text-white flex items-center gap-2">
                 <span>Multi-Dimensional Beauty Ritual Matrix</span>
-                <span className="text-xs font-normal text-gray-500">
+                <span className="text-xs font-normal text-[#8a8f98]">
                   (Powers the "How to Apply" Slide-Over Drawer)
                 </span>
               </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="text-xs text-[#8a8f98] dark:text-[#62666d] mt-0.5">
                 Select application frequency, best time of day, seasonality, dosage, and step-by-step instructions.
               </p>
             </div>
@@ -504,7 +504,7 @@ export default function ProductHeroVisualController({
               
               {/* Frequency */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-[11px] font-bold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                   1. Frequency Dropdown
                 </label>
                 <select
@@ -513,7 +513,7 @@ export default function ProductHeroVisualController({
                     setFrequency(e.target.value);
                     syncRitualToSpecs(e.target.value, timeOfDay, season, dosage, targetArea, steps);
                   }}
-                  className="w-full h-9 px-2.5 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs font-medium"
+                  className="w-full h-9 px-2.5 rounded-lg border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs font-medium"
                 >
                   <option value="Daily (Twice AM/PM)">Daily (Twice AM/PM)</option>
                   <option value="Daily (Morning / Sunrise)">Daily (Morning / Sunrise)</option>
@@ -526,7 +526,7 @@ export default function ProductHeroVisualController({
 
               {/* Time of Day */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-[11px] font-bold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                   2. Best Time of Day
                 </label>
                 <select
@@ -535,7 +535,7 @@ export default function ProductHeroVisualController({
                     setTimeOfDay(e.target.value);
                     syncRitualToSpecs(frequency, e.target.value, season, dosage, targetArea, steps);
                   }}
-                  className="w-full h-9 px-2.5 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs font-medium"
+                  className="w-full h-9 px-2.5 rounded-lg border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs font-medium"
                 >
                   <option value="Morning & Evening">Morning & Evening (AM/PM)</option>
                   <option value="Morning / Sunrise (Pre-Sun)">Morning / Sunrise (Pre-Sun)</option>
@@ -547,7 +547,7 @@ export default function ProductHeroVisualController({
 
               {/* Seasonality */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-[11px] font-bold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                   3. Season & Climate
                 </label>
                 <select
@@ -556,7 +556,7 @@ export default function ProductHeroVisualController({
                     setSeason(e.target.value);
                     syncRitualToSpecs(frequency, timeOfDay, e.target.value, dosage, targetArea, steps);
                   }}
-                  className="w-full h-9 px-2.5 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs font-medium"
+                  className="w-full h-9 px-2.5 rounded-lg border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs font-medium"
                 >
                   <option value="All Seasons">All Seasons (Year-Round)</option>
                   <option value="Winter & Dry Climate">Winter & Dry Climate (Deep Hydration)</option>
@@ -568,7 +568,7 @@ export default function ProductHeroVisualController({
 
               {/* Dosage */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-[11px] font-bold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                   4. Recommended Dosage
                 </label>
                 <input
@@ -579,13 +579,13 @@ export default function ProductHeroVisualController({
                     syncRitualToSpecs(frequency, timeOfDay, season, e.target.value, targetArea, steps);
                   }}
                   placeholder="e.g. 2–3 Drops"
-                  className="w-full h-9 px-2.5 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs"
+                  className="w-full h-9 px-2.5 rounded-lg border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs"
                 />
               </div>
 
               {/* Target Area */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-[11px] font-bold text-[#d0d6e0] dark:text-[#d0d6e0] mb-1">
                   5. Target Area
                 </label>
                 <input
@@ -596,7 +596,7 @@ export default function ProductHeroVisualController({
                     syncRitualToSpecs(frequency, timeOfDay, season, dosage, e.target.value, steps);
                   }}
                   placeholder="e.g. Full Face & Neck"
-                  className="w-full h-9 px-2.5 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs"
+                  className="w-full h-9 px-2.5 rounded-lg border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs"
                 />
               </div>
 
@@ -605,7 +605,7 @@ export default function ProductHeroVisualController({
             {/* Step-by-Step Instructions Repeater */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#d0d6e0] dark:text-[#d0d6e0]">
                   Step-by-Step Application Instructions
                 </span>
                 <button
@@ -621,17 +621,17 @@ export default function ProductHeroVisualController({
                 {steps.map((step, idx) => (
                   <div
                     key={`step-${idx}`}
-                    className="p-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50/80 dark:bg-zinc-800/80 space-y-2"
+                    className="p-3 rounded-xl border border-[#232636] dark:border-zinc-700 bg-[#10121b]/80 dark:bg-zinc-800/80 space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-800 dark:text-white">
+                      <span className="text-xs font-bold text-[#f7f8f8] dark:text-white">
                         Step {step.step}:
                       </span>
                       {steps.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeStep(idx)}
-                          className="text-gray-400 hover:text-red-500 text-xs"
+                          className="text-[#62666d] hover:text-red-500 text-xs"
                         >
                           Remove
                         </button>
@@ -644,14 +644,14 @@ export default function ProductHeroVisualController({
                         value={step.title}
                         onChange={(e) => updateStepField(idx, 'title', e.target.value)}
                         placeholder="Step Title (e.g. Cleanse & Prep)"
-                        className="w-full h-8 px-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs font-semibold"
+                        className="w-full h-8 px-2.5 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs font-semibold"
                       />
                       <input
                         type="text"
                         value={step.proTip || ''}
                         onChange={(e) => updateStepField(idx, 'proTip', e.target.value)}
                         placeholder="Pro Tip (Optional)"
-                        className="w-full h-8 px-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs italic text-emerald-800 dark:text-emerald-300"
+                        className="w-full h-8 px-2.5 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs italic text-emerald-800 dark:text-emerald-300"
                       />
                     </div>
                     <textarea
@@ -659,7 +659,7 @@ export default function ProductHeroVisualController({
                       onChange={(e) => updateStepField(idx, 'instruction', e.target.value)}
                       rows={2}
                       placeholder="Detailed application instruction..."
-                      className="w-full p-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs"
+                      className="w-full p-2 rounded-md border border-[#232636] dark:border-zinc-600 bg-[#161824] dark:bg-zinc-800 text-xs"
                     />
                   </div>
                 ))}

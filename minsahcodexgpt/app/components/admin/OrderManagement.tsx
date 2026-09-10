@@ -260,25 +260,25 @@ export default function OrderManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'processing': return 'bg-admin-panel text-admin-primary';
-      case 'shipped': return 'bg-indigo-100 text-indigo-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'refunded': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+      case 'confirmed': return 'bg-[#5e6ad2]/15 text-[#f7f8f8] border border-[#5e6ad2]/30';
+      case 'processing': return 'bg-[#5e6ad2]/25 text-[#f7f8f8] border border-[#5e6ad2]/40';
+      case 'shipped': return 'bg-sky-500/15 text-sky-300 border border-sky-500/30';
+      case 'delivered': return 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      case 'cancelled': return 'bg-rose-500/15 text-rose-300 border border-rose-500/30';
+      case 'refunded': return 'bg-orange-500/15 text-orange-300 border border-orange-500/30';
+      default: return 'bg-white/[0.05] text-[#8a8f98] border border-[#232636]';
     }
   };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'refunded': return 'bg-orange-100 text-orange-800';
-      case 'partially_refunded': return 'bg-admin-panel text-admin-primary';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+      case 'paid': return 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      case 'failed': return 'bg-rose-500/15 text-rose-300 border border-rose-500/30';
+      case 'refunded': return 'bg-orange-500/15 text-orange-300 border border-orange-500/30';
+      case 'partially_refunded': return 'bg-[#5e6ad2]/20 text-[#f7f8f8] border border-[#5e6ad2]/30';
+      default: return 'bg-white/[0.05] text-[#8a8f98] border border-[#232636]';
     }
   };
 
@@ -298,12 +298,12 @@ export default function OrderManagement() {
     ));
   };
 
-  const printInvoice = (order: AdminOrder) => {
+  const printInvoice = (_order: AdminOrder) => {
     // Simulate print functionality
     window.print();
   };
 
-  const printShippingLabel = (order: AdminOrder) => {
+  const printShippingLabel = (_order: AdminOrder) => {
     // Simulate print functionality
     window.print();
   };
@@ -321,19 +321,19 @@ export default function OrderManagement() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="p-4 sm:p-6 space-y-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-white/[0.05] rounded w-64"></div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-200 rounded"></div>
+              <div key={i} className="h-20 bg-[#161824] border border-[#232636] rounded-xl"></div>
             ))}
           </div>
-          <div className="space-y-4">
-            {[...Array(10)].map((_, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="space-y-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-[#161824] border border-[#232636] rounded-xl p-4">
+                <div className="h-4 bg-white/[0.05] rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-white/[0.03] rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -343,91 +343,91 @@ export default function OrderManagement() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-[#232636]">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
-          <p className="text-gray-600">Manage customer orders and fulfillment</p>
+          <h1 className="text-[20px] font-semibold text-[#f7f8f8] tracking-tight">Order Management</h1>
+          <p className="text-xs text-[#8a8f98] mt-0.5">Manage customer orders, shipping labels, and fulfillment</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
-            <RefreshCw className="h-4 w-4" />
-            Sync Orders
+        <div className="flex items-center gap-2">
+          <Button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] border border-[#232636] hover:bg-white/[0.08] text-[#f7f8f8] rounded-md text-[13px] font-medium transition-all">
+            <RefreshCw className="h-3.5 w-3.5 text-[#8a8f98]" />
+            <span>Sync Orders</span>
           </Button>
-          <Button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
-            <Printer className="h-4 w-4" />
-            Bulk Print
+          <Button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] border border-[#232636] hover:bg-white/[0.08] text-[#f7f8f8] rounded-md text-[13px] font-medium transition-all">
+            <Printer className="h-3.5 w-3.5 text-[#8a8f98]" />
+            <span>Bulk Print</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Total Orders</span>
-            <FileText className="h-5 w-5 text-gray-400" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div className="bg-[#161824] border border-[#232636] rounded-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_4px_rgba(0,0,0,0.2)]">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-[#8a8f98]">Total Orders</span>
+            <FileText className="h-4 w-4 text-[#8a8f98]" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+          <p className="text-2xl font-semibold text-[#f7f8f8] tracking-tight">{orders.length}</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Pending</span>
-            <Clock className="h-5 w-5 text-yellow-500" />
+        <div className="bg-[#161824] border border-[#232636] rounded-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_4px_rgba(0,0,0,0.2)]">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-[#8a8f98]">Pending</span>
+            <Clock className="h-4 w-4 text-amber-400" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-semibold text-[#f7f8f8] tracking-tight">
             {orders.filter(o => o.status === 'pending').length}
           </p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Processing</span>
-            <Filter className="h-5 w-5 text-blue-500" />
+        <div className="bg-[#161824] border border-[#232636] rounded-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_4px_rgba(0,0,0,0.2)]">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-[#8a8f98]">Processing</span>
+            <Filter className="h-4 w-4 text-[#5e6ad2]" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-semibold text-[#f7f8f8] tracking-tight">
             {orders.filter(o => o.status === 'processing').length}
           </p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Shipped</span>
-            <Truck className="h-5 w-5 text-indigo-500" />
+        <div className="bg-[#161824] border border-[#232636] rounded-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_4px_rgba(0,0,0,0.2)]">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-[#8a8f98]">Shipped</span>
+            <Truck className="h-4 w-4 text-sky-400" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-semibold text-[#f7f8f8] tracking-tight">
             {orders.filter(o => o.status === 'shipped').length}
           </p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Delivered</span>
-            <CheckCircle className="h-5 w-5 text-green-500" />
+        <div className="bg-[#161824] border border-[#232636] rounded-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_4px_rgba(0,0,0,0.2)] col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-[#8a8f98]">Delivered</span>
+            <CheckCircle className="h-4 w-4 text-emerald-400" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-semibold text-[#f7f8f8] tracking-tight">
             {orders.filter(o => o.status === 'delivered').length}
           </p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Filters Bar */}
+      <div className="bg-[#161824] border border-[#232636] rounded-xl p-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-[#8a8f98]" />
             <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search orders..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full pl-9 pr-3 py-1.5 bg-[#10121b] border border-[#232636] text-[#f7f8f8] placeholder-[#8a8f98]/50 focus:border-[#5e6ad2] rounded-md text-[13px]"
             />
           </div>
 
           <Select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-3 py-1.5 bg-[#10121b] border border-[#232636] text-[#f7f8f8] rounded-md text-[13px] focus:border-[#5e6ad2]"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -442,7 +442,7 @@ export default function OrderManagement() {
           <Select
             value={selectedPaymentStatus}
             onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-3 py-1.5 bg-[#10121b] border border-[#232636] text-[#f7f8f8] rounded-md text-[13px] focus:border-[#5e6ad2]"
           >
             <option value="all">All Payment Status</option>
             <option value="pending">Pending</option>
@@ -455,7 +455,7 @@ export default function OrderManagement() {
           <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-3 py-1.5 bg-[#10121b] border border-[#232636] text-[#f7f8f8] rounded-md text-[13px] focus:border-[#5e6ad2]"
           >
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -464,109 +464,111 @@ export default function OrderManagement() {
             <option value="90days">Last 90 Days</option>
           </Select>
 
-          <Button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+          <Button className="px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white font-medium rounded-md text-[13px] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] flex items-center justify-center transition-all">
             Apply Filters
           </Button>
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+      <div className="bg-[#161824] border border-[#232636] rounded-xl overflow-hidden shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
+        <div className="table-responsive overflow-x-auto">
+          <table className="min-w-full divide-y divide-[#1b1e2c]">
+            <thead className="bg-[#10121b]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Order
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Items
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Payment
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#1b1e2c]">
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4">
+                <tr key={order.id} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-3.5">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
-                      <p className="text-xs text-gray-500">{order.items.length} items</p>
+                      <p className="text-[13px] font-medium text-[#f7f8f8]">{order.orderNumber}</p>
+                      <p className="text-xs text-[#8a8f98]">{order.items.length} items</p>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-4 py-3.5">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{order.customer.name}</p>
-                      <p className="text-xs text-gray-500">{order.customer.email}</p>
+                      <p className="text-[13px] font-medium text-[#f7f8f8]">{order.customer.name}</p>
+                      <p className="text-xs text-[#8a8f98]">{order.customer.email}</p>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="space-y-1">
+                  <td className="px-4 py-3.5">
+                    <div className="space-y-0.5">
                       {order.items.slice(0, 2).map((item, index) => (
-                        <p key={index} className="text-xs text-gray-600 truncate">
+                        <p key={index} className="text-xs text-[#8a8f98] truncate max-w-[200px]">
                           {item.quantity}x {item.name}
                         </p>
                       ))}
                       {order.items.length > 2 && (
-                        <p className="text-xs text-gray-400">+{order.items.length - 2} more</p>
+                        <p className="text-[11px] text-[#8a8f98]/60">+{order.items.length - 2} more</p>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <p className="text-sm font-medium text-gray-900">{formatCurrency(order.pricing.total)}</p>
+                  <td className="px-4 py-3.5">
+                    <p className="text-[13px] font-medium text-[#f7f8f8]">{formatCurrency(order.pricing.total)}</p>
                   </td>
-                  <td className="px-4 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
+                  <td className="px-4 py-3.5">
+                    <span className={`px-2 py-0.5 text-[11px] rounded-[4px] font-mono ${getStatusColor(order.status)}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
+                  <td className="px-4 py-3.5">
+                    <span className={`px-2 py-0.5 text-[11px] rounded-[4px] font-mono ${getPaymentStatusColor(order.paymentStatus)}`}>
                       {order.paymentStatus}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <p className="text-sm text-gray-900">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <td className="px-4 py-3.5">
+                    <p className="text-xs text-[#8a8f98]">{new Date(order.createdAt).toLocaleDateString()}</p>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1">
                       <Button
                         onClick={() => {
                           setSelectedOrder(order);
                           setShowOrderDetails(true);
                         }}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.06] rounded transition-colors"
+                        title="View Order"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button className="p-1 text-gray-400 hover:text-gray-600">
+                      <Button className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.06] rounded transition-colors" title="Edit Order">
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         onClick={() => printInvoice(order)}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.06] rounded transition-colors"
+                        title="Print Invoice"
                       >
                         <Printer className="h-4 w-4" />
                       </Button>
                       {order.shipping.tracking && (
-                        <Button className="p-1 text-gray-400 hover:text-gray-600">
+                        <Button className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.06] rounded transition-colors" title="Track Shipping">
                           <Truck className="h-4 w-4" />
                         </Button>
                       )}
@@ -580,10 +582,10 @@ export default function OrderManagement() {
       </div>
 
       {filteredOrders.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-          <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
+        <div className="text-center py-12 bg-[#161824] border border-[#232636] rounded-xl">
+          <FileText className="h-10 w-10 text-[#8a8f98]/40 mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-[#f7f8f8] mb-1">No orders found</h3>
+          <p className="text-xs text-[#8a8f98]">Try adjusting your search query or filters</p>
         </div>
       )}
 
@@ -596,105 +598,107 @@ export default function OrderManagement() {
           description={selectedOrder.orderNumber}
           size="xl"
         >
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="p-4 sm:p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Customer Info */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Customer Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-gray-600">Name:</span> {selectedOrder.customer.name}</p>
-                    <p><span className="text-gray-600">Email:</span> {selectedOrder.customer.email}</p>
-                    <p><span className="text-gray-600">Phone:</span> {selectedOrder.customer.phone}</p>
+                <div className="bg-[#10121b] border border-[#232636] rounded-xl p-4">
+                  <h4 className="text-[13px] font-semibold text-[#f7f8f8] mb-3">Customer Information</h4>
+                  <div className="space-y-1.5 text-xs">
+                    <p><span className="text-[#8a8f98]">Name:</span> <span className="text-[#f7f8f8] font-medium">{selectedOrder.customer.name}</span></p>
+                    <p><span className="text-[#8a8f98]">Email:</span> <span className="text-[#f7f8f8] font-medium">{selectedOrder.customer.email}</span></p>
+                    <p><span className="text-[#8a8f98]">Phone:</span> <span className="text-[#f7f8f8] font-medium">{selectedOrder.customer.phone}</span></p>
                   </div>
                 </div>
 
                 {/* Shipping Info */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Shipping Address</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>{selectedOrder.shippingAddress.name}</p>
-                    <p>{selectedOrder.shippingAddress.street}</p>
-                    <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zip}</p>
-                    <p>{selectedOrder.shippingAddress.country}</p>
+                <div className="bg-[#10121b] border border-[#232636] rounded-xl p-4">
+                  <h4 className="text-[13px] font-semibold text-[#f7f8f8] mb-3">Shipping Address</h4>
+                  <div className="space-y-1 text-xs text-[#f7f8f8]">
+                    <p className="font-medium">{selectedOrder.shippingAddress.name}</p>
+                    <p className="text-[#8a8f98]">{selectedOrder.shippingAddress.street}</p>
+                    <p className="text-[#8a8f98]">{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zip}</p>
+                    <p className="text-[#8a8f98]">{selectedOrder.shippingAddress.country}</p>
                   </div>
                 </div>
               </div>
 
               {/* Order Items */}
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">Order Items</h4>
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {selectedOrder.items.map((item) => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-3">
-                            <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                            {item.variant && <p className="text-xs text-gray-500">{item.variant}</p>}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{item.sku}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(item.price)}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{item.quantity}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{formatCurrency(item.total)}</td>
+              <div>
+                <h4 className="text-[13px] font-semibold text-[#f7f8f8] mb-3">Order Items</h4>
+                <div className="border border-[#232636] rounded-xl overflow-hidden">
+                  <div className="table-responsive overflow-x-auto">
+                    <table className="min-w-full divide-y divide-[#1b1e2c]">
+                      <thead className="bg-[#10121b]">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-[#8a8f98] uppercase">Product</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-[#8a8f98] uppercase">SKU</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-[#8a8f98] uppercase">Price</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-[#8a8f98] uppercase">Qty</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-[#8a8f98] uppercase">Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-[#1b1e2c]">
+                        {selectedOrder.items.map((item) => (
+                          <tr key={item.id} className="hover:bg-white/[0.02]">
+                            <td className="px-4 py-3">
+                              <p className="text-[13px] font-medium text-[#f7f8f8]">{item.name}</p>
+                              {item.variant && <p className="text-xs text-[#8a8f98]">{item.variant}</p>}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#8a8f98] font-mono">{item.sku}</td>
+                            <td className="px-4 py-3 text-xs text-[#f7f8f8]">{formatCurrency(item.price)}</td>
+                            <td className="px-4 py-3 text-xs text-[#f7f8f8]">{item.quantity}</td>
+                            <td className="px-4 py-3 text-xs font-medium text-[#f7f8f8]">{formatCurrency(item.total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
               {/* Order Summary */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">Order Summary</h4>
-                <div className="space-y-2 text-sm">
+              <div className="bg-[#10121b] border border-[#232636] rounded-xl p-4">
+                <h4 className="text-[13px] font-semibold text-[#f7f8f8] mb-3">Order Summary</h4>
+                <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">{formatCurrency(selectedOrder.pricing.subtotal)}</span>
+                    <span className="text-[#8a8f98]">Subtotal:</span>
+                    <span className="font-medium text-[#f7f8f8]">{formatCurrency(selectedOrder.pricing.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Tax:</span>
-                    <span className="font-medium">{formatCurrency(selectedOrder.pricing.tax)}</span>
+                    <span className="text-[#8a8f98]">Tax:</span>
+                    <span className="font-medium text-[#f7f8f8]">{formatCurrency(selectedOrder.pricing.tax)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping:</span>
-                    <span className="font-medium">{formatCurrency(selectedOrder.pricing.shipping)}</span>
+                    <span className="text-[#8a8f98]">Shipping:</span>
+                    <span className="font-medium text-[#f7f8f8]">{formatCurrency(selectedOrder.pricing.shipping)}</span>
                   </div>
                   {selectedOrder.pricing.discount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Discount:</span>
-                      <span className="font-medium text-red-600">-{formatCurrency(selectedOrder.pricing.discount)}</span>
+                      <span className="text-[#8a8f98]">Discount:</span>
+                      <span className="font-medium text-rose-400">-{formatCurrency(selectedOrder.pricing.discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between pt-2 border-t border-gray-200">
-                    <span className="font-medium text-gray-900">Total:</span>
-                    <span className="font-bold text-gray-900">{formatCurrency(selectedOrder.pricing.total)}</span>
+                  <div className="flex justify-between pt-2 border-t border-[#232636]">
+                    <span className="font-medium text-[#f7f8f8]">Total:</span>
+                    <span className="font-bold text-sm text-[#f7f8f8]">{formatCurrency(selectedOrder.pricing.total)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Order Timeline */}
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">Order Timeline</h4>
+              <div>
+                <h4 className="text-[13px] font-semibold text-[#f7f8f8] mb-3">Order Timeline</h4>
                 <div className="space-y-3">
                   {selectedOrder.timeline.map((event, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                      <div className="w-2 h-2 bg-[#5e6ad2] rounded-full mt-1.5"></div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900">{event.status}</p>
-                          <p className="text-xs text-gray-500">{new Date(event.timestamp).toLocaleString()}</p>
+                          <p className="text-xs font-medium text-[#f7f8f8]">{event.status}</p>
+                          <p className="text-[11px] text-[#8a8f98]/60">{new Date(event.timestamp).toLocaleString()}</p>
                         </div>
-                        <p className="text-sm text-gray-600">{event.note}</p>
-                        <p className="text-xs text-gray-400">by {event.actor}</p>
+                        <p className="text-xs text-[#8a8f98]">{event.note}</p>
+                        <p className="text-[10px] text-[#8a8f98]/40">by {event.actor}</p>
                       </div>
                     </div>
                   ))}
@@ -702,45 +706,45 @@ export default function OrderManagement() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-[#232636]">
                 <Button
                   onClick={() => printInvoice(selectedOrder)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white rounded-md text-[13px] font-medium transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
                 >
-                  <Printer className="h-4 w-4" />
-                  Print Invoice
+                  <Printer className="h-3.5 w-3.5" />
+                  <span>Print Invoice</span>
                 </Button>
                 {selectedOrder.status === 'shipped' && (
-                  <Button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
-                    <Truck className="h-4 w-4" />
-                    Print Shipping Label
+                  <Button className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[13px] font-medium transition-all">
+                    <Truck className="h-3.5 w-3.5" />
+                    <span>Print Shipping Label</span>
                   </Button>
                 )}
                 {(selectedOrder.status === 'delivered' || selectedOrder.status === 'shipped') && (
                   <Button
                     onClick={() => processRefund(selectedOrder)}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 rounded-md text-[13px] transition-all"
                   >
-                    <Receipt className="h-4 w-4" />
-                    Process Refund
+                    <Receipt className="h-3.5 w-3.5" />
+                    <span>Process Refund</span>
                   </Button>
                 )}
                 {selectedOrder.status === 'confirmed' && (
                   <Button
                     onClick={() => updateOrderStatus(selectedOrder.id, 'processing')}
-                    className="flex items-center gap-2 px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white rounded-md text-[13px] font-medium transition-all"
                   >
-                    <Filter className="h-4 w-4" />
-                    Start Processing
+                    <Filter className="h-3.5 w-3.5" />
+                    <span>Start Processing</span>
                   </Button>
                 )}
                 {selectedOrder.status === 'processing' && (
                   <Button
                     onClick={() => updateOrderStatus(selectedOrder.id, 'shipped')}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white rounded-md text-[13px] font-medium transition-all"
                   >
-                    <Truck className="h-4 w-4" />
-                    Mark as Shipped
+                    <Truck className="h-3.5 w-3.5" />
+                    <span>Mark as Shipped</span>
                   </Button>
                 )}
               </div>

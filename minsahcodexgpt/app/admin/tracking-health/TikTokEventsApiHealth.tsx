@@ -13,7 +13,7 @@ export function TikTokEventsApiHealth({ metrics }: { metrics: TrackingHealthMetr
   const purchaseGap = metrics.expectedTikTokPurchases - metrics.tiktokPurchaseSent;
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-5">
+    <div className="rounded-xl border border-[#232636] bg-[#161824] p-5">
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="flex items-center text-lg font-bold text-[#F7F8F8]">
@@ -27,7 +27,7 @@ export function TikTokEventsApiHealth({ metrics }: { metrics: TrackingHealthMetr
             ? 'bg-white/[0.12] text-white border border-white/[0.20]'
             : metrics.tiktokEventsApiEnabled
               ? 'bg-white/[0.06] text-white/80 border border-white/[0.10]'
-              : 'bg-[#08090A] text-[#8A8F98] border border-white/[0.08]'
+              : 'bg-[#10121b] text-[#8A8F98] border border-[#232636]'
         }`}>
           {metrics.tiktokEventsApiEnabled ? (metrics.tiktokPurchaseLiveVerified ? 'Events API live' : 'Enabled, live gated') : 'Events API disabled'}
         </span>
@@ -46,7 +46,7 @@ export function TikTokEventsApiHealth({ metrics }: { metrics: TrackingHealthMetr
         <MetricCard title="IP + UA Coverage" value={formatPercent(metrics.tiktokIpUaCoverage)} subtitle={`${metrics.tiktokIpUaOrders}/${metrics.tiktokMatchBaseOrders} purchase-ready orders`} tone={metrics.tiktokIpUaCoverage >= 0.8 || metrics.tiktokMatchBaseOrders === 0 ? 'good' : 'warn'} />
       </div>
 
-      <div className="mt-4 rounded-lg border border-white/[0.08] bg-[#08090A] p-4 text-sm text-[#8A8F98]">
+      <div className="mt-4 rounded-lg border border-[#232636] bg-[#10121b] p-4 text-sm text-[#8A8F98]">
         TikTok ROAS is shown only from verified server-side Purchase counts. Fake/demo TikTok revenue is intentionally hidden until Events API production verification is complete.
       </div>
     </div>

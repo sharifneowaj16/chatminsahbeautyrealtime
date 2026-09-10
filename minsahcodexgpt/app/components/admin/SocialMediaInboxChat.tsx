@@ -646,7 +646,7 @@ function Avatar({ src, name, online }: { src?: string; name: string; size?: numb
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
-    <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-visible rounded-full bg-minsah-surface-accent text-sm font-black text-minsah-text-link">
+    <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-visible rounded-full bg-white/[0.04] text-sm font-black text-[#5e6ad2]">
       {src && !imageFailed ? (
         <img
           src={src}
@@ -659,8 +659,8 @@ function Avatar({ src, name, online }: { src?: string; name: string; size?: numb
       )}
       {online !== undefined ? (
         <span
-          className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-minsah-surface-panel ${
-            online ? 'bg-minsah-status-success-text' : 'bg-minsah-text-subtle'
+          className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#161824] ${
+            online ? 'bg-emerald-400' : 'bg-[#62666d]'
           }`}
           aria-label={online ? 'Online' : 'Offline'}
         />
@@ -2223,20 +2223,20 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
   }
 
   return (
-    <section className={`flex h-full min-h-0 w-full overflow-hidden bg-minsah-surface-page text-minsah-text-primary ${className}`} aria-label="Social media inbox">
+    <section className={`flex h-full min-h-0 w-full overflow-hidden bg-[#0b0c10] text-[#f7f8f8] ${className}`} aria-label="Social media inbox">
       <aside
-        className={`${showChat && isMobile ? 'hidden' : 'flex'} min-h-0 w-full flex-col border-r border-minsah-border-subtle bg-minsah-surface-panel sm:flex sm:w-80 lg:w-96`}
+        className={`${showChat && isMobile ? 'hidden' : 'flex'} min-h-0 w-full flex-col border-r border-[#232636] bg-[#161824] sm:flex sm:w-80 lg:w-96`}
         aria-label="Conversation list"
       >
-        <header className="shrink-0 border-b border-minsah-border-subtle px-4 py-4">
+        <header className="shrink-0 border-b border-[#232636] px-4 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-minsah-text-link" aria-hidden="true" />
+                <MessageSquare className="h-5 w-5 text-[#5e6ad2]" aria-hidden="true" />
                 <h1 className="truncate text-lg font-black">{title}</h1>
                 {unreadCount > 0 ? <Badge tone="danger">{unreadCount} unread</Badge> : null}
               </div>
-              {description ? <p className="mt-1 text-sm text-minsah-text-muted">{description}</p> : null}
+              {description ? <p className="mt-1 text-sm text-[#8a8f98]">{description}</p> : null}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <ConnectionDot status={connectionStatus} />
                 {deadLetterCount > 0 ? <Badge tone="warning">{deadLetterCount} delivery issues</Badge> : null}
@@ -2277,7 +2277,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 </div>
                 {syncingFb ? (
                   <progress
-                    className="mt-2 h-2 w-full overflow-hidden rounded-full accent-minsah-action-primary"
+                    className="mt-2 h-2 w-full overflow-hidden rounded-full accent-[#5e6ad2]"
                     max={100}
                     value={syncPercent}
                     aria-label="Facebook sync progress"
@@ -2321,9 +2321,9 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         >
           {visibleConversations.length === 0 ? (
             <div className="px-5 py-10 text-center">
-              <MessageSquare className="mx-auto h-9 w-9 text-minsah-text-subtle" aria-hidden="true" />
+              <MessageSquare className="mx-auto h-9 w-9 text-[#62666d]" aria-hidden="true" />
               <p className="mt-3 font-bold">No conversations found</p>
-              <p className="mt-1 text-sm text-minsah-text-muted">Try another platform or search term.</p>
+              <p className="mt-1 text-sm text-[#8a8f98]">Try another platform or search term.</p>
             </div>
           ) : (
             <div>
@@ -2334,8 +2334,8 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                       key={conversation.conversationId}
                       variant="ghost"
                       fullWidth
-                      className={`h-[77px] justify-start rounded-none border-b border-minsah-border-subtle px-4 py-3 text-left ${
-                        isActive ? 'bg-minsah-surface-accent text-minsah-text-primary' : ''
+                      className={`h-[77px] justify-start rounded-none border-b border-[#232636] px-4 py-3 text-left ${
+                        isActive ? 'bg-white/[0.04] text-[#f7f8f8]' : ''
                       }`}
                       onClick={() => {
                         setSelected(conversation.conversationId);
@@ -2350,10 +2350,10 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
                           <span className="truncate font-black">{fixEncoding(conversation.participant.name)}</span>
-                          <span className="shrink-0 text-xs font-medium text-minsah-text-subtle">{formatConvTime(conversation.latestMessage.timestamp)}</span>
+                          <span className="shrink-0 text-xs font-medium text-[#62666d]">{formatConvTime(conversation.latestMessage.timestamp)}</span>
                         </span>
                         <span className="mt-1 flex items-center gap-2">
-                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-minsah-text-muted">
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#8a8f98]">
                             {preview(conversation.latestMessage)}
                           </span>
                           {conversation.unreadCount > 0 ? <Badge tone="danger">{conversation.unreadCount}</Badge> : null}
@@ -2381,18 +2381,18 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         </div>
       </aside>
 
-      <main className={`${!showChat && isMobile ? 'hidden' : 'flex'} min-w-0 flex-1 flex-col bg-minsah-surface-subtle sm:flex`}>
+      <main className={`${!showChat && isMobile ? 'hidden' : 'flex'} min-w-0 flex-1 flex-col bg-[#10121b] sm:flex`}>
         {!activeConversation ? (
           <div className="flex h-full items-center justify-center p-6 text-center">
             <div>
-              <MessageSquare className="mx-auto h-12 w-12 text-minsah-text-subtle" aria-hidden="true" />
+              <MessageSquare className="mx-auto h-12 w-12 text-[#62666d]" aria-hidden="true" />
               <h2 className="mt-4 text-xl font-black">Select a conversation</h2>
-              <p className="mt-2 text-sm text-minsah-text-muted">Choose a customer thread to read and reply.</p>
+              <p className="mt-2 text-sm text-[#8a8f98]">Choose a customer thread to read and reply.</p>
             </div>
           </div>
         ) : (
           <>
-            <header className="flex shrink-0 items-center gap-3 border-b border-minsah-border-subtle bg-minsah-surface-panel px-3 py-3 sm:px-5">
+            <header className="flex shrink-0 items-center gap-3 border-b border-[#232636] bg-[#161824] px-3 py-3 sm:px-5">
               {isMobile ? (
                 <Button size="icon" variant="ghost" aria-label="Back to conversations" onClick={() => setShowChat(false)}>
                   <ArrowLeft className="h-5 w-5" aria-hidden="true" />
@@ -2404,7 +2404,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                   <h2 className="truncate font-black">{fixEncoding(activeConversation.participant.name)}</h2>
                   <PlatBadge platform={activeConversation.platform} />
                 </div>
-                <p className="mt-0.5 text-xs font-semibold text-minsah-text-muted">{activePlatformName}</p>
+                <p className="mt-0.5 text-xs font-semibold text-[#8a8f98]">{activePlatformName}</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <Badge tone={replyAllowed ? 'success' : 'warning'}>
                     {activeConversation.replyEligibility?.reasonCode ?? 'REPLY_ELIGIBILITY_UNAVAILABLE'}
@@ -2472,9 +2472,9 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                     <div key={message.id}>
                       {showDay ? (
                         <div className="my-4 flex items-center gap-3" aria-label={dayLabel(message.timestamp)}>
-                          <span className="h-px flex-1 bg-minsah-border-subtle" />
+                          <span className="h-px flex-1 bg-[#232636]" />
                           <Badge tone="neutral">{dayLabel(message.timestamp)}</Badge>
-                          <span className="h-px flex-1 bg-minsah-border-subtle" />
+                          <span className="h-px flex-1 bg-[#232636]" />
                         </div>
                       ) : null}
                       <article className={`flex items-end gap-2 ${message.isIncoming ? 'justify-start' : 'justify-end'}`}>
@@ -2482,8 +2482,8 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                         <div className={`max-w-[85%] sm:max-w-[72%] ${message.isIncoming ? '' : 'text-right'}`}>
                           <div className={`rounded-2xl border px-4 py-3 text-left shadow-[var(--shadow-small)] ${
                             message.isIncoming
-                              ? 'border-minsah-border-subtle bg-minsah-surface-panel text-minsah-text-primary'
-                              : 'border-minsah-action-primary bg-minsah-action-primary text-minsah-text-inverse'
+                              ? 'border-[#232636] bg-[#161824] text-[#f7f8f8]'
+                              : 'border-[#5e6ad2] bg-[#5e6ad2] text-white'
                           }`}>
                             {renderProductCard(message.content.text, message.isIncoming) ?? (
                               message.content.text ? <p className="whitespace-pre-wrap break-words text-sm leading-6">{fixEncoding(message.content.text)}</p> : null
@@ -2494,7 +2494,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                               </div>
                             ) : null}
                           </div>
-                          <div className={`mt-1 flex items-center gap-2 text-xs text-minsah-text-subtle ${message.isIncoming ? '' : 'justify-end'}`}>
+                          <div className={`mt-1 flex items-center gap-2 text-xs text-[#62666d] ${message.isIncoming ? '' : 'justify-end'}`}>
                             <span>{timeOnly(message.timestamp)}</span>
                             {!message.isIncoming ? (
                               <span className="inline-flex items-center gap-1">
@@ -2526,7 +2526,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
               </div>
             ) : null}
 
-            <footer className="shrink-0 border-t border-minsah-border-subtle bg-minsah-surface-panel p-3 sm:p-4">
+            <footer className="shrink-0 border-t border-[#232636] bg-[#161824] p-3 sm:p-4">
               <div className="mx-auto max-w-4xl">
                 {!replyAllowed ? (
                   <Alert tone="warning" className="mb-3" title="Reply unavailable" icon={<AlertTriangle className="h-5 w-5" />}>
@@ -2558,7 +2558,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 {drafts.length ? (
                   <div className="mb-3 flex flex-wrap gap-2">
                     {drafts.map((draft) => (
-                      <div key={draft.id} className="flex max-w-full items-center gap-2 rounded-xl border border-minsah-border-default bg-minsah-surface-subtle px-3 py-2 text-sm">
+                      <div key={draft.id} className="flex max-w-full items-center gap-2 rounded-xl border border-[#232636] bg-[#10121b] px-3 py-2 text-sm">
                         <Paperclip className="h-4 w-4 shrink-0" aria-hidden="true" />
                         <span className="max-w-48 truncate">{draft.file.name}</span>
                         <Button
@@ -2637,7 +2637,7 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                     <Send className="h-5 w-5" aria-hidden="true" />
                   </Button>
                 </div>
-                <p className="mt-2 text-xs text-minsah-text-subtle">Enter sends. Shift+Enter adds a new line.</p>
+                <p className="mt-2 text-xs text-[#62666d]">Enter sends. Shift+Enter adds a new line.</p>
               </div>
             </footer>
           </>
@@ -2708,15 +2708,15 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
             <Button variant="ghost" size="sm" className="justify-start" onClick={() => setSelectedProductDraft(null)}>
               <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to results
             </Button>
-            <div className="flex gap-4 rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle p-4">
+            <div className="flex gap-4 rounded-2xl border border-[#232636] bg-[#10121b] p-4">
               {selectedProductDraft.product.image ? (
                 <img src={selectedProductDraft.product.image} alt={selectedProductDraft.product.name} className="h-24 w-24 rounded-xl object-cover" />
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-minsah-surface-accent text-minsah-text-subtle">No image</div>
+                <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-white/[0.04] text-[#62666d]">No image</div>
               )}
               <div className="min-w-0 flex-1">
                 <h3 className="font-black">{selectedProductDraft.product.name}</h3>
-                <p className="mt-1 font-bold text-minsah-text-link">{formatBdt(selectedProductDraft.product.price)}</p>
+                <p className="mt-1 font-bold text-[#5e6ad2]">{formatBdt(selectedProductDraft.product.price)}</p>
                 <Badge tone={selectedProductDraft.product.inStock ? 'success' : 'danger'} className="mt-2">
                   {selectedProductDraft.product.inStock ? `${selectedProductDraft.product.stock} in stock` : 'Out of stock'}
                 </Badge>
@@ -2766,13 +2766,13 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
                 {product.image ? <img src={product.image} alt={product.name} className="h-16 w-16 rounded-xl object-cover" /> : null}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-black">{product.name}</span>
-                  <span className="mt-1 block text-sm text-minsah-text-muted">{formatBdt(product.price)} · {product.stock} in stock</span>
+                  <span className="mt-1 block text-sm text-[#8a8f98]">{formatBdt(product.price)} · {product.stock} in stock</span>
                 </span>
               </Button>
             ))}
           </div>
         ) : (
-          <div className="mt-8 text-center text-sm text-minsah-text-muted">No products matched your search.</div>
+          <div className="mt-8 text-center text-sm text-[#8a8f98]">No products matched your search.</div>
         )}
       </Drawer>
 
@@ -2787,9 +2787,9 @@ Never mention you are an AI. Sign off as "Minsah Beauty Team" if needed.`,
         disabled={!selectedProductDraft}
       >
         {selectedProductDraft ? (
-          <div className="rounded-2xl border border-minsah-border-subtle bg-minsah-surface-subtle p-4 text-sm">
+          <div className="rounded-2xl border border-[#232636] bg-[#10121b] p-4 text-sm">
             <p className="font-black">{selectedProductDraft.product.name}</p>
-            <p className="mt-1 text-minsah-text-muted">Quantity: {selectedProductDraft.quantity}</p>
+            <p className="mt-1 text-[#8a8f98]">Quantity: {selectedProductDraft.quantity}</p>
           </div>
         ) : null}
       </ConfirmDialog>
@@ -2819,7 +2819,7 @@ function renderProductCard(text: string, isIncoming: boolean) {
       {product.image ? <img src={product.image} alt={product.name} className="max-h-56 w-full rounded-xl object-cover" /> : null}
       <div>
         <p className="font-black">{product.name}</p>
-        <p className={`mt-1 text-sm ${isIncoming ? 'text-minsah-text-muted' : 'text-minsah-text-inverse'}`}>
+        <p className={`mt-1 text-sm ${isIncoming ? 'text-[#8a8f98]' : 'text-white'}`}>
           {formatBdt(product.price)} · Qty {product.quantity}
         </p>
         {product.variantLabel ? <p className="mt-1 text-xs">{product.variantLabel}</p> : null}
@@ -2830,10 +2830,10 @@ function renderProductCard(text: string, isIncoming: boolean) {
           href={toAbsoluteStorefrontUrl(product.viewUrl)}
           target="_blank"
           rel="noreferrer"
-          className={`minsah-control inline-flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold ${
+          className={` inline-flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold ${
             isIncoming
-              ? 'border-minsah-border-default bg-minsah-surface-panel text-minsah-text-link'
-              : 'border-minsah-text-inverse text-minsah-text-inverse'
+              ? 'border-[#232636] bg-[#161824] text-[#5e6ad2]'
+              : 'border-white/30 text-white'
           }`}
         >
           View product
@@ -2842,10 +2842,10 @@ function renderProductCard(text: string, isIncoming: boolean) {
           href={toAbsoluteStorefrontUrl(product.orderUrl)}
           target="_blank"
           rel="noreferrer"
-          className={`minsah-control inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold ${
+          className={` inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold ${
             isIncoming
-              ? 'bg-minsah-action-primary text-minsah-text-inverse'
-              : 'bg-minsah-surface-panel text-minsah-text-link'
+              ? 'bg-[#5e6ad2] text-white'
+              : 'bg-[#161824] text-[#5e6ad2]'
           }`}
         >
           Order now
@@ -2860,21 +2860,21 @@ function renderMedia(
   key: string,
   isIncoming: boolean,
 ) {
-  const contrastClass = isIncoming ? 'text-minsah-text-muted' : 'text-minsah-text-inverse';
+  const contrastClass = isIncoming ? 'text-[#8a8f98]' : 'text-white';
 
   if (media.type === 'image') {
     return (
-      <a key={key} href={media.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-minsah-border-subtle">
+      <a key={key} href={media.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-[#232636]">
         <img src={media.thumbnail || media.url} alt={media.fileName || 'Shared image'} className="max-h-72 w-full object-cover" />
       </a>
     );
   }
   if (media.type === 'video') {
     return (
-      <div key={key} className="overflow-hidden rounded-xl border border-minsah-border-subtle bg-minsah-surface-inverse">
+      <div key={key} className="overflow-hidden rounded-xl border border-[#232636] bg-[#161824]">
         <video controls preload="metadata" poster={media.thumbnail} className="max-h-72 w-full" src={media.url} />
         {media.fileName ? (
-          <div className="flex items-center gap-2 px-3 py-2 text-xs text-minsah-text-inverse">
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-white">
             <VideoIcon className="h-4 w-4" aria-hidden="true" />
             <span className="truncate">{media.fileName}</span>
           </div>
@@ -2884,7 +2884,7 @@ function renderMedia(
   }
   if (media.type === 'audio') {
     return (
-      <div key={key} className="rounded-xl border border-minsah-border-subtle p-3">
+      <div key={key} className="rounded-xl border border-[#232636] p-3">
         <div className={`mb-2 flex items-center gap-2 text-xs ${contrastClass}`}>
           <FileAudio className="h-4 w-4" aria-hidden="true" />
           <span className="truncate">{media.fileName || 'Audio'}</span>
@@ -2899,7 +2899,7 @@ function renderMedia(
       href={media.url}
       target="_blank"
       rel="noreferrer"
-      className={`flex min-h-11 items-center gap-2 rounded-xl border border-minsah-border-subtle px-3 py-2 text-sm font-semibold ${contrastClass}`}
+      className={`flex min-h-11 items-center gap-2 rounded-xl border border-[#232636] px-3 py-2 text-sm font-semibold ${contrastClass}`}
     >
       <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
       <span className="truncate">{media.fileName || media.mimeType || 'File'}</span>

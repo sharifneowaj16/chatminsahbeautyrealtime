@@ -32,7 +32,7 @@ export default function SearchFilterBar() {
   };
 
   return (
-    <div className="bg-[#151516] border border-white/[0.08] rounded-xl shadow-sm">
+    <div className="bg-[#161824] border border-[#232636] rounded-xl shadow-sm">
       <div className="p-4 sm:p-6 space-y-4">
         {/* Search Bar */}
         <div className="relative">
@@ -41,7 +41,7 @@ export default function SearchFilterBar() {
             placeholder="🔍 Search by order #, customer name, or phone..."
             value={filters.searchQuery}
             onChange={handleSearch}
-            className="w-full px-4 py-3 pl-10 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-sm sm:text-base"
+            className="w-full px-4 py-3 pl-10 border border-[#232636] bg-[#10121b] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-sm sm:text-base"
           />
           <span className="absolute left-3 top-3.5 text-[#62666D]">🔍</span>
         </div>
@@ -57,7 +57,7 @@ export default function SearchFilterBar() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="space-y-4 pt-4 border-t border-white/[0.08]">
+          <div className="space-y-4 pt-4 border-t border-[#232636]">
             {/* Status Filter */}
             <div>
               <p className="text-sm font-semibold text-[#8A8F98] mb-2">Status</p>
@@ -67,7 +67,7 @@ export default function SearchFilterBar() {
                     key={status}
                     onClick={() => handleStatusChange(status as 'pending' | 'completed')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.status === status ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
+                      filters.status === status ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-md' : 'bg-[#10121b] border border-[#232636] text-[#8A8F98] hover:bg-[#1b1e2c] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {status === 'pending' ? '⏳ Pending' : '✅ Completed'}
@@ -85,7 +85,7 @@ export default function SearchFilterBar() {
                     key={priority}
                     onClick={() => handlePriorityChange(priority)}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.priority === priority ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
+                      filters.priority === priority ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-md' : 'bg-[#10121b] border border-[#232636] text-[#8A8F98] hover:bg-[#1b1e2c] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {priority === 'URGENT'
@@ -109,7 +109,7 @@ export default function SearchFilterBar() {
                     key={range}
                     onClick={() => handleDateRangeChange(range as 'today' | 'week' | 'all')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.dateRange === range ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
+                      filters.dateRange === range ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-md' : 'bg-[#10121b] border border-[#232636] text-[#8A8F98] hover:bg-[#1b1e2c] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {range === 'today' ? '📅 Today' : range === 'week' ? '📆 Week' : 'All'}
@@ -127,7 +127,7 @@ export default function SearchFilterBar() {
                     key={sort}
                     onClick={() => handleSortChange(sort as 'recent' | 'urgent' | 'progress')}
                     className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      filters.sortBy === sort ? 'bg-white text-black hover:bg-white/90 shadow-md' : 'bg-[#08090A] border border-white/[0.08] text-[#8A8F98] hover:bg-[#1C1D1F] hover:text-[#F7F8F8]'
+                      filters.sortBy === sort ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-md' : 'bg-[#10121b] border border-[#232636] text-[#8A8F98] hover:bg-[#1b1e2c] hover:text-[#F7F8F8]'
                     }`}
                   >
                     {sort === 'recent'

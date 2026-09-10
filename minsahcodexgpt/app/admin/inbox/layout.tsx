@@ -7,7 +7,7 @@
  */
 export default function InboxLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-minsah-light">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0b0c10]">
       {children}
     </div>
   );

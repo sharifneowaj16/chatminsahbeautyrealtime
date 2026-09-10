@@ -60,7 +60,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-[#161824] rounded-lg border border-[#232636] shadow-sm overflow-hidden">
       {/* Header */}
       <Button
         type="button"
@@ -68,13 +68,13 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
         aria-expanded={!collapsed}
         aria-controls="product-faq-panel"
         onClick={() => setCollapsed((v) => !v)}
-        className="w-full min-h-0 justify-between rounded-none px-6 py-4 font-normal hover:bg-gray-50"
+        className="w-full min-h-0 justify-between rounded-none px-6 py-4 font-normal hover:bg-[#10121b]"
       >
         <div className="flex items-center gap-2">
           <HelpCircle className="w-5 h-5 text-white" aria-hidden="true" />
           <div className="text-left">
-            <h2 className="text-lg font-semibold text-gray-900">FAQ Section</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="text-lg font-semibold text-[#f7f8f8]">FAQ Section</h2>
+            <p className="text-xs text-[#8a8f98] mt-0.5">
               {faqs.length > 0
                 ? `${faqs.length} question${faqs.length === 1 ? '' : 's'} — eligible for Google FAQ rich results`
                 : 'Add questions to make this product eligible for Google FAQ rich results'}
@@ -88,16 +88,16 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
             </span>
           )}
           {collapsed
-            ? <ChevronDown className="w-4 h-4 text-gray-400" aria-hidden="true" />
-            : <ChevronUp className="w-4 h-4 text-gray-400" aria-hidden="true" />}
+            ? <ChevronDown className="w-4 h-4 text-[#62666d]" aria-hidden="true" />
+            : <ChevronUp className="w-4 h-4 text-[#62666d]" aria-hidden="true" />}
         </div>
       </Button>
 
       {!collapsed && (
-        <div id="product-faq-panel" className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-4">
+        <div id="product-faq-panel" className="px-6 pb-6 pt-2 border-t border-[#232636] space-y-4">
 
           {/* SEO tip */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800">
+          <div className="bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 rounded-lg px-4 py-3 text-sm text-[#f7f8f8]">
             💡 <strong>SEO tip:</strong> Add 5–8 useful FAQs to improve search-result coverage. Rich results are controlled by Google and are not guaranteed.
           </div>
 
@@ -107,7 +107,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
               {faqs.map((faq, index) => (
                 <div
                   key={index}
-                  className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                  className="border border-[#232636] rounded-lg p-4 bg-[#10121b]"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold text-white bg-admin-panel px-2 py-1 rounded">
@@ -118,7 +118,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                       variant="ghost"
                       size="icon"
                       onClick={() => removeFaq(index)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-rose-400"
                       aria-label={`Remove FAQ ${index + 1}`}
                       title="Remove FAQ"
                     >
@@ -134,7 +134,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                       className="focus:ring-white/20 text-sm"
                       placeholder="Example: Is this serum suitable for oily skin?"
                       label="Question"
-                      labelClassName="text-xs font-medium text-gray-700"
+                      labelClassName="text-xs font-medium text-[#d0d6e0]"
                     />
                     <div>
                       <Textarea
@@ -144,9 +144,9 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                         className="focus:ring-white/20 text-sm resize-none"
                         placeholder="Write a clear, detailed answer…"
                         label="Answer"
-                        labelClassName="text-xs font-medium text-gray-700"
+                        labelClassName="text-xs font-medium text-[#d0d6e0]"
                       />
-                      <p className="text-xs text-gray-400 mt-1 text-right">
+                      <p className="text-xs text-[#62666d] mt-1 text-right">
                         {faq.answer.length} chars
                         {faq.answer.length < 50 && faq.answer.length > 0 && (
                           <span className="ml-2 text-amber-500">Add a little more detail</span>
@@ -165,7 +165,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
               type="button"
               variant="primary"
               onClick={addFaq}
-              className="bg-white text-black hover:bg-white/90 text-sm hover:bg-white/90"
+              className="bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] text-sm hover:bg-white/90"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               Add FAQ
@@ -201,8 +201,8 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
                       disabled={alreadyAdded}
                       className={`rounded-full text-xs ${
                         alreadyAdded
-                          ? 'border-gray-200 bg-gray-100 text-gray-400'
-                          : 'border-admin-border bg-white text-white hover:border-admin-primary hover:bg-white text-black hover:bg-white/90 hover:text-white'
+                          ? 'border-[#232636] bg-[#10121b] text-[#62666d]'
+                          : 'border-admin-border bg-[#161824] text-white hover:border-admin-primary hover:bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:text-white'
                       }`}
                     >
                       {alreadyAdded ? '✓ ' : '+ '}{q}
@@ -215,7 +215,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
 
           {/* Empty state */}
           {faqs.length === 0 && (
-            <div className="text-center py-6 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+            <div className="text-center py-6 text-[#62666d] border-2 border-dashed border-[#232636] rounded-lg">
               <HelpCircle className="w-8 h-8 mx-auto mb-2 opacity-50" aria-hidden="true" />
               <p className="text-sm">No FAQs added yet</p>
               <p className="mt-1 text-xs">Use the button above to add a FAQ</p>

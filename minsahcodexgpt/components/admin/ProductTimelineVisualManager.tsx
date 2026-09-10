@@ -330,7 +330,7 @@ export default function ProductTimelineVisualManager({
   };
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-[#161824] border border-[#232636] rounded-2xl shadow-sm overflow-hidden ${className}`}>
       
       {/* Top Controller Header */}
       <div className="bg-[#1C3A13] text-white p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
@@ -384,7 +384,7 @@ export default function ProductTimelineVisualManager({
             <span className="text-xs font-bold text-[#1C3A13] uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#2F6D20]" /> 1-Click Skincare Starter Templates:
             </span>
-            <span className="text-[11px] text-gray-500">Quickly apply standard routine milestones</span>
+            <span className="text-[11px] text-[#8a8f98]">Quickly apply standard routine milestones</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {Object.entries(TEMPLATES).map(([key, t]) => (
@@ -392,10 +392,10 @@ export default function ProductTimelineVisualManager({
                 key={key}
                 type="button"
                 onClick={() => handleApplyTemplate(key)}
-                className="text-left bg-white border border-gray-200 hover:border-[#1C3A13] hover:shadow-sm p-3 rounded-lg text-xs font-semibold text-gray-800 transition-all flex items-center justify-between group"
+                className="text-left bg-[#161824] border border-[#232636] hover:border-[#1C3A13] hover:shadow-sm p-3 rounded-lg text-xs font-semibold text-[#f7f8f8] transition-all flex items-center justify-between group"
               >
                 <span>{t.name}</span>
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#1C3A13] transition-transform group-hover:translate-x-0.5" />
+                <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#1C3A13] transition-transform group-hover:translate-x-0.5" />
               </button>
             ))}
           </div>
@@ -403,7 +403,7 @@ export default function ProductTimelineVisualManager({
 
         {/* 2. Quick Preset Chips to Add New Period */}
         <div>
-          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-[#d0d6e0] uppercase tracking-wider mb-2">
             ⚡ Quick-Add Milestone Buttons:
           </label>
           <div className="flex flex-wrap gap-2">
@@ -421,7 +421,7 @@ export default function ProductTimelineVisualManager({
             <button
               type="button"
               onClick={() => handleAddStage('Custom Period', 'Custom Milestone Headline', 'First benefit bullet point')}
-              className="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+              className="inline-flex items-center gap-1.5 bg-[#10121b] hover:bg-white/[0.12] text-[#f7f8f8] border border-[#232636] px-3 py-1.5 rounded-full text-xs font-bold transition-all"
             >
               <Plus className="w-3 h-3" /> + Custom Stage
             </button>
@@ -432,10 +432,10 @@ export default function ProductTimelineVisualManager({
         {viewMode === 'edit' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+              <span className="text-xs font-bold text-[#8a8f98] uppercase tracking-wider">
                 Configured Milestone Stages ({stages.length})
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-[#8a8f98]">
                 Drag or use arrows to rearrange sequence
               </span>
             </div>
@@ -443,15 +443,15 @@ export default function ProductTimelineVisualManager({
             {stages.map((stage, sIdx) => (
               <div
                 key={stage.id}
-                className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-xs hover:border-[#1C3A13]/40 transition-all space-y-4 relative group"
+                className="bg-[#161824] border border-[#232636] rounded-xl p-4 sm:p-5 shadow-xs hover:border-[#1C3A13]/40 transition-all space-y-4 relative group"
               >
                 {/* Stage Header Row */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#232636] pb-3">
                   <div className="flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-[#1C3A13] text-[#FCFCF7] text-xs font-bold flex items-center justify-center">
                       {sIdx + 1}
                     </span>
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-bold text-[#f7f8f8]">
                       Milestone Stage {sIdx + 1}
                     </span>
                   </div>
@@ -463,7 +463,7 @@ export default function ProductTimelineVisualManager({
                       title="Move Up"
                       disabled={sIdx === 0}
                       onClick={() => handleMoveStage(sIdx, 'up')}
-                      className="p-1.5 text-gray-400 hover:text-gray-800 disabled:opacity-30 rounded hover:bg-gray-100"
+                      className="p-1.5 text-[#62666d] hover:text-[#f7f8f8] disabled:opacity-30 rounded hover:bg-[#10121b]"
                     >
                       <ArrowUp className="w-4 h-4" />
                     </button>
@@ -472,7 +472,7 @@ export default function ProductTimelineVisualManager({
                       title="Move Down"
                       disabled={sIdx === stages.length - 1}
                       onClick={() => handleMoveStage(sIdx, 'down')}
-                      className="p-1.5 text-gray-400 hover:text-gray-800 disabled:opacity-30 rounded hover:bg-gray-100"
+                      className="p-1.5 text-[#62666d] hover:text-[#f7f8f8] disabled:opacity-30 rounded hover:bg-[#10121b]"
                     >
                       <ArrowDown className="w-4 h-4" />
                     </button>
@@ -480,7 +480,7 @@ export default function ProductTimelineVisualManager({
                       type="button"
                       title="Duplicate Stage"
                       onClick={() => handleDuplicateStage(stage)}
-                      className="p-1.5 text-gray-400 hover:text-gray-800 rounded hover:bg-gray-100"
+                      className="p-1.5 text-[#62666d] hover:text-[#f7f8f8] rounded hover:bg-[#10121b]"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
@@ -488,7 +488,7 @@ export default function ProductTimelineVisualManager({
                       type="button"
                       title="Delete Stage"
                       onClick={() => handleRemoveStage(stage.id)}
-                      className="p-1.5 text-white/60 hover:text-red-600 rounded hover:bg-red-50"
+                      className="p-1.5 text-white/60 hover:text-red-600 rounded hover:bg-rose-500/10"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -499,7 +499,7 @@ export default function ProductTimelineVisualManager({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Pill Label Input */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                    <label className="block text-xs font-bold text-[#d0d6e0] mb-1">
                       Button Pill Text (e.g. 7 Days)
                     </label>
                     <div className="relative">
@@ -508,14 +508,14 @@ export default function ProductTimelineVisualManager({
                         value={stage.pillLabel}
                         onChange={(e) => handleUpdateStage(stage.id, 'pillLabel', e.target.value)}
                         placeholder="7 Days"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent"
+                        className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm font-semibold focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent"
                       />
                     </div>
                   </div>
 
                   {/* Headline Input */}
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                    <label className="block text-xs font-bold text-[#d0d6e0] mb-1">
                       Stage Headline Title
                     </label>
                     <input
@@ -523,15 +523,15 @@ export default function ProductTimelineVisualManager({
                       value={stage.headline}
                       onChange={(e) => handleUpdateStage(stage.id, 'headline', e.target.value)}
                       placeholder="Immediate Barrier Soothing & Redness Relief"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent"
                     />
                   </div>
                 </div>
 
                 {/* Bullet Points Sub-List */}
-                <div className="bg-[#FAFAFA] rounded-lg p-3 sm:p-4 space-y-2 border border-gray-100">
+                <div className="bg-[#FAFAFA] rounded-lg p-3 sm:p-4 space-y-2 border border-[#232636]">
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    <label className="text-xs font-bold text-[#8a8f98] uppercase tracking-wider">
                       Benefit Bullet Points (disc list)
                     </label>
                     <button
@@ -551,13 +551,13 @@ export default function ProductTimelineVisualManager({
                         value={benefit}
                         onChange={(e) => handleUpdateBenefit(stage.id, bIdx, e.target.value)}
                         placeholder="Detail specific benefit observed during this time frame..."
-                        className="flex-1 px-3 py-1.5 border border-gray-200 bg-white rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent"
+                        className="flex-1 px-3 py-1.5 border border-[#232636] bg-[#161824] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent"
                       />
                       {stage.benefits.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveBenefit(stage.id, bIdx)}
-                          className="p-1.5 text-gray-300 hover:text-red-500 rounded hover:bg-gray-100"
+                          className="p-1.5 text-[#d0d6e0] hover:text-red-500 rounded hover:bg-[#10121b]"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

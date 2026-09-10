@@ -138,13 +138,13 @@ export default function TrackingAnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#F7F8F8]">Tracking & Analytics Dashboard</h1>
-          <p className="text-gray-600">Comprehensive tracking across all platforms</p>
+          <p className="text-[#8a8f98]">Comprehensive tracking across all platforms</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
           <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+            className="px-4 py-2 border border-[#232636] rounded-lg"
           >
             <option value="24h">Last 24 Hours</option>
             <option value="7d">Last 7 Days</option>
@@ -153,7 +153,7 @@ export default function TrackingAnalyticsPage() {
           </Select>
           <Button
             onClick={handleRefresh}
-            className="inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg"
+            className="inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg"
           >
             <RefreshCw className={clsx('w-5 h-5 mr-2', isLoading && 'animate-spin')} />
             Refresh
@@ -192,7 +192,7 @@ export default function TrackingAnalyticsPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Revenue</p>
@@ -205,7 +205,7 @@ export default function TrackingAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Conversions</p>
@@ -220,7 +220,7 @@ export default function TrackingAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Users</p>
@@ -235,7 +235,7 @@ export default function TrackingAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Avg Order Value</p>
@@ -252,7 +252,7 @@ export default function TrackingAnalyticsPage() {
       {/* Traffic Sources & Campaigns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Traffic Sources */}
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Traffic Sources</h3>
           <div className="space-y-3">
             {analytics.traffic.sources.map((source, index) => (
@@ -281,11 +281,11 @@ export default function TrackingAnalyticsPage() {
         </div>
 
         {/* Top Campaigns */}
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Top Campaigns</h3>
           <div className="space-y-4">
             {analytics.traffic.campaigns.map((campaign, index) => (
-              <div key={index} className="border-b border-white/[0.08] pb-3 last:border-0">
+              <div key={index} className="border-b border-[#232636] pb-3 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F7F8F8]">{campaign.campaign}</span>
                   <span className="text-xs px-2 py-1 bg-white/[0.12] text-white border border-white/[0.20] rounded-full">
@@ -315,7 +315,7 @@ export default function TrackingAnalyticsPage() {
       {/* Devices & Platforms */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Device Breakdown */}
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Device Breakdown</h3>
           <div className="space-y-4">
             {analytics.devices.map((device, index) => {
@@ -323,7 +323,7 @@ export default function TrackingAnalyticsPage() {
               return (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-[#08090A] border border-white/[0.08] rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-[#10121b] border border-[#232636] rounded-lg flex items-center justify-center">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -344,7 +344,7 @@ export default function TrackingAnalyticsPage() {
         </div>
 
         {/* Platform Performance */}
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Platform Performance</h3>
           <div className="space-y-4">
             {Object.entries(analytics.platforms).map(([platform, data]) => (
@@ -352,7 +352,7 @@ export default function TrackingAnalyticsPage() {
                 <div className="flex items-center space-x-3">
                   <div className={clsx(
                     'w-3 h-3 rounded-full',
-                    data.enabled ? 'bg-green-500' : 'bg-gray-300'
+                    data.enabled ? 'bg-green-500' : 'bg-white/[0.16]'
                   )} />
                   <span className="text-sm font-medium text-[#F7F8F8] capitalize">{platform}</span>
                 </div>
@@ -389,7 +389,7 @@ export default function TrackingAnalyticsPage() {
       </div>
 
       {/* Conversion Funnel */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
         <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Conversion Funnel</h3>
         <div className="space-y-2">
           {analytics.funnel.map((step, index) => (
@@ -406,7 +406,7 @@ export default function TrackingAnalyticsPage() {
                   aria-label={`${step.step} funnel users`}
                 />
                 {step.dropoff > 0 ? (
-                  <span className="whitespace-nowrap text-xs font-semibold text-minsah-text-muted">
+                  <span className="whitespace-nowrap text-xs font-semibold text-[#8a8f98]">
                     -{step.dropoff.toFixed(1)}%
                   </span>
                 ) : null}
@@ -419,11 +419,11 @@ export default function TrackingAnalyticsPage() {
       {/* Top Products & Pages */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products */}
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Top Products</h3>
           <div className="space-y-3">
             {analytics.topProducts.map((product, index) => (
-              <div key={index} className="border-b border-white/[0.08] pb-3 last:border-0">
+              <div key={index} className="border-b border-[#232636] pb-3 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F7F8F8]">{product.name}</span>
                   <span className="text-sm font-bold text-white">
@@ -454,11 +454,11 @@ export default function TrackingAnalyticsPage() {
         </div>
 
         {/* Top Pages */}
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Top Pages</h3>
           <div className="space-y-3">
             {analytics.topPages.map((page, index) => (
-              <div key={index} className="border-b border-white/[0.08] pb-3 last:border-0">
+              <div key={index} className="border-b border-[#232636] pb-3 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F7F8F8]">{page.page}</span>
                   <span className="text-sm text-[#8A8F98]">{page.views.toLocaleString()} views</span>

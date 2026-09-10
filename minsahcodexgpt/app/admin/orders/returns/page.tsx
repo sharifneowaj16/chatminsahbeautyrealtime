@@ -148,12 +148,12 @@ export default function ReturnsPage() {
 
   const getStatusColor = (status: ReturnRequest['status']) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-emerald-500/10 text-emerald-300';
+      case 'rejected': return 'bg-red-100 text-rose-300';
+      case 'pending': return 'bg-amber-500/10 text-amber-300';
+      case 'processing': return 'bg-[#5e6ad2]/20 text-[#f7f8f8]';
+      case 'completed': return 'bg-[#10121b] text-[#f7f8f8]';
+      default: return 'bg-[#10121b] text-[#f7f8f8]';
     }
   };
 
@@ -162,11 +162,11 @@ export default function ReturnsPage() {
       case 'complete':
         return 'bg-green-500';
       case 'current':
-        return 'bg-white text-black hover:bg-white/90';
+        return 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]';
       case 'warning':
         return 'bg-amber-500';
       default:
-        return 'bg-gray-300';
+        return 'bg-white/[0.16]';
     }
   };
 
@@ -507,7 +507,7 @@ export default function ReturnsPage() {
         <Button
           onClick={fetchReturns}
           disabled={loading}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-white/[0.08] bg-[#151516] text-[#F7F8F8] rounded-lg hover:bg-[#1C1D1F] transition-colors duration-200"
+          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-[#232636] bg-[#161824] text-[#F7F8F8] rounded-lg hover:bg-[#1b1e2c] transition-colors duration-200"
         >
           <RefreshCw className={clsx('w-5 h-5 mr-2', loading && 'animate-spin')} />
           Refresh
@@ -516,7 +516,7 @@ export default function ReturnsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Returns</p>
@@ -526,7 +526,7 @@ export default function ReturnsPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Pending</p>
@@ -536,7 +536,7 @@ export default function ReturnsPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Approved</p>
@@ -546,7 +546,7 @@ export default function ReturnsPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Refund Amount</p>
@@ -560,23 +560,23 @@ export default function ReturnsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 mb-6">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#62666d]" />
             <Input
               type="text"
               placeholder="Search by return ID, order ID, or customer..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
             />
           </div>
 
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+            className="px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -606,7 +606,7 @@ export default function ReturnsPage() {
                 value={bulkNote}
                 onChange={(event) => setBulkNote(event.target.value)}
                 placeholder="Optional bulk note or rejection reason"
-                className="w-full rounded-lg border border-admin-border bg-white px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="w-full rounded-lg border border-admin-border bg-[#161824] px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
               />
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -645,7 +645,7 @@ export default function ReturnsPage() {
                   type="button"
                   onClick={() => setSelectedIds([])}
                   disabled={bulkUpdating}
-                  className="rounded-lg border border-admin-border bg-white px-4 py-2 text-sm font-medium text-white hover:bg-admin-panel disabled:opacity-70"
+                  className="rounded-lg border border-admin-border bg-[#161824] px-4 py-2 text-sm font-medium text-white hover:bg-admin-panel disabled:opacity-70"
                 >
                   Clear
                 </Button>
@@ -657,8 +657,8 @@ export default function ReturnsPage() {
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-700">{error}</p>
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-4 mb-6">
+          <p className="text-rose-400">{error}</p>
           <Button onClick={fetchReturns} className="mt-2 text-sm text-red-600 underline">
             Try again
           </Button>
@@ -666,7 +666,7 @@ export default function ReturnsPage() {
       )}
 
       {/* Returns Table */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <RefreshCw className="w-8 h-8 text-white animate-spin" />
@@ -675,14 +675,14 @@ export default function ReturnsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#08090A] border-b border-white/[0.08] text-[#8A8F98]">
+              <thead className="bg-[#10121b] border-b border-[#232636] text-[#8A8F98]">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <Input
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-white focus:ring-white/20"
+                      className="h-4 w-4 rounded border-[#232636] text-white focus:ring-white/20"
                       aria-label="Select all visible returns"
                     />
                   </th>
@@ -696,15 +696,15 @@ export default function ReturnsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-[#151516] divide-y divide-white/[0.08] text-[#F7F8F8]">
+              <tbody className="bg-[#161824] divide-y divide-[#232636] text-[#F7F8F8]">
                 {returns.map((returnRequest) => (
-                  <tr key={returnRequest.id} className="hover:bg-[#1C1D1F]">
+                  <tr key={returnRequest.id} className="hover:bg-[#1b1e2c]">
                     <td className="px-6 py-4">
                       <Input
                         type="checkbox"
                         checked={selectedIds.includes(returnRequest.id)}
                         onChange={() => toggleSelected(returnRequest.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-white focus:ring-white/20"
+                        className="h-4 w-4 rounded border-[#232636] text-white focus:ring-white/20"
                         aria-label={`Select return ${returnRequest.id}`}
                       />
                     </td>
@@ -734,7 +734,7 @@ export default function ReturnsPage() {
                         </div>
                       )}
                       {returnRequest.notes && (
-                        <div className="text-xs text-blue-600 italic mt-1">{returnRequest.notes}</div>
+                        <div className="text-xs text-[#5e6ad2] italic mt-1">{returnRequest.notes}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-[#F7F8F8]">
@@ -761,14 +761,14 @@ export default function ReturnsPage() {
                           <>
                             <Button
                               onClick={() => handleApprove(returnRequest.id)}
-                              className="text-green-600 hover:text-green-800"
+                              className="text-green-600 hover:text-emerald-300"
                               title="Approve"
                             >
                               <CheckCircle className="w-4 h-4" />
                             </Button>
                             <Button
                               onClick={() => handleReject(returnRequest.id)}
-                              className="text-red-600 hover:text-red-800"
+                              className="text-red-600 hover:text-rose-300"
                               title="Reject"
                             >
                               <XCircle className="w-4 h-4" />
@@ -777,7 +777,7 @@ export default function ReturnsPage() {
                         )}
                         <a
                           href={`mailto:${returnRequest.customer.email}?subject=Update on return ${returnRequest.id}`}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-[#5e6ad2] hover:text-[#f7f8f8]"
                           title="Message Customer"
                         >
                           <MessageCircle className="w-4 h-4" />
@@ -818,18 +818,18 @@ export default function ReturnsPage() {
           </div>
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-gray-200 p-4">
+                <div className="rounded-xl border border-[#232636] p-4">
                   <p className="text-xs uppercase tracking-wide text-[#8A8F98]">Customer</p>
                   <p className="mt-2 font-medium text-[#F7F8F8]">{selectedReturn.customer.name}</p>
                   <p className="text-sm text-[#8A8F98]">{selectedReturn.customer.email}</p>
                 </div>
-                <div className="rounded-xl border border-gray-200 p-4">
+                <div className="rounded-xl border border-[#232636] p-4">
                   <p className="text-xs uppercase tracking-wide text-[#8A8F98]">Requested</p>
                   <p className="mt-2 font-medium text-[#F7F8F8]">
                     {new Date(selectedReturn.requestDate).toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-xl border border-gray-200 p-4">
+                <div className="rounded-xl border border-[#232636] p-4">
                   <p className="text-xs uppercase tracking-wide text-[#8A8F98]">Refund</p>
                   <p className="mt-2 font-medium text-[#F7F8F8]">
                     {formatPrice(convertUSDtoBDT(selectedReturn.refundAmount))}
@@ -837,14 +837,14 @@ export default function ReturnsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-5">
+              <div className="rounded-xl border border-[#232636] p-5">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                   Return Reason
                 </h3>
-                <p className="mt-3 text-sm leading-6 text-gray-800">{selectedReturn.reason}</p>
+                <p className="mt-3 text-sm leading-6 text-[#f7f8f8]">{selectedReturn.reason}</p>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-5">
+              <div className="rounded-xl border border-[#232636] p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <Package className="h-4 w-4 text-[#8A8F98]" />
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
@@ -855,7 +855,7 @@ export default function ReturnsPage() {
                   {selectedReturn.items.map((item, index) => (
                     <div
                       key={`${selectedReturn.id}-${item.name}-${index}`}
-                      className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
+                      className="flex items-center justify-between rounded-lg bg-[#10121b] px-4 py-3"
                     >
                       <div>
                         <p className="font-medium text-[#F7F8F8]">{item.name}</p>
@@ -869,7 +869,7 @@ export default function ReturnsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-5">
+              <div className="rounded-xl border border-[#232636] p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                     Evidence Photos
@@ -886,7 +886,7 @@ export default function ReturnsPage() {
                         href={imageUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="group overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                        className="group overflow-hidden rounded-xl border border-[#232636] bg-[#10121b]"
                       >
                         <img
                           src={imageUrl}
@@ -897,13 +897,13 @@ export default function ReturnsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[#8A8F98]">
+                  <div className="rounded-lg bg-[#10121b] px-4 py-8 text-center text-sm text-[#8A8F98]">
                     No evidence photos were uploaded by the customer.
                   </div>
                 )}
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-5">
+              <div className="rounded-xl border border-[#232636] p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
@@ -913,7 +913,7 @@ export default function ReturnsPage() {
                       Derived from current order payment and return timestamps.
                     </p>
                   </div>
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 capitalize">
+                  <span className="rounded-full bg-[#10121b] px-3 py-1 text-xs font-medium text-[#d0d6e0] capitalize">
                     Payment: {selectedReturn.paymentStatus || 'unknown'}
                   </span>
                 </div>
@@ -929,7 +929,7 @@ export default function ReturnsPage() {
                           )}
                         />
                         {index < array.length - 1 && (
-                          <span className="mt-2 h-full w-px bg-gray-200" />
+                          <span className="mt-2 h-full w-px bg-white/[0.12]" />
                         )}
                       </div>
                       <div className="pb-5">
@@ -948,13 +948,13 @@ export default function ReturnsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-5">
+              <div className="rounded-xl border border-[#232636] p-5">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-[#8A8F98]">
                   Admin Decision
                 </h3>
                 <div className="mt-4 grid gap-4 md:grid-cols-[200px,1fr]">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                    <label className="mb-2 block text-sm font-medium text-[#d0d6e0]">
                       Status
                     </label>
                     <Select
@@ -962,7 +962,7 @@ export default function ReturnsPage() {
                       onChange={(event) =>
                         setDetailStatus(event.target.value as ReturnRequest['status'])
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
+                      className="w-full rounded-lg border border-[#232636] px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
                     >
                       <option value="pending">Pending</option>
                       <option value="approved">Approved</option>
@@ -972,7 +972,7 @@ export default function ReturnsPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                    <label className="mb-2 block text-sm font-medium text-[#d0d6e0]">
                       Internal Note / Customer Reply
                     </label>
                     <Textarea
@@ -980,7 +980,7 @@ export default function ReturnsPage() {
                       value={detailNote}
                       onChange={(event) => setDetailNote(event.target.value)}
                       placeholder="Add approval notes, rejection reason, or handling instructions..."
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
+                      className="w-full rounded-lg border border-[#232636] px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
                     />
                   </div>
                 </div>
@@ -990,21 +990,21 @@ export default function ReturnsPage() {
                     type="button"
                     onClick={handleSaveDetails}
                     disabled={savingDetail}
-                    className="inline-flex items-center rounded-lg bg-white text-black hover:bg-white/90 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/90 disabled:opacity-70"
+                    className="inline-flex items-center rounded-lg bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] px-5 py-2.5 text-sm font-medium text-white hover:bg-white/90 disabled:opacity-70"
                   >
                     {savingDetail && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                     Save Decision
                   </Button>
                   <a
                     href={`mailto:${selectedReturn.customer.email}?subject=Update on return ${selectedReturn.id}`}
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#1C1D1F]"
+                    className="inline-flex items-center rounded-lg border border-[#232636] px-5 py-2.5 text-sm font-medium text-[#d0d6e0] hover:bg-[#1b1e2c]"
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Email Customer
                   </a>
                   <a
                     href="/admin/orders"
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-[#1C1D1F]"
+                    className="inline-flex items-center rounded-lg border border-[#232636] px-5 py-2.5 text-sm font-medium text-[#d0d6e0] hover:bg-[#1b1e2c]"
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     Open Orders
@@ -1027,11 +1027,11 @@ export default function ReturnsPage() {
       >
         {confirmAction ? (
           <div className="space-y-4">
-            <div className="rounded-xl bg-minsah-status-warning-surface px-4 py-3 text-sm text-minsah-status-warning-text">
+            <div className="rounded-xl bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
               Status will change to <span className="font-semibold capitalize">{confirmAction.status}</span>.
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+              <label className="mb-2 block text-sm font-medium text-[#8a8f98]">
                 Note {confirmAction.requireNote ? '(Required)' : '(Optional)'}
               </label>
               <Textarea

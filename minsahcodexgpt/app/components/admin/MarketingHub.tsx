@@ -519,20 +519,20 @@ export default function MarketingHub() {
       case 'linkedin': return (
         <div className="w-6 h-6 bg-blue-700 rounded text-white flex items-center justify-center text-xs font-bold">li</div>
       );
-      default: return <Globe className="h-6 w-6 text-gray-400" />;
+      default: return <Globe className="h-6 w-6 text-[#62666d]" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'paused': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'published': return 'bg-emerald-500/10 text-emerald-300';
+      case 'scheduled': return 'bg-[#5e6ad2]/20 text-[#f7f8f8]';
+      case 'draft': return 'bg-amber-500/10 text-amber-300';
+      case 'failed': return 'bg-red-100 text-rose-300';
+      case 'active': return 'bg-emerald-500/10 text-emerald-300';
+      case 'paused': return 'bg-amber-500/10 text-amber-300';
+      case 'completed': return 'bg-[#10121b] text-[#f7f8f8]';
+      default: return 'bg-[#10121b] text-[#f7f8f8]';
     }
   };
 
@@ -623,17 +623,17 @@ export default function MarketingHub() {
     return (
       <div className="p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
+          <div className="h-8 bg-white/[0.12] rounded w-64 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <div key={i} className="h-24 bg-white/[0.12] rounded"></div>
             ))}
           </div>
           <div className="space-y-4">
             {[...Array(10)].map((_, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div key={i} className="bg-[#161824] border border-[#232636] rounded-lg p-4">
+                <div className="h-4 bg-white/[0.12] rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-white/[0.12] rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -655,8 +655,8 @@ export default function MarketingHub() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Marketing Hub</h1>
-          <p className="text-gray-600">Manage social media, campaigns, and marketing analytics</p>
+          <h1 className="text-2xl font-bold text-[#f7f8f8]">Marketing Hub</h1>
+          <p className="text-[#8a8f98]">Manage social media, campaigns, and marketing analytics</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -664,7 +664,7 @@ export default function MarketingHub() {
             <>
               <Button
                 onClick={() => setShowConnectAccount(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                className="flex items-center gap-2 px-4 py-2 border border-[#232636] rounded-lg hover:bg-[#10121b] text-sm"
               >
                 <Plus className="h-4 w-4" />
                 Connect Account
@@ -691,7 +691,7 @@ export default function MarketingHub() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-[#232636] mb-6">
         <nav className="flex space-x-8" aria-label="Tabs">
           {[
             { id: 'overview', name: 'Overview', icon: BarChart },
@@ -704,8 +704,8 @@ export default function MarketingHub() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-[#5e6ad2]'
+                  : 'border-transparent text-[#8a8f98] hover:text-[#d0d6e0] hover:border-[#232636]'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -760,36 +760,36 @@ export default function MarketingHub() {
           </div>
 
           {/* Social Media Accounts */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Connected Social Media Accounts</h3>
+          <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-[#f7f8f8] mb-4">Connected Social Media Accounts</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {socialAccounts.map((account) => (
-                <div key={account.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={account.id} className="border border-[#232636] rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       {getPlatformIcon(account.platform)}
                       <div>
-                        <h4 className="font-medium text-gray-900">{account.accountName}</h4>
-                        <p className="text-sm text-gray-500">{account.platform}</p>
+                        <h4 className="font-medium text-[#f7f8f8]">{account.accountName}</h4>
+                        <p className="text-sm text-[#8a8f98]">{account.platform}</p>
                       </div>
                     </div>
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      account.isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      account.isConnected ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-100 text-rose-300'
                     }`}>
                       {account.isConnected ? 'Connected' : 'Disconnected'}
                     </span>
                   </div>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Followers:</span>
+                      <span className="text-[#8a8f98]">Followers:</span>
                       <span className="font-medium">{formatNumber(account.metrics.followers)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Engagement:</span>
+                      <span className="text-[#8a8f98]">Engagement:</span>
                       <span className="font-medium">{account.metrics.engagement}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Reach:</span>
+                      <span className="text-[#8a8f98]">Reach:</span>
                       <span className="font-medium">{formatNumber(account.metrics.reach)}</span>
                     </div>
                   </div>
@@ -799,35 +799,35 @@ export default function MarketingHub() {
           </div>
 
           {/* Recent Posts */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Posts</h3>
-              <Button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <h3 className="text-lg font-semibold text-[#f7f8f8]">Recent Posts</h3>
+              <Button className="text-[#5e6ad2] hover:text-blue-700 text-sm font-medium">
                 View All Posts →
               </Button>
             </div>
             <div className="space-y-4">
               {posts.slice(0, 5).map((post) => (
-                <div key={post.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                <div key={post.id} className="flex items-center gap-4 p-4 bg-[#10121b] rounded-lg">
+                  <div className="w-12 h-12 bg-white/[0.12] rounded-lg flex items-center justify-center">
                     {post.type === 'video' ? (
-                      <Video className="h-6 w-6 text-gray-400" />
+                      <Video className="h-6 w-6 text-[#62666d]" />
                     ) : post.type === 'reel' ? (
-                      <Play className="h-6 w-6 text-gray-400" />
+                      <Play className="h-6 w-6 text-[#62666d]" />
                     ) : (
-                      <Image className="h-6 w-6 text-gray-400" aria-hidden="true" />
+                      <Image className="h-6 w-6 text-[#62666d]" aria-hidden="true" />
                     )}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="text-sm font-medium text-gray-900">{post.platform}</span>
+                      <span className="text-sm font-medium text-[#f7f8f8]">{post.platform}</span>
                       <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(post.status)}`}>
                         {post.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">{post.content.text}</p>
+                    <p className="text-sm text-[#8a8f98] line-clamp-2">{post.content.text}</p>
                     {post.metrics?.engagement && (
-                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-4 mt-2 text-xs text-[#8a8f98]">
                         <span>❤️ {formatNumber(post.metrics.likes)}</span>
                         <span>💬 {formatNumber(post.metrics.comments)}</span>
                         <span>👁️ {formatNumber(post.metrics.views)}</span>
@@ -846,23 +846,23 @@ export default function MarketingHub() {
       {activeTab === 'social' && (
         <div className="space-y-6">
           {/* Filters */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="bg-[#161824] border border-[#232636] rounded-lg p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#62666d]" />
                 <Input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search posts..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full pl-10 pr-4 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
 
               <Select
                 value={selectedPlatform}
                 onChange={(e) => setSelectedPlatform(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="px-4 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="all">All Platforms</option>
                 <option value="facebook">Facebook</option>
@@ -876,7 +876,7 @@ export default function MarketingHub() {
               <Select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="px-4 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="all">All Status</option>
                 <option value="published">Published</option>
@@ -894,11 +894,11 @@ export default function MarketingHub() {
           {/* Posts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {posts.map((post) => (
-              <div key={post.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+              <div key={post.id} className="bg-[#161824] border border-[#232636] rounded-lg p-4 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     {getPlatformIcon(post.platform)}
-                    <span className="text-sm font-medium text-gray-900">{post.platform}</span>
+                    <span className="text-sm font-medium text-[#f7f8f8]">{post.platform}</span>
                   </div>
                   <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(post.status)}`}>
                     {post.status}
@@ -906,18 +906,18 @@ export default function MarketingHub() {
                 </div>
 
                 <div className="mb-3">
-                  <div className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center mb-2">
+                  <div className="aspect-square bg-white/[0.12] rounded-lg flex items-center justify-center mb-2">
                     {post.type === 'video' || post.type === 'reel' ? (
-                      <Video className="h-12 w-12 text-gray-400" />
+                      <Video className="h-12 w-12 text-[#62666d]" />
                     ) : (
-                      <Image className="h-12 w-12 text-gray-400" aria-hidden="true" />
+                      <Image className="h-12 w-12 text-[#62666d]" aria-hidden="true" />
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 line-clamp-3">{post.content.text}</p>
+                  <p className="text-sm text-[#8a8f98] line-clamp-3">{post.content.text}</p>
                 </div>
 
                 {post.metrics && (
-                  <div className="flex items-center justify-between mb-3 text-sm text-gray-600">
+                  <div className="flex items-center justify-between mb-3 text-sm text-[#8a8f98]">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1">
                         <Heart className="h-4 w-4" />
@@ -932,19 +932,19 @@ export default function MarketingHub() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-[#8a8f98]">
                   <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                   <div className="flex items-center gap-1">
                     <Button
                       onClick={() => setSelectedPost(post)}
-                      className="p-1 text-gray-400 hover:text-gray-600"
+                      className="p-1 text-[#62666d] hover:text-[#8a8f98]"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button className="p-1 text-gray-400 hover:text-gray-600">
+                    <Button className="p-1 text-[#62666d] hover:text-[#8a8f98]">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button className="p-1 text-gray-400 hover:text-gray-600">
+                    <Button className="p-1 text-[#62666d] hover:text-[#8a8f98]">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -960,72 +960,72 @@ export default function MarketingHub() {
         <div className="space-y-6">
           {/* Campaign Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Total Budget</span>
-                <DollarSign className="h-5 w-5 text-gray-400" />
+                <span className="text-sm font-medium text-[#8a8f98]">Total Budget</span>
+                <DollarSign className="h-5 w-5 text-[#62666d]" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalBudget)}</p>
+              <p className="text-2xl font-bold text-[#f7f8f8]">{formatCurrency(totalBudget)}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Total Spent</span>
-                <DollarSign className="h-5 w-5 text-gray-400" />
+                <span className="text-sm font-medium text-[#8a8f98]">Total Spent</span>
+                <DollarSign className="h-5 w-5 text-[#62666d]" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSpent)}</p>
+              <p className="text-2xl font-bold text-[#f7f8f8]">{formatCurrency(totalSpent)}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Avg ROAS</span>
-                <BarChart className="h-5 w-5 text-gray-400" />
+                <span className="text-sm font-medium text-[#8a8f98]">Avg ROAS</span>
+                <BarChart className="h-5 w-5 text-[#62666d]" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-[#f7f8f8]">
                 {campaigns.length > 0
                   ? (campaigns.reduce((sum, c) => sum + (c.metrics.roas || 0), 0) / campaigns.filter(c => c.metrics.roas).length).toFixed(1)
                   : '0'}x
               </p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Conversions</span>
-                <TrendingUp className="h-5 w-5 text-gray-400" />
+                <span className="text-sm font-medium text-[#8a8f98]">Conversions</span>
+                <TrendingUp className="h-5 w-5 text-[#62666d]" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-[#f7f8f8]">
                 {campaigns.reduce((sum, c) => sum + (c.metrics.converted || 0), 0)}
               </p>
             </div>
           </div>
 
           {/* Campaigns List */}
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="bg-[#161824] border border-[#232636] rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-[#232636]">
+                <thead className="bg-[#10121b]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Campaign</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Budget</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Spent</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ROAS</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversions</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Campaign</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Budget</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Spent</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">ROAS</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Conversions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#8a8f98] uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-[#232636]">
                   {campaigns.map((campaign) => (
-                    <tr key={campaign.id} className="hover:bg-gray-50">
+                    <tr key={campaign.id} className="hover:bg-[#10121b]">
                       <td className="px-4 py-3">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{campaign.name}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm font-medium text-[#f7f8f8]">{campaign.name}</p>
+                          <p className="text-xs text-[#8a8f98]">
                             {new Date(campaign.duration.start).toLocaleDateString()} - {' '}
                             {campaign.duration.end ? new Date(campaign.duration.end).toLocaleDateString() : 'Ongoing'}
                           </p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 capitalize">
+                        <span className="px-2 py-1 text-xs rounded-full bg-[#10121b] text-[#f7f8f8] capitalize">
                           {campaign.type}
                         </span>
                       </td>
@@ -1034,19 +1034,19 @@ export default function MarketingHub() {
                           {campaign.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(campaign.budget ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(campaign.spent ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{campaign.metrics.roas || 'N/A'}x</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{campaign.metrics.converted || 0}</td>
+                      <td className="px-4 py-3 text-sm text-[#f7f8f8]">{formatCurrency(campaign.budget ?? 0)}</td>
+                      <td className="px-4 py-3 text-sm text-[#f7f8f8]">{formatCurrency(campaign.spent ?? 0)}</td>
+                      <td className="px-4 py-3 text-sm text-[#f7f8f8]">{campaign.metrics.roas || 'N/A'}x</td>
+                      <td className="px-4 py-3 text-sm text-[#f7f8f8]">{campaign.metrics.converted || 0}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <Button
                             onClick={() => setSelectedCampaign(campaign)}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1 text-[#62666d] hover:text-[#8a8f98]"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button className="p-1 text-gray-400 hover:text-gray-600">
+                          <Button className="p-1 text-[#62666d] hover:text-[#8a8f98]">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1063,14 +1063,14 @@ export default function MarketingHub() {
       {/* Calendar Tab */}
       {activeTab === 'calendar' && (
         <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Content Calendar</h3>
+          <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-[#f7f8f8] mb-4">Content Calendar</h3>
             <div className="text-center py-12">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Content Calendar</h3>
-              <p className="text-gray-600 mb-4">Schedule and manage your social media content</p>
-              <div className="bg-gray-100 rounded-lg p-4 max-w-2xl mx-auto">
-                <p className="text-sm text-gray-700 mb-2">📅 Upcoming Scheduled Posts:</p>
+              <Calendar className="h-12 w-12 text-[#62666d] mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[#f7f8f8] mb-2">Content Calendar</h3>
+              <p className="text-[#8a8f98] mb-4">Schedule and manage your social media content</p>
+              <div className="bg-[#10121b] rounded-lg p-4 max-w-2xl mx-auto">
+                <p className="text-sm text-[#d0d6e0] mb-2">📅 Upcoming Scheduled Posts:</p>
                 <ul className="text-left text-sm space-y-1">
                   <li>• Facebook promo post - Tomorrow at 9:00 AM</li>
                   <li>• Instagram story - Friday at 2:00 PM</li>
@@ -1094,11 +1094,11 @@ export default function MarketingHub() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
+                    <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Platform</label>
                     <Select
                       value={newPost.platform}
                       onChange={(e) => setNewPost({ ...newPost, platform: e.target.value as SocialMediaPost['platform'] })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select platform</option>
                       <option value="facebook">Facebook</option>
@@ -1110,11 +1110,11 @@ export default function MarketingHub() {
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Post Type</label>
+                    <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Post Type</label>
                     <Select
                       value={newPost.type}
                       onChange={(e) => setNewPost({ ...newPost, type: e.target.value as SocialMediaPost['type'] })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select type</option>
                       <option value="post">Post</option>
@@ -1127,32 +1127,32 @@ export default function MarketingHub() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Content</label>
                   <Textarea
                     rows={4}
                     value={newPost.content?.text || ''}
                     onChange={(e) => setNewPost({ ...newPost, content: { hashtags: [], mentions: [], ...newPost.content, text: e.target.value } })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="What's on your mind?"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Schedule (optional)</label>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Schedule (optional)</label>
                   <Input
                     type="datetime-local"
                     value={newPost.scheduledAt ? new Date(newPost.scheduledAt).toISOString().slice(0, 16) : ''}
                     onChange={(e) => setNewPost({ ...newPost, scheduledAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Media</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" aria-hidden="true" />
-                    <p className="text-sm text-gray-600 mb-2">Drag and drop images or videos</p>
-                    <Button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Media</label>
+                  <div className="border-2 border-dashed border-[#232636] rounded-lg p-6 text-center">
+                    <Image className="h-8 w-8 text-[#62666d] mx-auto mb-2" aria-hidden="true" />
+                    <p className="text-sm text-[#8a8f98] mb-2">Drag and drop images or videos</p>
+                    <Button className="text-[#5e6ad2] hover:text-blue-700 text-sm font-medium">
                       Choose Files
                     </Button>
                   </div>
@@ -1169,7 +1169,7 @@ export default function MarketingHub() {
                 </Button>
                 <Button
                   onClick={() => setShowCreatePost(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                  className="flex-1 px-4 py-2 border border-[#232636] rounded-lg hover:bg-[#10121b] text-sm"
                 >
                   Cancel
                 </Button>
@@ -1188,21 +1188,21 @@ export default function MarketingHub() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Name</label>
+                    <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Campaign Name</label>
                     <Input
                       type="text"
                       value={newCampaign.name || ''}
                       onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter campaign name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Type</label>
+                    <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Campaign Type</label>
                     <Select
                       value={newCampaign.type}
                       onChange={(e) => setNewCampaign({ ...newCampaign, type: e.target.value as MarketingCampaign['type'] })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select type</option>
                       <option value="email">Email</option>
@@ -1216,18 +1216,18 @@ export default function MarketingHub() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Budget</label>
+                    <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Budget</label>
                     <Input
                       type="number"
                       value={newCampaign.budget || ''}
                       onChange={(e) => setNewCampaign({ ...newCampaign, budget: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0.00"
                       step="0.01"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <label className="block text-sm font-medium text-[#d0d6e0] mb-1">End Date</label>
                     <Input
                       type="date"
                       value={newCampaign.duration?.end ? new Date(newCampaign.duration.end).toISOString().slice(0, 10) : ''}
@@ -1235,20 +1235,20 @@ export default function MarketingHub() {
                         ...newCampaign,
                         duration: { start: newCampaign.duration?.start ?? new Date().toISOString(), ...newCampaign.duration, end: new Date(e.target.value).toISOString() }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Target Audience</label>
                   <Select
                     value={newCampaign.targetAudience?.segments?.[0] || ''}
                     onChange={(e) => setNewCampaign({
                       ...newCampaign,
                       targetAudience: { segments: [e.target.value], criteria: {} }
                     })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select audience segment</option>
                     <option value="all">All Customers</option>
@@ -1260,12 +1260,12 @@ export default function MarketingHub() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Content</label>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Campaign Content</label>
                   <Textarea
                     rows={3}
                     value={newCampaign.content?.body || ''}
                     onChange={(e) => setNewCampaign({ ...newCampaign, content: { ...newCampaign.content, body: e.target.value } })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter campaign content"
                   />
                 </div>
@@ -1281,7 +1281,7 @@ export default function MarketingHub() {
                 </Button>
                 <Button
                   onClick={() => setShowCreateCampaign(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                  className="flex-1 px-4 py-2 border border-[#232636] rounded-lg hover:bg-[#10121b] text-sm"
                 >
                   Cancel
                 </Button>
@@ -1296,7 +1296,7 @@ export default function MarketingHub() {
         title="Connect Social Account"
       >
             <div className="p-6">
-              <p className="text-gray-600 mb-4">Choose a platform to connect to your marketing hub:</p>
+              <p className="text-[#8a8f98] mb-4">Choose a platform to connect to your marketing hub:</p>
               <div className="space-y-3">
                 {[
                   { name: 'Facebook', color: 'bg-blue-600' },

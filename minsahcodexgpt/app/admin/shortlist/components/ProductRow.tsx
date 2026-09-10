@@ -38,13 +38,13 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'URGENT':
-        return 'text-red-600 bg-red-50';
+        return 'text-red-600 bg-rose-500/10';
       case 'NORMAL':
-        return 'text-yellow-600 bg-yellow-50';
+        return 'text-yellow-600 bg-amber-500/10';
       case 'LOW_PRIORITY':
-        return 'text-green-600 bg-green-50';
+        return 'text-green-600 bg-emerald-500/10';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-[#8a8f98] bg-[#10121b]';
     }
   };
 
@@ -65,8 +65,8 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
     <div
       className={`p-3 rounded-lg border-2 transition-all ${
         item.purchased
-          ? 'border-green-300 bg-green-50'
-          : 'border-gray-300 bg-white hover:border-blue-400'
+          ? 'border-green-300 bg-emerald-500/10'
+          : 'border-[#232636] bg-[#161824] hover:border-blue-400'
       }`}
     >
       {/* Main Row - Checkbox + Product Name */}
@@ -77,7 +77,7 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
             type="checkbox"
             checked={item.purchased}
             onChange={onCheckboxChange}
-            className="w-5 h-5 rounded border border-white/[0.08] bg-[#08090A] cursor-pointer text-white focus:ring-white/20 transition-all"
+            className="w-5 h-5 rounded border border-[#232636] bg-[#10121b] cursor-pointer text-white focus:ring-white/20 transition-all"
           />
         </label>
 
@@ -86,14 +86,14 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
           <p
             className={`font-semibold text-sm sm:text-base transition-all ${
               item.purchased
-                ? 'text-green-700 line-through'
+                ? 'text-emerald-400 line-through'
                 : 'text-[#F7F8F8]'
             }`}
           >
             {item.productName}
           </p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-xs bg-[#08090A] border border-white/[0.08] text-[#8A8F98] px-2 py-0.5 rounded">
+            <span className="text-xs bg-[#10121b] border border-[#232636] text-[#8A8F98] px-2 py-0.5 rounded">
               Qty: {item.quantity}
             </span>
             <span className={`text-xs px-2 py-0.5 rounded font-medium ${getPriorityColor(item.priority)}`}>
@@ -104,7 +104,7 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
       </div>
 
       {/* Financial Details Grid - Mobile Stack */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-9 text-xs sm:text-sm border-t border-white/[0.08] pt-2 mt-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-9 text-xs sm:text-sm border-t border-[#232636] pt-2 mt-2">
         <div>
           <p className="text-[#8A8F98] text-xs">Buy Price</p>
           <p className="font-bold text-[#F7F8F8]">{formatCurrency(item.buyPrice)}</p>
@@ -134,7 +134,7 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
 
       {/* Notes */}
       {item.notes && (
-        <div className="pl-9 mt-2 pt-2 border-t border-white/[0.08]">
+        <div className="pl-9 mt-2 pt-2 border-t border-[#232636]">
           <p className="text-xs text-[#8A8F98] italic">
             📝 {item.notes}
           </p>

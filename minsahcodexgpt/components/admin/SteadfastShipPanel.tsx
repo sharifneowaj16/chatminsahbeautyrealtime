@@ -77,7 +77,7 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: 'Pending Pickup',
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    color: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
     icon: <Clock className="w-3.5 h-3.5" />,
   },
   hold: {
@@ -87,7 +87,7 @@ const STATUS_CONFIG: Record<
   },
   in_review: {
     label: 'In Review',
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: 'bg-[#5e6ad2]/20 text-[#f7f8f8] border-[#5e6ad2]/20',
     icon: <RefreshCw className="w-3.5 h-3.5" />,
   },
   partial_delivered: {
@@ -97,17 +97,17 @@ const STATUS_CONFIG: Record<
   },
   delivered: {
     label: 'Delivered ✓',
-    color: 'bg-green-100 text-green-800 border-green-200',
+    color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
     icon: <CheckCircle className="w-3.5 h-3.5" />,
   },
   cancelled: {
     label: 'Cancelled',
-    color: 'bg-red-100 text-red-800 border-red-200',
+    color: 'bg-red-100 text-rose-300 border-rose-500/20',
     icon: <XCircle className="w-3.5 h-3.5" />,
   },
   unknown: {
     label: 'Unknown',
-    color: 'bg-gray-100 text-gray-600 border-gray-200',
+    color: 'bg-[#10121b] text-[#8a8f98] border-[#232636]',
     icon: <Package className="w-3.5 h-3.5" />,
   },
 };
@@ -116,7 +116,7 @@ function StatusBadge({ status }: { status: string }) {
   const key = normalizeSteadfastDeliveryStatus(status);
   const cfg = STATUS_CONFIG[key] ?? {
     label: status,
-    color: 'bg-gray-100 text-gray-600 border-gray-200',
+    color: 'bg-[#10121b] text-[#8a8f98] border-[#232636]',
     icon: <Package className="w-3.5 h-3.5" />,
   };
   return (
@@ -270,7 +270,7 @@ export default function SteadfastShipPanel({
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-[480px] bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
+      <div className="fixed right-0 top-0 h-full w-full max-w-[480px] bg-[#161824] shadow-2xl z-50 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-admin-primary to-admin-primary-hover px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -321,14 +321,14 @@ export default function SteadfastShipPanel({
                 <Webhook className="w-4 h-4 shrink-0" />
                 Webhook callback URL
               </h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
+              <p className="text-xs text-[#8a8f98] leading-relaxed">
                 In the Steadfast portal, set this callback URL and the same Bearer token as your server env (
                 <code className="rounded bg-white/90 px-1 py-0.5 text-xs">STEADFAST_WEBHOOK_SECRET</code> or{' '}
                 <code className="rounded bg-white/90 px-1 py-0.5 text-xs">STEADFAST_WEBHOOK_AUTHORIZATION</code>
                 ). Delivery updates will sync to this order automatically.
               </p>
-              <div className="flex items-start gap-2 rounded-xl bg-white border border-admin-border px-3 py-2">
-                <code className="text-xs font-mono text-gray-800 flex-1 break-all leading-snug">
+              <div className="flex items-start gap-2 rounded-xl bg-[#161824] border border-admin-border px-3 py-2">
+                <code className="text-xs font-mono text-[#f7f8f8] flex-1 break-all leading-snug">
                   {webhookCallbackUrl}
                 </code>
                 <Button
@@ -336,7 +336,7 @@ export default function SteadfastShipPanel({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleCopy(webhookCallbackUrl)}
-                  className="shrink-0 text-gray-400 hover:bg-admin-panel hover:text-white"
+                  className="shrink-0 text-[#62666d] hover:bg-admin-panel hover:text-white"
                   aria-label="Copy webhook callback URL"
                   title="Copy URL"
                 >
@@ -351,7 +351,7 @@ export default function SteadfastShipPanel({
               </Link>
             </div>
           ) : (
-            <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <div className="rounded-xl border border-amber-100 bg-amber-500/10 px-3 py-2 text-xs text-amber-900">
               Set <code className="font-mono">NEXT_PUBLIC_APP_URL</code> to your public site URL so the Steadfast
               webhook callback can be copied here.
             </div>
@@ -381,10 +381,10 @@ export default function SteadfastShipPanel({
 
               <div className="space-y-2">
                 {(trackingCode || order.steadfastTrackingCode) && (
-                  <div className="flex items-center justify-between bg-white rounded-xl px-3 py-2">
+                  <div className="flex items-center justify-between bg-[#161824] rounded-xl px-3 py-2">
                     <div>
-                      <p className="text-xs text-gray-500">Tracking Code</p>
-                      <p className="text-sm font-mono font-semibold text-gray-900">
+                      <p className="text-xs text-[#8a8f98]">Tracking Code</p>
+                      <p className="text-sm font-mono font-semibold text-[#f7f8f8]">
                         {trackingCode || order.steadfastTrackingCode}
                       </p>
                     </div>
@@ -395,7 +395,7 @@ export default function SteadfastShipPanel({
                         size="icon"
                         onClick={() => handleCopy(trackingCode || order.steadfastTrackingCode || '')}
                         aria-label="Copy tracking code"
-                        className="text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        className="text-[#62666d] hover:bg-[#10121b] hover:text-[#8a8f98]"
                       >
                         <Copy className="w-4 h-4" aria-hidden="true" />
                       </Button>
@@ -403,7 +403,7 @@ export default function SteadfastShipPanel({
                         href={`/track?code=${trackingCode || order.steadfastTrackingCode}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1.5 text-[#62666d] hover:bg-[#10121b] hover:text-[#8a8f98]"
                         aria-label="Open tracking page"
                       >
                         <ExternalLink className="w-4 h-4" aria-hidden="true" />
@@ -412,10 +412,10 @@ export default function SteadfastShipPanel({
                   </div>
                 )}
                 {(consignmentId || order.steadfastConsignmentId) && (
-                  <div className="flex items-center justify-between bg-white rounded-xl px-3 py-2">
+                  <div className="flex items-center justify-between bg-[#161824] rounded-xl px-3 py-2">
                     <div>
-                      <p className="text-xs text-gray-500">Consignment ID</p>
-                      <p className="text-sm font-mono font-semibold text-gray-900">
+                      <p className="text-xs text-[#8a8f98]">Consignment ID</p>
+                      <p className="text-sm font-mono font-semibold text-[#f7f8f8]">
                         {consignmentId || order.steadfastConsignmentId}
                       </p>
                     </div>
@@ -426,23 +426,23 @@ export default function SteadfastShipPanel({
           )}
 
           {/* Recipient Info */}
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <div className="bg-[#10121b] rounded-2xl p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-[#d0d6e0] flex items-center gap-2">
               <User className="w-4 h-4 text-white" />
               Recipient Details
             </h3>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <User className="w-3.5 h-3.5 text-gray-400" />
+              <div className="flex items-center gap-2 text-sm text-[#8a8f98]">
+                <User className="w-3.5 h-3.5 text-[#62666d]" />
                 <span>{order.shipping?.name || order.customer.name}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Phone className="w-3.5 h-3.5 text-gray-400" />
+              <div className="flex items-center gap-2 text-sm text-[#8a8f98]">
+                <Phone className="w-3.5 h-3.5 text-[#62666d]" />
                 <span>{order.shipping?.phone || order.customer.phone || '—'}</span>
               </div>
               {order.shipping?.address && (
-                <div className="flex items-start gap-2 text-sm text-gray-600">
-                  <MapPin className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-2 text-sm text-[#8a8f98]">
+                  <MapPin className="w-3.5 h-3.5 text-[#62666d] mt-0.5 flex-shrink-0" />
                   <span>
                     {order.shipping.address}
                     {order.shipping.city ? `, ${order.shipping.city}` : ''}
@@ -468,7 +468,7 @@ export default function SteadfastShipPanel({
                     COD Amount (৳)
                   </span>
                 }
-                leading={<span className="text-sm font-medium text-gray-500">৳</span>}
+                leading={<span className="text-sm font-medium text-[#8a8f98]">৳</span>}
                 description={
                   codAmount === 0
                     ? '💳 Prepaid — no cash collection'
@@ -485,7 +485,7 @@ export default function SteadfastShipPanel({
                 placeholder="e.g. Call before delivery, fragile items..."
                 label={
                   <>
-                    Delivery Note <span className="text-gray-400 font-normal">(optional)</span>
+                    Delivery Note <span className="text-[#62666d] font-normal">(optional)</span>
                   </>
                 }
                 className="resize-none focus:ring-white/20"
@@ -495,15 +495,15 @@ export default function SteadfastShipPanel({
 
           {/* Feedback */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2">
+            <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 flex items-start gap-2">
               <XCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-rose-400">{error}</p>
             </div>
           )}
           {success && (
-            <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-start gap-2">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-green-700">{success}</p>
+              <p className="text-sm text-emerald-400">{success}</p>
             </div>
           )}
           {copied && (
@@ -514,7 +514,7 @@ export default function SteadfastShipPanel({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-100 p-5 space-y-3">
+        <div className="border-t border-[#232636] p-5 space-y-3">
           {!alreadyDispatched ? (
             <Button
               type="button"
@@ -554,7 +554,7 @@ export default function SteadfastShipPanel({
                 href={`https://portal.steadfast.com.bd`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 font-medium text-gray-600 hover:bg-gray-50"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#232636] px-4 py-2.5 font-medium text-[#8a8f98] hover:bg-[#10121b]"
               >
                 <ExternalLink className="w-4 h-4" aria-hidden="true" />
                 Portal
@@ -566,7 +566,7 @@ export default function SteadfastShipPanel({
             variant="ghost"
             fullWidth
             onClick={onClose}
-            className="py-2 text-sm text-gray-500 hover:text-gray-700"
+            className="py-2 text-sm text-[#8a8f98] hover:text-[#d0d6e0]"
           >
             Close
           </Button>

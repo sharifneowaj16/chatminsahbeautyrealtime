@@ -129,76 +129,70 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Marketing Hub</h1>
-              <p className="text-gray-600 mt-1">
-                Manage all your marketing channels from one place
-              </p>
-            </div>
+      <div className="border-b border-[#232636] bg-[#10121b] px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">Marketing Hub</h1>
+            <p className="text-xs sm:text-sm text-[#8a8f98] mt-1">
+              Manage all your marketing channels from one place
+            </p>
           </div>
+        </div>
 
-          {/* Tabs */}
-          <div className="border-b border-gray-200 -mb-px">
-            <nav className="flex space-x-8 overflow-x-auto" aria-label="Tabs">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <Button
-                    key={tab.id}
-                    type="button"
-                    variant="ghost"
-                    aria-current={activeTab === tab.id ? 'page' : undefined}
-                    onClick={() => handleTabChange(tab.id)}
-                    className={`min-h-0 whitespace-nowrap rounded-none border-b-2 px-1 py-4 font-medium ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:bg-transparent hover:text-gray-700'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" aria-hidden="true" />
-                    {tab.name}
-                    {tab.badge && (
-                      <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                        {tab.badge}
-                      </span>
-                    )}
-                  </Button>
-                );
-              })}
-            </nav>
-          </div>
+        {/* Tabs */}
+        <div className="border-b border-[#1b1e2c] -mb-px">
+          <nav className="flex space-x-6 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <Button
+                  key={tab.id}
+                  type="button"
+                  variant="ghost"
+                  aria-current={activeTab === tab.id ? 'page' : undefined}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`min-h-0 whitespace-nowrap rounded-none border-b-2 px-1 py-3 text-xs sm:text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-[#5e6ad2] text-[#5e6ad2]'
+                      : 'border-transparent text-[#8a8f98] hover:border-[#232636] hover:bg-transparent hover:text-[#f7f8f8]'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5" aria-hidden="true" />
+                  {tab.name}
+                  {tab.badge && (
+                    <span className="ml-2 px-2 py-0.5 bg-[#5e6ad2]/20 text-[#a5b4fc] rounded-full text-xs font-medium">
+                      {tab.badge}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+          </nav>
         </div>
       </div>
 
       {/* Content */}
-      <div
-        className={
-          'h-[calc(100vh-180px)]'
-        }
-      >
+      <div>
         {activeTab === 'overview' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <MarketingHub />
           </div>
         )}
         {activeTab === 'social' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <MarketingHub />
           </div>
         )}
         {activeTab === 'meta' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Meta Pixel Setup</h3>
-                    <p className="text-sm text-gray-600">Configure Pixel and Conversion API for campaign tracking</p>
+                    <h3 className="text-base sm:text-lg font-semibold text-[#f7f8f8]">Meta Pixel Setup</h3>
+                    <p className="text-xs sm:text-sm text-[#8a8f98]">Configure Pixel and Conversion API for campaign tracking</p>
                   </div>
                   <Button
                     type="button"
@@ -221,25 +215,25 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                         setMetaError(error instanceof Error ? error.message : 'Save failed');
                       }
                     }}
-                    className="bg-blue-600 text-sm hover:bg-blue-700"
+                    className="bg-[#5e6ad2] text-xs sm:text-sm hover:bg-[#6d78d5] text-white shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] self-start sm:self-auto"
                   >
-                    <Save className="w-4 h-4" aria-hidden="true" />
+                    <Save className="w-4 h-4 mr-1.5" aria-hidden="true" />
                     Save Meta Setup
                   </Button>
                 </div>
                 {metaSaved && (
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-[#10b981]/30 bg-[#10b981]/10 px-3 py-2 text-xs sm:text-sm text-[#34d399]">
                     <CheckCircle2 className="w-4 h-4" />
                     Meta settings saved
                   </div>
                 )}
                 {metaError && (
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-[#ef4444]/30 bg-[#ef4444]/10 px-3 py-2 text-xs sm:text-sm text-[#f87171]">
                     <span>{metaError}</span>
                   </div>
                 )}
                 {metaLoading && (
-                  <div className="mb-4 text-sm text-gray-500">Loading meta setup...</div>
+                  <div className="mb-4 text-xs text-[#8a8f98]">Loading meta setup...</div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
@@ -258,8 +252,8 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                 </div>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaign Targeting</h3>
+              <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <h3 className="text-base sm:text-lg font-semibold text-[#f7f8f8] mb-4">Campaign Targeting</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Select
                     value={metaSetup.objective}
@@ -281,8 +275,8 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                 </div>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Retarget Audiences</h3>
+              <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <h3 className="text-base sm:text-lg font-semibold text-[#f7f8f8] mb-4">Retarget Audiences</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                   {audiencePresets.map((audience) => (
                     <Button
@@ -298,31 +292,31 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
                             : [...prev.selectedAudiences, audience.id],
                         }))
                       }
-                      className={`h-auto min-h-11 flex-col items-start justify-start text-left ${
+                      className={`h-auto min-h-11 flex-col items-start justify-start text-left p-3 rounded-md transition-colors ${
                         metaSetup.selectedAudiences.includes(audience.id)
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-[#5e6ad2] bg-[#5e6ad2]/15 text-[#f7f8f8]'
+                          : 'border-[#232636] bg-[#10121b] text-[#8a8f98] hover:border-[#5e6ad2]/40'
                       }`}
                     >
-                      <p className="text-sm font-medium text-gray-900">{audience.label}</p>
-                      <p className="text-xs text-gray-500">Est. audience: {audience.size.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm font-medium text-[#f7f8f8]">{audience.label}</p>
+                      <p className="text-[11px] text-[#8a8f98]">Est. audience: {audience.size.toLocaleString()}</p>
                     </Button>
                   ))}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-lg bg-blue-50 border border-blue-100 p-4">
-                    <p className="text-xs text-blue-700 flex items-center gap-1">
-                      <Users className="w-3 h-3" />
+                  <div className="rounded-md bg-[#10121b] border border-[#232636] p-4">
+                    <p className="text-xs text-[#5e6ad2] flex items-center gap-1 font-medium">
+                      <Users className="w-3.5 h-3.5" />
                       Combined Reach
                     </p>
-                    <p className="text-xl font-bold text-blue-900">{selectedReach.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-[#f7f8f8] mt-1">{selectedReach.toLocaleString()}</p>
                   </div>
-                  <div className="rounded-lg bg-admin-panel border border-admin-border p-4">
-                    <p className="text-xs text-white flex items-center gap-1">
-                      <Target className="w-3 h-3" />
+                  <div className="rounded-md bg-[#10121b] border border-[#232636] p-4">
+                    <p className="text-xs text-[#a5b4fc] flex items-center gap-1 font-medium">
+                      <Target className="w-3.5 h-3.5" />
                       Suggested Strategy
                     </p>
-                    <p className="text-sm font-medium text-admin-text capitalize">
+                    <p className="text-xs sm:text-sm font-medium text-[#f7f8f8] capitalize mt-1">
                       {metaSetup.objective} + retarget warm audience first
                     </p>
                   </div>
@@ -335,35 +329,35 @@ export function AdminMarketingClient({ initialTab }: AdminMarketingClientProps) 
           <WhatsAppIntegration />
         )}
         {activeTab === 'email' && (
-          <div className="p-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <Mail className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Marketing</h3>
-              <p className="text-gray-600 mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-6 sm:p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <Mail className="w-12 h-12 sm:w-16 sm:h-16 text-[#62666d] mx-auto mb-3" />
+              <h3 className="text-base sm:text-lg font-semibold text-[#f7f8f8] mb-1.5">Email Marketing</h3>
+              <p className="text-xs sm:text-sm text-[#8a8f98] mb-5 max-w-md mx-auto">
                 Create and manage email campaigns, newsletters, and automated email sequences.
               </p>
-              <Button type="button" variant="primary" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="button" variant="primary" className="bg-[#5e6ad2] hover:bg-[#6d78d5] text-white text-xs sm:text-sm font-medium">
                 Create Email Campaign
               </Button>
             </div>
           </div>
         )}
         {activeTab === 'sms' && (
-          <div className="p-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">SMS Marketing</h3>
-              <p className="text-gray-600 mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-6 sm:p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <Bell className="w-12 h-12 sm:w-16 sm:h-16 text-[#62666d] mx-auto mb-3" />
+              <h3 className="text-base sm:text-lg font-semibold text-[#f7f8f8] mb-1.5">SMS Marketing</h3>
+              <p className="text-xs sm:text-sm text-[#8a8f98] mb-5 max-w-md mx-auto">
                 Send SMS campaigns, order updates, and promotional messages to your customers.
               </p>
-              <Button type="button" variant="primary" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="button" variant="primary" className="bg-[#5e6ad2] hover:bg-[#6d78d5] text-white text-xs sm:text-sm font-medium">
                 Create SMS Campaign
               </Button>
             </div>
           </div>
         )}
         {activeTab === 'google' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <GoogleServicesIntegration />
           </div>
         )}

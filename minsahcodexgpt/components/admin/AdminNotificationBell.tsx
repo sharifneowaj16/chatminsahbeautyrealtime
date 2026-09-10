@@ -112,7 +112,7 @@ export default function AdminNotificationBell() {
         aria-expanded={open}
         aria-controls="admin-notifications-panel"
         onClick={() => { setOpen((o) => !o); if (!open) fetchNotifications(); }}
-        className="relative text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+        className="relative text-[#8a8f98] hover:bg-[#10121b] hover:text-[#d0d6e0]"
       >
         <Bell className="w-5 h-5" aria-hidden="true" />
         {unreadCount > 0 && (
@@ -124,11 +124,11 @@ export default function AdminNotificationBell() {
 
       {/* Dropdown */}
       {open && (
-        <div id="admin-notifications-panel" role="region" aria-label="Notifications" className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+        <div id="admin-notifications-panel" role="region" aria-label="Notifications" className="absolute right-0 top-full mt-2 w-80 bg-[#161824] rounded-2xl shadow-2xl border border-[#232636] overflow-hidden z-50">
 
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+          <div className="px-4 py-3 border-b border-[#232636] flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#f7f8f8]">Notifications</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <Button
@@ -149,7 +149,7 @@ export default function AdminNotificationBell() {
                 size="icon"
                 aria-label="Close notifications"
                 onClick={() => setOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-[#62666d] hover:text-[#8a8f98]"
               >
                 <X className="w-4 h-4" aria-hidden="true" />
               </Button>
@@ -159,7 +159,7 @@ export default function AdminNotificationBell() {
           {/* List */}
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="py-10 text-center text-gray-400">
+              <div className="py-10 text-center text-[#62666d]">
                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" aria-hidden="true" />
                 <p className="text-sm">No notifications yet</p>
               </div>
@@ -190,20 +190,20 @@ export default function AdminNotificationBell() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xs font-semibold text-gray-900 truncate">{n.title}</p>
+                      <p className="text-xs font-semibold text-[#f7f8f8] truncate">{n.title}</p>
                       {n.type === 'GIFT_ORDER' && (
                         <span className="flex-shrink-0 text-xs bg-admin-panel text-white px-1.5 py-0.5 rounded-full font-medium">
                           🎁 Gift
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
-                    <p className="text-xs text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
+                    <p className="text-xs text-[#8a8f98] mt-0.5 line-clamp-2">{n.message}</p>
+                    <p className="text-xs text-[#62666d] mt-1">{timeAgo(n.createdAt)}</p>
                   </div>
 
                   {/* Unread dot */}
                   {!n.isRead && (
-                    <div className="w-2 h-2 bg-white text-black hover:bg-white/90 rounded-full mt-1 flex-shrink-0" />
+                    <div className="w-2 h-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-full mt-1 flex-shrink-0" />
                   )}
                 </Button>
               ))
@@ -212,7 +212,7 @@ export default function AdminNotificationBell() {
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="px-4 py-2.5 border-t border-gray-100 text-center">
+            <div className="px-4 py-2.5 border-t border-[#232636] text-center">
               <Button
                 type="button"
                 variant="ghost"

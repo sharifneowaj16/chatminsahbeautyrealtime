@@ -83,13 +83,13 @@ export default function ProviderHealthPanel() {
 
   useEffect(() => { void load(); }, [load]);
 
-  return <section className="space-y-4 rounded-2xl border bg-white p-5">
+  return <section className="space-y-4 rounded-2xl border bg-[#161824] p-5">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="flex items-center gap-2 text-lg font-bold"><ShieldCheck className="h-5 w-5 text-gray-500" /> Provider asset and permission health</h2><p className="mt-1 text-sm text-gray-600">App, Business, Page, Instagram account, ad account and form identities with safe remediation.</p></div>
+      <div><h2 className="flex items-center gap-2 text-lg font-bold"><ShieldCheck className="h-5 w-5 text-[#8a8f98]" /> Provider asset and permission health</h2><p className="mt-1 text-sm text-[#8a8f98]">App, Business, Page, Instagram account, ad account and form identities with safe remediation.</p></div>
       <Button variant="secondary" disabled={busy} onClick={() => void load()}><RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} /> Refresh</Button>
     </div>
-    {error && <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-    {!health && !error && <p className="text-sm text-gray-500">Loading provider health…</p>}
+    {error && <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</p>}
+    {!health && !error && <p className="text-sm text-[#8a8f98]">Loading provider health…</p>}
     {health && <>
       <div className="grid gap-3 md:grid-cols-4">
         <KeyValue label="Connection" value={health.connection?.status ?? 'UNCONFIGURED'} badge />
@@ -97,28 +97,28 @@ export default function ProviderHealthPanel() {
         <KeyValue label="Last successful" value={date(health.connection?.lastSuccessfulAt)} />
         <KeyValue label="Health snapshot" value={date(health.checkedAt)} />
       </div>
-      {health.connection?.failure && <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{failureText(health.connection.failure)}</p>}
+      {health.connection?.failure && <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-300">{failureText(health.connection.failure)}</p>}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {health.scopes.map((scope) => <article key={scope.scope} className="rounded-xl border p-4">
           <div className="flex items-center justify-between gap-2"><strong>{scope.scope}</strong><Badge tone={scope.unhealthy || scope.revoked ? 'warning' : 'success'}>{scope.verified}/{scope.total} healthy</Badge></div>
-          <p className="mt-1 text-xs text-gray-500">Unhealthy {scope.unhealthy} · revoked {scope.revoked}</p>
-          <div className="mt-3 space-y-3">{scope.assets.length === 0 ? <p className="text-sm text-gray-500">No mapped assets.</p> : scope.assets.map((asset) => <div key={asset.id} className="rounded-lg bg-gray-50 p-3 text-sm">
+          <p className="mt-1 text-xs text-[#8a8f98]">Unhealthy {scope.unhealthy} · revoked {scope.revoked}</p>
+          <div className="mt-3 space-y-3">{scope.assets.length === 0 ? <p className="text-sm text-[#8a8f98]">No mapped assets.</p> : scope.assets.map((asset) => <div key={asset.id} className="rounded-lg bg-[#10121b] p-3 text-sm">
             <div className="flex flex-wrap gap-2"><Badge tone={tone(asset.identityStatus)}>{asset.identityStatus}</Badge><Badge tone={tone(asset.permissionHealth)}>{asset.permissionHealth}</Badge></div>
-            <p className="mt-2 break-all text-xs text-gray-600">{asset.objectType} · {provider(asset.providerId)}</p>
-            <p className="mt-1 text-xs text-gray-500">Verified {date(asset.lastVerifiedAt)} · updated {date(asset.updatedAt)}</p>
-            {asset.statusReason && <p className="mt-2 text-xs text-amber-800">{asset.statusReason}</p>}
-            {asset.remediation && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900"><strong>{asset.remediation.code}</strong><br />{asset.remediation.action}</p>}
+            <p className="mt-2 break-all text-xs text-[#8a8f98]">{asset.objectType} · {provider(asset.providerId)}</p>
+            <p className="mt-1 text-xs text-[#8a8f98]">Verified {date(asset.lastVerifiedAt)} · updated {date(asset.updatedAt)}</p>
+            {asset.statusReason && <p className="mt-2 text-xs text-amber-300">{asset.statusReason}</p>}
+            {asset.remediation && <p className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-xs text-amber-900"><strong>{asset.remediation.code}</strong><br />{asset.remediation.action}</p>}
           </div>)}</div>
         </article>)}
       </div>
       {health.connection && <div className="rounded-xl border p-4">
         <h3 className="font-semibold">Latest connection checks</h3>
-        <div className="mt-3 space-y-2">{health.connection.checks.length === 0 ? <p className="text-sm text-gray-500">No connection checks recorded.</p> : health.connection.checks.map((check) => <div key={check.id} className="flex flex-col gap-2 rounded-lg bg-gray-50 p-3 text-sm md:flex-row md:items-center md:justify-between"><div className="flex flex-wrap gap-2"><Badge tone={tone(check.status)}>{check.status}</Badge><span>Token {check.tokenValid ? 'valid' : 'invalid'}</span><span>App ID {check.appIdMatches ? 'matches' : 'mismatch'}</span></div><span className="text-xs text-gray-500">{date(check.checkedAt)} · {failureText(check.failure)}</span></div>)}</div>
+        <div className="mt-3 space-y-2">{health.connection.checks.length === 0 ? <p className="text-sm text-[#8a8f98]">No connection checks recorded.</p> : health.connection.checks.map((check) => <div key={check.id} className="flex flex-col gap-2 rounded-lg bg-[#10121b] p-3 text-sm md:flex-row md:items-center md:justify-between"><div className="flex flex-wrap gap-2"><Badge tone={tone(check.status)}>{check.status}</Badge><span>Token {check.tokenValid ? 'valid' : 'invalid'}</span><span>App ID {check.appIdMatches ? 'matches' : 'mismatch'}</span></div><span className="text-xs text-[#8a8f98]">{date(check.checkedAt)} · {failureText(check.failure)}</span></div>)}</div>
       </div>}
     </>}
   </section>;
 }
 
 function KeyValue({ label, value, badge = false }: { label: string; value: string; badge?: boolean }) {
-  return <div className="rounded-xl border p-3"><div className="text-xs uppercase tracking-wide text-gray-500">{label}</div><div className="mt-2 font-semibold">{badge ? <Badge tone={tone(value)}>{value}</Badge> : value}</div></div>;
+  return <div className="rounded-xl border p-3"><div className="text-xs uppercase tracking-wide text-[#8a8f98]">{label}</div><div className="mt-2 font-semibold">{badge ? <Badge tone={tone(value)}>{value}</Badge> : value}</div></div>;
 }

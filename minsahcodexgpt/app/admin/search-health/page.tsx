@@ -50,7 +50,7 @@ type SearchHealth = {
 function statusClasses(status?: SearchHealth['status']) {
   if (status === 'healthy') return 'border-white/[0.15] bg-white/[0.08] text-white';
   if (status === 'degraded') return 'border-white/[0.10] bg-white/[0.06] text-white/80';
-  return 'border-white/[0.08] bg-white/[0.04] text-white/60';
+  return 'border-[#232636] bg-white/[0.04] text-white/60';
 }
 
 function statusIcon(status?: SearchHealth['status']) {
@@ -113,7 +113,7 @@ export default function AdminSearchHealthPage() {
           <Button
             onClick={loadHealth}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-black hover:bg-white/90 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/90 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/90 disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -121,7 +121,7 @@ export default function AdminSearchHealthPage() {
         </div>
 
         {error && (
-          <section className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 text-white/60">
+          <section className="rounded-xl border border-[#232636] bg-white/[0.04] p-4 text-white/60">
             <div className="flex items-start gap-3">
               <ShieldAlert className="mt-0.5 h-5 w-5" />
               <div>
@@ -133,7 +133,7 @@ export default function AdminSearchHealthPage() {
         )}
 
         {loading && !snapshot ? (
-          <section className="rounded-xl border border-white/[0.08] bg-[#151516] p-6 text-sm text-[#8A8F98] shadow-sm">
+          <section className="rounded-xl border border-[#232636] bg-[#161824] p-6 text-sm text-[#8A8F98] shadow-sm">
             Loading search health…
           </section>
         ) : snapshot ? (
@@ -147,7 +147,7 @@ export default function AdminSearchHealthPage() {
                     <p className="mt-1 text-sm">{snapshot.search?.message || snapshot.error || 'No status message returned.'}</p>
                   </div>
                 </div>
-                <div className="rounded-xl bg-[#08090A] border border-white/[0.08] px-4 py-3 text-sm font-semibold text-[#F7F8F8] shadow-sm">
+                <div className="rounded-xl bg-[#10121b] border border-[#232636] px-4 py-3 text-sm font-semibold text-[#F7F8F8] shadow-sm">
                   Current source: {sourceLabel}
                 </div>
               </div>
@@ -168,7 +168,7 @@ export default function AdminSearchHealthPage() {
             )}
 
             <section className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm">
+              <div className="rounded-xl border border-[#232636] bg-[#161824] p-5 shadow-sm">
                 <div className="flex items-center gap-2 text-[#8A8F98]">
                   <SearchCheck className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Search Source</span>
@@ -177,7 +177,7 @@ export default function AdminSearchHealthPage() {
                 <p className="mt-1 text-sm text-[#8A8F98]">Response time: {snapshot.responseTime}ms</p>
               </div>
 
-              <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm">
+              <div className="rounded-xl border border-[#232636] bg-[#161824] p-5 shadow-sm">
                 <div className="flex items-center gap-2 text-[#8A8F98]">
                   <ServerCrash className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Elasticsearch</span>
@@ -189,7 +189,7 @@ export default function AdminSearchHealthPage() {
                 <p className="mt-1 text-sm text-[#8A8F98]">Index: {snapshot.index?.name ?? 'unknown'} / {snapshot.index?.exists ? 'exists' : 'missing'}</p>
               </div>
 
-              <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm">
+              <div className="rounded-xl border border-[#232636] bg-[#161824] p-5 shadow-sm">
                 <div className="flex items-center gap-2 text-[#8A8F98]">
                   <Database className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Database fallback</span>
@@ -202,19 +202,19 @@ export default function AdminSearchHealthPage() {
               </div>
             </section>
 
-            <section className="rounded-xl border border-white/[0.08] bg-[#151516] p-5 shadow-sm">
+            <section className="rounded-xl border border-[#232636] bg-[#161824] p-5 shadow-sm">
               <h2 className="text-lg font-bold text-[#F7F8F8]">Phase 27 pass criteria</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <div className="rounded-xl border border-white/[0.08] bg-[#08090A] p-4 text-sm text-[#8A8F98]">
-                  <strong>ES healthy:</strong> API returns <code className="rounded bg-[#151516] border border-white/[0.08] px-1 text-[#F7F8F8]">source: elasticsearch</code>.
+                <div className="rounded-xl border border-[#232636] bg-[#10121b] p-4 text-sm text-[#8A8F98]">
+                  <strong>ES healthy:</strong> API returns <code className="rounded bg-[#161824] border border-[#232636] px-1 text-[#F7F8F8]">source: elasticsearch</code>.
                 </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[#08090A] p-4 text-sm text-[#8A8F98]">
-                  <strong>ES down:</strong> API returns <code className="rounded bg-[#151516] border border-white/[0.08] px-1 text-[#F7F8F8]">source: database_fallback</code>.
+                <div className="rounded-xl border border-[#232636] bg-[#10121b] p-4 text-sm text-[#8A8F98]">
+                  <strong>ES down:</strong> API returns <code className="rounded bg-[#161824] border border-[#232636] px-1 text-[#F7F8F8]">source: database_fallback</code>.
                 </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[#08090A] p-4 text-sm text-[#8A8F98]">
-                  <strong>Safety:</strong> fallback filters products with <code className="rounded bg-[#151516] border border-white/[0.08] px-1 text-[#F7F8F8]">isActive=true</code> and <code className="rounded bg-[#151516] border border-white/[0.08] px-1 text-[#F7F8F8]">deletedAt=null</code>.
+                <div className="rounded-xl border border-[#232636] bg-[#10121b] p-4 text-sm text-[#8A8F98]">
+                  <strong>Safety:</strong> fallback filters products with <code className="rounded bg-[#161824] border border-[#232636] px-1 text-[#F7F8F8]">isActive=true</code> and <code className="rounded bg-[#161824] border border-[#232636] px-1 text-[#F7F8F8]">deletedAt=null</code>.
                 </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[#08090A] p-4 text-sm text-[#8A8F98]">
+                <div className="rounded-xl border border-[#232636] bg-[#10121b] p-4 text-sm text-[#8A8F98]">
                   <strong>Visibility:</strong> this dashboard shows degraded state and DB fallback readiness.
                 </div>
               </div>

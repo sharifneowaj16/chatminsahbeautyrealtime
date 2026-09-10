@@ -215,7 +215,7 @@ export default function UniversalOfferEngineAdminPage() {
             type="button"
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-white text-black hover:bg-white/90 hover:bg-white/90 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/90 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save All Changes
@@ -224,19 +224,19 @@ export default function UniversalOfferEngineAdminPage() {
       </div>
 
       {/* ── WordPress-Style Navigation Tabs ── */}
-      <div className="flex overflow-x-auto gap-2 border-b border-white/[0.08] pb-px">
+      <div className="flex overflow-x-auto gap-2 border-b border-[#232636] pb-px">
         <button
           type="button"
           onClick={() => setActiveTab('coupons')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'coupons'
-              ? 'border-white text-white bg-white text-black hover:bg-white/90/10'
+              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
               : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
           }`}
         >
           <Tag className="w-4 h-4" />
           <span>Coupons & Vouchers</span>
-          <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-[#08090A] border border-white/[0.08] text-[#8A8F98] font-bold">
+          <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-[#10121b] border border-[#232636] text-[#8A8F98] font-bold">
             {config.coupons.length}
           </span>
         </button>
@@ -246,7 +246,7 @@ export default function UniversalOfferEngineAdminPage() {
           onClick={() => setActiveTab('topbar')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'topbar'
-              ? 'border-white text-white bg-white text-black hover:bg-white/90/10'
+              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
               : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
           }`}
         >
@@ -260,7 +260,7 @@ export default function UniversalOfferEngineAdminPage() {
           onClick={() => setActiveTab('bundles')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'bundles'
-              ? 'border-white text-white bg-white text-black hover:bg-white/90/10'
+              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
               : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
           }`}
         >
@@ -273,7 +273,7 @@ export default function UniversalOfferEngineAdminPage() {
           onClick={() => setActiveTab('anticonflict')}
           className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'anticonflict'
-              ? 'border-white text-white bg-white text-black hover:bg-white/90/10'
+              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
               : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
           }`}
         >
@@ -327,7 +327,7 @@ export default function UniversalOfferEngineAdminPage() {
                     placeholder="e.g. SUMMER15"
                     value={newCoupon.code}
                     onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] text-sm font-mono font-bold uppercase focus:ring-1 focus:ring-white/20 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm font-mono font-bold uppercase focus:ring-1 focus:ring-white/20 outline-none"
                   />
                 </div>
 
@@ -336,7 +336,7 @@ export default function UniversalOfferEngineAdminPage() {
                   <select
                     value={newCoupon.type}
                     onChange={(e) => setNewCoupon({ ...newCoupon, type: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
                   >
                     <option value="percentage">% Percentage Discount</option>
                     <option value="flat">৳ Fixed Flat Amount</option>
@@ -354,7 +354,7 @@ export default function UniversalOfferEngineAdminPage() {
                     required
                     value={newCoupon.value}
                     onChange={(e) => setNewCoupon({ ...newCoupon, value: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] text-sm font-bold focus:ring-1 focus:ring-white/20 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm font-bold focus:ring-1 focus:ring-white/20 outline-none"
                   />
                 </div>
 
@@ -366,7 +366,7 @@ export default function UniversalOfferEngineAdminPage() {
                     placeholder="0 = No minimum"
                     value={newCoupon.minSubtotal || ''}
                     onChange={(e) => setNewCoupon({ ...newCoupon, minSubtotal: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
                   />
                 </div>
 
@@ -377,7 +377,7 @@ export default function UniversalOfferEngineAdminPage() {
                     placeholder="e.g. 15% off on summer essentials"
                     value={newCoupon.description}
                     onChange={(e) => setNewCoupon({ ...newCoupon, description: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
                   />
                 </div>
 
@@ -387,7 +387,7 @@ export default function UniversalOfferEngineAdminPage() {
                     id="new-allowOnBundles"
                     checked={newCoupon.allowOnBundles}
                     onChange={(e) => setNewCoupon({ ...newCoupon, allowOnBundles: e.target.checked })}
-                    className="rounded border-gray-300 text-white focus:ring-white/20"
+                    className="rounded border-[#232636] text-white focus:ring-white/20"
                   />
                   <label htmlFor="new-allowOnBundles" className="text-xs font-semibold text-[#8A8F98]">
                     Allow Stacking on Bundles
@@ -407,9 +407,9 @@ export default function UniversalOfferEngineAdminPage() {
           )}
 
           {/* Coupon Table */}
-          <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#151516] shadow-xs">
-            <table className="min-w-full divide-y divide-white/[0.08] text-left text-xs">
-              <thead className="bg-[#08090A] text-[#8A8F98] font-bold uppercase tracking-wider text-[11px] border-b border-white/[0.08]">
+          <div className="overflow-hidden rounded-2xl border border-[#232636] bg-[#161824] shadow-xs">
+            <table className="min-w-full divide-y divide-[#232636] text-left text-xs">
+              <thead className="bg-[#10121b] text-[#8A8F98] font-bold uppercase tracking-wider text-[11px] border-b border-[#232636]">
                 <tr>
                   <th className="px-4 py-3">Code</th>
                   <th className="px-4 py-3">Type & Value</th>
@@ -419,11 +419,11 @@ export default function UniversalOfferEngineAdminPage() {
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.08]">
+              <tbody className="divide-y divide-[#232636]">
                 {config.coupons.map((coupon, idx) => (
-                  <tr key={coupon.code} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                  <tr key={coupon.code} className="hover:bg-[#1b1e2c]/70 transition-colors">
                     <td className="px-4 py-3.5 font-mono font-bold text-[#F7F8F8] text-sm">
-                      <span className="px-2 py-1 rounded-md bg-[#08090A] border border-white/[0.08] text-[#F7F8F8]">
+                      <span className="px-2 py-1 rounded-md bg-[#10121b] border border-[#232636] text-[#F7F8F8]">
                         {coupon.code}
                       </span>
                     </td>
@@ -444,7 +444,7 @@ export default function UniversalOfferEngineAdminPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       {coupon.allowOnBundles ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                           Stacks with Bundles
                         </span>
                       ) : (
@@ -460,7 +460,7 @@ export default function UniversalOfferEngineAdminPage() {
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
                           coupon.isActive
                             ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                            : 'bg-gray-100 text-[#8A8F98] hover:bg-gray-200'
+                            : 'bg-[#10121b] text-[#8A8F98] hover:bg-white/[0.12]'
                         }`}
                       >
                         {coupon.isActive ? 'Active' : 'Disabled'}
@@ -470,7 +470,7 @@ export default function UniversalOfferEngineAdminPage() {
                       <button
                         type="button"
                         onClick={() => handleDeleteCoupon(idx)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        className="p-1.5 text-[#62666d] hover:text-red-600 rounded-lg hover:bg-rose-500/10 transition-colors"
                         title="Delete coupon"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -503,13 +503,13 @@ export default function UniversalOfferEngineAdminPage() {
                   setConfig({ ...config, topBar: { ...config.topBar, enabled: e.target.checked } });
                   markDirty();
                 }}
-                className="w-4 h-4 rounded border-gray-300 text-white focus:ring-white/20"
+                className="w-4 h-4 rounded border-[#232636] text-white focus:ring-white/20"
               />
             </div>
           </div>
 
           {/* Tier 1: Product Free Delivery */}
-          <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#151516] shadow-xs space-y-3">
+          <div className="p-5 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b pb-2">
               <span className="font-bold text-sm text-[#F7F8F8] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -604,7 +604,7 @@ export default function UniversalOfferEngineAdminPage() {
           </div>
 
           {/* Tier 2: New Customer Delivery Offer */}
-          <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#151516] shadow-xs space-y-3">
+          <div className="p-5 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b pb-2">
               <span className="font-bold text-sm text-[#F7F8F8] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-500" />
@@ -698,7 +698,7 @@ export default function UniversalOfferEngineAdminPage() {
           </div>
 
           {/* Tier 3: Returning Customer Retention */}
-          <div className="p-5 rounded-2xl border border-white/[0.08] bg-[#151516] shadow-xs space-y-3">
+          <div className="p-5 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b pb-2">
               <span className="font-bold text-sm text-[#F7F8F8] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-purple-500" />
@@ -803,7 +803,7 @@ export default function UniversalOfferEngineAdminPage() {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#151516] shadow-xs space-y-6">
+          <div className="p-6 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-6">
             <div className="flex items-center justify-between border-b pb-4">
               <div>
                 <h3 className="font-bold text-sm text-[#F7F8F8]">Enable Bundles Feature</h3>
@@ -819,13 +819,13 @@ export default function UniversalOfferEngineAdminPage() {
                   });
                   markDirty();
                 }}
-                className="w-5 h-5 rounded border-gray-300 text-white focus:ring-white/20"
+                className="w-5 h-5 rounded border-[#232636] text-white focus:ring-white/20"
               />
             </div>
 
             {/* Tier sliders */}
             <div className="grid sm:grid-cols-3 gap-6">
-              <div className="p-4 rounded-xl bg-[#08090A] border border-white/[0.08]">
+              <div className="p-4 rounded-xl bg-[#10121b] border border-[#232636]">
                 <label className="block text-xs font-bold text-[#8A8F98] mb-1">
                   2-Step Bundle Profit Share (%)
                 </label>
@@ -842,7 +842,7 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="w-20 px-3 py-2 rounded-lg border border-white/[0.08] bg-[#151516] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
+                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
                   />
                   <span className="text-xs font-semibold text-[#8A8F98]">% of Real Profit</span>
                 </div>
@@ -851,7 +851,7 @@ export default function UniversalOfferEngineAdminPage() {
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#08090A] border border-white/[0.08]">
+              <div className="p-4 rounded-xl bg-[#10121b] border border-[#232636]">
                 <label className="block text-xs font-bold text-[#8A8F98] mb-1">
                   3-Step Bundle Profit Share (%)
                 </label>
@@ -868,7 +868,7 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="w-20 px-3 py-2 rounded-lg border border-white/[0.08] bg-[#151516] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
+                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
                   />
                   <span className="text-xs font-semibold text-[#8A8F98]">% of Real Profit</span>
                 </div>
@@ -877,7 +877,7 @@ export default function UniversalOfferEngineAdminPage() {
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#08090A] border border-white/[0.08]">
+              <div className="p-4 rounded-xl bg-[#10121b] border border-[#232636]">
                 <label className="block text-xs font-bold text-[#8A8F98] mb-1">
                   4+ Step VIP Profit Share (%)
                 </label>
@@ -894,7 +894,7 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="w-20 px-3 py-2 rounded-lg border border-white/[0.08] bg-[#151516] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
+                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
                   />
                   <span className="text-xs font-semibold text-[#8A8F98]">% of Real Profit</span>
                 </div>
@@ -905,7 +905,7 @@ export default function UniversalOfferEngineAdminPage() {
             </div>
 
             {/* Fallback Cost Ratio */}
-            <div className="p-4 rounded-xl bg-[#08090A] border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-4 rounded-xl bg-[#10121b] border border-[#232636] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h4 className="text-xs font-bold text-[#F7F8F8]">Fallback Purchase Cost Benchmark (%)</h4>
                 <p className="text-[11px] text-[#8A8F98]">
@@ -925,7 +925,7 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
-                  className="w-20 px-3 py-1.5 rounded-lg border font-bold text-xs bg-white"
+                  className="w-20 px-3 py-1.5 rounded-lg border font-bold text-xs bg-[#161824]"
                 />
                 <span className="text-xs font-bold text-[#8A8F98]">%</span>
               </div>
@@ -944,7 +944,7 @@ export default function UniversalOfferEngineAdminPage() {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#151516] shadow-xs space-y-6">
+          <div className="p-6 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-6">
             <div className="grid sm:grid-cols-2 gap-6">
               
               {/* Nationwide Free Delivery Threshold */}
@@ -974,7 +974,7 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="w-full px-3 py-2 rounded-lg border font-bold text-sm bg-white focus:ring-1 focus:ring-emerald-600 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border font-bold text-sm bg-[#161824] focus:ring-1 focus:ring-emerald-600 outline-none"
                   />
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
@@ -983,7 +983,7 @@ export default function UniversalOfferEngineAdminPage() {
               </div>
 
               {/* Dhaka Metro Free Delivery Threshold */}
-              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50">
+              <div className="p-4 rounded-xl border border-[#5e6ad2]/20 bg-[#5e6ad2]/10/50">
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-blue-950">
                     Dhaka Metro Free Delivery Threshold (৳)
@@ -1009,7 +1009,7 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="w-full px-3 py-2 rounded-lg border font-bold text-sm bg-white focus:ring-1 focus:ring-blue-600 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border font-bold text-sm bg-[#161824] focus:ring-1 focus:ring-blue-600 outline-none"
                   />
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
@@ -1019,10 +1019,10 @@ export default function UniversalOfferEngineAdminPage() {
             </div>
 
             {/* Anti-Stacking Master Gate */}
-            <div className="p-5 rounded-xl border border-amber-200 bg-amber-50/50 space-y-3">
+            <div className="p-5 rounded-xl border border-amber-500/20 bg-amber-500/10/50 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <ShieldAlert className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                  <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-sm font-bold text-amber-950">
                       Strict Anti-Stacking Guard (Recommended)
@@ -1072,7 +1072,7 @@ export default function UniversalOfferEngineAdminPage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-black hover:bg-white/90 hover:bg-white/90 text-white transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/90 text-white transition-all shadow-sm"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Save Changes

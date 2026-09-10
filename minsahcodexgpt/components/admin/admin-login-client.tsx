@@ -55,10 +55,10 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
 
   if (authLoading) {
     return (
-      <div className="admin-workspace min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
+      <div className="admin-workspace min-h-screen flex items-center justify-center bg-[#0b0d14]">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-admin-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#8A8F98]">Loading...</p>
+          <div className="w-12 h-12 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xs text-[#8a8f98]">Loading...</p>
         </div>
       </div>
     );
@@ -66,17 +66,17 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
 
   if (isLoggedIn || user) {
     return (
-      <div className="admin-workspace min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-panel to-admin-bg">
+      <div className="admin-workspace min-h-screen flex items-center justify-center bg-[#0b0d14]">
         <div className="text-center">
-          <div className="w-16 h-16 bg-emerald-950/80 border border-emerald-800/40 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 bg-[#10b981]/15 border border-[#10b981]/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-[#34d399]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-[#F7F8F8] mb-2">Login Successful!</h2>
-          <p className="text-[#8A8F98] mb-4">Redirecting to admin dashboard...</p>
-          <div className="w-64 bg-[rgba(255,255,255,0.08)] rounded-full h-2 mx-auto">
-            <div className="bg-white text-black hover:bg-white/90 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+          <h2 className="text-xl font-bold text-[#f7f8f8] mb-1.5">Login Successful!</h2>
+          <p className="text-xs text-[#8a8f98] mb-4">Redirecting to admin dashboard...</p>
+          <div className="w-48 bg-[#232636] rounded-full h-1.5 mx-auto overflow-hidden">
+            <div className="bg-[#5e6ad2] h-full rounded-full animate-pulse" style={{ width: '100%' }}></div>
           </div>
         </div>
       </div>
@@ -85,32 +85,32 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
 
   return (
     <div
-      className="admin-workspace min-h-screen flex items-center justify-center bg-[#08090A] p-4 relative overflow-hidden"
+      className="admin-workspace min-h-screen flex items-center justify-center bg-[#0b0d14] p-4 relative overflow-hidden"
       style={{
         fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       }}
     >
-      {/* Subtle radial ambient glow behind the card, signature of Linear */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-white/[0.02] rounded-full blur-3xl pointer-events-none" />
+      {/* Magic Blue ambient glow behind the card */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-[#5e6ad2]/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-[400px] relative z-10">
-        <div className="linear-card bg-[#0D0E11] border border-white/[0.08] rounded-2xl p-7 sm:p-8 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_24px_48px_rgba(0,0,0,0.8)]">
+      <div className="w-full max-w-[380px] relative z-10">
+        <div className="bg-[#161824] border border-[#232636] rounded-xl p-6 sm:p-7 shadow-[0_24px_48px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.03)]">
           {/* Brand Mark */}
-          <div className="flex flex-col items-center text-center mb-7">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.12] flex items-center justify-center mb-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20)]">
-              <span className="text-white font-semibold text-sm tracking-widest font-mono">MB</span>
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-10 h-10 rounded-lg bg-[#10121b] border border-[#232636] flex items-center justify-center mb-3 text-[#5e6ad2]">
+              <span className="font-bold text-sm tracking-widest font-mono">MB</span>
             </div>
-            <h1 className="text-lg font-semibold text-[#F7F8F8] tracking-tight">Admin Sign In</h1>
-            <p className="text-xs text-[#8A8F98] mt-1">Authenticate to access the workspace</p>
+            <h1 className="text-base sm:text-lg font-semibold text-[#f7f8f8] tracking-tight">Admin Sign In</h1>
+            <p className="text-xs text-[#8a8f98] mt-1">Authenticate to access the workspace</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[11px] font-medium text-[#8A8F98] mb-1.5 uppercase tracking-wider">
+              <label className="block text-[11px] font-medium text-[#8a8f98] mb-1.5 uppercase tracking-wider">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#62666D] pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#62666d] pointer-events-none" />
                 <input
                   type="email"
                   value={email}
@@ -118,17 +118,17 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
                   placeholder="admin@minsahbeauty.com"
                   required
                   autoComplete="email"
-                  className="w-full pl-9 pr-3 py-2 border border-white/[0.08] bg-[#08090A] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 transition-all"
+                  className="w-full pl-9 pr-3 py-2 border border-[#232636] bg-[#10121b] text-xs text-[#f7f8f8] placeholder-[#62666d] rounded-md focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] focus:border-[#5e6ad2] transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-[#8A8F98] mb-1.5 uppercase tracking-wider">
+              <label className="block text-[11px] font-medium text-[#8a8f98] mb-1.5 uppercase tracking-wider">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#62666D] pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#62666d] pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -136,13 +136,13 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full pl-9 pr-9 py-2 border border-white/[0.08] bg-[#08090A] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 transition-all"
+                  className="w-full pl-9 pr-9 py-2 border border-[#232636] bg-[#10121b] text-xs text-[#f7f8f8] placeholder-[#62666d] rounded-md focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] focus:border-[#5e6ad2] transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#62666D] hover:text-[#8A8F98] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#62666d] hover:text-[#8a8f98] transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -154,7 +154,7 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
             </div>
 
             {error && (
-              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 px-3 py-2 rounded-lg text-xs font-medium">
+              <div className="bg-[#ef4444]/10 border border-[#ef4444]/20 text-[#f87171] px-3 py-2 rounded-md text-xs font-medium">
                 {error}
               </div>
             )}
@@ -162,14 +162,14 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="h-9 w-full bg-white text-black font-semibold text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
+              className="h-9 w-full bg-[#5e6ad2] text-white font-medium text-xs rounded-md shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] hover:bg-[#6d78d5] active:scale-[0.99] transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
-              <span className="text-black font-semibold">{isLoading ? 'Signing in...' : 'Continue'}</span>
+              {isLoading ? 'Signing in...' : 'Continue'}
             </button>
           </form>
 
           <div className="mt-5 text-center">
-            <Link href="/" className="text-[11px] text-[#8A8F98] hover:text-white transition-colors inline-flex items-center gap-1">
+            <Link href="/" className="text-[11px] text-[#8a8f98] hover:text-[#f7f8f8] transition-colors inline-flex items-center gap-1">
               <ArrowLeft className="w-3 h-3" />
               Back to storefront
             </Link>

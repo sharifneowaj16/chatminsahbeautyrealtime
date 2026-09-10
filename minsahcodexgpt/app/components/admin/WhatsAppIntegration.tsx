@@ -126,8 +126,8 @@ export default function WhatsAppIntegration() {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-64"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-8 bg-white/[0.12] rounded w-64"></div>
+          <div className="h-64 bg-white/[0.12] rounded"></div>
         </div>
       </div>
     );
@@ -138,13 +138,13 @@ export default function WhatsAppIntegration() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">WhatsApp Business Integration</h2>
-          <p className="text-gray-600 text-sm">Connect and manage your WhatsApp Business account</p>
+          <h2 className="text-2xl font-bold text-[#f7f8f8]">WhatsApp Business Integration</h2>
+          <p className="text-[#8a8f98] text-sm">Connect and manage your WhatsApp Business account</p>
         </div>
         {account && account.status === 'connected' && (
           <Button
             onClick={() => setShowSettings(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 py-2 border border-[#232636] rounded-lg hover:bg-[#10121b]"
           >
             <Settings className="w-5 h-5" />
             Settings
@@ -154,13 +154,13 @@ export default function WhatsAppIntegration() {
 
       {/* Connection Status */}
       {!account || account.status === 'disconnected' ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-8">
+        <div className="bg-[#161824] border border-[#232636] rounded-lg p-8">
           <div className="text-center max-w-md mx-auto">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect WhatsApp Business</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-lg font-semibold text-[#f7f8f8] mb-2">Connect WhatsApp Business</h3>
+            <p className="text-[#8a8f98] mb-6">
               Connect your WhatsApp Business account to send and receive messages directly from your admin dashboard.
             </p>
             <Button
@@ -173,19 +173,19 @@ export default function WhatsAppIntegration() {
           </div>
         </div>
       ) : account.status === 'pending' ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-8">
+        <div className="bg-[#161824] border border-[#232636] rounded-lg p-8">
           <div className="text-center max-w-md mx-auto">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <QrCode className="w-8 h-8 text-yellow-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Scan QR Code</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-lg font-semibold text-[#f7f8f8] mb-2">Scan QR Code</h3>
+            <p className="text-[#8a8f98] mb-6">
               Open WhatsApp on your phone, go to Settings <ChevronRight className="w-4 h-4 inline mx-1" /> Linked Devices <ChevronRight className="w-4 h-4 inline mx-1" /> Link a Device, and scan this QR code.
             </p>
             {showQR && (
-              <div className="bg-gray-100 rounded-lg p-8 mb-4 flex items-center justify-center">
-                <div className="w-64 h-64 bg-white border-4 border-gray-300 rounded-lg flex items-center justify-center">
-                  <QrCode className="w-32 h-32 text-gray-400" />
+              <div className="bg-[#10121b] rounded-lg p-8 mb-4 flex items-center justify-center">
+                <div className="w-64 h-64 bg-[#161824] border-4 border-[#232636] rounded-lg flex items-center justify-center">
+                  <QrCode className="w-32 h-32 text-[#62666d]" />
                 </div>
               </div>
             )}
@@ -210,42 +210,42 @@ export default function WhatsAppIntegration() {
               <p className="text-green-100 text-xs mt-1">{account.phoneNumber}</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm font-medium">Messages Sent</span>
-                <Send className="w-5 h-5 text-gray-400" />
+                <span className="text-[#8a8f98] text-sm font-medium">Messages Sent</span>
+                <Send className="w-5 h-5 text-[#62666d]" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{account.messageCount.sent.toLocaleString()}</p>
-              <p className="text-gray-500 text-xs mt-1">Total sent</p>
+              <p className="text-2xl font-bold text-[#f7f8f8]">{account.messageCount.sent.toLocaleString()}</p>
+              <p className="text-[#8a8f98] text-xs mt-1">Total sent</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm font-medium">Messages Received</span>
-                <MessageCircle className="w-5 h-5 text-gray-400" />
+                <span className="text-[#8a8f98] text-sm font-medium">Messages Received</span>
+                <MessageCircle className="w-5 h-5 text-[#62666d]" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{account.messageCount.received.toLocaleString()}</p>
-              <p className="text-gray-500 text-xs mt-1">Total received</p>
+              <p className="text-2xl font-bold text-[#f7f8f8]">{account.messageCount.received.toLocaleString()}</p>
+              <p className="text-[#8a8f98] text-xs mt-1">Total received</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm font-medium">Today</span>
-                <Bell className="w-5 h-5 text-gray-400" />
+                <span className="text-[#8a8f98] text-sm font-medium">Today</span>
+                <Bell className="w-5 h-5 text-[#62666d]" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{account.messageCount.today}</p>
-              <p className="text-gray-500 text-xs mt-1">Messages today</p>
+              <p className="text-2xl font-bold text-[#f7f8f8]">{account.messageCount.today}</p>
+              <p className="text-[#8a8f98] text-xs mt-1">Messages today</p>
             </div>
           </div>
 
           {/* Settings Card */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Auto-Reply Settings</h3>
+          <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-[#f7f8f8] mb-4">Auto-Reply Settings</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">Auto-Reply Enabled</p>
-                  <p className="text-sm text-gray-500">Automatically reply to incoming messages</p>
+                  <p className="font-medium text-[#f7f8f8]">Auto-Reply Enabled</p>
+                  <p className="text-sm text-[#8a8f98]">Automatically reply to incoming messages</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <Input
@@ -257,13 +257,13 @@ export default function WhatsAppIntegration() {
                     } : null)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-white/[0.12] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#5e6ad2]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#161824] after:border-[#232636] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
 
               {account.settings.autoReply && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-2">
                     Auto-Reply Message
                   </label>
                   <Textarea
@@ -273,16 +273,16 @@ export default function WhatsAppIntegration() {
                       settings: { ...prev.settings, autoReplyMessage: e.target.value }
                     } : null)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter your auto-reply message..."
                   />
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-4 border-t border-[#232636]">
                 <div>
-                  <p className="font-medium text-gray-900">Business Hours</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-[#f7f8f8]">Business Hours</p>
+                  <p className="text-sm text-[#8a8f98]">
                     {account.settings.businessHours.start} - {account.settings.businessHours.end}
                   </p>
                 </div>
@@ -299,7 +299,7 @@ export default function WhatsAppIntegration() {
                     } : null)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-white/[0.12] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#5e6ad2]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#161824] after:border-[#232636] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function WhatsAppIntegration() {
           <div className="flex justify-end">
             <Button
               onClick={handleDisconnect}
-              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-rose-500/10"
             >
               Disconnect WhatsApp
             </Button>
@@ -342,7 +342,7 @@ export default function WhatsAppIntegration() {
         {account ? (
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+              <label className="mb-2 block text-sm font-medium text-[#8a8f98]">
                 Business Name
               </label>
               <Input
@@ -356,13 +356,13 @@ export default function WhatsAppIntegration() {
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+              <label className="mb-2 block text-sm font-medium text-[#8a8f98]">
                 Phone Number
               </label>
               <Input type="text" value={account.phoneNumber} readOnly />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-minsah-text-muted">
+              <label className="mb-2 block text-sm font-medium text-[#8a8f98]">
                 Away Message
               </label>
               <Textarea

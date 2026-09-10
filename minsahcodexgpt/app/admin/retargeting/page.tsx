@@ -154,7 +154,7 @@ export default function RetargetingAudiencesPage() {
   if (!hasPermission(PERMISSIONS.ANALYTICS_VIEW)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to view retargeting audiences.</p>
+        <p className="text-[#8a8f98]">You don't have permission to view retargeting audiences.</p>
       </div>
     );
   }
@@ -187,9 +187,9 @@ export default function RetargetingAudiencesPage() {
   const getPlatformColor = (platform: string) => {
     switch (platform) {
       case 'facebook':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-[#5e6ad2]/20 text-[#f7f8f8]';
       case 'google':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-rose-300';
       case 'tiktok':
         return 'bg-admin-panel text-white';
       case 'instagram':
@@ -197,7 +197,7 @@ export default function RetargetingAudiencesPage() {
       case 'twitter':
         return 'bg-sky-100 text-sky-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-[#10121b] text-[#f7f8f8]';
     }
   };
 
@@ -212,9 +212,9 @@ export default function RetargetingAudiencesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#F7F8F8]">Retargeting Audiences</h1>
-          <p className="text-gray-600">Build and manage custom audiences for retargeting campaigns</p>
+          <p className="text-[#8a8f98]">Build and manage custom audiences for retargeting campaigns</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg">
           <Plus className="w-5 h-5 mr-2" />
           Create Audience
         </Button>
@@ -222,7 +222,7 @@ export default function RetargetingAudiencesPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Audiences</p>
@@ -233,7 +233,7 @@ export default function RetargetingAudiencesPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Reach</p>
@@ -244,7 +244,7 @@ export default function RetargetingAudiencesPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Impressions</p>
@@ -255,7 +255,7 @@ export default function RetargetingAudiencesPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Avg ROAS</p>
@@ -268,23 +268,23 @@ export default function RetargetingAudiencesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 shadow-sm">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-4 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#62666d]" />
             <Input
               type="text"
               placeholder="Search audiences..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20"
+              className="w-full pl-10 pr-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20"
             />
           </div>
 
           <Select
             value={filterPlatform}
             onChange={(e) => setFilterPlatform(e.target.value)}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20"
+            className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20"
           >
             <option value="all">All Platforms</option>
             <option value="facebook">Facebook</option>
@@ -297,7 +297,7 @@ export default function RetargetingAudiencesPage() {
           <Select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20"
+            className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -308,10 +308,10 @@ export default function RetargetingAudiencesPage() {
       </div>
 
       {/* Audiences List */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden shadow-sm">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#08090A]">
+            <thead className="bg-[#10121b]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Audience
@@ -336,9 +336,9 @@ export default function RetargetingAudiencesPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.08]">
+            <tbody className="divide-y divide-[#232636]">
               {filteredAudiences.map((audience) => (
-                <tr key={audience.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                <tr key={audience.id} className="hover:bg-[#1b1e2c]/70 transition-colors">
                   <td className="px-6 py-4">
                     <div>
                       <p className="text-sm font-medium text-[#F7F8F8]">{audience.name}</p>
@@ -353,7 +353,7 @@ export default function RetargetingAudiencesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <Users className="w-4 h-4 text-gray-400 mr-1" />
+                      <Users className="w-4 h-4 text-[#62666d] mr-1" />
                       <span className="text-sm text-[#F7F8F8]">{audience.size.toLocaleString()}</span>
                     </div>
                   </td>
@@ -380,9 +380,9 @@ export default function RetargetingAudiencesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      audience.status === 'active' ? 'bg-green-100 text-green-800' :
-                      audience.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                      audience.status === 'active' ? 'bg-emerald-500/10 text-emerald-300' :
+                      audience.status === 'paused' ? 'bg-amber-500/10 text-amber-300' :
+                      'bg-[#10121b] text-[#f7f8f8]'
                     }`}>
                       {audience.status}
                     </span>
@@ -401,7 +401,7 @@ export default function RetargetingAudiencesPage() {
                           <Play className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button className="text-blue-600 hover:text-blue-900">
+                      <Button className="text-[#5e6ad2] hover:text-blue-900">
                         <Download className="w-4 h-4" />
                       </Button>
                       <Button className="text-red-600 hover:text-red-900">
@@ -418,7 +418,7 @@ export default function RetargetingAudiencesPage() {
 
       {filteredAudiences.length === 0 && (
         <div className="text-center py-12">
-          <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <Target className="w-16 h-16 text-[#d0d6e0] mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No audiences found</h3>
           <p className="text-[#8A8F98] mb-6">
             {searchQuery || filterPlatform !== 'all' || filterStatus !== 'all'
@@ -426,7 +426,7 @@ export default function RetargetingAudiencesPage() {
               : 'Create your first retargeting audience to get started'}
           </p>
           {!searchQuery && filterPlatform === 'all' && filterStatus === 'all' && (
-            <Button className="inline-flex items-center px-6 py-3 bg-white text-black hover:bg-white/90 rounded-lg">
+            <Button className="inline-flex items-center px-6 py-3 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg">
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Audience
             </Button>

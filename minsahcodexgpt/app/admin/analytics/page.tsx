@@ -149,7 +149,7 @@ function formatRoas(value: number | null) {
 
 function GrowthBadge({ value }: { value: number | null }) {
   if (value === null) {
-    return <span className="text-xs font-medium text-gray-400">no previous baseline</span>;
+    return <span className="text-xs font-medium text-[#62666d]">no previous baseline</span>;
   }
 
   const positive = value >= 0;
@@ -177,10 +177,10 @@ function MetricCard({
   tone?: 'neutral' | 'good' | 'warn' | 'bad';
 }) {
   const toneClass = {
-    neutral: 'border-white/[0.08] bg-[#151516]',
+    neutral: 'border-[#232636] bg-[#161824]',
     good: 'border-emerald-200 bg-emerald-50',
-    warn: 'border-amber-200 bg-amber-50',
-    bad: 'border-red-200 bg-red-50',
+    warn: 'border-amber-500/20 bg-amber-500/10',
+    bad: 'border-rose-500/20 bg-rose-500/10',
   }[tone];
 
   return (
@@ -190,7 +190,7 @@ function MetricCard({
           <p className="text-sm font-medium text-[#8A8F98]">{title}</p>
           <p className="mt-2 text-2xl font-bold text-[#F7F8F8]">{value}</p>
         </div>
-        <div className="rounded-lg bg-[#08090A] border border-white/[0.08] p-2 text-[#F7F8F8] shadow-sm">
+        <div className="rounded-lg bg-[#10121b] border border-[#232636] p-2 text-[#F7F8F8] shadow-sm">
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -205,9 +205,9 @@ function MetricCard({
 function GradeBadge({ grade }: { grade: ProductWinner['grade'] }) {
   const className = {
     A: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    B: 'bg-blue-100 text-blue-700 border-blue-200',
-    C: 'bg-amber-100 text-amber-700 border-amber-200',
-    D: 'bg-red-100 text-red-700 border-red-200',
+    B: 'bg-[#5e6ad2]/20 text-blue-700 border-[#5e6ad2]/20',
+    C: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    D: 'bg-red-100 text-rose-400 border-rose-500/20',
   }[grade];
 
   return <span className={clsx('rounded-full border px-2 py-1 text-xs font-bold', className)}>Grade {grade}</span>;
@@ -218,11 +218,11 @@ function TrendBars({ series }: { series: RevenueResponse['series'] }) {
   const compactSeries = series.length > 45 ? series.filter((_, index) => index % 3 === 0) : series;
 
   return (
-    <div className="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-white/[0.08] bg-[#08090A] p-4">
+    <div className="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-[#232636] bg-[#10121b] p-4">
       {compactSeries.map((item) => (
         <div key={item.date} className="grid grid-cols-[5rem_1fr_auto] items-center gap-3 text-xs">
           <span className="text-[#8A8F98]">{item.date}</span>
-          <progress className="h-2 w-full accent-minsah-action-primary" max={maxDelivered} value={item.deliveredRevenue} aria-label={`${item.date} delivered revenue`} />
+          <progress className="h-2 w-full accent-[#5e6ad2]" max={maxDelivered} value={item.deliveredRevenue} aria-label={`${item.date} delivered revenue`} />
           <span className="font-semibold text-[#F7F8F8]">{formatPrice(item.deliveredRevenue)}</span>
         </div>
       ))}
@@ -295,7 +295,7 @@ export default function AnalyticsPage() {
 
   if (!canView) {
     return (
-      <div className="m-6 rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
+      <div className="m-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
         <div className="flex items-center gap-3">
           <ShieldAlert className="h-6 w-6" />
           <div>
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
           <Select
             value={dateRange}
             onChange={(event) => setDateRange(event.target.value as DateRange)}
-            className="rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-white/20/40"
+            className="rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-1 focus:ring-[#5e6ad2]"
           >
             {dateRanges.map((range) => (
               <option key={range.value} value={range.value}>{range.label}</option>
@@ -335,12 +335,12 @@ export default function AnalyticsPage() {
             onChange={(event) => setAdSpendInput(event.target.value)}
             inputMode="decimal"
             placeholder="Ad spend BDT optional"
-            className="rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] placeholder-[#62666D] px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-white/20/40"
+            className="rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] placeholder-[#62666D] px-4 py-2 text-sm focus:border-admin-primary focus:ring-2 focus:ring-1 focus:ring-[#5e6ad2]"
           />
           <Button
             onClick={() => void loadAnalytics()}
             disabled={isLoading}
-            className="inline-flex items-center justify-center rounded-lg border border-white/[0.08] bg-[#151516] px-4 py-2 text-sm font-medium text-[#8A8F98] hover:text-[#F7F8F8] hover:bg-[#1C1D1F] disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-lg border border-[#232636] bg-[#161824] px-4 py-2 text-sm font-medium text-[#8A8F98] hover:text-[#F7F8F8] hover:bg-[#1b1e2c] disabled:opacity-50"
           >
             <RefreshCw className={clsx('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
             Refresh
@@ -349,7 +349,7 @@ export default function AnalyticsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-400">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
             {error}
@@ -358,7 +358,7 @@ export default function AnalyticsPage() {
       ) : null}
 
       {isLoading && !summary ? (
-        <div className="flex h-64 items-center justify-center rounded-xl border border-white/[0.08] bg-[#151516] text-[#8A8F98]">
+        <div className="flex h-64 items-center justify-center rounded-xl border border-[#232636] bg-[#161824] text-[#8A8F98]">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading real analytics...
         </div>
       ) : null}
@@ -399,7 +399,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-            <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-5 lg:col-span-2">
+            <div className="rounded-xl border border-[#232636] bg-[#161824] p-5 lg:col-span-2">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-[#F7F8F8]">Delivered Revenue Trend</h2>
@@ -410,7 +410,7 @@ export default function AnalyticsPage() {
               <TrendBars series={revenueData.series} />
             </div>
 
-            <div className="rounded-xl border border-white/[0.08] bg-[#151516] p-5">
+            <div className="rounded-xl border border-[#232636] bg-[#161824] p-5">
               <h2 className="text-lg font-semibold text-[#F7F8F8]">Order Funnel</h2>
               <div className="mt-4 space-y-3 text-sm text-[#8A8F98]">
                 <div className="flex justify-between"><span>Created</span><strong className="text-[#F7F8F8] font-semibold">{formatNumber(summary.ordersCreated)}</strong></div>
@@ -418,7 +418,7 @@ export default function AnalyticsPage() {
                 <div className="flex justify-between"><span>Delivered</span><strong className="text-[#F7F8F8] font-semibold">{formatNumber(summary.deliveredOrders)} ({formatPercent(summary.deliveryRate)})</strong></div>
                 <div className="flex justify-between"><span>Cancelled</span><strong className="text-[#F7F8F8] font-semibold">{formatNumber(summary.cancelledOrders)} ({formatPercent(summary.cancelRate)})</strong></div>
                 <div className="flex justify-between"><span>Returned</span><strong className="text-[#F7F8F8] font-semibold">{formatNumber(summary.returnedOrders)} ({formatPercent(summary.returnRate)})</strong></div>
-                <div className="border-t border-white/[0.08] pt-3">
+                <div className="border-t border-[#232636] pt-3">
                   <div className="flex justify-between"><span>Meta purchases sent</span><strong className="text-[#F7F8F8] font-semibold">{formatNumber(summary.metaPurchaseSent)}</strong></div>
                   <div className="mt-2 flex justify-between"><span>GA4 purchases sent</span><strong className="text-[#F7F8F8] font-semibold">{formatNumber(summary.gaPurchaseSent)}</strong></div>
                 </div>
@@ -436,8 +436,8 @@ export default function AnalyticsPage() {
       ) : null}
 
       {productsData ? (
-        <div className="rounded-xl border border-white/[0.08] bg-[#151516]">
-          <div className="flex flex-col gap-3 border-b border-white/[0.08] p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="rounded-xl border border-[#232636] bg-[#161824]">
+          <div className="flex flex-col gap-3 border-b border-[#232636] p-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-[#F7F8F8]">Product Winner Dashboard</h2>
               <p className="mt-1 text-sm text-[#8A8F98]">{productsData.summary.metricsNote}</p>
@@ -451,8 +451,8 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-[#08090A] border-b border-white/[0.08] text-left text-xs font-semibold uppercase tracking-wide text-[#8A8F98]">
+            <table className="min-w-full divide-y divide-[#232636] text-sm">
+              <thead className="bg-[#10121b] border-b border-[#232636] text-left text-xs font-semibold uppercase tracking-wide text-[#8A8F98]">
                 <tr>
                   <th className="px-5 py-3">Product</th>
                   <th className="px-5 py-3">Grade</th>
@@ -468,9 +468,9 @@ export default function AnalyticsPage() {
                   <th className="px-5 py-3 text-right">Stock</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.08] bg-[#151516]">
+              <tbody className="divide-y divide-[#232636] bg-[#161824]">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                  <tr key={product.id} className="hover:bg-[#1b1e2c]/70 transition-colors">
                     <td className="max-w-xs px-5 py-4">
                       <div className="font-semibold text-[#F7F8F8]">{product.name}</div>
                       <div className="mt-1 flex items-center gap-2 text-xs text-[#8A8F98]">

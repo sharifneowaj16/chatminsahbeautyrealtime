@@ -71,23 +71,27 @@
   --control-icon-size: 2.75rem;
   --font-size-minimum-readable: 0.75rem;
 
-  /* Admin panel design system - Linear Pure Monochrome (Real Workspace Orbiter) */
-  --admin-bg: #0B0C0E;          /* Linear Sidebar / Outer Shell */
-  --admin-canvas: #141518;      /* Linear Inner Workspace Canvas */
-  --admin-panel: #18191D;       /* Linear Card Surface */
-  --admin-panel-hover: #202227; /* Linear Row / Card hover */
-  --admin-primary: #F7F8F8;     /* Linear Pure Monochrome White Action */
-  --admin-primary-hover: #FFFFFF;
-  --admin-text: #F7F8F8;        /* Linear Luminous White text */
-  --admin-text-muted: #8A8F98;  /* Linear 60% Alpha Muted text */
-  --admin-text-subtle: #62666D; /* Linear 35% Alpha Subtle/Disabled text */
-  --admin-border: rgba(255, 255, 255, 0.08);        /* Linear 8% Alpha White border */
-  --admin-border-subtle: rgba(255, 255, 255, 0.05); /* Linear 5% Alpha White divider */
-  --admin-border-strong: rgba(255, 255, 255, 0.15); /* Linear 15% Alpha White hover border */
-  --admin-success: #F7F8F8;
-  --admin-danger: #8A8F98;
-  --admin-warning: #D1D5DB;
-  --admin-info: #E5E7EB;
+  /* Admin panel design system - Linear "Magic Blue" Interface */
+  --admin-bg: #090a0f;              /* Linear Sidebar / Drawer */
+  --admin-canvas: #10121b;          /* Linear Inner Workspace Canvas */
+  --admin-panel: #161824;           /* Linear Card Surface */
+  --admin-panel-hover: #1c1f2e;     /* Linear Row / Card hover */
+  --admin-primary: #5e6ad2;         /* Linear Magic Blue Action */
+  --admin-primary-hover: #6d78d5;
+  --admin-accent: #5e6ad2;          /* Magic Blue Accent */
+  --admin-accent-hover: #6d78d5;
+  --admin-accent-subtle: rgba(94, 106, 210, 0.15);
+  --admin-text: #f7f8f8;            /* Linear Luminous White text */
+  --admin-text-muted: #8a8f98;      /* Linear Muted text */
+  --admin-text-subtle: #62666d;     /* Linear Subtle/Disabled text */
+  --admin-border: #232636;          /* Linear Magic Blue border */
+  --admin-border-subtle: #1b1e2c;   /* Linear Hairline divider */
+  --admin-border-strong: rgba(255, 255, 255, 0.16);
+  --admin-popover: #161722;         /* Elevated Popover / Modal */
+  --admin-success: #27c37b;
+  --admin-danger: #ef4444;
+  --admin-warning: #f59e0b;
+  --admin-info: #5e6ad2;
 
   /* Compatibility aliases. Remove only after all legacy consumers migrate. */
   --background: var(--color-surface-panel);
@@ -116,6 +120,39 @@
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Scoped semantic token remaps for Linear Magic Blue across the entire admin panel */
+  --color-action-primary: #5e6ad2;
+  --color-action-primary-hover: #6d78d5;
+  --color-action-secondary: #161824;
+  --color-action-secondary-hover: #1c1f2e;
+  --color-action-disabled: rgba(255, 255, 255, 0.05);
+
+  --color-surface-page: #10121b;
+  --color-surface-panel: #161824;
+  --color-surface-elevated: #161722;
+  --color-surface-subtle: #12131b;
+  --color-surface-soft: #161824;
+  --color-surface-highlight: #1b1e2c;
+  --color-surface-accent: rgba(94, 106, 210, 0.15);
+  --color-surface-inverse: #f7f8f8;
+  --color-surface-disabled: #161824;
+
+  --color-text-primary: #f7f8f8;
+  --color-text-muted: #8a8f98;
+  --color-text-subtle: #62666d;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #62666d;
+  --color-text-link: #5e6ad2;
+
+  --color-border-default: #232636;
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-subtle: #1b1e2c;
+  --color-border-focus: #5e6ad2;
+
+  --color-status-danger-surface: rgba(239, 68, 68, 0.12);
+  --color-status-danger-border: rgba(239, 68, 68, 0.25);
+  --color-status-danger-text: #f87171;
 }
 
 nextjs-portal,
@@ -1656,4 +1693,34 @@ img {
   .header-actions { gap: 6px; }
   .icon-control, .cart, .menu-btn { width: 42px; height: 42px; }
 }
+
+/* Scoped Admin Workspace & Magic Blue Utilities */
+.admin-workspace {
+  color-scheme: dark;
+  background-color: var(--admin-bg, #090a0f);
+  color: var(--admin-text, #f7f8f8);
+}
+
+.admin-workspace ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.admin-workspace ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-workspace ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+.admin-workspace ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Mobile horizontal scroll container styling for admin tables */
+.admin-workspace .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 

@@ -136,7 +136,7 @@ export default function MediaLibraryPage() {
         <div className="flex gap-2">
           <Button
             onClick={fetchFiles}
-            className="inline-flex items-center px-3 py-2 border border-white/[0.08] bg-[#151516] text-[#F7F8F8] rounded-lg text-sm hover:bg-[#1C1D1F]"
+            className="inline-flex items-center px-3 py-2 border border-[#232636] bg-[#161824] text-[#F7F8F8] rounded-lg text-sm hover:bg-[#1b1e2c]"
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
@@ -145,7 +145,7 @@ export default function MediaLibraryPage() {
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg disabled:opacity-50"
           >
             <Upload className="w-5 h-5 mr-2" />
             {uploading ? 'Uploading...' : 'Upload Files'}
@@ -173,15 +173,15 @@ export default function MediaLibraryPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-4">
           <p className="text-sm text-[#8A8F98]">Total Files</p>
           <p className="text-2xl font-bold">{stats.total}</p>
         </div>
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-4">
           <p className="text-sm text-[#8A8F98]">Images</p>
           <p className="text-2xl font-bold">{stats.images}</p>
         </div>
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-4">
           <p className="text-sm text-[#8A8F98]">Storage Used</p>
           <p className="text-2xl font-bold">{stats.totalSizeMB} MB</p>
         </div>
@@ -195,8 +195,8 @@ export default function MediaLibraryPage() {
             onClick={() => setFolder(f)}
             className={`px-3 py-1 rounded-full text-sm border ${
               folder === f
-                ? 'bg-white text-black hover:bg-white/90 border-white'
-                : 'bg-white text-[#F7F8F8] border-gray-300 hover:bg-gray-50'
+                ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] border-white'
+                : 'bg-[#161824] text-[#F7F8F8] border-[#232636] hover:bg-[#10121b]'
             }`}
           >
             {f || 'All'}
@@ -206,20 +206,20 @@ export default function MediaLibraryPage() {
 
       {/* File Grid */}
       {loading ? (
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-12 text-center text-[#8A8F98]">
-          <RefreshCw className="w-8 h-8 text-gray-400 mx-auto mb-2 animate-spin" />
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-12 text-center text-[#8A8F98]">
+          <RefreshCw className="w-8 h-8 text-[#62666d] mx-auto mb-2 animate-spin" />
           <p className="text-[#8A8F98]">Loading files...</p>
         </div>
       ) : files.length === 0 ? (
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-12 text-center text-[#8A8F98]">
-          <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-12 text-center text-[#8A8F98]">
+          <ImageIcon className="w-16 h-16 text-[#d0d6e0] mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No Files Found</h3>
           <p className="text-[#8A8F98] mb-6">
             {folder ? `No files in "${folder}" folder` : 'Upload your first files to get started'}
           </p>
           <Button
             onClick={() => fileInputRef.current?.click()}
-            className="px-6 py-3 bg-white text-black hover:bg-white/90 rounded-lg"
+            className="px-6 py-3 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg"
           >
             Upload Files
           </Button>
@@ -227,9 +227,9 @@ export default function MediaLibraryPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {files.map((file) => (
-            <div key={file.name} className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden group relative">
+            <div key={file.name} className="bg-[#161824] rounded-xl border border-[#232636] overflow-hidden group relative">
               {/* Preview */}
-              <div className="aspect-square bg-[#08090A] flex items-center justify-center overflow-hidden">
+              <div className="aspect-square bg-[#10121b] flex items-center justify-center overflow-hidden">
                 {isImage(file.name) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -241,7 +241,7 @@ export default function MediaLibraryPage() {
                     }}
                   />
                 ) : (
-                  <ImageIcon className="w-8 h-8 text-gray-400" />
+                  <ImageIcon className="w-8 h-8 text-[#62666d]" />
                 )}
               </div>
 
@@ -250,7 +250,7 @@ export default function MediaLibraryPage() {
                 <p className="text-xs text-[#F7F8F8] truncate" title={file.name.split('/').pop()}>
                   {file.name.split('/').pop()}
                 </p>
-                <p className="text-xs text-gray-400">{formatSize(file.size)}</p>
+                <p className="text-xs text-[#62666d]">{formatSize(file.size)}</p>
               </div>
 
               {/* Actions overlay */}
@@ -258,7 +258,7 @@ export default function MediaLibraryPage() {
                 <Button
                   onClick={() => handleCopyUrl(file.url)}
                   title="Copy URL"
-                  className="p-2 bg-[#151516] border border-white/[0.08] text-[#F7F8F8] rounded-full hover:bg-[#1C1D1F]"
+                  className="p-2 bg-[#161824] border border-[#232636] text-[#F7F8F8] rounded-full hover:bg-[#1b1e2c]"
                 >
                   {copiedUrl === file.url ? (
                     <Check className="w-4 h-4 text-green-600" />
@@ -269,7 +269,7 @@ export default function MediaLibraryPage() {
                 <Button
                   onClick={() => handleDelete(file.name)}
                   title="Delete"
-                  className="p-2 bg-[#151516] border border-white/[0.08] text-[#F7F8F8] rounded-full hover:bg-[#1C1D1F]"
+                  className="p-2 bg-[#161824] border border-[#232636] text-[#F7F8F8] rounded-full hover:bg-[#1b1e2c]"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
                 </Button>

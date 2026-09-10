@@ -409,7 +409,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#10121b]">
       {/* Mobile navigation drawer */}
       <Drawer
         open={sidebarOpen}
@@ -430,14 +430,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       onClick={() => toggleExpanded(item.name)}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                         item.current
-                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-[#5e6ad2]/10 text-blue-700 border-l-4 border-blue-700'
+                          : 'text-[#d0d6e0] hover:bg-[#10121b] hover:text-[#f7f8f8]'
                       }`}
                     >
                       <item.icon className="h-5 w-5" />
                       <span className="flex-1 text-left">{item.name}</span>
                       {item.badge && (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-red-100 text-rose-300 text-xs rounded-full">
                           {item.badge}
                         </span>
                       )}
@@ -455,8 +455,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             href={child.href || '#'}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                               child.current
-                                ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                ? 'bg-[#5e6ad2]/10 text-blue-700 border-l-4 border-blue-700'
+                                : 'text-[#8a8f98] hover:bg-[#10121b] hover:text-[#f7f8f8]'
                             }`}
                           >
                             <child.icon className="h-4 w-4" />
@@ -471,14 +471,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     href={item.href || '#'}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                       item.current
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        ? 'bg-[#5e6ad2]/10 text-blue-700 border-l-4 border-blue-700'
+                        : 'text-[#d0d6e0] hover:bg-[#10121b] hover:text-[#f7f8f8]'
                     }`}
                   >
                     <item.icon className="h-5 w-5" />
                     <span className="flex-1">{item.name}</span>
                     {item.badge && (
-                      <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                      <span className="px-2 py-1 bg-red-100 text-rose-300 text-xs rounded-full">
                         {item.badge}
                       </span>
                     )}
@@ -487,15 +487,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
             ))}
 
-            <div className="pt-6 mt-6 border-t border-gray-200">
-              <div className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            <div className="pt-6 mt-6 border-t border-[#232636]">
+              <div className="px-3 text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-2">
                 Advanced
               </div>
               {secondaryNavigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-300"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[#d0d6e0] hover:bg-[#10121b] hover:text-[#f7f8f8] transition-colors duration-300"
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.name}</span>
@@ -508,13 +508,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
+          <div className="flex flex-col flex-grow bg-[#161824] border-r border-[#232636] pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-6 mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">MB</span>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Minsah Beauty Admin</h2>
+                <h2 className="text-xl font-bold text-[#f7f8f8]">Minsah Beauty Admin</h2>
               </div>
             </div>
 
@@ -528,14 +528,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         onClick={() => toggleExpanded(item.name)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                           item.current
-                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                            ? 'bg-[#5e6ad2]/10 text-blue-700 border-l-4 border-blue-700'
+                            : 'text-[#d0d6e0] hover:bg-[#10121b] hover:text-[#f7f8f8]'
                         }`}
                       >
                         <item.icon className="h-5 w-5" />
                         <span className="flex-1 text-left">{item.name}</span>
                         {item.badge && (
-                          <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                          <span className="px-2 py-1 bg-red-100 text-rose-300 text-xs rounded-full">
                             {item.badge}
                           </span>
                         )}
@@ -553,8 +553,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                               href={child.href || '#'}
                               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                                 child.current
-                                  ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                  ? 'bg-[#5e6ad2]/10 text-blue-700 border-l-4 border-blue-700'
+                                  : 'text-[#8a8f98] hover:bg-[#10121b] hover:text-[#f7f8f8]'
                               }`}
                             >
                               <child.icon className="h-4 w-4" />
@@ -569,14 +569,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       href={item.href || '#'}
                       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                         item.current
-                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-[#5e6ad2]/10 text-blue-700 border-l-4 border-blue-700'
+                          : 'text-[#d0d6e0] hover:bg-[#10121b] hover:text-[#f7f8f8]'
                       }`}
                     >
                       <item.icon className="h-5 w-5" />
                       <span className="flex-1">{item.name}</span>
                       {item.badge && (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-red-100 text-rose-300 text-xs rounded-full">
                           {item.badge}
                         </span>
                       )}
@@ -585,15 +585,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
               ))}
 
-              <div className="pt-6 mt-6 border-t border-gray-200">
-                <div className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              <div className="pt-6 mt-6 border-t border-[#232636]">
+                <div className="px-3 text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-2">
                   Advanced
                 </div>
                 {secondaryNavigation.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-300"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[#d0d6e0] hover:bg-[#10121b] hover:text-[#f7f8f8] transition-colors duration-300"
                   >
                     <item.icon className="h-5 w-5" />
                     <span>{item.name}</span>
@@ -608,25 +608,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="flex flex-col flex-1 lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
+        <div className="sticky top-0 z-40 bg-[#161824] border-b border-[#232636]">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
               <Button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
+                className="lg:hidden p-2 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#10121b] rounded-lg transition-colors duration-300"
               >
                 <Menu className="h-5 w-5" />
               </Button>
 
               {/* Search Bar */}
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#62666d]" />
                 <Input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products, orders, customers..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full pl-10 pr-4 py-2 border border-[#232636] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
             </div>
@@ -634,11 +634,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex items-center gap-4">
               {/* Quick Actions */}
               <div className="hidden md:flex items-center gap-2">
-                <Button className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full hover:bg-green-200 transition-colors">
+                <Button className="px-3 py-1 bg-emerald-500/10 text-emerald-300 text-xs rounded-full hover:bg-green-200 transition-colors">
                   <CheckCircle className="h-3 w-3 inline mr-1" />
                   All Systems Operational
                 </Button>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-[#8a8f98]">
                   Last sync: 2 minutes ago
                 </span>
               </div>
@@ -647,7 +647,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="relative">
                 <Button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
+                  className="relative p-2 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#10121b] rounded-lg transition-colors duration-300"
                 >
                   <Bell className="h-5 w-5" />
                   {adminUser.notifications && adminUser.notifications > 0 && (
@@ -657,40 +657,40 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
                 {/* Notifications Dropdown */}
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="font-medium text-gray-900">Notifications</h3>
+                  <div className="absolute right-0 mt-2 w-80 bg-[#161824] border border-[#232636] rounded-lg shadow-lg z-50">
+                    <div className="p-4 border-b border-[#232636]">
+                      <h3 className="font-medium text-[#f7f8f8]">Notifications</h3>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                            !notification.read ? 'bg-blue-50' : ''
+                          className={`p-4 border-b border-[#232636] hover:bg-[#10121b] cursor-pointer ${
+                            !notification.read ? 'bg-[#5e6ad2]/10' : ''
                           }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              notification.type === 'warning' ? 'bg-yellow-100' :
-                              notification.type === 'order' ? 'bg-blue-100' :
-                              notification.type === 'review' ? 'bg-green-100' :
-                              'bg-gray-100'
+                              notification.type === 'warning' ? 'bg-amber-500/10' :
+                              notification.type === 'order' ? 'bg-[#5e6ad2]/20' :
+                              notification.type === 'review' ? 'bg-emerald-500/10' :
+                              'bg-[#10121b]'
                             }`}>
                               {notification.type === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-600" />}
-                              {notification.type === 'order' && <ShoppingBag className="h-4 w-4 text-blue-600" />}
+                              {notification.type === 'order' && <ShoppingBag className="h-4 w-4 text-[#5e6ad2]" />}
                               {notification.type === 'review' && <StarIconSolid className="h-4 w-4 text-green-600" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-                              <p className="text-sm text-gray-500 truncate">{notification.message}</p>
-                              <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                              <p className="text-sm font-medium text-[#f7f8f8]">{notification.title}</p>
+                              <p className="text-sm text-[#8a8f98] truncate">{notification.message}</p>
+                              <p className="text-xs text-[#62666d] mt-1">{notification.time}</p>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="p-3 border-t border-gray-200">
-                      <Button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    <div className="p-3 border-t border-[#232636]">
+                      <Button className="text-sm text-[#5e6ad2] hover:text-blue-700 font-medium">
                         View all notifications →
                       </Button>
                     </div>
@@ -702,61 +702,61 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="relative">
                 <Button
                   onClick={() => setShowProfile(!showProfile)}
-                  className="flex items-center gap-3 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-300"
+                  className="flex items-center gap-3 p-2 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#10121b] rounded-lg transition-colors duration-300"
                 >
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-white/[0.12] rounded-full flex items-center justify-center">
                     {adminUser.avatar ? (
                       <img src={adminUser.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      <span className="text-gray-600 font-medium">{adminUser.name.charAt(0)}</span>
+                      <span className="text-[#8a8f98] font-medium">{adminUser.name.charAt(0)}</span>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{adminUser.name}</p>
-                    <p className="text-xs text-gray-500">{adminUser.role}</p>
+                    <p className="text-sm font-medium text-[#f7f8f8]">{adminUser.name}</p>
+                    <p className="text-xs text-[#8a8f98]">{adminUser.role}</p>
                   </div>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
 
                 {/* Profile Dropdown */}
                 {showProfile && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <div className="p-4 border-b border-gray-200">
+                  <div className="absolute right-0 mt-2 w-64 bg-[#161824] border border-[#232636] rounded-lg shadow-lg z-50">
+                    <div className="p-4 border-b border-[#232636]">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-white/[0.12] rounded-full flex items-center justify-center">
                           {adminUser.avatar ? (
                             <img src={adminUser.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
                           ) : (
-                            <span className="text-gray-600 font-medium text-lg">{adminUser.name.charAt(0)}</span>
+                            <span className="text-[#8a8f98] font-medium text-lg">{adminUser.name.charAt(0)}</span>
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{adminUser.name}</p>
-                          <p className="text-sm text-gray-500">{adminUser.email}</p>
+                          <p className="font-medium text-[#f7f8f8]">{adminUser.name}</p>
+                          <p className="text-sm text-[#8a8f98]">{adminUser.email}</p>
                         </div>
                       </div>
                     </div>
                     <div className="p-2">
                       <Link
                         href="/admin/profile"
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+                        className="flex items-center gap-3 px-3 py-2 text-sm text-[#d0d6e0] hover:bg-[#10121b] rounded-lg"
                       >
                         <UserCircle className="h-4 w-4" />
                         Profile
                       </Link>
                       <Link
                         href="/admin/settings"
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+                        className="flex items-center gap-3 px-3 py-2 text-sm text-[#d0d6e0] hover:bg-[#10121b] rounded-lg"
                       >
                         <Settings className="h-4 w-4" />
                         Settings
                       </Link>
-                      <div className="px-3 py-2 text-sm text-gray-500">
+                      <div className="px-3 py-2 text-sm text-[#8a8f98]">
                         Last login: {adminUser.lastLogin ? formatRelativeTime(adminUser.lastLogin) : 'Never'}
                       </div>
                       <Button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
+                        className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-rose-500/10 rounded-lg"
                       >
                         <LogOut className="h-4 w-4" />
                         Logout
@@ -776,15 +776,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-200 px-6 py-2">
+      <div className="bg-[#161824] border-b border-[#232636] px-6 py-2">
         <nav className="flex items-center space-x-2 text-sm">
-          <Link href="/admin" className="text-gray-500 hover:text-gray-700">
+          <Link href="/admin" className="text-[#8a8f98] hover:text-[#d0d6e0]">
             Home
           </Link>
           {pathname !== '/admin' && (
             <>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 capitalize">
+              <span className="text-[#62666d]">/</span>
+              <span className="text-[#f7f8f8] capitalize">
                 {pathname.split('/').pop()?.replace(/-/g, ' ')}
               </span>
             </>

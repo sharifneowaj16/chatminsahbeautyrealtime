@@ -224,7 +224,7 @@ export default function ProductsPage() {
   if (!hasPermission(PERMISSIONS.PRODUCTS_VIEW)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don&apos;t have permission to view products.</p>
+        <p className="text-[#8a8f98]">You don&apos;t have permission to view products.</p>
       </div>
     );
   }
@@ -268,9 +268,9 @@ export default function ProductsPage() {
 
   const getStatusColor = (status: ApiProduct['status']) => {    switch (status) {
       case 'active':       return 'bg-white/[0.10] text-white border border-white/[0.15]';
-      case 'inactive':     return 'bg-white/[0.04] text-white/50 border border-white/[0.08]';
-      case 'out_of_stock': return 'bg-white/[0.04] text-white/50 border border-white/[0.08]';
-      default:             return 'bg-white/[0.04] text-white/50 border border-white/[0.08]';
+      case 'inactive':     return 'bg-white/[0.04] text-white/50 border border-[#232636]';
+      case 'out_of_stock': return 'bg-white/[0.04] text-white/50 border border-[#232636]';
+      default:             return 'bg-white/[0.04] text-white/50 border border-[#232636]';
     }
   };
 
@@ -300,14 +300,14 @@ export default function ProductsPage() {
           <div className="mt-3 sm:mt-0 flex items-center gap-2">
             <Link
               href="/admin/products/import"
-              className="inline-flex items-center h-8.5 px-3 bg-[#151516] border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-white/80 hover:text-white rounded-lg text-xs font-medium hover:bg-[#1C1D1F] active:scale-[0.97] transition-all duration-120"
+              className="inline-flex items-center h-8.5 px-3 bg-[#161824] border border-[#232636] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-white/80 hover:text-white rounded-lg text-xs font-medium hover:bg-[#1b1e2c] active:scale-[0.97] transition-all duration-120"
             >
               <ClipboardPaste className="w-3.5 h-3.5 mr-1.5 text-white/60" />
               Claude Import
             </Link>
             <Link
               href="/admin/products/new"
-              className="inline-flex items-center h-8.5 px-3.5 bg-white text-black font-medium text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.97] transition-all duration-120"
+              className="inline-flex items-center h-8.5 px-3.5 bg-[#5e6ad2] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-medium text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.97] transition-all duration-120"
             >
               <Plus className="w-3.5 h-3.5 mr-1.5 stroke-[2.5]" />
               Add Product
@@ -317,7 +317,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="linear-card bg-[#151516] rounded-lg border border-white/[0.08] p-3 mb-4">
+      <div className="linear-card bg-[#161824] rounded-lg border border-[#232636] p-3 mb-4">
         <div className="flex flex-col lg:flex-row gap-2.5">
           <div className="flex-1">
             <div className="relative">
@@ -327,24 +327,30 @@ export default function ProductsPage() {
                 placeholder="Search products..."
                 value={filters.search}
                 onChange={(e) => updateFilter('search', e.target.value)}
-                className="w-full h-8.5 pl-9 pr-3 bg-[#08090A] border border-white/[0.08] text-[#F7F8F8] placeholder:text-white/35 rounded-lg text-xs focus:ring-1 focus:ring-white/20 focus:border-white/25 shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] transition-all"
+                className="w-full h-8.5 pl-9 pr-3 bg-[#10121b] border border-[#232636] text-[#F7F8F8] placeholder:text-white/35 rounded-lg text-xs focus:ring-1 focus:ring-white/20 focus:border-white/25 shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] transition-all"
               />
             </div>
           </div>
 
-          <Button
+          <button
+            type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center h-8.5 px-3 border border-white/[0.08] bg-[#08090A] text-white/80 hover:text-white rounded-lg text-xs font-medium hover:bg-[#1C1D1F] active:scale-[0.97] transition-all duration-120"
+            className={clsx(
+              "inline-flex items-center h-8.5 px-3 border rounded-lg text-xs font-medium transition-all duration-120 active:scale-[0.97]",
+              showFilters
+                ? "bg-[#5e6ad2] text-white border-[#5e6ad2] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                : "bg-[#10121b] border-[#232636] text-white/80 hover:text-white hover:bg-[#1b1e2c]"
+            )}
           >
-            <Filter className="w-3.5 h-3.5 mr-1.5 text-white/50" />
+            <Filter className={clsx("w-3.5 h-3.5 mr-1.5", showFilters ? "text-white" : "text-white/50")} />
             Filters
             {showFilters && <Layers className="w-3.5 h-3.5 ml-1.5 text-white" />}
-          </Button>
+          </button>
 
           <Select
             value={filters.sortBy}
             onChange={(e) => updateFilter('sortBy', e.target.value)}
-            className="h-8.5 px-3 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg text-xs font-medium focus:ring-1 focus:ring-white/20 focus:border-white/25"
+            className="h-8.5 px-3 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg text-xs font-medium focus:ring-1 focus:ring-white/20 focus:border-white/25"
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -353,13 +359,13 @@ export default function ProductsPage() {
         </div>
 
         {showFilters && (
-          <div className="mt-3 pt-3 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="mt-3 pt-3 border-t border-[#232636] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
               <label className="block text-[11px] font-medium text-white/50 mb-1">Category</label>
               <Select
                 value={filters.category}
                 onChange={(e) => updateFilter('category', e.target.value)}
-                className="w-full h-8 px-2.5 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-md text-xs"
+                className="w-full h-8 px-2.5 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-md text-xs"
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>{category}</option>
@@ -371,7 +377,7 @@ export default function ProductsPage() {
               <Select
                 value={filters.status}
                 onChange={(e) => updateFilter('status', e.target.value)}
-                className="w-full h-8 px-2.5 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-md text-xs"
+                className="w-full h-8 px-2.5 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-md text-xs"
               >
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
@@ -409,14 +415,14 @@ export default function ProductsPage() {
       {fetchError && (
         <div className="linear-card bg-white/[0.04] border border-white/[0.15] rounded-lg p-3 mb-4 flex items-center justify-between">
           <p className="text-xs text-white/80">Failed to load products: {fetchError}</p>
-          <Button onClick={() => fetchProducts()} className="h-7 px-2.5 text-xs bg-white text-black font-medium rounded-md">
+          <Button onClick={() => fetchProducts()} className="h-7 px-2.5 text-xs bg-[#5e6ad2] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-medium rounded-md">
             Retry
           </Button>
         </div>
       )}
 
       {/* Products Table */}
-      <div className="linear-card bg-[#151516] rounded-lg border border-white/[0.08] overflow-hidden shadow-sm">
+      <div className="linear-card bg-[#161824] rounded-lg border border-[#232636] overflow-hidden shadow-sm">
         {loading ? (
           <div className="text-center py-10">
             <p className="text-xs text-white/50 font-medium">Loading products...</p>
@@ -424,14 +430,14 @@ export default function ProductsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#08090A] border-b border-white/[0.08]">
+              <thead className="bg-[#10121b] border-b border-[#232636]">
                 <tr>
                   <th className="px-3.5 py-2 text-left w-10">
                     <Input
                       type="checkbox"
                       checked={selectedProducts.length === products.length && products.length > 0}
                       onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-white/[0.15] bg-[#08090A] text-white focus:ring-white/20 w-3.5 h-3.5"
+                      className="rounded border-white/[0.15] bg-[#10121b] text-white focus:ring-white/20 w-3.5 h-3.5"
                     />
                   </th>
                   <th className="px-3 py-2 text-left text-[11px] font-medium text-white/50 uppercase tracking-wider">Product</th>
@@ -443,7 +449,7 @@ export default function ProductsPage() {
                   <th className="px-3 py-2 text-right text-[11px] font-medium text-white/50 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-[#151516] divide-y divide-white/[0.06]">
+              <tbody className="bg-[#161824] divide-y divide-[#232636]">
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-white/[0.025] transition-colors duration-100 group">
                     <td className="px-3.5 py-2.5">
@@ -451,12 +457,12 @@ export default function ProductsPage() {
                         type="checkbox"
                         checked={selectedProducts.includes(product.id)}
                         onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
-                        className="rounded border-white/[0.15] bg-[#08090A] text-white focus:ring-white/20 w-3.5 h-3.5"
+                        className="rounded border-white/[0.15] bg-[#10121b] text-white focus:ring-white/20 w-3.5 h-3.5"
                       />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center space-x-2.5">
-                        <div className="w-8 h-8 bg-[#1C1D1F] border border-white/[0.06] rounded-md flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="w-8 h-8 bg-[#1b1e2c] border border-[#232636] rounded-md flex items-center justify-center overflow-hidden shrink-0">
                           {product.image ? (
                             <img
                               src={product.image}
@@ -513,7 +519,7 @@ export default function ProductsPage() {
                     <td className="px-3 py-2.5">
                       <div className="flex flex-col gap-1">
                         <span className={clsx('inline-flex items-center h-5 px-2 rounded-full text-[10px] font-medium w-fit gap-1', getStatusColor(product.status))}>
-                          <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', product.status === 'active' ? 'bg-white' : 'bg-white/40')} />
+                          <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', product.status === 'active' ? 'bg-[#161824]' : 'bg-white/40')} />
                           <span className="capitalize">{product.status.replace('_', ' ')}</span>
                         </span>
                         {product.hasPendingShortlist && (
@@ -582,7 +588,7 @@ export default function ProductsPage() {
         )}
 
         {!loading && products.length > 0 && (
-          <div className="flex flex-col gap-3 border-t border-white/[0.08] bg-[#08090A]/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-[#232636] bg-[#10121b]/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-[#8A8F98]">
               Showing {firstVisibleProduct}-{lastVisibleProduct} of {pagination.totalCount} products
             </div>
@@ -597,34 +603,34 @@ export default function ProductsPage() {
                   }));
                   setSelectedProducts([]);
                 }}
-                className="rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 text-sm focus:ring-2 focus:ring-white/20"
+                className="rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-2 text-sm focus:ring-2 focus:ring-white/20"
               >
                 <option value={25}>25 / page</option>
                 <option value={50}>50 / page</option>
                 <option value={100}>100 / page</option>
               </Select>
               <div className="flex items-center gap-2">
-                <Button
+                <button
                   type="button"
                   disabled={pagination.page <= 1}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-                  className="inline-flex items-center rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#1C1D1F]"
+                  className="inline-flex items-center rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[#1b1e2c] transition-colors"
                 >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  <ChevronLeft className="mr-1 h-3.5 w-3.5 text-[#8A8F98]" />
                   Previous
-                </Button>
-                <span className="text-sm text-[#8A8F98]">
+                </button>
+                <span className="text-xs text-[#8A8F98] px-1">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
-                <Button
+                <button
                   type="button"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
-                  className="inline-flex items-center rounded-lg border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#1C1D1F]"
+                  className="inline-flex items-center rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[#1b1e2c] transition-colors"
                 >
                   Next
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
+                  <ChevronRight className="ml-1 h-3.5 w-3.5 text-[#8A8F98]" />
+                </button>
               </div>
             </div>
           </div>

@@ -25,6 +25,7 @@ import {
   Save,
   X,
   Tag,
+  Layers,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -213,7 +214,7 @@ export default function CategoriesPage() {
   const getStatusColor = (status: Category['status']) => {
     return status === 'active'
       ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
-      : 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
+      : 'bg-white/[0.06] text-[#8A8F98] border border-[#232636]';
   };
 
   return (
@@ -226,27 +227,27 @@ export default function CategoriesPage() {
         </div>
         <Button
           onClick={openAddModal}
-          className="mt-3 sm:mt-0 h-8.5 px-3.5 bg-white text-black font-medium text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.98] transition-all inline-flex items-center"
+          className="mt-3 sm:mt-0 h-8 px-3.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white font-medium text-xs rounded-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] active:scale-[0.98] transition-all inline-flex items-center"
         >
-          <Plus className="w-4 h-4 mr-1.5" />
+          <Plus className="w-3.5 h-3.5 mr-1.5" />
           Add Category
         </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Categories</p>
               <p className="text-xl font-semibold tracking-tight text-[#F7F8F8] mt-1">{categories.length}</p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
               <Folder className="w-3.5 h-3.5 text-white/70" />
             </div>
           </div>
         </div>
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Products</p>
@@ -254,12 +255,12 @@ export default function CategoriesPage() {
                 {categories.reduce((sum, cat) => sum + cat.productCount, 0)}
               </p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
               <FolderOpen className="w-3.5 h-3.5 text-white/70" />
             </div>
           </div>
         </div>
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Active Categories</p>
@@ -267,12 +268,12 @@ export default function CategoriesPage() {
                 {categories.filter(cat => cat.status === 'active').length}
               </p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
               <div className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_6px_rgba(52,211,153,0.5)]"></div>
             </div>
           </div>
         </div>
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Subcategories</p>
@@ -280,32 +281,32 @@ export default function CategoriesPage() {
                 {categories.reduce((sum, cat) => sum + cat.subcategories.length, 0)}
               </p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-              <Tag className="w-3.5 h-3.5 text-white/70" />
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
+              <Layers className="w-3.5 h-3.5 text-white/70" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-3 mb-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+      {/* Search and Filters */}
+      <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-3 mb-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#62666D]" />
+          <Search className="w-3.5 h-3.5 text-[#8A8F98] absolute left-3 top-1/2 transform -translate-y-1/2" />
           <Input
             type="text"
             placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
+            className="w-full pl-9 pr-3 py-1.5 border border-[#232636] bg-[#10121b] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-[#5e6ad2] focus:border-[#5e6ad2]"
           />
         </div>
       </div>
 
       {/* Categories List */}
-      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+      <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#08090A] border-b border-white/[0.08]">
+            <thead className="bg-[#10121b] border-b border-[#232636]">
               <tr>
                 <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   Category
@@ -327,7 +328,7 @@ export default function CategoriesPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-[#08090A] divide-y divide-white/[0.06]">
+            <tbody className="bg-[#10121b] divide-y divide-[#232636]">
               {filteredCategories.map((category) => {
                 const isExpanded = expandedCategories.includes(category.id);
                 return (
@@ -335,16 +336,18 @@ export default function CategoriesPage() {
                     <tr className="hover:bg-white/[0.03] transition-colors">
                       <td className="px-3.5 py-2.5">
                         <div className="flex items-center">
-                          <Button
+                          <button
+                            type="button"
                             onClick={() => toggleExpanded(category.id)}
-                            className="mr-1.5 p-1 hover:bg-white/[0.06] rounded text-[#8A8F98] active:scale-[0.95] transition-transform"
+                            className="mr-2 p-1 hover:bg-white/[0.06] rounded text-[#8A8F98] hover:text-[#F7F8F8] active:scale-[0.95] transition-all cursor-pointer inline-flex items-center justify-center"
+                            aria-label={isExpanded ? 'Collapse category' : 'Expand category'}
                           >
                             {isExpanded ? (
                               <ChevronDown className="w-3.5 h-3.5 text-[#8A8F98]" />
                             ) : (
                               <ChevronRight className="w-3.5 h-3.5 text-[#8A8F98]" />
                             )}
-                          </Button>
+                          </button>
                           <div>
                             <div className="text-xs font-medium text-[#F7F8F8]">{category.name}</div>
                             <div className="text-[10px] text-[#62666D]">Created: {new Date(category.createdAt).toLocaleDateString()}</div>
@@ -364,31 +367,33 @@ export default function CategoriesPage() {
                       </td>
                       <td className="px-3.5 py-2.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Button
+                          <button
+                            type="button"
                             onClick={() => openEditModal(category)}
-                            className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] active:scale-[0.97] transition-all"
+                            className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.04] text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.08] active:scale-[0.97] transition-all cursor-pointer"
                             title="Edit"
                           >
                             <Edit className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleDeleteCategory(category.id)}
-                            className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 active:scale-[0.97] transition-all"
+                            className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 active:scale-[0.97] transition-all cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          </button>
                         </div>
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr key={`${category.id}-expanded`}>
-                        <td colSpan={6} className="px-5 py-3.5 bg-[#0D0E11] border-y border-white/[0.06]">
+                        <td colSpan={6} className="px-5 py-3.5 bg-[#10121b] border-y border-[#232636]">
                           <div className="space-y-3">
                             <h4 className="text-xs font-medium text-[#F7F8F8]">Subcategories & Items</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                               {category.subcategories.map((subcat, index) => (
-                                <div key={index} className="border border-white/[0.08] rounded-lg p-3 bg-[#08090A] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+                                <div key={index} className="border border-[#232636] rounded-lg p-3 bg-[#10121b] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
                                   <h5 className="text-xs font-semibold text-[#F7F8F8] mb-1.5 flex items-center">
                                     <Tag className="w-3 h-3 mr-1.5 text-white/70" />
                                     {subcat.name}
@@ -449,27 +454,27 @@ export default function CategoriesPage() {
         <div className="space-y-6">
               {/* Category Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">
                   Category Name *
                 </label>
                 <Input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
                   placeholder="e.g., Make Up, Skin care"
                 />
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">
                   Status
                 </label>
                 <Select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -478,7 +483,7 @@ export default function CategoriesPage() {
 
               {/* Subcategories */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#d0d6e0] mb-2">
                   Subcategories
                 </label>
 
@@ -489,12 +494,12 @@ export default function CategoriesPage() {
                     value={newSubcategoryName}
                     onChange={(e) => setNewSubcategoryName(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory()}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
                     placeholder="Subcategory name (e.g., Face, Eyes)"
                   />
                   <Button
                     onClick={handleAddSubcategory}
-                    className="px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg"
+                    className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg"
                   >
                     <Plus className="w-5 h-5" />
                   </Button>
@@ -503,12 +508,12 @@ export default function CategoriesPage() {
                 {/* Subcategories List */}
                 <div className="space-y-4">
                   {formData.subcategories.map((subcat, index) => (
-                    <div key={index} className="border border-gray-300 rounded-lg p-4">
+                    <div key={index} className="border border-[#232636] rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-[#F7F8F8]">{subcat.name}</h4>
                         <Button
                           onClick={() => handleRemoveSubcategory(index)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 hover:text-rose-300"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -522,7 +527,7 @@ export default function CategoriesPage() {
                             value={newItemName}
                             onChange={(e) => setNewItemName(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleAddItem(index)}
-                            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+                            className="flex-1 px-3 py-1.5 text-sm border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
                             placeholder="Item name (e.g., Foundation)"
                             autoFocus
                           />
@@ -537,7 +542,7 @@ export default function CategoriesPage() {
                               setEditingSubcategoryIndex(null);
                               setNewItemName('');
                             }}
-                            className="px-3 py-1.5 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400"
+                            className="px-3 py-1.5 bg-white/[0.16] text-[#d0d6e0] text-sm rounded-lg hover:bg-gray-400"
                           >
                             Cancel
                           </Button>
@@ -573,7 +578,7 @@ export default function CategoriesPage() {
                       </div>
 
                       {subcat.items.length === 0 && editingSubcategoryIndex !== index && (
-                        <p className="text-xs text-gray-400 italic">No items yet</p>
+                        <p className="text-xs text-[#62666d] italic">No items yet</p>
                       )}
                     </div>
                   ))}

@@ -150,7 +150,7 @@ export default function SalesByRegionPage() {
   if (!hasPermission(PERMISSIONS.ANALYTICS_VIEW)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to view sales by region.</p>
+        <p className="text-[#8a8f98]">You don't have permission to view sales by region.</p>
       </div>
     );
   }
@@ -181,7 +181,7 @@ export default function SalesByRegionPage() {
           <h1 className="text-2xl font-bold text-[#F7F8F8]">Sales by Region - Bangladesh</h1>
           <p className="text-[#8A8F98]">Track sales performance across divisions, districts, thanas, and areas</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg">
           <Download className="w-5 h-5 mr-2" />
           Export Report
         </Button>
@@ -189,7 +189,7 @@ export default function SalesByRegionPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Orders</p>
@@ -200,7 +200,7 @@ export default function SalesByRegionPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Revenue</p>
@@ -213,7 +213,7 @@ export default function SalesByRegionPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Customers</p>
@@ -224,7 +224,7 @@ export default function SalesByRegionPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Avg Order Value</p>
@@ -239,7 +239,7 @@ export default function SalesByRegionPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 shadow-sm">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-4 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Select
             value={viewType}
@@ -248,7 +248,7 @@ export default function SalesByRegionPage() {
               setSelectedDivision('all');
               setSelectedDistrict('all');
             }}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
+            className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
           >
             <option value="division">View by Division</option>
             <option value="district">View by District</option>
@@ -262,7 +262,7 @@ export default function SalesByRegionPage() {
                 setSelectedDivision(e.target.value);
                 setSelectedDistrict('all');
               }}
-              className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
+              className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
             >
               <option value="all">Select Division</option>
               {getAllDivisions().map(div => (
@@ -275,7 +275,7 @@ export default function SalesByRegionPage() {
             <Select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
+              className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
             >
               <option value="all">Select District</option>
               {getDistrictsByDivision(selectedDivision).map(dist => (
@@ -287,7 +287,7 @@ export default function SalesByRegionPage() {
           <Select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
+            className="px-4 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:ring-2 focus:ring-white/20"
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -298,10 +298,10 @@ export default function SalesByRegionPage() {
       </div>
 
       {/* Regional Sales Table */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden shadow-sm">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#08090A]">
+            <thead className="bg-[#10121b]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Location
@@ -326,9 +326,9 @@ export default function SalesByRegionPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.08]">
+            <tbody className="divide-y divide-[#232636]">
               {dataToDisplay.map((location: any, index: number) => (
-                <tr key={index} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                <tr key={index} className="hover:bg-[#1b1e2c]/70 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <MapPin className="w-5 h-5 text-white mr-2" />
@@ -345,7 +345,7 @@ export default function SalesByRegionPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <Users className="w-4 h-4 text-gray-400 mr-1" />
+                      <Users className="w-4 h-4 text-[#62666d] mr-1" />
                       <span className="text-sm text-[#F7F8F8]">{location.totalCustomers.toLocaleString()}</span>
                     </div>
                   </td>
@@ -357,7 +357,7 @@ export default function SalesByRegionPage() {
                   <td className="px-6 py-4">
                     <span className={`text-sm font-semibold ${
                       location.growth >= 20 ? 'text-green-600' :
-                      location.growth >= 10 ? 'text-blue-600' :
+                      location.growth >= 10 ? 'text-[#5e6ad2]' :
                       'text-orange-600'
                     }`}>
                       +{location.growth.toFixed(1)}%
@@ -388,9 +388,9 @@ export default function SalesByRegionPage() {
       </div>
 
       {/* Bangladesh Map Placeholder */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
         <h3 className="text-lg font-bold text-[#F7F8F8] mb-4">Sales Heatmap - Bangladesh</h3>
-        <div className="bg-[#08090A] border border-white/[0.08] rounded-lg p-12 text-center">
+        <div className="bg-[#10121b] border border-[#232636] rounded-lg p-12 text-center">
           <MapPin className="w-16 h-16 text-admin-text-muted mx-auto mb-4" />
           <p className="text-[#8A8F98]">Interactive Bangladesh map with sales heatmap</p>
           <p className="text-sm text-[#62666D] mt-2">

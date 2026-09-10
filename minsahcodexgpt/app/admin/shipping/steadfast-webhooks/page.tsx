@@ -83,7 +83,7 @@ export default function SteadfastWebhooksPage() {
   if (!isLoading && !canView) {
     return (
       <div className="p-8">
-        <p className="text-gray-600">You do not have permission to view shipping webhooks.</p>
+        <p className="text-[#8a8f98]">You do not have permission to view shipping webhooks.</p>
       </div>
     )
   }
@@ -96,7 +96,7 @@ export default function SteadfastWebhooksPage() {
             <h1 className="text-2xl font-bold text-[#F7F8F8]">Steadfast webhooks</h1>
             <p className="mt-1 text-sm text-[#8A8F98]">
               Courier delivery and tracking callbacks received at{' '}
-              <code className="rounded bg-[#08090A] border border-white/[0.08] px-1.5 py-0.5 text-xs text-[#F7F8F8]">/api/webhook/steadfast</code>
+              <code className="rounded bg-[#10121b] border border-[#232636] px-1.5 py-0.5 text-xs text-[#F7F8F8]">/api/webhook/steadfast</code>
               . Raw payloads are not listed here for security.
             </p>
           </div>
@@ -104,7 +104,7 @@ export default function SteadfastWebhooksPage() {
             <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-white/[0.08] bg-[#151516] text-[#F7F8F8] px-3 py-2 text-sm"
+              className="rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] px-3 py-2 text-sm"
             >
               <option value="">All statuses</option>
               <option value="PROCESSED">Processed</option>
@@ -115,7 +115,7 @@ export default function SteadfastWebhooksPage() {
               type="button"
               onClick={() => void loadPage({ append: false })}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-[#151516] px-4 py-2 text-sm font-medium text-[#F7F8F8] hover:bg-[#1C1D1F] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#232636] bg-[#161824] px-4 py-2 text-sm font-medium text-[#F7F8F8] hover:bg-[#1b1e2c] disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -124,16 +124,16 @@ export default function SteadfastWebhooksPage() {
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             {error}
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#151516] shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-[#232636] bg-[#161824] shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/[0.08] text-sm">
-              <thead className="bg-[#08090A]">
+            <table className="min-w-full divide-y divide-[#232636] text-sm">
+              <thead className="bg-[#10121b]">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Received</th>
                   <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Type</th>
@@ -143,7 +143,7 @@ export default function SteadfastWebhooksPage() {
                   <th className="px-4 py-3 text-left font-semibold text-[#8A8F98]">Result</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.08]">
+              <tbody className="divide-y divide-[#232636]">
                 {events.length === 0 && !loading ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-12 text-center text-[#8A8F98]">
@@ -152,7 +152,7 @@ export default function SteadfastWebhooksPage() {
                   </tr>
                 ) : (
                   events.map((e) => (
-                    <tr key={e.id} className="hover:bg-[#1C1D1F]/70 transition-colors">
+                    <tr key={e.id} className="hover:bg-[#1b1e2c]/70 transition-colors">
                       <td className="whitespace-nowrap px-4 py-3 text-[#8A8F98]">
                         {new Date(e.receivedAt).toLocaleString()}
                       </td>
@@ -184,17 +184,17 @@ export default function SteadfastWebhooksPage() {
                         {e.trackingMessage ? (
                           <span className="line-clamp-2">{e.trackingMessage}</span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-[#62666d]">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                             e.processingStatus === 'PROCESSED'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-emerald-500/10 text-emerald-300'
                               : e.processingStatus === 'NO_ORDER_FOUND'
-                                ? 'bg-amber-100 text-amber-900'
-                                : 'bg-gray-100 text-gray-700'
+                                ? 'bg-amber-500/10 text-amber-900'
+                                : 'bg-[#10121b] text-[#d0d6e0]'
                           }`}
                         >
                           {e.processingStatus === 'PROCESSED' && (
@@ -220,22 +220,22 @@ export default function SteadfastWebhooksPage() {
               type="button"
               disabled={loading}
               onClick={() => void loadPage({ append: true, cursor: nextCursor })}
-              className="rounded-lg bg-white text-black hover:bg-white/90 px-4 py-2 text-sm font-medium text-white hover:bg-white/90 disabled:opacity-50"
+              className="rounded-lg bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] px-4 py-2 text-sm font-medium text-white hover:bg-white/90 disabled:opacity-50"
             >
               Load more
             </Button>
           </div>
         )}
 
-        <div className="rounded-lg border border-white/[0.08] bg-[#151516] p-4 text-sm text-[#F7F8F8]">
+        <div className="rounded-lg border border-[#232636] bg-[#161824] p-4 text-sm text-[#F7F8F8]">
           <div className="flex items-start gap-2">
             <Package className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <p className="font-medium">Security</p>
               <p className="mt-1 text-[#8A8F98]">
-                Set <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">STEADFAST_WEBHOOK_SECRET</code> and/or{' '}
-                <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">STEADFAST_WEBHOOK_CUSTOMER_KEY</code> +{' '}
-                <code className="rounded bg-[#08090A] border border-white/[0.08] px-1 text-[#F7F8F8]">STEADFAST_WEBHOOK_AUTHORIZATION</code> on the server.
+                Set <code className="rounded bg-[#10121b] border border-[#232636] px-1 text-[#F7F8F8]">STEADFAST_WEBHOOK_SECRET</code> and/or{' '}
+                <code className="rounded bg-[#10121b] border border-[#232636] px-1 text-[#F7F8F8]">STEADFAST_WEBHOOK_CUSTOMER_KEY</code> +{' '}
+                <code className="rounded bg-[#10121b] border border-[#232636] px-1 text-[#F7F8F8]">STEADFAST_WEBHOOK_AUTHORIZATION</code> on the server.
                 The webhook rejects requests until at least one credential is configured.
               </p>
             </div>

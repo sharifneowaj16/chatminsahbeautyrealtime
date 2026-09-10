@@ -22,7 +22,7 @@ function ShortlistContent() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-0 z-30 bg-[#161824] border-b border-[#232636] shadow-sm">
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl sm:text-3xl font-bold text-[#F7F8F8]">
@@ -39,7 +39,7 @@ function ShortlistContent() {
               <span aria-hidden="true">🔄</span>
             </Button>
           </div>
-          <p className="text-gray-600 text-sm">
+          <p className="text-[#8a8f98] text-sm">
             Track products to purchase from suppliers
           </p>
         </div>
@@ -47,10 +47,10 @@ function ShortlistContent() {
 
       {/* Error Alert */}
       {error && (
-        <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+        <div className="mx-4 mt-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center justify-between">
           <div>
-            <p className="text-red-800 font-medium">Error</p>
-            <p className="text-red-700 text-sm">{error}</p>
+            <p className="text-rose-300 font-medium">Error</p>
+            <p className="text-rose-400 text-sm">{error}</p>
           </div>
           <Button
             type="button"
@@ -58,7 +58,7 @@ function ShortlistContent() {
             size="icon"
             onClick={clearError}
             aria-label="Dismiss error"
-            className="text-red-600 hover:text-red-800"
+            className="text-red-600 hover:text-rose-300"
           >
             <span aria-hidden="true">✕</span>
           </Button>

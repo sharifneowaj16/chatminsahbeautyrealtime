@@ -87,7 +87,7 @@ export default function UsersManagementPage() {
   if (!hasPermission(PERMISSIONS.USERS_MANAGE)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to manage users.</p>
+        <p className="text-[#8a8f98]">You don't have permission to manage users.</p>
       </div>
     );
   }
@@ -127,11 +127,11 @@ export default function UsersManagementPage() {
       case 'active':
         return 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20';
       case 'inactive':
-        return 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
+        return 'bg-white/[0.06] text-[#8A8F98] border border-[#232636]';
       case 'suspended':
         return 'bg-rose-500/10 text-rose-300 border border-rose-500/20';
       default:
-        return 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
+        return 'bg-white/[0.06] text-[#8A8F98] border border-[#232636]';
     }
   };
 
@@ -146,7 +146,7 @@ export default function UsersManagementPage() {
       case 'moderator':
         return 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
       default:
-        return 'bg-white/[0.06] text-[#8A8F98] border border-white/[0.08]';
+        return 'bg-white/[0.06] text-[#8A8F98] border border-[#232636]';
     }
   };
 
@@ -158,7 +158,7 @@ export default function UsersManagementPage() {
           <h1 className="text-xl font-semibold tracking-tight text-[#F7F8F8]">User Management</h1>
           <p className="text-xs text-[#8A8F98] mt-0.5">Manage admin users and their permissions</p>
         </div>
-        <Button className="mt-3 sm:mt-0 h-8.5 px-3.5 bg-white text-black font-medium text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.98] transition-all inline-flex items-center">
+        <Button className="mt-3 sm:mt-0 h-8.5 px-3.5 bg-[#5e6ad2] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-medium text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.98] transition-all inline-flex items-center">
           <Plus className="w-4 h-4 mr-1.5" />
           Add User
         </Button>
@@ -166,19 +166,19 @@ export default function UsersManagementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Total Users</p>
               <p className="text-xl font-semibold tracking-tight text-[#F7F8F8] mt-1">{users.length}</p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
               <User className="w-3.5 h-3.5 text-white/70" />
             </div>
           </div>
         </div>
 
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Active Users</p>
@@ -186,13 +186,13 @@ export default function UsersManagementPage() {
                 {users.filter(u => u.status === 'active').length}
               </p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-emerald-400" />
             </div>
           </div>
         </div>
 
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Admins</p>
@@ -200,13 +200,13 @@ export default function UsersManagementPage() {
                 {users.filter(u => u.role === 'admin' || u.role === 'super_admin').length}
               </p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-blue-400" />
             </div>
           </div>
         </div>
 
-        <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">Inactive</p>
@@ -214,7 +214,7 @@ export default function UsersManagementPage() {
                 {users.filter(u => u.status === 'inactive').length}
               </p>
             </div>
-            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-[#232636] flex items-center justify-center">
               <Lock className="w-3.5 h-3.5 text-[#62666D]" />
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] p-3 mb-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+      <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] p-3 mb-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#62666D]" />
@@ -231,14 +231,14 @@ export default function UsersManagementPage() {
               placeholder="Search users by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
+              className="w-full pl-9 pr-3 py-1.5 border border-[#232636] bg-[#10121b] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
             />
           </div>
 
           <Select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-1.5 border border-white/[0.08] bg-[#0D0E11] text-xs text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
+            className="px-3 py-1.5 border border-[#232636] bg-[#10121b] text-xs text-[#F7F8F8] rounded-lg focus:ring-1 focus:ring-white/20 focus:border-white/20"
           >
             <option value="all">All Roles</option>
             <option value="super_admin">Super Admin</option>
@@ -250,10 +250,10 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Users Table */}
-      <div className="linear-card bg-[#08090A] rounded-xl border border-white/[0.08] overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+      <div className="linear-card bg-[#10121b] rounded-xl border border-[#232636] overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#08090A] border-b border-white/[0.08]">
+            <thead className="bg-[#10121b] border-b border-[#232636]">
               <tr>
                 <th className="px-3.5 py-2.5 text-left text-[11px] font-medium text-[#8A8F98] uppercase tracking-wider">
                   User
@@ -275,12 +275,12 @@ export default function UsersManagementPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-[#08090A] divide-y divide-white/[0.06]">
+            <tbody className="bg-[#10121b] divide-y divide-[#232636]">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-white/[0.03] transition-colors">
                   <td className="px-3.5 py-2.5">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-white/[0.04] border border-white/[0.08] rounded-full flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10)]">
+                      <div className="w-8 h-8 bg-white/[0.04] border border-[#232636] rounded-full flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10)]">
                         <span className="text-white text-xs font-medium">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
@@ -323,7 +323,7 @@ export default function UsersManagementPage() {
                   <td className="px-3.5 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <Button
-                        className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
+                        className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
                         title="Edit"
                         disabled={user.id === '1'}
                       >
@@ -362,13 +362,13 @@ export default function UsersManagementPage() {
 
         {filteredUsers.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No users found matching your criteria.</p>
+            <p className="text-[#8a8f98]">No users found matching your criteria.</p>
           </div>
         )}
       </div>
 
       {/* Permissions Reference */}
-      <div className="mt-6 bg-[#151516] rounded-xl border border-white/[0.08] p-6 shadow-sm">
+      <div className="mt-6 bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-[#F7F8F8] mb-4">Role Permissions</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>

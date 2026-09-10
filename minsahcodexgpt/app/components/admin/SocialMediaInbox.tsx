@@ -26,7 +26,7 @@ export default function SocialMediaInbox({
   description = 'Read and reply to customer conversations from one place.',
 }: SocialMediaInboxProps) {
   return (
-    <div className={`minsah-panel min-h-[42rem] overflow-hidden ${className ?? ''}`}>
+    <div className={`bg-[#161824] border border-[#232636] rounded-xl min-h-[42rem] overflow-hidden ${className ?? ''}`}>
       <SocialMediaInboxChat
         className="min-h-[42rem]"
         initialPlatform={initialPlatform}

@@ -115,11 +115,11 @@ export default function BlogManagementPage() {
       case 'published':
         return 'bg-white/[0.12] text-white border border-white/[0.20]';
       case 'draft':
-        return 'bg-[#08090A] text-[#8A8F98] border border-white/[0.08]';
+        return 'bg-[#10121b] text-[#8A8F98] border border-[#232636]';
       case 'scheduled':
         return 'bg-white/[0.08] text-white border border-white/[0.12]';
       default:
-        return 'bg-[#08090A] text-[#8A8F98] border border-white/[0.08]';
+        return 'bg-[#10121b] text-[#8A8F98] border border-[#232636]';
     }
   };
 
@@ -131,7 +131,7 @@ export default function BlogManagementPage() {
           <h1 className="text-2xl font-bold text-[#F7F8F8]">Blog Posts</h1>
           <p className="text-[#8A8F98]">Create and manage blog content</p>
         </div>
-        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg transition-colors duration-200">
+        <Button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg transition-colors duration-200">
           <Plus className="w-5 h-5 mr-2" />
           New Post
         </Button>
@@ -139,7 +139,7 @@ export default function BlogManagementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Posts</p>
@@ -149,7 +149,7 @@ export default function BlogManagementPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Published</p>
@@ -161,7 +161,7 @@ export default function BlogManagementPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Drafts</p>
@@ -173,7 +173,7 @@ export default function BlogManagementPage() {
           </div>
         </div>
 
-        <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-6">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Views</p>
@@ -187,23 +187,23 @@ export default function BlogManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] p-4 mb-6">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#62666d]" />
             <Input
               type="text"
               placeholder="Search blog posts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
             />
           </div>
 
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
+            className="px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="published">Published</option>
@@ -214,10 +214,10 @@ export default function BlogManagementPage() {
       </div>
 
       {/* Blog Posts Table */}
-      <div className="bg-[#151516] rounded-xl border border-white/[0.08] overflow-hidden">
+      <div className="bg-[#161824] rounded-xl border border-[#232636] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#08090A] border-b border-white/[0.08] text-[#8A8F98]">
+            <thead className="bg-[#10121b] border-b border-[#232636] text-[#8A8F98]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[#8A8F98] uppercase tracking-wider">
                   Title
@@ -242,9 +242,9 @@ export default function BlogManagementPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-[#151516] divide-y divide-white/[0.08] text-[#F7F8F8]">
+            <tbody className="bg-[#161824] divide-y divide-[#232636] text-[#F7F8F8]">
               {filteredPosts.map((post) => (
-                <tr key={post.id} className="hover:bg-[#1C1D1F]">
+                <tr key={post.id} className="hover:bg-[#1b1e2c]">
                   <td className="px-6 py-4">
                     <div>
                       <div className="text-sm font-medium text-[#F7F8F8]">{post.title}</div>
@@ -264,7 +264,7 @@ export default function BlogManagementPage() {
                   <td className="px-6 py-4 text-sm text-[#F7F8F8]">{post.category}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center text-sm text-[#F7F8F8]">
-                      <User className="w-4 h-4 mr-1 text-gray-400" />
+                      <User className="w-4 h-4 mr-1 text-[#62666d]" />
                       {post.author}
                     </div>
                   </td>
@@ -278,13 +278,13 @@ export default function BlogManagementPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center text-sm text-[#F7F8F8]">
-                      <Eye className="w-4 h-4 mr-1 text-gray-400" />
+                      <Eye className="w-4 h-4 mr-1 text-[#62666d]" />
                       {post.views.toLocaleString()}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center text-sm text-[#F7F8F8]">
-                      <Calendar className="w-4 h-4 mr-1 text-gray-400" />
+                      <Calendar className="w-4 h-4 mr-1 text-[#62666d]" />
                       {new Date(post.publishedDate).toLocaleDateString()}
                     </div>
                   </td>
@@ -298,12 +298,12 @@ export default function BlogManagementPage() {
                       >
                         <Eye className="w-4 h-4" />
                       </Link>
-                      <Button className="text-blue-600 hover:text-blue-800" title="Edit">
+                      <Button className="text-[#5e6ad2] hover:text-[#f7f8f8]" title="Edit">
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         onClick={() => handleDeletePost(post.id)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-red-600 hover:text-rose-300"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />

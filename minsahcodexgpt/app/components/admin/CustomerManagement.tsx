@@ -132,12 +132,12 @@ export default function CustomerManagement() {
 
   const getSegmentColor = (score: string) => {
     switch (score) {
-      case 'vip': return 'bg-admin-panel text-admin-primary border-admin-border';
-      case 'loyal': return 'bg-green-100 text-green-800 border-green-200';
-      case 'at-risk': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'lost': return 'bg-red-100 text-red-800 border-red-200';
-      case 'new': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'vip': return 'bg-[#5e6ad2]/20 text-[#a5b4fc] border-[#5e6ad2]/40';
+      case 'loyal': return 'bg-[#10b981]/15 text-[#34d399] border-[#10b981]/30';
+      case 'at-risk': return 'bg-[#f59e0b]/15 text-[#fbbf24] border-[#f59e0b]/30';
+      case 'lost': return 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/30';
+      case 'new': return 'bg-[#3b82f6]/15 text-[#60a5fa] border-[#3b82f6]/30';
+      default: return 'bg-[#232636] text-[#8a8f98] border-[#232636]';
     }
   };
 
@@ -241,20 +241,20 @@ export default function CustomerManagement() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6 space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          <div className="h-8 bg-[#232636] rounded w-64 mb-6"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <div key={i} className="h-24 bg-[#161824] border border-[#232636] rounded-lg"></div>
             ))}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(9)].map((_, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="h-20 bg-gray-200 rounded-full w-20 mx-auto mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+              <div key={i} className="bg-[#161824] border border-[#232636] rounded-lg p-4">
+                <div className="h-20 bg-[#232636] rounded-full w-20 mx-auto mb-3"></div>
+                <div className="h-4 bg-[#232636] rounded w-3/4 mx-auto mb-2"></div>
+                <div className="h-3 bg-[#232636] rounded w-1/2 mx-auto"></div>
               </div>
             ))}
           </div>
@@ -264,37 +264,37 @@ export default function CustomerManagement() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer Management</h1>
-          <p className="text-gray-600">Manage customers and analyze behavior</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">Customer Management</h1>
+          <p className="text-xs sm:text-sm text-[#8a8f98]">Manage customers and analyze behavior</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button
             onClick={() => setShowSegmentManager(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-[#161824] hover:bg-[#1b1e2c] border border-[#232636] text-[#f7f8f8] rounded-md text-xs sm:text-sm font-medium transition-colors"
           >
-            <Users className="h-4 w-4" />
+            <Users className="h-4 w-4 text-[#8a8f98]" />
             Manage Segments
           </Button>
           <Button
             onClick={() => setShowVipManager(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-[#161824] hover:bg-[#1b1e2c] border border-[#232636] text-[#f7f8f8] rounded-md text-xs sm:text-sm font-medium transition-colors"
           >
-            <Crown className="h-4 w-4" />
+            <Crown className="h-4 w-4 text-[#eab308]" />
             VIP Customers
           </Button>
           <Button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-[#161824] hover:bg-[#1b1e2c] border border-[#232636] text-[#f7f8f8] rounded-md text-xs sm:text-sm font-medium transition-colors"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 text-[#8a8f98]" />
             Export CSV
           </Button>
-          <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+          <Button className="flex items-center gap-2 px-3.5 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white rounded-md text-xs sm:text-sm font-medium shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] transition-all">
             <Plus className="h-4 w-4" />
             Add Customer
           </Button>
@@ -302,84 +302,84 @@ export default function CustomerManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-blue-100 text-sm font-medium">Total Customers</span>
-            <Users className="h-5 w-5" />
+            <span className="text-xs text-[#8a8f98] font-medium">Total Customers</span>
+            <Users className="h-4 w-4 text-[#5e6ad2]" />
           </div>
-          <p className="text-2xl font-bold">{customers.length.toLocaleString()}</p>
-          <p className="text-blue-100 text-xs mt-1">+12% from last month</p>
+          <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">{customers.length.toLocaleString()}</p>
+          <p className="text-[#34d399] text-xs mt-1">+12% from last month</p>
         </div>
 
-        <div className="bg-gradient-to-br from-admin-primary to-admin-primary-hover rounded-lg p-4 text-white">
+        <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-admin-text/90 text-sm font-medium">VIP Customers</span>
-            <Crown className="h-5 w-5" />
+            <span className="text-xs text-[#8a8f98] font-medium">VIP Customers</span>
+            <Crown className="h-4 w-4 text-[#eab308]" />
           </div>
-          <p className="text-2xl font-bold">{customers.filter(c => c.isVip).length}</p>
-          <p className="text-admin-text/90 text-xs mt-1">Top tier</p>
+          <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">{customers.filter(c => c.isVip).length}</p>
+          <p className="text-[#a5b4fc] text-xs mt-1">Top tier</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
+        <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-green-100 text-sm font-medium">Active</span>
-            <CheckCircle className="h-5 w-5" />
+            <span className="text-xs text-[#8a8f98] font-medium">Active</span>
+            <CheckCircle className="h-4 w-4 text-[#10b981]" />
           </div>
-          <p className="text-2xl font-bold">
+          <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">
             {customers.filter(c =>
               new Date(c.stats.lastOrderDate).getTime() > Date.now() - 90 * 24 * 60 * 60 * 1000
             ).length}
           </p>
-          <p className="text-green-100 text-xs mt-1">Last 90 days</p>
+          <p className="text-[#8a8f98] text-xs mt-1">Last 90 days</p>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-4 text-white">
+        <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-yellow-100 text-sm font-medium">At Risk</span>
-            <AlertTriangle className="h-5 w-5" />
+            <span className="text-xs text-[#8a8f98] font-medium">At Risk</span>
+            <AlertTriangle className="h-4 w-4 text-[#f59e0b]" />
           </div>
-          <p className="text-2xl font-bold">
+          <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">
             {customers.filter(c => c.rfm.score === 'at-risk').length}
           </p>
-          <p className="text-yellow-100 text-xs mt-1">Need attention</p>
+          <p className="text-[#fbbf24] text-xs mt-1">Need attention</p>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white">
+        <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)] col-span-2 md:col-span-1">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-orange-100 text-sm font-medium">New</span>
-            <CheckCircle className="h-5 w-5" />
+            <span className="text-xs text-[#8a8f98] font-medium">New</span>
+            <CheckCircle className="h-4 w-4 text-[#60a5fa]" />
           </div>
-          <p className="text-2xl font-bold">
+          <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">
             {customers.filter(c => c.rfm.score === 'new').length}
           </p>
-          <p className="text-orange-100 text-xs mt-1">This month</p>
+          <p className="text-[#60a5fa] text-xs mt-1">This month</p>
         </div>
       </div>
 
       {/* RFM Analysis */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Segmentation (RFM Analysis)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="bg-[#161824] border border-[#232636] rounded-lg p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+        <h3 className="text-sm sm:text-base font-semibold text-[#f7f8f8] mb-4">Customer Segmentation (RFM Analysis)</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           {[
-            { score: 'vip', label: 'VIP Customers', desc: 'High value, recent purchasers', color: 'purple' },
-            { score: 'loyal', label: 'Loyal Customers', desc: 'Regular purchasers', color: 'green' },
-            { score: 'at-risk', label: 'At Risk', desc: 'Declining engagement', color: 'yellow' },
-            { score: 'lost', label: 'Lost', desc: 'No recent activity', color: 'red' },
-            { score: 'new', label: 'New', desc: 'Recent first-time buyers', color: 'blue' }
+            { score: 'vip', label: 'VIP Customers', desc: 'High value, recent purchasers', color: 'border-[#5e6ad2]/30 bg-[#5e6ad2]/10 text-[#a5b4fc]' },
+            { score: 'loyal', label: 'Loyal Customers', desc: 'Regular purchasers', color: 'border-[#10b981]/30 bg-[#10b981]/10 text-[#34d399]' },
+            { score: 'at-risk', label: 'At Risk', desc: 'Declining engagement', color: 'border-[#f59e0b]/30 bg-[#f59e0b]/10 text-[#fbbf24]' },
+            { score: 'lost', label: 'Lost', desc: 'No recent activity', color: 'border-[#ef4444]/30 bg-[#ef4444]/10 text-[#f87171]' },
+            { score: 'new', label: 'New', desc: 'Recent first-time buyers', color: 'border-[#3b82f6]/30 bg-[#3b82f6]/10 text-[#60a5fa]' }
           ].map((segment) => {
             const count = customers.filter(c => c.rfm.score === segment.score).length;
             const percentage = ((count / customers.length) * 100).toFixed(1);
 
             return (
-              <div key={segment.score} className={`border-${segment.color}-200 bg-${segment.color}-50 rounded-lg p-4 border`}>
+              <div key={segment.score} className={`rounded-lg p-3 sm:p-4 border ${segment.color}`}>
                 <div className="flex items-center gap-2 mb-2">
                   {getSegmentIcon(segment.score)}
-                  <h4 className="font-medium text-gray-900">{segment.label}</h4>
+                  <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8]">{segment.label}</h4>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{count}</p>
-                <p className="text-sm text-gray-600">{percentage}% of total</p>
-                <p className="text-xs text-gray-500 mt-1">{segment.desc}</p>
+                <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8]">{count}</p>
+                <p className="text-xs text-[#8a8f98]">{percentage}% of total</p>
+                <p className="text-[11px] text-[#62666d] mt-1">{segment.desc}</p>
               </div>
             );
           })}
@@ -387,23 +387,23 @@ export default function CustomerManagement() {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="bg-[#161824] border border-[#232636] rounded-lg p-3 sm:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#8a8f98]" />
             <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search customers..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full pl-9 pr-3 py-2 bg-[#10121b] border border-[#232636] text-[#f7f8f8] placeholder-[#62666d] rounded-md focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] text-xs sm:text-sm"
             />
           </div>
 
           <Select
             value={selectedSegment}
             onChange={(e) => setSelectedSegment(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-3 py-2 bg-[#10121b] border border-[#232636] text-[#f7f8f8] rounded-md focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] text-xs sm:text-sm"
           >
             <option value="all">All Segments</option>
             <option value="vip">VIP</option>
@@ -416,7 +416,7 @@ export default function CustomerManagement() {
           <Select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-3 py-2 bg-[#10121b] border border-[#232636] text-[#f7f8f8] rounded-md focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] text-xs sm:text-sm"
           >
             <option value="all">All Status</option>
             <option value="vip">VIP Only</option>
@@ -427,7 +427,7 @@ export default function CustomerManagement() {
           <Select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-3 py-2 bg-[#10121b] border border-[#232636] text-[#f7f8f8] rounded-md focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] text-xs sm:text-sm"
           >
             <option value="name">Sort by Name</option>
             <option value="orders">Sort by Orders</option>
@@ -439,52 +439,52 @@ export default function CustomerManagement() {
           <div className="flex items-center gap-2">
             <Button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-[#5e6ad2]/20 text-[#a5b4fc] border border-[#5e6ad2]/40' : 'bg-[#10121b] border border-[#232636] text-[#8a8f98] hover:text-[#f7f8f8]'}`}
             >
               <div className="grid grid-cols-2 gap-1">
-                <div className="w-1 h-1 bg-current rounded-full"></div>
-                <div className="w-1 h-1 bg-current rounded-full"></div>
-                <div className="w-1 h-1 bg-current rounded-full"></div>
-                <div className="w-1 h-1 bg-current rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-current rounded-sm"></div>
+                <div className="w-1.5 h-1.5 bg-current rounded-sm"></div>
+                <div className="w-1.5 h-1.5 bg-current rounded-sm"></div>
+                <div className="w-1.5 h-1.5 bg-current rounded-sm"></div>
               </div>
             </Button>
             <Button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-[#5e6ad2]/20 text-[#a5b4fc] border border-[#5e6ad2]/40' : 'bg-[#10121b] border border-[#232636] text-[#8a8f98] hover:text-[#f7f8f8]'}`}
             >
-              <Filter className="h-5 w-5" />
+              <Filter className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         {/* Bulk Actions */}
         {selectedCustomers.length > 0 && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-[#1b1e2c]">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">
+              <span className="text-xs sm:text-sm text-[#8a8f98]">
                 {selectedCustomers.length} customers selected
               </span>
               <Button
                 onClick={handleSelectAll}
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-xs sm:text-sm text-[#5e6ad2] hover:text-[#828fff]"
               >
                 {selectedCustomers.length === filteredCustomers.length ? 'Deselect all' : 'Select all'}
               </Button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={handleBulkEmail}
-                className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5e6ad2] text-white rounded-md hover:bg-[#6d78d5] text-xs font-medium"
               >
-                <Mail className="h-4 w-4" />
+                <Mail className="h-3.5 w-3.5" />
                 Send Email
               </Button>
-              <Button className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
-                <Tag className="h-4 w-4" />
+              <Button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10b981] text-white rounded-md hover:bg-[#059669] text-xs font-medium">
+                <Tag className="h-3.5 w-3.5" />
                 Add Tags
               </Button>
-              <Button className="flex items-center gap-2 px-3 py-1 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm">
-                <Gift className="h-4 w-4" />
+              <Button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#8b5cf6] text-white rounded-md hover:bg-[#7c3aed] text-xs font-medium">
+                <Gift className="h-3.5 w-3.5" />
                 Send Coupon
               </Button>
             </div>
@@ -493,89 +493,89 @@ export default function CustomerManagement() {
       </div>
 
       {/* Customers Grid/List */}
-      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
+      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
         {filteredCustomers.map((customer) => {
           const isSelected = selectedCustomers.includes(customer.id);
           const rfmScore = calculateRFMScore(customer);
 
           return viewMode === 'grid' ? (
-            <div key={customer.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+            <div key={customer.id} className="bg-[#161824] border border-[#232636] rounded-lg p-4 hover:border-[#5e6ad2]/40 transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <Input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => handleSelectCustomer(customer.id)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 accent-[#5e6ad2] bg-[#10121b] border-[#232636] rounded"
                   />
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#232636] rounded-full flex items-center justify-center flex-shrink-0 text-[#f7f8f8]">
                     {customer.avatar ? (
                       <img src={customer.avatar} alt={customer.name} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      <span className="text-gray-600 font-medium">{customer.name.charAt(0)}</span>
+                      <span className="text-xs sm:text-sm font-semibold">{customer.name.charAt(0)}</span>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-xs sm:text-sm text-[#f7f8f8] flex items-center gap-1.5 truncate">
                       {customer.name}
-                      {customer.isVip && <Crown className="h-4 w-4 text-yellow-500" />}
+                      {customer.isVip && <Crown className="h-3.5 w-3.5 text-[#eab308] flex-shrink-0" />}
                     </h3>
-                    <p className="text-sm text-gray-500">{customer.email}</p>
+                    <p className="text-xs text-[#8a8f98] truncate">{customer.email}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Segment:</span>
-                  <span className={`px-2 py-1 text-xs rounded-full border ${getSegmentColor(customer.rfm.score)}`}>
+              <div className="space-y-2 mb-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8a8f98]">Segment:</span>
+                  <span className={`px-2 py-0.5 text-[11px] rounded-full border ${getSegmentColor(customer.rfm.score)}`}>
                     {customer.rfm.score.toUpperCase()}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">RFM Score:</span>
-                  <span className="font-medium">{rfmScore}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8a8f98]">RFM Score:</span>
+                  <span className="font-medium text-[#f7f8f8]">{rfmScore}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Orders:</span>
-                  <span className="font-medium">{customer.stats.totalOrders}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8a8f98]">Orders:</span>
+                  <span className="font-medium text-[#f7f8f8]">{customer.stats.totalOrders}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Total Spent:</span>
-                  <span className="font-medium">{formatCurrency(customer.stats.totalSpent)}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8a8f98]">Total Spent:</span>
+                  <span className="font-medium text-[#f7f8f8]">{formatCurrency(customer.stats.totalSpent)}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Last Order:</span>
-                  <span className="font-medium">{formatRelativeTime(customer.stats.lastOrderDate)}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8a8f98]">Last Order:</span>
+                  <span className="font-medium text-[#f7f8f8]">{formatRelativeTime(customer.stats.lastOrderDate)}</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-3 border-t border-[#1b1e2c]">
                 <div className="flex items-center gap-1">
                   {customer.preferences.email && (
                     <Button
                       onClick={() => sendNotification(customer.id, 'email')}
-                      className="p-1 text-blue-600 hover:text-blue-700"
+                      className="p-1.5 text-[#5e6ad2] hover:text-[#828fff] hover:bg-[#5e6ad2]/10 rounded"
                       title="Send Email"
                     >
-                      <Mail className="h-4 w-4" />
+                      <Mail className="h-3.5 w-3.5" />
                     </Button>
                   )}
                   {customer.preferences.sms && (
                     <Button
                       onClick={() => sendNotification(customer.id, 'sms')}
-                      className="p-1 text-green-600 hover:text-green-700"
+                      className="p-1.5 text-[#10b981] hover:text-[#34d399] hover:bg-[#10b981]/10 rounded"
                       title="Send SMS"
                     >
-                      <Phone className="h-4 w-4" />
+                      <Phone className="h-3.5 w-3.5" />
                     </Button>
                   )}
                   <Button
                     onClick={() => sendNotification(customer.id, 'push')}
-                    className="p-1 text-admin-primary hover:text-admin-primary"
+                    className="p-1.5 text-[#a5b4fc] hover:text-white hover:bg-[#5e6ad2]/10 rounded"
                     title="Send Push"
                   >
-                    <Bell className="h-4 w-4" />
+                    <Bell className="h-3.5 w-3.5" />
                   </Button>
                 </div>
                 <div className="flex items-center gap-1">
@@ -584,102 +584,104 @@ export default function CustomerManagement() {
                       setSelectedCustomer(customer);
                       setShowCustomerDetails(true);
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-600"
+                    className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#1b1e2c] rounded"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-3.5 w-3.5" />
                   </Button>
-                  <Button className="p-1 text-gray-400 hover:text-gray-600">
-                    <Edit className="h-4 w-4" />
+                  <Button className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#1b1e2c] rounded">
+                    <Edit className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
             </div>
           ) : (
-            <div key={customer.id} className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center gap-4">
-                <Input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => handleSelectCustomer(customer.id)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                  {customer.avatar ? (
-                    <img src={customer.avatar} alt={customer.name} className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <span className="text-gray-600 font-medium text-lg">{customer.name.charAt(0)}</span>
-                  )}
+            <div key={customer.id} className="bg-[#161824] border border-[#232636] rounded-lg p-3 sm:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => handleSelectCustomer(customer.id)}
+                    className="w-4 h-4 accent-[#5e6ad2] bg-[#10121b] border-[#232636] rounded"
+                  />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#232636] rounded-full flex items-center justify-center flex-shrink-0 text-[#f7f8f8]">
+                    {customer.avatar ? (
+                      <img src={customer.avatar} alt={customer.name} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <span className="text-xs sm:text-sm font-semibold">{customer.name.charAt(0)}</span>
+                    )}
+                  </div>
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <h3 className="font-medium text-xs sm:text-sm text-[#f7f8f8] flex items-center gap-1.5">
                       {customer.name}
-                      {customer.isVip && <Crown className="h-4 w-4 text-yellow-500" />}
+                      {customer.isVip && <Crown className="h-3.5 w-3.5 text-[#eab308]" />}
                     </h3>
-                    <span className={`px-2 py-1 text-xs rounded-full border ${getSegmentColor(customer.rfm.score)}`}>
+                    <span className={`px-2 py-0.5 text-[11px] rounded-full border ${getSegmentColor(customer.rfm.score)}`}>
                       {customer.rfm.score.toUpperCase()}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs">
                     <div>
-                      <span className="text-gray-600">Email:</span>
-                      <span className="ml-1 font-medium truncate block">{customer.email}</span>
+                      <span className="text-[#8a8f98]">Email:</span>
+                      <span className="ml-1 text-[#f7f8f8] truncate block">{customer.email}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Phone:</span>
-                      <span className="ml-1 font-medium">{customer.phone || 'N/A'}</span>
+                      <span className="text-[#8a8f98]">Phone:</span>
+                      <span className="ml-1 text-[#f7f8f8]">{customer.phone || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Orders:</span>
-                      <span className="ml-1 font-medium">{customer.stats.totalOrders}</span>
+                      <span className="text-[#8a8f98]">Orders:</span>
+                      <span className="ml-1 text-[#f7f8f8] font-medium">{customer.stats.totalOrders}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Spent:</span>
-                      <span className="ml-1 font-medium">{formatCurrency(customer.stats.totalSpent)}</span>
+                      <span className="text-[#8a8f98]">Spent:</span>
+                      <span className="ml-1 text-[#f7f8f8] font-medium">{formatCurrency(customer.stats.totalSpent)}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">RFM:</span>
-                      <span className="ml-1 font-medium">{rfmScore}</span>
+                      <span className="text-[#8a8f98]">RFM:</span>
+                      <span className="ml-1 text-[#f7f8f8] font-medium">{rfmScore}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Last Order:</span>
-                      <span className="ml-1 font-medium">{formatRelativeTime(customer.stats.lastOrderDate)}</span>
+                      <span className="text-[#8a8f98]">Last Order:</span>
+                      <span className="ml-1 text-[#f7f8f8]">{formatRelativeTime(customer.stats.lastOrderDate)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-1">
-                    {customer.preferences.email && (
-                      <Button
-                        onClick={() => sendNotification(customer.id, 'email')}
-                        className="p-1 text-blue-600 hover:text-blue-700"
-                        title="Send Email"
-                      >
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {customer.preferences.sms && (
-                      <Button
-                        onClick={() => sendNotification(customer.id, 'sms')}
-                        className="p-1 text-green-600 hover:text-green-700"
-                        title="Send SMS"
-                      >
-                        <Phone className="h-4 w-4" />
-                      </Button>
-                    )}
+
+                <div className="flex items-center gap-1 self-end sm:self-center pt-2 sm:pt-0 border-t border-[#1b1e2c] sm:border-0 w-full sm:w-auto justify-end">
+                  {customer.preferences.email && (
                     <Button
-                      onClick={() => {
-                        setSelectedCustomer(customer);
-                        setShowCustomerDetails(true);
-                      }}
-                      className="p-1 text-gray-400 hover:text-gray-600"
+                      onClick={() => sendNotification(customer.id, 'email')}
+                      className="p-1.5 text-[#5e6ad2] hover:text-[#828fff] hover:bg-[#5e6ad2]/10 rounded"
+                      title="Send Email"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Mail className="h-3.5 w-3.5" />
                     </Button>
-                    <Button className="p-1 text-gray-400 hover:text-gray-600">
-                      <Edit className="h-4 w-4" />
+                  )}
+                  {customer.preferences.sms && (
+                    <Button
+                      onClick={() => sendNotification(customer.id, 'sms')}
+                      className="p-1.5 text-[#10b981] hover:text-[#34d399] hover:bg-[#10b981]/10 rounded"
+                      title="Send SMS"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
                     </Button>
-                  </div>
+                  )}
+                  <Button
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setShowCustomerDetails(true);
+                    }}
+                    className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#1b1e2c] rounded"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button className="p-1.5 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#1b1e2c] rounded">
+                    <Edit className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -688,10 +690,10 @@ export default function CustomerManagement() {
       </div>
 
       {filteredCustomers.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
-          <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
+        <div className="text-center py-12 bg-[#161824] border border-[#232636] rounded-lg">
+          <Users className="h-10 w-10 text-[#62666d] mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-[#f7f8f8] mb-1">No customers found</h3>
+          <p className="text-xs text-[#8a8f98]">Try adjusting your search or filters</p>
         </div>
       )}
 
@@ -704,75 +706,77 @@ export default function CustomerManagement() {
           description={selectedCustomer.email}
           size="xl"
         >
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="p-4 sm:p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Customer Info */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Customer Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-gray-600">Phone:</span> {selectedCustomer.phone || 'Not provided'}</p>
-                    <p><span className="text-gray-600">Date of Birth:</span> {selectedCustomer.dateOfBirth || 'Not provided'}</p>
-                    <p><span className="text-gray-600">Gender:</span> {selectedCustomer.gender || 'Not specified'}</p>
-                    <p><span className="text-gray-600">Member Since:</span> {new Date(selectedCustomer.createdAt).toLocaleDateString()}</p>
-                    <p><span className="text-gray-600">VIP Status:</span> {selectedCustomer.isVip ? 'Yes' : 'No'}</p>
+                <div className="bg-[#10121b] border border-[#232636] rounded-lg p-4">
+                  <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8] mb-3">Customer Information</h4>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <p><span className="text-[#8a8f98]">Phone:</span> <span className="text-[#f7f8f8]">{selectedCustomer.phone || 'Not provided'}</span></p>
+                    <p><span className="text-[#8a8f98]">Date of Birth:</span> <span className="text-[#f7f8f8]">{selectedCustomer.dateOfBirth || 'Not provided'}</span></p>
+                    <p><span className="text-[#8a8f98]">Gender:</span> <span className="text-[#f7f8f8]">{selectedCustomer.gender || 'Not specified'}</span></p>
+                    <p><span className="text-[#8a8f98]">Member Since:</span> <span className="text-[#f7f8f8]">{new Date(selectedCustomer.createdAt).toLocaleDateString()}</span></p>
+                    <p><span className="text-[#8a8f98]">VIP Status:</span> <span className="text-[#f7f8f8] font-medium">{selectedCustomer.isVip ? 'Yes' : 'No'}</span></p>
                   </div>
                 </div>
 
                 {/* Statistics */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Order Statistics</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-gray-600">Total Orders:</span> {selectedCustomer.stats.totalOrders}</p>
-                    <p><span className="text-gray-600">Total Spent:</span> {formatCurrency(selectedCustomer.stats.totalSpent)}</p>
-                    <p><span className="text-gray-600">Average Order Value:</span> {formatCurrency(selectedCustomer.stats.avgOrderValue)}</p>
-                    <p><span className="text-gray-600">Items Purchased:</span> {selectedCustomer.stats.itemsPurchased}</p>
-                    <p><span className="text-gray-600">First Order:</span> {new Date(selectedCustomer.stats.firstOrderDate).toLocaleDateString()}</p>
-                    <p><span className="text-gray-600">Last Order:</span> {new Date(selectedCustomer.stats.lastOrderDate).toLocaleDateString()}</p>
+                <div className="bg-[#10121b] border border-[#232636] rounded-lg p-4">
+                  <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8] mb-3">Order Statistics</h4>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <p><span className="text-[#8a8f98]">Total Orders:</span> <span className="text-[#f7f8f8] font-medium">{selectedCustomer.stats.totalOrders}</span></p>
+                    <p><span className="text-[#8a8f98]">Total Spent:</span> <span className="text-[#f7f8f8] font-medium">{formatCurrency(selectedCustomer.stats.totalSpent)}</span></p>
+                    <p><span className="text-[#8a8f98]">Average Order Value:</span> <span className="text-[#f7f8f8]">{formatCurrency(selectedCustomer.stats.avgOrderValue)}</span></p>
+                    <p><span className="text-[#8a8f98]">Items Purchased:</span> <span className="text-[#f7f8f8]">{selectedCustomer.stats.itemsPurchased}</span></p>
+                    <p><span className="text-[#8a8f98]">First Order:</span> <span className="text-[#f7f8f8]">{new Date(selectedCustomer.stats.firstOrderDate).toLocaleDateString()}</span></p>
+                    <p><span className="text-[#8a8f98]">Last Order:</span> <span className="text-[#f7f8f8]">{new Date(selectedCustomer.stats.lastOrderDate).toLocaleDateString()}</span></p>
                   </div>
                 </div>
               </div>
 
               {/* RFM Analysis */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">RFM Analysis</h4>
+              <div className="bg-[#10121b] border border-[#232636] rounded-lg p-4">
+                <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8] mb-3">RFM Analysis</h4>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-sm text-gray-600">Recency</p>
-                    <p className="text-lg font-bold text-gray-900">{selectedCustomer.rfm.recency}</p>
-                    <p className="text-xs text-gray-500">How recent</p>
+                    <p className="text-xs text-[#8a8f98]">Recency</p>
+                    <p className="text-base sm:text-lg font-bold text-[#f7f8f8]">{selectedCustomer.rfm.recency}</p>
+                    <p className="text-[11px] text-[#62666d]">How recent</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Frequency</p>
-                    <p className="text-lg font-bold text-gray-900">{selectedCustomer.rfm.frequency}</p>
-                    <p className="text-xs text-gray-500">How often</p>
+                    <p className="text-xs text-[#8a8f98]">Frequency</p>
+                    <p className="text-base sm:text-lg font-bold text-[#f7f8f8]">{selectedCustomer.rfm.frequency}</p>
+                    <p className="text-[11px] text-[#62666d]">How often</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Monetary</p>
-                    <p className="text-lg font-bold text-gray-900">{selectedCustomer.rfm.monetary}</p>
-                    <p className="text-xs text-gray-500">How much</p>
+                    <p className="text-xs text-[#8a8f98]">Monetary</p>
+                    <p className="text-base sm:text-lg font-bold text-[#f7f8f8]">{selectedCustomer.rfm.monetary}</p>
+                    <p className="text-[11px] text-[#62666d]">How much</p>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">Segment: <span className="font-medium">{selectedCustomer.rfm.segment}</span></p>
+                <div className="mt-4 pt-4 border-t border-[#1b1e2c]">
+                  <p className="text-xs sm:text-sm text-[#8a8f98]">Segment: <span className="font-medium text-[#f7f8f8]">{selectedCustomer.rfm.segment}</span></p>
                 </div>
               </div>
 
               {/* Addresses */}
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">Addresses</h4>
+              <div>
+                <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8] mb-3">Addresses</h4>
                 <div className="space-y-3">
                   {selectedCustomer.addresses.map((address) => (
-                    <div key={address.id} className="border border-gray-200 rounded-lg p-3">
+                    <div key={address.id} className="bg-[#10121b] border border-[#232636] rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="font-medium text-gray-900">{address.name}</p>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          address.type === 'shipping' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                        }`}>
-                          {address.type}
-                        </span>
-                        {address.isDefault && <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Default</span>}
+                        <p className="font-medium text-xs sm:text-sm text-[#f7f8f8]">{address.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`px-2 py-0.5 text-[11px] rounded-full border ${
+                            address.type === 'shipping' ? 'bg-[#5e6ad2]/20 text-[#a5b4fc] border-[#5e6ad2]/30' : 'bg-[#10b981]/20 text-[#34d399] border-[#10b981]/30'
+                          }`}>
+                            {address.type}
+                          </span>
+                          {address.isDefault && <span className="px-2 py-0.5 text-[11px] rounded-full bg-[#eab308]/20 text-[#fbbf24] border border-[#eab308]/30">Default</span>}
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs text-[#8a8f98]">
                         {address.street}<br />
                         {address.city}, {address.state} {address.zip}<br />
                         {address.country}
@@ -783,78 +787,78 @@ export default function CustomerManagement() {
               </div>
 
               {/* Preferences */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">Communication Preferences</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-[#10121b] border border-[#232636] rounded-lg p-4">
+                <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8] mb-3">Communication Preferences</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className="flex items-center gap-2">
                     <Input
                       type="checkbox"
                       checked={selectedCustomer.preferences.email}
                       readOnly
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                      className="w-4 h-4 accent-[#5e6ad2] rounded"
                     />
-                    <span className="text-sm text-gray-700">Email</span>
+                    <span className="text-xs sm:text-sm text-[#f7f8f8]">Email</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
                       type="checkbox"
                       checked={selectedCustomer.preferences.sms}
                       readOnly
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                      className="w-4 h-4 accent-[#5e6ad2] rounded"
                     />
-                    <span className="text-sm text-gray-700">SMS</span>
+                    <span className="text-xs sm:text-sm text-[#f7f8f8]">SMS</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
                       type="checkbox"
                       checked={selectedCustomer.preferences.marketing}
                       readOnly
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                      className="w-4 h-4 accent-[#5e6ad2] rounded"
                     />
-                    <span className="text-sm text-gray-700">Marketing</span>
+                    <span className="text-xs sm:text-sm text-[#f7f8f8]">Marketing</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Language:</span>
-                    <span className="font-medium">{selectedCustomer.preferences.language}</span>
+                    <span className="text-xs sm:text-sm text-[#8a8f98]">Language:</span>
+                    <span className="text-xs sm:text-sm font-medium text-[#f7f8f8]">{selectedCustomer.preferences.language}</span>
                   </div>
                 </div>
               </div>
 
               {/* Notes */}
               {selectedCustomer.notes && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Notes</h4>
-                  <p className="text-sm text-gray-700">{selectedCustomer.notes}</p>
+                <div className="bg-[#eab308]/10 border border-[#eab308]/20 rounded-lg p-4">
+                  <h4 className="font-medium text-xs sm:text-sm text-[#fbbf24] mb-1">Notes</h4>
+                  <p className="text-xs sm:text-sm text-[#eab308]">{selectedCustomer.notes}</p>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3">
-                <Button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <Button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#5e6ad2] text-white rounded-md hover:bg-[#6d78d5] text-xs sm:text-sm font-medium">
                   <Mail className="h-4 w-4" />
                   Send Email
                 </Button>
                 {selectedCustomer.phone && (
-                  <Button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
+                  <Button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#10b981] text-white rounded-md hover:bg-[#059669] text-xs sm:text-sm font-medium">
                     <Phone className="h-4 w-4" />
                     Send SMS
                   </Button>
                 )}
-                <Button className="flex items-center gap-2 px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm">
+                <Button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#8b5cf6] text-white rounded-md hover:bg-[#7c3aed] text-xs sm:text-sm font-medium">
                   <Gift className="h-4 w-4" />
                   Send Coupon
                 </Button>
-                <Button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm">
+                <Button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#f97316] text-white rounded-md hover:bg-[#ea580c] text-xs sm:text-sm font-medium">
                   <Tag className="h-4 w-4" />
                   Add Tag
                 </Button>
                 {selectedCustomer.isVip ? (
-                  <Button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
+                  <Button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#ef4444] text-white rounded-md hover:bg-[#dc2626] text-xs sm:text-sm font-medium">
                     <Crown className="h-4 w-4" />
                     Remove VIP
                   </Button>
                 ) : (
-                  <Button className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm">
+                  <Button className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-md text-xs sm:text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
                     <Crown className="h-4 w-4" />
                     Make VIP
                   </Button>
@@ -871,31 +875,29 @@ export default function CustomerManagement() {
         title="Customer Segments"
         size="lg"
       >
-            <div className="p-6">
-              <div className="space-y-4">
-                <p className="text-gray-600">Manage your customer segmentation rules and targeting strategies.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { name: 'VIP Customers', desc: 'High-value customers with 90+ RFM score', count: customers.filter(c => c.rfm.score === 'vip').length },
-                    { name: 'Loyal Customers', desc: 'Regular purchasers with good engagement', count: customers.filter(c => c.rfm.score === 'loyal').length },
-                    { name: 'At Risk Customers', desc: 'Declining engagement, needs re-engagement', count: customers.filter(c => c.rfm.score === 'at-risk').length },
-                    { name: 'Lost Customers', desc: 'No purchases in 6+ months', count: customers.filter(c => c.rfm.score === 'lost').length },
-                  ].map((segment, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-1">{segment.name}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{segment.desc}</p>
-                      <p className="text-lg font-bold text-blue-600">{segment.count} customers</p>
-                    </div>
-                  ))}
-                </div>
+            <div className="p-4 sm:p-6 space-y-4">
+              <p className="text-xs sm:text-sm text-[#8a8f98]">Manage your customer segmentation rules and targeting strategies.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {[
+                  { name: 'VIP Customers', desc: 'High-value customers with 90+ RFM score', count: customers.filter(c => c.rfm.score === 'vip').length },
+                  { name: 'Loyal Customers', desc: 'Regular purchasers with good engagement', count: customers.filter(c => c.rfm.score === 'loyal').length },
+                  { name: 'At Risk Customers', desc: 'Declining engagement, needs re-engagement', count: customers.filter(c => c.rfm.score === 'at-risk').length },
+                  { name: 'Lost Customers', desc: 'No purchases in 6+ months', count: customers.filter(c => c.rfm.score === 'lost').length },
+                ].map((segment, index) => (
+                  <div key={index} className="bg-[#10121b] border border-[#232636] rounded-lg p-4">
+                    <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8] mb-1">{segment.name}</h4>
+                    <p className="text-xs text-[#8a8f98] mb-2">{segment.desc}</p>
+                    <p className="text-base sm:text-lg font-bold text-[#5e6ad2]">{segment.count} customers</p>
+                  </div>
+                ))}
               </div>
-              <div className="flex gap-3 mt-6">
-                <Button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <Button className="flex-1 px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white rounded-md text-xs sm:text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
                   Create Campaign
                 </Button>
                 <Button
                   onClick={() => setShowSegmentManager(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                  className="flex-1 px-4 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-[#232636] text-[#f7f8f8] rounded-md text-xs sm:text-sm font-medium transition-colors"
                 >
                   Close
                 </Button>
@@ -910,44 +912,42 @@ export default function CustomerManagement() {
         title="VIP Customer Management"
         size="lg"
       >
-            <div className="p-6">
-              <div className="space-y-4">
-                <p className="text-gray-600">Manage your VIP customers and exclusive benefits.</p>
+            <div className="p-4 sm:p-6 space-y-4">
+              <p className="text-xs sm:text-sm text-[#8a8f98]">Manage your VIP customers and exclusive benefits.</p>
 
-                <div className="bg-admin-panel border border-admin-border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-admin-text">Current VIP Customers</h4>
-                    <span className="text-admin-primary font-bold">{customers.filter(c => c.isVip).length}</span>
-                  </div>
-                  <p className="text-sm text-admin-primary">These customers receive exclusive benefits and priority support.</p>
+              <div className="bg-[#10121b] border border-[#232636] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8]">Current VIP Customers</h4>
+                  <span className="text-[#eab308] font-bold text-base sm:text-lg">{customers.filter(c => c.isVip).length}</span>
                 </div>
+                <p className="text-xs text-[#8a8f98]">These customers receive exclusive benefits and priority support.</p>
+              </div>
 
-                <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">VIP Benefits</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {[
-                      'Free shipping on all orders',
-                      'Early access to new products',
-                      'Exclusive discounts and promotions',
-                      'Priority customer support',
-                      'Birthday gifts and rewards',
-                      'Invitations to VIP events'
-                    ].map((benefit, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        {benefit}
-                      </div>
-                    ))}
-                  </div>
+              <div className="space-y-3">
+                <h4 className="font-medium text-xs sm:text-sm text-[#f7f8f8]">VIP Benefits</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    'Free shipping on all orders',
+                    'Early access to new products',
+                    'Exclusive discounts and promotions',
+                    'Priority customer support',
+                    'Birthday gifts and rewards',
+                    'Invitations to VIP events'
+                  ].map((benefit, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs sm:text-sm text-[#8a8f98] bg-[#10121b] border border-[#232636] p-2.5 rounded-md">
+                      <CheckCircle className="h-4 w-4 text-[#10b981] flex-shrink-0" />
+                      <span>{benefit}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex gap-3 mt-6">
-                <Button className="flex-1 px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-admin-primary-hover text-sm">
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <Button className="flex-1 px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white rounded-md text-xs sm:text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
                   Manage VIP Rules
                 </Button>
                 <Button
                   onClick={() => setShowVipManager(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                  className="flex-1 px-4 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-[#232636] text-[#f7f8f8] rounded-md text-xs sm:text-sm font-medium transition-colors"
                 >
                   Close
                 </Button>

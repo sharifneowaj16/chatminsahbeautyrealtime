@@ -10,10 +10,10 @@ export function MetricCard({
   tone?: 'neutral' | 'good' | 'warn' | 'bad';
 }) {
   const toneClass = {
-    neutral: 'border-white/[0.08] bg-[#151516]',
+    neutral: 'border-[#232636] bg-[#161824]',
     good: 'border-white/[0.15] bg-white/[0.08]',
     warn: 'border-white/[0.10] bg-white/[0.06]',
-    bad: 'border-white/[0.08] bg-white/[0.04]',
+    bad: 'border-[#232636] bg-white/[0.04]',
   }[tone];
 
   const valueClass = {

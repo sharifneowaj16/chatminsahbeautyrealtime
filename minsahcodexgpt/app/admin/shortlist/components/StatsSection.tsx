@@ -24,7 +24,7 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, subtext, indicator }: StatCardProps) {
   return (
-    <div className="linear-card bg-[#08090A] border border-white/[0.08] rounded-xl p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] relative overflow-hidden group hover:border-white/20 transition-all duration-150">
+    <div className="linear-card bg-[#10121b] border border-[#232636] rounded-xl p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] relative overflow-hidden group hover:border-white/20 transition-all duration-150">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-1.5">
@@ -34,7 +34,7 @@ function StatCard({ icon, label, value, subtext, indicator }: StatCardProps) {
           <p className="text-[#F7F8F8] text-2xl font-semibold tracking-tight mt-1.5">{value}</p>
           {subtext && <p className="text-[#62666D] text-xs mt-1 font-normal">{subtext}</p>}
         </div>
-        <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-sm">
+        <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-[#232636] flex items-center justify-center text-sm">
           {icon}
         </div>
       </div>
@@ -48,7 +48,7 @@ export default function StatsSection({ stats }: { stats: Stats }) {
   };
 
   return (
-    <div className="linear-card p-4 sm:p-6 bg-[#08090A] border border-white/[0.08] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-4">
+    <div className="linear-card p-4 sm:p-6 bg-[#10121b] border border-[#232636] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-4">
       <div className="mb-2">
         <h2 className="text-sm font-semibold tracking-tight text-[#F7F8F8] flex items-center gap-2">
           <span>📊</span> Real-time Statistics
@@ -97,7 +97,7 @@ export default function StatsSection({ stats }: { stats: Stats }) {
       </div>
 
       {/* Completion Progress */}
-      <div className="linear-card bg-[#0D0E11] rounded-xl p-4 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+      <div className="linear-card bg-[#10121b] rounded-xl p-4 border border-[#232636] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-medium text-[#8A8F98] uppercase tracking-tight">Overall Completion</p>
           <span className="text-sm font-bold text-white tracking-tight">{stats.completionRate}%</span>

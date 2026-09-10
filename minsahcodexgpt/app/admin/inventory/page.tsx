@@ -211,7 +211,7 @@ export default function InventoryPage() {
   };
 
   if (!hasPermission(PERMISSIONS.PRODUCTS_VIEW)) {
-    return <div className="flex h-64 items-center justify-center"><p className="text-gray-500">You don&apos;t have permission to view inventory.</p></div>;
+    return <div className="flex h-64 items-center justify-center"><p className="text-[#8a8f98]">You don&apos;t have permission to view inventory.</p></div>;
   }
 
   return (
@@ -222,9 +222,9 @@ export default function InventoryPage() {
           <p className="text-xs text-[#8A8F98] mt-0.5">Realtime stock, supplier, shortlist, and purchase-rate control in one place.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => setSupplierModalOpen(true)} className="h-8 rounded-lg border border-white/[0.08] bg-white/[0.05] px-3 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98]">Supplier Add</Button>
-          <Button type="button" onClick={() => setPurchaseOrderModalOpen(true)} className="h-8 rounded-lg bg-white text-black px-3.5 text-xs font-medium shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 transition-all active:scale-[0.98]">Purchase Order</Button>
-          <Button type="button" onClick={() => refreshWorkspace(true)} disabled={refreshing} className="h-8 inline-flex items-center rounded-lg border border-white/[0.08] bg-white/[0.05] px-3 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98] disabled:opacity-50">
+          <Button type="button" onClick={() => setSupplierModalOpen(true)} className="h-8 rounded-lg border border-[#232636] bg-white/[0.05] px-3 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98]">Supplier Add</Button>
+          <Button type="button" onClick={() => setPurchaseOrderModalOpen(true)} className="h-8 rounded-lg bg-[#5e6ad2] hover:bg-[#6d78d5] text-white px-3.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]">Purchase Order</Button>
+          <Button type="button" onClick={() => refreshWorkspace(true)} disabled={refreshing} className="h-8 inline-flex items-center rounded-lg border border-[#232636] bg-white/[0.05] px-3 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98] disabled:opacity-50">
             <RefreshCw className={clsx('mr-1.5 h-3.5 w-3.5', refreshing && 'animate-spin')} />
             Refresh
           </Button>
@@ -240,9 +240,9 @@ export default function InventoryPage() {
         <SummaryCard title="Shortlist" value={String(stats.shortlistCount)} tone="accent" />
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-1.5 p-1 bg-[#08090A] border border-white/[0.08] rounded-xl w-fit">
+      <div className="mb-5 flex flex-wrap gap-1.5 p-1 bg-[#10121b] border border-[#232636] rounded-xl w-fit">
         {(['inventory', 'shortlist', 'suppliers', 'purchase-orders'] as InventoryTab[]).map((tab) => (
-          <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={clsx('rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-all active:scale-[0.98]', activeTab === tab ? 'bg-white text-black shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)]' : 'text-[#8A8F98] hover:text-white hover:bg-white/[0.04]')}>
+          <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={clsx('rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-all active:scale-[0.98]', activeTab === tab ? 'bg-white/[0.12] text-[#F7F8F8] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]' : 'text-[#8A8F98] hover:text-white hover:bg-white/[0.04]')}>
             {tab.replace('-', ' ')}
           </button>
         ))}
@@ -256,36 +256,36 @@ export default function InventoryPage() {
 
       {activeTab === 'inventory' && (
         <>
-          <div className="mb-4 rounded-xl border border-white/[0.08] bg-[#08090A] p-3.5 linear-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+          <div className="mb-4 rounded-xl border border-[#232636] bg-[#10121b] p-3.5 linear-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#62666D]" />
-                <Input value={filters.search} onChange={(event) => setFilters({ search: event.target.value })} placeholder="Search by product, SKU, brand, category..." className="w-full rounded-lg border border-white/[0.08] bg-[#0D0E11] py-1.5 pl-9 pr-3 text-xs text-[#F7F8F8] placeholder-[#62666D] focus:border-white/20 focus:ring-1 focus:ring-white/20" />
+                <Input value={filters.search} onChange={(event) => setFilters({ search: event.target.value })} placeholder="Search by product, SKU, brand, category..." className="w-full rounded-lg border border-[#232636] bg-[#10121b] py-1.5 pl-9 pr-3 text-xs text-[#F7F8F8] placeholder-[#62666D] focus:border-white/20 focus:ring-1 focus:ring-white/20" />
               </div>
-              <Select value={filters.status} onChange={(event) => setFilters({ status: event.target.value })} className="rounded-lg border border-white/[0.08] bg-[#0D0E11] text-[#F7F8F8] px-3 py-1.5 text-xs focus:border-white/20 focus:ring-1 focus:ring-white/20">
+              <Select value={filters.status} onChange={(event) => setFilters({ status: event.target.value })} className="rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-1.5 text-xs focus:border-white/20 focus:ring-1 focus:ring-white/20">
                 <option value="all">All Status</option><option value="in_stock">In Stock</option><option value="low_stock">Low Stock</option><option value="out_of_stock">Out of Stock</option><option value="overstocked">Overstocked</option>
               </Select>
-              <Select value={filters.category} onChange={(event) => setFilters({ category: event.target.value })} className="rounded-lg border border-white/[0.08] bg-[#0D0E11] text-[#F7F8F8] px-3 py-1.5 text-xs focus:border-white/20 focus:ring-1 focus:ring-white/20">
+              <Select value={filters.category} onChange={(event) => setFilters({ category: event.target.value })} className="rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-1.5 text-xs focus:border-white/20 focus:ring-1 focus:ring-white/20">
                 <option value="all">All Categories</option>
                 {categories.map((category) => <option key={category} value={category}>{category}</option>)}
               </Select>
-              <Select value={filters.sort} onChange={(event) => setFilters({ sort: event.target.value })} className="rounded-lg border border-white/[0.08] bg-[#0D0E11] text-[#F7F8F8] px-3 py-1.5 text-xs focus:border-white/20 focus:ring-1 focus:ring-white/20">
+              <Select value={filters.sort} onChange={(event) => setFilters({ sort: event.target.value })} className="rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-1.5 text-xs focus:border-white/20 focus:ring-1 focus:ring-white/20">
                 <option value="stock">Stock Level</option><option value="lowStock">Low Stock Priority</option><option value="value">Value</option><option value="updated">Recently Updated</option><option value="name">Name</option>
               </Select>
-              <div className="rounded-lg bg-[#0D0E11] border border-white/[0.08] px-3 py-2 text-xs text-[#8A8F98]"><span className="font-semibold text-[#F7F8F8]">{inventory.length}</span> visible items, <span className="font-semibold text-rose-400">{lowStockVisible}</span> urgent.</div>
-              <div className="rounded-lg bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-xs text-[#D0D6E0]">Supplier-linked products: <span className="font-semibold text-white">{inventory.filter((item) => item.supplierCount > 0).length}</span></div>
+              <div className="rounded-lg bg-[#10121b] border border-[#232636] px-3 py-2 text-xs text-[#8A8F98]"><span className="font-semibold text-[#F7F8F8]">{inventory.length}</span> visible items, <span className="font-semibold text-rose-400">{lowStockVisible}</span> urgent.</div>
+              <div className="rounded-lg bg-white/[0.04] border border-[#232636] px-3 py-2 text-xs text-[#D0D6E0]">Supplier-linked products: <span className="font-semibold text-white">{inventory.filter((item) => item.supplierCount > 0).length}</span></div>
             </div>
           </div>
 
           {canEdit && selectedIds.length > 0 && (
-            <div className="mb-4 rounded-xl border border-white/[0.12] bg-[#0D0E11] p-3.5 linear-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+            <div className="mb-4 rounded-xl border border-white/[0.12] bg-[#10121b] p-3.5 linear-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs font-semibold text-[#F7F8F8]">{selectedIds.length} products selected</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" onClick={() => openBulkModal('add')} className="h-7 rounded-md border border-white/[0.08] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Add</Button>
-                  <Button type="button" onClick={() => openBulkModal('remove')} className="h-7 rounded-md border border-white/[0.08] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Remove</Button>
-                  <Button type="button" onClick={() => openBulkModal('set')} className="h-7 rounded-md border border-white/[0.08] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Qty</Button>
-                  <Button type="button" onClick={() => openBulkModal('reorder')} className="h-7 rounded-md border border-white/[0.08] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Reorder</Button>
+                  <Button type="button" onClick={() => openBulkModal('add')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Add</Button>
+                  <Button type="button" onClick={() => openBulkModal('remove')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Remove</Button>
+                  <Button type="button" onClick={() => openBulkModal('set')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Qty</Button>
+                  <Button type="button" onClick={() => openBulkModal('reorder')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Reorder</Button>
                   <Button type="button" onClick={() => setSelectedIds([])} className="h-7 rounded-md px-2.5 text-xs text-[#8A8F98] hover:text-white transition-all active:scale-[0.97]">Clear</Button>
                 </div>
               </div>
@@ -294,10 +294,10 @@ export default function InventoryPage() {
         </>
       )}
       {activeTab === 'inventory' && (
-        <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#08090A] linear-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+        <div className="overflow-hidden rounded-xl border border-[#232636] bg-[#10121b] linear-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#08090A] border-b border-white/[0.08]">
+              <thead className="bg-[#10121b] border-b border-[#232636]">
                 <tr>
                   {canEdit && <th className="px-3.5 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[#8A8F98] w-10"><Input type="checkbox" checked={allVisibleSelected} onChange={() => setSelectedIds(allVisibleSelected ? [] : inventory.map((item) => item.id))} /></th>}
                   <th className="px-3.5 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[#8A8F98]">Product</th>
@@ -307,15 +307,15 @@ export default function InventoryPage() {
                   <th className="px-3.5 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[#8A8F98]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.06] bg-[#08090A]">
+              <tbody className="divide-y divide-[#232636] bg-[#10121b]">
                 {loading ? Array.from({ length: 6 }).map((_, index) => <tr key={index}><td colSpan={6} className="px-3.5 py-3"><div className="h-4 animate-pulse rounded bg-white/[0.04]" /></td></tr>) : inventory.map((item) => (
                   <tr key={item.id} className="hover:bg-white/[0.03] transition-colors">
                     {canEdit && <td className="px-3.5 py-2.5"><Input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => setSelectedIds((prev) => prev.includes(item.id) ? prev.filter((id) => id !== item.id) : [...prev, item.id])} /></td>}
                     <td className="px-3.5 py-2.5">
                       <div className="flex items-start gap-2.5">
-                        <Button type="button" onClick={() => handleToggleShortlist(item)} className={clsx('mt-0.5 active:scale-[0.95] transition-transform', item.shortlisted ? 'text-amber-400' : 'text-[#62666D] hover:text-amber-400')}>
+                        <button type="button" onClick={() => handleToggleShortlist(item)} className={clsx('mt-0.5 p-1 rounded hover:bg-white/[0.04] active:scale-[0.95] transition-all', item.shortlisted ? 'text-amber-400' : 'text-[#62666D] hover:text-amber-400')}>
                           <Star className={clsx('h-4 w-4', item.shortlisted && 'fill-current')} />
-                        </Button>
+                        </button>
                         <div>
                           <p className="text-xs font-medium text-[#F7F8F8]">{item.productName}</p>
                           <p className="text-[11px] text-[#8A8F98]">{item.sku} / {item.brand} / {item.category}</p>
@@ -340,10 +340,10 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-3.5 py-2.5">
                       <div className="flex items-center gap-1.5">
-                        <Button type="button" onClick={() => setDetailItem(item)} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Eye className="h-3.5 w-3.5" /></Button>
+                        <button type="button" onClick={() => setDetailItem(item)} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Eye className="h-3.5 w-3.5" /></button>
                         {canEdit && <>
-                          <Button type="button" onClick={() => openSingleModal(item, 'add')} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Plus className="h-3.5 w-3.5" /></Button>
-                          <Button type="button" onClick={() => openSingleModal(item, 'remove')} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Minus className="h-3.5 w-3.5" /></Button>
+                          <button type="button" onClick={() => openSingleModal(item, 'add')} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Plus className="h-3.5 w-3.5" /></button>
+                          <button type="button" onClick={() => openSingleModal(item, 'remove')} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Minus className="h-3.5 w-3.5" /></button>
                         </>}
                       </div>
                     </td>
@@ -358,17 +358,17 @@ export default function InventoryPage() {
       {activeTab === 'shortlist' && (
         <div className="grid gap-4">
           {shortlist.map((item) => (
-            <div key={item.shortlistId} className="rounded-xl border border-white/[0.08] bg-[#151516] p-5">
+            <div key={item.shortlistId} className="rounded-xl border border-[#232636] bg-[#161824] p-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <Star className="h-5 w-5 fill-current text-amber-500" />
                     <h3 className="font-semibold text-[#F7F8F8]">{item.productName}</h3>
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">{item.sku} / {item.brand} / {item.category}</p>
-                  <p className="mt-2 text-sm text-gray-700">{item.note || 'No shortlist note yet.'}</p>
+                  <p className="mt-1 text-sm text-[#8A8F98]">{item.sku} / {item.brand} / {item.category}</p>
+                  <p className="mt-2 text-sm text-[#D0D6E0]">{item.note || 'No shortlist note yet.'}</p>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-[#8A8F98]">
                   <p>Priority: {item.priority}</p>
                   <p>Stock: {item.currentStock}</p>
                   <p>Status: {item.status.replace(/_/g, ' ')}</p>
@@ -383,12 +383,12 @@ export default function InventoryPage() {
       {activeTab === 'suppliers' && (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {suppliers.map((supplier) => (
-            <div key={supplier.id} className="rounded-xl border border-white/[0.08] bg-[#151516] p-5">
+            <div key={supplier.id} className="rounded-xl border border-[#232636] bg-[#161824] p-5">
               <div className="flex items-start justify-between gap-3">
-                <div><h3 className="font-semibold text-[#F7F8F8]">{supplier.name}</h3><p className="text-sm text-gray-500">{supplier.code}</p></div>
-                <span className={clsx('rounded-full px-3 py-1 text-xs font-medium', supplier.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>{supplier.isActive ? 'Active' : 'Inactive'}</span>
+                <div><h3 className="font-semibold text-[#F7F8F8]">{supplier.name}</h3><p className="text-sm text-[#8A8F98]">{supplier.code}</p></div>
+                <span className={clsx('rounded-full px-3 py-1 text-xs font-medium', supplier.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/[0.04] text-[#8A8F98] border border-[#232636]')}>{supplier.isActive ? 'Active' : 'Inactive'}</span>
               </div>
-              <div className="mt-4 grid gap-2 text-sm text-gray-600">
+              <div className="mt-4 grid gap-2 text-sm text-[#8A8F98]">
                 <p>Contact: {supplier.contactPerson || 'N/A'}</p>
                 <p>Email: {supplier.email || 'N/A'}</p>
                 <p>Phone: {supplier.phone || 'N/A'}</p>
@@ -402,10 +402,10 @@ export default function InventoryPage() {
       )}
 
       {activeTab === 'purchase-orders' && (
-        <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#151516]">
+        <div className="overflow-hidden rounded-lg border border-[#232636] bg-[#161824]">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#08090A] border-b border-white/[0.08]">
+              <thead className="bg-[#10121b] border-b border-[#232636]">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#8A8F98]">PO</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#8A8F98]">Supplier</th>
@@ -414,14 +414,14 @@ export default function InventoryPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#8A8F98]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.08] bg-[#151516]">
+              <tbody className="divide-y divide-[#232636] bg-[#161824]">
                 {purchaseOrders.map((po) => (
                   <tr key={po.id}>
                     <td className="px-4 py-4 text-sm"><p className="font-medium text-[#F7F8F8]">{po.orderNumber}</p><p className="text-xs text-[#8A8F98]">{po.itemCount} items / {po.receivedUnits} received</p></td>
-                    <td className="px-4 py-4 text-sm text-gray-700">{po.supplier.name} ({po.supplier.code})</td>
-                    <td className="px-4 py-4 text-sm text-gray-700">{formatPrice(convertUSDtoBDT(po.totalAmount))}</td>
-                    <td className="px-4 py-4 text-sm"><span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{po.status.replace(/_/g, ' ')}</span></td>
-                    <td className="px-4 py-4">{po.status !== 'RECEIVED' && <Button type="button" onClick={() => handleReceivePurchaseOrder(po.id)} className="inline-flex items-center rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"><Truck className="mr-2 h-4 w-4" />Receive</Button>}</td>
+                    <td className="px-4 py-4 text-sm text-[#D0D6E0]">{po.supplier.name} ({po.supplier.code})</td>
+                    <td className="px-4 py-4 text-sm text-[#D0D6E0]">{formatPrice(convertUSDtoBDT(po.totalAmount))}</td>
+                    <td className="px-4 py-4 text-sm"><span className="rounded-full bg-white/[0.04] border border-[#232636] px-3 py-1 text-xs font-medium text-[#8A8F98]">{po.status.replace(/_/g, ' ')}</span></td>
+                    <td className="px-4 py-4">{po.status !== 'RECEIVED' && <button type="button" onClick={() => handleReceivePurchaseOrder(po.id)} className="inline-flex items-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]"><Truck className="mr-1.5 h-3.5 w-3.5" />Receive</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -449,10 +449,10 @@ export default function InventoryPage() {
             <DetailCard label="Lowest Rate Supplier" value={detailItem.lowestSupplierName || 'N/A'} />
             <DetailCard label="Lowest Rate Date" value={detailItem.lowestPurchaseDate ? new Date(detailItem.lowestPurchaseDate).toLocaleDateString() : 'N/A'} />
           </div>
-          <div className="mt-6 rounded-xl border border-minsah-border-subtle p-4">
-            <p className="text-sm font-semibold text-minsah-text-primary">Inventory shortlist</p>
-            <p className="mt-2 text-sm text-minsah-text-muted">{detailItem.shortlisted ? detailItem.shortlistNote || 'Shortlisted, note not set yet.' : 'Ei product ekhono shortlist-e nei.'}</p>
-            <div className="mt-4"><Link href={`/admin/products/${detailItem.id}/edit`} className="text-sm font-medium text-minsah-text-link hover:underline">Open product edit</Link></div>
+          <div className="mt-6 rounded-xl border border-[#232636] p-4 bg-[#10121b]">
+            <p className="text-sm font-semibold text-[#F7F8F8]">Inventory shortlist</p>
+            <p className="mt-2 text-sm text-[#8A8F98]">{detailItem.shortlisted ? detailItem.shortlistNote || 'Shortlisted, note not set yet.' : 'Ei product ekhono shortlist-e nei.'}</p>
+            <div className="mt-4"><Link href={`/admin/products/${detailItem.id}/edit`} className="text-sm font-medium text-[#5e6ad2] hover:text-[#6d78d5]">Open product edit</Link></div>
           </div>
         </Drawer>
       ) : null}
@@ -500,26 +500,26 @@ export default function InventoryPage() {
         }
       >
             <div className="space-y-4">
-              <Select value={purchaseOrderForm.supplierId} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, supplierId: event.target.value }))} className="w-full rounded-lg border border-gray-300 px-4 py-2">
+              <Select value={purchaseOrderForm.supplierId} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, supplierId: event.target.value }))} className="w-full rounded-lg border border-[#232636] px-4 py-2">
                 <option value="">Select supplier</option>
                 {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name} ({supplier.code})</option>)}
               </Select>
               {purchaseOrderForm.items.map((item, index) => (
-                <div key={index} className="grid grid-cols-1 gap-3 rounded-xl border border-white/[0.08] bg-[#151516] p-4 md:grid-cols-[1.5fr,120px,140px,auto]">
-                  <Select value={item.productId} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.map((row, rowIndex) => rowIndex === index ? { ...row, productId: event.target.value } : row) }))} className="rounded-lg border border-gray-300 px-3 py-2">
+                <div key={index} className="grid grid-cols-1 gap-3 rounded-xl border border-[#232636] bg-[#161824] p-4 md:grid-cols-[1.5fr,120px,140px,auto]">
+                  <Select value={item.productId} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.map((row, rowIndex) => rowIndex === index ? { ...row, productId: event.target.value } : row) }))} className="rounded-lg border border-[#232636] px-3 py-2">
                     <option value="">Select product</option>
                     {inventory.map((product) => <option key={product.id} value={product.id}>{product.productName}</option>)}
                   </Select>
-                  <Input value={item.quantity} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: event.target.value } : row) }))} placeholder="Qty" className="rounded-lg border border-gray-300 px-3 py-2" />
-                  <Input value={item.unitCost} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.map((row, rowIndex) => rowIndex === index ? { ...row, unitCost: event.target.value } : row) }))} placeholder="Unit Cost" className="rounded-lg border border-gray-300 px-3 py-2" />
-                  <Button type="button" onClick={() => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.length === 1 ? prev.items : prev.items.filter((_, rowIndex) => rowIndex !== index) }))} className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700">Remove</Button>
+                  <Input value={item.quantity} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: event.target.value } : row) }))} placeholder="Qty" className="rounded-lg border border-[#232636] px-3 py-2" />
+                  <Input value={item.unitCost} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.map((row, rowIndex) => rowIndex === index ? { ...row, unitCost: event.target.value } : row) }))} placeholder="Unit Cost" className="rounded-lg border border-[#232636] px-3 py-2" />
+                  <button type="button" onClick={() => setPurchaseOrderForm((prev) => ({ ...prev, items: prev.items.length === 1 ? prev.items : prev.items.filter((_, rowIndex) => rowIndex !== index) }))} className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/20 transition-all">Remove</button>
                 </div>
               ))}
-              <Button type="button" onClick={() => setPurchaseOrderForm((prev) => ({ ...prev, items: [...prev.items, { productId: '', quantity: '1', unitCost: '' }] }))} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700">Add Item</Button>
+              <button type="button" onClick={() => setPurchaseOrderForm((prev) => ({ ...prev, items: [...prev.items, { productId: '', quantity: '1', unitCost: '' }] }))} className="rounded-lg border border-[#232636] bg-white/[0.04] px-4 py-2 text-xs font-medium text-[#D0D6E0] hover:bg-white/[0.08] hover:text-white transition-all">Add Item</button>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <Input value={purchaseOrderForm.shippingCost} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, shippingCost: event.target.value }))} placeholder="Shipping cost" className="rounded-lg border border-gray-300 px-3 py-2" />
-                <Input value={purchaseOrderForm.taxAmount} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, taxAmount: event.target.value }))} placeholder="Tax amount" className="rounded-lg border border-gray-300 px-3 py-2" />
-                <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800">Total {formatPrice(convertUSDtoBDT(purchaseOrderTotal))}</div>
+                <Input value={purchaseOrderForm.shippingCost} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, shippingCost: event.target.value }))} placeholder="Shipping cost" className="rounded-lg border border-[#232636] px-3 py-2" />
+                <Input value={purchaseOrderForm.taxAmount} onChange={(event) => setPurchaseOrderForm((prev) => ({ ...prev, taxAmount: event.target.value }))} placeholder="Tax amount" className="rounded-lg border border-[#232636] px-3 py-2" />
+                <div className="rounded-lg bg-[#10121b] border border-[#232636] px-4 py-3 text-sm font-semibold text-[#F7F8F8]">Total {formatPrice(convertUSDtoBDT(purchaseOrderTotal))}</div>
               </div>
             </div>
       </Modal>
@@ -530,7 +530,7 @@ export default function InventoryPage() {
 function SummaryCard({ title, value, tone = 'default' }: { title: string; value: string; tone?: 'default' | 'warning' | 'danger' | 'info' | 'accent' }) {
   const toneClass = tone === 'warning' ? 'text-amber-300' : tone === 'danger' ? 'text-rose-400' : tone === 'info' ? 'text-blue-300' : tone === 'accent' ? 'text-white' : 'text-[#F7F8F8]';
   return (
-    <div className="linear-card rounded-xl border border-white/[0.08] bg-[#08090A] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+    <div className="linear-card rounded-xl border border-[#232636] bg-[#10121b] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
       <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">{title}</p>
       <p className={clsx('mt-1.5 text-xl font-semibold tracking-tight', toneClass)}>{value}</p>
     </div>
@@ -539,7 +539,7 @@ function SummaryCard({ title, value, tone = 'default' }: { title: string; value:
 
 function DetailCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="linear-card rounded-xl border border-white/[0.08] bg-[#08090A] p-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+    <div className="linear-card rounded-xl border border-[#232636] bg-[#10121b] p-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
       <p className="text-[11px] font-medium uppercase tracking-tight text-[#8A8F98]">{label}</p>
       <p className="mt-1 font-medium text-sm text-[#F7F8F8]">{value}</p>
     </div>
@@ -548,7 +548,7 @@ function DetailCard({ label, value }: { label: string; value: string }) {
 
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="linear-card rounded-xl border border-white/[0.08] bg-[#08090A] p-10 text-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+    <div className="linear-card rounded-xl border border-[#232636] bg-[#10121b] p-10 text-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
       <Package className="mx-auto mb-3 h-8 w-8 text-[#62666D]" />
       <h3 className="font-semibold text-sm text-[#F7F8F8]">{title}</h3>
       <p className="mt-1 text-xs text-[#8A8F98]">{description}</p>
@@ -600,8 +600,8 @@ function TwoColInput({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-gray-700">{label}{required ? ' *' : ''}</span>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2" />
+      <span className="mb-2 block text-xs font-medium text-[#8A8F98]">{label}{required ? ' *' : ''}</span>
+      <Input value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-[#232636] px-3 py-2" />
     </label>
   );
 }

@@ -122,10 +122,10 @@ export default function CategoriesManagementPage() {
 
   const colorOptions = [
     'bg-admin-panel',
-    'bg-blue-100',
+    'bg-[#5e6ad2]/20',
     'bg-admin-panel',
-    'bg-yellow-100',
-    'bg-green-100',
+    'bg-amber-500/10',
+    'bg-emerald-500/10',
     'bg-red-100',
     'bg-orange-100',
     'bg-teal-100',
@@ -138,12 +138,12 @@ export default function CategoriesManagementPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin/home-sections" className="p-2 hover:bg-white rounded-lg transition">
-            <ArrowLeft size={24} className="text-minsah-dark" />
+          <Link href="/admin/home-sections" className="p-2 hover:bg-[#161824] rounded-lg transition">
+            <ArrowLeft size={24} className="text-[#f7f8f8]" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-minsah-dark">Manage Categories</h1>
-            <p className="text-minsah-secondary mt-1">Add, edit, or remove product categories</p>
+            <h1 className="text-3xl font-bold text-[#f7f8f8]">Manage Categories</h1>
+            <p className="text-[#8a8f98] mt-1">Add, edit, or remove product categories</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ export default function CategoriesManagementPage() {
           </Button>
           <Button
             onClick={saveCategories}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg transition text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg transition text-sm font-medium"
           >
             <Save size={20} />
             Save Changes
@@ -166,7 +166,7 @@ export default function CategoriesManagementPage() {
 
       {/* Add Category Form */}
       {showAddForm && (
-        <div className="bg-[#151516] border border-white/[0.08] p-6 rounded-xl shadow-sm mb-6">
+        <div className="bg-[#161824] border border-[#232636] p-6 rounded-xl shadow-sm mb-6">
           <h3 className="text-xl font-bold text-[#F7F8F8] mb-4">Add New Category</h3>
           <div className="grid grid-cols-4 gap-4">
             <div>
@@ -175,7 +175,7 @@ export default function CategoriesManagementPage() {
                 type="text"
                 value={newCategory.name}
                 onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
+                className="w-full px-3 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
                 placeholder="Category name"
               />
             </div>
@@ -184,7 +184,7 @@ export default function CategoriesManagementPage() {
               <Select
                 value={newCategory.icon}
                 onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
+                className="w-full px-3 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
               >
                 {iconOptions.map(icon => (
                   <option key={icon} value={icon}>{icon}</option>
@@ -196,7 +196,7 @@ export default function CategoriesManagementPage() {
               <Select
                 value={newCategory.color}
                 onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
+                className="w-full px-3 py-2 border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded-lg focus:outline-none focus:border-white"
               >
                 {colorOptions.map(color => (
                   <option key={color} value={color}>{color.replace('bg-', '').replace('-100', '')}</option>
@@ -216,8 +216,8 @@ export default function CategoriesManagementPage() {
       )}
 
       {/* Categories List */}
-      <div className="bg-[#151516] border border-white/[0.08] rounded-xl shadow-sm overflow-hidden">
-        <div className="bg-[#08090A] border-b border-white/[0.08] text-[#8A8F98] px-6 py-4 flex items-center gap-4 text-sm font-medium">
+      <div className="bg-[#161824] border border-[#232636] rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-[#10121b] border-b border-[#232636] text-[#8A8F98] px-6 py-4 flex items-center gap-4 text-sm font-medium">
           <span className="w-16 text-center font-semibold">Icon</span>
           <span className="flex-1 font-semibold">Name</span>
           <span className="w-32 text-center font-semibold">Color</span>
@@ -226,12 +226,12 @@ export default function CategoriesManagementPage() {
           <span className="w-48 text-center font-semibold">Actions</span>
         </div>
 
-        <div className="divide-y divide-white/[0.08] bg-[#151516]">
+        <div className="divide-y divide-[#232636] bg-[#161824]">
           {categories.map((category, index) => (
             <div
               key={category.id}
               className={`px-6 py-4 flex items-center gap-4 ${
-                !category.isVisible ? 'bg-[#08090A]/50 opacity-60' : 'hover:bg-[#1C1D1F]/70'
+                !category.isVisible ? 'bg-[#10121b]/50 opacity-60' : 'hover:bg-[#1b1e2c]/70'
               }`}
             >
               {/* Icon */}
@@ -257,7 +257,7 @@ export default function CategoriesManagementPage() {
                 <Select
                   value={category.color}
                   onChange={(e) => updateCategory(category.id, { color: e.target.value })}
-                  className="w-full px-2 py-1 text-sm border border-white/[0.08] bg-[#08090A] text-[#F7F8F8] rounded focus:outline-none focus:border-white"
+                  className="w-full px-2 py-1 text-sm border border-[#232636] bg-[#10121b] text-[#F7F8F8] rounded focus:outline-none focus:border-white"
                 >
                   {colorOptions.map(color => (
                     <option key={color} value={color}>{color.replace('bg-', '')}</option>
@@ -276,8 +276,8 @@ export default function CategoriesManagementPage() {
                   onClick={() => toggleVisibility(category.id)}
                   className={`p-2 rounded-lg transition ${
                     category.isVisible
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                      ? 'bg-emerald-500/10 text-emerald-400 hover:bg-green-200'
+                      : 'bg-white/[0.12] text-[#8a8f98] hover:bg-white/[0.16]'
                   }`}
                 >
                   {category.isVisible ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -289,14 +289,14 @@ export default function CategoriesManagementPage() {
                 <Button
                   onClick={() => moveCategory(category.id, 'up')}
                   disabled={index === 0}
-                  className="p-2 rounded hover:bg-[#08090A] text-[#F7F8F8] border border-transparent hover:border-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-2 rounded hover:bg-[#10121b] text-[#F7F8F8] border border-transparent hover:border-[#232636] disabled:opacity-30 disabled:cursor-not-allowed transition"
                 >
                   <ChevronUp size={18} />
                 </Button>
                 <Button
                   onClick={() => moveCategory(category.id, 'down')}
                   disabled={index === categories.length - 1}
-                  className="p-2 rounded hover:bg-[#08090A] text-[#F7F8F8] border border-transparent hover:border-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-2 rounded hover:bg-[#10121b] text-[#F7F8F8] border border-transparent hover:border-[#232636] disabled:opacity-30 disabled:cursor-not-allowed transition"
                 >
                   <ChevronDown size={18} />
                 </Button>

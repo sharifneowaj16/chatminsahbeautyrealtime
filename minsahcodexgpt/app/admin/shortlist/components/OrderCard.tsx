@@ -69,7 +69,7 @@ export default function OrderCard({ order }: { order: Order }) {
 
   return (
     <div
-      className={`linear-card bg-[#151516] border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] border-l-4 ${borderAccent} rounded-xl overflow-hidden hover:border-white/[0.15] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all`}
+      className={`linear-card bg-[#161824] border border-[#232636] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] border-l-4 ${borderAccent} rounded-xl overflow-hidden hover:border-white/[0.15] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all`}
     >
       {/* Header - Always Visible */}
       <div
@@ -125,7 +125,7 @@ export default function OrderCard({ order }: { order: Order }) {
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.08] sm:border-t-0">
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#232636] sm:border-t-0">
             <div>
               <p className="text-xs text-[#8A8F98]">Profit</p>
               <p className="font-bold text-[#F7F8F8]">{formatCurrency(order.totalProfit)}</p>
@@ -140,7 +140,7 @@ export default function OrderCard({ order }: { order: Order }) {
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="border-t border-white/[0.08] p-4 sm:p-5 bg-[#08090A] space-y-3">
+        <div className="border-t border-[#232636] p-4 sm:p-5 bg-[#10121b] space-y-3">
           {/* Product List */}
           <div className="space-y-2">
             {order.items.map((item) => (
@@ -156,13 +156,13 @@ export default function OrderCard({ order }: { order: Order }) {
 
           {/* Completion Message */}
           {order.isCompleted && (
-            <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
-              <p className="text-green-800 font-medium text-sm flex items-center gap-2">
+            <div className="mt-4 p-3 bg-emerald-500/10 border border-green-300 rounded-lg">
+              <p className="text-emerald-300 font-medium text-sm flex items-center gap-2">
                 <span>✅</span>
                 All products have been purchased!
               </p>
               {order.completedAt && (
-                <p className="text-green-700 text-xs mt-1">
+                <p className="text-emerald-400 text-xs mt-1">
                   Completed on {formatDate(order.completedAt)}
                 </p>
               )}

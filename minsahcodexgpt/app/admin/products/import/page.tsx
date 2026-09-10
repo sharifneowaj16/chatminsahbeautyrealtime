@@ -681,8 +681,8 @@ export default function ImportProductPage() {
   if (!hasPermission(PERMISSIONS.PRODUCTS_CREATE)) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">You don&apos;t have permission to create products.</p>
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-4">
+          <p className="text-rose-300">You don&apos;t have permission to create products.</p>
         </div>
       </div>
     );
@@ -922,17 +922,17 @@ export default function ImportProductPage() {
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
         </Link>
         <h1 className="text-2xl font-bold text-[#F7F8F8]">Product Import — SEO 1-22 Ready</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-[#8a8f98] text-sm mt-1">
           Paste an [IMPORT_DATA] block, flat JSON, or the complete final SEO JSON to auto-fill the form.
         </p>
       </div>
 
-      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+      <div className="mb-6 bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 rounded-xl p-4">
         <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-800 space-y-1">
+          <Info className="w-5 h-5 text-[#5e6ad2] flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-[#f7f8f8] space-y-1">
             <p className="font-semibold">How to use this importer:</p>
-            <p>1. Paste the final JSON or <code className="bg-blue-100 px-1.5 py-0.5 rounded font-mono">[IMPORT_DATA]...[/IMPORT_DATA]</code> block.</p>
+            <p>1. Paste the final JSON or <code className="bg-[#5e6ad2]/20 px-1.5 py-0.5 rounded font-mono">[IMPORT_DATA]...[/IMPORT_DATA]</code> block.</p>
             <p>2. Parse it → review the owner-fill section → verify stock, URLs, and images → save.</p>
             <p>3. The backend API route must save the new SEO fields; otherwise those payload fields will be ignored.</p>
           </div>
@@ -940,7 +940,7 @@ export default function ImportProductPage() {
       </div>
 
       {step === 'paste' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <ClipboardPaste className="w-5 h-5 text-white" />
             <h2 className="text-lg font-semibold text-[#F7F8F8]">Paste import JSON</h2>
@@ -953,12 +953,12 @@ export default function ImportProductPage() {
               setParseError('');
             }}
             rows={16}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 font-mono text-sm resize-y"
+            className="w-full px-4 py-3 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 font-mono text-sm resize-y"
             placeholder={`Paste here:\n\n[IMPORT_DATA]\n{\n  "name": "Sunsilk Power Shot Hair Treatment",\n  "category": "Hair care",\n  "brand": "Sunsilk",\n  "pageH1": "Sunsilk Power Shot Hair Treatment Price in Bangladesh"\n}\n[/IMPORT_DATA]\n\nOr paste the complete final SEO JSON.`}
           />
 
           {parseError && (
-            <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+            <div className="mt-3 flex items-start gap-2 bg-rose-500/10 border border-rose-500/20 rounded-lg px-4 py-3 text-sm text-rose-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{parseError}</span>
             </div>
@@ -969,14 +969,14 @@ export default function ImportProductPage() {
               type="button"
               onClick={handleParse}
               disabled={!pasteText.trim()}
-              className="inline-flex items-center px-6 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg disabled:opacity-50 font-medium"
+              className="inline-flex items-center px-6 py-2.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg disabled:opacity-50 font-medium"
             >
               <Sparkles className="w-4 h-4 mr-2" /> Parse JSON
             </Button>
             <Button
               type="button"
               onClick={() => setPasteText('')}
-              className="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2.5 border border-[#232636] rounded-lg text-[#8a8f98] hover:bg-[#10121b]"
             >
               <X className="w-4 h-4 mr-1" /> Clear
             </Button>
@@ -986,13 +986,13 @@ export default function ImportProductPage() {
 
       {step === 'review' && importData && (
         <div className="space-y-4">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              <p className="font-semibold text-green-800">Data parsed — review it, update owner-fill fields, then save</p>
+              <p className="font-semibold text-emerald-300">Data parsed — review it, update owner-fill fields, then save</p>
             </div>
             {importData.marketPriceNote && (
-              <p className="text-sm text-green-700 ml-7">
+              <p className="text-sm text-emerald-400 ml-7">
                 💰 <strong>Market Reference:</strong> {importData.marketPriceNote}
               </p>
             )}
@@ -1007,10 +1007,10 @@ export default function ImportProductPage() {
             highlight
           >
             <div className="space-y-4">
-              <p className="text-sm text-amber-800">
+              <p className="text-sm text-amber-300">
                 Verify or complete these fields before or after import. JSON comments are invalid, so they are shown as separate review fields.
               </p>
-              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+              <ul className="list-disc pl-5 text-sm text-[#d0d6e0] space-y-1">
                 {importData.ownerFillRequired.map((item, index) => (
                   <li key={`${item}-${index}`}>{item}</li>
                 ))}
@@ -1024,9 +1024,9 @@ export default function ImportProductPage() {
                 />
               )}
               {importData.ownerComments.length > 0 && (
-                <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Owner Comments</p>
-                  <ul className="list-disc pl-5 text-sm text-gray-600">
+                <div className="bg-[#10121b] rounded-lg border border-[#232636] p-3">
+                  <p className="text-sm font-medium text-[#d0d6e0] mb-2">Owner Comments</p>
+                  <ul className="list-disc pl-5 text-sm text-[#8a8f98]">
                     {importData.ownerComments.map((comment, index) => (
                       <li key={`${comment}-${index}`}>{comment}</li>
                     ))}
@@ -1048,11 +1048,11 @@ export default function ImportProductPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Category *</label>
                   <Select
                     value={importData.category}
                     onChange={(e) => updateField('category', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
+                    className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
                   >
                     <option value="">Select category</option>
                     {categoriesData.map((category) => (
@@ -1062,7 +1062,7 @@ export default function ImportProductPage() {
                       <option value={importData.category}>{importData.category}</option>
                     )}
                   </Select>
-                  <p className="text-xs text-gray-400 mt-1">Category name database-er exact name-er sathe match korte hobe.</p>
+                  <p className="text-xs text-[#62666d] mt-1">Category name database-er exact name-er sathe match korte hobe.</p>
                 </div>
                 <TextInput label="Brand *" value={importData.brand} onChange={(value) => updateField('brand', value)} />
               </div>
@@ -1071,11 +1071,11 @@ export default function ImportProductPage() {
                 <TextInput label="Subcategory" value={importData.subcategory} onChange={(value) => updateField('subcategory', value)} />
                 <TextInput label="Item / Product Type" value={importData.item} onChange={(value) => updateField('item', value)} />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Origin Country</label>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Origin Country</label>
                   <Select
                     value={importData.originCountry}
                     onChange={(e) => updateField('originCountry', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20"
+                    className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
                   >
                     {countries.map((country) => (
                       <option key={country} value={country}>{country}</option>
@@ -1094,7 +1094,7 @@ export default function ImportProductPage() {
                   onChange={(e) => updateField('featured', e.target.checked)}
                   className="w-4 h-4 text-white rounded"
                 />
-                <span className="text-sm text-gray-700">Featured Product</span>
+                <span className="text-sm text-[#d0d6e0]">Featured Product</span>
               </label>
 
               <TextareaInput label="Description *" value={importData.description} rows={8} onChange={(value) => updateField('description', value)} />
@@ -1105,7 +1105,7 @@ export default function ImportProductPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Skin / Hair Type</label>
+                <label className="block text-sm font-medium text-[#d0d6e0] mb-2">Skin / Hair Type</label>
                 <div className="flex flex-wrap gap-2">
                   {skinTypes.map((type) => (
                     <Button
@@ -1114,8 +1114,8 @@ export default function ImportProductPage() {
                       onClick={() => toggleSkinType(type)}
                       className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
                         importData.skinType.includes(type)
-                          ? 'bg-white text-black hover:bg-white/90 border-admin-primary text-white'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-admin-border'
+                          ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] border-admin-primary text-white'
+                          : 'bg-[#161824] border-[#232636] text-[#d0d6e0] hover:border-admin-border'
                       }`}
                     >
                       {type}
@@ -1137,12 +1137,12 @@ export default function ImportProductPage() {
             highlight
           >
             <div className="space-y-3">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3 text-sm text-amber-300">
                 Always verify price, stock, and SKU. A stock value of 0 keeps the product schema and storefront status as OutOfStock.
               </div>
               {importData.variants.map((variant, index) => (
-                <div key={`${variant.sku}-${index}`} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <p className="text-sm font-semibold text-gray-700 mb-3">Variant #{index + 1}</p>
+                <div key={`${variant.sku}-${index}`} className="border border-[#232636] rounded-lg p-4 bg-[#10121b]">
+                  <p className="text-sm font-semibold text-[#d0d6e0] mb-3">Variant #{index + 1}</p>
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                     <TextInput label="Size" value={variant.size} onChange={(value) => updateVariant(index, 'size', value)} small />
                     <TextInput label="Color" value={variant.color} onChange={(value) => updateVariant(index, 'color', value)} small />
@@ -1267,7 +1267,7 @@ export default function ImportProductPage() {
                   onChange={(e) => updateField('faqSchemaReady', e.target.checked)}
                   className="w-4 h-4 text-white rounded"
                 />
-                <span className="text-sm text-gray-700">FAQ schema ready</span>
+                <span className="text-sm text-[#d0d6e0]">FAQ schema ready</span>
               </label>
             </div>
           </Section>
@@ -1302,7 +1302,7 @@ export default function ImportProductPage() {
             onToggle={() => toggleSection('images')}
           >
             <div className="space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-sm text-amber-300">
                 Placeholder image URLs were removed automatically. Add real CDN or live image URLs in the JSON editor, or upload images from the edit page after saving.
               </div>
               <JsonEditor label="Images JSON" value={importData.images} onBlur={(value) => updateJsonField('images', value, importData.images)} rows={10} />
@@ -1319,7 +1319,7 @@ export default function ImportProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TextInput label="Shipping Weight (grams)" value={importData.shippingWeight} onChange={(value) => updateField('shippingWeight', value)} />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions (L × W × H cm)</label>
+                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Dimensions (L × W × H cm)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['length', 'width', 'height'] as const).map((dimension) => (
                     <Input
@@ -1327,7 +1327,7 @@ export default function ImportProductPage() {
                       type="text"
                       value={importData.dimensions[dimension]}
                       onChange={(e) => updateDimension(dimension, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-white/20"
+                      className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:ring-2 focus:ring-white/20"
                       placeholder={dimension.charAt(0).toUpperCase()}
                     />
                   ))}
@@ -1341,7 +1341,7 @@ export default function ImportProductPage() {
                 onChange={(e) => updateField('isFragile', e.target.checked)}
                 className="w-4 h-4 text-white rounded"
               />
-              <span className="text-sm text-gray-700">Fragile Item</span>
+              <span className="text-sm text-[#d0d6e0]">Fragile Item</span>
             </label>
           </Section>
 
@@ -1373,11 +1373,11 @@ export default function ImportProductPage() {
                 }}
                 className="w-4 h-4 text-emerald-600 rounded"
               />
-              <span className="text-sm font-medium text-gray-700">Enable delivery offer</span>
+              <span className="text-sm font-medium text-[#d0d6e0]">Enable delivery offer</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Offer Type</label>
+                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Offer Type</label>
                 <Select
                   value={importData.deliveryOfferEnabled ? importData.deliveryOfferType : 'DEFAULT'}
                   onChange={(e) => {
@@ -1386,7 +1386,7 @@ export default function ImportProductPage() {
                     updateField('deliveryOfferEnabled', type !== 'DEFAULT');
                     if (type !== 'FIXED') updateField('deliveryOfferAmount', '');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 bg-white"
+                  className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 bg-[#161824]"
                 >
                   <option value="DEFAULT">Courier calculated / No product offer</option>
                   <option value="FREE">Free delivery for full order</option>
@@ -1439,14 +1439,14 @@ export default function ImportProductPage() {
                 ['flashSaleEligible', 'Flash Sale Eligible'],
                 ['preOrderOption', 'Pre-order'],
               ] as Array<[keyof ImportData, string]>).map(([key, label]) => (
-                <label key={key as string} className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                <label key={key as string} className="flex items-center gap-2 p-3 border border-[#232636] rounded-lg cursor-pointer hover:bg-[#10121b]">
                   <Input
                     type="checkbox"
                     checked={Boolean(importData[key])}
                     onChange={(e) => updateField(key, e.target.checked as never)}
                     className="w-4 h-4 text-white rounded"
                   />
-                  <span className="text-sm text-gray-700">{label}</span>
+                  <span className="text-sm text-[#d0d6e0]">{label}</span>
                 </label>
               ))}
             </div>
@@ -1462,20 +1462,20 @@ export default function ImportProductPage() {
             expanded={expandedSections.faqs}
             onToggle={() => toggleSection('faqs')}
           >
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-[#8a8f98] mb-3">
               Imported {importData.faqs.length} FAQ item{importData.faqs.length === 1 ? '' : 's'}. You can edit or add more.
             </p>
             <ProductFaqSection faqs={importData.faqs} onChange={(faqs) => updateField('faqs', faqs)} />
           </Section>
 
-          <div className="flex items-center justify-between bg-white rounded-xl border border-gray-200 p-5 shadow-sm sticky bottom-0 z-10">
+          <div className="flex items-center justify-between bg-[#161824] rounded-xl border border-[#232636] p-5 shadow-sm sticky bottom-0 z-10">
             <Button
               type="button"
               onClick={() => {
                 setStep('paste');
                 setImportData(null);
               }}
-              className="inline-flex items-center px-5 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+              className="inline-flex items-center px-5 py-2.5 border-2 border-[#232636] rounded-lg text-[#d0d6e0] hover:bg-[#10121b] font-medium"
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> Paste again
             </Button>
@@ -1483,7 +1483,7 @@ export default function ImportProductPage() {
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="inline-flex items-center px-8 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg disabled:opacity-50 font-medium shadow-lg"
+              className="inline-flex items-center px-8 py-2.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg disabled:opacity-50 font-medium shadow-lg"
             >
               {isSubmitting ? (
                 <>
@@ -1521,11 +1521,11 @@ function Section({
   highlight?: boolean;
 }) {
   return (
-    <div className={`bg-white rounded-xl border shadow-sm overflow-hidden ${highlight ? 'border-amber-300' : 'border-gray-200'}`}>
+    <div className={`bg-[#161824] rounded-xl border shadow-sm overflow-hidden ${highlight ? 'border-amber-300' : 'border-[#232636]'}`}>
       <Button
         type="button"
         onClick={onToggle}
-        className={`w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors ${highlight ? 'bg-amber-50' : ''}`}
+        className={`w-full flex items-center justify-between px-6 py-4 hover:bg-[#10121b] transition-colors ${highlight ? 'bg-amber-500/10' : ''}`}
         aria-expanded={expanded}
         aria-controls={`section-${sectionKey}`}
       >
@@ -1533,10 +1533,10 @@ function Section({
           {icon}
           <span className={`font-semibold ${highlight ? 'text-white/80' : 'text-[#F7F8F8]'}`}>{title}</span>
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+        {expanded ? <ChevronUp className="w-4 h-4 text-[#62666d]" /> : <ChevronDown className="w-4 h-4 text-[#62666d]" />}
       </Button>
       {expanded && (
-        <div id={`section-${sectionKey}`} className="px-6 pb-6 pt-2 border-t border-gray-100">
+        <div id={`section-${sectionKey}`} className="px-6 pb-6 pt-2 border-t border-[#232636]">
           {children}
         </div>
       )}
@@ -1563,13 +1563,13 @@ function TextInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-[#d0d6e0] mb-1">{label}</label>
       <Input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 disabled:bg-gray-100 disabled:text-gray-400 ${small ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
+        className={`w-full border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 disabled:bg-[#10121b] disabled:text-[#62666d] ${small ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
         placeholder={placeholder}
       />
     </div>
@@ -1591,12 +1591,12 @@ function TextareaInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-[#d0d6e0] mb-1">{label}</label>
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
+        className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
         placeholder={placeholder}
       />
     </div>
@@ -1614,12 +1614,12 @@ function ArrayTextarea({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-[#d0d6e0] mb-1">{label}</label>
       <Textarea
         value={value.join(', ')}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
+        className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
         placeholder="Comma separated"
       />
     </div>
@@ -1639,12 +1639,12 @@ function JsonEditor({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-[#d0d6e0] mb-1">{label}</label>
       <Textarea
         defaultValue={jsonString(value, Array.isArray(value) ? [] : {})}
         onBlur={(e) => onBlur(e.target.value)}
         rows={rows}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white/20 text-xs font-mono"
+        className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-xs font-mono"
       />
     </div>
   );
