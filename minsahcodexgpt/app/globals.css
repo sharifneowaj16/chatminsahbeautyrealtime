@@ -71,11 +71,11 @@
   --control-icon-size: 2.75rem;
   --font-size-minimum-readable: 0.75rem;
 
-  /* Admin panel design system - Linear Pure Monochrome */
-  --admin-bg: #08090A;          /* Linear Ultra Deep Black - sidebar/base */
-  --admin-canvas: #08090A;      /* Linear Content Canvas */
-  --admin-panel: #151516;       /* Linear Near-Black Card/Panel */
-  --admin-panel-hover: #1C1D1F; /* Linear Row / Card hover */
+  /* Admin panel design system - Linear Pure Monochrome (Real Workspace Orbiter) */
+  --admin-bg: #0B0C0E;          /* Linear Sidebar / Outer Shell */
+  --admin-canvas: #141518;      /* Linear Inner Workspace Canvas */
+  --admin-panel: #18191D;       /* Linear Card Surface */
+  --admin-panel-hover: #202227; /* Linear Row / Card hover */
   --admin-primary: #F7F8F8;     /* Linear Pure Monochrome White Action */
   --admin-primary-hover: #FFFFFF;
   --admin-text: #F7F8F8;        /* Linear Luminous White text */
@@ -108,6 +108,19 @@
   --color-warning: var(--color-status-warning-text);
   --color-danger: var(--color-status-danger-text);
   --color-info: var(--color-status-info-text);
+}
+
+/* Linear Workspace Typography & Dev Tools Override */
+.admin-workspace {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+nextjs-portal,
+[data-nextjs-dev-tools-button] {
+  display: none !important;
 }
 
 @theme inline {

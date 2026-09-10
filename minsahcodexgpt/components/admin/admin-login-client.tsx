@@ -84,139 +84,94 @@ export function AdminLoginClient({ redirectTo }: AdminLoginClientProps) {
   }
 
   return (
-    <div className="admin-workspace min-h-screen flex bg-gradient-to-br from-admin-panel to-admin-bg">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-admin-primary to-admin-primary-hover p-12 flex-col justify-between relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-black/20"></div>
+    <div
+      className="admin-workspace min-h-screen flex items-center justify-center bg-[#08090A] p-4 relative overflow-hidden"
+      style={{
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      }}
+    >
+      {/* Subtle radial ambient glow behind the card, signature of Linear */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-white/[0.02] rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10">
-          <div className="flex items-center space-x-2 mb-8">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">M</span>
+      <div className="w-full max-w-[400px] relative z-10">
+        <div className="linear-card bg-[#0D0E11] border border-white/[0.08] rounded-2xl p-7 sm:p-8 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_24px_48px_rgba(0,0,0,0.8)]">
+          {/* Brand Mark */}
+          <div className="flex flex-col items-center text-center mb-7">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.12] flex items-center justify-center mb-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20)]">
+              <span className="text-white font-semibold text-sm tracking-widest font-mono">MB</span>
             </div>
-            <span className="text-white text-2xl font-semibold">Minsah Beauty Admin</span>
+            <h1 className="text-lg font-semibold text-[#F7F8F8] tracking-tight">Admin Sign In</h1>
+            <p className="text-xs text-[#8A8F98] mt-1">Authenticate to access the workspace</p>
           </div>
 
-          <div className="max-w-md">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Admin Dashboard
-            </h1>
-            <p className="text-white/90 text-lg leading-relaxed">
-              Manage your beauty empire with our powerful admin tools.
-              Control products, orders, customers, and analytics all in one place.
-            </p>
-          </div>
-        </div>
-
-        <div className="relative z-10">
-          <div className="space-y-4 text-white/80">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">&#10003;</span>
-              </div>
-              <div>
-                <div className="text-white font-medium">Complete Order Management</div>
-                <div className="text-white/70 text-sm">Track and process orders efficiently</div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-medium text-[#8A8F98] mb-1.5 uppercase tracking-wider">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#62666D] pointer-events-none" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@minsahbeauty.com"
+                  required
+                  autoComplete="email"
+                  className="w-full pl-9 pr-3 py-2 border border-white/[0.08] bg-[#08090A] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 transition-all"
+                />
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">&#10003;</span>
-              </div>
-              <div>
-                <div className="text-white font-medium">Product Control</div>
-                <div className="text-white/70 text-sm">Manage inventory and pricing</div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">&#10003;</span>
-              </div>
-              <div>
-                <div className="text-white font-medium">Customer Analytics</div>
-                <div className="text-white/70 text-sm">Deep insights into your business</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-md">
-          <div className="flex items-center justify-center space-x-2 mb-8 lg:hidden">
-            <div className="w-10 h-10 bg-white text-black hover:bg-white/90 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">M</span>
-            </div>
-            <span className="text-white text-2xl font-semibold">Admin</span>
-          </div>
-
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-[#F7F8F8] mb-2">Welcome Back</h1>
-            <p className="text-[#8A8F98]">Sign in to your admin dashboard</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              required
-              autoComplete="email"
-              label="Email Address"
-              leading={<Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-              className="focus:ring-white/20"
-            />
-
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              autoComplete="current-password"
-              label="Password"
-              leading={<Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-              trailing={
-                <Button
+            <div>
+              <label className="block text-[11px] font-medium text-[#8A8F98] mb-1.5 uppercase tracking-wider">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#62666D] pointer-events-none" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  className="w-full pl-9 pr-9 py-2 border border-white/[0.08] bg-[#08090A] text-xs text-[#F7F8F8] placeholder-[#62666D] rounded-lg focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 transition-all"
+                />
+                <button
                   type="button"
-                  variant="ghost"
-                  size="icon"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="pointer-events-auto text-[#8A8F98] hover:text-[#F7F8F8]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#62666D] hover:text-[#8A8F98] transition-colors"
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5" aria-hidden="true" />
+                    <EyeOff className="h-4 w-4" />
                   ) : (
-                    <Eye className="h-5 w-5" aria-hidden="true" />
+                    <Eye className="h-4 w-4" />
                   )}
-                </Button>
-              }
-              className="focus:ring-white/20"
-            />
+                </button>
+              </div>
+            </div>
 
             {error && (
-              <div className="bg-red-950/80 border border-red-800/50 text-white/60 px-4 py-3 rounded-lg text-sm font-medium">
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 px-3 py-2 rounded-lg text-xs font-medium">
                 {error}
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
-              variant="primary"
-              fullWidth
               disabled={isLoading}
-              aria-busy={isLoading || undefined}
-              className="bg-white text-black hover:bg-white/90 py-3 hover:bg-white/90"
+              className="h-9 w-full bg-white text-black font-semibold text-xs rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
+              <span className="text-black font-semibold">{isLoading ? 'Signing in...' : 'Continue'}</span>
+            </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link href="/" className="text-sm text-white hover:text-white transition-colors inline-flex items-center gap-1">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Main Site
+          <div className="mt-5 text-center">
+            <Link href="/" className="text-[11px] text-[#8A8F98] hover:text-white transition-colors inline-flex items-center gap-1">
+              <ArrowLeft className="w-3 h-3" />
+              Back to storefront
             </Link>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import Script from 'next/script';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   clearNonEssentialTrackingStorage,
   CURRENT_TRACKING_CONSENT_VERSION,
@@ -65,8 +66,13 @@ export function TrackingConsentModeScript() {
 }
 
 export function TrackingConsentBanner() {
+  const pathname = usePathname();
   const [consent, setConsent] = useState<TrackingConsentState>('unknown');
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  if (pathname && pathname.startsWith('/admin')) {
+    return null;
+  }
 
   useEffect(() => {
     const rawConsent = getClientTrackingConsent();

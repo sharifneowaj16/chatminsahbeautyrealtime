@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  devIndicators: false,
 
   // ✅ compress: true — gzip/brotli compression চালু (bandwidth কমাবে)
   compress: true,
