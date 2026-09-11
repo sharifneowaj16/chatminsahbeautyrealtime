@@ -130,6 +130,8 @@ export async function POST(request: NextRequest) {
           deliveryOfferEnabled: true,
           deliveryOfferType: true,
           deliveryOfferAmount: true,
+          deliveryChargeInsideDhaka: true,
+          deliveryChargeOutsideDhaka: true,
           deliveryOfferStartDate: true,
           deliveryOfferEndDate: true,
           deliveryOfferBadgeText: true,

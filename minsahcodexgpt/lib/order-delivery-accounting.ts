@@ -44,6 +44,7 @@ export type OrderDeliveryAccountingAddressInput = {
   pathao_zone_id?: number | null;
   pathaoCityId?: number | null;
   pathaoZoneId?: number | null;
+  city?: string | null;
 };
 
 export type ClientDeliveryAccountingInput = {
@@ -227,27 +228,48 @@ async function fetchPathaoCourierCharge(params: {
   return roundMoney(courierCharge);
 }
 
-function fallbackFromClient(client: ClientDeliveryAccountingInput): OrderDeliveryAccountingResult {
-  const shippingCost = roundMoney(toMoney(client.customerDeliveryCharge ?? client.shippingCost));
-  const clientCourierCharge = toMoney(client.courierDeliveryCharge);
-  const courierDeliveryCharge = clientCourierCharge > 0 ? roundMoney(clientCourierCharge) : null;
-  const clientDiscount = toMoney(client.deliveryDiscountAmount);
-  const deliveryDiscountAmount = courierDeliveryCharge !== null
-    ? roundMoney(Math.max(0, courierDeliveryCharge - shippingCost))
-    : roundMoney(clientDiscount);
+function resolveFallbackDeliveryAccounting(params: {
+  client: ClientDeliveryAccountingInput;
+  products: OrderDeliveryAccountingProductInput[];
+  address?: OrderDeliveryAccountingAddressInput | null;
+}): OrderDeliveryAccountingResult {
+  const cityName = typeof params.address?.city === 'string' ? params.address.city.trim().toLowerCase() : '';
+  const cityId = Number(params.address?.pathao_city_id ?? params.address?.pathaoCityId);
+  const isInsideDhaka = cityName.includes('dhaka') || cityId === 1;
+
+  // Standard fallback courier rates if live courier quote failed
+  const standardCourierCharge = isInsideDhaka ? 80 : 130;
+  const clientCourierCharge = toMoney(params.client.courierDeliveryCharge);
+  const fallbackCourierCharge = clientCourierCharge > 0
+    ? roundMoney(clientCourierCharge)
+    : standardCourierCharge;
+
+  // Server-side offer re-evaluation using actual database product records and current timestamp.
+  // This ensures expired offers are strictly invalidated even if client claims an offer or Pathao is down.
+  const now = new Date();
+  const deliveryPricing = calculateDeliveryPricing({
+    courierDeliveryCharge: fallbackCourierCharge,
+    courierPricingSource: 'FALLBACK',
+    products: params.products,
+    isInsideDhaka,
+    destinationCity: params.address?.city ?? (isInsideDhaka ? 'Dhaka' : null),
+    now,
+  });
 
   return {
-    shippingCost,
-    courierDeliveryCharge,
-    deliveryDiscountAmount,
-    deliveryPricingSource: normalizePricingSource(client.deliveryPricingSource) === 'DEFAULT'
-      ? 'FALLBACK'
-      : normalizePricingSource(client.deliveryPricingSource),
-    deliveryOfferType: normalizeOfferType(client.deliveryOfferType),
-    deliveryOfferProductId: client.deliveryOfferProductId || null,
-    deliveryOfferBadgeText: client.deliveryOfferBadgeText?.trim() || null,
+    shippingCost: deliveryPricing.customerDeliveryCharge,
+    courierDeliveryCharge: fallbackCourierCharge,
+    deliveryDiscountAmount: deliveryPricing.deliveryDiscountAmount,
+    deliveryPricingSource: deliveryPricing.deliveryPricingSource === 'PRODUCT_OFFER'
+      ? 'PRODUCT_OFFER'
+      : 'FALLBACK',
+    deliveryOfferType: deliveryPricing.deliveryOfferType,
+    deliveryOfferProductId: deliveryPricing.deliveryOfferProductId,
+    deliveryOfferBadgeText: deliveryPricing.deliveryOfferBadgeText,
     quoteVerified: false,
-    pricingNote: 'Server courier quote unavailable; saved client quote as fallback accounting.',
+    pricingNote: deliveryPricing.deliveryPricingSource === 'PRODUCT_OFFER'
+      ? 'Server courier quote unavailable; active product delivery offer verified against DB.'
+      : 'Server courier quote unavailable; calculated standard fallback delivery charge with verified offer expiry.',
   };
 }
 
@@ -262,7 +284,11 @@ export async function resolveOrderDeliveryAccounting(params: {
   const recipientZone = getAddressId(params.address?.pathao_zone_id ?? params.address?.pathaoZoneId);
 
   if (!recipientCity || !recipientZone || !params.items.length) {
-    return fallbackFromClient(params.client);
+    return resolveFallbackDeliveryAccounting({
+      client: params.client,
+      products: params.products,
+      address: params.address,
+    });
   }
 
   try {
@@ -280,10 +306,15 @@ export async function resolveOrderDeliveryAccounting(params: {
       parcelWeightKg,
     });
 
+    const cityName = typeof params.address?.city === 'string' ? params.address.city.trim().toLowerCase() : '';
+    const isInsideDhaka = cityName.includes('dhaka') || recipientCity === 1;
+
     const deliveryPricing = calculateDeliveryPricing({
       courierDeliveryCharge,
       courierPricingSource: 'PATHAO',
       products: params.products,
+      isInsideDhaka,
+      destinationCity: params.address?.city ?? (isInsideDhaka ? 'Dhaka' : null),
     });
 
     return {
@@ -299,6 +330,10 @@ export async function resolveOrderDeliveryAccounting(params: {
     };
   } catch (error) {
     console.error('Order delivery accounting quote failed:', error);
-    return fallbackFromClient(params.client);
+    return resolveFallbackDeliveryAccounting({
+      client: params.client,
+      products: params.products,
+      address: params.address,
+    });
   }
 }
