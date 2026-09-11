@@ -194,7 +194,9 @@ export default function SeedBundleDrawer({
     selectedProducts.forEach((p) => {
       totalSellingPrice += p.price;
       // If admin didn't set costPrice, estimate conservative 75% purchase cost to guarantee zero loss
-      const estimatedCost = p.costPrice != null ? p.costPrice : p.price * 0.75;
+      const estimatedCost = (p.costPrice != null && Number(p.costPrice) > 0)
+        ? Number(p.costPrice)
+        : p.price * 0.75;
       totalCostPrice += estimatedCost;
       if (p.hasFreeDelivery || p.deliveryOfferType === 'FREE') {
         hasAnyFreeDelivery = true;

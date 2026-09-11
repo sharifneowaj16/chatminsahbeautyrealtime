@@ -72,6 +72,7 @@ interface ProductFormData {
   reviewCount: number;
   images: ProductImage[];
   variants: ProductVariant[];
+  costPrice: string;
   // SEO
   metaTitle: string;
   metaDescription: string;
@@ -170,6 +171,7 @@ interface LoadedAdminProduct {
   id: string;
   name?: string;
   price?: number | string;
+  costPrice?: number | string | null;
   stock?: number;
   images?: LoadedProductImage[];
   variants?: LoadedProductVariant[];
@@ -273,6 +275,7 @@ const defaultFormData: ProductFormData = {
   originCountry: 'Bangladesh (Local)', status: 'active', featured: false,
   description: '', weight: '', ingredients: '', skinType: [], expiryDate: '',
   shelfLife: '', productCondition: 'NEW', gtin: '', averageRating: 0, reviewCount: 0,
+  costPrice: '',
   images: [],
   variants: [{ id: '1', size: '', color: '', price: '', stock: '', sku: '' }],
   metaTitle: '', metaDescription: '', urlSlug: '', tags: '',
@@ -382,6 +385,7 @@ export default function EditProductPage() {
               ]
             : savedImageAltTexts,
           variants:      existingVariants,
+          costPrice:        p.costPrice  != null ? String(p.costPrice) : '',
           weight:           p.weight     != null ? String(p.weight) : '',
           ingredients:      p.ingredients   || '',
           skinType:         Array.isArray(p.skinType) ? p.skinType : [],
@@ -775,6 +779,7 @@ export default function EditProductPage() {
         name:          formData.name,
         description:   formData.description,
         price:         basePrice,
+        costPrice:     formData.costPrice ? parseFloat(formData.costPrice) : null,
         originalPrice,
         category:      formData.category,
         subcategory:   formData.subcategory || undefined,
@@ -1806,7 +1811,23 @@ export default function EditProductPage() {
             <h2 className="text-lg font-semibold text-[#F7F8F8]">Discount & Offers</h2>
           </div>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">
+                  Cost Price (৳)
+                </label>
+                <Input
+                  type="number"
+                  name="costPrice"
+                  value={formData.costPrice}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
+                  placeholder="e.g. 700.00"
+                />
+                <p className="text-[11px] text-[#8a8f98] mt-1">Wholesale cost for bundle margins</p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Discount %</label>
                 <Input type="number" value={formData.discountPercentage}

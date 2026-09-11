@@ -1273,3 +1273,81 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const admin = await getVerifiedAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCTS_EDIT)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const existing = await prisma.product.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+      },
+      select: { id: true, name: true, price: true, costPrice: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+
+    const data: Prisma.ProductUpdateInput = {};
+
+    if ('costPrice' in body) {
+      const rawCost = body.costPrice;
+      if (rawCost === null || rawCost === '' || rawCost === undefined) {
+        data.costPrice = null;
+      } else {
+        const num = Number(rawCost);
+        if (Number.isNaN(num) || num < 0) {
+          return NextResponse.json({ error: 'Invalid cost price. Must be a non-negative number.' }, { status: 400 });
+        }
+        data.costPrice = new Prisma.Decimal(num);
+      }
+    }
+
+    const updated = await prisma.product.update({
+      where: { id: existing.id },
+      data,
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        costPrice: true,
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      product: {
+        id: updated.id,
+        name: updated.name,
+        price: Number(updated.price),
+        costPrice: updated.costPrice ? Number(updated.costPrice) : null,
+        updatedAt: updated.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('PATCH /api/admin/products/[id] error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: 'Failed to update product', details: message },
+      { status: 500 }
+    );
+  }
+}

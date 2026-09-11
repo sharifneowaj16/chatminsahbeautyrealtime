@@ -26,7 +26,10 @@ import {
   CouponValidationError,
   validateCouponForOrder,
 } from "@/lib/coupon-validation";
-import { normalizeBangladeshPhoneNumber } from "@/lib/phone";
+import {
+  normalizeBangladeshPhoneNumber,
+  getBangladeshPhoneVariations,
+} from "@/lib/phone";
 import {
   CheckoutIdempotencyError,
   hashCheckoutIdempotencyPayload,
@@ -539,12 +542,25 @@ export async function POST(request: NextRequest) {
     });
     const shippingCostNum = deliveryAccounting.shippingCost;
     const taxAmount = 0;
+    const customerPhone =
+      addressData?.phoneNumber ??
+      savedAccountingAddress?.phone ??
+      customerForTracking?.phone ??
+      null;
+    const checkoutPhones = [
+      customerForTracking?.phone,
+      addressData?.phoneNumber,
+      addressData?.phone,
+      savedAccountingAddress?.phone,
+    ];
     const couponValidation = await validateCouponForOrder({
       prisma,
       userId,
       couponCode,
       subtotal,
       shippingCost: shippingCostNum,
+      phoneNumber: customerPhone,
+      phoneNumbers: checkoutPhones,
     });
     const discountAmount = couponValidation.discountAmount;
     const total = parseFloat(
@@ -636,8 +652,37 @@ export async function POST(request: NextRequest) {
           couponValidation.perUserLimit > 0 &&
           couponValidation.code
         ) {
+          const rawPhones = [
+            customerForTracking?.phone,
+            addressData?.phoneNumber,
+            addressData?.phone,
+            savedAccountingAddress?.phone,
+          ].filter((p): p is string => Boolean(p && typeof p === "string" && p.trim()));
+
+          const phoneCandidates = Array.from(
+            new Set(rawPhones.flatMap((p) => getBangladeshPhoneVariations(p))),
+          );
+
+          const userConditions: Prisma.OrderWhereInput[] = [{ userId }];
+          if (phoneCandidates.length > 0) {
+            userConditions.push({
+              shippingAddress: {
+                phone: { in: phoneCandidates },
+              },
+            });
+            userConditions.push({
+              user: {
+                phone: { in: phoneCandidates },
+              },
+            });
+          }
+
           const userCouponUseCount = await tx.order.count({
-            where: { userId, couponCode: couponValidation.code },
+            where: {
+              couponCode: couponValidation.code,
+              status: { notIn: ["CANCELLED", "PAYMENT_EXPIRED"] },
+              OR: userConditions,
+            },
           });
           if (userCouponUseCount >= couponValidation.perUserLimit) {
             throw new Error("COUPON_USER_LIMIT_REACHED");

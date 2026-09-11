@@ -121,8 +121,12 @@ export default function SeedHeroBundleCard({
   const calculation = useMemo(() => {
     const totalSellingPrice = effectiveMainPrice + effectivePairedPrice;
     // Fallback purchase cost: 75% of selling price to guarantee zero loss
-    const mainCost = mainProduct.costPrice != null ? mainProduct.costPrice : effectiveMainPrice * 0.75;
-    const pairedCost = activePairedProduct.costPrice != null ? activePairedProduct.costPrice : effectivePairedPrice * 0.75;
+    const mainCost = (mainProduct.costPrice != null && Number(mainProduct.costPrice) > 0)
+      ? Number(mainProduct.costPrice)
+      : effectiveMainPrice * 0.75;
+    const pairedCost = (activePairedProduct.costPrice != null && Number(activePairedProduct.costPrice) > 0)
+      ? Number(activePairedProduct.costPrice)
+      : effectivePairedPrice * 0.75;
 
     // Weight and courier delivery calculation (outside Dhaka standard)
     const mainWeight = extractVariantWeightKg(activeMainVariant?.attributes) ?? parseWeightToKg(mainProduct.shippingWeight) ?? parseWeightToKg(mainProduct.weight) ?? 0.25;

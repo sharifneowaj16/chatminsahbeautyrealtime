@@ -23,12 +23,21 @@ export async function GET() {
         coupons: Array.isArray(config.coupons)
           ? config.coupons.filter((c: any) => c.isActive !== false)
           : Object.values(PROMO_CATALOG),
-        bundles: config.bundles || {
-          enabled: true,
-          twoStepDiscountPercent: 15,
-          threeStepDiscountPercent: 25,
-          fourStepDiscountPercent: 30,
-        },
+        bundles: config.bundles
+          ? {
+              enabled: config.bundles.enabled ?? true,
+              twoStepDiscountPercent: config.bundles.twoStepDiscountPercent ?? 15,
+              threeStepDiscountPercent: config.bundles.threeStepDiscountPercent ?? 25,
+              fourStepDiscountPercent: config.bundles.fourStepDiscountPercent ?? 30,
+              estimatedCostRatio: config.bundles.estimatedCostRatio ?? 60,
+            }
+          : {
+              enabled: true,
+              twoStepDiscountPercent: 15,
+              threeStepDiscountPercent: 25,
+              fourStepDiscountPercent: 30,
+              estimatedCostRatio: 60,
+            },
         antiConflict: config.antiConflict || {
           strictAntiStacking: true,
         },
@@ -48,6 +57,7 @@ export async function GET() {
         twoStepDiscountPercent: 15,
         threeStepDiscountPercent: 25,
         fourStepDiscountPercent: 30,
+        estimatedCostRatio: 60,
       },
       antiConflict: {
         strictAntiStacking: true,

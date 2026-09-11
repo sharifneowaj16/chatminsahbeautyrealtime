@@ -23,3 +23,21 @@ export function normalizeBangladeshPhoneNumber(value: unknown): string | null {
 export function isValidBangladeshPhoneNumber(value: unknown): boolean {
   return normalizeBangladeshPhoneNumber(value) !== null;
 }
+
+export function getBangladeshPhoneVariations(value: unknown): string[] {
+  const normalized = normalizeBangladeshPhoneNumber(value);
+  if (!normalized) {
+    if (typeof value === 'string' && value.trim()) {
+      return [value.trim()];
+    }
+    return [];
+  }
+  return Array.from(
+    new Set([
+      normalized,
+      `+88${normalized}`,
+      `88${normalized}`,
+      `+880${normalized.slice(1)}`,
+    ]),
+  );
+}

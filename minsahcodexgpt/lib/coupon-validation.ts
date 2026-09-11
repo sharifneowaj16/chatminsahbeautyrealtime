@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@/generated/prisma/client';
+import type { Prisma, PrismaClient } from '@/generated/prisma/client';
 
 type MoneyLike = number | string | null | undefined | { toString(): string };
 
@@ -60,6 +60,7 @@ function capDiscount(value: number, maxDiscountableAmount: number): number {
 }
 
 import { PROMO_CATALOG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
+import { getBangladeshPhoneVariations } from '@/lib/phone';
 
 const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
 
@@ -69,6 +70,8 @@ export async function validateCouponForOrder(params: {
   couponCode?: string;
   subtotal: number;
   shippingCost: number;
+  phoneNumber?: string | null;
+  phoneNumbers?: Array<string | null | undefined>;
 }): Promise<ValidatedCouponDiscount> {
   const couponCode = params.couponCode?.trim().toUpperCase();
   if (!couponCode) {
@@ -181,12 +184,39 @@ export async function validateCouponForOrder(params: {
   }
 
   if (coupon.perUserLimit !== null && coupon.perUserLimit > 0) {
+    const rawPhones = [
+      ...(params.phoneNumbers ?? []),
+      params.phoneNumber,
+    ].filter((p): p is string => Boolean(p && typeof p === 'string' && p.trim()));
+
+    const phoneCandidates = Array.from(
+      new Set(rawPhones.flatMap((p) => getBangladeshPhoneVariations(p))),
+    );
+
+    const userConditions: Prisma.OrderWhereInput[] = [{ userId: params.userId }];
+    if (phoneCandidates.length > 0) {
+      userConditions.push({
+        shippingAddress: {
+          phone: { in: phoneCandidates },
+        },
+      });
+      userConditions.push({
+        user: {
+          phone: { in: phoneCandidates },
+        },
+      });
+    }
+
     const userUsageCount = await params.prisma.order.count({
-      where: { userId: params.userId, couponCode: coupon.code },
+      where: {
+        couponCode: coupon.code,
+        status: { notIn: ['CANCELLED', 'PAYMENT_EXPIRED'] },
+        OR: userConditions,
+      },
     });
 
     if (userUsageCount >= coupon.perUserLimit) {
-      throw new CouponValidationError('Coupon usage limit reached for this account', 'COUPON_USER_LIMIT_REACHED', 409);
+      throw new CouponValidationError('Coupon usage limit reached for this account or phone number', 'COUPON_USER_LIMIT_REACHED', 409);
     }
   }
 

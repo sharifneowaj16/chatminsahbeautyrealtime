@@ -506,6 +506,15 @@ export default function ProductsPage() {
                       {product.originalPrice != null && product.originalPrice > product.price && (
                         <div className="text-[10px] text-white/40 line-through">{formatPrice(product.originalPrice)}</div>
                       )}
+                      {(product.costPrice == null || product.costPrice <= 0) && (
+                        <Link
+                          href={`/admin/products/${productUrlKey(product)}/edit`}
+                          className="mt-1 inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition"
+                          title="Cost price not set. Click to edit."
+                        >
+                          ⚠️ No Cost Price
+                        </Link>
+                      )}
                     </td>
                     <td className="px-3 py-2.5">
                       <div className={clsx('text-xs', getStockColor(product.stock))}>

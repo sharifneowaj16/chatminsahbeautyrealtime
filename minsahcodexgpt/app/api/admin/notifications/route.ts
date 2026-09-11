@@ -16,33 +16,70 @@ export async function GET(request: NextRequest) {
     const onlyUnread = searchParams.get('unread') === 'true';
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    const notifications = await prisma.adminNotification.findMany({
-      where: onlyUnread ? { isRead: false } : {},
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      include: {
-        order: {
-          select: { orderNumber: true, total: true },
+    const [notifications, dbUnreadCount, missingCostProducts] = await Promise.all([
+      prisma.adminNotification.findMany({
+        where: onlyUnread ? { isRead: false } : {},
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        include: {
+          order: {
+            select: { orderNumber: true, total: true },
+          },
         },
-      },
-    });
+      }),
+      prisma.adminNotification.count({
+        where: { isRead: false },
+      }),
+      prisma.product.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          OR: [{ costPrice: null }, { costPrice: 0 }],
+        },
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          updatedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 15,
+      }),
+    ]);
 
-    const unreadCount = await prisma.adminNotification.count({
-      where: { isRead: false },
-    });
+    const costPriceAlerts = missingCostProducts.map((p) => ({
+      id: `missing-cost-${p.id}`,
+      type: 'MISSING_COST_PRICE',
+      title: `⚠️ Missing Cost Price: ${p.name}`,
+      message: `Selling price: ৳${Number(p.price)}. Cost price is not set. Bundle discount safety fallback is active. Click to set cost price.`,
+      isRead: false,
+      createdAt: p.updatedAt.toISOString(),
+      order: null,
+      productId: p.id,
+      productName: p.name,
+      sellingPrice: Number(p.price),
+    }));
+
+    const mappedDbNotifications = notifications.map((n) => ({
+      id:        n.id,
+      type:      n.type,
+      title:     n.title,
+      message:   n.message,
+      isRead:    n.isRead,
+      createdAt: n.createdAt.toISOString(),
+      order:     n.order
+        ? { orderNumber: n.order.orderNumber, total: n.order.total.toNumber() }
+        : null,
+      productId: null,
+      productName: null,
+      sellingPrice: null,
+    }));
+
+    const allNotifications = [...costPriceAlerts, ...mappedDbNotifications].slice(0, limit);
+    const unreadCount = dbUnreadCount + costPriceAlerts.length;
 
     return NextResponse.json({
-      notifications: notifications.map((n) => ({
-        id:        n.id,
-        type:      n.type,
-        title:     n.title,
-        message:   n.message,
-        isRead:    n.isRead,
-        createdAt: n.createdAt.toISOString(),
-        order:     n.order
-          ? { orderNumber: n.order.orderNumber, total: n.order.total.toNumber() }
-          : null,
-      })),
+      notifications: allNotifications,
       unreadCount,
     });
   } catch (error) {
