@@ -164,15 +164,19 @@ export default function CartItemRow({
                         }
                       }}
                       disabled={busy}
-                      className="h-full w-full flex items-center justify-center text-[#181C1A] hover:bg-black/5 active:scale-90 transition-transform cursor-pointer disabled:opacity-40 focus:outline-none"
+                      style={{ minBlockSize: 0, minHeight: 0 }}
+                      className="h-full w-full p-0 m-0 flex items-center justify-center text-[#181C1A] hover:bg-black/5 active:scale-90 transition-transform cursor-pointer disabled:opacity-40 focus:outline-none"
                       aria-label={`Decrease ${item.name}`}
                     >
                       <Minus size={11} strokeWidth={2} aria-hidden="true" />
                     </button>
-                    <div className="h-full w-full flex items-center justify-center overflow-hidden">
+                    <div
+                      style={{ minBlockSize: 0, minHeight: 0 }}
+                      className="h-full w-full p-0 m-0 flex items-center justify-center overflow-hidden"
+                    >
                       <span
                         key={item.quantity}
-                        className="text-xs font-semibold text-[#181C1A] text-center inline-block animate-counter-pop select-none"
+                        className="text-xs font-semibold leading-none text-[#181C1A] text-center inline-flex items-center justify-center animate-counter-pop select-none"
                         aria-live="polite"
                         aria-atomic="true"
                       >
@@ -187,7 +191,8 @@ export default function CartItemRow({
                       type="button"
                       onClick={() => onQuantityChange(item.quantity + 1)}
                       disabled={busy || isAtMaxQuantity}
-                      className="h-full w-full flex items-center justify-center text-[#181C1A] hover:bg-black/5 active:scale-90 transition-transform cursor-pointer disabled:opacity-40 focus:outline-none"
+                      style={{ minBlockSize: 0, minHeight: 0 }}
+                      className="h-full w-full p-0 m-0 flex items-center justify-center text-[#181C1A] hover:bg-black/5 active:scale-90 transition-transform cursor-pointer disabled:opacity-40 focus:outline-none"
                       aria-label={
                         isAtMaxQuantity
                           ? `${item.name} maximum quantity reached`
