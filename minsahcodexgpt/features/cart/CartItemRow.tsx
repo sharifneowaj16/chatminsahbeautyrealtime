@@ -115,27 +115,27 @@ export default function CartItemRow({
               ) : null}
             </div>
 
-            {onRemove && !isSummary && (
+            {onRemove && !isSummary && !isCompact && (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={onRemove}
                 disabled={busy}
-                className={isCompact ? "h-7 w-7 rounded-full text-stone-400 hover:text-red-600 hover:bg-black/5 transition-colors shrink-0" : "text-minsah-danger hover:bg-red-50"}
+                className="text-minsah-danger hover:bg-red-50"
                 aria-label={`Remove ${item.name}`}
               >
                 {busy ? (
-                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 ) : (
-                  <Trash2 size={14} aria-hidden="true" />
+                  <Trash2 size={16} aria-hidden="true" />
                 )}
               </Button>
             )}
           </div>
 
           {isSummary ? null : (
-            <div className={`flex flex-wrap items-center justify-between gap-3 ${isCompact ? "mt-2" : "mt-3"}`}>
+            <div className={`flex items-center justify-between gap-3 ${isCompact ? "mt-3" : "mt-3"}`}>
               <div>
                 <p
                   className={`${isCompact ? "text-[15px] font-semibold text-[#181C1A]" : "text-base font-black text-minsah-primary"}`}
@@ -153,7 +153,7 @@ export default function CartItemRow({
                 <div
                   className={`flex items-center overflow-hidden rounded-full ${
                     isCompact
-                      ? "h-[34px] w-[84px] border border-[#D0D5DD] bg-white shadow-xs"
+                      ? "h-[32px] w-[82px] border border-[#D0D5DD] bg-white shadow-xs"
                       : "h-11 border border-minsah-border-soft bg-white"
                   }`}
                 >
@@ -161,7 +161,13 @@ export default function CartItemRow({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => onQuantityChange(item.quantity - 1)}
+                    onClick={() => {
+                      if (item.quantity <= 1 && onRemove) {
+                        onRemove();
+                      } else {
+                        onQuantityChange(item.quantity - 1);
+                      }
+                    }}
                     disabled={busy}
                     className={
                       isCompact
@@ -170,19 +176,19 @@ export default function CartItemRow({
                     }
                     aria-label={`Decrease ${item.name}`}
                   >
-                    <Minus size={isCompact ? 12 : 14} aria-hidden="true" />
+                    <Minus size={isCompact ? 11 : 14} aria-hidden="true" />
                   </Button>
                   <span
                     className={`${
                       isCompact
-                        ? "min-w-[28px] text-xs font-semibold text-[#181C1A]"
+                        ? "min-w-[26px] text-xs font-semibold text-[#181C1A]"
                         : "min-w-10 text-sm font-black text-minsah-text"
                     } text-center`}
                     aria-live="polite"
                     aria-atomic="true"
                   >
                     {busy ? (
-                      <Loader2 size={isCompact ? 12 : 14} className="mx-auto animate-spin" />
+                      <Loader2 size={isCompact ? 11 : 14} className="mx-auto animate-spin" />
                     ) : (
                       item.quantity
                     )}
@@ -204,7 +210,7 @@ export default function CartItemRow({
                         : `Increase ${item.name}`
                     }
                   >
-                    <Plus size={isCompact ? 12 : 14} aria-hidden="true" />
+                    <Plus size={isCompact ? 11 : 14} aria-hidden="true" />
                   </Button>
                 </div>
               )}
