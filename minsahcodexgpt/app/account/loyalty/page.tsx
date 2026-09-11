@@ -57,14 +57,37 @@ async function getLoyaltyData(userId: string) {
       createdAt: true,
       loyaltyPoints: true,
       orders: {
-        where: { status: 'DELIVERED' },
-        orderBy: { deliveredAt: 'desc' },
+        where: {
+          OR: [
+            { status: 'DELIVERED' },
+            {
+              deliveredAt: { not: null },
+              status: { in: ['CANCELLED', 'REFUNDED'] },
+            },
+          ],
+        },
+        orderBy: { updatedAt: 'desc' },
         select: {
           id: true,
           orderNumber: true,
           total: true,
+          status: true,
           createdAt: true,
           deliveredAt: true,
+          cancelledAt: true,
+          refundedAt: true,
+          updatedAt: true,
+        },
+      },
+      returns: {
+        where: { status: { in: ['COMPLETED', 'APPROVED'] } },
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          id: true,
+          returnNumber: true,
+          refundAmount: true,
+          requestDate: true,
+          updatedAt: true,
         },
       },
       reviews: {
@@ -112,13 +135,36 @@ async function getLoyaltyData(userId: string) {
       description: 'Welcome bonus for signing up',
       createdAt: user.createdAt,
     },
-    ...user.orders.map((order) => ({
-      id: `order-${order.id}`,
-      type: 'earned' as const,
-      points: Math.max(Math.round(Number(order.total) * LOYALTY_CONFIG.points_per_bdt), 0),
-      description: `Order #${order.orderNumber}`,
-      orderId: order.orderNumber,
-      createdAt: order.deliveredAt ?? order.createdAt,
+    ...user.orders.flatMap((order) => {
+      const earnedTx = {
+        id: `order-${order.id}`,
+        type: 'earned' as const,
+        points: Math.max(Math.round(Number(order.total) * LOYALTY_CONFIG.points_per_bdt), 0),
+        description: `Order #${order.orderNumber}`,
+        orderId: order.orderNumber,
+        createdAt: order.deliveredAt ?? order.createdAt,
+      };
+
+      if (order.status === 'CANCELLED' || order.status === 'REFUNDED') {
+        const clawbackTx = {
+          id: `order-clawback-${order.id}`,
+          type: 'redeemed' as const,
+          points: Math.max(Math.round(Number(order.total) * LOYALTY_CONFIG.points_per_bdt), 0),
+          description: `Clawback: Order #${order.orderNumber} (${order.status.toLowerCase()})`,
+          orderId: order.orderNumber,
+          createdAt: order.cancelledAt ?? order.refundedAt ?? order.updatedAt,
+        };
+        return [earnedTx, clawbackTx];
+      }
+
+      return [earnedTx];
+    }),
+    ...user.returns.map((ret) => ({
+      id: `return-deduction-${ret.id}`,
+      type: 'redeemed' as const,
+      points: Math.max(Math.round(Number(ret.refundAmount) * LOYALTY_CONFIG.points_per_bdt), 0),
+      description: `Return deduction: #${ret.returnNumber}`,
+      createdAt: ret.updatedAt,
     })),
     ...user.reviews.map((review) => ({
       id: `review-${review.id}`,

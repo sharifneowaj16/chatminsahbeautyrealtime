@@ -4,6 +4,7 @@ import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma } from '@/generated/prisma/client';
 import { enqueueGa4Refund } from '@/lib/queue/metaCapiQueue';
 import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
+import { clawbackLoyaltyPointsForReturn } from '@/lib/loyalty';
 
 export const dynamic = 'force-dynamic';
 
@@ -162,6 +163,9 @@ export async function PATCH(request: NextRequest) {
         id: true,
         returnNumber: true,
         orderId: true,
+        userId: true,
+        status: true,
+        refundAmount: true,
         order: {
           select: {
             id: true,
@@ -201,6 +205,12 @@ export async function PATCH(request: NextRequest) {
       });
 
       if (normalizedStatus === 'COMPLETED') {
+        for (const returnRequest of existingReturns) {
+          if (returnRequest.status !== 'COMPLETED') {
+            await clawbackLoyaltyPointsForReturn(tx, returnRequest, returnRequest.status);
+          }
+        }
+
         const seenOrderIds = new Set<string>();
         for (const returnRequest of existingReturns) {
           if (seenOrderIds.has(returnRequest.orderId)) continue;

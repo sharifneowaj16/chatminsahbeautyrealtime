@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 
+import { clawbackLoyaltyPointsForReturn } from '@/lib/loyalty';
+
 // PATCH /api/admin/orders/returns/[id] - Approve, reject, or update return status
 export async function PATCH(
   request: NextRequest,
@@ -41,9 +43,25 @@ export async function PATCH(
     if (status) updateData.status = statusMap[status.toLowerCase()] || status.toUpperCase();
     if (adminNote !== undefined) updateData.adminNote = adminNote;
 
-    const updated = await prisma.return.update({
-      where: { id: existing.id },
-      data: updateData,
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedReturn = await tx.return.update({
+        where: { id: existing.id },
+        data: updateData,
+      });
+
+      const nextStatus = updatedReturn.status;
+      const prevStatus = existing.status;
+
+      // Claw back loyalty points if return is approved or completed
+      if (
+        (nextStatus === 'APPROVED' || nextStatus === 'COMPLETED') &&
+        prevStatus !== 'APPROVED' &&
+        prevStatus !== 'COMPLETED'
+      ) {
+        await clawbackLoyaltyPointsForReturn(tx, existing, prevStatus);
+      }
+
+      return updatedReturn;
     });
 
     return NextResponse.json({

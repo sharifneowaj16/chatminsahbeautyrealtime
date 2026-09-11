@@ -16,6 +16,10 @@ import {
   SteadfastError,
 } from '@/lib/steadfast/client';
 import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
+import {
+  awardLoyaltyPointsForOrder,
+  clawbackLoyaltyPointsForOrder,
+} from '@/lib/loyalty';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +74,12 @@ export async function POST(request: NextRequest) {
       await prisma.$transaction(async (tx) => {
         const updatedOrder = await tx.order.update({ where: { id: order.id }, data: updates });
         await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+
+        if (order.status !== 'DELIVERED' && updatedOrder.status === 'DELIVERED') {
+          await awardLoyaltyPointsForOrder(tx, updatedOrder, order.status);
+        } else if (order.status === 'DELIVERED' && updatedOrder.status === 'CANCELLED') {
+          await clawbackLoyaltyPointsForOrder(tx, order, { previousStatus: order.status, forceClawback: true });
+        }
       });
 
       return NextResponse.json({
@@ -141,6 +151,12 @@ export async function POST(request: NextRequest) {
       await prisma.$transaction(async (tx) => {
         const updatedOrder = await tx.order.update({ where: { id: order.id }, data: updates });
         await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+
+        if (order.status !== 'DELIVERED' && updatedOrder.status === 'DELIVERED') {
+          await awardLoyaltyPointsForOrder(tx, updatedOrder, order.status);
+        } else if (order.status === 'DELIVERED' && updatedOrder.status === 'CANCELLED') {
+          await clawbackLoyaltyPointsForOrder(tx, order, { previousStatus: order.status, forceClawback: true });
+        }
       });
       updated++;
     } catch (err) {

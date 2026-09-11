@@ -12,6 +12,10 @@ import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/p
 import { extractBearerToken, secureCompareText } from '@/lib/security/request-secret'
 import { isPrismaUniqueConstraintError } from '@/lib/prisma-errors'
 import { calculateCourierSendAccounting, toJsonInput } from '@/lib/courier-send-accounting'
+import {
+  awardLoyaltyPointsForOrder,
+  clawbackLoyaltyPointsForOrder,
+} from '@/lib/loyalty'
 
 export const dynamic = 'force-dynamic'
 
@@ -342,6 +346,12 @@ export async function POST(request: NextRequest) {
       })
 
       await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder)
+
+      if (order.status !== 'DELIVERED' && updatedOrder.status === 'DELIVERED') {
+        await awardLoyaltyPointsForOrder(tx, updatedOrder, order.status);
+      } else if (order.status === 'DELIVERED' && updatedOrder.status === 'CANCELLED') {
+        await clawbackLoyaltyPointsForOrder(tx, order, { previousStatus: order.status, forceClawback: true });
+      }
     }
 
     await tx.steadfastWebhookEvent.update({

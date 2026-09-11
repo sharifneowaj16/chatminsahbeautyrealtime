@@ -27,6 +27,10 @@ import {
 } from '@/lib/steadfast/client';
 import prisma from '@/lib/prisma';
 import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
+import {
+  awardLoyaltyPointsForOrder,
+  clawbackLoyaltyPointsForOrder,
+} from '@/lib/loyalty';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -107,6 +111,12 @@ async function syncAllActiveShipments() {
             });
 
             await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+
+            if (order.status !== 'DELIVERED' && updatedOrder.status === 'DELIVERED') {
+              await awardLoyaltyPointsForOrder(tx, updatedOrder, order.status);
+            } else if (order.status === 'DELIVERED' && updatedOrder.status === 'CANCELLED') {
+              await clawbackLoyaltyPointsForOrder(tx, order, { previousStatus: order.status, forceClawback: true });
+            }
           });
 
           updated++;
@@ -178,6 +188,12 @@ async function syncSingleOrder(orderId: string) {
   await prisma.$transaction(async (tx) => {
     const updatedOrder = await tx.order.update({ where: { id: order.id }, data: updateData });
     await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+
+    if (order.status !== 'DELIVERED' && updatedOrder.status === 'DELIVERED') {
+      await awardLoyaltyPointsForOrder(tx, updatedOrder, order.status);
+    } else if (order.status === 'DELIVERED' && updatedOrder.status === 'CANCELLED') {
+      await clawbackLoyaltyPointsForOrder(tx, order, { previousStatus: order.status, forceClawback: true });
+    }
   });
   console.log(
     `[SteadfastWorker] Synced ${order.orderNumber}: ${newSteadfastStatus}`

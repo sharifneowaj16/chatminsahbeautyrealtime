@@ -19,6 +19,10 @@ import { attributeVerifiedSearchConversionsForOrder } from "@/lib/search/convers
 import { createMetaPurchaseOutboxInTransaction } from "@/lib/meta/capi/purchase-outbox";
 import { requestMetaOutboxDispatch } from "@/lib/meta/capi/dispatcher";
 import type { MetaOutboxDb } from "@/lib/meta/capi/outbox-repository";
+import {
+  awardLoyaltyPointsForOrder,
+  clawbackLoyaltyPointsForOrder,
+} from "@/lib/loyalty";
 
 function normalizeStatusInput(status?: string | null) {
   return String(status ?? "")
@@ -422,6 +426,33 @@ export async function PATCH(
 
       await recordProductLifecycleTransitionInTransaction(tx, existing, updatedOrder);
 
+      const nextStatus = updatedOrder.status;
+      const prevStatus = existing.status;
+      const nextPaymentStatus = updatedOrder.paymentStatus;
+      const prevPaymentStatus = existing.paymentStatus;
+
+      // 1. Award loyalty points on delivery (from non-delivered to DELIVERED)
+      if (prevStatus !== "DELIVERED" && nextStatus === "DELIVERED") {
+        await awardLoyaltyPointsForOrder(tx, updatedOrder, prevStatus);
+      }
+
+      // 2. Clawback loyalty points on cancellation or refund if order was delivered or paid
+      const isNowCancelledOrRefunded =
+        nextStatus === "CANCELLED" ||
+        nextStatus === "REFUNDED" ||
+        nextPaymentStatus === "REFUNDED";
+
+      const wasDeliveredOrCompleted =
+        prevStatus === "DELIVERED" ||
+        prevPaymentStatus === "COMPLETED";
+
+      if (isNowCancelledOrRefunded && wasDeliveredOrCompleted) {
+        await clawbackLoyaltyPointsForOrder(tx, existing, {
+          previousStatus: prevStatus,
+          forceClawback: true,
+        });
+      }
+
       if (shouldQueueCodPurchase && !existing.isTest) {
         const outbox = await createMetaPurchaseOutboxInTransaction(
           tx as unknown as MetaOutboxDb,
@@ -539,20 +570,30 @@ export async function DELETE(
 
     const existing = await prisma.order.findFirst({
       where: { OR: [{ id }, { orderNumber: id }] },
-      select: { id: true, orderNumber: true },
+      select: { id: true, orderNumber: true, userId: true, status: true, total: true },
     });
 
     if (!existing) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Return model has no onDelete cascade from Order, so delete manually.
-    // ReturnItem has onDelete: Cascade from Return, so deleting Returns is enough.
-    await prisma.return.deleteMany({ where: { orderId: existing.id } });
+    await prisma.$transaction(async (tx) => {
+      // Clawback points if deleted order was delivered
+      if (existing.status === "DELIVERED") {
+        await clawbackLoyaltyPointsForOrder(tx, existing, {
+          previousStatus: existing.status,
+          forceClawback: true,
+        });
+      }
 
-    // Delete the order — cascades to: OrderItem, Payment, PurchaseShortlist.
-    // AdminNotification and webhook events use SetNull so they stay intact.
-    await prisma.order.delete({ where: { id: existing.id } });
+      // Return model has no onDelete cascade from Order, so delete manually.
+      // ReturnItem has onDelete: Cascade from Return, so deleting Returns is enough.
+      await tx.return.deleteMany({ where: { orderId: existing.id } });
+
+      // Delete the order — cascades to: OrderItem, Payment, PurchaseShortlist.
+      // AdminNotification and webhook events use SetNull so they stay intact.
+      await tx.order.delete({ where: { id: existing.id } });
+    });
 
     return NextResponse.json({
       success: true,

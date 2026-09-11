@@ -10,6 +10,10 @@ import {
   calculateCourierSendAccounting,
   extractCourierResponseCharge,
 } from '@/lib/courier-send-accounting';
+import {
+  awardLoyaltyPointsForOrder,
+  clawbackLoyaltyPointsForOrder,
+} from '@/lib/loyalty';
 
 export const dynamic = 'force-dynamic';
 
@@ -239,6 +243,12 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
     });
 
     await recordProductLifecycleTransitionInTransaction(tx, order, updatedOrder);
+
+    if (order.status !== 'DELIVERED' && updatedOrder.status === 'DELIVERED') {
+      await awardLoyaltyPointsForOrder(tx, updatedOrder, order.status);
+    } else if (order.status === 'DELIVERED' && updatedOrder.status === 'CANCELLED') {
+      await clawbackLoyaltyPointsForOrder(tx, order, { previousStatus: order.status, forceClawback: true });
+    }
 
     await tx.pathaoWebhookEvent.update({
       where: { id: eventId },
