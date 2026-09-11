@@ -51,11 +51,11 @@ export default function CartItemRow({
   const isAtMaxQuantity = maxQuantity !== null && item.quantity >= maxQuantity;
   const isSummary = density === "summary";
   const isCompact = density === "compact";
-  const imageSize = isSummary ? 48 : isCompact ? 64 : 96;
+  const imageSize = isSummary ? 48 : isCompact ? 72 : 96;
   const imageClass = isSummary
     ? "h-12 w-12 rounded-xl"
     : isCompact
-      ? "h-16 w-16 rounded-2xl"
+      ? "h-[72px] w-[72px] rounded-lg bg-[#EAEAE4] shrink-0"
       : "h-24 w-24 rounded-3xl";
 
   return (
@@ -64,13 +64,13 @@ export default function CartItemRow({
         isSummary
           ? "flex items-center gap-3"
           : isCompact
-            ? "rounded-3xl border border-minsah-border-soft bg-minsah-panel p-3 transition-shadow duration-200 hover:shadow-sm"
+            ? "border-b border-black/[0.08] bg-transparent py-4 transition-colors last:border-b-0"
             : "rounded-[28px] border border-minsah-border-soft bg-minsah-panel p-4 shadow-sm"
       } ${className}`}
     >
-      <div className={isSummary ? "contents" : "flex gap-4"}>
+      <div className={isSummary ? "contents" : "flex gap-3.5 items-center"}>
         <div
-          className={`${imageClass} flex-shrink-0 overflow-hidden bg-minsah-light`}
+          className={`${imageClass} flex-shrink-0 overflow-hidden ${isCompact ? "border border-black/[0.04]" : "bg-minsah-light"}`}
         >
           {isDisplayableImage(item.variantImage || item.image) ? (
             <Image
@@ -84,7 +84,7 @@ export default function CartItemRow({
           ) : (
             <div className="flex h-full w-full items-center justify-center text-minsah-secondary">
               <ShoppingBag
-                size={isSummary ? 18 : isCompact ? 20 : 26}
+                size={isSummary ? 18 : isCompact ? 22 : 26}
                 aria-hidden="true"
               />
             </div>
@@ -92,15 +92,15 @@ export default function CartItemRow({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <h3
-                className={`${isSummary || isCompact ? "text-sm" : "text-base"} line-clamp-2 font-bold leading-snug text-minsah-text`}
+                className={`${isSummary ? "text-sm font-bold text-minsah-text" : isCompact ? "text-[14px] font-semibold text-[#181C1A] leading-snug" : "text-base font-bold text-minsah-text"} line-clamp-2`}
               >
                 {item.name}
               </h3>
               {variantLabel && (
-                <p className="mt-1 line-clamp-1 text-xs font-medium text-minsah-muted">
+                <p className={`mt-0.5 line-clamp-1 text-xs ${isCompact ? "text-[#667085] font-normal" : "font-medium text-minsah-muted"}`}>
                   {variantLabel}
                 </p>
               )}
@@ -122,23 +122,23 @@ export default function CartItemRow({
                 size="icon"
                 onClick={onRemove}
                 disabled={busy}
-                className="text-minsah-danger hover:bg-red-50"
+                className={isCompact ? "h-7 w-7 rounded-full text-stone-400 hover:text-red-600 hover:bg-black/5 transition-colors shrink-0" : "text-minsah-danger hover:bg-red-50"}
                 aria-label={`Remove ${item.name}`}
               >
                 {busy ? (
-                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
                 ) : (
-                  <Trash2 size={16} aria-hidden="true" />
+                  <Trash2 size={14} aria-hidden="true" />
                 )}
               </Button>
             )}
           </div>
 
           {isSummary ? null : (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className={`flex flex-wrap items-center justify-between gap-3 ${isCompact ? "mt-2" : "mt-3"}`}>
               <div>
                 <p
-                  className={`${isCompact ? "text-sm" : "text-base"} font-black text-minsah-primary`}
+                  className={`${isCompact ? "text-[15px] font-semibold text-[#181C1A]" : "text-base font-black text-minsah-primary"}`}
                 >
                   {formatPrice(item.price)}
                 </p>
@@ -150,25 +150,39 @@ export default function CartItemRow({
               </div>
 
               {onQuantityChange && (
-                <div className="flex h-11 items-center overflow-hidden rounded-full border border-minsah-border-soft bg-white">
+                <div
+                  className={`flex items-center overflow-hidden rounded-full ${
+                    isCompact
+                      ? "h-[34px] w-[84px] border border-[#D0D5DD] bg-white shadow-xs"
+                      : "h-11 border border-minsah-border-soft bg-white"
+                  }`}
+                >
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => onQuantityChange(item.quantity - 1)}
                     disabled={busy}
-                    className="h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
+                    className={
+                      isCompact
+                        ? "h-full w-7 rounded-none text-xs text-[#181C1A] hover:bg-black/5"
+                        : "h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
+                    }
                     aria-label={`Decrease ${item.name}`}
                   >
-                    <Minus size={14} aria-hidden="true" />
+                    <Minus size={isCompact ? 12 : 14} aria-hidden="true" />
                   </Button>
                   <span
-                    className="min-w-10 text-center text-sm font-black text-minsah-text"
+                    className={`${
+                      isCompact
+                        ? "min-w-[28px] text-xs font-semibold text-[#181C1A]"
+                        : "min-w-10 text-sm font-black text-minsah-text"
+                    } text-center`}
                     aria-live="polite"
                     aria-atomic="true"
                   >
                     {busy ? (
-                      <Loader2 size={14} className="mx-auto animate-spin" />
+                      <Loader2 size={isCompact ? 12 : 14} className="mx-auto animate-spin" />
                     ) : (
                       item.quantity
                     )}
@@ -179,14 +193,18 @@ export default function CartItemRow({
                     size="icon"
                     onClick={() => onQuantityChange(item.quantity + 1)}
                     disabled={busy || isAtMaxQuantity}
-                    className="h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
+                    className={
+                      isCompact
+                        ? "h-full w-7 rounded-none text-xs text-[#181C1A] hover:bg-black/5"
+                        : "h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
+                    }
                     aria-label={
                       isAtMaxQuantity
                         ? `${item.name} maximum quantity reached`
                         : `Increase ${item.name}`
                     }
                   >
-                    <Plus size={14} aria-hidden="true" />
+                    <Plus size={isCompact ? 12 : 14} aria-hidden="true" />
                   </Button>
                 </div>
               )}

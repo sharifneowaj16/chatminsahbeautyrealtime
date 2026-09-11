@@ -1,17 +1,77 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Gift, Loader2, ShoppingBag, Sparkles, Tag, Truck, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Gift,
+  Loader2,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Tag,
+  Truck,
+  X,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, CartItem } from "@/contexts/CartContext";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import CartItemRow from "@/features/cart/CartItemRow";
-import OrderSummary from "@/features/cart/OrderSummary";
 import { formatPrice } from "@/utils/currency";
+
+interface CrossSellProduct {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  subtitle: string;
+  badge?: string;
+}
+
+// Curated beauty cross-sells matching Seed.com "Bundle + Save" aesthetic
+const CROSS_SELL_PRODUCTS: CrossSellProduct[] = [
+  {
+    id: "prod-addon-lip",
+    name: "Hydra-Peptide Lip Therapy Balm",
+    price: 650,
+    originalPrice: 850,
+    image: "/images/categories/Lip_Care.png",
+    subtitle: "Nourishing barrier care",
+    badge: "Save 25%",
+  },
+  {
+    id: "prod-addon-serum",
+    name: "Advanced Niacinamide Glow Serum",
+    price: 1150,
+    originalPrice: 1450,
+    image: "/images/categories/Serum.png",
+    subtitle: "Clinical radiance booster",
+    badge: "Top Pick",
+  },
+  {
+    id: "prod-addon-sun",
+    name: "Ultra-Light Invisible Sunscreen SPF50+",
+    price: 990,
+    originalPrice: 1250,
+    image: "/images/categories/Sunscreen.png",
+    subtitle: "Invisible daily UV veil",
+    badge: "Popular",
+  },
+  {
+    id: "prod-addon-skincare",
+    name: "Radiance Essentials Duo Bundle",
+    price: 1950,
+    originalPrice: 2450,
+    image: "/images/categories/Skincare.png",
+    subtitle: "Complete clinical reset",
+    badge: "Bundle",
+  },
+];
 
 export default function CartDrawer() {
   const router = useRouter();
@@ -19,6 +79,7 @@ export default function CartDrawer() {
   const {
     items,
     subtotal,
+    addItem,
     updateQuantity,
     removeItem,
     cartLoading,
@@ -31,13 +92,15 @@ export default function CartDrawer() {
   } = useCart();
 
   const [busyItemIds, setBusyItemIds] = useState<string[]>([]);
+  const [addingAddonId, setAddingAddonId] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+  const [isPromoExpanded, setIsPromoExpanded] = useState(false);
 
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const hasItems = items.length > 0;
 
-  // Free delivery calculations (100% synchronized with Universal Offer Engine)
+  // Free delivery calculations (Universal Offer Engine sync)
   const targetThreshold = freeDeliveryThreshold;
   const isFreeDeliveryUnlocked = Boolean(isContextFreeUnlocked || subtotal >= targetThreshold);
   const remainingForFreeDelivery = isFreeDeliveryUnlocked ? 0 : Math.max(0, targetThreshold - subtotal);
@@ -60,8 +123,25 @@ export default function CartDrawer() {
     try {
       applyPromoCode(code);
       setCouponInput("");
+      setIsPromoExpanded(false);
     } finally {
       setCouponLoading(false);
+    }
+  };
+
+  const handleAddCrossSell = async (addon: CrossSellProduct) => {
+    setAddingAddonId(addon.id);
+    try {
+      await addItem({
+        id: addon.id,
+        name: addon.name,
+        price: addon.price,
+        quantity: 1,
+        image: addon.image,
+        variantName: addon.subtitle,
+      });
+    } finally {
+      setAddingAddonId(null);
     }
   };
 
@@ -71,37 +151,12 @@ export default function CartDrawer() {
     router.push("/checkout");
   };
 
-  const orderLines = [
-    { key: "subtotal", label: "Subtotal", value: formatPrice(subtotal), emphasis: true },
-    ...(discount > 0
-      ? [
-          {
-            key: "discount",
-            label: (
-              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
-                <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-                Coupon ({promoCode})
-              </span>
-            ),
-            value: <span className="font-bold text-emerald-700">-{formatPrice(discount)}</span>,
-            emphasis: true,
-          },
-        ]
-      : []),
-  ];
-
   // Bundle and regular item breakdown for coupon applicability
   const nonBundleItems = items.filter(
     (item) =>
       !item.isBundle &&
       !item.bundleId &&
-      !(typeof item.id === 'string' && item.id.startsWith('bundle-'))
-  );
-  const hasBundleItems = items.some(
-    (item) =>
-      item.isBundle ||
-      item.bundleId ||
-      (typeof item.id === 'string' && item.id.startsWith('bundle-'))
+      !(typeof item.id === "string" && item.id.startsWith("bundle-")),
   );
   const hasOnlyBundles = hasItems && nonBundleItems.length === 0;
 
@@ -112,80 +167,115 @@ export default function CartDrawer() {
     }
   }, [hasOnlyBundles, promoCode, removePromoCode]);
 
-  const footer = hasItems ? (
-    <div className="w-full space-y-4">
-      {/* ── Quick Coupon Box (Hidden when cart contains only bundle items) ── */}
+  // Seed-inspired Custom Drawer Header
+  const customTitle = (
+    <div className="flex items-center justify-between w-full">
+      <div className="flex items-center gap-2.5">
+        <h2 className="text-2xl font-semibold text-[#1B361B] tracking-tight font-sans">
+          Your Cart
+        </h2>
+        {hasItems && (
+          <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[#E8E8E2] text-[#1B361B]">
+            {totalQuantity}
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={closeDrawer}
+        className="w-9 h-9 rounded-full bg-[#E8E8E2] hover:bg-[#DFDFD8] flex items-center justify-center text-[#1B361B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1B361B]/20 cursor-pointer"
+        aria-label="Close cart drawer"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+
+  // Available cross-sells filtered against existing cart items
+  const availableCrossSells = CROSS_SELL_PRODUCTS.filter(
+    (addon) => !items.some((item) => item.id === addon.id || item.name === addon.name),
+  );
+
+  // Sticky Seed-style Footer
+  const drawerFooter = hasItems ? (
+    <div className="w-full bg-[#F4F4F0] px-6 pt-4 pb-6 border-t border-black/[0.08] space-y-3.5">
+      {/* ── Promo Code Accordion / Active Status ── */}
       {hasOnlyBundles ? (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-3 text-xs text-emerald-900">
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-2.5 text-xs text-emerald-900">
           <Sparkles className="h-4 w-4 shrink-0 text-emerald-600" />
           <span className="leading-snug">
-            <strong className="font-semibold">Special Bundle Savings Applied:</strong> Additional promo coupons are not applicable to bundle packages.
+            <strong className="font-semibold">Special Bundle Savings:</strong> Coupons apply to individual items.
           </span>
         </div>
+      ) : discount > 0 && promoCode ? (
+        <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="font-bold tracking-wider text-emerald-900">{promoCode}</span>
+            <span className="font-semibold text-emerald-700">(-{formatPrice(discount)} OFF)</span>
+          </div>
+          <button
+            type="button"
+            onClick={removePromoCode}
+            className="rounded-full p-1 text-gray-400 hover:bg-emerald-100 hover:text-red-600 transition-colors cursor-pointer"
+            aria-label="Remove coupon"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       ) : (
-        <div className="rounded-lg border border-stone-200 bg-minsah-surface-subtle p-3">
-          {hasBundleItems && (
-            <p className="mb-2 text-[11px] text-stone-500 font-medium">
-              💡 Coupons apply to regular items (bundles have built-in savings)
-            </p>
-          )}
-          {discount > 0 && promoCode ? (
-            <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setIsPromoExpanded((prev) => !prev)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1B361B] hover:underline cursor-pointer transition-all"
+          >
+            <Tag className="h-3.5 w-3.5" />
+            <span>Apply Promo Code</span>
+            {isPromoExpanded ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+          </button>
+
+          {isPromoExpanded && (
+            <div className="rounded-xl border border-black/[0.08] bg-white p-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-emerald-600" />
-                <span className="font-bold tracking-wider text-emerald-900">{promoCode}</span>
-                <span className="font-semibold text-emerald-700">(-{formatPrice(discount)} OFF)</span>
-              </div>
-              <button
-                type="button"
-                onClick={removePromoCode}
-                className="rounded-full p-1 text-gray-400 hover:bg-emerald-100 hover:text-red-600 transition-colors"
-                aria-label="Remove coupon"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Tag className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleApplyCoupon();
-                      }
-                    }}
-                    placeholder="Coupon code (e.g. SAVE10)"
-                    className="w-full rounded-md border border-stone-200 bg-white py-2 pl-9 pr-3 text-base md:text-xs font-semibold uppercase tracking-wider text-minsah-dark placeholder:normal-case placeholder:font-normal placeholder:text-stone-400 focus:border-minsah-primary focus:outline-none focus:ring-1 focus:ring-minsah-primary"
-                  />
-                </div>
-                <Button
+                <input
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleApplyCoupon();
+                    }
+                  }}
+                  placeholder="Promo code (e.g. SAVE10)"
+                  className="w-full rounded-lg border border-stone-200 bg-white py-2 px-3 text-base md:text-xs font-semibold uppercase tracking-wider text-[#181C1A] placeholder:normal-case placeholder:font-normal placeholder:text-stone-400 focus:border-[#1B361B] focus:outline-none focus:ring-1 focus:ring-[#1B361B]"
+                />
+                <button
                   type="button"
-                  size="sm"
                   disabled={!couponInput.trim() || couponLoading}
                   onClick={() => handleApplyCoupon()}
-                  className="rounded-full px-4 py-2 text-xs font-semibold bg-minsah-dark text-white hover:bg-minsah-primary transition-colors"
+                  className="rounded-full px-4 py-2 text-xs font-semibold bg-[#1B361B] text-white hover:bg-[#254825] transition-colors disabled:opacity-50 cursor-pointer shrink-0"
                 >
                   {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
-                </Button>
+                </button>
               </div>
 
               {/* Quick Suggestions */}
-              <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5">
-                <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
-                  <Gift className="h-3 w-3 text-minsah-primary" /> Offers:
+              <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5 no-scrollbar">
+                <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1 shrink-0">
+                  <Gift className="h-3 w-3 text-[#1B361B]" /> Offers:
                 </span>
-                {["WELCOME10", "SAVE10", "SAVE20", "FIRST50", "MINSAH10"].map((code) => (
+                {["WELCOME10", "SAVE10", "SAVE20", "MINSAH10"].map((code) => (
                   <button
                     key={code}
                     type="button"
                     onClick={() => handleApplyCoupon(code)}
-                    className="rounded-full border border-dashed border-minsah-primary/40 bg-white px-2 py-0.5 font-semibold text-minsah-primary hover:bg-minsah-primary hover:text-white transition-colors"
+                    className="rounded-full border border-dashed border-[#1B361B]/30 bg-[#F4F4F0] px-2 py-0.5 font-semibold text-[#1B361B] hover:bg-[#1B361B] hover:text-white transition-colors cursor-pointer shrink-0"
                   >
                     {code}
                   </button>
@@ -196,45 +286,50 @@ export default function CartDrawer() {
         </div>
       )}
 
-      {/* ── Order Summary ── */}
-      <OrderSummary
-        compact
-        title=""
-        lines={orderLines}
-        notice={
-          <div className="rounded-lg bg-minsah-surface-soft p-3">
-            <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-              <span className="inline-flex items-center gap-2 font-semibold text-minsah-action-primary">
-                <Truck size={16} aria-hidden="true" /> Delivery Charge
-              </span>
-              <span className={`text-xs font-bold ${isFreeDeliveryUnlocked ? 'text-emerald-700' : 'text-minsah-text-muted'}`}>
-                {isFreeDeliveryUnlocked ? '🎉 FREE' : 'Calculated at checkout'}
-              </span>
-            </div>
-            <p className="text-xs leading-5 text-minsah-text-muted">
-              {isFreeDeliveryUnlocked
-                ? 'Your order qualifies for 100% Free Standard Delivery across Bangladesh!'
-                : 'Final delivery cost uses your address, courier quote, and active product delivery offers. Final amount will be shown before order placement.'}
-            </p>
-          </div>
-        }
-        action={
-          <div className="grid gap-2 pt-1">
-            <Button
-              type="button"
-              fullWidth
-              onClick={handleCheckout}
-              disabled={cartLoading || !hasItems}
-              className="bg-minsah-primary hover:bg-minsah-dark text-white font-semibold py-3 text-sm rounded-full shadow-xs transition-all"
-            >
-              Checkout ({formatPrice(Math.max(0, subtotal - discount))})
-            </Button>
-            <Button type="button" variant="secondary" fullWidth onClick={closeDrawer} className="rounded-full text-xs font-semibold">
-              Continue shopping
-            </Button>
-          </div>
-        }
-      />
+      {/* ── Total & Pricing Breakdown ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-base font-semibold text-[#1B361B]">Total</span>
+          <p className="text-[11px] text-[#667085]">
+            {isFreeDeliveryUnlocked
+              ? "Free delivery unlocked • Taxes included"
+              : "Shipping calculated at checkout"}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className="text-xl font-bold text-[#1B361B]">
+            {formatPrice(Math.max(0, subtotal - discount))}
+          </span>
+          {discount > 0 && (
+            <span className="block text-[11px] font-semibold text-emerald-700">
+              Saved -{formatPrice(discount)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Seed-style Capsule Checkout Button ── */}
+      <button
+        type="button"
+        onClick={handleCheckout}
+        disabled={cartLoading || !hasItems}
+        className="w-full h-[54px] rounded-full bg-[#1B361B] hover:bg-[#254825] active:scale-[0.99] text-white font-semibold text-base transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(27,54,27,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+      >
+        <span>Checkout</span>
+        <span className="text-white/60">•</span>
+        <span>{formatPrice(Math.max(0, subtotal - discount))}</span>
+      </button>
+
+      {/* ── Trust Indicators ── */}
+      <div className="flex items-center justify-center gap-4 text-[11px] text-[#667085] pt-1">
+        <span className="inline-flex items-center gap-1">
+          <ShieldCheck className="h-3.5 w-3.5 text-[#1B361B]" /> 100% Authentic
+        </span>
+        <span>•</span>
+        <span>Cash on Delivery</span>
+        <span>•</span>
+        <span>Fast Dispatch</span>
+      </div>
     </div>
   ) : undefined;
 
@@ -244,47 +339,50 @@ export default function CartDrawer() {
       onClose={closeDrawer}
       side="right"
       size="md"
-      title={hasItems ? `${items.length} product${items.length > 1 ? "s" : ""}` : "Your cart is empty"}
-      description={hasItems ? `${totalQuantity} item${totalQuantity !== 1 ? "s" : ""} ready to review` : "Add products to start your order."}
-      closeLabel="Close cart drawer"
-      bodyClassName="p-0 sm:p-0"
-      footer={footer}
-      footerClassName="block px-4 sm:px-5 pb-5"
+      title={customTitle}
+      showCloseButton={false}
+      panelClassName="bg-[#F4F4F0] text-[#181C1A] sm:max-w-[460px] w-full sm:rounded-l-[24px] shadow-[0_20px_48px_rgba(0,0,0,0.16)] border-l border-black/5"
+      backdropClassName="bg-black/40 backdrop-blur-[4px]"
+      headerClassName="border-b border-black/[0.06] bg-[#F4F4F0] px-6 py-5 shrink-0"
+      bodyClassName="p-0 bg-[#F4F4F0] overflow-y-auto"
+      footer={drawerFooter}
+      footerClassName="p-0 border-t border-black/[0.08] bg-[#F4F4F0]"
     >
       {hasItems ? (
-        <div className="space-y-3 px-4 py-3 sm:px-5">
-          {/* ── Free Delivery Progress Bar ── */}
-          <div className="rounded-2xl border border-emerald-100/80 bg-gradient-to-r from-emerald-50/70 via-stone-50/60 to-orange-50/50 p-3.5 shadow-sm">
-            <div className="flex items-center justify-between text-xs font-semibold text-gray-800">
-              <span className="flex items-center gap-1.5">
-                <Truck className={`h-4 w-4 ${isFreeDeliveryUnlocked ? 'text-emerald-600' : 'text-[#D07A60]'}`} />
-                {isFreeDeliveryUnlocked ? (
-                  <span className="font-bold text-emerald-800">
-                    🎉 Congratulations! You unlocked <span className="underline decoration-emerald-500">FREE Delivery</span>
-                  </span>
-                ) : (
-                  <span>
-                    Add <strong className="text-[#D07A60] font-bold">{formatPrice(remainingForFreeDelivery)}</strong> more for <strong className="text-emerald-700 font-bold">FREE Delivery</strong>
-                  </span>
-                )}
-              </span>
-              <span className="text-[11px] font-bold text-gray-500">{progressPercent}%</span>
-            </div>
+        <div className="flex flex-col min-h-full pb-4">
+          {/* ── Seed Incentive / Free Delivery Goal Banner ── */}
+          <div className="px-6 pt-4 pb-2">
+            <div className="rounded-xl border border-[#1B361B]/15 bg-[#E9EDE4] p-3.5">
+              <div className="flex items-center justify-between text-xs font-semibold text-[#1B361B]">
+                <span className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-[#1B361B] shrink-0" />
+                  {isFreeDeliveryUnlocked ? (
+                    <span className="font-semibold">
+                      🎉 Congratulations! You unlocked <strong className="underline decoration-[#1B361B]/50 font-bold">FREE Delivery</strong>
+                    </span>
+                  ) : (
+                    <span>
+                      Add <strong className="font-bold">{formatPrice(remainingForFreeDelivery)}</strong> more for <strong className="font-bold">FREE Delivery</strong>
+                    </span>
+                  )}
+                </span>
+                <span className="text-[11px] font-bold text-[#1B361B]/70 shrink-0">
+                  {progressPercent}%
+                </span>
+              </div>
 
-            {/* Progress Track */}
-            <div className="relative mt-2.5 h-2 w-full overflow-hidden rounded-full bg-emerald-100/60">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ease-out ${
-                  isFreeDeliveryUnlocked
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-sm"
-                    : "bg-gradient-to-r from-[#D07A60] via-[#4A7C59] to-[#88B296]"
-                }`}
-                style={{ width: `${progressPercent}%` }}
-              />
+              {/* Minimal Progress Bar */}
+              <div className="relative mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
+                <div
+                  className="h-full rounded-full bg-[#1B361B] transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-3 pt-1">
+          {/* ── Cart Items List ── */}
+          <div className="px-6 divide-y divide-black/[0.08]">
             {items.map((item) => (
               <CartItemRow
                 key={item.id}
@@ -298,19 +396,95 @@ export default function CartDrawer() {
               />
             ))}
           </div>
+
+          {/* ── Seed-style Cross-Sell ("Bundle + Save") Carousel ── */}
+          {availableCrossSells.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-black/[0.06]">
+              <div className="px-6 mb-2.5 flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#1B361B]">
+                  Bundle + Save (Add-ons)
+                </h3>
+                <span className="text-[10px] font-semibold text-[#1B361B]/60">
+                  Special Prices
+                </span>
+              </div>
+
+              <div className="px-6 flex gap-3 overflow-x-auto no-scrollbar pb-2 pt-1">
+                {availableCrossSells.map((addon) => (
+                  <div
+                    key={addon.id}
+                    className="w-[240px] shrink-0 rounded-xl bg-[#EAEAE4] p-3 flex items-center gap-3 border border-black/5 hover:border-black/15 transition-all"
+                  >
+                    <div className="w-12 h-12 rounded-lg bg-white p-1 overflow-hidden shrink-0 flex items-center justify-center">
+                      <Image
+                        src={addon.image}
+                        alt={addon.name}
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-semibold text-[#1B361B] truncate">
+                        {addon.name}
+                      </h4>
+                      <p className="text-[11px] text-[#667085] truncate">
+                        {addon.subtitle}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs font-bold text-[#1B361B]">
+                          {formatPrice(addon.price)}
+                        </span>
+                        {addon.originalPrice && (
+                          <span className="text-[10px] text-stone-400 line-through">
+                            {formatPrice(addon.originalPrice)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={addingAddonId === addon.id}
+                      onClick={() => handleAddCrossSell(addon)}
+                      className="rounded-full border border-[#1B361B] bg-transparent hover:bg-[#1B361B] hover:text-white text-[#1B361B] text-xs font-semibold px-2.5 py-1 transition-colors flex items-center gap-1 shrink-0 cursor-pointer disabled:opacity-50"
+                    >
+                      {addingAddonId === addon.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        "Add"
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
-        <EmptyState
-          title="No items yet"
-          description="Add a product to see your cart preview, subtotal, and checkout action here."
-          icon={<ShoppingBag className="h-7 w-7" />}
-          action={
-            <Button type="button" onClick={closeDrawer} className="rounded-2xl bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white font-semibold px-6">
-              Continue shopping
-            </Button>
-          }
-          className="m-4 border-0 shadow-none"
-        />
+        /* ── Seed-style Minimalist Empty Cart State ── */
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-[#E8E8E2] flex items-center justify-center text-[#1B361B]">
+            <ShoppingBag className="w-7 h-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-[#1B361B]">
+              Your cart is currently empty
+            </h3>
+            <p className="text-xs text-[#667085] max-w-[260px] mx-auto leading-relaxed">
+              Explore our clinically-tested skincare formulas and curated daily routines.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              closeDrawer();
+              router.push("/shop");
+            }}
+            className="rounded-full bg-[#1B361B] hover:bg-[#254825] text-white px-7 py-3 text-xs font-semibold transition-all shadow-sm cursor-pointer"
+          >
+            Shop Best Sellers →
+          </button>
+        </div>
       )}
     </Drawer>
   );
