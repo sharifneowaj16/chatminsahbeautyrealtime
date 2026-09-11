@@ -206,9 +206,12 @@ export async function validateCouponForOrder(params: {
     throw new CouponValidationError('Coupon type is not supported', 'COUPON_TYPE_UNSUPPORTED');
   }
 
+  // Cap promo discount so an order subtotal can never be reduced to 0 by a coupon alone.
+  // Leaving at least 1 taka ensures positive payable balance.
+  const maxDiscountableAmount = Math.max(0, params.subtotal - 1);
   const discountAmount = couponType === 'FREE_SHIPPING'
     ? capDiscount(rawDiscount, params.shippingCost)
-    : capDiscount(rawDiscount, params.subtotal);
+    : capDiscount(rawDiscount, maxDiscountableAmount);
 
   return {
     couponId: coupon.id || null,

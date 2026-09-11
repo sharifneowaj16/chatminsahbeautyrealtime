@@ -76,7 +76,9 @@ export function calculateCartOffers(
           promoDiscount = rule.maxDiscount;
         }
 
-        promoDiscount = Math.max(0, Math.min(promoDiscount, subtotal));
+        // Keep at least 1 taka payable subtotal so promo discounts can never make total 0
+        const maxApplicableDiscount = Math.max(0, subtotal - 1);
+        promoDiscount = Math.max(0, Math.min(promoDiscount, maxApplicableDiscount));
       }
     }
   }

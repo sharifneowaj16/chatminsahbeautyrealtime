@@ -548,6 +548,14 @@ export async function POST(request: NextRequest) {
     const total = parseFloat(
       Math.max(0, subtotal + shippingCostNum - discountAmount).toFixed(2),
     );
+
+    if (total <= 0) {
+      throw new OrderValidationError(
+        "Order payable total must be greater than zero.",
+        "INVALID_ORDER_TOTAL",
+        400,
+      );
+    }
     const notifyItems = items.map((item) => {
       const product = productMap.get(item.productId)!;
       const variant = item.variantId ? variantMap.get(item.variantId) : null;

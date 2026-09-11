@@ -172,6 +172,10 @@ function getFriendlyCheckoutError(data: unknown) {
     return "Selected area does not match the selected zone. Please re-select.";
   }
 
+  if (code === "INVALID_ORDER_TOTAL") {
+    return "Order total must be greater than ৳0 to place an order.";
+  }
+
   if (rawMessage.toLowerCase().includes("phone")) {
     return "Phone number ta 11 digit-er valid BD number din.";
   }
@@ -423,13 +427,17 @@ function CheckoutContent() {
     if (deliveryState !== "success") {
       return "Delivery calculation failed. Please re-check address.";
     }
+    if (finalTotal <= 0) {
+      return "Order total must be greater than ৳0 to place an order.";
+    }
     return null;
-  }, [deliveryState, fieldErrors, items.length, selectedPaymentMethod]);
+  }, [deliveryState, fieldErrors, finalTotal, items.length, selectedPaymentMethod]);
 
   const placeOrderDisabled =
     isPlacingOrder ||
     items.length === 0 ||
     !selectedPaymentMethod ||
+    finalTotal <= 0 ||
     (Boolean(user) && deliveryState === "loading");
 
   const orderButtonLabel = useMemo(() => {
@@ -700,7 +708,9 @@ function CheckoutContent() {
 
     if (checkoutBlockReason) {
       setCheckoutError(checkoutBlockReason);
-      setExpandedSection("address");
+      if (finalTotal > 0) {
+        setExpandedSection("address");
+      }
       return;
     }
 
