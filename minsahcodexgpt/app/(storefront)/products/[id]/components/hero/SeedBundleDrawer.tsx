@@ -38,6 +38,8 @@ export interface BundleProductCandidate {
   shippingWeight?: string | number | null;
   deliveryOfferType?: string | null;
   deliveryOfferAmount?: number | null;
+  deliveryChargeInsideDhaka?: number | null;
+  deliveryChargeOutsideDhaka?: number | null;
 }
 
 export interface SeedBundleDrawerProps {
@@ -211,7 +213,8 @@ export default function SeedBundleDrawer({
       if (p.deliveryOfferType === 'FREE' || p.hasFreeDelivery) {
         absorbedDelivery = courierCost;
       } else if (p.deliveryOfferType === 'FIXED') {
-        absorbedDelivery = Math.max(0, courierCost - (p.deliveryOfferAmount ?? 0));
+        const fixedCustomerRate = p.deliveryChargeOutsideDhaka ?? p.deliveryOfferAmount ?? 0;
+        absorbedDelivery = Math.max(0, courierCost - Number(fixedCustomerRate));
       }
       totalStoreAbsorbedDelivery += absorbedDelivery;
     });

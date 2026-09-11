@@ -58,6 +58,8 @@ type ProductDeliveryOfferFields = {
   deliveryOfferEnabled?: boolean | null;
   deliveryOfferType?: 'DEFAULT' | 'FREE' | 'FIXED' | string | null;
   deliveryOfferAmount?: Prisma.Decimal | string | number | null;
+  deliveryChargeInsideDhaka?: Prisma.Decimal | string | number | null;
+  deliveryChargeOutsideDhaka?: Prisma.Decimal | string | number | null;
   deliveryOfferStartDate?: Date | string | null;
   deliveryOfferEndDate?: Date | string | null;
   deliveryOfferBadgeText?: string | null;
@@ -212,6 +214,8 @@ function deliveryOfferUpdateData(payload: PlainObject, existing?: ProductDeliver
     'deliveryOfferEnabled',
     'deliveryOfferType',
     'deliveryOfferAmount',
+    'deliveryChargeInsideDhaka',
+    'deliveryChargeOutsideDhaka',
     'deliveryOfferStartDate',
     'deliveryOfferEndDate',
     'deliveryOfferBadgeText',
@@ -232,26 +236,48 @@ function deliveryOfferUpdateData(payload: PlainObject, existing?: ProductDeliver
       deliveryOfferEnabled: false,
       deliveryOfferType: 'DEFAULT' as AdminDeliveryOfferType,
       deliveryOfferAmount: null,
+      deliveryChargeInsideDhaka: null,
+      deliveryChargeOutsideDhaka: null,
       deliveryOfferStartDate: null,
       deliveryOfferEndDate: null,
       deliveryOfferBadgeText: null,
     };
   }
 
+  const insideSource = hasOwn(payload, 'deliveryChargeInsideDhaka')
+    ? payload.deliveryChargeInsideDhaka
+    : (existing?.deliveryChargeInsideDhaka != null ? String(existing.deliveryChargeInsideDhaka) : undefined);
+  const outsideSource = hasOwn(payload, 'deliveryChargeOutsideDhaka')
+    ? payload.deliveryChargeOutsideDhaka
+    : (existing?.deliveryChargeOutsideDhaka != null ? String(existing.deliveryChargeOutsideDhaka) : undefined);
+
   const amountSource = hasOwn(payload, 'deliveryOfferAmount')
     ? payload.deliveryOfferAmount
     : existing?.deliveryOfferAmount != null
       ? String(existing.deliveryOfferAmount)
-      : undefined;
+      : (insideSource ?? outsideSource);
+
+  const insideDhakaAmount = requestedType === 'FIXED'
+    ? decimalNullable(insideSource, 'Inside Dhaka delivery charge')
+    : null;
+  const outsideDhakaAmount = requestedType === 'FIXED'
+    ? decimalNullable(outsideSource, 'Outside Dhaka delivery charge')
+    : null;
   const deliveryOfferAmount = requestedType === 'FIXED'
-    ? decimalNullable(amountSource, 'Fixed delivery offer amount')
+    ? (decimalNullable(amountSource, 'Fixed delivery offer amount') ?? insideDhakaAmount ?? outsideDhakaAmount)
     : null;
 
-  if (requestedType === 'FIXED' && deliveryOfferAmount === null) {
+  if (requestedType === 'FIXED' && deliveryOfferAmount === null && insideDhakaAmount === null && outsideDhakaAmount === null) {
     throw new ProductRouteError('Fixed delivery offer amount is required');
   }
   if (deliveryOfferAmount !== null && Number(deliveryOfferAmount) < 0) {
     throw new ProductRouteError('Fixed delivery offer amount cannot be negative');
+  }
+  if (insideDhakaAmount !== null && Number(insideDhakaAmount) < 0) {
+    throw new ProductRouteError('Inside Dhaka delivery charge cannot be negative');
+  }
+  if (outsideDhakaAmount !== null && Number(outsideDhakaAmount) < 0) {
+    throw new ProductRouteError('Outside Dhaka delivery charge cannot be negative');
   }
 
   const deliveryOfferStartDate = hasOwn(payload, 'deliveryOfferStartDate')
@@ -276,7 +302,9 @@ function deliveryOfferUpdateData(payload: PlainObject, existing?: ProductDeliver
   return {
     deliveryOfferEnabled: true,
     deliveryOfferType: requestedType,
-    deliveryOfferAmount,
+    deliveryOfferAmount: requestedType === 'FIXED' ? (deliveryOfferAmount ?? insideDhakaAmount ?? null) : null,
+    deliveryChargeInsideDhaka: requestedType === 'FREE' ? '0' : (insideDhakaAmount ?? deliveryOfferAmount ?? null),
+    deliveryChargeOutsideDhaka: requestedType === 'FREE' ? '0' : (outsideDhakaAmount ?? deliveryOfferAmount ?? null),
     deliveryOfferStartDate,
     deliveryOfferEndDate,
     deliveryOfferBadgeText: nullableString(badgeSource),

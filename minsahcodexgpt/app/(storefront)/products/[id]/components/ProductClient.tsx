@@ -69,6 +69,8 @@ interface RatingData {
 interface ActiveDeliveryOffer {
   type: "FREE" | "FIXED" | "DEFAULT" | string;
   amount: number | null;
+  insideDhakaAmount?: number | null;
+  outsideDhakaAmount?: number | null;
   badgeText: string | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -84,6 +86,8 @@ interface RelatedProduct {
   deliveryOfferEnabled?: boolean | null;
   deliveryOfferType?: string | null;
   deliveryOfferAmount?: number | null;
+  deliveryChargeInsideDhaka?: number | null;
+  deliveryChargeOutsideDhaka?: number | null;
   originalPrice: number | null;
   image: string;
   slug: string;
@@ -155,6 +159,8 @@ interface ProductClientProps {
     authenticityNote?: string;
     ingredientVerificationStatus?: string;
     activeDeliveryOffer?: ActiveDeliveryOffer | null;
+    deliveryChargeInsideDhaka?: number | null;
+    deliveryChargeOutsideDhaka?: number | null;
     keyBenefits?: string[];
     usageInstructions?: string[];
     descriptionSections?: unknown;
@@ -692,6 +698,8 @@ export default function ProductClient({
           deliveryOfferEnabled: Boolean(product.activeDeliveryOffer),
           deliveryOfferType: product.activeDeliveryOffer?.type || null,
           deliveryOfferAmount: product.activeDeliveryOffer?.amount != null ? Number(product.activeDeliveryOffer.amount) : null,
+          deliveryChargeInsideDhaka: product.activeDeliveryOffer?.insideDhakaAmount != null ? Number(product.activeDeliveryOffer.insideDhakaAmount) : ((product as any).deliveryChargeInsideDhaka != null ? Number((product as any).deliveryChargeInsideDhaka) : null),
+          deliveryChargeOutsideDhaka: product.activeDeliveryOffer?.outsideDhakaAmount != null ? Number(product.activeDeliveryOffer.outsideDhakaAmount) : ((product as any).deliveryChargeOutsideDhaka != null ? Number((product as any).deliveryChargeOutsideDhaka) : null),
           productSpecs: (product as any).productSpecs,
           productAttributes: (product as any).productAttributes,
           descriptionSections: product.descriptionSections as any,
@@ -712,6 +720,8 @@ export default function ProductClient({
                 shippingWeight: p.shippingWeight ?? null,
                 deliveryOfferType: p.deliveryOfferType ?? null,
                 deliveryOfferAmount: p.deliveryOfferAmount ?? null,
+                deliveryChargeInsideDhaka: p.deliveryChargeInsideDhaka ?? null,
+                deliveryChargeOutsideDhaka: p.deliveryChargeOutsideDhaka ?? null,
                 category: product.category || 'Skincare',
                 variants: (p.variants as any) || [],
               }))

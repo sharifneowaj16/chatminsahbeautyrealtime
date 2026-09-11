@@ -135,14 +135,16 @@ export default function SeedHeroBundleCard({
     if (mainProduct.deliveryOfferType === 'FREE' || mainProduct.hasFreeDelivery) {
       mainAbsorbed = mainCourier;
     } else if (mainProduct.deliveryOfferType === 'FIXED') {
-      mainAbsorbed = Math.max(0, mainCourier - (mainProduct.deliveryOfferAmount ?? 0));
+      const fixedAmount = mainProduct.deliveryChargeOutsideDhaka ?? mainProduct.deliveryOfferAmount ?? 0;
+      mainAbsorbed = Math.max(0, mainCourier - Number(fixedAmount));
     }
 
     let pairedAbsorbed = 0;
     if (activePairedProduct.deliveryOfferType === 'FREE' || activePairedProduct.hasFreeDelivery) {
       pairedAbsorbed = pairedCourier;
     } else if (activePairedProduct.deliveryOfferType === 'FIXED') {
-      pairedAbsorbed = Math.max(0, pairedCourier - (activePairedProduct.deliveryOfferAmount ?? 0));
+      const fixedAmount = activePairedProduct.deliveryChargeOutsideDhaka ?? activePairedProduct.deliveryOfferAmount ?? 0;
+      pairedAbsorbed = Math.max(0, pairedCourier - Number(fixedAmount));
     }
 
     const totalStoreAbsorbedDelivery = mainAbsorbed + pairedAbsorbed;

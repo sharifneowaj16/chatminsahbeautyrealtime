@@ -72,6 +72,8 @@ export type ProductDetailData = {
     deliveryOfferEnabled?: boolean | null;
     deliveryOfferType?: string | null;
     deliveryOfferAmount?: number | null;
+    deliveryChargeInsideDhaka?: number | null;
+    deliveryChargeOutsideDhaka?: number | null;
     originalPrice: number | null;
     image: string;
     slug: string;
@@ -236,6 +238,12 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
     const deliveryOfferAmount = product.deliveryOfferAmount
       ? product.deliveryOfferAmount.toNumber()
       : null;
+    const deliveryChargeInsideDhaka = product.deliveryChargeInsideDhaka
+      ? product.deliveryChargeInsideDhaka.toNumber()
+      : null;
+    const deliveryChargeOutsideDhaka = product.deliveryChargeOutsideDhaka
+      ? product.deliveryChargeOutsideDhaka.toNumber()
+      : null;
 
     const deliveryOfferInput = {
       id: product.id,
@@ -243,6 +251,8 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
       deliveryOfferEnabled: product.deliveryOfferEnabled,
       deliveryOfferType: product.deliveryOfferType,
       deliveryOfferAmount,
+      deliveryChargeInsideDhaka,
+      deliveryChargeOutsideDhaka,
       deliveryOfferStartDate: product.deliveryOfferStartDate,
       deliveryOfferEndDate: product.deliveryOfferEndDate,
       deliveryOfferBadgeText: product.deliveryOfferBadgeText,
@@ -253,6 +263,8 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
       ? {
           type: product.deliveryOfferType,
           amount: deliveryOfferAmount,
+          insideDhakaAmount: deliveryChargeInsideDhaka,
+          outsideDhakaAmount: deliveryChargeOutsideDhaka,
           badgeText: getDeliveryOfferBadgeText(deliveryOfferInput),
           startDate: product.deliveryOfferStartDate ? product.deliveryOfferStartDate.toISOString() : null,
           endDate: product.deliveryOfferEndDate ? product.deliveryOfferEndDate.toISOString() : null,
@@ -417,6 +429,8 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
           deliveryOfferEnabled: p.deliveryOfferEnabled,
           deliveryOfferType: p.deliveryOfferType,
           deliveryOfferAmount: p.deliveryOfferAmount ? p.deliveryOfferAmount.toNumber() : null,
+          deliveryChargeInsideDhaka: p.deliveryChargeInsideDhaka ? p.deliveryChargeInsideDhaka.toNumber() : null,
+          deliveryChargeOutsideDhaka: p.deliveryChargeOutsideDhaka ? p.deliveryChargeOutsideDhaka.toNumber() : null,
           originalPrice: p.compareAtPrice ? p.compareAtPrice.toNumber() : null,
           image: pImage?.url || '',
           slug: p.slug,

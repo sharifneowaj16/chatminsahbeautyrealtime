@@ -391,6 +391,8 @@ model Product {
   deliveryOfferEnabled   Boolean           @default(false)
   deliveryOfferType      DeliveryOfferType @default(DEFAULT)
   deliveryOfferAmount    Decimal?          @db.Decimal(10, 2)
+  deliveryChargeInsideDhaka  Decimal?      @db.Decimal(10, 2)
+  deliveryChargeOutsideDhaka Decimal?      @db.Decimal(10, 2)
   deliveryOfferStartDate DateTime?
   deliveryOfferEndDate   DateTime?
   deliveryOfferBadgeText String?

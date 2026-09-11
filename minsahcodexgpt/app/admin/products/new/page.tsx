@@ -140,6 +140,8 @@ interface ProductFormData {
   deliveryOfferEnabled: boolean;
   deliveryOfferType: DeliveryOfferType;
   deliveryOfferAmount: string;
+  deliveryChargeInsideDhaka: string;
+  deliveryChargeOutsideDhaka: string;
   deliveryOfferStartDate: string;
   deliveryOfferEndDate: string;
   deliveryOfferBadgeText: string;
@@ -203,6 +205,7 @@ const defaultForm: ProductFormData = {
   shippingWeight: '', dimensions: { length: '', width: '', height: '' },
   isFragile: false,
   deliveryOfferEnabled: false, deliveryOfferType: 'DEFAULT', deliveryOfferAmount: '',
+  deliveryChargeInsideDhaka: '', deliveryChargeOutsideDhaka: '',
   deliveryOfferStartDate: '', deliveryOfferEndDate: '', deliveryOfferBadgeText: '',
   discountPercentage: '', salePrice: '',
   offerStartDate: '', offerEndDate: '', flashSaleEligible: false,
@@ -595,9 +598,17 @@ export default function NewProductPage() {
     if (!isValidOptionalNumber(formData.dimensions.width)) newErrors.dimensions_width = 'Width must be a number';
     if (!isValidOptionalNumber(formData.dimensions.height)) newErrors.dimensions_height = 'Height must be a number';
     if (formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED') {
-      const amount = Number(formData.deliveryOfferAmount);
-      if (!formData.deliveryOfferAmount.trim() || !Number.isFinite(amount) || amount < 0) {
-        newErrors.deliveryOfferAmount = 'Fixed delivery charge must be 0 or greater';
+      if (formData.deliveryChargeInsideDhaka.trim() !== '') {
+        const inside = Number(formData.deliveryChargeInsideDhaka);
+        if (!Number.isFinite(inside) || inside < 0) {
+          newErrors.deliveryChargeInsideDhaka = 'Inside Dhaka delivery charge must be 0 or greater';
+        }
+      }
+      if (formData.deliveryChargeOutsideDhaka.trim() !== '') {
+        const outside = Number(formData.deliveryChargeOutsideDhaka);
+        if (!Number.isFinite(outside) || outside < 0) {
+          newErrors.deliveryChargeOutsideDhaka = 'Outside Dhaka delivery charge must be 0 or greater';
+        }
       }
     }
     if (formData.deliveryOfferStartDate && formData.deliveryOfferEndDate) {
@@ -734,7 +745,9 @@ export default function NewProductPage() {
           isFragile: formData.isFragile,
           deliveryOfferEnabled: formData.deliveryOfferEnabled && formData.deliveryOfferType !== 'DEFAULT',
           deliveryOfferType: formData.deliveryOfferEnabled ? formData.deliveryOfferType : 'DEFAULT',
-          deliveryOfferAmount: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? formData.deliveryOfferAmount : undefined,
+          deliveryOfferAmount: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? (formData.deliveryChargeInsideDhaka || formData.deliveryOfferAmount || undefined) : undefined,
+          deliveryChargeInsideDhaka: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? formData.deliveryChargeInsideDhaka || undefined : (formData.deliveryOfferType === 'FREE' ? '0' : undefined),
+          deliveryChargeOutsideDhaka: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? formData.deliveryChargeOutsideDhaka || undefined : (formData.deliveryOfferType === 'FREE' ? '0' : undefined),
           deliveryOfferStartDate: formData.deliveryOfferEnabled ? formData.deliveryOfferStartDate || undefined : undefined,
           deliveryOfferEndDate: formData.deliveryOfferEnabled ? formData.deliveryOfferEndDate || undefined : undefined,
           deliveryOfferBadgeText: formData.deliveryOfferEnabled ? formData.deliveryOfferBadgeText || undefined : undefined,
@@ -1646,26 +1659,73 @@ export default function NewProductPage() {
                     className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-emerald-500 bg-[#161824]"
                   >
                     <option value="DEFAULT">Courier calculated / No product offer</option>
-                    <option value="FREE">Free delivery for full order</option>
-                    <option value="FIXED">Fixed delivery charge</option>
+                    <option value="FREE">Full Free Delivery (সারা দেশে সম্পূর্ণ ফ্রি ডেলিভারি)</option>
+                    <option value="FIXED">Custom City Delivery (ঢাকার ভেতরে ও বাইরে নির্ধারিত চার্জ)</option>
                   </Select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Fixed Delivery Amount (৳)</label>
-                  <Input
-                    type="number"
-                    name="deliveryOfferAmount"
-                    value={formData.deliveryOfferAmount}
-                    onChange={handleChange}
-                    disabled={!formData.deliveryOfferEnabled || formData.deliveryOfferType !== 'FIXED'}
-                    min="0"
-                    step="1"
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-[#10121b] disabled:text-[#62666d] ${errors.deliveryOfferAmount ? 'border-red-500' : 'border-[#232636]'}`}
-                    placeholder="e.g., 60"
-                  />
-                  {errors.deliveryOfferAmount && <p className="mt-1 text-sm text-red-600">{errors.deliveryOfferAmount}</p>}
-                </div>
               </div>
+
+              {formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' && (
+                <div className="mt-4 p-4 rounded-lg bg-[#10121b] border border-[#232636] space-y-3">
+                  <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+                    শহরভিত্তিক ডেলিভারি চার্জ নির্ধারণ করুন:
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+                        🏠 ঢাকার ভেতরে ডেলিভারি চার্জ (৳)
+                      </label>
+                      <Input
+                        type="number"
+                        name="deliveryChargeInsideDhaka"
+                        value={formData.deliveryChargeInsideDhaka}
+                        onChange={handleChange}
+                        min="0"
+                        step="1"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-[#161824] ${errors.deliveryChargeInsideDhaka ? 'border-red-500' : 'border-[#232636]'}`}
+                        placeholder="যেমন: ৬০ (ফ্রি হলে ০)"
+                      />
+                      {errors.deliveryChargeInsideDhaka && (
+                        <p className="mt-1 text-xs text-red-500">{errors.deliveryChargeInsideDhaka}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+                        🚚 ঢাকার বাইরে ডেলিভারি চার্জ (৳)
+                      </label>
+                      <Input
+                        type="number"
+                        name="deliveryChargeOutsideDhaka"
+                        value={formData.deliveryChargeOutsideDhaka}
+                        onChange={handleChange}
+                        min="0"
+                        step="1"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-[#161824] ${errors.deliveryChargeOutsideDhaka ? 'border-red-500' : 'border-[#232636]'}`}
+                        placeholder="যেমন: ১২০"
+                      />
+                      {errors.deliveryChargeOutsideDhaka && (
+                        <p className="mt-1 text-xs text-red-500">{errors.deliveryChargeOutsideDhaka}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, deliveryChargeInsideDhaka: '0', deliveryChargeOutsideDhaka: '120', deliveryOfferBadgeText: 'ঢাকার ভেতরে ফ্রি ডেলিভারি' }))}
+                      className="text-xs px-2.5 py-1 rounded bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition"
+                    >
+                      ⚡ ঢাকার ভেতরে ফ্রি (৳০) + বাইরে ১২০৳
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, deliveryChargeInsideDhaka: '60', deliveryChargeOutsideDhaka: '120', deliveryOfferBadgeText: 'স্পেশাল ডেলিভারি অফার' }))}
+                      className="text-xs px-2.5 py-1 rounded bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition"
+                    >
+                      ⚡ ভেতরে ৬০৳ + বাইরে ১২০৳
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

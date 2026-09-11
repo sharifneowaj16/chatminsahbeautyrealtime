@@ -16,6 +16,8 @@ export type DeliveryOfferProductInput = {
   deliveryOfferEnabled?: boolean | null;
   deliveryOfferType?: DeliveryOfferType | string | null;
   deliveryOfferAmount?: MoneyLike;
+  deliveryChargeInsideDhaka?: MoneyLike;
+  deliveryChargeOutsideDhaka?: MoneyLike;
   deliveryOfferStartDate?: Date | string | null;
   deliveryOfferEndDate?: Date | string | null;
   deliveryOfferBadgeText?: string | null;
@@ -25,6 +27,8 @@ export type DeliveryPricingInput = {
   courierDeliveryCharge: MoneyLike;
   courierPricingSource?: DeliveryPricingSource | string | null;
   products: DeliveryOfferProductInput[];
+  isInsideDhaka?: boolean | null;
+  destinationCity?: string | null;
   now?: Date;
 };
 
@@ -192,8 +196,18 @@ export function calculateDeliveryPricing(input: DeliveryPricingInput): DeliveryP
     };
   }
 
+  const isDhaka = input.isInsideDhaka ?? (
+    typeof input.destinationCity === 'string' && input.destinationCity.toLowerCase().includes('dhaka')
+  );
+
   const offerType = normalizeOfferType(appliedProduct.deliveryOfferType);
-  const offerAmount = offerType === 'FIXED' ? normalizeMoney(appliedProduct.deliveryOfferAmount) : null;
+  let offerAmount: number | null = null;
+  if (offerType === 'FIXED') {
+    const targetRate = isDhaka
+      ? (appliedProduct.deliveryChargeInsideDhaka ?? appliedProduct.deliveryOfferAmount)
+      : (appliedProduct.deliveryChargeOutsideDhaka ?? appliedProduct.deliveryOfferAmount);
+    offerAmount = normalizeMoney(targetRate);
+  }
   const customerDeliveryCharge =
     offerType === 'FREE' ? 0 : Math.min(courierDeliveryCharge, offerAmount ?? courierDeliveryCharge);
   const deliveryDiscountAmount = roundMoney(

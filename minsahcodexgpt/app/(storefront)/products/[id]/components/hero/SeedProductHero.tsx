@@ -34,6 +34,8 @@ export interface SeedProductHeroProps {
     deliveryOfferEnabled?: boolean | null;
     deliveryOfferType?: string | null;
     deliveryOfferAmount?: number | null;
+    deliveryChargeInsideDhaka?: number | null;
+    deliveryChargeOutsideDhaka?: number | null;
     productSpecs?: Record<string, any> | null;
     productAttributes?: Record<string, any> | null;
     descriptionSections?: Record<string, any> | any[] | null;
@@ -120,8 +122,10 @@ export default function SeedProductHero({
     shippingWeight: product.shippingWeight,
     deliveryOfferType: product.deliveryOfferType,
     deliveryOfferAmount: product.deliveryOfferAmount,
+    deliveryChargeInsideDhaka: product.deliveryChargeInsideDhaka,
+    deliveryChargeOutsideDhaka: product.deliveryChargeOutsideDhaka,
     variants: variants,
-  }), [product.id, cleanName, product.costPrice, product.image, product.deliveryOfferEnabled, product.deliveryOfferType, product.deliveryOfferAmount, product.weight, product.shippingWeight, activeVariantPrice, activeImageOverride, variants]);
+  }), [product.id, cleanName, product.costPrice, product.image, product.deliveryOfferEnabled, product.deliveryOfferType, product.deliveryOfferAmount, product.deliveryChargeInsideDhaka, product.deliveryChargeOutsideDhaka, product.weight, product.shippingWeight, activeVariantPrice, activeImageOverride, variants]);
 
   // Paired Product Candidate
   const pairedBundleItem: BundleProductCandidate | null = useMemo(() => {

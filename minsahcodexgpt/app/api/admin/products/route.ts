@@ -142,21 +142,31 @@ function buildDeliveryOfferData(body: PlainObject) {
       deliveryOfferEnabled: false,
       deliveryOfferType: 'DEFAULT' as AdminDeliveryOfferType,
       deliveryOfferAmount: null,
+      deliveryChargeInsideDhaka: null,
+      deliveryChargeOutsideDhaka: null,
       deliveryOfferStartDate: null,
       deliveryOfferEndDate: null,
       deliveryOfferBadgeText: null,
     };
   }
 
+  const insideDhaka = decimalValue(body.deliveryChargeInsideDhaka);
+  const outsideDhaka = decimalValue(body.deliveryChargeOutsideDhaka);
   const deliveryOfferAmount = requestedType === 'FIXED'
-    ? decimalValue(body.deliveryOfferAmount)
+    ? (insideDhaka ?? decimalValue(body.deliveryOfferAmount))
     : undefined;
 
-  if (requestedType === 'FIXED' && deliveryOfferAmount === undefined) {
+  if (requestedType === 'FIXED' && deliveryOfferAmount === undefined && insideDhaka === undefined && outsideDhaka === undefined) {
     throw new ProductRouteError('Fixed delivery offer amount is required');
   }
   if (deliveryOfferAmount !== undefined && Number(deliveryOfferAmount) < 0) {
     throw new ProductRouteError('Fixed delivery offer amount cannot be negative');
+  }
+  if (insideDhaka !== undefined && Number(insideDhaka) < 0) {
+    throw new ProductRouteError('Inside Dhaka delivery charge cannot be negative');
+  }
+  if (outsideDhaka !== undefined && Number(outsideDhaka) < 0) {
+    throw new ProductRouteError('Outside Dhaka delivery charge cannot be negative');
   }
 
   const deliveryOfferStartDate = requiredDateValue(body.deliveryOfferStartDate, 'Delivery offer start date');
@@ -169,7 +179,9 @@ function buildDeliveryOfferData(body: PlainObject) {
   return {
     deliveryOfferEnabled: true,
     deliveryOfferType: requestedType,
-    deliveryOfferAmount: requestedType === 'FIXED' ? deliveryOfferAmount : null,
+    deliveryOfferAmount: requestedType === 'FIXED' ? (deliveryOfferAmount ?? insideDhaka ?? null) : null,
+    deliveryChargeInsideDhaka: requestedType === 'FREE' ? '0' : (insideDhaka ?? deliveryOfferAmount ?? null),
+    deliveryChargeOutsideDhaka: requestedType === 'FREE' ? '0' : (outsideDhaka ?? deliveryOfferAmount ?? null),
     deliveryOfferStartDate: deliveryOfferStartDate ?? null,
     deliveryOfferEndDate: deliveryOfferEndDate ?? null,
     deliveryOfferBadgeText: optionalString(body.deliveryOfferBadgeText) || null,
