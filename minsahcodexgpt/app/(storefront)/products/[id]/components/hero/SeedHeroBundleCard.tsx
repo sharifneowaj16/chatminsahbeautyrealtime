@@ -10,6 +10,7 @@ import SeedBundleDrawer, { BundleProductCandidate } from './SeedBundleDrawer';
 import SeedBundleProductCapsule from './SeedBundleProductCapsule';
 import { safeImageUrl } from '@/lib/safe-image';
 import { createBundleCartItem, findStandaloneCartItems } from '@/utils/cartItemHelper';
+import { estimateDeliveryCharge, extractVariantWeightKg, parseWeightToKg } from '@/lib/buy-now';
 import { cleanProductName } from './cleanProductName';
 
 export interface SeedHeroBundleCardProps {
@@ -114,18 +115,51 @@ export default function SeedHeroBundleCard({
 
   // =========================================================================
   // REAL BENEFIT 15% DISCOUNT CALCULATION FOR 2-STEP BASE BUNDLE
+  // Formula:
+  // Real Benefit = Max(0, Selling Price - Purchase Cost - Store Absorbed Delivery)
   // =========================================================================
   const calculation = useMemo(() => {
     const totalSellingPrice = effectiveMainPrice + effectivePairedPrice;
-    const mainCost = mainProduct.costPrice != null ? mainProduct.costPrice : effectiveMainPrice * 0.6;
-    const pairedCost = activePairedProduct.costPrice != null ? activePairedProduct.costPrice : effectivePairedPrice * 0.6;
+    // Fallback purchase cost: 75% of selling price to guarantee zero loss
+    const mainCost = mainProduct.costPrice != null ? mainProduct.costPrice : effectiveMainPrice * 0.75;
+    const pairedCost = activePairedProduct.costPrice != null ? activePairedProduct.costPrice : effectivePairedPrice * 0.75;
+
+    // Weight and courier delivery calculation (outside Dhaka standard)
+    const mainWeight = extractVariantWeightKg(activeMainVariant?.attributes) ?? parseWeightToKg(mainProduct.shippingWeight) ?? parseWeightToKg(mainProduct.weight) ?? 0.25;
+    const pairedWeight = extractVariantWeightKg(activePairedVariant?.attributes) ?? parseWeightToKg(activePairedProduct.shippingWeight) ?? parseWeightToKg(activePairedProduct.weight) ?? 0.25;
+
+    const mainCourier = estimateDeliveryCharge({ city: 'Outside Dhaka', area: 'Outside', parcelWeightKg: mainWeight + 0.1 }).charge;
+    const pairedCourier = estimateDeliveryCharge({ city: 'Outside Dhaka', area: 'Outside', parcelWeightKg: pairedWeight + 0.1 }).charge;
+
+    let mainAbsorbed = 0;
+    if (mainProduct.deliveryOfferType === 'FREE' || mainProduct.hasFreeDelivery) {
+      mainAbsorbed = mainCourier;
+    } else if (mainProduct.deliveryOfferType === 'FIXED') {
+      mainAbsorbed = Math.max(0, mainCourier - (mainProduct.deliveryOfferAmount ?? 0));
+    }
+
+    let pairedAbsorbed = 0;
+    if (activePairedProduct.deliveryOfferType === 'FREE' || activePairedProduct.hasFreeDelivery) {
+      pairedAbsorbed = pairedCourier;
+    } else if (activePairedProduct.deliveryOfferType === 'FIXED') {
+      pairedAbsorbed = Math.max(0, pairedCourier - (activePairedProduct.deliveryOfferAmount ?? 0));
+    }
+
+    const totalStoreAbsorbedDelivery = mainAbsorbed + pairedAbsorbed;
     
-    const realBenefit = Math.max(0, totalSellingPrice - (mainCost + pairedCost));
+    const realBenefit = Math.max(0, totalSellingPrice - (mainCost + pairedCost) - totalStoreAbsorbedDelivery);
     // 2-step bundle gets 15% of Real Profit
     const customerSavings = Math.round(realBenefit * 0.15);
     const finalPayable = Math.max(0, totalSellingPrice - customerSavings);
     // Free delivery conditions: 1) finalPayable >= 1100, or 2) mainProduct / pairedProduct has special free delivery flag
-    const hasFreeDelivery = finalPayable >= 1100 || Boolean(mainProduct.hasFreeDelivery || activePairedProduct.hasFreeDelivery);
+    const hasFreeDelivery =
+      finalPayable >= 1100 ||
+      Boolean(
+        mainProduct.hasFreeDelivery ||
+        activePairedProduct.hasFreeDelivery ||
+        mainProduct.deliveryOfferType === 'FREE' ||
+        activePairedProduct.deliveryOfferType === 'FREE'
+      );
 
     return {
       totalSellingPrice,
@@ -133,7 +167,24 @@ export default function SeedHeroBundleCard({
       finalPayable,
       hasFreeDelivery,
     };
-  }, [effectiveMainPrice, effectivePairedPrice, mainProduct.costPrice, mainProduct.hasFreeDelivery, activePairedProduct.costPrice, activePairedProduct.hasFreeDelivery]);
+  }, [
+    effectiveMainPrice,
+    effectivePairedPrice,
+    mainProduct.costPrice,
+    mainProduct.hasFreeDelivery,
+    mainProduct.weight,
+    mainProduct.shippingWeight,
+    mainProduct.deliveryOfferType,
+    mainProduct.deliveryOfferAmount,
+    activePairedProduct.costPrice,
+    activePairedProduct.hasFreeDelivery,
+    activePairedProduct.weight,
+    activePairedProduct.shippingWeight,
+    activePairedProduct.deliveryOfferType,
+    activePairedProduct.deliveryOfferAmount,
+    activeMainVariant?.attributes,
+    activePairedVariant?.attributes,
+  ]);
 
   // If disabled by admin, return null
   if (!enabled) return null;

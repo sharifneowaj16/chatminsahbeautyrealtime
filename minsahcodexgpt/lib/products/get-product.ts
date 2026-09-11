@@ -66,6 +66,12 @@ export type ProductDetailData = {
     id: string;
     name: string;
     price: number;
+    costPrice?: number | null;
+    weight?: number | null;
+    shippingWeight?: string | null;
+    deliveryOfferEnabled?: boolean | null;
+    deliveryOfferType?: string | null;
+    deliveryOfferAmount?: number | null;
     originalPrice: number | null;
     image: string;
     slug: string;
@@ -405,6 +411,12 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
           id: p.id,
           name: p.name,
           price: p.price.toNumber(),
+          costPrice: p.costPrice ? p.costPrice.toNumber() : null,
+          weight: p.weight ? p.weight.toNumber() : null,
+          shippingWeight: p.shippingWeight || '',
+          deliveryOfferEnabled: p.deliveryOfferEnabled,
+          deliveryOfferType: p.deliveryOfferType,
+          deliveryOfferAmount: p.deliveryOfferAmount ? p.deliveryOfferAmount.toNumber() : null,
           originalPrice: p.compareAtPrice ? p.compareAtPrice.toNumber() : null,
           image: pImage?.url || '',
           slug: p.slug,

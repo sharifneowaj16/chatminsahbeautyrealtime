@@ -29,8 +29,11 @@ export interface SeedProductHeroProps {
     skinType?: string | string[] | null;
     shelfLife?: string | null;
     originCountry?: string | string[] | null;
+    weight?: number | string | null;
     shippingWeight?: string | null;
     deliveryOfferEnabled?: boolean | null;
+    deliveryOfferType?: string | null;
+    deliveryOfferAmount?: number | null;
     productSpecs?: Record<string, any> | null;
     productAttributes?: Record<string, any> | null;
     descriptionSections?: Record<string, any> | any[] | null;
@@ -112,9 +115,13 @@ export default function SeedProductHero({
     costPrice: product.costPrice,
     image: activeImageOverride || product.image || '/images/categories/Skincare.png',
     stock: 100,
-    hasFreeDelivery: Boolean(product.deliveryOfferEnabled),
+    hasFreeDelivery: Boolean(product.deliveryOfferType === 'FREE' || product.deliveryOfferEnabled),
+    weight: product.weight,
+    shippingWeight: product.shippingWeight,
+    deliveryOfferType: product.deliveryOfferType,
+    deliveryOfferAmount: product.deliveryOfferAmount,
     variants: variants,
-  }), [product.id, cleanName, product.costPrice, product.image, product.deliveryOfferEnabled, activeVariantPrice, activeImageOverride, variants]);
+  }), [product.id, cleanName, product.costPrice, product.image, product.deliveryOfferEnabled, product.deliveryOfferType, product.deliveryOfferAmount, product.weight, product.shippingWeight, activeVariantPrice, activeImageOverride, variants]);
 
   // Paired Product Candidate
   const pairedBundleItem: BundleProductCandidate | null = useMemo(() => {

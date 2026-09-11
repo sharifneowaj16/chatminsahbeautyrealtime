@@ -20,6 +20,7 @@ import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { safeImageUrl } from '@/lib/safe-image';
 import { createBundleCartItem, findStandaloneCartItems } from '@/utils/cartItemHelper';
+import { estimateDeliveryCharge, parseWeightToKg } from '@/lib/buy-now';
 import type { ProductVariantItem } from './SeedVariantRail';
 import { cleanProductName } from './cleanProductName';
 
@@ -33,6 +34,10 @@ export interface BundleProductCandidate {
   hasFreeDelivery?: boolean;
   category?: string;
   variants?: ProductVariantItem[];
+  weight?: string | number | null;
+  shippingWeight?: string | number | null;
+  deliveryOfferType?: string | null;
+  deliveryOfferAmount?: number | null;
 }
 
 export interface SeedBundleDrawerProps {
@@ -172,7 +177,7 @@ export default function SeedBundleDrawer({
   // =========================================================================
   // VIP REAL BENEFIT MATHEMATICAL ENGINE
   // Formula:
-  // Real Benefit = Sum(Selling Price - Purchase Cost)
+  // Real Benefit = Max(0, Sum(Selling Price) - Sum(Purchase Cost) - Sum(Store Absorbed Delivery))
   // 2 Products: 15% of Real Benefit Discount
   // 3 Products: 25% of Real Benefit Discount
   // 4+ Products: 30% of Real Benefit Discount
@@ -181,19 +186,37 @@ export default function SeedBundleDrawer({
     const itemCount = selectedProducts.length;
     let totalSellingPrice = 0;
     let totalCostPrice = 0;
+    let totalStoreAbsorbedDelivery = 0;
     let hasAnyFreeDelivery = false;
 
     selectedProducts.forEach((p) => {
       totalSellingPrice += p.price;
-      // If admin didn't set costPrice, estimate conservative 60% purchase cost to guarantee zero loss
-      const estimatedCost = p.costPrice != null ? p.costPrice : p.price * 0.6;
+      // If admin didn't set costPrice, estimate conservative 75% purchase cost to guarantee zero loss
+      const estimatedCost = p.costPrice != null ? p.costPrice : p.price * 0.75;
       totalCostPrice += estimatedCost;
-      if (p.hasFreeDelivery) {
+      if (p.hasFreeDelivery || p.deliveryOfferType === 'FREE') {
         hasAnyFreeDelivery = true;
       }
+
+      // Calculate real delivery cost absorbed by store (outside Dhaka standard)
+      const productWeight = parseWeightToKg(p.shippingWeight) ?? parseWeightToKg(p.weight) ?? 0.25;
+      const totalParcelWeight = productWeight + 0.1; // 100g default packaging
+      const courierCost = estimateDeliveryCharge({
+        city: 'Outside Dhaka',
+        area: 'Outside',
+        parcelWeightKg: totalParcelWeight,
+      }).charge;
+
+      let absorbedDelivery = 0;
+      if (p.deliveryOfferType === 'FREE' || p.hasFreeDelivery) {
+        absorbedDelivery = courierCost;
+      } else if (p.deliveryOfferType === 'FIXED') {
+        absorbedDelivery = Math.max(0, courierCost - (p.deliveryOfferAmount ?? 0));
+      }
+      totalStoreAbsorbedDelivery += absorbedDelivery;
     });
 
-    const realBenefit = Math.max(0, totalSellingPrice - totalCostPrice);
+    const realBenefit = Math.max(0, totalSellingPrice - totalCostPrice - totalStoreAbsorbedDelivery);
 
     // Tiered percentage of Real Benefit
     let discountPercentageOfBenefit = 0;
@@ -213,6 +236,7 @@ export default function SeedBundleDrawer({
       itemCount,
       totalSellingPrice,
       realBenefit,
+      totalStoreAbsorbedDelivery,
       discountRateText:
         itemCount === 2
           ? '15% of Profit Saved'

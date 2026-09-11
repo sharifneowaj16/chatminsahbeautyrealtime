@@ -78,6 +78,12 @@ interface RelatedProduct {
   id: string;
   name: string;
   price: number;
+  costPrice?: number | null;
+  weight?: number | null;
+  shippingWeight?: string | null;
+  deliveryOfferEnabled?: boolean | null;
+  deliveryOfferType?: string | null;
+  deliveryOfferAmount?: number | null;
   originalPrice: number | null;
   image: string;
   slug: string;
@@ -681,7 +687,11 @@ export default function ProductClient({
           skinType: (product as any).skinType,
           shelfLife: (product as any).shelfLife,
           originCountry: (product as any).originCountry,
+          weight: product.weight,
+          shippingWeight: product.shippingWeight,
           deliveryOfferEnabled: Boolean(product.activeDeliveryOffer),
+          deliveryOfferType: product.activeDeliveryOffer?.type || null,
+          deliveryOfferAmount: product.activeDeliveryOffer?.amount != null ? Number(product.activeDeliveryOffer.amount) : null,
           productSpecs: (product as any).productSpecs,
           productAttributes: (product as any).productAttributes,
           descriptionSections: product.descriptionSections as any,
@@ -694,10 +704,14 @@ export default function ProductClient({
                 id: p.id,
                 name: p.name,
                 price: p.price,
-                costPrice: (p as any).costPrice,
+                costPrice: p.costPrice ?? null,
                 image: p.image || '/images/categories/Skincare.png',
                 stock: p.stock,
-                hasFreeDelivery: true,
+                hasFreeDelivery: Boolean(p.deliveryOfferType === 'FREE' || p.deliveryOfferEnabled),
+                weight: p.weight ?? null,
+                shippingWeight: p.shippingWeight ?? null,
+                deliveryOfferType: p.deliveryOfferType ?? null,
+                deliveryOfferAmount: p.deliveryOfferAmount ?? null,
                 category: product.category || 'Skincare',
                 variants: (p.variants as any) || [],
               }))
