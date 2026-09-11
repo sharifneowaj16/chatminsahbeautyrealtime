@@ -106,7 +106,7 @@ export function Drawer({
       viewportClassName="overflow-hidden"
       containerClassName={joinClassNames(
         getContainerClassName(side),
-        isSeed && 'h-dvh max-h-dvh p-[2%] items-stretch justify-end',
+        isSeed && 'h-dvh max-h-dvh p-[1%] items-stretch justify-end',
       )}
       panelClassName={joinClassNames(
         isSeed
