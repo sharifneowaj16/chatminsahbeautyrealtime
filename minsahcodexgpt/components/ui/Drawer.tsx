@@ -9,7 +9,7 @@ import { joinClassNames } from '@/components/ui/Field';
 
 export type DrawerSide = 'left' | 'right' | 'bottom';
 export type DrawerSize = 'sm' | 'md' | 'lg' | 'full';
-export type DrawerVariant = 'default' | 'admin';
+export type DrawerVariant = 'default' | 'admin' | 'seed';
 
 type DrawerAccessibleName =
   | { title: ReactNode; ariaLabel?: never }
@@ -84,7 +84,8 @@ export function Drawer({
   footerClassName,
 }: DrawerProps) {
   const pathname = usePathname();
-  const isAdmin = variant === 'admin' || (variant !== 'default' && Boolean(pathname?.startsWith('/admin')));
+  const isSeed = variant === 'seed';
+  const isAdmin = !isSeed && (variant === 'admin' || (variant !== 'default' && Boolean(pathname?.startsWith('/admin'))));
   const hasHeader = Boolean(title || description || (dismissible && showCloseButton));
 
   return (
@@ -95,19 +96,26 @@ export function Drawer({
       ariaLabel={ariaLabel}
       className={className}
       backdropClassName={joinClassNames(
-        isAdmin && 'bg-black/75 backdrop-blur-[3px]',
+        isSeed
+          ? 'bg-black/40 backdrop-blur-[3px]'
+          : isAdmin
+            ? 'bg-black/75 backdrop-blur-[3px]'
+            : undefined,
         backdropClassName,
       )}
       viewportClassName="overflow-hidden"
-      containerClassName={getContainerClassName(side)}
+      containerClassName={joinClassNames(getContainerClassName(side), isSeed && 'h-full')}
       panelClassName={joinClassNames(
-        isAdmin
-          ? 'flex flex-col overflow-hidden border-[#232636] bg-[#090a0f] text-[#f7f8f8] shadow-[0_24px_64px_rgba(0,0,0,0.75)] duration-[250ms]'
-          : 'flex flex-col overflow-hidden border-minsah-border-subtle bg-minsah-surface-elevated text-minsah-text-primary shadow-[var(--shadow-elevated)] duration-[250ms]',
-        side === 'left' && (isAdmin ? 'border-r border-[#232636]' : 'border-r'),
-        side === 'right' && (isAdmin ? 'border-l border-[#232636]' : 'border-l'),
-        side === 'bottom' && (isAdmin ? 'border-t border-[#232636]' : 'border-t'),
-        getPanelClassName(side, size),
+        isSeed
+          ? 'flex flex-col h-dvh max-h-dvh overflow-hidden bg-[#F2F2EC] text-[#181C1A] shadow-[0_20px_48px_rgba(0,0,0,0.16)] duration-[250ms] border-l border-black/5 sm:max-w-[460px] sm:rounded-l-[24px]'
+          : isAdmin
+            ? 'flex flex-col overflow-hidden border-[#232636] bg-[#090a0f] text-[#f7f8f8] shadow-[0_24px_64px_rgba(0,0,0,0.75)] duration-[250ms]'
+            : 'flex flex-col overflow-hidden border-minsah-border-subtle bg-minsah-surface-elevated text-minsah-text-primary shadow-[var(--shadow-elevated)] duration-[250ms]',
+        side === 'left' && !isSeed && (isAdmin ? 'border-r border-[#232636]' : 'border-r'),
+        side === 'right' && !isSeed && (isAdmin ? 'border-l border-[#232636]' : 'border-l'),
+        side === 'bottom' && !isSeed && (isAdmin ? 'border-t border-[#232636]' : 'border-t'),
+        !isSeed && getPanelClassName(side, size),
+        isSeed && (side === 'left' ? 'data-closed:-translate-x-full' : 'data-closed:translate-x-full'),
         panelClassName,
       )}
     >
@@ -125,19 +133,23 @@ export function Drawer({
       {hasHeader ? (
         <header
           className={joinClassNames(
-            isAdmin
-              ? 'flex shrink-0 items-start gap-4 border-b border-[#232636] px-5 py-4 sm:px-6 bg-[#090a0f]'
-              : 'flex shrink-0 items-start gap-4 border-b border-minsah-border-subtle px-5 py-4 sm:px-6',
+            isSeed
+              ? 'flex shrink-0 items-center justify-between bg-[#F2F2EC] px-6 pt-7 pb-3 relative z-10'
+              : isAdmin
+                ? 'flex shrink-0 items-start gap-4 border-b border-[#232636] px-5 py-4 sm:px-6 bg-[#090a0f]'
+                : 'flex shrink-0 items-start gap-4 border-b border-minsah-border-subtle px-5 py-4 sm:px-6',
             headerClassName,
           )}
         >
-          <div className="min-w-0 flex-1">
+          <div className={isSeed ? 'flex-1 min-w-0' : 'min-w-0 flex-1'}>
             {title ? (
               <DialogTitle
                 className={
-                  isAdmin
-                    ? 'text-base font-semibold leading-6 text-[#f7f8f8] tracking-tight'
-                    : 'text-lg font-black leading-7 text-minsah-text-primary'
+                  isSeed
+                    ? 'text-[22px] font-semibold text-[#1B361B] tracking-tight font-sans'
+                    : isAdmin
+                      ? 'text-base font-semibold leading-6 text-[#f7f8f8] tracking-tight'
+                      : 'text-lg font-black leading-7 text-minsah-text-primary'
                 }
               >
                 {title}
@@ -158,19 +170,30 @@ export function Drawer({
           </div>
 
           {dismissible && showCloseButton ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              aria-label={closeLabel}
-              className={joinClassNames(
-                '-m-2 shrink-0',
-                isAdmin && 'text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.06] rounded-md transition-colors',
-              )}
-            >
-              <X className="h-5 w-5" aria-hidden="true" />
-            </Button>
+            isSeed ? (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={closeLabel}
+                className="w-9 h-9 rounded-full bg-[#E5E5DF] hover:bg-[#DCDCD6] flex items-center justify-center text-[#1B361B] transition-colors focus:outline-none cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4 stroke-[1.5]" aria-hidden="true" />
+              </button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                aria-label={closeLabel}
+                className={joinClassNames(
+                  '-m-2 shrink-0',
+                  isAdmin && 'text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.06] rounded-md transition-colors',
+                )}
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            )
           ) : null}
         </header>
       ) : null}
@@ -178,8 +201,8 @@ export function Drawer({
       {children ? (
         <div
           className={joinClassNames(
-            'flex-1 overflow-y-auto px-5 py-5 sm:px-6',
-            isAdmin && 'text-[#f7f8f8]',
+            'flex-1 overflow-y-auto overscroll-contain min-h-0',
+            isSeed ? 'bg-[#F2F2EC] p-0' : isAdmin ? 'px-5 py-5 sm:px-6 text-[#f7f8f8]' : 'px-5 py-5 sm:px-6',
             bodyClassName,
           )}
         >
@@ -190,9 +213,11 @@ export function Drawer({
       {footer ? (
         <footer
           className={joinClassNames(
-            isAdmin
-              ? 'flex shrink-0 flex-col-reverse gap-2.5 border-t border-[#232636] bg-[#12131b]/60 px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6'
-              : 'flex shrink-0 flex-col-reverse gap-3 border-t border-minsah-border-subtle bg-minsah-surface-subtle px-5 py-4 sm:flex-row sm:justify-end sm:px-6',
+            isSeed
+              ? 'shrink-0 bg-[#F2F2EC] border-t border-black/[0.08] relative z-10'
+              : isAdmin
+                ? 'flex shrink-0 flex-col-reverse gap-2.5 border-t border-[#232636] bg-[#12131b]/60 px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6'
+                : 'flex shrink-0 flex-col-reverse gap-3 border-t border-minsah-border-subtle bg-minsah-surface-subtle px-5 py-4 sm:flex-row sm:justify-end sm:px-6',
             footerClassName,
           )}
         >

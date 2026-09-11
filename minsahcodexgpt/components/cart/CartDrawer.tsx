@@ -155,23 +155,6 @@ export default function CartDrawer() {
     }
   }, [hasOnlyBundles, promoCode, removePromoCode]);
 
-  // Seed.com 100% Pixel-Perfect Custom Drawer Header
-  const customTitle = (
-    <div className="flex items-center justify-between w-full">
-      <h2 className="text-[22px] font-semibold text-[#1B361B] tracking-tight font-sans">
-        Your Cart
-      </h2>
-      <button
-        type="button"
-        onClick={closeDrawer}
-        className="w-9 h-9 rounded-full bg-[#E5E5DF] hover:bg-[#DCDCD6] flex items-center justify-center text-[#1B361B] transition-colors focus:outline-none cursor-pointer"
-        aria-label="Close cart drawer"
-      >
-        <X className="w-4 h-4 stroke-[1.5]" />
-      </button>
-    </div>
-  );
-
   // Available cross-sells filtered against existing cart items
   const availableCrossSells = CROSS_SELL_PRODUCTS.filter(
     (addon) => !items.some((item) => item.id === addon.id || item.name === addon.name),
@@ -179,13 +162,13 @@ export default function CartDrawer() {
 
   // Seed.com 100% Pixel-Perfect Sticky Footer
   const drawerFooter = hasItems ? (
-    <div className="w-full bg-[#F2F2EC] px-6 pt-5 pb-6 border-t border-black/[0.08] space-y-4">
+    <div className="w-full px-6 pt-5 pb-7 space-y-4">
       {/* ── Total & Pricing Breakdown ── */}
       <div>
         <div className="flex items-center justify-between">
-          <span className="text-[18px] font-semibold text-[#1B361B] tracking-tight">Total</span>
+          <span className="text-[18px] font-semibold text-[#1B361B] tracking-tight font-sans">Total</span>
           <div className="text-right">
-            <span className="text-[20px] font-bold text-[#1B361B]">
+            <span className="text-[20px] font-bold text-[#1B361B] font-sans">
               {formatPrice(Math.max(0, subtotal - discount))}
             </span>
             {discount > 0 && (
@@ -219,15 +202,10 @@ export default function CartDrawer() {
       open={isOpen}
       onClose={closeDrawer}
       side="right"
-      size="md"
-      title={customTitle}
-      showCloseButton={false}
-      panelClassName="bg-[#F2F2EC] text-[#181C1A] sm:max-w-[460px] w-full sm:rounded-l-[24px] shadow-[0_20px_48px_rgba(0,0,0,0.16)] border-l border-black/5"
-      backdropClassName="bg-black/40 backdrop-blur-[4px]"
-      headerClassName="border-b-0 bg-[#F2F2EC] px-6 pt-6 pb-3 shrink-0"
-      bodyClassName="p-0 bg-[#F2F2EC] overflow-y-auto"
+      variant="seed"
+      title="Your Cart"
+      closeLabel="Close cart drawer"
       footer={drawerFooter}
-      footerClassName="p-0 border-t border-black/[0.08] bg-[#F2F2EC]"
     >
       {hasItems ? (
         <div className="flex flex-col min-h-full pb-4">
