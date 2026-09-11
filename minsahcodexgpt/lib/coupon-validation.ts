@@ -141,7 +141,7 @@ export async function validateCouponForOrder(params: {
       coupon = {
         id: '',
         code: couponCode,
-        type: promo.type === 'percentage' ? 'PERCENTAGE' : 'FIXED',
+        type: promo.code === 'FREESHIP' ? 'FREE_SHIPPING' : (promo.type === 'percentage' ? 'PERCENTAGE' : 'FIXED'),
         value: promo.type === 'percentage' ? Math.round(promo.value * 100) : promo.value,
         minPurchase: promo.minSubtotal ?? 0,
         maxDiscount: promo.maxDiscount ?? 0,

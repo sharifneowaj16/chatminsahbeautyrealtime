@@ -140,21 +140,12 @@ export default function CartDrawer() {
     router.push("/checkout");
   };
 
-  // Bundle and regular item breakdown for coupon applicability
-  const nonBundleItems = items.filter(
-    (item) =>
-      !item.isBundle &&
-      !item.bundleId &&
-      !(typeof item.id === "string" && item.id.startsWith("bundle-")),
-  );
-  const hasOnlyBundles = hasItems && nonBundleItems.length === 0;
-
-  // Auto-remove promo code if cart transitions to only bundles or promo coupons disabled
+  // Auto-remove promo code if promo coupons disabled globally
   useEffect(() => {
-    if ((hasOnlyBundles || !ENABLE_PROMO_COUPONS) && promoCode) {
+    if (!ENABLE_PROMO_COUPONS && promoCode) {
       removePromoCode();
     }
-  }, [hasOnlyBundles, promoCode, removePromoCode]);
+  }, [promoCode, removePromoCode]);
 
   // Available cross-sells filtered against existing cart items
   const availableCrossSells = CROSS_SELL_PRODUCTS.filter(
@@ -303,7 +294,7 @@ export default function CartDrawer() {
           )}
 
           {/* ── Seed-style "Apply Promo Code" Editorial Link ── */}
-          {ENABLE_PROMO_COUPONS && !hasOnlyBundles && (
+          {ENABLE_PROMO_COUPONS && (
             <div className="px-6 mt-4 pt-3 border-t border-black/[0.06]">
               {discount > 0 && promoCode ? (
                 <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs">

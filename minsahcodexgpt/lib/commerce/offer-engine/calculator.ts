@@ -60,25 +60,29 @@ export function calculateCartOffers(
       } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
         promoError = `Minimum subtotal of ৳${rule.minSubtotal} required for ${rule.code}`;
       } else {
-        appliedPromoRule = rule;
         const applicableBase = rule.allowOnBundles ? subtotal : nonBundleSubtotal;
 
-        if (applicableBase <= 0 && bundleSubtotal > 0 && !rule.allowOnBundles) {
+        if (applicableBase <= 0 && bundleSubtotal > 0 && !rule.allowOnBundles && rule.code !== 'FREESHIP') {
           // Items are all promotional bundles with already applied discounts
+          promoError = `${rule.code} cannot be applied to promotional bundles`;
           promoDiscount = 0;
-        } else if (rule.type === 'percentage') {
-          promoDiscount = Math.round(applicableBase * rule.value);
         } else {
-          promoDiscount = Math.min(rule.value, applicableBase);
-        }
+          appliedPromoRule = rule;
 
-        if (rule.maxDiscount && promoDiscount > rule.maxDiscount) {
-          promoDiscount = rule.maxDiscount;
-        }
+          if (rule.type === 'percentage') {
+            promoDiscount = Math.round(applicableBase * rule.value);
+          } else {
+            promoDiscount = Math.min(rule.value, applicableBase);
+          }
 
-        // Keep at least 1 taka payable subtotal so promo discounts can never make total 0
-        const maxApplicableDiscount = Math.max(0, subtotal - 1);
-        promoDiscount = Math.max(0, Math.min(promoDiscount, maxApplicableDiscount));
+          if (rule.maxDiscount && promoDiscount > rule.maxDiscount) {
+            promoDiscount = rule.maxDiscount;
+          }
+
+          // Keep at least 1 taka payable subtotal so promo discounts can never make total 0
+          const maxApplicableDiscount = Math.max(0, subtotal - 1);
+          promoDiscount = Math.max(0, Math.min(promoDiscount, maxApplicableDiscount));
+        }
       }
     }
   }
@@ -92,7 +96,8 @@ export function calculateCartOffers(
   const isFreeDeliveryUnlocked =
     hasProductFreeDelivery ||
     subtotal >= targetThreshold ||
-    (isCityDhaka && subtotal >= DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD);
+    (isCityDhaka && subtotal >= DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD) ||
+    Boolean(appliedPromoRule?.code === 'FREESHIP');
 
   const remainingForFreeDelivery = isFreeDeliveryUnlocked
     ? 0

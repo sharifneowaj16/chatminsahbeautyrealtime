@@ -73,4 +73,12 @@ export const PROMO_CATALOG: Record<string, PromoRule> = {
     description: 'Flat ৳100 welcome credit on orders over ৳1000',
     allowOnBundles: false,
   },
+  FREESHIP: {
+    code: 'FREESHIP',
+    type: 'flat',
+    value: 0,
+    minSubtotal: 1000,
+    description: 'Free shipping on orders over ৳1000',
+    allowOnBundles: true,
+  },
 };
