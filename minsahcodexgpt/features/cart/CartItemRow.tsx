@@ -150,69 +150,102 @@ export default function CartItemRow({
               </div>
 
               {onQuantityChange && (
-                <div
-                  className={`flex items-center overflow-hidden rounded-full ${
-                    isCompact
-                      ? "h-[32px] w-[82px] border border-[#D0D5DD] bg-white shadow-xs"
-                      : "h-11 border border-minsah-border-soft bg-white"
-                  }`}
-                >
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      if (item.quantity <= 1 && onRemove) {
-                        onRemove();
-                      } else {
-                        onQuantityChange(item.quantity - 1);
+                isCompact ? (
+                  <div
+                    className="grid grid-cols-3 items-center h-[32px] w-[86px] rounded-full border border-[#D0D5DD] bg-white shadow-xs overflow-hidden select-none"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (item.quantity <= 1 && onRemove) {
+                          onRemove();
+                        } else {
+                          onQuantityChange(item.quantity - 1);
+                        }
+                      }}
+                      disabled={busy}
+                      className="h-full w-full flex items-center justify-center text-[#181C1A] hover:bg-black/5 active:scale-90 transition-transform cursor-pointer disabled:opacity-40 focus:outline-none"
+                      aria-label={`Decrease ${item.name}`}
+                    >
+                      <Minus size={11} strokeWidth={2} aria-hidden="true" />
+                    </button>
+                    <div className="h-full w-full flex items-center justify-center overflow-hidden">
+                      <span
+                        key={item.quantity}
+                        className="text-xs font-semibold text-[#181C1A] text-center inline-block animate-counter-pop select-none"
+                        aria-live="polite"
+                        aria-atomic="true"
+                      >
+                        {busy ? (
+                          <Loader2 size={11} className="mx-auto animate-spin" />
+                        ) : (
+                          item.quantity
+                        )}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onQuantityChange(item.quantity + 1)}
+                      disabled={busy || isAtMaxQuantity}
+                      className="h-full w-full flex items-center justify-center text-[#181C1A] hover:bg-black/5 active:scale-90 transition-transform cursor-pointer disabled:opacity-40 focus:outline-none"
+                      aria-label={
+                        isAtMaxQuantity
+                          ? `${item.name} maximum quantity reached`
+                          : `Increase ${item.name}`
                       }
-                    }}
-                    disabled={busy}
-                    className={
-                      isCompact
-                        ? "h-full w-7 rounded-none text-xs text-[#181C1A] hover:bg-black/5"
-                        : "h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
-                    }
-                    aria-label={`Decrease ${item.name}`}
+                    >
+                      <Plus size={11} strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="flex items-center overflow-hidden rounded-full h-11 border border-minsah-border-soft bg-white"
                   >
-                    <Minus size={isCompact ? 11 : 14} aria-hidden="true" />
-                  </Button>
-                  <span
-                    className={`${
-                      isCompact
-                        ? "min-w-[26px] text-xs font-semibold text-[#181C1A]"
-                        : "min-w-10 text-sm font-black text-minsah-text"
-                    } text-center`}
-                    aria-live="polite"
-                    aria-atomic="true"
-                  >
-                    {busy ? (
-                      <Loader2 size={isCompact ? 11 : 14} className="mx-auto animate-spin" />
-                    ) : (
-                      item.quantity
-                    )}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onQuantityChange(item.quantity + 1)}
-                    disabled={busy || isAtMaxQuantity}
-                    className={
-                      isCompact
-                        ? "h-full w-7 rounded-none text-xs text-[#181C1A] hover:bg-black/5"
-                        : "h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
-                    }
-                    aria-label={
-                      isAtMaxQuantity
-                        ? `${item.name} maximum quantity reached`
-                        : `Increase ${item.name}`
-                    }
-                  >
-                    <Plus size={isCompact ? 11 : 14} aria-hidden="true" />
-                  </Button>
-                </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (item.quantity <= 1 && onRemove) {
+                          onRemove();
+                        } else {
+                          onQuantityChange(item.quantity - 1);
+                        }
+                      }}
+                      disabled={busy}
+                      className="h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
+                      aria-label={`Decrease ${item.name}`}
+                    >
+                      <Minus size={14} aria-hidden="true" />
+                    </Button>
+                    <span
+                      className="min-w-10 text-sm font-black text-minsah-text text-center"
+                      aria-live="polite"
+                      aria-atomic="true"
+                    >
+                      {busy ? (
+                        <Loader2 size={14} className="mx-auto animate-spin" />
+                      ) : (
+                        item.quantity
+                      )}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onQuantityChange(item.quantity + 1)}
+                      disabled={busy || isAtMaxQuantity}
+                      className="h-full w-11 rounded-none text-minsah-primary hover:bg-minsah-light"
+                      aria-label={
+                        isAtMaxQuantity
+                          ? `${item.name} maximum quantity reached`
+                          : `Increase ${item.name}`
+                      }
+                    >
+                      <Plus size={14} aria-hidden="true" />
+                    </Button>
+                  </div>
+                )
               )}
             </div>
           )}
