@@ -149,7 +149,7 @@ export function Drawer({
               <DialogTitle
                 className={
                   isSeed
-                    ? 'text-[22px] font-semibold text-[#1B361B] tracking-tight font-sans'
+                    ? 'text-[22px] font-[350] text-[#1B361B] tracking-tight font-sans'
                     : isAdmin
                       ? 'text-base font-semibold leading-6 text-[#f7f8f8] tracking-tight'
                       : 'text-lg font-black leading-7 text-minsah-text-primary'

@@ -166,19 +166,19 @@ export default function CartDrawer() {
       {/* ── Total & Pricing Breakdown ── */}
       <div>
         <div className="flex items-center justify-between">
-          <span className="text-[18px] font-semibold text-[#1B361B] tracking-tight font-sans">Total</span>
+          <span className="text-[18px] font-[350] text-[#1B361B] tracking-tight font-sans">Total</span>
           <div className="text-right">
-            <span className="text-[20px] font-bold text-[#1B361B] font-sans">
+            <span className="text-[20px] font-[350] text-[#1B361B] font-sans">
               {formatPrice(Math.max(0, subtotal - discount))}
             </span>
             {discount > 0 && (
-              <span className="block text-[11px] font-semibold text-emerald-700">
+              <span className="block text-[11px] font-[350] text-emerald-700">
                 Saved -{formatPrice(discount)}
               </span>
             )}
           </div>
         </div>
-        <p className="text-xs text-[#667085] mt-1">
+        <p className="text-xs font-[350] text-[#667085] mt-1">
           {isFreeDeliveryUnlocked
             ? "Free delivery unlocked • Taxes included"
             : "Shipping + taxes calculated at checkout"}
@@ -190,7 +190,7 @@ export default function CartDrawer() {
         type="button"
         onClick={handleCheckout}
         disabled={cartLoading || !hasItems}
-        className="w-full h-[54px] rounded-full bg-[#1B361B] hover:bg-[#254825] active:scale-[0.99] text-white font-semibold text-base transition-all duration-200 flex items-center justify-center shadow-[0_4px_14px_rgba(27,54,27,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer tracking-wide"
+        className="w-full h-[54px] rounded-full bg-[#1B361B] hover:bg-[#254825] active:scale-[0.99] text-white font-[350] text-base transition-all duration-200 flex items-center justify-center shadow-[0_4px_14px_rgba(27,54,27,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer tracking-wide"
       >
         Checkout
       </button>
@@ -211,7 +211,7 @@ export default function CartDrawer() {
         <div className="flex flex-col min-h-full pb-4">
           {/* ── Seed-style Bracketed Incentive Banner 【 🏷️ Save 25% when you add another product 】 ── */}
           <div className="px-6 pt-2 pb-3">
-            <div className="rounded-lg bg-[#E5EAE1] px-4 py-3 text-center text-xs font-semibold text-[#1B361B] flex items-center justify-center gap-2">
+            <div className="rounded-lg bg-[#E5EAE1] px-4 py-3 text-center text-xs font-[450] text-[#1B361B] flex items-center justify-center gap-2">
               <span className="text-[#1B361B]/40 select-none">【</span>
               {isFreeDeliveryUnlocked ? (
                 <>
@@ -308,8 +308,8 @@ export default function CartDrawer() {
                 <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="font-bold tracking-wider text-emerald-900">{promoCode}</span>
-                    <span className="font-semibold text-emerald-700">(-{formatPrice(discount)} OFF)</span>
+                    <span className="font-[350] tracking-wider text-emerald-900">{promoCode}</span>
+                    <span className="font-[350] text-emerald-700">(-{formatPrice(discount)} OFF)</span>
                   </div>
                   <button
                     type="button"
@@ -350,7 +350,7 @@ export default function CartDrawer() {
                           type="button"
                           disabled={!couponInput.trim() || couponLoading}
                           onClick={() => handleApplyCoupon()}
-                          className="rounded-full px-4 py-2 text-xs font-semibold bg-[#1B361B] text-white hover:bg-[#254825] transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+                          className="rounded-full px-4 py-2 text-xs font-[350] bg-[#1B361B] text-white hover:bg-[#254825] transition-colors disabled:opacity-50 cursor-pointer shrink-0"
                         >
                           {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
                         </button>
@@ -358,7 +358,7 @@ export default function CartDrawer() {
 
                       {/* Quick Suggestions */}
                       <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5 no-scrollbar">
-                        <span className="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1 shrink-0">
+                        <span className="text-[10px] font-[400] uppercase text-gray-400 flex items-center gap-1 shrink-0">
                           <Gift className="h-3 w-3 text-[#1B361B]" /> Offers:
                         </span>
                         {["WELCOME10", "SAVE10", "SAVE20", "MINSAH10"].map((code) => (

@@ -95,7 +95,7 @@ export default function CartItemRow({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <h3
-                className={`${isSummary ? "text-sm font-bold text-minsah-text" : isCompact ? "text-[14px] font-semibold text-[#181C1A] leading-snug" : "text-base font-bold text-minsah-text"} line-clamp-2`}
+                className={`${isSummary ? "text-sm font-bold text-minsah-text" : isCompact ? "text-[14px] font-[500] text-[#181C1A] leading-snug" : "text-base font-bold text-minsah-text"} line-clamp-2`}
               >
                 {item.name}
               </h3>
@@ -138,7 +138,7 @@ export default function CartItemRow({
             <div className={`flex items-center justify-between gap-3 ${isCompact ? "mt-3" : "mt-3"}`}>
               <div>
                 <p
-                  className={`${isCompact ? "text-[15px] font-semibold text-[#181C1A]" : "text-base font-black text-minsah-primary"}`}
+                  className={`${isCompact ? "text-[15px] font-[450] text-[#181C1A]" : "text-base font-black text-minsah-primary"}`}
                 >
                   {formatPrice(item.price)}
                 </p>
