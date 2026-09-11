@@ -59,7 +59,7 @@ function capDiscount(value: number, maxDiscountableAmount: number): number {
   return roundMoney(Math.min(Math.max(0, value), Math.max(0, maxDiscountableAmount)));
 }
 
-import { PROMO_CATALOG } from '@/lib/commerce/offer-engine';
+import { PROMO_CATALOG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
 
 const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
 
@@ -80,6 +80,14 @@ export async function validateCouponForOrder(params: {
       usageLimit: null,
       perUserLimit: null,
     };
+  }
+
+  if (!ENABLE_PROMO_COUPONS) {
+    throw new CouponValidationError(
+      'Promo vouchers are not active at this time',
+      'COUPON_DISABLED',
+      400
+    );
   }
 
   let coupon = (await params.prisma.coupon.findUnique({

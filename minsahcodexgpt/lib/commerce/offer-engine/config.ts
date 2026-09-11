@@ -14,6 +14,13 @@ export const DELIVERY_CONFIG: DeliveryTierConfig = {
 };
 
 /**
+ * Global Store Promotion Feature Flag
+ * Set to false to disable coupon codes across the storefront (hides input and stops coupon discounts).
+ * Set to true to re-enable coupon vouchers for seasonal campaigns (e.g. Eid).
+ */
+export const ENABLE_PROMO_COUPONS = false;
+
+/**
  * Universal Promo Code Catalog
  * Integrates all active marketing vouchers into a single verified registry.
  */

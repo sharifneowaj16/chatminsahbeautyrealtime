@@ -17,6 +17,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import CartItemRow from "@/features/cart/CartItemRow";
 import { formatPrice } from "@/utils/currency";
+import { ENABLE_PROMO_COUPONS } from "@/lib/commerce/offer-engine";
 
 interface CrossSellProduct {
   id: string;
@@ -148,9 +149,9 @@ export default function CartDrawer() {
   );
   const hasOnlyBundles = hasItems && nonBundleItems.length === 0;
 
-  // Auto-remove promo code if cart transitions to only bundles
+  // Auto-remove promo code if cart transitions to only bundles or promo coupons disabled
   useEffect(() => {
-    if (hasOnlyBundles && promoCode) {
+    if ((hasOnlyBundles || !ENABLE_PROMO_COUPONS) && promoCode) {
       removePromoCode();
     }
   }, [hasOnlyBundles, promoCode, removePromoCode]);
@@ -302,7 +303,7 @@ export default function CartDrawer() {
           )}
 
           {/* ── Seed-style "Apply Promo Code" Editorial Link ── */}
-          {!hasOnlyBundles && (
+          {ENABLE_PROMO_COUPONS && !hasOnlyBundles && (
             <div className="px-6 mt-4 pt-3 border-t border-black/[0.06]">
               {discount > 0 && promoCode ? (
                 <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs">

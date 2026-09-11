@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { trackAddToCart } from '@/lib/tracking/ecommerce';
-import { calculateCartOffers, DELIVERY_CONFIG } from '@/lib/commerce/offer-engine';
+import { calculateCartOffers, DELIVERY_CONFIG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export interface CartItem {
@@ -251,9 +251,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Keep discount synchronized with offer evaluation when promoCode is active
   useEffect(() => {
-    if (promoCode && offerEvaluation.appliedPromoRule) {
+    if (ENABLE_PROMO_COUPONS && promoCode && offerEvaluation.appliedPromoRule) {
       setDiscount(offerEvaluation.promoDiscount);
-    } else if (!promoCode && discount !== 0) {
+    } else if ((!promoCode || !ENABLE_PROMO_COUPONS || !offerEvaluation.appliedPromoRule) && discount !== 0) {
       setDiscount(0);
     }
   }, [promoCode, offerEvaluation.appliedPromoRule, offerEvaluation.promoDiscount, discount]);
@@ -670,6 +670,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ── Promo code ──────────────────────────────────────────────────
 
   const applyPromoCode = useCallback((codeOverride?: string) => {
+    if (!ENABLE_PROMO_COUPONS) {
+      pushToast({ title: 'Promo vouchers are not active at this time', tone: 'danger' });
+      return;
+    }
     const code = (codeOverride || promoCode).trim().toUpperCase();
     if (!code) {
       pushToast({ title: 'Please enter a coupon code', tone: 'danger' });

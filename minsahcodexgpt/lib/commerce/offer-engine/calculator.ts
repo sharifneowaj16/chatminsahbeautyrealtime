@@ -1,4 +1,4 @@
-import { DELIVERY_CONFIG, PROMO_CATALOG } from './config';
+import { DELIVERY_CONFIG, PROMO_CATALOG, ENABLE_PROMO_COUPONS } from './config';
 import type {
   CartOfferCalculationParams,
   CartOfferCalculationResult,
@@ -49,31 +49,35 @@ export function calculateCartOffers(
   let promoError: string | null = null;
 
   if (promoCode && promoCode.trim()) {
-    const normalizedCode = promoCode.trim().toUpperCase();
-    const rule = PROMO_CATALOG[normalizedCode];
-
-    if (!rule) {
-      promoError = 'Invalid or expired promo code';
-    } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
-      promoError = `Minimum subtotal of ৳${rule.minSubtotal} required for ${rule.code}`;
+    if (!ENABLE_PROMO_COUPONS) {
+      promoError = 'Promo vouchers are not active at this time';
     } else {
-      appliedPromoRule = rule;
-      const applicableBase = rule.allowOnBundles ? subtotal : nonBundleSubtotal;
+      const normalizedCode = promoCode.trim().toUpperCase();
+      const rule = PROMO_CATALOG[normalizedCode];
 
-      if (applicableBase <= 0 && bundleSubtotal > 0 && !rule.allowOnBundles) {
-        // Items are all promotional bundles with already applied discounts
-        promoDiscount = 0;
-      } else if (rule.type === 'percentage') {
-        promoDiscount = Math.round(applicableBase * rule.value);
+      if (!rule) {
+        promoError = 'Invalid or expired promo code';
+      } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
+        promoError = `Minimum subtotal of ৳${rule.minSubtotal} required for ${rule.code}`;
       } else {
-        promoDiscount = Math.min(rule.value, applicableBase);
-      }
+        appliedPromoRule = rule;
+        const applicableBase = rule.allowOnBundles ? subtotal : nonBundleSubtotal;
 
-      if (rule.maxDiscount && promoDiscount > rule.maxDiscount) {
-        promoDiscount = rule.maxDiscount;
-      }
+        if (applicableBase <= 0 && bundleSubtotal > 0 && !rule.allowOnBundles) {
+          // Items are all promotional bundles with already applied discounts
+          promoDiscount = 0;
+        } else if (rule.type === 'percentage') {
+          promoDiscount = Math.round(applicableBase * rule.value);
+        } else {
+          promoDiscount = Math.min(rule.value, applicableBase);
+        }
 
-      promoDiscount = Math.max(0, Math.min(promoDiscount, subtotal));
+        if (rule.maxDiscount && promoDiscount > rule.maxDiscount) {
+          promoDiscount = rule.maxDiscount;
+        }
+
+        promoDiscount = Math.max(0, Math.min(promoDiscount, subtotal));
+      }
     }
   }
 
