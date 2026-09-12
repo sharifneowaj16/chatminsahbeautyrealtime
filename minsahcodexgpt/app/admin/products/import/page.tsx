@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
@@ -38,6 +38,8 @@ import {
   HelpCircle,
   FileJson,
   Link2,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 // CHANGE THIS ONLY IF YOUR LIVE PRODUCT URL BASE IS DIFFERENT.
@@ -74,12 +76,16 @@ interface ImportData {
   item: string;
   brand: string;
   originCountry: string;
+  status: 'active' | 'inactive';
+  condition: 'NEW' | 'USED' | 'REFURBISHED';
   featured: boolean;
   description: string;
   weight: string;
   ingredients: string;
   skinType: string[];
   shelfLife: string;
+  gtin: string;
+  barcode: string;
   variants: ImportVariant[];
   images: ImportImage[];
 
@@ -145,6 +151,8 @@ interface ImportData {
   deliveryOfferEnabled: boolean;
   deliveryOfferType: DeliveryOfferType;
   deliveryOfferAmount: string;
+  deliveryChargeInsideDhaka: string;
+  deliveryChargeOutsideDhaka: string;
   deliveryOfferStartDate: string;
   deliveryOfferEndDate: string;
   deliveryOfferBadgeText: string;
@@ -340,21 +348,27 @@ function normalizeImportData(raw: JsonRecord): ImportData {
   const breadcrumbFromGraph = firstRecordFromGraph(graph, 'BreadcrumbList');
 
   const slug = asString(readPath(raw, ['urlSlug', 'slug', 'productCore.slug', 'prismaImportData.productCreatePayloadForPrisma.slug']));
-  const canonicalUrl = asString(
+  const rawCanonicalUrl = asString(
     readPath(raw, [
       'canonicalUrl',
       'seoFieldsForMinsahProductModel.canonicalUrl',
       'prismaImportData.productCreatePayloadForPrisma.canonicalUrl',
       'sitemapIndexing.canonicalUrl',
-    ]),
-    slug ? `${DEFAULT_PRODUCT_BASE_URL}/${slug}` : ''
+    ])
   );
+  const canonicalUrl = rawCanonicalUrl && !rawCanonicalUrl.includes('ADD_')
+    ? rawCanonicalUrl
+    : (slug ? `${DEFAULT_PRODUCT_BASE_URL}/${slug}` : '');
 
   const imageAltTexts = asStringArray(readPath(raw, ['imageAltTexts', 'prismaImportData.productCreatePayloadForPrisma.imageAltTexts']));
   const images = asImportImages(
     readPath(raw, ['images', 'imageUrls', 'productImages', 'prismaImportData.productImagesCreatePayloadForPrisma']),
     imageAltTexts
   );
+  const rawOgImageUrl = asString(readPath(raw, ['ogImageUrl', 'seoFieldsForMinsahProductModel.ogImageUrl', 'prismaImportData.productCreatePayloadForPrisma.ogImageUrl']));
+  const ogImageUrl = rawOgImageUrl && !rawOgImageUrl.includes('ADD_')
+    ? rawOgImageUrl
+    : (images.find((image) => image.isDefault)?.url || images[0]?.url || '');
   const variants = normalizeVariants(raw, prismaImport, productCore);
 
   const generatedVariantPriceTable = variants.map((variant) => ({
@@ -373,6 +387,17 @@ function normalizeImportData(raw: JsonRecord): ImportData {
     asBoolean(readPath(raw, ['deliveryOfferEnabled', 'deliveryOffer.enabled', 'shippingAndDelivery.deliveryOfferEnabled', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferEnabled']), false) ||
     normalizedDeliveryOfferType !== 'DEFAULT';
 
+  const rawStatus = asString(readPath(raw, ['status', 'productCore.status'])).toLowerCase();
+  const status: 'active' | 'inactive' = rawStatus === 'inactive' ? 'inactive' : 'active';
+  const rawCondition = asString(readPath(raw, ['condition', 'productCondition'])).toUpperCase();
+  const condition: 'NEW' | 'USED' | 'REFURBISHED' = ['NEW', 'USED', 'REFURBISHED'].includes(rawCondition)
+    ? (rawCondition as 'NEW' | 'USED' | 'REFURBISHED')
+    : 'NEW';
+
+  const deliveryOfferAmount = asString(readPath(raw, ['deliveryOfferAmount', 'deliveryOffer.amount', 'shippingAndDelivery.deliveryOfferAmount', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferAmount']));
+  const deliveryChargeInsideDhaka = asString(readPath(raw, ['deliveryChargeInsideDhaka', 'deliveryOffer.deliveryChargeInsideDhaka', 'shippingAndDelivery.deliveryChargeInsideDhaka']), deliveryOfferAmount);
+  const deliveryChargeOutsideDhaka = asString(readPath(raw, ['deliveryChargeOutsideDhaka', 'deliveryOffer.deliveryChargeOutsideDhaka', 'shippingAndDelivery.deliveryChargeOutsideDhaka']), deliveryOfferAmount);
+
   return {
     name: asString(readPath(raw, ['name', 'productCore.name', 'prismaImportData.productCreatePayloadForPrisma.name'])),
     category: asString(readPath(raw, ['category', 'productCore.category', 'prismaImportData.productCreatePayloadForPrisma.category']), 'Hair care'),
@@ -380,12 +405,16 @@ function normalizeImportData(raw: JsonRecord): ImportData {
     item: asString(readPath(raw, ['item', 'productCore.productType'])),
     brand: asString(readPath(raw, ['brand', 'productCore.brand', 'prismaImportData.productCreatePayloadForPrisma.brand'])),
     originCountry: asString(readPath(raw, ['originCountry', 'productCore.originCountry', 'productSpecs.Country of Origin']), 'Bangladesh (Local)'),
+    status,
+    condition,
     featured: asBoolean(readPath(raw, ['featured', 'isFeatured', 'productCore.isFeatured']), false),
     description: asString(readPath(raw, ['description', 'prismaImportData.productCreatePayloadForPrisma.description'])).replace(/\\n/g, '\n'),
     weight: asString(readPath(raw, ['weight', 'prismaImportData.productCreatePayloadForPrisma.weight'])),
     ingredients: normalizeIngredients(raw, prismaProduct),
     skinType: asStringArray(readPath(raw, ['skinType', 'prismaImportData.productCreatePayloadForPrisma.skinType'])),
     shelfLife: asString(readPath(raw, ['shelfLife', 'productSpecs.Shelf Life', 'prismaImportData.productCreatePayloadForPrisma.shelfLife'])),
+    gtin: asString(readPath(raw, ['gtin', 'prismaImportData.productCreatePayloadForPrisma.gtin'])),
+    barcode: asString(readPath(raw, ['barcode', 'prismaImportData.productCreatePayloadForPrisma.barcode'])),
     variants,
     images,
 
@@ -399,7 +428,7 @@ function normalizeImportData(raw: JsonRecord): ImportData {
     bengaliSecondaryKeywords: asStringArray(readPath(raw, ['bengaliSecondaryKeywords', 'seoFieldsForMinsahProductModel.bengaliSecondaryKeywords', 'prismaImportData.productCreatePayloadForPrisma.bengaliSecondaryKeywords'])),
     ogTitle: asString(readPath(raw, ['ogTitle', 'seoFieldsForMinsahProductModel.ogTitle', 'prismaImportData.productCreatePayloadForPrisma.ogTitle'])),
     ogDescription: asString(readPath(raw, ['ogDescription', 'seoFieldsForMinsahProductModel.ogDescription', 'prismaImportData.productCreatePayloadForPrisma.ogDescription'])),
-    ogImageUrl: asString(readPath(raw, ['ogImageUrl', 'seoFieldsForMinsahProductModel.ogImageUrl', 'prismaImportData.productCreatePayloadForPrisma.ogImageUrl']), images.find((image) => image.isDefault)?.url || images[0]?.url || ''),
+    ogImageUrl,
     canonicalUrl,
     urlSlug: slug,
     tags: asString(readPath(raw, ['tags', 'metaKeywords', 'seoFieldsForMinsahProductModel.metaKeywords', 'prismaImportData.productCreatePayloadForPrisma.tags'])),
@@ -456,7 +485,9 @@ function normalizeImportData(raw: JsonRecord): ImportData {
     isFragile: asBoolean(readPath(raw, ['isFragile', 'shippingAndDelivery.isFragile', 'prismaImportData.productCreatePayloadForPrisma.isFragile']), false),
     deliveryOfferEnabled,
     deliveryOfferType: normalizedDeliveryOfferType,
-    deliveryOfferAmount: asString(readPath(raw, ['deliveryOfferAmount', 'deliveryOffer.amount', 'shippingAndDelivery.deliveryOfferAmount', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferAmount'])),
+    deliveryOfferAmount,
+    deliveryChargeInsideDhaka,
+    deliveryChargeOutsideDhaka,
     deliveryOfferStartDate: asString(readPath(raw, ['deliveryOfferStartDate', 'deliveryOffer.startDate', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferStartDate'])),
     deliveryOfferEndDate: asString(readPath(raw, ['deliveryOfferEndDate', 'deliveryOffer.endDate', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferEndDate'])),
     deliveryOfferBadgeText: asString(readPath(raw, ['deliveryOfferBadgeText', 'deliveryOffer.badgeText', 'shippingAndDelivery.deliveryOfferBadgeText', 'prismaImportData.productCreatePayloadForPrisma.deliveryOfferBadgeText'])),
@@ -721,6 +752,33 @@ export default function ImportProductPage() {
     });
   };
 
+  const handleAddVariant = () => {
+    setImportData((prev) => {
+      if (!prev) return prev;
+      const newIndex = prev.variants.length + 1;
+      const newVariant: ImportVariant = {
+        size: '',
+        color: '',
+        shade: '',
+        price: prev.variants[0]?.price || '',
+        stock: '10',
+        sku: `MSH-VAR-${Date.now().toString(36).toUpperCase()}-${newIndex}`,
+      };
+      return { ...prev, variants: [...prev.variants, newVariant] };
+    });
+  };
+
+  const handleRemoveVariant = (index: number) => {
+    setImportData((prev) => {
+      if (!prev) return prev;
+      if (prev.variants.length <= 1) {
+        pushToast({ tone: 'danger', description: 'At least one variant is required' });
+        return prev;
+      }
+      return { ...prev, variants: prev.variants.filter((_, i) => i !== index) };
+    });
+  };
+
   const updateDimension = (field: 'length' | 'width' | 'height', value: string) => {
     setImportData((prev) => (prev ? { ...prev, dimensions: { ...prev.dimensions, [field]: value } } : prev));
   };
@@ -758,9 +816,13 @@ export default function ImportProductPage() {
     });
 
     if (importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED') {
-      const amount = Number(importData.deliveryOfferAmount);
-      if (!importData.deliveryOfferAmount.trim() || !Number.isFinite(amount) || amount < 0) {
-        errors.push('Fixed delivery offer amount must be 0 or greater');
+      const inside = Number(importData.deliveryChargeInsideDhaka || importData.deliveryOfferAmount);
+      const outside = Number(importData.deliveryChargeOutsideDhaka || importData.deliveryOfferAmount);
+      if ((!importData.deliveryChargeInsideDhaka.trim() && !importData.deliveryOfferAmount.trim()) || !Number.isFinite(inside) || inside < 0) {
+        errors.push('Fixed delivery offer amount (Inside Dhaka) must be 0 or greater');
+      }
+      if (importData.deliveryChargeOutsideDhaka.trim() && (!Number.isFinite(outside) || outside < 0)) {
+        errors.push('Outside Dhaka delivery charge must be 0 or greater');
       }
     }
     if (importData.deliveryOfferStartDate && importData.deliveryOfferEndDate) {
@@ -786,8 +848,10 @@ export default function ImportProductPage() {
     setIsSubmitting(true);
     try {
       const basePrice = parseFloat(importData.variants[0]?.price || '0') || 0;
-      const finalCanonicalUrl = importData.canonicalUrl || (importData.urlSlug ? `${DEFAULT_PRODUCT_BASE_URL}/${importData.urlSlug}` : undefined);
-      const finalOgImageUrl = importData.ogImageUrl || importData.images.find((image) => image.isDefault)?.url || importData.images[0]?.url;
+      const cleanCanonical = importData.canonicalUrl && !importData.canonicalUrl.includes('ADD_') ? importData.canonicalUrl : undefined;
+      const finalCanonicalUrl = cleanCanonical || (importData.urlSlug ? `${DEFAULT_PRODUCT_BASE_URL}/${importData.urlSlug}` : undefined);
+      const cleanOgImage = importData.ogImageUrl && !importData.ogImageUrl.includes('ADD_') ? importData.ogImageUrl : undefined;
+      const finalOgImageUrl = cleanOgImage || importData.images.find((image) => image.isDefault)?.url || importData.images[0]?.url;
 
       await adminFetchJson<{ success: boolean }>('/api/admin/products', {
         method: 'POST',
@@ -799,7 +863,7 @@ export default function ImportProductPage() {
           item: importData.item || undefined,
           brand: importData.brand,
           originCountry: importData.originCountry,
-          status: 'active',
+          status: importData.status,
           featured: importData.featured,
           description: importData.description,
           weight: numericText(importData.weight),
@@ -883,7 +947,9 @@ export default function ImportProductPage() {
           gender: importData.gender || undefined,
 
           // Defaults / shipping / options
-          condition: 'NEW',
+          condition: importData.condition || 'NEW',
+          gtin: importData.gtin || undefined,
+          barcode: importData.barcode || undefined,
           averageRating: 0,
           reviewCount: 0,
           shippingWeight: importData.shippingWeight || undefined,
@@ -894,7 +960,9 @@ export default function ImportProductPage() {
           isFragile: importData.isFragile,
           deliveryOfferEnabled: importData.deliveryOfferEnabled && importData.deliveryOfferType !== 'DEFAULT',
           deliveryOfferType: importData.deliveryOfferEnabled ? importData.deliveryOfferType : 'DEFAULT',
-          deliveryOfferAmount: importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED' ? importData.deliveryOfferAmount : undefined,
+          deliveryOfferAmount: importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED' ? (importData.deliveryChargeInsideDhaka || importData.deliveryOfferAmount || undefined) : undefined,
+          deliveryChargeInsideDhaka: importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED' ? (importData.deliveryChargeInsideDhaka || importData.deliveryOfferAmount || undefined) : (importData.deliveryOfferType === 'FREE' ? '0' : undefined),
+          deliveryChargeOutsideDhaka: importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED' ? (importData.deliveryChargeOutsideDhaka || importData.deliveryOfferAmount || undefined) : (importData.deliveryOfferType === 'FREE' ? '0' : undefined),
           deliveryOfferStartDate: importData.deliveryOfferEnabled ? importData.deliveryOfferStartDate || undefined : undefined,
           deliveryOfferEndDate: importData.deliveryOfferEnabled ? importData.deliveryOfferEndDate || undefined : undefined,
           deliveryOfferBadgeText: importData.deliveryOfferEnabled ? importData.deliveryOfferBadgeText || undefined : undefined,
@@ -1067,6 +1135,33 @@ export default function ImportProductPage() {
                 <TextInput label="Brand *" value={importData.brand} onChange={(value) => updateField('brand', value)} />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Status *</label>
+                  <Select
+                    value={importData.status}
+                    onChange={(e) => updateField('status', e.target.value as 'active' | 'inactive')}
+                    className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
+                  >
+                    <option value="active">Active (Published)</option>
+                    <option value="inactive">Draft (Inactive)</option>
+                  </Select>
+                  <p className="text-xs text-[#62666d] mt-1">ছবি বা তথ্য অসম্পূর্ণ থাকলে Draft হিসেবে সেভ করুন।</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Condition</label>
+                  <Select
+                    value={importData.condition}
+                    onChange={(e) => updateField('condition', e.target.value as 'NEW' | 'USED' | 'REFURBISHED')}
+                    className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
+                  >
+                    <option value="NEW">New</option>
+                    <option value="USED">Used</option>
+                    <option value="REFURBISHED">Refurbished</option>
+                  </Select>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <TextInput label="Subcategory" value={importData.subcategory} onChange={(value) => updateField('subcategory', value)} />
                 <TextInput label="Item / Product Type" value={importData.item} onChange={(value) => updateField('item', value)} />
@@ -1085,6 +1180,11 @@ export default function ImportProductPage() {
                     )}
                   </Select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <TextInput label="GTIN (Barcode / EAN / UPC)" value={importData.gtin} onChange={(value) => updateField('gtin', value)} placeholder="e.g., 880912345678" />
+                <TextInput label="Barcode" value={importData.barcode} onChange={(value) => updateField('barcode', value)} placeholder="Warehouse barcode" />
               </div>
 
               <label className="flex items-center gap-2 cursor-pointer">
@@ -1130,19 +1230,40 @@ export default function ImportProductPage() {
 
           <Section
             icon={<Tag className="w-5 h-5 text-white" />}
-            title="Variants — Price & Stock"
+            title={`Variants — Price & Stock (${importData.variants.length})`}
             sectionKey="variants"
             expanded={expandedSections.variants}
             onToggle={() => toggleSection('variants')}
             highlight
           >
             <div className="space-y-3">
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3 text-sm text-amber-300">
-                Always verify price, stock, and SKU. A stock value of 0 keeps the product schema and storefront status as OutOfStock.
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3 text-sm text-amber-300 flex-1">
+                  Always verify price, stock, and SKU. A stock value of 0 keeps the product schema and storefront status as OutOfStock.
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleAddVariant}
+                  className="inline-flex items-center self-start sm:self-center px-4 py-2.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white text-xs font-medium rounded-lg shadow whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4 mr-1.5" /> Add Variant
+                </Button>
               </div>
               {importData.variants.map((variant, index) => (
                 <div key={`${variant.sku}-${index}`} className="border border-[#232636] rounded-lg p-4 bg-[#10121b]">
-                  <p className="text-sm font-semibold text-[#d0d6e0] mb-3">Variant #{index + 1}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#d0d6e0]">Variant #{index + 1}</p>
+                    {importData.variants.length > 1 && (
+                      <Button
+                        type="button"
+                        onClick={() => handleRemoveVariant(index)}
+                        className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 p-1.5 rounded transition-colors"
+                        title="Delete variant"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                     <TextInput label="Size" value={variant.size} onChange={(value) => updateVariant(index, 'size', value)} small />
                     <TextInput label="Color" value={variant.color} onChange={(value) => updateVariant(index, 'color', value)} small />
@@ -1366,6 +1487,8 @@ export default function ImportProductPage() {
                   if (!checked) {
                     updateField('deliveryOfferType', 'DEFAULT');
                     updateField('deliveryOfferAmount', '');
+                    updateField('deliveryChargeInsideDhaka', '');
+                    updateField('deliveryChargeOutsideDhaka', '');
                     updateField('deliveryOfferStartDate', '');
                     updateField('deliveryOfferEndDate', '');
                     updateField('deliveryOfferBadgeText', '');
@@ -1384,7 +1507,11 @@ export default function ImportProductPage() {
                     const type = e.target.value as DeliveryOfferType;
                     updateField('deliveryOfferType', type);
                     updateField('deliveryOfferEnabled', type !== 'DEFAULT');
-                    if (type !== 'FIXED') updateField('deliveryOfferAmount', '');
+                    if (type !== 'FIXED') {
+                      updateField('deliveryOfferAmount', '');
+                      updateField('deliveryChargeInsideDhaka', '');
+                      updateField('deliveryChargeOutsideDhaka', '');
+                    }
                   }}
                   className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 bg-[#161824]"
                 >
@@ -1394,10 +1521,14 @@ export default function ImportProductPage() {
                 </Select>
               </div>
               <TextInput
-                label="Fixed Delivery Amount (৳)"
+                label="Fixed Delivery Base Amount (৳)"
                 value={importData.deliveryOfferAmount}
-                onChange={(value) => updateField('deliveryOfferAmount', value)}
+                onChange={(value) => {
+                  updateField('deliveryOfferAmount', value);
+                  if (!importData.deliveryChargeInsideDhaka) updateField('deliveryChargeInsideDhaka', value);
+                }}
                 disabled={!importData.deliveryOfferEnabled || importData.deliveryOfferType !== 'FIXED'}
+                placeholder="e.g. 60"
               />
               <TextInput
                 label="Offer Start"
@@ -1414,6 +1545,27 @@ export default function ImportProductPage() {
                 disabled={!importData.deliveryOfferEnabled}
               />
             </div>
+
+            {importData.deliveryOfferEnabled && importData.deliveryOfferType === 'FIXED' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border border-emerald-500/20 bg-emerald-500/5 rounded-xl">
+                <TextInput
+                  label="Delivery Charge Inside Dhaka (৳) *"
+                  value={importData.deliveryChargeInsideDhaka}
+                  onChange={(value) => {
+                    updateField('deliveryChargeInsideDhaka', value);
+                    if (!importData.deliveryOfferAmount) updateField('deliveryOfferAmount', value);
+                  }}
+                  placeholder="e.g. 60"
+                />
+                <TextInput
+                  label="Delivery Charge Outside Dhaka (৳)"
+                  value={importData.deliveryChargeOutsideDhaka}
+                  onChange={(value) => updateField('deliveryChargeOutsideDhaka', value)}
+                  placeholder="e.g. 120 (ঐচ্ছিক, ফাঁকা থাকলে Inside Dhaka চার্জ প্রযোজ্য)"
+                />
+              </div>
+            )}
+
             <div className="mt-4">
               <TextInput
                 label="Badge Text"
@@ -1637,14 +1789,56 @@ function JsonEditor({
   onBlur: (value: string) => void;
   rows?: number;
 }) {
+  const [text, setText] = useState(() => jsonString(value, Array.isArray(value) ? [] : {}));
+  const [error, setError] = useState<string | null>(null);
+
+  const formattedValue = jsonString(value, Array.isArray(value) ? [] : {});
+  useEffect(() => {
+    setText((prev) => {
+      try {
+        if (JSON.stringify(JSON.parse(prev)) === JSON.stringify(JSON.parse(formattedValue))) {
+          return prev;
+        }
+      } catch {
+        return prev;
+      }
+      return formattedValue;
+    });
+  }, [formattedValue]);
+
+  const handleBlur = () => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setError(null);
+      onBlur(Array.isArray(value) ? '[]' : '{}');
+      return;
+    }
+    try {
+      JSON.parse(trimmed);
+      setError(null);
+      onBlur(trimmed);
+    } catch (err) {
+      setError(`Invalid JSON: ${err instanceof Error ? err.message : 'Syntax error'}`);
+    }
+  };
+
   return (
     <div>
-      <label className="block text-sm font-medium text-[#d0d6e0] mb-1">{label}</label>
+      <div className="flex items-center justify-between mb-1">
+        <label className="block text-sm font-medium text-[#d0d6e0]">{label}</label>
+        {error && <span className="text-xs text-rose-400 font-medium">{error}</span>}
+      </div>
       <Textarea
-        defaultValue={jsonString(value, Array.isArray(value) ? [] : {})}
-        onBlur={(e) => onBlur(e.target.value)}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          if (error) setError(null);
+        }}
+        onBlur={handleBlur}
         rows={rows}
-        className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-xs font-mono"
+        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-white/20 text-xs font-mono ${
+          error ? 'border-rose-500/60 bg-rose-500/5' : 'border-[#232636]'
+        }`}
       />
     </div>
   );

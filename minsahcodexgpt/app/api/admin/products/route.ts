@@ -236,7 +236,7 @@ async function getOrCreateCategoryId(categoryName: string): Promise<string | und
   const slug = toSlug(categoryName);
   const category = await prisma.category.upsert({
     where: { slug },
-    update: { name: categoryName },
+    update: {},
     create: { name: categoryName, slug },
     select: { id: true },
   });
@@ -250,7 +250,7 @@ async function getOrCreateBrandId(brandName: string): Promise<string | undefined
   const slug = toSlug(brandName);
   const brand = await prisma.brand.upsert({
     where: { slug },
-    update: { name: brandName },
+    update: {},
     create: { name: brandName, slug },
     select: { id: true },
   });
