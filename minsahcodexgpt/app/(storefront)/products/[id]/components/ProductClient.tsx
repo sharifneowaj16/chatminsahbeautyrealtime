@@ -2,11 +2,9 @@
 
 /* eslint-disable react-hooks/preserve-manual-memoization */
 
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -18,8 +16,6 @@ import { cleanProductName } from "./hero/cleanProductName";
 import SeedBenefitsSection from "./benefits/SeedBenefitsSection";
 import SeedMemberReviewsSection from "./reviews/SeedMemberReviewsSection";
 import { trackProductView } from "@/lib/tracking/ecommerce";
-import { productPath } from "@/lib/product-url";
-import CatalogProductImage from "@/components/catalog/CatalogProductImage";
 
 interface ImageItem {
   url: string;
@@ -99,16 +95,6 @@ interface FrequentlyBoughtProduct {
   variants?: Variant[];
 }
 
-interface RecentlyViewedProduct {
-  id: string;
-  slug?: string | null;
-  name: string;
-  price: number;
-  originalPrice: number | null;
-  image: string;
-  stock: number;
-  hasVariants: boolean;
-}
 
 interface ProductClientProps {
   product: {
@@ -278,9 +264,6 @@ export default function ProductClient({
     setQuantity(newQty);
   }, []);
 
-  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>(
-    [],
-  );
 
   const viewedProductKeysRef = useRef<Set<string>>(new Set());
 
@@ -356,47 +339,6 @@ export default function ProductClient({
 
   const displayTitle = cleanProductName(product.pageH1 || product.name);
 
-  useEffect(() => {
-    const storageKey = "minsah_recently_viewed_products";
-
-    try {
-      const saved = localStorage.getItem(storageKey);
-      const parsed = saved
-        ? (JSON.parse(saved) as RecentlyViewedProduct[])
-        : [];
-      const filtered = parsed.filter((item) => item.id !== product.id);
-      setRecentlyViewed(filtered.slice(0, 8));
-
-      const currentProduct: RecentlyViewedProduct = {
-        id: product.id,
-        slug: product.slug,
-        name: product.name,
-        price: baseDisplayPrice,
-        originalPrice: product.originalPrice,
-        image: product.image,
-        stock: product.stock,
-        hasVariants: product.variants.length > 0,
-      };
-
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify([currentProduct, ...filtered].slice(0, 12)),
-      );
-    } catch {
-      setRecentlyViewed([]);
-    }
-  }, [
-    product.id,
-    product.slug,
-    product.name,
-    product.price,
-    product.salePrice,
-    baseDisplayPrice,
-    product.originalPrice,
-    product.image,
-    product.stock,
-    product.variants.length,
-  ]);
 
   return (
     <>
@@ -511,121 +453,6 @@ export default function ProductClient({
             customReviews={reviews}
           />
         </div>
-
-        {/* Related Products Carousel */}
-        {relatedProducts.length > 0 && (
-          <section className="mt-16 rounded-2xl border border-stone-200 bg-[#FCFCF7] p-6 sm:p-8 shadow-xs">
-            <div className="mb-6 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1C3A13]">
-                  আপনার পছন্দ হতে পারে
-                </p>
-                <h3 className="text-xl font-bold tracking-tight text-[#1C3A13] sm:text-2xl">
-                  সম্পর্কিত পণ্যসমূহ (Related Products)
-                </h3>
-              </div>
-              <Link
-                href="/shop"
-                className="text-xs font-bold text-[#1C3A13] hover:underline"
-              >
-                সব দেখুন →
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {relatedProducts.slice(0, 4).map((relatedProduct) => {
-                const relatedDiscount =
-                  relatedProduct.originalPrice &&
-                  relatedProduct.originalPrice > relatedProduct.price
-                    ? Math.round(
-                        ((relatedProduct.originalPrice -
-                          relatedProduct.price) /
-                          relatedProduct.originalPrice) *
-                          100,
-                      )
-                    : null;
-
-                return (
-                  <Link
-                    key={relatedProduct.id}
-                    href={productPath(relatedProduct)}
-                    className="group flex h-full flex-col overflow-hidden rounded-xl border border-stone-200 bg-white transition-all hover:border-stone-400 hover:shadow-xs"
-                  >
-                    <div className="relative aspect-square bg-stone-50 p-2">
-                      <CatalogProductImage
-                        src={relatedProduct.image}
-                        alt={relatedProduct.name}
-                        sizes="(max-width: 640px) 50vw, 25vw"
-                        className="group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {relatedDiscount && (
-                        <span className="absolute right-2.5 top-2.5 rounded-full bg-[#1C3A13] px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs">
-                          -{relatedDiscount}%
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-1 flex-col p-3.5">
-                      <p className="line-clamp-2 text-xs font-semibold text-stone-900 group-hover:text-[#1C3A13] transition">
-                        {relatedProduct.name}
-                      </p>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <span className="text-sm font-inter font-bold text-[#1C3A13]">
-                          ৳{Math.round(relatedProduct.price)}
-                        </span>
-                        {relatedProduct.originalPrice &&
-                          relatedProduct.originalPrice > relatedProduct.price && (
-                            <span className="text-xs font-inter text-stone-400 line-through">
-                              ৳{Math.round(relatedProduct.originalPrice)}
-                            </span>
-                          )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Recently Viewed Products */}
-        {recentlyViewed.length > 0 && (
-          <section className="mt-16 mb-20 rounded-2xl border border-stone-200 bg-[#FCFCF7] p-6 sm:p-8 shadow-xs">
-            <div className="mb-6">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1C3A13]">
-                সম্প্রতি দেখা হয়েছে
-              </p>
-              <h3 className="text-xl font-bold tracking-tight text-[#1C3A13] sm:text-2xl">
-                Recently Viewed Products
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-              {recentlyViewed.slice(0, 6).map((recentProduct) => (
-                <Link
-                  key={recentProduct.id}
-                  href={productPath(recentProduct)}
-                  className="group block overflow-hidden rounded-xl border border-stone-200 bg-white p-2.5 transition hover:border-stone-400 hover:shadow-xs"
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-50">
-                    <CatalogProductImage
-                      src={recentProduct.image}
-                      alt={recentProduct.name}
-                      sizes="120px"
-                      className="group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <p className="mt-2 line-clamp-1 text-xs font-semibold text-stone-900 group-hover:text-[#1C3A13] transition">
-                    {recentProduct.name}
-                  </p>
-                  <p className="text-xs font-inter font-bold text-[#1C3A13]">
-                    ৳{Math.round(recentProduct.price)}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
 
       {/* Seed.com-Inspired Dynamic Scroll-Morphing Sticky Capsule Bar */}
