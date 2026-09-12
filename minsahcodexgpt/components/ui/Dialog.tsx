@@ -47,7 +47,7 @@ export function Dialog({
       onClose={dismissible ? onClose : noop}
       role={role}
       aria-label={ariaLabel}
-      className={joinClassNames('relative z-[80]', className)}
+      className={joinClassNames('relative z-[150]', className)}
     >
       <HeadlessDialogBackdrop
         transition

@@ -126,7 +126,7 @@ export function ToastProvider({
       {children}
       {toasts.length ? (
         <div
-          className="minsah-toast-viewport pointer-events-none fixed inset-x-4 z-[100] flex flex-col-reverse gap-3 sm:left-auto sm:right-6 sm:w-96"
+          className="minsah-toast-viewport pointer-events-none fixed inset-x-4 z-[200] flex flex-col-reverse gap-3 sm:left-auto sm:right-6 sm:w-96"
           role="region"
           aria-label="Notifications"
         >
