@@ -221,15 +221,15 @@ export default function SeedHeroBuyBox({
             <span className="font-bold font-inter text-xs sm:text-sm">{rating ? Number(rating).toFixed(1) : '5.0'}</span>
             <span className="text-[#1c3a13]/40 dark:text-white/40">•</span>
             <a href="#reviews-section" className="font-inter underline underline-offset-4 hover:opacity-80">
-              {reviewCount}টি রিভিউ
+              {reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}
             </a>
           </>
         ) : (
           <div className="flex items-center gap-1.5 text-xs text-[#1c3a13]/80 dark:text-emerald-300 font-medium">
             <span className="text-amber-500">★</span>
-            <span>১০০% অরিজিনাল অথেনটিক প্রোডাক্ট</span>
+            <span>100% Original Authentic Product</span>
             <span className="text-[#1c3a13]/30">•</span>
-            <span className="text-stone-500 dark:text-stone-400">ক্যাশ অন ডেলিভারি</span>
+            <span className="text-stone-500 dark:text-stone-400">Cash on Delivery</span>
           </div>
         )}
       </div>
@@ -324,7 +324,7 @@ export default function SeedHeroBuyBox({
           className="flex-1 h-12 lg:h-[54px] rounded-full bg-[#1c3a13] hover:bg-[#15300f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white text-[15px] lg:text-base font-semibold tracking-tight shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
         >
           <ShoppingBag size={18} className="shrink-0" />
-          <span className="font-inter font-bold">কার্টে যোগ করুন • ৳{Math.round(currentPrice * quantity)}</span>
+          <span className="font-inter font-bold">Add to Cart • ৳{Math.round(currentPrice * quantity)}</span>
         </button>
       </div>
 

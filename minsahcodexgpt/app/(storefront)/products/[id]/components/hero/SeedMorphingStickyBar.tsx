@@ -403,10 +403,10 @@ export default function SeedMorphingStickyBar({
               {isAdding ? (
                 <span className="flex items-center gap-1">
                   <Check size={16} className="text-emerald-700 animate-bounce" />
-                  <span>যোগ হয়েছে</span>
+                  <span>Added!</span>
                 </span>
               ) : (
-                <span>কার্টে যোগ করুন</span>
+                <span>Add to Cart</span>
               )}
             </button>
           </div>

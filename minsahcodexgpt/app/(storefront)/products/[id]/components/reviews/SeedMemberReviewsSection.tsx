@@ -279,16 +279,16 @@ export function SeedMemberReviewsSection({
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#1C3A13]/5 text-amber-500 mb-4 text-xl">
               ★
             </div>
-            <h3 className="text-lg font-bold text-[#1C3A13] mb-1.5">এই পণ্যে এখনও কোনো রিভিউ নেই</h3>
+            <h3 className="text-lg font-bold text-[#1C3A13] mb-1.5">No reviews yet for this product</h3>
             <p className="text-xs sm:text-sm text-stone-500 mb-6">
-              আপনি কি এই পণ্যটি ব্যবহার করেছেন? আপনার মূল্যবান মতামত দিয়ে অন্যান্য ক্রেতাদের সঠিক পণ্য নির্বাচনে সাহায্য করুন।
+              Have you tried this product? Share your thoughts to help other members make the right choice.
             </p>
             <button
               type="button"
               onClick={() => setIsWriteModalOpen(true)}
               className="inline-flex items-center justify-center rounded-full bg-[#1C3A13] hover:bg-[#28521c] text-white px-6 py-2.5 text-xs sm:text-sm font-semibold shadow-xs transition"
             >
-              প্রথম রিভিউ দিন
+              Write the First Review
             </button>
           </div>
         ) : (

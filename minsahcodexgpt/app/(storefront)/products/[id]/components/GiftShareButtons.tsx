@@ -32,7 +32,7 @@ interface LoggedInUser {
   name: string;
 }
 
-const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'রংপুর', 'ময়মনসিংহ'];
+const DISTRICTS = ['Dhaka', 'Chattogram', 'Sylhet', 'Rajshahi', 'Khulna', 'Barishal', 'Rangpur', 'Mymensingh'];
 
 function GiftLinkResult({ result }: { result: GiftResult }) {
   const { pushToast } = useToast();
@@ -40,9 +40,9 @@ function GiftLinkResult({ result }: { result: GiftResult }) {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(result.giftUrl);
-      pushToast({ tone: 'success', title: 'লিংক কপি হয়েছে' });
+      pushToast({ tone: 'success', title: 'Link copied' });
     } catch {
-      pushToast({ tone: 'danger', title: 'লিংক কপি করা যায়নি' });
+      pushToast({ tone: 'danger', title: 'Failed to copy link' });
     }
   };
 
@@ -56,14 +56,14 @@ function GiftLinkResult({ result }: { result: GiftResult }) {
       await navigator.share({ url: result.giftUrl });
     } catch (error) {
       if ((error as { name?: string }).name !== 'AbortError') {
-        pushToast({ tone: 'danger', title: 'শেয়ার করা যায়নি' });
+        pushToast({ tone: 'danger', title: 'Failed to share' });
       }
     }
   };
 
   return (
-    <div className="space-y-4" lang="bn">
-      <Alert tone="success" announcement="polite" title="গিফট লিংক তৈরি হয়েছে">
+    <div className="space-y-4" lang="en">
+      <Alert tone="success" announcement="polite" title="Gift Link Created">
         <span className="break-all text-xs">{result.giftUrl}</span>
       </Alert>
 
@@ -90,10 +90,10 @@ function GiftLinkResult({ result }: { result: GiftResult }) {
 
       <div className="grid grid-cols-2 gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={handleNativeShare}>
-          <Share2 className="h-4 w-4" /> শেয়ার করুন
+          <Share2 className="h-4 w-4" /> Share
         </Button>
         <Button type="button" variant="secondary" size="sm" onClick={handleCopy}>
-          <Check className="h-4 w-4" /> লিংক কপি
+          <Check className="h-4 w-4" /> Copy Link
         </Button>
       </div>
     </div>
@@ -132,7 +132,7 @@ function SendGiftForm({
 
   const handleCreate = async () => {
     if (!recipientName.trim()) {
-      setError('যাকে উপহার দেবেন তার নাম দিন।');
+      setError('Please enter the recipient name.');
       return;
     }
 
@@ -154,9 +154,9 @@ function SendGiftForm({
       });
       const data = await response.json();
       if (response.ok) setResult(data);
-      else setError(data.error || 'গিফট লিংক তৈরি করা যায়নি।');
+      else setError(data.error || 'Failed to create gift link.');
     } catch {
-      setError('নেটওয়ার্কে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      setError('Network error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -165,29 +165,29 @@ function SendGiftForm({
   if (result) return <GiftLinkResult result={result} />;
 
   return (
-    <div className="space-y-4" lang="bn">
-      <UserSummary user={user} action="আপনি উপহার পাঠাচ্ছেন" />
+    <div className="space-y-4" lang="en">
+      <UserSummary user={user} action="You are sending a gift" />
       {error ? <Alert tone="danger" announcement="assertive">{error}</Alert> : null}
       <Input
         id="send-gift-recipient"
-        label="প্রাপকের নাম"
+        label="Recipient Name"
         required
         value={recipientName}
         onChange={(event) => setRecipientName(event.target.value)}
-        placeholder="বন্ধুর নাম"
+        placeholder="Friend's name"
       />
       <Textarea
         id="send-gift-message"
-        label="শুভেচ্ছা বার্তা"
-        description="ঐচ্ছিক"
+        label="Greeting Message"
+        description="Optional"
         value={message}
         onChange={(event) => setMessage(event.target.value)}
-        placeholder="আপনার শুভেচ্ছা লিখুন"
+        placeholder="Write your greeting"
         rows={3}
       />
       <Button type="button" fullWidth size="lg" onClick={handleCreate} disabled={loading} aria-busy={loading || undefined}>
         {loading ? <Spinner size="sm" decorative /> : <Gift className="h-4 w-4" />}
-        {loading ? 'লিংক তৈরি হচ্ছে…' : 'উপহার পাঠানোর লিংক তৈরি করুন'}
+        {loading ? 'Creating link…' : 'Create Gift Link'}
       </Button>
     </div>
   );
@@ -205,14 +205,14 @@ function GetGiftForm({
   const [step, setStep] = useState<'form' | 'address'>('form');
   const [payerName, setPayerName] = useState('');
   const [message, setMessage] = useState('');
-  const [address, setAddress] = useState({ name: user.name, phone: '', street: '', city: 'ঢাকা' });
+  const [address, setAddress] = useState({ name: user.name, phone: '', street: '', city: 'Dhaka' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<GiftResult | null>(null);
 
   const goToAddress = () => {
     if (!payerName.trim()) {
-      setError('যার কাছে উপহার চাইবেন তার নাম দিন।');
+      setError('Please enter the name of the person you are requesting a gift from.');
       return;
     }
     setError('');
@@ -221,7 +221,7 @@ function GetGiftForm({
 
   const handleCreate = async () => {
     if (!address.phone.trim() || !address.street.trim()) {
-      setError('ফোন নম্বর ও সম্পূর্ণ ঠিকানা দিন।');
+      setError('Please enter your phone number and complete delivery address.');
       return;
     }
 
@@ -244,9 +244,9 @@ function GetGiftForm({
       });
       const data = await response.json();
       if (response.ok) setResult(data);
-      else setError(data.error || 'গিফট লিংক তৈরি করা যায়নি।');
+      else setError(data.error || 'Failed to create gift link.');
     } catch {
-      setError('নেটওয়ার্কে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      setError('Network error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -255,43 +255,43 @@ function GetGiftForm({
   if (result) return <GiftLinkResult result={result} />;
 
   return (
-    <div className="space-y-4" lang="bn">
-      <UserSummary user={user} action="আপনি উপহার চাইছেন" />
+    <div className="space-y-4" lang="en">
+      <UserSummary user={user} action="You are requesting a gift" />
       {error ? <Alert tone="danger" announcement="assertive">{error}</Alert> : null}
 
       {step === 'form' ? (
         <>
           <Input
             id="get-gift-payer"
-            label="যার কাছে উপহার চাইবেন"
+            label="Request Gift From"
             required
             value={payerName}
             onChange={(event) => setPayerName(event.target.value)}
-            placeholder="বন্ধু বা পরিবারের সদস্যের নাম"
+            placeholder="Friend or family member's name"
           />
           <Textarea
             id="get-gift-message"
-            label="বার্তা"
-            description="ঐচ্ছিক"
+            label="Message"
+            description="Optional"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            placeholder="কেন পণ্যটি চান তা লিখুন"
+            placeholder="Why you would like this product"
             rows={3}
           />
           <Button type="button" fullWidth size="lg" onClick={goToAddress}>
-            পরের ধাপ
+            Next Step
           </Button>
         </>
       ) : (
         <>
           <h4 className="flex items-center gap-2 text-sm font-bold text-minsah-text-primary">
-            <MapPin className="h-4 w-4" /> আপনার ডেলিভারি ঠিকানা
+            <MapPin className="h-4 w-4" /> Your Delivery Address
           </h4>
           <Input
             id="get-gift-phone"
             type="tel"
             inputMode="tel"
-            label="ফোন নম্বর"
+            label="Phone Number"
             required
             value={address.phone}
             onChange={(event) => setAddress((current) => ({ ...current, phone: event.target.value }))}
@@ -299,15 +299,15 @@ function GetGiftForm({
           />
           <Input
             id="get-gift-street"
-            label="বাড়ি ও রাস্তার ঠিকানা"
+            label="House & Street Address"
             required
             value={address.street}
             onChange={(event) => setAddress((current) => ({ ...current, street: event.target.value }))}
-            placeholder="বাড়ি, রাস্তা ও এলাকার নাম"
+            placeholder="House, street, and area name"
           />
           <Select
             id="get-gift-city"
-            label="জেলা"
+            label="District"
             value={address.city}
             onChange={(event) => setAddress((current) => ({ ...current, city: event.target.value }))}
           >
@@ -315,11 +315,11 @@ function GetGiftForm({
           </Select>
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant="secondary" onClick={() => setStep('form')} disabled={loading}>
-              পেছনে
+              Back
             </Button>
             <Button type="button" onClick={handleCreate} disabled={loading} aria-busy={loading || undefined}>
               {loading ? <Spinner size="sm" decorative /> : <ShoppingBag className="h-4 w-4" />}
-              {loading ? 'তৈরি হচ্ছে…' : 'লিংক তৈরি করুন'}
+              {loading ? 'Creating…' : 'Create Link'}
             </Button>
           </div>
         </>
@@ -359,10 +359,10 @@ export function GiftButtons({ productId, productName, variantId }: GiftButtonsPr
     <>
       <div className="grid grid-cols-2 gap-2">
         <Button type="button" variant="secondary" onClick={() => handleOpen('send')}>
-          <Gift className="h-4 w-4" /> উপহার পাঠান
+          <Gift className="h-4 w-4" /> Send Gift
         </Button>
         <Button type="button" onClick={() => handleOpen('get')}>
-          <ShoppingBag className="h-4 w-4" /> উপহার চান
+          <ShoppingBag className="h-4 w-4" /> Ask for Gift
         </Button>
       </div>
 
@@ -370,13 +370,13 @@ export function GiftButtons({ productId, productName, variantId }: GiftButtonsPr
         open={modal !== null}
         onClose={handleClose}
         side="bottom"
-        title={modal === 'send' ? 'উপহার পাঠান' : 'উপহার চান'}
+        title={modal === 'send' ? 'Send a Gift' : 'Ask for a Gift'}
         description={
           modal === 'send'
-            ? `${productName} উপহার দিতে একটি নিরাপদ লিংক তৈরি করুন।`
-            : `${productName} উপহার হিসেবে চাইতে একটি নিরাপদ লিংক তৈরি করুন।`
+            ? `Create a secure link to gift ${productName}.`
+            : `Create a secure link to request ${productName} as a gift.`
         }
-        closeLabel="গিফট প্যানেল বন্ধ করুন"
+        closeLabel="Close gift panel"
         bodyClassName="mx-auto w-full max-w-md"
       >
         {!loggedInUser && modal ? (
@@ -409,7 +409,7 @@ export function ShareButton({ productName, productUrl }: ShareButtonProps) {
         await navigator.share({ title: productName, url: productUrl });
       } catch (error) {
         if ((error as { name?: string }).name !== 'AbortError') {
-          pushToast({ tone: 'danger', title: 'শেয়ার করা যায়নি' });
+          pushToast({ tone: 'danger', title: 'Failed to share' });
         }
       }
       return;
@@ -417,15 +417,15 @@ export function ShareButton({ productName, productUrl }: ShareButtonProps) {
 
     try {
       await navigator.clipboard.writeText(productUrl);
-      pushToast({ tone: 'success', title: 'পণ্যের লিংক কপি হয়েছে' });
+      pushToast({ tone: 'success', title: 'Product link copied' });
     } catch {
-      pushToast({ tone: 'danger', title: 'লিংক কপি করা যায়নি' });
+      pushToast({ tone: 'danger', title: 'Failed to copy link' });
     }
   };
 
   return (
     <Button type="button" variant="ghost" size="sm" onClick={handleShare}>
-      <Share2 className="h-4 w-4" /> শেয়ার
+      <Share2 className="h-4 w-4" /> Share
     </Button>
   );
 }

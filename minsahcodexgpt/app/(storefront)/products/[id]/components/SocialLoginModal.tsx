@@ -62,7 +62,7 @@ export default function SocialLoginModal({ onSuccess, onClose, purpose }: Social
       });
 
       if (result?.error) {
-        setError('লগইন সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।');
+        setError('Unable to complete login. Please try again.');
         return;
       }
 
@@ -82,32 +82,32 @@ export default function SocialLoginModal({ onSuccess, onClose, purpose }: Social
           window.setTimeout(poll, 1000);
         } else {
           setLoading(null);
-          setError('লগইন যাচাই করা যায়নি। আবার চেষ্টা করুন।');
+          setError('Unable to verify login. Please try again.');
         }
       };
 
       window.setTimeout(poll, 800);
     } catch {
-      setError('নেটওয়ার্কে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      setError('Network error occurred. Please try again.');
       setLoading(null);
     }
   };
 
   const purposeText =
     purpose === 'send_gift'
-      ? 'উপহার পাঠাতে লগইন করুন'
+      ? 'Log in to Send a Gift'
       : purpose === 'get_gift'
-        ? 'উপহার চাইতে লগইন করুন'
-        : 'অর্ডার করতে লগইন করুন';
+        ? 'Log in to Request a Gift'
+        : 'Log in to Place Order';
 
   return (
-    <section className="space-y-4" lang="bn" aria-labelledby="social-login-heading">
+    <section className="space-y-4" lang="en" aria-labelledby="social-login-heading">
       <div>
         <h3 id="social-login-heading" className="text-base font-black text-minsah-text-primary">
           {purposeText}
         </h3>
         <p className="mt-1 text-sm leading-6 text-minsah-text-muted">
-          নিরাপদ লগইন সম্পন্ন হলে আপনার তথ্য এই ডিভাইসে সংরক্ষিত থাকবে।
+          Your information will be securely saved on this device once logged in.
         </p>
       </div>
 
@@ -128,7 +128,7 @@ export default function SocialLoginModal({ onSuccess, onClose, purpose }: Social
           aria-busy={loading === 'google' || undefined}
         >
           {loading === 'google' ? <Spinner size="sm" decorative /> : <GoogleIcon />}
-          Google দিয়ে চালিয়ে যান
+          Continue with Google
         </Button>
 
         <Button
@@ -142,20 +142,20 @@ export default function SocialLoginModal({ onSuccess, onClose, purpose }: Social
           style={{ backgroundColor: SOCIAL_PLATFORM_COLORS.facebook }}
         >
           {loading === 'facebook' ? <Spinner size="sm" decorative /> : <FacebookIcon />}
-          Facebook দিয়ে চালিয়ে যান
+          Continue with Facebook
         </Button>
 
         <Button type="button" variant="ghost" fullWidth onClick={onClose} disabled={loading !== null}>
-          এখন নয়
+          Not Now
         </Button>
       </div>
 
       <p className="text-center text-xs leading-5 text-minsah-text-subtle">
-        চালিয়ে গেলে আপনি Minsah Beauty-এর{' '}
+        By continuing, you agree to Minsah Beauty&apos;s{' '}
         <Link href="/privacy-policy" className="font-bold text-minsah-text-link underline underline-offset-2">
-          গোপনীয়তা নীতি
-        </Link>{' '}
-        মেনে নিচ্ছেন।
+          Privacy Policy
+        </Link>
+        .
       </p>
     </section>
   );

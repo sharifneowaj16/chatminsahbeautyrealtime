@@ -76,7 +76,7 @@ export default function ProductStickyHeader({
   }, []);
 
   const subtitle = requiresVariantSelection
-    ? 'অপশন নির্বাচন করুন'
+    ? 'Select Option'
     : variantName
       ? `${variantName} • ৳${Math.round(price)}`
       : `৳${Math.round(price)}`;
