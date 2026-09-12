@@ -95,20 +95,15 @@ export default function SeedMorphingStickyBar({
     const updateVisibility = () => {
       findElements();
 
-      // Top Sentinel check
-      if (!bundleBtn) {
-        setIsVisible(false);
-        return;
-      }
-
-      const bundleRect = bundleBtn.getBoundingClientRect();
-
-      // Rule 1: Strictly BELOW the bundle button.
-      // If bundleRect.bottom > 0, button is visible or below viewport (user is at or above button).
-      // When scrolling down, button leaves viewport top -> bundleRect.bottom <= 0
-      // When scrolling up, button re-enters from top -> bundleRect.bottom > 0 -> HIDE immediately!
-      const isPastBundle = bundleRect.bottom <= 0;
-      if (!isPastBundle) {
+      // Top Sentinel check: appear after scrolling past top hero buy area
+      const heroEl = document.querySelector('[aria-label="Product Hero Section"]') || document.querySelector('h1');
+      if (heroEl) {
+        const heroRect = heroEl.getBoundingClientRect();
+        if (heroRect.bottom > 200) {
+          setIsVisible(false);
+          return;
+        }
+      } else if (window.scrollY < 400) {
         setIsVisible(false);
         return;
       }
@@ -288,13 +283,13 @@ export default function SeedMorphingStickyBar({
     }
 
     if (animStage === 1) {
-      // Phase 1: 64px circular orb at the bottom-right (Image 1)
+      // Phase 1: circular orb at the bottom-right
       return {
         opacity: 1,
         pointerEvents: 'auto',
         transform: 'translateY(0) scale(1)',
-        width: '64px',
-        height: '64px',
+        width: isDesktop ? '64px' : '56px',
+        height: isDesktop ? '64px' : '56px',
         right: isDesktop ? '28px' : '16px',
         left: isDesktop ? 'auto' : 'auto',
         transition:
@@ -302,8 +297,8 @@ export default function SeedMorphingStickyBar({
       };
     }
 
-    // Phase 2, 3, 4: Full expanded 480 * 64 capsule
-    // Desktop: Right-anchored (leaves clean Left Gap across the viewport matching Seed.com)
+    // Phase 2, 3, 4: Full expanded capsule
+    // Desktop: Right-anchored
     // Mobile: Full-width centered up to 480px
     if (isDesktop) {
       return {
@@ -319,7 +314,7 @@ export default function SeedMorphingStickyBar({
       };
     }
 
-    // Mobile: Centered
+    // Mobile: Centered & slimmed down to 56px height
     return {
       opacity: 1,
       pointerEvents: 'auto',
@@ -328,7 +323,7 @@ export default function SeedMorphingStickyBar({
       transform: 'translateX(-50%) scale(1)',
       width: 'calc(100vw - 24px)',
       maxWidth: '480px',
-      height: '64px',
+      height: '56px',
       transition:
         'width 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1), height 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease',
     };
@@ -345,13 +340,13 @@ export default function SeedMorphingStickyBar({
       `}
     >
       <div
-        className="relative h-full w-full overflow-hidden rounded-full bg-[#575e5559] backdrop-blur-2xl saturate-180 border border-white/20 shadow-[0px_12px_36px_rgba(0,0,0,0.22)] p-2"
+        className="relative h-full w-full overflow-hidden rounded-full bg-[#575e5559] backdrop-blur-2xl saturate-180 border border-white/20 shadow-[0px_12px_36px_rgba(0,0,0,0.22)] p-1.5 md:p-2"
         onClick={animStage === 1 ? handleCtaClick : undefined}
       >
         {/* Dynamic Inner Row */}
-        <div className="h-full w-full flex items-center justify-between gap-3">
-          {/* Left: Product Thumbnail Image (Glides smoothly with the expanding left edge) */}
-          <div className="relative h-12 w-12 rounded-full overflow-hidden bg-white/20 p-0.5 border border-white/25 shrink-0">
+        <div className="h-full w-full flex items-center justify-between gap-2.5 md:gap-3">
+          {/* Left: Product Thumbnail Image */}
+          <div className="relative h-10 w-10 md:h-12 md:w-12 rounded-full overflow-hidden bg-white/20 p-0.5 border border-white/25 shrink-0">
             <Image
               src={safeImageUrl(productImage)}
               alt={productName}
@@ -361,10 +356,10 @@ export default function SeedMorphingStickyBar({
             />
           </div>
 
-          {/* Middle: Product Name Only (#1c3a13 dark forest text) */}
+          {/* Middle: Product Name */}
           <div
             className={`
-              flex-1 min-w-0 px-2.5 overflow-hidden transition-all duration-300 ease-out
+              flex-1 min-w-0 px-1.5 md:px-2.5 overflow-hidden transition-all duration-300 ease-out
               ${
                 animStage >= 3
                   ? 'opacity-100 translate-x-0'
@@ -377,19 +372,19 @@ export default function SeedMorphingStickyBar({
                 fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 fontWeight: 500,
               }}
-              className="block text-sm md:text-base text-[#1c3a13] tracking-tight leading-snug truncate"
+              className="block text-xs md:text-sm lg:text-base text-[#1c3a13] tracking-tight leading-snug truncate"
             >
               {cleanProductName(productName)}
             </span>
           </div>
 
-          {/* Right: Solid White High-Contrast CTA Button (Exact 120px * 48px) */}
+          {/* Right: Solid White High-Contrast CTA Button */}
           <div
             className={`
               shrink-0 flex-none transition-all duration-300 cubic-bezier(0.34,1.56,0.64,1)
               ${
                 animStage >= 4
-                  ? 'opacity-100 scale-100 overflow-visible w-[120px]'
+                  ? 'opacity-100 scale-100 overflow-visible'
                   : 'opacity-0 scale-75 max-w-0 overflow-hidden pointer-events-none'
               }
             `}
@@ -402,16 +397,16 @@ export default function SeedMorphingStickyBar({
                 fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 fontWeight: 650,
               }}
-              className="group flex items-center justify-center gap-1.5 w-[120px] h-[48px] rounded-full bg-white hover:bg-white/95 text-[#1c3a13] text-xs md:text-sm tracking-tight shadow-[0_2px_10px_rgba(0,0,0,0.25)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
-              aria-label="Start Order and Open Cart"
+              className="group flex items-center justify-center gap-1.5 px-3 md:px-4 min-w-[96px] md:min-w-[120px] h-[40px] md:h-[48px] rounded-full bg-white hover:bg-white/95 text-[#1c3a13] text-xs md:text-sm tracking-tight shadow-[0_2px_10px_rgba(0,0,0,0.25)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+              aria-label="Add to Cart and Open Drawer"
             >
               {isAdding ? (
                 <span className="flex items-center gap-1">
                   <Check size={16} className="text-emerald-700 animate-bounce" />
-                  <span>Added!</span>
+                  <span>যোগ হয়েছে</span>
                 </span>
               ) : (
-                <span>Start Now</span>
+                <span>কার্টে যোগ করুন</span>
               )}
             </button>
           </div>

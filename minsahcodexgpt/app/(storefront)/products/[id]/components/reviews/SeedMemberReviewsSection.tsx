@@ -107,13 +107,13 @@ export function SeedMemberReviewsSection({
   customReviews,
   className = "",
 }: SeedMemberReviewsSectionProps) {
-  // Base Reviews Pool
+  // Base Reviews Pool (authentic data only)
   const [reviewsPool, setReviewsPool] = useState<ReviewItem[]>(() => {
     if (customReviews && customReviews.length > 0) return customReviews;
     if (Array.isArray(product.reviews) && product.reviews.length > 0) {
       return product.reviews as unknown as ReviewItem[];
     }
-    return DEFAULT_VERIFIED_REVIEWS;
+    return [];
   });
 
   // Filter States
@@ -213,14 +213,14 @@ export function SeedMemberReviewsSection({
   };
 
   // Resolved Rating Data
-  const averageScore = ratingData?.average || product.rating || 4.8;
-  const totalReviewsCount = ratingData?.total || (typeof product.reviews === "number" ? product.reviews : reviewsPool.length) || 15307;
+  const averageScore = ratingData?.average || product.rating || 5.0;
+  const totalReviewsCount = ratingData?.total != null ? ratingData.total : (typeof product.reviews === "number" ? product.reviews : reviewsPool.length);
   const distributionData = ratingData?.distribution || {
-    5: 13486,
-    4: 1256,
-    3: 338,
-    2: 102,
-    1: 125,
+    5: totalReviewsCount,
+    4: 0,
+    3: 0,
+    2: 0,
+    1: 0,
   };
 
   return (
@@ -233,51 +233,72 @@ export function SeedMemberReviewsSection({
         
         {/* Phase 1: Header + 56px Score + 5-Star Distribution Bar Matrix */}
         <SeedMemberReviewsHeader
-          title={"Member\nReviews"}
+          title={"Customer\nReviews"}
           averageRating={averageScore}
           totalReviews={totalReviewsCount}
           distribution={distributionData}
         />
 
         {/* Phase 2: Power Review Filters (Search, Topics, Stars, Sort, Write Review) */}
-        <SeedReviewFilters
-          searchQuery={searchQuery}
-          onSearchChange={(q) => {
-            setSearchQuery(q);
-            setCurrentPage(1);
-          }}
-          selectedTopic={selectedTopic}
-          onTopicSelect={(topic) => {
-            setSelectedTopic(topic);
-            setCurrentPage(1);
-          }}
-          selectedRating={selectedRating}
-          onRatingSelect={(rating) => {
-            setSelectedRating(rating);
-            setCurrentPage(1);
-          }}
-          onlyWithPhotos={onlyWithPhotos}
-          onTogglePhotosOnly={() => {
-            setOnlyWithPhotos(!onlyWithPhotos);
-            setCurrentPage(1);
-          }}
-          sortBy={sortBy}
-          onSortChange={(sort) => {
-            setSortBy(sort);
-            setCurrentPage(1);
-          }}
-          totalFilteredCount={filteredAndSortedReviews.length}
-          onResetFilters={handleResetFilters}
-          onOpenWriteReview={() => setIsWriteModalOpen(true)}
-        />
+        {reviewsPool.length > 0 && (
+          <SeedReviewFilters
+            searchQuery={searchQuery}
+            onSearchChange={(q) => {
+              setSearchQuery(q);
+              setCurrentPage(1);
+            }}
+            selectedTopic={selectedTopic}
+            onTopicSelect={(topic) => {
+              setSelectedTopic(topic);
+              setCurrentPage(1);
+            }}
+            selectedRating={selectedRating}
+            onRatingSelect={(rating) => {
+              setSelectedRating(rating);
+              setCurrentPage(1);
+            }}
+            onlyWithPhotos={onlyWithPhotos}
+            onTogglePhotosOnly={() => {
+              setOnlyWithPhotos(!onlyWithPhotos);
+              setCurrentPage(1);
+            }}
+            sortBy={sortBy}
+            onSortChange={(sort) => {
+              setSortBy(sort);
+              setCurrentPage(1);
+            }}
+            totalFilteredCount={filteredAndSortedReviews.length}
+            onResetFilters={handleResetFilters}
+            onOpenWriteReview={() => setIsWriteModalOpen(true)}
+          />
+        )}
 
-        {/* Phase 3: Review Cards List + Lightbox + Pagination */}
-        <SeedReviewCardList
-          reviews={paginatedReviews}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        {/* Phase 3: Review Cards List or Zero State */}
+        {reviewsPool.length === 0 ? (
+          <div className="rounded-2xl border border-[#1C3A13]/10 bg-white/80 p-8 sm:p-12 text-center max-w-lg mx-auto shadow-xs">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#1C3A13]/5 text-amber-500 mb-4 text-xl">
+              ★
+            </div>
+            <h3 className="text-lg font-bold text-[#1C3A13] mb-1.5">এই পণ্যে এখনও কোনো রিভিউ নেই</h3>
+            <p className="text-xs sm:text-sm text-stone-500 mb-6">
+              আপনি কি এই পণ্যটি ব্যবহার করেছেন? আপনার মূল্যবান মতামত দিয়ে অন্যান্য ক্রেতাদের সঠিক পণ্য নির্বাচনে সাহায্য করুন।
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsWriteModalOpen(true)}
+              className="inline-flex items-center justify-center rounded-full bg-[#1C3A13] hover:bg-[#28521c] text-white px-6 py-2.5 text-xs sm:text-sm font-semibold shadow-xs transition"
+            >
+              প্রথম রিভিউ দিন
+            </button>
+          </div>
+        ) : (
+          <SeedReviewCardList
+            reviews={paginatedReviews}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
 
       </div>
 

@@ -18,11 +18,14 @@ import { cleanProductName } from './cleanProductName';
 export interface SeedHeroBuyBoxProps {
   productId: string;
   sku?: string;
+  category?: string;
   name: string;
   price: number;
   compareAtPrice?: number | null;
   shortDescription?: string;
   keyBenefits?: string[];
+  rating?: number;
+  reviewCount?: number;
   variants?: ProductVariantItem[];
   defaultImage?: string;
   onVariantChange?: (variantId: string | null, currentPrice: number, stock: number) => void;
@@ -33,11 +36,14 @@ export interface SeedHeroBuyBoxProps {
 
 export default function SeedHeroBuyBox({
   productId,
-  sku = 'DS-01®',
+  sku,
+  category,
   name,
   price,
   compareAtPrice,
   shortDescription,
+  rating,
+  reviewCount,
   variants = [],
   defaultImage = '/images/categories/Skincare.png',
   onVariantChange,
@@ -186,13 +192,15 @@ export default function SeedHeroBuyBox({
     <div className={`w-full flex flex-col font-sans ${className}`}>
       
       {/* ========================================================================= */}
-      {/* 1. SEED CODE PILL (12px md:13px / 500 / #1c3a13)                          */}
+      {/* 1. BRAND / SKU PILL (12px md:13px / 500 / #1c3a13)                        */}
       {/* ========================================================================= */}
-      <div className="mb-2">
-        <span className="inline-flex items-center rounded-full border border-[#1c3a13] dark:border-emerald-400/50 bg-transparent px-2.5 py-0.5 text-xs lg:text-[13px] font-medium tracking-wide text-[#1c3a13] dark:text-emerald-300 select-none">
-          {sku} FORMULA
-        </span>
-      </div>
+      {(sku || category) && (
+        <div className="mb-2">
+          <span className="inline-flex items-center rounded-full border border-[#1c3a13]/25 dark:border-emerald-400/50 bg-[#1c3a13]/5 dark:bg-emerald-950/20 px-2.5 py-0.5 text-xs lg:text-[13px] font-medium tracking-wide text-[#1c3a13] dark:text-emerald-300 select-none">
+            {sku ? `SKU: ${sku}` : category}
+          </span>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 2. PRODUCT TITLE H1 (26px Mobile / 28px Tablet / 32px Desktop / #1c3a13)  */}
@@ -202,26 +210,38 @@ export default function SeedHeroBuyBox({
       </h1>
 
       {/* ========================================================================= */}
-      {/* 3. REVIEWS & TRUST LINE (Enlarged & Comma-Free: 15301 Reviews)              */}
+      {/* 3. REVIEWS & TRUST LINE                                                   */}
       {/* ========================================================================= */}
-      <div className="flex items-center gap-2 text-sm sm:text-base text-[#1c3a13] dark:text-emerald-200 mb-4 lg:mb-5">
-        <div className="flex text-[#1c3a13] dark:text-emerald-400 text-base sm:text-lg tracking-wider">
-          ★★★★★
-        </div>
-        <span className="font-bold font-inter text-sm sm:text-base">5.0</span>
-        <span className="text-[#1c3a13]/40 dark:text-white/40">•</span>
-        <span className="font-inter underline underline-offset-4 cursor-pointer hover:opacity-80">
-          15301 Reviews
-        </span>
+      <div className="flex items-center gap-2 text-xs sm:text-sm text-[#1c3a13] dark:text-emerald-200 mb-3.5 lg:mb-4">
+        {reviewCount && reviewCount > 0 ? (
+          <>
+            <div className="flex text-amber-500 text-sm sm:text-base tracking-wider" aria-label={`${rating || 5} out of 5 stars`}>
+              ★★★★★
+            </div>
+            <span className="font-bold font-inter text-xs sm:text-sm">{rating ? Number(rating).toFixed(1) : '5.0'}</span>
+            <span className="text-[#1c3a13]/40 dark:text-white/40">•</span>
+            <a href="#reviews-section" className="font-inter underline underline-offset-4 hover:opacity-80">
+              {reviewCount}টি রিভিউ
+            </a>
+          </>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-[#1c3a13]/80 dark:text-emerald-300 font-medium">
+            <span className="text-amber-500">★</span>
+            <span>১০০% অরিজিনাল অথেনটিক প্রোডাক্ট</span>
+            <span className="text-[#1c3a13]/30">•</span>
+            <span className="text-stone-500 dark:text-stone-400">ক্যাশ অন ডেলিভারি</span>
+          </div>
+        )}
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. CLINICAL / VALUE PITCH (14px Mobile / 15px Tablet / 16px Desktop)      */}
+      {/* 4. VALUE PITCH (14px Mobile / 15px Tablet / 16px Desktop)                 */}
       {/* ========================================================================= */}
-      <p className="text-sm md:text-[15px] lg:text-base leading-[1.45] text-[#1c3a13] dark:text-stone-300 mb-4 lg:mb-5">
-        {shortDescription ||
-          'Targeted botanical complex clinically engineered to fade hyperpigmentation, strengthen skin barrier, and restore radiant glass-skin glow.*'}
-      </p>
+      {shortDescription && (
+        <p className="text-sm md:text-[15px] lg:text-base leading-[1.45] text-[#1c3a13]/85 dark:text-stone-300 mb-4 lg:mb-5">
+          {shortDescription}
+        </p>
+      )}
 
       {/* ========================================================================= */}
       {/* 5. PRICE ROW & BESTSELLER BADGE (#D4F6A2 Lime Pill)                       */}
@@ -297,13 +317,14 @@ export default function SeedHeroBuyBox({
           </button>
         </div>
 
-        {/* Solid Forest Green Start Now CTA */}
+        {/* Solid Forest Green CTA */}
         <button
           type="button"
           onClick={handleAddToCart}
           className="flex-1 h-12 lg:h-[54px] rounded-full bg-[#1c3a13] hover:bg-[#15300f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white text-[15px] lg:text-base font-semibold tracking-tight shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
         >
-          <span className="font-inter font-bold">Start Now • ৳{Math.round(currentPrice * quantity)}</span>
+          <ShoppingBag size={18} className="shrink-0" />
+          <span className="font-inter font-bold">কার্টে যোগ করুন • ৳{Math.round(currentPrice * quantity)}</span>
         </button>
       </div>
 

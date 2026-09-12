@@ -161,7 +161,7 @@ export default function SeedHeroGallery({
         {/* TIER 1: Full-Width Primary Feature Hero Card (Image 1) */}
         <div
           onClick={() => openLightbox(0)}
-          className="group relative w-full aspect-[4/3] overflow-hidden rounded-[24px] bg-[#122A16] border border-black/5 dark:border-white/10 shadow-sm cursor-zoom-in transition-all duration-300 hover:border-black/15 dark:hover:border-white/20"
+          className="group relative w-full aspect-[4/3] overflow-hidden rounded-[24px] bg-[#F4F4EE] dark:bg-zinc-900 border border-stone-200/80 dark:border-white/10 shadow-xs cursor-zoom-in transition-all duration-300 hover:border-stone-300 dark:hover:border-white/20"
         >
           {!erroredImages[0] ? (
             <Image
@@ -174,8 +174,8 @@ export default function SeedHeroGallery({
               onError={() => handleImageError(0)}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[#122A16] text-white/50 font-sans text-sm">
-              <span>Formulation View</span>
+            <div className="flex h-full w-full items-center justify-center bg-[#F4F4EE] dark:bg-zinc-900 text-stone-500 dark:text-stone-400 font-sans text-sm">
+              <span>{productName}</span>
             </div>
           )}
 
@@ -202,7 +202,7 @@ export default function SeedHeroGallery({
                 <div
                   key={`desktop-grid-${actualIndex}-${imgUrl}`}
                   onClick={() => openLightbox(actualIndex)}
-                  className="group relative w-full aspect-[4/3] overflow-hidden rounded-[24px] bg-[#122A16] border border-black/5 dark:border-white/10 shadow-xs cursor-zoom-in transition-all duration-300 hover:border-black/15 dark:hover:border-white/20"
+                  className="group relative w-full aspect-[4/3] overflow-hidden rounded-[24px] bg-[#F4F4EE] dark:bg-zinc-900 border border-stone-200/80 dark:border-white/10 shadow-xs cursor-zoom-in transition-all duration-300 hover:border-stone-300 dark:hover:border-white/20"
                 >
                   {!erroredImages[actualIndex] ? (
                     <Image
@@ -215,7 +215,7 @@ export default function SeedHeroGallery({
                       onError={() => handleImageError(actualIndex)}
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-[#122A16] text-white/50 font-sans text-xs">
+                    <div className="flex h-full w-full items-center justify-center bg-[#F4F4EE] dark:bg-zinc-900 text-stone-500 dark:text-stone-400 font-sans text-xs">
                       <span>Detail View {actualIndex + 1}</span>
                     </div>
                   )}
@@ -251,7 +251,7 @@ export default function SeedHeroGallery({
             <div
               key={`mobile-slide-${idx}-${imgUrl}`}
               onClick={() => openLightbox(idx)}
-              className="relative shrink-0 w-[85vw] sm:w-[78vw] aspect-[4/4.5] overflow-hidden rounded-[20px] bg-[#122A16] border border-black/5 dark:border-white/10 shadow-md cursor-pointer"
+              className="relative shrink-0 w-[85vw] sm:w-[78vw] aspect-[4/4.5] overflow-hidden rounded-[20px] bg-[#F4F4EE] dark:bg-zinc-900 border border-stone-200/80 dark:border-white/10 shadow-md cursor-pointer"
               style={{ scrollSnapAlign: 'center' }}
             >
               {!erroredImages[idx] ? (
@@ -266,7 +266,7 @@ export default function SeedHeroGallery({
                   onError={() => handleImageError(idx)}
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[#122A16] text-white/50 font-sans text-sm">
+                <div className="flex h-full w-full items-center justify-center bg-[#F4F4EE] dark:bg-zinc-900 text-stone-500 dark:text-stone-400 font-sans text-sm">
                   <span>Slide {idx + 1}</span>
                 </div>
               )}

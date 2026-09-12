@@ -94,37 +94,8 @@ export default function SeedHeroActionReel({
       }
     }
 
-    // C. Default luxury demonstration reels
-    return [
-      {
-        id: 'reel-1',
-        title: 'Texture & Glass-Glow',
-        creator: '@minsah',
-        avatarText: 'M',
-        posterUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
-      },
-      {
-        id: 'reel-2',
-        title: 'Morning 3-Step Ritual',
-        creator: '@dermalab',
-        avatarText: 'D',
-        posterUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80',
-      },
-      {
-        id: 'reel-3',
-        title: '30-Day Dermal Results',
-        creator: '@glowskin',
-        avatarText: 'S',
-        posterUrl: 'https://images.unsplash.com/photo-1608248597359-54316d7a5b39?auto=format&fit=crop&w=600&q=80',
-      },
-      {
-        id: 'reel-4',
-        title: 'Shade & Finish Swatch',
-        creator: '@ritual',
-        avatarText: 'R',
-        posterUrl: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=600&q=80',
-      },
-    ];
+    // C. If no reels are configured, return empty list (renders nothing)
+    return [];
   }, [reels]);
 
   // If explicitly disabled by admin, return null

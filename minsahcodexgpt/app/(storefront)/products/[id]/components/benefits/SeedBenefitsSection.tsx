@@ -13,6 +13,7 @@ export interface SeedBenefitsSectionProps {
     name: string;
     bengaliName?: string;
     description?: string;
+    keyBenefits?: string[];
     usageInstructions?: string[];
     descriptionSections?: unknown;
     faqs?: BenefitFaqItem[];
@@ -72,8 +73,22 @@ export function SeedBenefitsSection({
       }
     }
 
+    if (product?.keyBenefits && Array.isArray(product.keyBenefits) && product.keyBenefits.length > 0) {
+      return product.keyBenefits.slice(0, 4).map((b, idx) => {
+        const parts = b.split(':');
+        const headline = parts.length > 1 ? parts[0].trim() : b.trim();
+        const detail = parts.length > 1 ? parts.slice(1).join(':').trim() : b.trim();
+        return {
+          id: `stage-benefit-${idx + 1}`,
+          pillLabel: `Feature 0${idx + 1}`,
+          headline,
+          benefits: [detail],
+        };
+      });
+    }
+
     return undefined;
-  }, [product?.descriptionSections, customTimelineStages]);
+  }, [product?.descriptionSections, product?.keyBenefits, customTimelineStages]);
 
   // Parse FAQs
   const resolvedFaqs: BenefitFaqItem[] | undefined = useMemo(() => {

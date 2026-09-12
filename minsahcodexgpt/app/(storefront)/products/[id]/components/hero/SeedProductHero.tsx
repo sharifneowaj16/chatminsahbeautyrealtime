@@ -29,6 +29,9 @@ export interface SeedProductHeroProps {
     skinType?: string | string[] | null;
     shelfLife?: string | null;
     originCountry?: string | string[] | null;
+    category?: string | null;
+    rating?: number | null;
+    reviews?: number | null;
     weight?: number | string | null;
     shippingWeight?: string | null;
     deliveryOfferEnabled?: boolean | null;
@@ -73,7 +76,7 @@ export default function SeedProductHero({
   // Active Variant Price (Synchronized with selected variant)
   const [activeVariantPrice, setActiveVariantPrice] = useState<number>(product.price);
 
-  // Gallery Images Array (Ensuring 5 high-res string URLs for Seed Asymmetric Grid)
+  // Gallery Images Array (Real product images only)
   const normalizedGalleryImages: string[] = useMemo(() => {
     const list: string[] = [];
     if (activeImageOverride) {
@@ -89,19 +92,9 @@ export default function SeedProductHero({
       });
     }
 
-    // High quality fallbacks if fewer than 5 images
-    const fallbackShots = [
-      'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=1200&q=80',
-    ];
-
-    fallbackShots.forEach((shot) => {
-      if (list.length < 5 && !list.includes(shot)) {
-        list.push(shot);
-      }
-    });
+    if (list.length === 0 && product.image) {
+      list.push(product.image);
+    }
 
     return list;
   }, [product.image, product.images, activeImageOverride]);
@@ -182,12 +175,15 @@ export default function SeedProductHero({
           {/* Phase 2: Seed Sticky Buy Box */}
           <SeedHeroBuyBox
             productId={product.id}
-            sku={product.sku || 'DS-01®'}
+            sku={product.sku || undefined}
+            category={product.category || undefined}
             name={cleanName}
             price={product.price}
             compareAtPrice={product.compareAtPrice}
             shortDescription={product.shortDescription || undefined}
             keyBenefits={product.keyBenefits || undefined}
+            rating={product.rating != null ? Number(product.rating) : undefined}
+            reviewCount={product.reviews != null ? Number(product.reviews) : undefined}
             variants={variants}
             defaultImage={product.image}
             onImageChange={(img) => {
