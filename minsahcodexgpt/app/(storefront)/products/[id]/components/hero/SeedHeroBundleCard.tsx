@@ -5,11 +5,10 @@ import Image from 'next/image';
 import { ShoppingBag, Check, Sparkles } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
-import { useToast } from '@/components/ui/ToastProvider';
 import SeedBundleDrawer, { BundleProductCandidate } from './SeedBundleDrawer';
 import SeedBundleProductCapsule from './SeedBundleProductCapsule';
 import { safeImageUrl } from '@/lib/safe-image';
-import { createBundleCartItem, findStandaloneCartItems, generateBundleGroupId } from '@/utils/cartItemHelper';
+import { createBundleCartItem, generateBundleGroupId } from '@/utils/cartItemHelper';
 import { estimateDeliveryCharge, extractVariantWeightKg, parseWeightToKg } from '@/lib/buy-now';
 import { cleanProductName } from './cleanProductName';
 import { FreeDeliveryIncentiveBanner } from '@/components/cart/FreeDeliveryIncentiveBanner';
@@ -36,9 +35,8 @@ export default function SeedHeroBundleCard({
   onMainVariantChange,
   className = '',
 }: SeedHeroBundleCardProps) {
-  const { items, addItem, removeItem, freeDeliveryConfig } = useCart();
+  const { addBundleItems, freeDeliveryConfig } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
-  const { pushToast } = useToast();
 
   // Bundle Drawer Open State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -232,7 +230,7 @@ export default function SeedHeroBundleCard({
   if (!enabled) return null;
 
   // Direct 1-Click Add 2-Step Bundle to Bag
-  const handleAddBaseBundle = () => {
+  const handleAddBaseBundle = async () => {
     if (!activePairedProduct) return;
 
     const discountRatio =
@@ -244,20 +242,6 @@ export default function SeedHeroBundleCard({
       { productId: mainProduct.id, variantId: activeMainVariant?.id },
       { productId: activePairedProduct.id, variantId: activePairedVariant?.id },
     ]);
-
-    // Smart Auto-Upgrade: Remove existing standalone (non-bundle) single items to prevent duplicate rows
-    const standaloneItems = findStandaloneCartItems(items, [
-      mainProduct.id,
-      activePairedProduct.id,
-    ]);
-
-    if (standaloneItems.length > 0) {
-      standaloneItems.forEach((item) => removeItem(item.id));
-      pushToast({
-        title: 'Upgraded to 2-Step Routine Bundle with savings!',
-        tone: 'success',
-      });
-    }
 
     // Add Main Product as Bundle Item with Variant
     const mainItem = createBundleCartItem({
@@ -286,7 +270,6 @@ export default function SeedHeroBundleCard({
       discountRatio,
       quantity: 1,
     });
-    addItem(mainItem);
 
     // Add Paired Product as Bundle Item with Variant
     const pairedItem = createBundleCartItem({
@@ -315,8 +298,8 @@ export default function SeedHeroBundleCard({
       discountRatio,
       quantity: 1,
     });
-    addItem(pairedItem);
 
+    await addBundleItems([mainItem, pairedItem]);
     openCartDrawer();
   };
 

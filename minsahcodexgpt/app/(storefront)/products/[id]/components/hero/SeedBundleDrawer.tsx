@@ -17,9 +17,8 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
-import { useToast } from '@/components/ui/ToastProvider';
 import { safeImageUrl } from '@/lib/safe-image';
-import { createBundleCartItem, findStandaloneCartItems, generateBundleGroupId } from '@/utils/cartItemHelper';
+import { createBundleCartItem, generateBundleGroupId } from '@/utils/cartItemHelper';
 import { estimateDeliveryCharge, parseWeightToKg } from '@/lib/buy-now';
 import type { ProductVariantItem } from './SeedVariantRail';
 import { cleanProductName } from './cleanProductName';
@@ -67,9 +66,8 @@ export default function SeedBundleDrawer({
   catalogCandidates = [],
   className = '',
 }: SeedBundleDrawerProps) {
-  const { items, addItem, removeItem, freeDeliveryConfig } = useCart();
+  const { addBundleItems, freeDeliveryConfig } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
-  const { pushToast } = useToast();
 
   // Selected Products in Custom Bundle (Main product is always anchor)
   const [selectedProducts, setSelectedProducts] = useState<BundleProductCandidate[]>([
@@ -266,7 +264,7 @@ export default function SeedBundleDrawer({
   }, [selectedProducts, freeDeliveryConfig.nationwideThreshold]);
 
   // Handle Add to Cart
-  const handleAddBundleToCart = () => {
+  const handleAddBundleToCart = async () => {
     // Add all selected products to cart with proportionally distributed bundle savings
     const discountRatio =
       bundleCalculation.totalSellingPrice > 0
@@ -286,33 +284,11 @@ export default function SeedBundleDrawer({
     );
     const stepName = `${selectedProducts.length}-Step Bundle`;
 
-    // Replace-on-change: If a different custom-drawer bundle already exists in the cart, remove it
-    const staleCustomBundleItems = items.filter(
-      (item) =>
-        item.isBundle &&
-        item.bundleSource === 'custom-drawer' &&
-        (item.bundleGroupId || item.bundleId) !== bundleGroupId
-    );
-    if (staleCustomBundleItems.length > 0) {
-      staleCustomBundleItems.forEach((item) => removeItem(item.id));
-    }
-
-    // Smart Auto-Upgrade: Remove existing standalone (non-bundle) single items to prevent duplicate rows
-    const selectedIds = selectedProducts.map((p) => p.id);
-    const standaloneItems = findStandaloneCartItems(items, selectedIds);
-    if (standaloneItems.length > 0) {
-      standaloneItems.forEach((item) => removeItem(item.id));
-      pushToast({
-        title: `Upgraded to ${stepName} with savings!`,
-        tone: 'success',
-      });
-    }
-
-    selectedProducts.forEach((p) => {
+    const bundleItems = selectedProducts.map((p) => {
       const activeVar = p.selectedVariantId
         ? p.variants?.find((v) => v.id === p.selectedVariantId) ?? p.variants?.[0] ?? null
         : p.variants?.[0] ?? null;
-      const bundleItem = createBundleCartItem({
+      return createBundleCartItem({
         product: {
           id: p.id,
           name: p.name,
@@ -338,9 +314,9 @@ export default function SeedBundleDrawer({
         discountRatio,
         quantity: 1,
       });
-      addItem(bundleItem);
     });
 
+    await addBundleItems(bundleItems);
     onClose();
     openCartDrawer();
   };

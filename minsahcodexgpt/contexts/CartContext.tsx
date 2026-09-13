@@ -5,6 +5,17 @@ import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { trackAddToCart } from '@/lib/tracking/ecommerce';
 import { calculateCartOffers, DELIVERY_CONFIG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
+import { extractVariantAttributes, generateCartItemId } from '@/utils/cartItemHelper';
+
+export interface ProductVariantItem {
+  id: string;
+  sku?: string;
+  name: string;
+  price: number;
+  stock?: number;
+  attributes?: Record<string, any> | null;
+  image?: string | null;
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export interface CartItem {
@@ -36,6 +47,8 @@ export interface CartItem {
   stock?: number | null;
   /** Maximum purchasable quantity when inventory is enforced. Null means no client cap. */
   maxQuantity?: number | null;
+  /** Available variants of this product for in-cart switching */
+  availableVariants?: ProductVariantItem[];
 }
 
 
@@ -72,6 +85,8 @@ export interface PaymentMethod {
 interface CartContextType {
   items: CartItem[];
   addItem: (item: CartItem, options?: AddItemOptions) => Promise<boolean>;
+  addBundleItems: (items: CartItem[], options?: AddItemOptions) => Promise<boolean>;
+  updateItemVariant: (itemId: string, newVariant: ProductVariantItem) => Promise<boolean>;
   removeItem: (itemId: string) => Promise<boolean>;
   updateQuantity: (itemId: string, quantity: number) => Promise<boolean>;
   clearCart: () => Promise<boolean>;
@@ -145,6 +160,7 @@ function mapApiItem(apiItem: {
     shippingWeight?: number | null;
     trackInventory?: boolean | null;
     allowBackorder?: boolean | null;
+    variants?: ProductVariantItem[];
   };
   variant: {
     id: string;
@@ -193,6 +209,7 @@ function mapApiItem(apiItem: {
     shippingWeight: apiItem.product.shippingWeight ?? null,
     stock: availableStock,
     maxQuantity,
+    availableVariants: apiItem.product.variants ?? undefined,
   };
 }
 
@@ -631,6 +648,203 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [user, items, refreshToken, fetchCartFromDB]
   );
 
+  const addBundleItems = useCallback(
+    async (bundleItems: CartItem[], options?: AddItemOptions): Promise<boolean> => {
+      if (!bundleItems || bundleItems.length === 0) return false;
+
+      // 1. Identify incoming bundle ID and all product IDs in the new bundle
+      const incomingBundleGroupId =
+        bundleItems[0]?.bundleGroupId || bundleItems[0]?.bundleId || null;
+      const newProductIds = new Set(
+        bundleItems
+          .map((i) => i.productId || i.id)
+          .filter(Boolean) as string[]
+      );
+
+      // 2. Identify superseded bundle groups (any bundle having a different group ID that shares products)
+      const supersededGroupIds = new Set<string>();
+      for (const item of items) {
+        const isBundle = Boolean(
+          item.isBundle ||
+          item.bundleId ||
+          (typeof item.id === 'string' && item.id.startsWith('bundle-'))
+        );
+        const prodId = item.productId || item.id;
+        if (isBundle && prodId && newProductIds.has(prodId)) {
+          const groupId = item.bundleGroupId || item.bundleId;
+          if (groupId && groupId !== incomingBundleGroupId) {
+            supersededGroupIds.add(groupId);
+          }
+        }
+      }
+
+      // 3. Collect all items to remove:
+      // - All items belonging to superseded bundle groups (the entire old bundle group)
+      // - Any standalone items for these products (smart auto-upgrade)
+      const itemsToRemove = items.filter((item) => {
+        const isBundle = Boolean(
+          item.isBundle ||
+          item.bundleId ||
+          (typeof item.id === 'string' && item.id.startsWith('bundle-'))
+        );
+        if (isBundle) {
+          const groupId = item.bundleGroupId || item.bundleId;
+          return Boolean(groupId && supersededGroupIds.has(groupId));
+        } else {
+          const prodId = item.productId || item.id;
+          return Boolean(prodId && newProductIds.has(prodId));
+        }
+      });
+
+      // 4. Remove all superseded items using authoritative removeItem()
+      for (const item of itemsToRemove) {
+        await removeItem(item.id);
+      }
+
+      if (itemsToRemove.length > 0) {
+        pushToast({
+          title: 'Cart upgraded with bundle savings!',
+          tone: 'success',
+        });
+      }
+
+      // 5. Add all bundle items via addItem()
+      let allSuccess = true;
+      for (const item of bundleItems) {
+        const ok = await addItem(item, options);
+        if (!ok) allSuccess = false;
+      }
+
+      return allSuccess;
+    },
+    [items, removeItem, addItem, pushToast]
+  );
+
+  const updateItemVariant = useCallback(
+    async (itemId: string, newVariant: ProductVariantItem): Promise<boolean> => {
+      const targetItem = items.find((i) => i.id === itemId);
+      if (!targetItem) return false;
+
+      const attrData = extractVariantAttributes(newVariant.attributes, newVariant.name);
+      const newSize = attrData.size || attrData.volume;
+      const newColor = attrData.color;
+      const newShade = attrData.shade || attrData.color;
+      const newVariantName = attrData.label || newVariant.name || null;
+
+      const targetProductId = targetItem.productId || targetItem.id;
+      const isBundle = Boolean(targetItem.isBundle);
+      const newPrice = isBundle
+        ? Math.round(newVariant.price * (targetItem.bundleDiscountRatio ?? 1))
+        : newVariant.price;
+
+      const newCartItemId = isBundle
+        ? generateCartItemId(targetProductId, newVariant.id, targetItem.bundleId)
+        : generateCartItemId(targetProductId, newVariant.id);
+
+      const availableStock = typeof newVariant.stock === 'number' ? newVariant.stock : targetItem.stock;
+      const maxQuantity = typeof availableStock === 'number' ? availableStock : targetItem.maxQuantity;
+
+      const updatedItem: CartItem = {
+        ...targetItem,
+        id: newCartItemId,
+        variantId: newVariant.id,
+        variantName: newVariantName,
+        size: newSize,
+        color: newColor,
+        shade: newShade,
+        price: newPrice,
+        image: newVariant.image || targetItem.image,
+        variantImage: newVariant.image || targetItem.variantImage,
+        sku: newVariant.sku || targetItem.sku,
+        variantSku: newVariant.sku || targetItem.variantSku,
+        stock: availableStock,
+        maxQuantity,
+      };
+
+      if (user) {
+        cartSyncVersionRef.current += 1;
+
+        // If another item in cart already has newCartItemId, merge quantities
+        const existingMergeTarget = items.find((i) => i.id === newCartItemId && i.id !== itemId);
+        if (existingMergeTarget) {
+          const mergedQuantity = clampCartQuantity(
+            existingMergeTarget.quantity + targetItem.quantity,
+            existingMergeTarget.maxQuantity
+          );
+
+          if (existingMergeTarget.cartItemId) {
+            await fetch(`/api/cart/${existingMergeTarget.cartItemId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ quantity: mergedQuantity }),
+            });
+          }
+          if (targetItem.cartItemId) {
+            await fetch(`/api/cart/${targetItem.cartItemId}`, {
+              method: 'DELETE',
+              credentials: 'include',
+            });
+          }
+
+          setItems((prev) =>
+            prev
+              .filter((i) => i.id !== itemId)
+              .map((i) => (i.id === newCartItemId ? { ...i, quantity: mergedQuantity } : i))
+          );
+          return true;
+        }
+
+        // Normal switch: update database record
+        if (targetItem.cartItemId) {
+          try {
+            let res = await fetch(`/api/cart/${targetItem.cartItemId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ variantId: newVariant.id }),
+            });
+            if (res.status === 401 && (await refreshToken())) {
+              res = await fetch(`/api/cart/${targetItem.cartItemId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ variantId: newVariant.id }),
+              });
+            }
+            if (!res.ok) throw new Error('Failed to update variant');
+          } catch {
+            await fetchCartFromDB();
+            return false;
+          }
+        }
+
+        setItems((prev) =>
+          prev.map((i) => (i.id === itemId ? updatedItem : i))
+        );
+        return true;
+      }
+
+      // Guest / local cart
+      const existingMergeTarget = items.find((i) => i.id === newCartItemId && i.id !== itemId);
+      if (existingMergeTarget) {
+        const mergedQuantity = clampCartQuantity(
+          existingMergeTarget.quantity + targetItem.quantity,
+          existingMergeTarget.maxQuantity
+        );
+        setItems((prev) =>
+          prev
+            .filter((i) => i.id !== itemId)
+            .map((i) => (i.id === newCartItemId ? { ...i, quantity: mergedQuantity } : i))
+        );
+      } else {
+        setItems((prev) => prev.map((i) => (i.id === itemId ? updatedItem : i)));
+      }
+      return true;
+    },
+    [items, user, refreshToken, fetchCartFromDB]
+  );
+
   const updateQuantity = useCallback(
     async (itemId: string, quantity: number): Promise<boolean> => {
       const target = items.find((i) => i.id === itemId);
@@ -868,6 +1082,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => ({
       items,
       addItem,
+      addBundleItems,
+      updateItemVariant,
       removeItem,
       updateQuantity,
       clearCart,
@@ -897,6 +1113,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [
       addAddress,
       addItem,
+      addBundleItems,
+      updateItemVariant,
       addresses,
       applyPromoCode,
       removePromoCode,

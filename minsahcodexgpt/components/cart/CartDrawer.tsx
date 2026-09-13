@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Gift,
@@ -19,50 +18,7 @@ import { formatPrice } from "@/utils/currency";
 import { FreeDeliveryIncentiveBanner } from "@/components/cart/FreeDeliveryIncentiveBanner";
 import { ENABLE_PROMO_COUPONS } from "@/lib/commerce/offer-engine";
 
-interface CrossSellProduct {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  subtitle: string;
-}
 
-// Curated beauty cross-sells matching Seed.com "Bundle + Save" aesthetic
-const CROSS_SELL_PRODUCTS: CrossSellProduct[] = [
-  {
-    id: "prod-addon-lip",
-    name: "Hydra-Peptide Lip Therapy Balm",
-    price: 650,
-    originalPrice: 850,
-    image: "/images/categories/Lip_Care.png",
-    subtitle: "Nourishing barrier care",
-  },
-  {
-    id: "prod-addon-serum",
-    name: "Advanced Niacinamide Glow Serum",
-    price: 1150,
-    originalPrice: 1450,
-    image: "/images/categories/Serum.png",
-    subtitle: "Clinical radiance booster",
-  },
-  {
-    id: "prod-addon-sun",
-    name: "Ultra-Light Invisible Sunscreen SPF50+",
-    price: 990,
-    originalPrice: 1250,
-    image: "/images/categories/Sunscreen.png",
-    subtitle: "Invisible daily UV veil",
-  },
-  {
-    id: "prod-addon-skincare",
-    name: "Radiance Essentials Duo Bundle",
-    price: 1950,
-    originalPrice: 2450,
-    image: "/images/categories/Skincare.png",
-    subtitle: "Complete clinical reset",
-  },
-];
 
 export interface CartDrawerProps {
   freeDeliveryThreshold?: number;
@@ -90,7 +46,6 @@ export default function CartDrawer({
   } = useCart();
 
   const [busyItemIds, setBusyItemIds] = useState<string[]>([]);
-  const [addingAddonId, setAddingAddonId] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [isPromoExpanded, setIsPromoExpanded] = useState(false);
@@ -125,21 +80,7 @@ export default function CartDrawer({
     }
   };
 
-  const handleAddCrossSell = async (addon: CrossSellProduct) => {
-    setAddingAddonId(addon.id);
-    try {
-      await addItem({
-        id: addon.id,
-        name: addon.name,
-        price: addon.price,
-        quantity: 1,
-        image: addon.image,
-        variantName: addon.subtitle,
-      });
-    } finally {
-      setAddingAddonId(null);
-    }
-  };
+
 
   const handleCheckout = () => {
     if (!hasItems) return;
@@ -154,10 +95,7 @@ export default function CartDrawer({
     }
   }, [promoCode, removePromoCode]);
 
-  // Available cross-sells filtered against existing cart items
-  const availableCrossSells = CROSS_SELL_PRODUCTS.filter(
-    (addon) => !items.some((item) => item.id === addon.id || item.name === addon.name),
-  );
+
 
   // Seed.com 100% Pixel-Perfect Sticky Footer
   const drawerFooter = hasItems ? (
@@ -232,62 +170,7 @@ export default function CartDrawer({
             ))}
           </div>
 
-          {/* ── Seed-style Cross-Sell ("Bundle + Save 25%") Carousel ── */}
-          {availableCrossSells.length > 0 && (
-            <div className="mt-5 pt-3 border-t border-black/[0.06]">
-              <div className="px-6 mb-3">
-                <h3 className="text-sm font-semibold text-[#1B361B]">
-                  Bundle + Save 25%
-                </h3>
-              </div>
 
-              <div className="px-6 flex gap-3 overflow-x-auto no-scrollbar pb-2 pt-0.5">
-                {availableCrossSells.map((addon) => (
-                  <div
-                    key={addon.id}
-                    className="w-[230px] shrink-0 rounded-xl bg-[#EDECE6] p-3 flex items-center gap-3 border border-black/[0.04] hover:border-black/10 transition-all"
-                  >
-                    <div className="w-11 h-11 rounded-lg bg-white/80 p-1 overflow-hidden shrink-0 flex items-center justify-center">
-                      <Image
-                        src={addon.image}
-                        alt={addon.name}
-                        width={44}
-                        height={44}
-                        className="h-full w-full object-contain"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-xs font-semibold text-[#1B361B] truncate">
-                        {addon.name}
-                      </h4>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs font-bold text-[#1B361B]">
-                          {formatPrice(addon.price)}
-                        </span>
-                        {addon.originalPrice && (
-                          <span className="text-[11px] text-[#8A8F98] line-through">
-                            {formatPrice(addon.originalPrice)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={addingAddonId === addon.id}
-                      onClick={() => handleAddCrossSell(addon)}
-                      className="rounded-full border border-[#1B361B] bg-transparent hover:bg-[#1B361B] hover:text-white text-[#1B361B] text-xs font-semibold px-3 py-1 transition-colors flex items-center gap-1 shrink-0 cursor-pointer disabled:opacity-50"
-                    >
-                      {addingAddonId === addon.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        "Add"
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* ── Seed-style "Apply Promo Code" Editorial Link ── */}
           {ENABLE_PROMO_COUPONS && (

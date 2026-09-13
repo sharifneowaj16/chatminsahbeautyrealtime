@@ -26,6 +26,10 @@ export async function GET(request: NextRequest) {
           include: {
             images: { take: 1, orderBy: { sortOrder: 'asc' } },
             brand: true,
+            variants: {
+              where: { isActive: true, deletedAt: null },
+              orderBy: { id: 'asc' },
+            },
           },
         },
         variant: true,
@@ -52,6 +56,15 @@ export async function GET(request: NextRequest) {
         allowBackorder: item.product.allowBackorder,
         weight: item.product.weight ? item.product.weight.toNumber() : null,
         shippingWeight: toOptionalNumber(item.product.shippingWeight),
+        variants: item.product.variants?.map((v) => ({
+          id: v.id,
+          name: v.name,
+          price: v.price ? v.price.toNumber() : item.product.price.toNumber(),
+          stock: v.quantity,
+          sku: v.sku,
+          attributes: v.attributes,
+          image: v.image || null,
+        })) || [],
       },
       variant: item.variant
         ? {

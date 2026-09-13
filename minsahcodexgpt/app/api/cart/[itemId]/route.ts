@@ -22,12 +22,12 @@ export async function PATCH(
     }
 
     const { itemId } = await params;
-    const { quantity: rawQuantity } = (await request.json()) as { quantity?: number | string };
-    const quantity = Math.trunc(Number(rawQuantity));
-
-    if (quantity == null || !Number.isFinite(quantity) || quantity < 0) {
-      return NextResponse.json({ error: 'Valid quantity is required' }, { status: 400 });
-    }
+    const body = (await request.json()) as {
+      quantity?: number | string;
+      variantId?: string | null;
+    };
+    const rawQuantity = body.quantity;
+    const variantId = body.variantId;
 
     const cartItem = await prisma.cartItem.findFirst({
       where: { id: itemId, userId },
@@ -38,13 +38,46 @@ export async function PATCH(
       return NextResponse.json({ error: 'Cart item not found' }, { status: 404 });
     }
 
+    let quantity = cartItem.quantity;
+    if (rawQuantity !== undefined && rawQuantity !== null) {
+      const parsedQty = Math.trunc(Number(rawQuantity));
+      if (!Number.isFinite(parsedQty) || parsedQty < 0) {
+        return NextResponse.json({ error: 'Valid quantity is required' }, { status: 400 });
+      }
+      quantity = parsedQty;
+    }
+
     if (quantity === 0) {
       await prisma.cartItem.delete({ where: { id: itemId } });
       return NextResponse.json({ success: true, deleted: true });
     }
 
-    const availableStock = cartItem.variant
-      ? cartItem.variant.quantity
+    let nextVariantId = cartItem.variantId;
+    let targetVariant = cartItem.variant;
+
+    if (variantId !== undefined) {
+      if (variantId === null || variantId === '') {
+        nextVariantId = null;
+        targetVariant = null;
+      } else {
+        const foundVariant = await prisma.productVariant.findFirst({
+          where: {
+            id: variantId,
+            productId: cartItem.productId,
+            isActive: true,
+            deletedAt: null,
+          },
+        });
+        if (!foundVariant) {
+          return NextResponse.json({ error: 'Variant not found for this product' }, { status: 404 });
+        }
+        nextVariantId = foundVariant.id;
+        targetVariant = foundVariant;
+      }
+    }
+
+    const availableStock = targetVariant
+      ? targetVariant.quantity
       : cartItem.product.quantity;
 
     if (cartItem.product.trackInventory && !cartItem.product.allowBackorder && quantity > availableStock) {
@@ -56,7 +89,10 @@ export async function PATCH(
 
     const updated = await prisma.cartItem.update({
       where: { id: itemId },
-      data: { quantity },
+      data: {
+        quantity,
+        variantId: nextVariantId,
+      },
       include: {
         product: {
           include: {
