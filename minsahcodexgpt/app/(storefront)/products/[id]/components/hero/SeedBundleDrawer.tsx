@@ -65,7 +65,7 @@ export default function SeedBundleDrawer({
   catalogCandidates = [],
   className = '',
 }: SeedBundleDrawerProps) {
-  const { items, addItem, removeItem } = useCart();
+  const { items, addItem, removeItem, freeDeliveryConfig } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
   const { pushToast } = useToast();
 
@@ -237,6 +237,9 @@ export default function SeedBundleDrawer({
     const finalPayable = Math.max(0, totalSellingPrice - customerSavings);
     const ownerNetProfit = Math.round(realBenefit - customerSavings);
 
+    const isFreeDelivery =
+      finalPayable >= freeDeliveryConfig.nationwideThreshold || hasAnyFreeDelivery;
+
     return {
       itemCount,
       totalSellingPrice,
@@ -253,9 +256,9 @@ export default function SeedBundleDrawer({
       customerSavings,
       finalPayable,
       ownerNetProfit,
-      hasAnyFreeDelivery,
+      hasAnyFreeDelivery: isFreeDelivery,
     };
-  }, [selectedProducts]);
+  }, [selectedProducts, freeDeliveryConfig.nationwideThreshold]);
 
   // Handle Add to Cart
   const handleAddBundleToCart = () => {
