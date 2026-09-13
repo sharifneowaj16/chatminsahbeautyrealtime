@@ -141,31 +141,52 @@ export default function SeedHeroBundleCard({
     const mainWeight = extractVariantWeightKg(activeMainVariant?.attributes) ?? parseWeightToKg(mainProduct.shippingWeight) ?? parseWeightToKg(mainProduct.weight) ?? 0.25;
     const pairedWeight = extractVariantWeightKg(activePairedVariant?.attributes) ?? parseWeightToKg(activePairedProduct.shippingWeight) ?? parseWeightToKg(activePairedProduct.weight) ?? 0.25;
 
-    const mainCourier = estimateDeliveryCharge({ city: 'Outside Dhaka', area: 'Outside', parcelWeightKg: mainWeight + 0.1 }).charge;
-    const pairedCourier = estimateDeliveryCharge({ city: 'Outside Dhaka', area: 'Outside', parcelWeightKg: pairedWeight + 0.1 }).charge;
+    // 1. Combined parcel courier delivery (bundled into a single shipping parcel)
+    const combinedWeight = mainWeight + pairedWeight + 0.1;
+    const combinedCourier = estimateDeliveryCharge({
+      city: 'Outside Dhaka',
+      area: 'Outside',
+      parcelWeightKg: combinedWeight,
+    }).charge;
 
-    let mainAbsorbed = 0;
-    if (mainProduct.deliveryOfferType === 'FREE' || mainProduct.hasFreeDelivery) {
-      mainAbsorbed = mainCourier;
-    } else if (mainProduct.deliveryOfferType === 'FIXED') {
-      const fixedAmount = mainProduct.deliveryChargeOutsideDhaka ?? mainProduct.deliveryOfferAmount ?? 0;
-      mainAbsorbed = Math.max(0, mainCourier - Number(fixedAmount));
+    let totalStoreAbsorbedDelivery = 0;
+    if (
+      mainProduct.deliveryOfferType === 'FREE' ||
+      activePairedProduct.deliveryOfferType === 'FREE' ||
+      mainProduct.hasFreeDelivery ||
+      activePairedProduct.hasFreeDelivery
+    ) {
+      totalStoreAbsorbedDelivery = combinedCourier;
+    } else if (
+      mainProduct.deliveryOfferType === 'FIXED' ||
+      activePairedProduct.deliveryOfferType === 'FIXED'
+    ) {
+      const fixedAmount =
+        mainProduct.deliveryChargeOutsideDhaka ??
+        activePairedProduct.deliveryChargeOutsideDhaka ??
+        mainProduct.deliveryOfferAmount ??
+        activePairedProduct.deliveryOfferAmount ??
+        0;
+      totalStoreAbsorbedDelivery = Math.max(0, combinedCourier - Number(fixedAmount));
     }
 
-    let pairedAbsorbed = 0;
-    if (activePairedProduct.deliveryOfferType === 'FREE' || activePairedProduct.hasFreeDelivery) {
-      pairedAbsorbed = pairedCourier;
-    } else if (activePairedProduct.deliveryOfferType === 'FIXED') {
-      const fixedAmount = activePairedProduct.deliveryChargeOutsideDhaka ?? activePairedProduct.deliveryOfferAmount ?? 0;
-      pairedAbsorbed = Math.max(0, pairedCourier - Number(fixedAmount));
-    }
+    // Available profit margin before discount
+    const availableMargin = Math.max(
+      0,
+      totalSellingPrice - (mainCost + pairedCost) - totalStoreAbsorbedDelivery
+    );
 
-    const totalStoreAbsorbedDelivery = mainAbsorbed + pairedAbsorbed;
-    
-    const realBenefit = Math.max(0, totalSellingPrice - (mainCost + pairedCost) - totalStoreAbsorbedDelivery);
-    // 2-step bundle gets 15% of Real Profit
-    const customerSavings = Math.round(realBenefit * 0.15);
+    // Realistic bundle discount rule:
+    // Minimum 5% off total selling price or 15% of net profit margin, whichever is higher,
+    // strictly capped so store never sells at a loss (max 80% of available margin).
+    const targetSavings = Math.max(
+      Math.round(availableMargin * 0.15),
+      Math.round(totalSellingPrice * 0.05)
+    );
+    const maxSafeDiscount = Math.round(availableMargin * 0.8);
+    const customerSavings = availableMargin > 0 ? Math.min(targetSavings, maxSafeDiscount) : 0;
     const finalPayable = Math.max(0, totalSellingPrice - customerSavings);
+
     // Free delivery conditions: 1) finalPayable >= 1100, or 2) mainProduct / pairedProduct has special free delivery flag
     const hasFreeDelivery =
       finalPayable >= 1100 ||
@@ -192,6 +213,7 @@ export default function SeedHeroBundleCard({
     mainProduct.shippingWeight,
     mainProduct.deliveryOfferType,
     mainProduct.deliveryOfferAmount,
+    mainProduct.deliveryChargeOutsideDhaka,
     activeMainVariant?.attributes,
     activePairedVariant?.attributes,
   ]);
@@ -302,13 +324,10 @@ export default function SeedHeroBundleCard({
               </h3>
             </div>
 
-            {calculation.customerSavings > 0 ? (
+            {/* Top-Right Badge: Only shown when there is genuine savings */}
+            {calculation.customerSavings > 0 && (
               <span className="shrink-0 inline-flex items-center rounded-full bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 px-3.5 py-1 text-[#1E6839] dark:text-emerald-300 shadow-2xs font-inter text-xs font-bold leading-4">
                 SAVE ৳{Math.round(calculation.customerSavings)}
-              </span>
-            ) : (
-              <span className="shrink-0 inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/20 px-3 py-1 text-emerald-800 dark:text-emerald-300 shadow-2xs font-inter text-xs font-semibold leading-4">
-                DUO RITUAL
               </span>
             )}
           </div>
