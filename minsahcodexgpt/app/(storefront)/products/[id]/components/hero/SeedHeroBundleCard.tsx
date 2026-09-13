@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { ShoppingBag, Check } from 'lucide-react';
+import { ShoppingBag, Check, Sparkles } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { useToast } from '@/components/ui/ToastProvider';
@@ -42,25 +42,19 @@ export default function SeedHeroBundleCard({
   // Bundle Drawer Open State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Fallback default paired product if none provided by admin
-  const activePairedProduct: BundleProductCandidate = useMemo(() => {
+  // Active Paired Product (Only real verified candidates, NO dummy fallback)
+  const activePairedProduct: BundleProductCandidate | null = useMemo(() => {
     if (pairedProduct) return pairedProduct;
     if (catalogCandidates.length > 0) return catalogCandidates[0];
-    return {
-      id: 'default-addon-cream',
-      name: 'Barrier Moisture Repair Cream',
-      price: 1200,
-      costPrice: 700,
-      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=400&q=80',
-      stock: 20,
-      hasFreeDelivery: true,
-      category: 'Moisturizer',
-    };
+    return null;
   }, [pairedProduct, catalogCandidates]);
 
   // Variant lists
   const mainVariants = useMemo(() => mainProduct.variants || [], [mainProduct.variants]);
-  const pairedVariants = useMemo(() => activePairedProduct.variants || [], [activePairedProduct.variants]);
+  const pairedVariants = useMemo(
+    () => activePairedProduct?.variants || [],
+    [activePairedProduct?.variants]
+  );
 
   // Selected variant state
   const [selectedMainVariantId, setSelectedMainVariantId] = useState<string | null>(
@@ -88,6 +82,8 @@ export default function SeedHeroBundleCard({
       if (!selectedPairedVariantId || !pairedVariants.some((v) => v.id === selectedPairedVariantId)) {
         setSelectedPairedVariantId(pairedVariants[0].id);
       }
+    } else {
+      setSelectedPairedVariantId(null);
     }
   }, [pairedVariants, selectedPairedVariantId]);
 
@@ -96,14 +92,15 @@ export default function SeedHeroBundleCard({
   }, [mainVariants, selectedMainVariantId]);
 
   const activePairedVariant = useMemo(() => {
+    if (!activePairedProduct) return null;
     return pairedVariants.find((v) => v.id === selectedPairedVariantId) || (pairedVariants.length > 0 ? pairedVariants[0] : null);
-  }, [pairedVariants, selectedPairedVariantId]);
+  }, [activePairedProduct, pairedVariants, selectedPairedVariantId]);
 
   const effectiveMainPrice = activeMainVariant?.price ?? mainProduct.price;
   const effectiveMainImage = activeMainVariant?.image || mainProduct.image;
 
-  const effectivePairedPrice = activePairedVariant?.price ?? activePairedProduct.price;
-  const effectivePairedImage = activePairedVariant?.image || activePairedProduct.image;
+  const effectivePairedPrice = activePairedVariant?.price ?? activePairedProduct?.price ?? 0;
+  const effectivePairedImage = activePairedVariant?.image || activePairedProduct?.image || '';
 
   const handleMainVariantSelect = (varId: string) => {
     setSelectedMainVariantId(varId);
@@ -119,6 +116,18 @@ export default function SeedHeroBundleCard({
   // Real Benefit = Max(0, Selling Price - Purchase Cost - Store Absorbed Delivery)
   // =========================================================================
   const calculation = useMemo(() => {
+    if (!activePairedProduct) {
+      return {
+        totalSellingPrice: effectiveMainPrice,
+        customerSavings: 0,
+        finalPayable: effectiveMainPrice,
+        hasFreeDelivery: Boolean(
+          mainProduct.hasFreeDelivery ||
+          mainProduct.deliveryOfferType === 'FREE'
+        ),
+      };
+    }
+
     const totalSellingPrice = effectiveMainPrice + effectivePairedPrice;
     // Fallback purchase cost: 75% of selling price to guarantee zero loss
     const mainCost = (mainProduct.costPrice != null && Number(mainProduct.costPrice) > 0)
@@ -174,6 +183,7 @@ export default function SeedHeroBundleCard({
       hasFreeDelivery,
     };
   }, [
+    activePairedProduct,
     effectiveMainPrice,
     effectivePairedPrice,
     mainProduct.costPrice,
@@ -182,12 +192,6 @@ export default function SeedHeroBundleCard({
     mainProduct.shippingWeight,
     mainProduct.deliveryOfferType,
     mainProduct.deliveryOfferAmount,
-    activePairedProduct.costPrice,
-    activePairedProduct.hasFreeDelivery,
-    activePairedProduct.weight,
-    activePairedProduct.shippingWeight,
-    activePairedProduct.deliveryOfferType,
-    activePairedProduct.deliveryOfferAmount,
     activeMainVariant?.attributes,
     activePairedVariant?.attributes,
   ]);
@@ -197,6 +201,8 @@ export default function SeedHeroBundleCard({
 
   // Direct 1-Click Add 2-Step Bundle to Bag
   const handleAddBaseBundle = () => {
+    if (!activePairedProduct) return;
+
     const discountRatio =
       calculation.totalSellingPrice > 0
         ? calculation.finalPayable / calculation.totalSellingPrice
@@ -278,153 +284,211 @@ export default function SeedHeroBundleCard({
   return (
     <section className={`w-full ${className}`} aria-label="Frequently Paired With Bundle Section">
       
-      {/* ========================================================================= */}
-      {/* 1. INLINE LUXURY BUNDLE CARD CONTAINER (PHASE 1)                          */}
-      {/* ========================================================================= */}
-      <div className="p-5 sm:p-6 rounded-[28px] bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 shadow-xs space-y-5">
-        
-        {/* Phase 1: Card Header (• DUO RITUAL + Serif Title + Save Badge) */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" />
-              <span>DUO RITUAL</span>
-            </div>
-            <h3 className="font-sans text-2xl sm:text-[26px] font-medium font-[500] tracking-tight text-[#122A16] dark:text-white mt-1">
-              Frequently Paired With
-            </h3>
-          </div>
-
-          <span
-            className="shrink-0 inline-flex items-center rounded-full bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 px-3.5 py-1 text-[#1E6839] dark:text-emerald-300 shadow-2xs font-inter"
-            style={{
-              fontSize: '12px',
-              fontWeight: 700,
-              lineHeight: '16px',
-              letterSpacing: 'normal',
-            }}
-          >
-            SAVE ৳{calculation.customerSavings > 0 ? Math.round(calculation.customerSavings) : '150'}
-          </span>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* PHASE 2: STEP 1 - MAIN PRODUCT CAPSULE (REUSABLE)                        */}
-        {/* ========================================================================= */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-zinc-800/90 border border-stone-200/90 dark:border-white/10 shadow-2xs">
-          <SeedBundleProductCapsule
-            stepNumber={1}
-            stepLabel="MAIN PRODUCT"
-            stepLabelColor="text-stone-500 dark:text-stone-400"
-            product={{
-              ...mainProduct,
-              price: effectiveMainPrice,
-              image: effectiveMainImage,
-              variants: mainVariants,
-            }}
-            selectedVariantId={selectedMainVariantId}
-            onVariantSelect={(varId, pPrice, vStock) => {
-              handleMainVariantSelect(varId);
-            }}
-          />
-        </div>
-
-        {/* ========================================================================= */}
-        {/* PHASE 3: TRANSITION DIVIDER (+ PAIR WITH)                                */}
-        {/* ========================================================================= */}
-        <div className="relative py-2 flex items-center justify-center">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-dashed border-stone-200 dark:border-white/10" />
-          </div>
-          <span className="relative z-10 inline-flex items-center gap-1 rounded-full bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-600 dark:text-stone-300 shadow-2xs">
-            + PAIR WITH
-          </span>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* PHASE 4: STEP 2 - PAIRED PRODUCT CAPSULE (REUSABLE)                      */}
-        {/* ========================================================================= */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-zinc-800/90 border border-stone-200/90 dark:border-white/10 shadow-2xs">
-          <SeedBundleProductCapsule
-            stepNumber={2}
-            stepLabel="FREQUENTLY PAIRED WITH THIS"
-            stepLabelColor="text-emerald-800 dark:text-emerald-400"
-            product={{
-              ...activePairedProduct,
-              price: effectivePairedPrice,
-              image: effectivePairedImage,
-              variants: pairedVariants,
-            }}
-            selectedVariantId={selectedPairedVariantId}
-            onVariantSelect={(varId, pPrice, vStock) => {
-              setSelectedPairedVariantId(varId);
-            }}
-          />
-        </div>
-
-        {/* ========================================================================= */}
-        {/* PHASE 5: BUNDLE PRICE ROW & CHECKOUT ACTION SUMMARY                      */}
-        {/* ========================================================================= */}
-        <div className="pt-2 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      {activePairedProduct ? (
+        /* ========================================================================= */
+        /* 1A. INLINE LUXURY DUO BUNDLE CARD (WHEN PAIRED PRODUCT EXISTS)            */
+        /* ========================================================================= */
+        <div className="p-5 sm:p-6 rounded-[28px] bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 shadow-xs space-y-5">
+          
+          {/* Card Header (• DUO RITUAL + Title + Save Badge) */}
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
-                BUNDLE PRICE
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="font-inter font-bold text-xl sm:text-2xl text-[#122A16] dark:text-white leading-none">
-                  ৳{Math.round(calculation.finalPayable)}
-                </span>
-                {calculation.customerSavings > 0 && (
-                  <span className="font-inter text-xs sm:text-sm text-stone-400 line-through leading-none">
-                    ৳{Math.round(calculation.totalSellingPrice)}
-                  </span>
-                )}
-                {calculation.customerSavings > 0 && (
-                  <span className="inline-flex items-center rounded-md bg-[#EAF5EC] dark:bg-emerald-950/50 border border-[#D4EBD9] dark:border-emerald-500/30 px-2 py-0.5 font-inter text-[11px] font-bold text-[#1E6839] dark:text-emerald-300 shadow-2xs">
-                    Save ৳{Math.round(calculation.customerSavings)}
-                  </span>
-                )}
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" />
+                <span>DUO RITUAL</span>
               </div>
+              <h3 className="font-sans text-2xl sm:text-[26px] font-medium font-[500] tracking-tight text-[#122A16] dark:text-white mt-1">
+                Frequently Paired With
+              </h3>
             </div>
 
-            {calculation.hasFreeDelivery && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#BBE3CE] dark:border-emerald-500/30 bg-[#F2FAF6] dark:bg-emerald-950/40 px-3 py-1 text-xs font-medium text-[#1E6839] dark:text-emerald-300 shadow-2xs">
-                <Check size={12} strokeWidth={2.5} className="text-[#1E6839] dark:text-emerald-400 shrink-0" />
-                <span>You Earn Free Delivery</span>
-              </div>
+            {calculation.customerSavings > 0 ? (
+              <span className="shrink-0 inline-flex items-center rounded-full bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 px-3.5 py-1 text-[#1E6839] dark:text-emerald-300 shadow-2xs font-inter text-xs font-bold leading-4">
+                SAVE ৳{Math.round(calculation.customerSavings)}
+              </span>
+            ) : (
+              <span className="shrink-0 inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/20 px-3 py-1 text-emerald-800 dark:text-emerald-300 shadow-2xs font-inter text-xs font-semibold leading-4">
+                DUO RITUAL
+              </span>
             )}
           </div>
 
-          <div className="space-y-2.5">
-            {/* Primary CTA Button */}
+          {/* STEP 1 - MAIN PRODUCT CAPSULE */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-zinc-800/90 border border-stone-200/90 dark:border-white/10 shadow-2xs">
+            <SeedBundleProductCapsule
+              stepNumber={1}
+              stepLabel="MAIN PRODUCT"
+              stepLabelColor="text-stone-500 dark:text-stone-400"
+              product={{
+                ...mainProduct,
+                price: effectiveMainPrice,
+                image: effectiveMainImage,
+                variants: mainVariants,
+              }}
+              selectedVariantId={selectedMainVariantId}
+              onVariantSelect={(varId) => {
+                handleMainVariantSelect(varId);
+              }}
+            />
+          </div>
+
+          {/* TRANSITION DIVIDER (+ PAIR WITH) */}
+          <div className="relative py-2 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-dashed border-stone-200 dark:border-white/10" />
+            </div>
+            <span className="relative z-10 inline-flex items-center gap-1 rounded-full bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-600 dark:text-stone-300 shadow-2xs">
+              + PAIR WITH
+            </span>
+          </div>
+
+          {/* STEP 2 - PAIRED PRODUCT CAPSULE */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-zinc-800/90 border border-stone-200/90 dark:border-white/10 shadow-2xs">
+            <SeedBundleProductCapsule
+              stepNumber={2}
+              stepLabel="FREQUENTLY PAIRED WITH THIS"
+              stepLabelColor="text-emerald-800 dark:text-emerald-400"
+              product={{
+                ...activePairedProduct,
+                price: effectivePairedPrice,
+                image: effectivePairedImage,
+                variants: pairedVariants,
+              }}
+              selectedVariantId={selectedPairedVariantId}
+              onVariantSelect={(varId) => {
+                setSelectedPairedVariantId(varId);
+              }}
+            />
+          </div>
+
+          {/* BUNDLE PRICE ROW & CHECKOUT ACTION SUMMARY */}
+          <div className="pt-2 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
+                  BUNDLE PRICE
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="font-inter font-bold text-xl sm:text-2xl text-[#122A16] dark:text-white leading-none">
+                    ৳{Math.round(calculation.finalPayable)}
+                  </span>
+                  {calculation.customerSavings > 0 && (
+                    <span className="font-inter text-xs sm:text-sm text-stone-400 line-through leading-none">
+                      ৳{Math.round(calculation.totalSellingPrice)}
+                    </span>
+                  )}
+                  {calculation.customerSavings > 0 && (
+                    <span className="inline-flex items-center rounded-md bg-[#EAF5EC] dark:bg-emerald-950/50 border border-[#D4EBD9] dark:border-emerald-500/30 px-2 py-0.5 font-inter text-[11px] font-bold text-[#1E6839] dark:text-emerald-300 shadow-2xs">
+                      Save ৳{Math.round(calculation.customerSavings)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {calculation.hasFreeDelivery && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#BBE3CE] dark:border-emerald-500/30 bg-[#F2FAF6] dark:bg-emerald-950/40 px-3 py-1 text-xs font-medium text-[#1E6839] dark:text-emerald-300 shadow-2xs">
+                  <Check size={12} strokeWidth={2.5} className="text-[#1E6839] dark:text-emerald-400 shrink-0" />
+                  <span>You Earn Free Delivery</span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2.5">
+              {/* Primary CTA Button */}
+              <button
+                type="button"
+                onClick={handleAddBaseBundle}
+                data-sticky-sentinel="bundle-cta"
+                className="w-full h-12 sm:h-13 flex items-center justify-center gap-2 rounded-full bg-[#122A16] hover:bg-[#0c1d0f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-bold text-xs sm:text-[13px] tracking-wide shadow-md active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <ShoppingBag size={15} />
+                <span className="font-inter font-bold">
+                  Add Both to Bag • ৳{Math.round(calculation.finalPayable)}
+                </span>
+              </button>
+
+              {/* Interactive Custom Bundle Drawer Trigger */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="w-full py-2.5 px-3.5 flex items-center justify-between rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 border border-stone-200/80 dark:border-white/10 text-xs text-stone-700 dark:text-stone-300 transition-colors cursor-pointer group"
+                >
+                  <span className="flex items-center gap-1.5 font-medium truncate">
+                    <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="text-[#122A16] dark:text-white font-semibold">Want other items?</span>
+                    <span className="truncate">Create Custom Bundle</span>
+                  </span>
+                  <span className="shrink-0 text-emerald-700 dark:text-emerald-300 font-bold font-mono text-[11px] group-hover:translate-x-0.5 transition-transform ml-2">
+                    Up to 30% OFF ›
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      ) : (
+        /* ========================================================================= */
+        /* 1B. STANDALONE CUSTOM BUNDLE ROUTINE BUILDER (WHEN NO PAIRED ITEM EXISTS) */
+        /* ========================================================================= */
+        <div className="p-5 sm:p-6 rounded-[28px] bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 shadow-xs space-y-4">
+          {/* Header with SAVE UP TO 30% badge */}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" />
+                <span>BUILD YOUR ROUTINE</span>
+              </div>
+              <h3 className="font-sans text-xl sm:text-2xl font-medium tracking-tight text-[#122A16] dark:text-white mt-1">
+                Create Your Custom Bundle
+              </h3>
+            </div>
+
+            <span className="shrink-0 inline-flex items-center rounded-full bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 px-3 py-1 text-[#1E6839] dark:text-emerald-300 shadow-2xs font-inter text-xs font-bold">
+              SAVE UP TO 30%
+            </span>
+          </div>
+
+          <p className="text-xs sm:text-[13px] text-stone-600 dark:text-stone-300 leading-relaxed">
+            Pair this formulation with essentials from our catalog to build your personalized skincare ritual and unlock automated tiered savings:
+          </p>
+
+          {/* Tiered discounts pill row */}
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="rounded-xl border border-stone-200/90 dark:border-white/10 bg-stone-50/70 dark:bg-zinc-800/60 p-2.5 text-center">
+              <p className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400 tracking-wider">2 Products</p>
+              <p className="font-inter font-bold text-xs sm:text-sm text-[#122A16] dark:text-emerald-400 mt-0.5">15% OFF</p>
+            </div>
+            <div className="rounded-xl border border-stone-200/90 dark:border-white/10 bg-stone-50/70 dark:bg-zinc-800/60 p-2.5 text-center">
+              <p className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400 tracking-wider">3 Products</p>
+              <p className="font-inter font-bold text-xs sm:text-sm text-[#122A16] dark:text-emerald-400 mt-0.5">25% OFF</p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/30 dark:border-emerald-500/40 bg-emerald-50/60 dark:bg-emerald-950/30 p-2.5 text-center">
+              <p className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-400 tracking-wider">4+ Products</p>
+              <p className="font-inter font-bold text-xs sm:text-sm text-emerald-700 dark:text-emerald-300 mt-0.5">30% OFF</p>
+            </div>
+          </div>
+
+          {/* Primary CTA to open Custom Bundle Drawer */}
+          <div className="pt-2">
             <button
               type="button"
-              onClick={handleAddBaseBundle}
+              onClick={() => setIsDrawerOpen(true)}
               data-sticky-sentinel="bundle-cta"
               className="w-full h-12 sm:h-13 flex items-center justify-center gap-2 rounded-full bg-[#122A16] hover:bg-[#0c1d0f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-bold text-xs sm:text-[13px] tracking-wide shadow-md active:scale-[0.99] transition-all cursor-pointer"
             >
-              <ShoppingBag size={15} />
+              <Sparkles size={15} />
               <span className="font-inter font-bold">
-                Add Both to Bag • ৳{Math.round(calculation.finalPayable)}
+                Build Custom Bundle (+ Choose Add-ons)
               </span>
             </button>
-
-            {/* Interactive Custom Bundle Drawer Trigger Link */}
-            <div className="text-center pt-0.5">
-              <button
-                type="button"
-                onClick={() => setIsDrawerOpen(true)}
-                className="inline-flex items-center gap-1 text-xs font-medium text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                <span>Create Your Own Bundle (Save up to 30%)</span>
-                <span className="text-stone-400 dark:text-stone-500 font-bold ml-0.5">›</span>
-              </button>
-            </div>
+            <p className="text-[11px] text-stone-500 dark:text-stone-400 text-center mt-2">
+              ✓ Free Delivery over ৳1,100 • Cash on Delivery Available
+            </p>
           </div>
         </div>
-
-      </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 2. SLIDE-OVER MULTI-ITEM CUSTOM BUNDLE DRAWER                             */}
@@ -437,11 +501,15 @@ export default function SeedHeroBundleCard({
           price: effectiveMainPrice,
           image: effectiveMainImage,
         }}
-        initialAddon={{
-          ...activePairedProduct,
-          price: effectivePairedPrice,
-          image: effectivePairedImage,
-        }}
+        initialAddon={
+          activePairedProduct
+            ? {
+                ...activePairedProduct,
+                price: effectivePairedPrice,
+                image: effectivePairedImage,
+              }
+            : null
+        }
         catalogCandidates={catalogCandidates}
       />
 
