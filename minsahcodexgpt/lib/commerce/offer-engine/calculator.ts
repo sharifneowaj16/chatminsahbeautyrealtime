@@ -88,7 +88,13 @@ export function calculateCartOffers(
   }
 
   // 3. Free Delivery Evaluation
-  const targetThreshold = DELIVERY_CONFIG.NATIONWIDE_THRESHOLD;
+  const targetThreshold =
+    params.freeDeliveryConfig?.nationwideThreshold ??
+    DELIVERY_CONFIG.NATIONWIDE_THRESHOLD;
+  const dhakaThreshold =
+    params.freeDeliveryConfig?.dhakaThreshold ??
+    DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD;
+
   const isCityDhaka =
     typeof destinationCity === 'string' &&
     destinationCity.toLowerCase().includes('dhaka');
@@ -96,7 +102,7 @@ export function calculateCartOffers(
   const isFreeDeliveryUnlocked =
     hasProductFreeDelivery ||
     subtotal >= targetThreshold ||
-    (isCityDhaka && subtotal >= DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD) ||
+    (isCityDhaka && subtotal >= dhakaThreshold) ||
     Boolean(appliedPromoRule?.code === 'FREESHIP');
 
   const remainingForFreeDelivery = isFreeDeliveryUnlocked

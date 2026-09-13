@@ -64,7 +64,13 @@ const CROSS_SELL_PRODUCTS: CrossSellProduct[] = [
   },
 ];
 
-export default function CartDrawer() {
+export interface CartDrawerProps {
+  freeDeliveryThreshold?: number;
+}
+
+export default function CartDrawer({
+  freeDeliveryThreshold: propThreshold,
+}: CartDrawerProps = {}) {
   const router = useRouter();
   const { isOpen, closeDrawer } = useCartDrawer();
   const {
@@ -78,7 +84,8 @@ export default function CartDrawer() {
     applyPromoCode,
     removePromoCode,
     discount,
-    freeDeliveryThreshold = 1100,
+    freeDeliveryConfig,
+    freeDeliveryThreshold: contextThreshold,
     isFreeDeliveryUnlocked: isContextFreeUnlocked,
   } = useCart();
 
@@ -91,7 +98,7 @@ export default function CartDrawer() {
   const hasItems = items.length > 0;
 
   // Free delivery calculations (Universal Offer Engine sync)
-  const targetThreshold = freeDeliveryThreshold;
+  const targetThreshold = propThreshold ?? freeDeliveryConfig?.nationwideThreshold ?? contextThreshold;
   const isFreeDeliveryUnlocked = Boolean(isContextFreeUnlocked || subtotal >= targetThreshold);
   const remainingForFreeDelivery = isFreeDeliveryUnlocked ? 0 : Math.max(0, targetThreshold - subtotal);
 

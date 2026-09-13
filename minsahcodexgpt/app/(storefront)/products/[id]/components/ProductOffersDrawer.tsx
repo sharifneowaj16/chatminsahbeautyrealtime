@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Tag, Zap, Gift, Truck, Check, Copy } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 
 interface ProductOffersDrawerProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export default function ProductOffersDrawer({
   isOpen,
   onClose,
 }: ProductOffersDrawerProps) {
+  const { freeDeliveryConfig } = useCart();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -122,7 +124,9 @@ export default function ProductOffersDrawer({
             </div>
             <div>
               <p className="text-xs font-semibold text-white">Free Nationwide Shipping</p>
-              <p className="text-[11px] text-white/60 font-inter">On all orders over ৳1100 (Dhaka ৳500+)</p>
+              <p className="text-[11px] text-white/60 font-inter">
+                On all orders over ৳{freeDeliveryConfig.nationwideThreshold.toLocaleString('en-IN')} (Dhaka ৳{freeDeliveryConfig.dhakaThreshold.toLocaleString('en-IN')}+)
+              </p>
             </div>
           </div>
 

@@ -91,6 +91,10 @@ interface CartContextType {
   selectedPaymentMethod: PaymentMethod | null;
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
   cartLoading: boolean;
+  freeDeliveryConfig: {
+    nationwideThreshold: number;
+    dhakaThreshold: number;
+  };
   freeDeliveryThreshold: number;
   isFreeDeliveryUnlocked: boolean;
 }
@@ -235,6 +239,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(PAYMENT_METHODS[0]);
 
+  const [freeDeliveryConfig, setFreeDeliveryConfig] = useState<{
+    nationwideThreshold: number;
+    dhakaThreshold: number;
+  }>({
+    nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD, // fallback only
+    dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,      // fallback only
+  });
+
+  const fetchOfferEngineConfig = useCallback(async () => {
+    try {
+      const response = await fetch('/api/offer-engine');
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.success && data?.freeDelivery) {
+          setFreeDeliveryConfig({
+            nationwideThreshold: data.freeDelivery.nationwideThreshold,
+            dhakaThreshold: data.freeDelivery.dhakaThreshold,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching offer engine config, keeping fallback threshold:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOfferEngineConfig();
+  }, [fetchOfferEngineConfig]);
+
   const subtotal     = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const shippingCost = 0;
   const tax          = 0;
@@ -246,8 +279,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       subtotal,
       promoCode,
       destinationCity: selectedAddress?.city || null,
+      freeDeliveryConfig,
     });
-  }, [items, subtotal, promoCode, selectedAddress?.city]);
+  }, [items, subtotal, promoCode, selectedAddress?.city, freeDeliveryConfig]);
+
+  const isFreeDeliveryUnlocked = offerEvaluation.isFreeDeliveryUnlocked;
 
   // Keep discount synchronized with offer evaluation when promoCode is active
   useEffect(() => {
@@ -684,6 +720,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       subtotal,
       promoCode: code,
       destinationCity: selectedAddress?.city || null,
+      freeDeliveryConfig,
     });
 
     if (result.appliedPromoRule && !result.promoError) {
@@ -693,7 +730,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else {
       pushToast({ title: result.promoError || 'Invalid or expired promo code', tone: 'danger' });
     }
-  }, [items, promoCode, pushToast, selectedAddress?.city, subtotal]);
+  }, [items, promoCode, pushToast, selectedAddress?.city, subtotal, freeDeliveryConfig]);
 
   const removePromoCode = useCallback(() => {
     setDiscount(0);
@@ -827,8 +864,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       selectedPaymentMethod,
       setSelectedPaymentMethod,
       cartLoading,
-      freeDeliveryThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
-      isFreeDeliveryUnlocked: offerEvaluation.isFreeDeliveryUnlocked,
+      freeDeliveryConfig,
+      freeDeliveryThreshold: freeDeliveryConfig.nationwideThreshold,
+      isFreeDeliveryUnlocked,
     }),
     [
       addAddress,
@@ -840,8 +878,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearCart,
       deleteAddress,
       discount,
+      freeDeliveryConfig,
+      isFreeDeliveryUnlocked,
       items,
-      offerEvaluation.isFreeDeliveryUnlocked,
       paymentMethods,
       promoCode,
       removeItem,

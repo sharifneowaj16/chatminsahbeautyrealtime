@@ -4,30 +4,49 @@ import { authOptions } from '@/lib/auth/nextauth';
 import prisma from '@/lib/prisma';
 import { LoyaltyClient } from '@/components/account/loyalty-client';
 import { LOYALTY_CONFIG } from '@/types/user';
+import { getFreeDeliveryThresholdConfig } from '@/lib/commerce/offer-engine/server';
 
-const loyaltyTiers = [
-  {
-    name: 'Customer',
-    minPoints: 0,
-    icon: 'Star',
-    color: 'gray',
-    benefits: ['1 point per BDT spent', 'Birthday bonus: 50 points', 'Standard customer support'],
-  },
-  {
-    name: 'VIP',
-    minPoints: 1000,
-    icon: 'Heart',
-    color: 'purple',
-    benefits: ['1.2x points on all purchases', 'Birthday bonus: 100 points', 'Priority customer support', 'Exclusive access to sales', 'Free shipping on orders over BDT 500'],
-  },
-  {
-    name: 'Premium',
-    minPoints: 5000,
-    icon: 'Crown',
-    color: 'yellow',
-    benefits: ['1.5x points on all purchases', 'Birthday bonus: 200 points', 'Dedicated customer support', 'Early access to new products', 'Free shipping on all orders', 'Personal beauty consultant', 'Anniversary bonus: 150 points'],
-  },
-];
+function buildLoyaltyTiers(dhakaThreshold: number) {
+  return [
+    {
+      name: 'Customer',
+      minPoints: 0,
+      icon: 'Star',
+      color: 'gray',
+      benefits: ['1 point per BDT spent', 'Birthday bonus: 50 points', 'Standard customer support'],
+    },
+    {
+      name: 'VIP',
+      minPoints: 1000,
+      icon: 'Heart',
+      color: 'purple',
+      benefits: [
+        '1.2x points on all purchases',
+        'Birthday bonus: 100 points',
+        'Priority customer support',
+        'Exclusive access to sales',
+        `Free shipping on orders over BDT ${dhakaThreshold}`,
+      ],
+    },
+    {
+      name: 'Premium',
+      minPoints: 5000,
+      icon: 'Crown',
+      color: 'yellow',
+      benefits: [
+        '1.5x points on all purchases',
+        'Birthday bonus: 200 points',
+        'Dedicated customer support',
+        'Early access to new products',
+        'Free shipping on all orders',
+        'Personal beauty consultant',
+        'Anniversary bonus: 150 points',
+      ],
+    },
+  ];
+}
+
+const defaultLoyaltyTiers = buildLoyaltyTiers(500);
 
 const rewards = [
   { id: '1', name: 'BDT 100 Off Coupon', points: 500, description: 'Get BDT 100 off your next purchase', category: 'discount' },
@@ -49,7 +68,7 @@ function getTierName(points: number) {
   return 'customer';
 }
 
-async function getLoyaltyData(userId: string) {
+async function getLoyaltyData(userId: string, tiers = defaultLoyaltyTiers) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -202,8 +221,8 @@ async function getLoyaltyData(userId: string) {
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const currentPoints = user.loyaltyPoints;
-  const nextTier = loyaltyTiers.find((tier) => tier.minPoints > currentPoints);
-  const currentTierMinPoints = [...loyaltyTiers]
+  const nextTier = tiers.find((tier) => tier.minPoints > currentPoints);
+  const currentTierMinPoints = [...tiers]
     .reverse()
     .find((tier) => currentPoints >= tier.minPoints)?.minPoints ?? 0;
   const pointsNeededForNextTier = nextTier ? Math.max(nextTier.minPoints - currentPoints, 0) : 0;
@@ -239,7 +258,9 @@ export default async function LoyaltyPage() {
     redirect('/login?redirect=/account/loyalty');
   }
 
-  const data = await getLoyaltyData(session.user.id);
+  const freeDelivery = await getFreeDeliveryThresholdConfig();
+  const loyaltyTiers = buildLoyaltyTiers(freeDelivery.dhakaThreshold);
+  const data = await getLoyaltyData(session.user.id, loyaltyTiers);
 
   return (
     <LoyaltyClient

@@ -62,11 +62,11 @@ export const DEFAULT_DELIVERY_MESSAGE_CONFIG: DeliveryMessageConfig = {
     ctaHref: '',
   },
   message2: {
-    text: '🎁 New customer delivery offer: ঢাকার ভিতরে ফ্রি, ঢাকার বাইরে ৳60 (৳500+ order), ৳1100+ হলে সারা বাংলাদেশে ফ্রি।',
+    text: '🎁 New customer delivery offer: ঢাকার ভিতরে ফ্রি, ঢাকার বাইরে ৳60 ({{dhakaSubsidizedThreshold}}+ order), {{nationwideThreshold}}+ হলে সারা বাংলাদেশে ফ্রি।',
     backgroundColor: '#d3fa99',
     textColor: '#1c3a13',
     active: true,
-    messageText: '🎁 New customer delivery offer: ঢাকার ভিতরে ফ্রি, ঢাকার বাইরে ৳60 (৳500+ order), ৳1100+ হলে সারা বাংলাদেশে ফ্রি।',
+    messageText: '🎁 New customer delivery offer: ঢাকার ভিতরে ফ্রি, ঢাকার বাইরে ৳60 ({{dhakaSubsidizedThreshold}}+ order), {{nationwideThreshold}}+ হলে সারা বাংলাদেশে ফ্রি।',
     bgColor: '#d3fa99',
     enabled: true,
     ctaText: '',
@@ -83,4 +83,12 @@ export const DEFAULT_DELIVERY_MESSAGE_CONFIG: DeliveryMessageConfig = {
     ctaText: '',
     ctaHref: '',
   },
+};
+
+export const FALLBACK_DELIVERY_MESSAGE: DeliveryMessageResponse = {
+  messageType: 'NEW_CUSTOMER',
+  messageText: '🎁 New customer delivery offer: ঢাকার ভিতরে ফ্রি, ঢাকার বাইরে ৳60 ({{dhakaSubsidizedThreshold}}+ order), {{nationwideThreshold}}+ হলে সারা বাংলাদেশে ফ্রি।',
+  backgroundColor: '#d3fa99',
+  textColor: '#1c3a13',
+  active: true,
 };

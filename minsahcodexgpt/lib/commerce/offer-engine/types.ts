@@ -36,6 +36,10 @@ export interface CartOfferCalculationParams {
   promoCode?: string | null;
   destinationCity?: string | null;
   isNewCustomer?: boolean;
+  freeDeliveryConfig?: {
+    nationwideThreshold?: number;
+    dhakaThreshold?: number;
+  } | null;
 }
 
 export interface CartOfferCalculationResult {

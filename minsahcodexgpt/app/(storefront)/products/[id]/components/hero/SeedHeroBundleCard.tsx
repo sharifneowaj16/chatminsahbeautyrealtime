@@ -35,7 +35,7 @@ export default function SeedHeroBundleCard({
   onMainVariantChange,
   className = '',
 }: SeedHeroBundleCardProps) {
-  const { items, addItem, removeItem } = useCart();
+  const { items, addItem, removeItem, freeDeliveryConfig } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
   const { pushToast } = useToast();
 
@@ -187,9 +187,9 @@ export default function SeedHeroBundleCard({
     const customerSavings = availableMargin > 0 ? Math.min(targetSavings, maxSafeDiscount) : 0;
     const finalPayable = Math.max(0, totalSellingPrice - customerSavings);
 
-    // Free delivery conditions: 1) finalPayable >= 1100, or 2) mainProduct / pairedProduct has special free delivery flag
+    // Free delivery conditions: 1) finalPayable >= nationwideThreshold, or 2) mainProduct / pairedProduct has special free delivery flag
     const hasFreeDelivery =
-      finalPayable >= 1100 ||
+      finalPayable >= freeDeliveryConfig.nationwideThreshold ||
       Boolean(
         mainProduct.hasFreeDelivery ||
         activePairedProduct.hasFreeDelivery ||
@@ -216,6 +216,7 @@ export default function SeedHeroBundleCard({
     mainProduct.deliveryChargeOutsideDhaka,
     activeMainVariant?.attributes,
     activePairedVariant?.attributes,
+    freeDeliveryConfig.nationwideThreshold,
   ]);
 
   // If disabled by admin, return null
@@ -503,7 +504,7 @@ export default function SeedHeroBundleCard({
               </span>
             </button>
             <p className="text-[11px] text-stone-500 dark:text-stone-400 text-center mt-2">
-              ✓ Free Delivery over ৳1,100 • Cash on Delivery Available
+              ✓ Free Delivery over ৳{freeDeliveryConfig.nationwideThreshold.toLocaleString('en-IN')} • Cash on Delivery Available
             </p>
           </div>
         </div>

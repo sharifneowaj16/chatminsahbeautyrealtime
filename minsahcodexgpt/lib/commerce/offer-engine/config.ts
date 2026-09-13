@@ -6,6 +6,8 @@ import type { DeliveryTierConfig, PromoRule } from './types';
  * - Tiered Dhaka Metro threshold: ৳500
  * - Tiered Outside Dhaka subsidized threshold: ৳500 (৳60 delivery charge)
  */
+// Fallback only — CartContext is the source of truth, fetched from 
+// /api/offer-engine (SiteConfig.universalOfferEngineConfig).
 export const DELIVERY_CONFIG: DeliveryTierConfig = {
   NATIONWIDE_THRESHOLD: 1100,
   DHAKA_METRO_THRESHOLD: 500,

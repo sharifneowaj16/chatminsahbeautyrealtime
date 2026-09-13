@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { resolveDeliveryMessage } from '@/lib/delivery-message/resolver';
+import { getFreeDeliveryThresholdConfig } from '@/lib/commerce/offer-engine/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,13 +33,26 @@ export async function GET(request: NextRequest) {
       userId,
     });
 
-    const safePayload = result || {
+    let safePayload = result || {
       messageType: null,
       messageText: '',
       backgroundColor: '',
       textColor: '',
       active: false,
     };
+
+    if (safePayload.messageText) {
+      const freeDelivery = await getFreeDeliveryThresholdConfig();
+      const nationwideFormatted = `৳${freeDelivery.nationwideThreshold.toLocaleString('en-IN')}`;
+      const dhakaSubsidizedFormatted = `৳${(freeDelivery.outsideDhakaSubsidizedThreshold ?? freeDelivery.dhakaThreshold).toLocaleString('en-IN')}`;
+
+      safePayload = {
+        ...safePayload,
+        messageText: safePayload.messageText
+          .replace(/\{\{nationwideThreshold\}\}/g, nationwideFormatted)
+          .replace(/\{\{dhakaSubsidizedThreshold\}\}/g, dhakaSubsidizedFormatted),
+      };
+    }
 
     return NextResponse.json(safePayload, {
       headers: {
