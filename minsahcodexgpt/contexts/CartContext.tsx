@@ -24,6 +24,8 @@ export interface CartItem {
   color?: string | null;
   shade?: string | null;
   bundleId?: string | null;
+  bundleGroupId?: string | null;
+  bundleSource?: 'hero-card' | 'custom-drawer' | null;
   bundleName?: string | null;
   bundleDiscountRatio?: number | null;
   isBundle?: boolean | null;
@@ -523,11 +525,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
           let itemForTracking = normalizedItem;
           if (data.item) {
             const mapped = mapApiItem(data.item);
-            itemForTracking = mapped;
+            itemForTracking = {
+              ...mapped,
+              ...normalizedItem,
+              cartItemId: mapped.cartItemId,
+              quantity: mapped.quantity,
+            };
             setItems((prev) => {
-              const existing = prev.find((cartItem) => cartItem.id === mapped.id);
-              if (existing) {
-                return prev.map((cartItem) => cartItem.id === mapped.id ? mapped : cartItem);
+              const existingIndex = prev.findIndex(
+                (cartItem) => cartItem.id === normalizedItem.id || cartItem.id === mapped.id
+              );
+              if (existingIndex !== -1) {
+                const existing = prev[existingIndex];
+                const updatedItem: CartItem = {
+                  ...mapped,
+                  ...existing,
+                  cartItemId: mapped.cartItemId,
+                  quantity: mapped.quantity,
+                  id: existing.id,
+                  price: existing.price,
+                  isBundle: existing.isBundle,
+                  bundleId: existing.bundleId,
+                  bundleGroupId: existing.bundleGroupId,
+                  bundleSource: existing.bundleSource,
+                  bundleName: existing.bundleName,
+                  bundleDiscountRatio: existing.bundleDiscountRatio,
+                };
+                const next = [...prev];
+                next[existingIndex] = updatedItem;
+                return next;
               }
               return [mapped, ...prev];
             });

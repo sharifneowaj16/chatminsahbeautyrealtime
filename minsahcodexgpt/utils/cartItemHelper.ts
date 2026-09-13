@@ -79,6 +79,19 @@ export function generateCartItemId(
   return baseKey;
 }
 
+/**
+ * Unifies bundle group ID generation across storefront cards and custom drawers.
+ * Sorts by "productId:variantId" so selection order never alters the bundle key.
+ */
+export function generateBundleGroupId(
+  items: Array<{ productId: string; variantId?: string | null }>
+): string {
+  return items
+    .map((i) => `${i.productId}:${i.variantId || 'base'}`)
+    .sort()
+    .join('|');
+}
+
 export interface StandardProductInput {
   id: string;
   name: string;
@@ -181,6 +194,8 @@ export interface CreateBundleCartItemParams {
   product: StandardProductInput;
   variant?: StandardVariantInput | null;
   bundleId: string;
+  bundleGroupId?: string | null;
+  bundleSource?: 'hero-card' | 'custom-drawer' | null;
   bundleName?: string;
   discountRatio?: number;
   quantity?: number;
@@ -193,6 +208,8 @@ export function createBundleCartItem({
   product,
   variant,
   bundleId,
+  bundleGroupId,
+  bundleSource,
   bundleName = 'Special Bundle',
   discountRatio = 1,
   quantity = 1,
@@ -245,6 +262,8 @@ export function createBundleCartItem({
     maxQuantity,
     isBundle: true,
     bundleId,
+    bundleGroupId: bundleGroupId ?? bundleId,
+    bundleSource: bundleSource ?? null,
     bundleName,
     bundleDiscountRatio: discountRatio,
   };

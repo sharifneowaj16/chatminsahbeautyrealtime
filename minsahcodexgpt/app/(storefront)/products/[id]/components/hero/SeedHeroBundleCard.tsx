@@ -9,9 +9,10 @@ import { useToast } from '@/components/ui/ToastProvider';
 import SeedBundleDrawer, { BundleProductCandidate } from './SeedBundleDrawer';
 import SeedBundleProductCapsule from './SeedBundleProductCapsule';
 import { safeImageUrl } from '@/lib/safe-image';
-import { createBundleCartItem, findStandaloneCartItems } from '@/utils/cartItemHelper';
+import { createBundleCartItem, findStandaloneCartItems, generateBundleGroupId } from '@/utils/cartItemHelper';
 import { estimateDeliveryCharge, extractVariantWeightKg, parseWeightToKg } from '@/lib/buy-now';
 import { cleanProductName } from './cleanProductName';
+import { FreeDeliveryIncentiveBanner } from '@/components/cart/FreeDeliveryIncentiveBanner';
 
 export interface SeedHeroBundleCardProps {
   /** Anchor / Main Product */
@@ -117,14 +118,19 @@ export default function SeedHeroBundleCard({
   // =========================================================================
   const calculation = useMemo(() => {
     if (!activePairedProduct) {
+      const hasFreeDelivery = Boolean(
+        effectiveMainPrice >= freeDeliveryConfig.nationwideThreshold ||
+        mainProduct.hasFreeDelivery ||
+        mainProduct.deliveryOfferType === 'FREE'
+      );
       return {
         totalSellingPrice: effectiveMainPrice,
         customerSavings: 0,
         finalPayable: effectiveMainPrice,
-        hasFreeDelivery: Boolean(
-          mainProduct.hasFreeDelivery ||
-          mainProduct.deliveryOfferType === 'FREE'
-        ),
+        hasFreeDelivery,
+        remainingForFreeDelivery: hasFreeDelivery
+          ? 0
+          : Math.max(0, freeDeliveryConfig.nationwideThreshold - effectiveMainPrice),
       };
     }
 
@@ -202,6 +208,9 @@ export default function SeedHeroBundleCard({
       customerSavings,
       finalPayable,
       hasFreeDelivery,
+      remainingForFreeDelivery: hasFreeDelivery
+        ? 0
+        : Math.max(0, freeDeliveryConfig.nationwideThreshold - finalPayable),
     };
   }, [
     activePairedProduct,
@@ -231,7 +240,10 @@ export default function SeedHeroBundleCard({
         ? calculation.finalPayable / calculation.totalSellingPrice
         : 1;
 
-    const bundleGroupId = `bundle-${mainProduct.id}-${activeMainVariant?.id || 'base'}-${activePairedProduct.id}-${activePairedVariant?.id || 'base'}`;
+    const bundleGroupId = generateBundleGroupId([
+      { productId: mainProduct.id, variantId: activeMainVariant?.id },
+      { productId: activePairedProduct.id, variantId: activePairedVariant?.id },
+    ]);
 
     // Smart Auto-Upgrade: Remove existing standalone (non-bundle) single items to prevent duplicate rows
     const standaloneItems = findStandaloneCartItems(items, [
@@ -268,6 +280,8 @@ export default function SeedHeroBundleCard({
           }
         : null,
       bundleId: bundleGroupId,
+      bundleGroupId,
+      bundleSource: 'hero-card',
       bundleName: '2-Step Bundle',
       discountRatio,
       quantity: 1,
@@ -295,6 +309,8 @@ export default function SeedHeroBundleCard({
           }
         : null,
       bundleId: bundleGroupId,
+      bundleGroupId,
+      bundleSource: 'hero-card',
       bundleName: '2-Step Bundle',
       discountRatio,
       quantity: 1,
@@ -413,6 +429,14 @@ export default function SeedHeroBundleCard({
               )}
             </div>
 
+            {/* Incentive banner for free delivery when not yet unlocked */}
+            {!calculation.hasFreeDelivery && calculation.remainingForFreeDelivery > 0 && (
+              <FreeDeliveryIncentiveBanner
+                isUnlocked={false}
+                remainingAmount={calculation.remainingForFreeDelivery}
+              />
+            )}
+
             <div className="space-y-2.5">
               {/* Primary CTA Button */}
               <button
@@ -520,6 +544,7 @@ export default function SeedHeroBundleCard({
           ...mainProduct,
           price: effectiveMainPrice,
           image: effectiveMainImage,
+          selectedVariantId: activeMainVariant?.id ?? null,
         }}
         initialAddon={
           activePairedProduct
@@ -527,6 +552,7 @@ export default function SeedHeroBundleCard({
                 ...activePairedProduct,
                 price: effectivePairedPrice,
                 image: effectivePairedImage,
+                selectedVariantId: activePairedVariant?.id ?? null,
               }
             : null
         }

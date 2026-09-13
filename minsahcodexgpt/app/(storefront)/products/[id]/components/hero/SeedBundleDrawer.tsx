@@ -19,10 +19,11 @@ import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { safeImageUrl } from '@/lib/safe-image';
-import { createBundleCartItem, findStandaloneCartItems } from '@/utils/cartItemHelper';
+import { createBundleCartItem, findStandaloneCartItems, generateBundleGroupId } from '@/utils/cartItemHelper';
 import { estimateDeliveryCharge, parseWeightToKg } from '@/lib/buy-now';
 import type { ProductVariantItem } from './SeedVariantRail';
 import { cleanProductName } from './cleanProductName';
+import { FreeDeliveryIncentiveBanner } from '@/components/cart/FreeDeliveryIncentiveBanner';
 
 export interface BundleProductCandidate {
   id: string;
@@ -34,6 +35,7 @@ export interface BundleProductCandidate {
   hasFreeDelivery?: boolean;
   category?: string;
   variants?: ProductVariantItem[];
+  selectedVariantId?: string | null;
   weight?: string | number | null;
   shippingWeight?: string | number | null;
   deliveryOfferType?: string | null;
@@ -257,6 +259,9 @@ export default function SeedBundleDrawer({
       finalPayable,
       ownerNetProfit,
       hasAnyFreeDelivery: isFreeDelivery,
+      remainingForFreeDelivery: isFreeDelivery
+        ? 0
+        : Math.max(0, freeDeliveryConfig.nationwideThreshold - finalPayable),
     };
   }, [selectedProducts, freeDeliveryConfig.nationwideThreshold]);
 
@@ -268,8 +273,29 @@ export default function SeedBundleDrawer({
         ? bundleCalculation.finalPayable / bundleCalculation.totalSellingPrice
         : 1;
 
-    const bundleGroupId = selectedProducts.map((p) => p.id).sort().join('-');
+    const bundleGroupId = generateBundleGroupId(
+      selectedProducts.map((p) => {
+        const activeVar = p.selectedVariantId
+          ? p.variants?.find((v) => v.id === p.selectedVariantId) ?? p.variants?.[0] ?? null
+          : p.variants?.[0] ?? null;
+        return {
+          productId: p.id,
+          variantId: activeVar?.id ?? null,
+        };
+      })
+    );
     const stepName = `${selectedProducts.length}-Step Bundle`;
+
+    // Replace-on-change: If a different custom-drawer bundle already exists in the cart, remove it
+    const staleCustomBundleItems = items.filter(
+      (item) =>
+        item.isBundle &&
+        item.bundleSource === 'custom-drawer' &&
+        (item.bundleGroupId || item.bundleId) !== bundleGroupId
+    );
+    if (staleCustomBundleItems.length > 0) {
+      staleCustomBundleItems.forEach((item) => removeItem(item.id));
+    }
 
     // Smart Auto-Upgrade: Remove existing standalone (non-bundle) single items to prevent duplicate rows
     const selectedIds = selectedProducts.map((p) => p.id);
@@ -283,7 +309,9 @@ export default function SeedBundleDrawer({
     }
 
     selectedProducts.forEach((p) => {
-      const activeVar = p.variants && p.variants.length > 0 ? p.variants[0] : null;
+      const activeVar = p.selectedVariantId
+        ? p.variants?.find((v) => v.id === p.selectedVariantId) ?? p.variants?.[0] ?? null
+        : p.variants?.[0] ?? null;
       const bundleItem = createBundleCartItem({
         product: {
           id: p.id,
@@ -304,6 +332,8 @@ export default function SeedBundleDrawer({
             }
           : null,
         bundleId: bundleGroupId,
+        bundleGroupId,
+        bundleSource: 'custom-drawer',
         bundleName: stepName,
         discountRatio,
         quantity: 1,
@@ -582,6 +612,15 @@ export default function SeedBundleDrawer({
                   </span>
                 </div>
               </div>
+
+              {/* Free delivery incentive banner when not yet unlocked */}
+              {!bundleCalculation.hasAnyFreeDelivery && bundleCalculation.remainingForFreeDelivery > 0 && (
+                <FreeDeliveryIncentiveBanner
+                  isUnlocked={false}
+                  remainingAmount={bundleCalculation.remainingForFreeDelivery}
+                  className="mt-2"
+                />
+              )}
 
               <div className="pt-2 border-t border-emerald-500/20 flex items-baseline justify-between">
                 <span className="text-xs font-bold text-stone-900 dark:text-white">

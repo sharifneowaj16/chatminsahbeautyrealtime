@@ -8,7 +8,6 @@ import {
   Loader2,
   ShoppingBag,
   Sparkles,
-  Truck,
   X,
 } from "lucide-react";
 
@@ -17,6 +16,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import CartItemRow from "@/features/cart/CartItemRow";
 import { formatPrice } from "@/utils/currency";
+import { FreeDeliveryIncentiveBanner } from "@/components/cart/FreeDeliveryIncentiveBanner";
 import { ENABLE_PROMO_COUPONS } from "@/lib/commerce/offer-engine";
 
 interface CrossSellProduct {
@@ -210,21 +210,10 @@ export default function CartDrawer({
         <div className="flex flex-col min-h-full pb-4">
           {/* ── Seed-style Bracketed Incentive Banner 【 🏷️ Save 25% when you add another product 】 ── */}
           <div className="px-6 pt-2 pb-3">
-            <div className="rounded-lg bg-[#E5EAE1] px-4 py-3 text-center text-xs font-[450] text-[#1B361B] flex items-center justify-center gap-2">
-              <span className="text-[#1B361B]/40 select-none">【</span>
-              {isFreeDeliveryUnlocked ? (
-                <>
-                  <Sparkles className="h-3.5 w-3.5 text-[#1B361B] shrink-0" />
-                  <span>FREE Delivery Unlocked on your order</span>
-                </>
-              ) : (
-                <>
-                  <Truck className="h-3.5 w-3.5 text-[#1B361B] shrink-0" />
-                  <span>Add {formatPrice(remainingForFreeDelivery)} more for FREE Delivery</span>
-                </>
-              )}
-              <span className="text-[#1B361B]/40 select-none">】</span>
-            </div>
+            <FreeDeliveryIncentiveBanner
+              isUnlocked={isFreeDeliveryUnlocked}
+              remainingAmount={remainingForFreeDelivery}
+            />
           </div>
 
           {/* ── Cart Items List ── */}
