@@ -13,8 +13,8 @@ import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  AlertTriangle, CheckCircle2, Eye, EyeOff, GripVertical, Loader2, Save,
-  ChevronDown, ChevronUp, Settings
+  AlertTriangle, CheckCircle2, GripVertical, Loader2, Save,
+  ChevronDown, ChevronUp, Settings, ExternalLink
 } from 'lucide-react';
 import { defaultHomeHeroConfig, defaultHomeSections } from '@/lib/homeData';
 import { HomeHeroConfig, HomeSection, SectionType } from '@/types/admin';
@@ -375,10 +375,20 @@ export default function HomeSectionsPage() {
           <div className="text-sm font-bold mb-2 text-white">COMBO</div>
           <div className="font-semibold text-[#F7F8F8] text-sm">Combos</div>
         </Link>
-        <Link href="/admin/home-sections/brands" className="bg-[#161824] p-4 rounded-xl border border-[#232636] hover:border-white transition text-center shadow-sm"
+        <Link href="/admin/home-sections/brands" className="bg-[#161824] p-4 rounded-xl border border-[#232636] hover:border-[#5e6ad2] transition text-center shadow-sm relative group"
         >
-          <div className="text-sm font-bold mb-2 text-white">BRAND</div>
+          <div className="text-sm font-bold mb-2 text-white flex items-center justify-center gap-1.5">
+            <span>BRAND</span>
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                sections.find((s) => s.type === 'brands')?.isVisible !== false ? 'bg-emerald-400' : 'bg-stone-500'
+              }`}
+            />
+          </div>
           <div className="font-semibold text-[#F7F8F8] text-sm">Brands</div>
+          <div className="text-[11px] text-[#8A8F98] mt-0.5">
+            {sections.find((s) => s.type === 'brands')?.isVisible !== false ? 'Visible on Home' : 'Hidden from Home'}
+          </div>
         </Link>
         <Link href="/admin/home-sections/slides" className="bg-[#161824] p-4 rounded-xl border border-[#232636] hover:border-white transition text-center shadow-sm"
         >
@@ -433,18 +443,24 @@ export default function HomeSectionsPage() {
               </div>
 
               {/* Visibility Toggle */}
-              <div className="w-24 flex justify-center">
-                <Button
+              <div className="w-24 flex items-center justify-center gap-1.5">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={section.isVisible}
                   onClick={() => toggleVisibility(section.id)}
-                  aria-label={`${section.isVisible ? 'Hide' : 'Show'} ${section.title}`}
-                  className={`p-2 rounded-lg transition ${
-                    section.isVisible
-                      ? 'bg-emerald-500/10 text-emerald-400 hover:bg-green-200'
-                      : 'bg-white/[0.12] text-[#8a8f98] hover:bg-white/[0.16]'
+                  aria-label={`${section.isVisible ? 'Hide' : 'Show'} ${section.title} on homepage`}
+                  title={`${section.isVisible ? 'Visible on homepage (click to hide)' : 'Hidden from homepage (click to show)'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#5e6ad2] ${
+                    section.isVisible ? 'bg-emerald-500' : 'bg-[#232636]'
                   }`}
                 >
-                  {section.isVisible ? <Eye size={18} /> : <EyeOff size={18} />}
-                </Button>
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                      section.isVisible ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
 
               {/* Layout */}
@@ -580,9 +596,21 @@ export default function HomeSectionsPage() {
                           onChange={(e) => updateSectionSettings(section.id, { showViewAll: e.target.checked })}
                           className="w-4 h-4 text-[#5e6ad2] rounded"
                         />
-                        Show "View All" Link
+                        Show &quot;View All&quot; Link
                       </label>
                     </div>
+
+                    {section.type === 'brands' && (
+                      <div className="pt-1">
+                        <Link
+                          href="/admin/home-sections/brands"
+                          className="flex items-center justify-between rounded-lg border border-[#5e6ad2]/30 bg-[#5e6ad2]/10 p-2.5 text-xs font-semibold text-[#5e6ad2] hover:bg-[#5e6ad2]/20 transition-colors"
+                        >
+                          <span>Open Dedicated Brands Page</span>
+                          <ExternalLink size={14} />
+                        </Link>
+                      </div>
+                    )}
 
                     <Button
                       onClick={() => setShowSettings(null)}

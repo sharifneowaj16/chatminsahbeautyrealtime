@@ -6,6 +6,7 @@ import HomeHeroBanner from '@/app/components/HomeHeroBanner';
 import HomeTrustStrip from '@/app/components/HomeTrustStrip';
 import HomeProductsClientFallback from '@/app/components/HomeProductsClientFallback';
 import HomeProductSections from '@/app/components/HomeProductSections';
+import HomeBrandsSection from '@/app/components/HomeBrandsSection';
 import HomeSectionSkeleton from '@/app/components/HomeSectionSkeleton';
 import prisma from '@/lib/prisma';
 import { getHomePageConfig, type HomePageConfig } from '@/lib/homepageConfig';
@@ -352,7 +353,7 @@ async function getInitialProducts(homeConfig: HomePageConfig): Promise<Product[]
 }
 
 function isProductHomeSection(type: HomeSection['type']) {
-  return ['flash-sale', 'new-arrivals', 'for-you', 'recommendations', 'favourites', 'brands'].includes(type);
+  return ['flash-sale', 'new-arrivals', 'for-you', 'recommendations', 'favourites'].includes(type);
 }
 
 export default async function HomePage() {
@@ -424,6 +425,16 @@ export default async function HomePage() {
       //     />
       //   </Suspense>
       // );
+    }
+
+    if (section.type === 'brands') {
+      return (
+        <HomeBrandsSection
+          key={section.id}
+          section={section}
+          brands={homeConfig.brands}
+        />
+      );
     }
 
     if (isProductHomeSection(section.type)) {
