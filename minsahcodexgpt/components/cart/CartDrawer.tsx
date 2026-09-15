@@ -99,23 +99,23 @@ export default function CartDrawer({
 
   // Seed.com 100% Pixel-Perfect Sticky Footer
   const drawerFooter = hasItems ? (
-    <div className="w-full px-6 pt-5 pb-7 space-y-4">
+    <div className="w-full px-6 pt-5 md:pt-2 pb-7 md:pb-3 space-y-4 md:space-y-2">
       {/* ── Total & Pricing Breakdown ── */}
       <div>
         <div className="flex items-center justify-between">
-          <span className="text-[18px] font-[350] text-[#1B361B] tracking-tight font-sans">Total</span>
+          <span className="text-[18px] md:text-[15px] font-[350] text-[#1B361B] tracking-tight font-sans">Total</span>
           <div className="text-right">
-            <span className="text-[20px] font-[350] text-[#1B361B] font-sans">
+            <span className="text-[20px] md:text-[17px] font-[350] text-[#1B361B] font-sans">
               {formatPrice(Math.max(0, subtotal - discount))}
             </span>
             {discount > 0 && (
-              <span className="block text-[11px] font-[350] text-emerald-700">
+              <span className="block text-[11px] md:text-[10px] font-[350] text-emerald-700">
                 Saved -{formatPrice(discount)}
               </span>
             )}
           </div>
         </div>
-        <p className="text-xs font-[350] text-[#667085] mt-1">
+        <p className="text-xs md:text-[11px] font-[350] text-[#667085] mt-1 md:mt-0.5">
           {isFreeDeliveryUnlocked
             ? "Free delivery unlocked • Taxes included"
             : "Shipping + taxes calculated at checkout"}
@@ -127,7 +127,7 @@ export default function CartDrawer({
         type="button"
         onClick={handleCheckout}
         disabled={cartLoading || !hasItems}
-        className="w-full h-[54px] rounded-full bg-[#1B361B] hover:bg-[#254825] active:scale-[0.99] text-white font-[350] text-base transition-all duration-200 flex items-center justify-center shadow-[0_4px_14px_rgba(27,54,27,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer tracking-wide"
+        className="w-full h-[54px] md:h-[42px] rounded-full bg-[#1B361B] hover:bg-[#254825] active:scale-[0.99] text-white font-[350] text-base md:text-[14px] transition-all duration-200 flex items-center justify-center shadow-[0_4px_14px_rgba(27,54,27,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer tracking-wide"
       >
         Checkout
       </button>
@@ -145,9 +145,9 @@ export default function CartDrawer({
       footer={drawerFooter}
     >
       {hasItems ? (
-        <div className="flex flex-col min-h-full pb-4">
+        <div className="flex flex-col min-h-full pb-4 md:pb-1">
           {/* ── Seed-style Bracketed Incentive Banner 【 🏷️ Save 25% when you add another product 】 ── */}
-          <div className="px-6 pt-2 pb-3">
+          <div className="px-6 pt-2 pb-3 md:pt-1 md:pb-1.5">
             <FreeDeliveryIncentiveBanner
               isUnlocked={isFreeDeliveryUnlocked}
               remainingAmount={remainingForFreeDelivery}

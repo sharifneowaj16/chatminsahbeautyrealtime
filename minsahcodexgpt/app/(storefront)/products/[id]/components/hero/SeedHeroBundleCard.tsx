@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
 import { ShoppingBag, Check, Sparkles } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import SeedBundleDrawer, { BundleProductCandidate } from './SeedBundleDrawer';
 import SeedBundleProductCapsule from './SeedBundleProductCapsule';
-import { safeImageUrl } from '@/lib/safe-image';
 import { createBundleCartItem, generateBundleGroupId } from '@/utils/cartItemHelper';
 import { estimateDeliveryCharge, extractVariantWeightKg, parseWeightToKg } from '@/lib/buy-now';
 import { cleanProductName } from './cleanProductName';
@@ -263,6 +261,7 @@ export default function SeedHeroBundleCard({
             attributes: activeMainVariant.attributes,
           }
         : null,
+      availableVariants: (mainProduct.variants as any[]) || [],
       bundleId: bundleGroupId,
       bundleGroupId,
       bundleSource: 'hero-card',
@@ -291,6 +290,7 @@ export default function SeedHeroBundleCard({
             attributes: activePairedVariant.attributes,
           }
         : null,
+      availableVariants: (activePairedProduct.variants as any[]) || [],
       bundleId: bundleGroupId,
       bundleGroupId,
       bundleSource: 'hero-card',
@@ -310,7 +310,7 @@ export default function SeedHeroBundleCard({
         /* ========================================================================= */
         /* 1A. INLINE LUXURY DUO BUNDLE CARD (WHEN PAIRED PRODUCT EXISTS)            */
         /* ========================================================================= */
-        <div className="p-5 sm:p-6 rounded-[28px] bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 shadow-xs space-y-5">
+        <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 shadow-xs space-y-3.5">
           
           {/* Card Header (• DUO RITUAL + Title + Save Badge) */}
           <div className="flex items-start justify-between gap-3">
@@ -319,21 +319,21 @@ export default function SeedHeroBundleCard({
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" />
                 <span>DUO RITUAL</span>
               </div>
-              <h3 className="font-sans text-2xl sm:text-[26px] font-medium font-[500] tracking-tight text-[#122A16] dark:text-white mt-1">
+              <h3 className="font-sans text-lg sm:text-xl font-bold tracking-tight text-[#122A16] dark:text-white mt-0.5">
                 Frequently Paired With
               </h3>
             </div>
 
             {/* Top-Right Badge: Only shown when there is genuine savings */}
             {calculation.customerSavings > 0 && (
-              <span className="shrink-0 inline-flex items-center rounded-full bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 px-3.5 py-1 text-[#1E6839] dark:text-emerald-300 shadow-2xs font-inter text-xs font-bold leading-4">
+              <span className="shrink-0 inline-flex items-center rounded-full bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 px-2.5 py-0.5 text-[#1E6839] dark:text-emerald-300 shadow-2xs font-inter text-[11px] font-bold leading-4">
                 SAVE ৳{Math.round(calculation.customerSavings)}
               </span>
             )}
           </div>
 
           {/* STEP 1 - MAIN PRODUCT CAPSULE */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-zinc-800/90 border border-stone-200/90 dark:border-white/10 shadow-2xs">
+          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-stone-50/70 dark:bg-zinc-800/60 border border-stone-200/70 dark:border-white/5 shadow-2xs">
             <SeedBundleProductCapsule
               stepNumber={1}
               stepLabel="MAIN PRODUCT"
@@ -352,17 +352,17 @@ export default function SeedHeroBundleCard({
           </div>
 
           {/* TRANSITION DIVIDER (+ PAIR WITH) */}
-          <div className="relative py-2 flex items-center justify-center">
+          <div className="relative py-0.5 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-dashed border-stone-200 dark:border-white/10" />
             </div>
-            <span className="relative z-10 inline-flex items-center gap-1 rounded-full bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-600 dark:text-stone-300 shadow-2xs">
+            <span className="relative z-10 inline-flex items-center gap-1 rounded-full bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400 shadow-2xs">
               + PAIR WITH
             </span>
           </div>
 
           {/* STEP 2 - PAIRED PRODUCT CAPSULE */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-zinc-800/90 border border-stone-200/90 dark:border-white/10 shadow-2xs">
+          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-stone-50/70 dark:bg-zinc-800/60 border border-stone-200/70 dark:border-white/5 shadow-2xs">
             <SeedBundleProductCapsule
               stepNumber={2}
               stepLabel="FREQUENTLY PAIRED WITH THIS"
@@ -381,13 +381,13 @@ export default function SeedHeroBundleCard({
           </div>
 
           {/* BUNDLE PRICE ROW & CHECKOUT ACTION SUMMARY */}
-          <div className="pt-2 space-y-4">
+          <div className="pt-1 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                   BUNDLE PRICE
                 </p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-0.5">
                   <span className="font-inter font-bold text-xl sm:text-2xl text-[#122A16] dark:text-white leading-none">
                     ৳{Math.round(calculation.finalPayable)}
                   </span>
@@ -405,9 +405,9 @@ export default function SeedHeroBundleCard({
               </div>
 
               {calculation.hasFreeDelivery && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#BBE3CE] dark:border-emerald-500/30 bg-[#F2FAF6] dark:bg-emerald-950/40 px-3 py-1 text-xs font-medium text-[#1E6839] dark:text-emerald-300 shadow-2xs">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#BBE3CE] dark:border-emerald-500/30 bg-[#F2FAF6] dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-medium text-[#1E6839] dark:text-emerald-300 shadow-2xs">
                   <Check size={12} strokeWidth={2.5} className="text-[#1E6839] dark:text-emerald-400 shrink-0" />
-                  <span>You Earn Free Delivery</span>
+                  <span>Free Delivery</span>
                 </div>
               )}
             </div>
@@ -420,13 +420,13 @@ export default function SeedHeroBundleCard({
               />
             )}
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {/* Primary CTA Button */}
               <button
                 type="button"
                 onClick={handleAddBaseBundle}
                 data-sticky-sentinel="bundle-cta"
-                className="w-full h-12 sm:h-13 flex items-center justify-center gap-2 rounded-full bg-[#122A16] hover:bg-[#0c1d0f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-bold text-xs sm:text-[13px] tracking-wide shadow-md active:scale-[0.99] transition-all cursor-pointer"
+                className="w-full h-11 sm:h-12 flex items-center justify-center gap-2 rounded-full bg-[#122A16] hover:bg-[#0c1d0f] dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-bold text-xs sm:text-[13px] tracking-wide shadow-md active:scale-[0.99] transition-all cursor-pointer"
               >
                 <ShoppingBag size={15} />
                 <span className="font-inter font-bold">
@@ -435,11 +435,11 @@ export default function SeedHeroBundleCard({
               </button>
 
               {/* Interactive Custom Bundle Drawer Trigger */}
-              <div className="pt-1">
+              <div>
                 <button
                   type="button"
                   onClick={() => setIsDrawerOpen(true)}
-                  className="w-full py-2.5 px-3.5 flex items-center justify-between rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 border border-stone-200/80 dark:border-white/10 text-xs text-stone-700 dark:text-stone-300 transition-colors cursor-pointer group"
+                  className="w-full py-2 px-3 flex items-center justify-between rounded-lg sm:rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 border border-stone-200/80 dark:border-white/10 text-xs text-stone-700 dark:text-stone-300 transition-colors cursor-pointer group"
                 >
                   <span className="flex items-center gap-1.5 font-medium truncate">
                     <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />

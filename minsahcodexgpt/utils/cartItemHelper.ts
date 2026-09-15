@@ -1,4 +1,4 @@
-import type { CartItem } from '@/contexts/CartContext';
+import type { CartItem, ProductVariantItem } from '@/contexts/CartContext';
 
 export interface AttributeExtractionResult {
   size: string | null;
@@ -118,6 +118,7 @@ export interface StandardVariantInput {
 export interface CreateStandardCartItemParams {
   product: StandardProductInput;
   variant?: StandardVariantInput | null;
+  availableVariants?: ProductVariantItem[];
   quantity?: number;
 }
 
@@ -136,6 +137,7 @@ function parseWeightNumber(val: unknown): number | null {
 export function createStandardCartItem({
   product,
   variant,
+  availableVariants,
   quantity = 1,
 }: CreateStandardCartItemParams): CartItem {
   const hasVariant = Boolean(variant && variant.id);
@@ -187,12 +189,14 @@ export function createStandardCartItem({
     bundleId: null,
     bundleName: null,
     bundleDiscountRatio: null,
+    availableVariants: availableVariants && availableVariants.length > 0 ? availableVariants : undefined,
   };
 }
 
 export interface CreateBundleCartItemParams {
   product: StandardProductInput;
   variant?: StandardVariantInput | null;
+  availableVariants?: ProductVariantItem[];
   bundleId: string;
   bundleGroupId?: string | null;
   bundleSource?: 'hero-card' | 'custom-drawer' | null;
@@ -207,6 +211,7 @@ export interface CreateBundleCartItemParams {
 export function createBundleCartItem({
   product,
   variant,
+  availableVariants,
   bundleId,
   bundleGroupId,
   bundleSource,
@@ -266,6 +271,7 @@ export function createBundleCartItem({
     bundleSource: bundleSource ?? null,
     bundleName,
     bundleDiscountRatio: discountRatio,
+    availableVariants: availableVariants && availableVariants.length > 0 ? availableVariants : undefined,
   };
 }
 

@@ -367,63 +367,65 @@ export default function ProductClient({
       {/* ========================================================================= */}
       {/* SEED & DIEUX-INSPIRED MODULAR 7-PHASE MASTER HERO ARCHITECTURE             */}
       {/* ========================================================================= */}
-      <SeedProductHero
-        product={{
-          id: product.id,
-          name: displayTitle,
-          sku: product.sku || undefined,
-          category: product.category || null,
-          rating: rating?.average || product.rating || null,
-          reviews: rating?.total != null ? rating.total : (product.reviews || null),
-          price: baseDisplayPrice,
-          compareAtPrice: comparePrice,
-          costPrice: (product as any).costPrice,
-          image: product.image || '/images/categories/Skincare.png',
-          images: galleryImages,
-          shortDescription: product.shortDescription,
-          keyBenefits: product.keyBenefits,
-          ingredients: product.ingredients,
-          skinType: (product as any).skinType,
-          shelfLife: (product as any).shelfLife,
-          originCountry: (product as any).originCountry,
-          weight: product.weight,
-          shippingWeight: product.shippingWeight,
-          deliveryOfferEnabled: Boolean(product.activeDeliveryOffer),
-          deliveryOfferType: product.activeDeliveryOffer?.type || null,
-          deliveryOfferAmount: product.activeDeliveryOffer?.amount != null ? Number(product.activeDeliveryOffer.amount) : null,
-          deliveryChargeInsideDhaka: product.activeDeliveryOffer?.insideDhakaAmount != null ? Number(product.activeDeliveryOffer.insideDhakaAmount) : ((product as any).deliveryChargeInsideDhaka != null ? Number((product as any).deliveryChargeInsideDhaka) : null),
-          deliveryChargeOutsideDhaka: product.activeDeliveryOffer?.outsideDhakaAmount != null ? Number(product.activeDeliveryOffer.outsideDhakaAmount) : ((product as any).deliveryChargeOutsideDhaka != null ? Number((product as any).deliveryChargeOutsideDhaka) : null),
-          productSpecs: (product as any).productSpecs,
-          productAttributes: (product as any).productAttributes,
-          descriptionSections: product.descriptionSections as any,
-          relatedProducts: (product as any).relatedProducts,
-        }}
-        variants={product.variants as any}
-        relatedProductsList={
-          relatedProducts && relatedProducts.length > 0
-            ? relatedProducts.map((p) => ({
-                id: p.id,
-                name: p.name,
-                price: p.price,
-                costPrice: p.costPrice ?? null,
-                image: p.image || '/images/categories/Skincare.png',
-                stock: p.stock,
-                hasFreeDelivery: Boolean(p.deliveryOfferType === 'FREE' || p.deliveryOfferEnabled),
-                weight: p.weight ?? null,
-                shippingWeight: p.shippingWeight ?? null,
-                deliveryOfferType: p.deliveryOfferType ?? null,
-                deliveryOfferAmount: p.deliveryOfferAmount ?? null,
-                deliveryChargeInsideDhaka: p.deliveryChargeInsideDhaka ?? null,
-                deliveryChargeOutsideDhaka: p.deliveryChargeOutsideDhaka ?? null,
-                category: product.category || 'Skincare',
-                variants: (p.variants as any) || [],
-              }))
-            : undefined
-        }
-        onVariantChange={handleVariantChange}
-        onImageChange={handleImageChange}
-        onQuantityChange={handleQuantityChange}
-      />
+      <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-8">
+        <SeedProductHero
+          product={{
+            id: product.id,
+            name: displayTitle,
+            sku: product.sku || undefined,
+            category: product.category || null,
+            rating: rating?.average || product.rating || null,
+            reviews: rating?.total != null ? rating.total : (product.reviews || null),
+            price: baseDisplayPrice,
+            compareAtPrice: comparePrice,
+            costPrice: (product as any).costPrice,
+            image: product.image || '/images/categories/Skincare.png',
+            images: galleryImages,
+            shortDescription: product.shortDescription,
+            keyBenefits: product.keyBenefits,
+            ingredients: product.ingredients,
+            skinType: (product as any).skinType,
+            shelfLife: (product as any).shelfLife,
+            originCountry: (product as any).originCountry,
+            weight: product.weight,
+            shippingWeight: product.shippingWeight,
+            deliveryOfferEnabled: Boolean(product.activeDeliveryOffer),
+            deliveryOfferType: product.activeDeliveryOffer?.type || null,
+            deliveryOfferAmount: product.activeDeliveryOffer?.amount != null ? Number(product.activeDeliveryOffer.amount) : null,
+            deliveryChargeInsideDhaka: product.activeDeliveryOffer?.insideDhakaAmount != null ? Number(product.activeDeliveryOffer.insideDhakaAmount) : ((product as any).deliveryChargeInsideDhaka != null ? Number((product as any).deliveryChargeInsideDhaka) : null),
+            deliveryChargeOutsideDhaka: product.activeDeliveryOffer?.outsideDhakaAmount != null ? Number(product.activeDeliveryOffer.outsideDhakaAmount) : ((product as any).deliveryChargeOutsideDhaka != null ? Number((product as any).deliveryChargeOutsideDhaka) : null),
+            productSpecs: (product as any).productSpecs,
+            productAttributes: (product as any).productAttributes,
+            descriptionSections: product.descriptionSections as any,
+            relatedProducts: (product as any).relatedProducts,
+          }}
+          variants={product.variants as any}
+          relatedProductsList={
+            relatedProducts && relatedProducts.length > 0
+              ? relatedProducts.map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  price: p.price,
+                  costPrice: p.costPrice ?? null,
+                  image: p.image || '/images/categories/Skincare.png',
+                  stock: p.stock,
+                  hasFreeDelivery: Boolean(p.deliveryOfferType === 'FREE' || p.deliveryOfferEnabled),
+                  weight: p.weight ?? null,
+                  shippingWeight: p.shippingWeight ?? null,
+                  deliveryOfferType: p.deliveryOfferType ?? null,
+                  deliveryOfferAmount: p.deliveryOfferAmount ?? null,
+                  deliveryChargeInsideDhaka: p.deliveryChargeInsideDhaka ?? null,
+                  deliveryChargeOutsideDhaka: p.deliveryChargeOutsideDhaka ?? null,
+                  category: product.category || 'Skincare',
+                  variants: (p.variants as any) || [],
+                }))
+              : undefined
+          }
+          onVariantChange={handleVariantChange}
+          onImageChange={handleImageChange}
+          onQuantityChange={handleQuantityChange}
+        />
+      </div>
 
       {/* ========================================================================= */}
       {/* SEED-STYLE "BENEFITS THAT BUILD OVER TIME" CLINICAL TIMELINE & FAQ MATRIX  */}
@@ -435,25 +437,21 @@ export default function ProductClient({
       {/* ========================================================================= */}
       {/* SEED.COM MEMBER REVIEWS & VERIFIED BUYER PHOTO MATRIX                    */}
       {/* ========================================================================= */}
-      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-        <div className="mt-14 -mx-4 sm:-mx-6 lg:-mx-8">
-          <SeedMemberReviewsSection
-            product={product as any}
-            ratingData={{
-              average: rating?.average || product.rating || 5.0,
-              total: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
-              distribution: rating?.distribution || {
-                5: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
-                4: 0,
-                3: 0,
-                2: 0,
-                1: 0,
-              },
-            }}
-            customReviews={reviews}
-          />
-        </div>
-      </div>
+      <SeedMemberReviewsSection
+          product={product as any}
+          ratingData={{
+            average: rating?.average || product.rating || 5.0,
+            total: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
+            distribution: rating?.distribution || {
+              5: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
+              4: 0,
+              3: 0,
+              2: 0,
+              1: 0,
+            },
+          }}
+          customReviews={reviews}
+        />
 
       {/* Seed.com-Inspired Dynamic Scroll-Morphing Sticky Capsule Bar */}
       <SeedMorphingStickyBar

@@ -70,11 +70,11 @@ export function TrackingConsentBanner() {
   const [consent, setConsent] = useState<TrackingConsentState>('unknown');
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  if (pathname && pathname.startsWith('/admin')) {
-    return null;
-  }
-
   useEffect(() => {
+    if (pathname && pathname.startsWith('/admin')) {
+      return;
+    }
+
     const rawConsent = getClientTrackingConsent();
     const storedConsent = rawConsent === 'granted' && !getClientTrackingConsentVersion() ? 'unknown' : rawConsent;
     const stateSyncTimer = window.setTimeout(() => setConsent(storedConsent), 0);
@@ -90,12 +90,19 @@ export function TrackingConsentBanner() {
     }
 
     const handler = () => setConsent(getClientTrackingConsent());
+    const openHandler = () => setSettingsOpen(true);
     window.addEventListener(TRACKING_CONSENT_EVENT, handler);
+    window.addEventListener('mb:open-cookie-settings', openHandler);
     return () => {
       window.clearTimeout(stateSyncTimer);
       window.removeEventListener(TRACKING_CONSENT_EVENT, handler);
+      window.removeEventListener('mb:open-cookie-settings', openHandler);
     };
-  }, []);
+  }, [pathname]);
+
+  if (pathname && pathname.startsWith('/admin')) {
+    return null;
+  }
 
   const updateConsent = (nextConsent: Exclude<TrackingConsentState, 'unknown' | 'withdrawn'>) => {
     const previousState = consent;
@@ -112,15 +119,7 @@ export function TrackingConsentBanner() {
   };
 
   if (consent !== 'unknown' && !settingsOpen) {
-    return (
-      <button
-        type="button"
-        className="fixed bottom-3 left-3 z-[9998] rounded-full border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-md hover:bg-gray-50"
-        onClick={() => setSettingsOpen(true)}
-      >
-        Cookie settings
-      </button>
-    );
+    return null;
   }
 
   return (

@@ -290,7 +290,7 @@ export default function SeedMorphingStickyBar({
         transform: 'translateY(0) scale(1)',
         width: isDesktop ? '64px' : '56px',
         height: isDesktop ? '64px' : '56px',
-        right: isDesktop ? '28px' : '16px',
+        right: isDesktop ? 'max(32px, calc((100vw - 1440px) / 2 + 32px))' : '16px',
         left: isDesktop ? 'auto' : 'auto',
         transition:
           'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), width 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -305,7 +305,7 @@ export default function SeedMorphingStickyBar({
         opacity: 1,
         pointerEvents: 'auto',
         transform: 'translateY(0) scale(1)',
-        right: '28px',
+        right: 'max(32px, calc((100vw - 1440px) / 2 + 32px))',
         left: 'auto',
         width: '480px',
         height: '64px',

@@ -30,7 +30,7 @@ export default function SiteFooter() {
 
   return (
     <footer className="border-t border-minsah-accent/20 bg-minsah-dark text-minsah-light">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <div className="mx-auto max-w-[1440px] px-4 lg:px-8 py-12 sm:py-14 lg:py-16">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.35fr_0.8fr_0.8fr_1.15fr]">
           <section aria-labelledby="footer-brand-heading">
             <div className="flex items-center gap-3">

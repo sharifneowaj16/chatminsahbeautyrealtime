@@ -12,7 +12,8 @@ import {
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { createStandardCartItem } from '@/utils/cartItemHelper';
-import SeedVariantRail, { ProductVariantItem } from './SeedVariantRail';
+import SeedHeroVariantDropdown from './SeedHeroVariantDropdown';
+import type { ProductVariantItem } from './SeedVariantRail';
 import { cleanProductName } from './cleanProductName';
 
 export interface SeedHeroBuyBoxProps {
@@ -181,6 +182,7 @@ export default function SeedHeroBuyBox({
             attributes: selectedVariant.attributes,
           }
         : null,
+      availableVariants: variants.length > 0 ? (variants as any[]) : undefined,
       quantity,
     });
 
@@ -263,14 +265,14 @@ export default function SeedHeroBuyBox({
       </div>
 
       {/* ========================================================================= */}
-      {/* 6. MULTI-DIMENSIONAL VARIANT RAIL & PACK SIZES                            */}
+      {/* 6. CART-DRAWER STYLE LUXURY VARIANT & SIZE SELECTOR DROPDOWN             */}
       {/* ========================================================================= */}
       {variants && variants.length > 1 && (
         <div className="mb-4">
-          <SeedVariantRail
+          <SeedHeroVariantDropdown
             variants={variants}
-            basePrice={price}
-            baseStock={currentStock}
+            selectedVariantId={selectedVariantId}
+            defaultImage={defaultImage}
             onVariantChange={handleVariantChange}
             onImageChange={handleImageChange}
           />

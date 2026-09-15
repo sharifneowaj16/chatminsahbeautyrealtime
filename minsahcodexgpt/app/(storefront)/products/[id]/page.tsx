@@ -346,7 +346,7 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
 
       {/* Breadcrumb (Desktop Only — Hidden on mobile for optimal above-the-fold viewport) */}
       <div className="hidden md:block w-full bg-[#fcfcf7]">
-        <div className="w-full lg:w-[95%] 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-8 py-3">
           <nav className="flex items-center gap-1.5 text-xs text-[#1c3a13]/70 font-medium" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-[#1c3a13] transition">Home</Link>
             <span aria-hidden="true" className="text-[#1c3a13]/40">/</span>
@@ -369,16 +369,14 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
       </div>
 
       {/* Main content */}
-      <div className="w-full lg:w-[95%] 2xl:max-w-[1400px] mx-auto">
-        <ProductClient
-          product={product as any}
-          reviews={reviews}
-          rating={rating}
-          relatedProducts={relatedProducts}
-          frequentlyBoughtTogether={frequentlyBoughtTogether}
-          productUrl={productUrl}
-        />
-      </div>
+      <ProductClient
+        product={product as any}
+        reviews={reviews}
+        rating={rating}
+        relatedProducts={relatedProducts}
+        frequentlyBoughtTogether={frequentlyBoughtTogether}
+        productUrl={productUrl}
+      />
 
       <div className="pb-28">
       </div>

@@ -137,7 +137,7 @@ export function Drawer({
         <header
           className={joinClassNames(
             isSeed
-              ? 'flex shrink-0 items-center justify-between bg-[#F2F2EC] px-6 pt-7 pb-3 relative z-10'
+              ? 'flex shrink-0 items-center justify-between bg-[#F2F2EC] px-6 pt-7 pb-3 md:pt-3 md:pb-1.5 relative z-10'
               : isAdmin
                 ? 'flex shrink-0 items-start gap-4 border-b border-[#232636] px-5 py-4 sm:px-6 bg-[#090a0f]'
                 : 'flex shrink-0 items-start gap-4 border-b border-minsah-border-subtle px-5 py-4 sm:px-6',
@@ -149,7 +149,7 @@ export function Drawer({
               <DialogTitle
                 className={
                   isSeed
-                    ? 'text-[22px] font-[350] text-[#1B361B] tracking-tight font-sans'
+                    ? 'text-[22px] md:text-[18px] font-[350] text-[#1B361B] tracking-tight font-sans'
                     : isAdmin
                       ? 'text-base font-semibold leading-6 text-[#f7f8f8] tracking-tight'
                       : 'text-lg font-black leading-7 text-minsah-text-primary'
@@ -178,9 +178,9 @@ export function Drawer({
                 type="button"
                 onClick={onClose}
                 aria-label={closeLabel}
-                className="w-9 h-9 rounded-full bg-[#E5E5DF] hover:bg-[#DCDCD6] flex items-center justify-center text-[#1B361B] transition-colors focus:outline-none cursor-pointer shrink-0"
+                className="w-9 h-9 md:w-7 md:h-7 rounded-full bg-[#E5E5DF] hover:bg-[#DCDCD6] flex items-center justify-center text-[#1B361B] transition-colors focus:outline-none cursor-pointer shrink-0"
               >
-                <X className="w-4 h-4 stroke-[1.5]" aria-hidden="true" />
+                <X className="w-4 h-4 md:w-3.5 md:h-3.5 stroke-[1.5]" aria-hidden="true" />
               </button>
             ) : (
               <Button

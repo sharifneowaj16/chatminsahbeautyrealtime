@@ -91,7 +91,7 @@ export default function ProductStickyHeader({
   return (
     <>
       <header className="sticky top-2 sm:top-3 z-40 w-full pointer-events-none transition-all duration-300">
-        <div className="flex w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 pointer-events-auto">
+        <div className="flex w-full max-w-[1440px] mx-auto items-center justify-between gap-3 px-4 lg:px-8 pointer-events-auto">
 
           {/* ================= SEED.COM PIXEL-PERFECT LEFT FLOATING PILL ================= */}
           <div

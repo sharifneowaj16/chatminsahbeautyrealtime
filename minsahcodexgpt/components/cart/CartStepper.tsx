@@ -321,6 +321,17 @@ export default function CartStepper({
       image: variant.image || effectiveProductImage,
       stock: variant.stock,
       maxQuantity: variant.stock,
+      availableVariants: effectiveVariants && effectiveVariants.length > 0
+        ? effectiveVariants.map((v) => ({
+            id: v.id,
+            name: v.name,
+            price: Number(v.price),
+            stock: v.stock,
+            sku: v.sku ?? undefined,
+            attributes: v.attributes,
+            image: v.image || null,
+          }))
+        : undefined,
     };
 
     const success = await addItem(cartItem);
@@ -402,6 +413,17 @@ export default function CartStepper({
         image: variantImage || context?.image || effectiveProductImage,
         stock: safeMaxStock,
         maxQuantity: safeMaxStock,
+        availableVariants: availableVariants && availableVariants.length > 0
+          ? availableVariants.map((v) => ({
+              id: v.id,
+              name: v.name,
+              price: Number(v.price),
+              stock: v.stock,
+              sku: v.sku ?? undefined,
+              attributes: v.attributes,
+              image: v.image || null,
+            }))
+          : undefined,
       };
       const success = await addItem(cartItem);
       if (success) {
