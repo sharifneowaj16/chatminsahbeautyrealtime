@@ -545,6 +545,7 @@ async function main() {
         price: 1650,
         quantity: 40,
         attributes: { shade: 'Ivory', shadeNumber: '110' },
+        image: '/images/categories/Makeup.png',
       },
       {
         productId: foundation1.id,
@@ -553,6 +554,7 @@ async function main() {
         price: 1650,
         quantity: 50,
         attributes: { shade: 'Natural Beige', shadeNumber: '130' },
+        image: '/images/categories/Skincare.png',
       },
       {
         productId: foundation1.id,
@@ -561,6 +563,7 @@ async function main() {
         price: 1650,
         quantity: 30,
         attributes: { shade: 'Sand', shadeNumber: '140' },
+        image: '/images/categories/Sunscreen.png',
       },
     ],
     skipDuplicates: true,

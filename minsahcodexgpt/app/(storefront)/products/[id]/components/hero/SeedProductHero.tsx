@@ -186,6 +186,7 @@ export default function SeedProductHero({
             reviewCount={product.reviews != null ? Number(product.reviews) : undefined}
             variants={variants}
             defaultImage={product.image}
+            galleryImages={normalizedGalleryImages}
             onImageChange={(img) => {
               setActiveImageOverride(img);
               onImageChange?.(img);

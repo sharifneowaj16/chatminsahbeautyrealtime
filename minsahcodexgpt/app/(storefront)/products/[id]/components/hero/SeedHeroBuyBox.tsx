@@ -29,6 +29,7 @@ export interface SeedHeroBuyBoxProps {
   reviewCount?: number;
   variants?: ProductVariantItem[];
   defaultImage?: string;
+  galleryImages?: string[];
   onVariantChange?: (variantId: string | null, currentPrice: number, stock: number) => void;
   onImageChange?: (imageUrl: string | null) => void;
   onQuantityChange?: (quantity: number) => void;
@@ -47,6 +48,7 @@ export default function SeedHeroBuyBox({
   reviewCount,
   variants = [],
   defaultImage = '/images/categories/Skincare.png',
+  galleryImages = [],
   onVariantChange,
   onImageChange,
   onQuantityChange,
@@ -156,6 +158,14 @@ export default function SeedHeroBuyBox({
   const handleImageChange = (imgUrl: string | null) => {
     if (imgUrl) setCurrentImage(imgUrl);
     if (onImageChange) onImageChange(imgUrl);
+  };
+
+  const handleHoverImage = (imgUrl: string | null) => {
+    // When hovering over variant options, preview temporary image in Hero Gallery,
+    // or restore the locked selected variant image when unhovered
+    if (onImageChange) {
+      onImageChange(imgUrl || currentImage);
+    }
   };
 
   // Add to Cart with Standard Factory
@@ -273,8 +283,10 @@ export default function SeedHeroBuyBox({
             variants={variants}
             selectedVariantId={selectedVariantId}
             defaultImage={defaultImage}
+            galleryImages={galleryImages}
             onVariantChange={handleVariantChange}
             onImageChange={handleImageChange}
+            onHoverImage={handleHoverImage}
           />
         </div>
       )}

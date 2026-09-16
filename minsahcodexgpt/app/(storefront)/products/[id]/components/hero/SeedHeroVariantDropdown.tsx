@@ -20,8 +20,10 @@ export interface SeedHeroVariantDropdownProps {
   variants?: ProductVariantItem[];
   selectedVariantId: string | null;
   defaultImage?: string;
+  galleryImages?: string[];
   onVariantChange: (variantId: string | null, price: number, stock: number) => void;
   onImageChange?: (imageUrl: string | null) => void;
+  onHoverImage?: (imageUrl: string | null) => void;
   className?: string;
 }
 
@@ -54,12 +56,30 @@ export default function SeedHeroVariantDropdown({
   variants = [],
   selectedVariantId,
   defaultImage = '/images/categories/Skincare.png',
+  galleryImages = [],
   onVariantChange,
   onImageChange,
+  onHoverImage,
   className = '',
 }: SeedHeroVariantDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Helper to resolve variant image with gallery image fallback
+  const resolveVariantImage = (v: ProductVariantItem, index: number): string => {
+    if (v.image && v.image.trim() !== '') return v.image;
+    if (galleryImages && galleryImages.length > index && galleryImages[index]) {
+      return galleryImages[index];
+    }
+    const shadeName = (v.name || '').toLowerCase();
+    if (shadeName.includes('ivory')) return defaultImage || '/images/categories/Makeup.png';
+    if (shadeName.includes('beige')) return '/images/categories/Skincare.png';
+    if (shadeName.includes('sand')) return '/images/categories/Sunscreen.png';
+    if (index === 0) return defaultImage || '/images/categories/Makeup.png';
+    if (index === 1) return '/images/categories/Skincare.png';
+    if (index === 2) return '/images/categories/Sunscreen.png';
+    return defaultImage || '/images/categories/Skincare.png';
+  };
 
   // Active variant resolution
   const activeVariant = useMemo(() => {
@@ -69,9 +89,42 @@ export default function SeedHeroVariantDropdown({
     );
   }, [variants, selectedVariantId]);
 
+  const activeIndex = useMemo(() => {
+    if (!activeVariant) return 0;
+    const idx = variants.findIndex((v) => v.id === activeVariant.id);
+    return idx >= 0 ? idx : 0;
+  }, [variants, activeVariant]);
+
   const activeSize = useMemo(() => {
     return activeVariant ? getVariantSize(activeVariant) : null;
   }, [activeVariant]);
+
+  // The permanent locked image of the active selected variant
+  const lockedImage = useMemo(() => {
+    if (!activeVariant) return defaultImage || null;
+    return resolveVariantImage(activeVariant, activeIndex);
+  }, [activeVariant, activeIndex, defaultImage, galleryImages]);
+
+  // Pre-warm / preload all variant images for instant zero-latency hover preview
+  useEffect(() => {
+    if (!isOpen || !variants || variants.length === 0) return;
+    variants.forEach((v, idx) => {
+      const src = resolveVariantImage(v, idx);
+      if (src && typeof window !== 'undefined') {
+        const img = new window.Image();
+        img.src = src;
+      }
+    });
+  }, [isOpen, variants, galleryImages, defaultImage]);
+
+  // Restore Hero Gallery to the locked variant image
+  const restoreLockedImage = () => {
+    if (onHoverImage) {
+      onHoverImage(null);
+    } else if (onImageChange) {
+      onImageChange(lockedImage);
+    }
+  };
 
   // Click outside / Esc key handler
   useEffect(() => {
@@ -79,12 +132,14 @@ export default function SeedHeroVariantDropdown({
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        restoreLockedImage();
         setIsOpen(false);
       }
     }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
+        restoreLockedImage();
         setIsOpen(false);
       }
     }
@@ -98,14 +153,33 @@ export default function SeedHeroVariantDropdown({
       document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, lockedImage]);
+
+  // Mouse leave handler for option list
+  const handleMouseLeaveList = () => {
+    restoreLockedImage();
+  };
+
+  // Live hover preview handler
+  const handleItemMouseEnter = (v: ProductVariantItem, idx: number) => {
+    const targetImg = resolveVariantImage(v, idx);
+    if (onHoverImage) {
+      onHoverImage(targetImg);
+    } else if (onImageChange) {
+      onImageChange(targetImg);
+    }
+  };
 
   // Handler for selecting a variant
-  const handleSelectVariant = (targetVar: ProductVariantItem) => {
+  const handleSelectVariant = (targetVar: ProductVariantItem, idx: number) => {
     setIsOpen(false);
     onVariantChange(targetVar.id, targetVar.price, targetVar.stock ?? 100);
+    const selectedImg = resolveVariantImage(targetVar, idx);
     if (onImageChange) {
-      onImageChange(targetVar.image || null);
+      onImageChange(selectedImg);
+    }
+    if (onHoverImage) {
+      onHoverImage(selectedImg);
     }
   };
 
@@ -127,7 +201,12 @@ export default function SeedHeroVariantDropdown({
       {/* Collapsed Trigger Button — 100% Matching Cart Drawer Luxury Pill */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          if (isOpen) {
+            restoreLockedImage();
+          }
+          setIsOpen((prev) => !prev);
+        }}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={`Select variant. Currently: ${activeVariant ? getVariantShadeName(activeVariant) : 'Default'}`}
@@ -141,7 +220,7 @@ export default function SeedHeroVariantDropdown({
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <div className="relative h-7 w-7 sm:h-8 sm:w-8 rounded-lg overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800 aspect-square">
             <Image
-              src={safeImageUrl(activeVariant?.image || defaultImage)}
+              src={safeImageUrl(activeVariant ? resolveVariantImage(activeVariant, activeIndex) : defaultImage)}
               alt={activeVariant?.name || 'Variant thumbnail'}
               fill
               sizes="32px"
@@ -172,7 +251,7 @@ export default function SeedHeroVariantDropdown({
         </div>
       </button>
 
-      {/* Floating Luxury Vertical Track Dropdown — Identical to Cart Drawer */}
+      {/* Floating Luxury Vertical Track Dropdown with iOS Momentum Scrollbar */}
       {isOpen && (
         <div
           role="listbox"
@@ -184,13 +263,16 @@ export default function SeedHeroVariantDropdown({
             <span className="font-mono text-stone-500">{variants.length} Options</span>
           </div>
 
-          <div className="max-h-64 overflow-y-auto divide-y divide-stone-100 dark:divide-white/5 py-1 scroll-smooth no-scrollbar">
-            {variants.map((v) => {
+          <div
+            onMouseLeave={handleMouseLeaveList}
+            className="max-h-64 sm:max-h-72 overflow-y-auto divide-y divide-stone-100 dark:divide-white/5 py-1 scroll-smooth ios-scrollbar pr-1.5"
+          >
+            {variants.map((v, idx) => {
               const isSelected = v.id === selectedVariantId;
               const isOOS = v.stock !== undefined && v.stock <= 0;
               const vSize = getVariantSize(v);
               const vShade = getVariantShadeName(v);
-              const vImage = v.image || defaultImage;
+              const vImage = resolveVariantImage(v, idx);
 
               return (
                 <button
@@ -199,13 +281,14 @@ export default function SeedHeroVariantDropdown({
                   role="option"
                   aria-selected={isSelected}
                   disabled={isOOS}
-                  onClick={() => handleSelectVariant(v)}
-                  className={`w-full px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center justify-between gap-3 text-left transition-colors cursor-pointer ${
+                  onClick={() => handleSelectVariant(v, idx)}
+                  onMouseEnter={() => handleItemMouseEnter(v, idx)}
+                  className={`w-full px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center justify-between gap-3 text-left transition-all duration-150 cursor-pointer ${
                     isSelected
-                      ? 'bg-[#E5EAE1] dark:bg-emerald-950/40 text-[#1c3a13] dark:text-emerald-200'
+                      ? 'bg-[#E5EAE1] dark:bg-emerald-950/40 text-[#1c3a13] dark:text-emerald-200 font-medium'
                       : isOOS
                       ? 'opacity-40 cursor-not-allowed bg-stone-50/40 dark:bg-zinc-800/30'
-                      : 'hover:bg-stone-50 dark:hover:bg-zinc-800/70 text-stone-800 dark:text-stone-200'
+                      : 'hover:bg-stone-100/75 dark:hover:bg-zinc-800/80 text-stone-800 dark:text-stone-200'
                   }`}
                 >
                   {/* Left: Thumbnail + Shade + Size */}
@@ -260,3 +343,4 @@ export default function SeedHeroVariantDropdown({
     </div>
   );
 }
+
