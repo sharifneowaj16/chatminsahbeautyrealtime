@@ -159,46 +159,38 @@ export default function SeedMorphingStickyBar({
   }, []);
 
   // Animation Stage:
-  // 0 = hidden: bar is off-screen / collapsed
-  // 1 = icon: small circular badge popped in at bottom-right (Image 1)
-  // 2 = expanding: bubble morphs & expands from right-to-left into bottom-centered capsule (Image 2)
-  // 3 = text: product title words, price & stock status unmask and slide in
-  // 4 = ready: "Start Now" button scales in with spring bounce, full bar interactive
-  const [animStage, setAnimStage] = useState<0 | 1 | 2 | 3 | 4>(0);
+  // 0 = hidden: bar glides downward out of view
+  // 1 = icon: small circular badge popped in with spring
+  // 2 = expanding: fluidly morphs from circle into full-width capsule
+  // 3 = ready: product title & CTA button effortlessly fade and scale in
+  const [animStage, setAnimStage] = useState<0 | 1 | 2 | 3>(0);
 
-  // Staggered choreography when visibility changes (600ms expansion flow)
+  // Fluid iOS choreography when visibility changes (~420ms total)
   useEffect(() => {
     let t1: NodeJS.Timeout;
     let t2: NodeJS.Timeout;
-    let t3: NodeJS.Timeout;
 
     if (isVisible) {
-      // Phase 1: Circular product icon appears at bottom right
+      // Step 1 (0ms): Icon bubble appears
       setAnimStage(1);
 
-      // Phase 2: Bar begins expanding over 600ms from right to left
+      // Step 2 (140ms): Fluidly morphs and expands from circle to capsule
       t1 = setTimeout(() => {
         setAnimStage(2);
-      }, 350);
+      }, 140);
 
-      // Phase 3: Text & pricing reveals smoothly inside the expanding pill
+      // Step 3 (240ms): Product title and CTA button effortlessly slide & fade into place
       t2 = setTimeout(() => {
         setAnimStage(3);
-      }, 680);
-
-      // Phase 4: CTA button pops in with spring as expansion reaches full width
-      t3 = setTimeout(() => {
-        setAnimStage(4);
-      }, 950);
+      }, 240);
     } else {
-      // User scrolled out of trigger zone -> clean, immediate reverse collapse
+      // When scrolling back up, gracefully glide down out of view in one fluid motion
       setAnimStage(0);
     }
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      clearTimeout(t3);
     };
   }, [isVisible]);
 
@@ -265,71 +257,84 @@ export default function SeedMorphingStickyBar({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Outer container positioning style for multi-phase morphing animation
-  // Desktop: Anchored to Bottom-Right, elevated to bottom: 38px to avoid clipping
+  // Outer container positioning style with GPU layer acceleration & fluid spring curves
+  // Desktop: Anchored to Bottom-Right, elevated to bottom: 38px
   // Mobile: Centered at bottom, elevated to bottom: 28px with 20px left/right margins (width: calc(100vw - 40px))
   const containerStyle: React.CSSProperties = useMemo(() => {
     const bottomPos = isDesktop ? '38px' : 'calc(28px + env(safe-area-inset-bottom, 0px))';
 
+    const gpuProps = {
+      willChange: 'transform, opacity, width',
+      WebkitBackfaceVisibility: 'hidden' as const,
+      backfaceVisibility: 'hidden' as const,
+    };
+
     if (animStage === 0) {
       return {
+        ...gpuProps,
         opacity: 0,
         pointerEvents: 'none',
         bottom: bottomPos,
-        transform: isDesktop ? 'translateY(24px) scale(0.92)' : 'translate(-50%, 24px) scale(0.92)',
-        width: '64px',
-        height: '64px',
+        transform: isDesktop ? 'translate3d(0, 32px, 0) scale(0.95)' : 'translate3d(-50%, 32px, 0) scale(0.95)',
+        width: isDesktop ? '480px' : 'calc(100vw - 40px)',
+        maxWidth: isDesktop ? '480px' : '440px',
+        height: isDesktop ? '64px' : '56px',
         right: isDesktop ? 'max(32px, calc((100vw - 1440px) / 2 + 32px))' : 'auto',
         left: isDesktop ? 'auto' : '50%',
-        transition: 'opacity 220ms ease, transform 220ms ease',
+        transition: 'transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 220ms ease',
       };
     }
 
     if (animStage === 1) {
       // Phase 1: circular orb at bottom right
       return {
+        ...gpuProps,
         opacity: 1,
         pointerEvents: 'auto',
         bottom: bottomPos,
-        transform: isDesktop ? 'translateY(0) scale(1)' : 'translate(-50%, 0) scale(1)',
+        transform: isDesktop ? 'translate3d(0, 0, 0) scale(1)' : 'translate3d(-50%, 0, 0) scale(1)',
         width: isDesktop ? '64px' : '56px',
         height: isDesktop ? '64px' : '56px',
+        maxWidth: isDesktop ? '64px' : '56px',
         right: isDesktop ? 'max(32px, calc((100vw - 1440px) / 2 + 32px))' : 'auto',
         left: isDesktop ? 'auto' : '50%',
         transition:
-          'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), width 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), width 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease',
       };
     }
 
-    // Phase 2, 3, 4: Full expanded capsule
+    // Phase 2, 3: Full expanded capsule
     if (isDesktop) {
       return {
+        ...gpuProps,
         opacity: 1,
         pointerEvents: 'auto',
         bottom: '38px',
-        transform: 'translateY(0) scale(1)',
+        transform: 'translate3d(0, 0, 0) scale(1)',
         right: 'max(32px, calc((100vw - 1440px) / 2 + 32px))',
         left: 'auto',
         width: '480px',
+        maxWidth: '480px',
         height: '64px',
         transition:
-          'width 600ms cubic-bezier(0.16, 1, 0.3, 1), height 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease, transform 350ms ease',
+          'width 420ms cubic-bezier(0.22, 1, 0.36, 1), transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease',
       };
     }
 
     // Mobile: Centered with increased left, right and bottom margins
     return {
+      ...gpuProps,
       opacity: 1,
       pointerEvents: 'auto',
       bottom: 'calc(28px + env(safe-area-inset-bottom, 0px))',
       left: '50%',
       right: 'auto',
-      transform: 'translateX(-50%) scale(1)',
+      transform: 'translate3d(-50%, 0, 0) scale(1)',
       width: 'calc(100vw - 40px)',
       maxWidth: '440px',
       height: '56px',
       transition:
-        'width 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1), height 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease',
+        'width 420ms cubic-bezier(0.22, 1, 0.36, 1), transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease',
     };
   }, [animStage, isDesktop]);
 
@@ -359,10 +364,10 @@ export default function SeedMorphingStickyBar({
           {/* Middle: Product Name */}
           <div
             className={`
-              flex-1 min-w-0 px-1.5 md:px-2.5 overflow-hidden transition-all duration-300 ease-out
+              flex-1 min-w-0 px-1.5 md:px-2.5 overflow-hidden transition-all duration-300 cubic-bezier(0.22, 1, 0.36, 1)
               ${animStage >= 3
                 ? 'opacity-100 translate-x-0'
-                : 'opacity-0 translate-x-3 pointer-events-none'
+                : 'opacity-0 -translate-x-1.5 pointer-events-none'
               }
             `}
           >
@@ -378,13 +383,13 @@ export default function SeedMorphingStickyBar({
             </span>
           </div>
 
-          {/* Right: Solid White High-Contrast CTA Button */}
+          {/* Right: Solid White High-Contrast CTA Button (No Layout Thrash) */}
           <div
             className={`
-              shrink-0 flex-none transition-all duration-300 cubic-bezier(0.34,1.56,0.64,1)
-              ${animStage >= 4
-                ? 'opacity-100 scale-100 overflow-visible'
-                : 'opacity-0 scale-75 max-w-0 overflow-hidden pointer-events-none'
+              shrink-0 flex-none transition-all duration-350 cubic-bezier(0.22, 1, 0.36, 1)
+              ${animStage >= 3
+                ? 'opacity-100 scale-100 translate-x-0 pointer-events-auto'
+                : 'opacity-0 scale-90 translate-x-2 pointer-events-none'
               }
             `}
           >
