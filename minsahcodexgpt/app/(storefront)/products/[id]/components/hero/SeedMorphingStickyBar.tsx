@@ -227,12 +227,12 @@ export default function SeedMorphingStickyBar({
         },
         variant: variantId
           ? {
-              id: variantId,
-              name: variantName,
-              price: price,
-              image: productImage,
-              sku: sku || undefined,
-            }
+            id: variantId,
+            name: variantName,
+            price: price,
+            image: productImage,
+            sku: sku || undefined,
+          }
           : null,
         quantity: quantity || 1,
       });
@@ -266,44 +266,47 @@ export default function SeedMorphingStickyBar({
   }, []);
 
   // Outer container positioning style for multi-phase morphing animation
-  // Desktop: Anchored to Bottom-Right (Seed.com alignment with Left Gap)
-  // Mobile: Centered at bottom for comfortable thumb reach
+  // Desktop: Anchored to Bottom-Right, elevated to bottom: 38px to avoid clipping
+  // Mobile: Centered at bottom, elevated to bottom: 28px with 20px left/right margins (width: calc(100vw - 40px))
   const containerStyle: React.CSSProperties = useMemo(() => {
+    const bottomPos = isDesktop ? '38px' : 'calc(28px + env(safe-area-inset-bottom, 0px))';
+
     if (animStage === 0) {
       return {
         opacity: 0,
         pointerEvents: 'none',
-        transform: isDesktop ? 'translateY(24px) scale(0.9)' : 'translate(-50%, 24px) scale(0.9)',
+        bottom: bottomPos,
+        transform: isDesktop ? 'translateY(24px) scale(0.92)' : 'translate(-50%, 24px) scale(0.92)',
         width: '64px',
         height: '64px',
-        right: isDesktop ? '28px' : 'auto',
+        right: isDesktop ? 'max(32px, calc((100vw - 1440px) / 2 + 32px))' : 'auto',
         left: isDesktop ? 'auto' : '50%',
         transition: 'opacity 220ms ease, transform 220ms ease',
       };
     }
 
     if (animStage === 1) {
-      // Phase 1: circular orb at the bottom-right
+      // Phase 1: circular orb at bottom right
       return {
         opacity: 1,
         pointerEvents: 'auto',
-        transform: 'translateY(0) scale(1)',
+        bottom: bottomPos,
+        transform: isDesktop ? 'translateY(0) scale(1)' : 'translate(-50%, 0) scale(1)',
         width: isDesktop ? '64px' : '56px',
         height: isDesktop ? '64px' : '56px',
-        right: isDesktop ? 'max(32px, calc((100vw - 1440px) / 2 + 32px))' : '16px',
-        left: isDesktop ? 'auto' : 'auto',
+        right: isDesktop ? 'max(32px, calc((100vw - 1440px) / 2 + 32px))' : 'auto',
+        left: isDesktop ? 'auto' : '50%',
         transition:
           'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1), width 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
       };
     }
 
     // Phase 2, 3, 4: Full expanded capsule
-    // Desktop: Right-anchored
-    // Mobile: Full-width centered up to 480px
     if (isDesktop) {
       return {
         opacity: 1,
         pointerEvents: 'auto',
+        bottom: '38px',
         transform: 'translateY(0) scale(1)',
         right: 'max(32px, calc((100vw - 1440px) / 2 + 32px))',
         left: 'auto',
@@ -314,15 +317,16 @@ export default function SeedMorphingStickyBar({
       };
     }
 
-    // Mobile: Centered & slimmed down to 56px height
+    // Mobile: Centered with increased left, right and bottom margins
     return {
       opacity: 1,
       pointerEvents: 'auto',
+      bottom: 'calc(28px + env(safe-area-inset-bottom, 0px))',
       left: '50%',
       right: 'auto',
       transform: 'translateX(-50%) scale(1)',
-      width: 'calc(100vw - 24px)',
-      maxWidth: '480px',
+      width: 'calc(100vw - 40px)',
+      maxWidth: '440px',
       height: '56px',
       transition:
         'width 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1), height 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease',
@@ -333,20 +337,16 @@ export default function SeedMorphingStickyBar({
     <div
       aria-hidden={animStage === 0}
       style={containerStyle}
-      className={`
-        fixed z-50
-        bottom-[calc(16px+env(safe-area-inset-bottom,0px))] md:bottom-6
-        ${className}
-      `}
+      className={`fixed z-50 ${className}`}
     >
       <div
-        className="relative h-full w-full overflow-hidden rounded-full bg-[#575e5559] backdrop-blur-2xl saturate-180 border border-white/20 shadow-[0px_12px_36px_rgba(0,0,0,0.22)] p-1.5 md:p-2"
+        className="relative h-full w-full overflow-hidden rounded-full bg-[rgba(20,26,18,0.78)] dark:bg-[rgba(10,14,10,0.85)] backdrop-blur-2xl saturate-190 border border-white/25 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.32),inset_0_-1px_1px_0_rgba(0,0,0,0.25)] p-1.5 md:p-2"
         onClick={animStage === 1 ? handleCtaClick : undefined}
       >
         {/* Dynamic Inner Row */}
         <div className="h-full w-full flex items-center justify-between gap-2.5 md:gap-3">
           {/* Left: Product Thumbnail Image */}
-          <div className="relative h-10 w-10 md:h-12 md:w-12 rounded-full overflow-hidden bg-white/20 p-0.5 border border-white/25 shrink-0">
+          <div className="relative h-10 w-10 md:h-12 md:w-12 rounded-full overflow-hidden bg-white/20 p-0.5 border border-white/25 shrink-0 aspect-square">
             <Image
               src={safeImageUrl(productImage)}
               alt={productName}
@@ -360,10 +360,9 @@ export default function SeedMorphingStickyBar({
           <div
             className={`
               flex-1 min-w-0 px-1.5 md:px-2.5 overflow-hidden transition-all duration-300 ease-out
-              ${
-                animStage >= 3
-                  ? 'opacity-100 translate-x-0'
-                  : 'opacity-0 translate-x-3 pointer-events-none'
+              ${animStage >= 3
+                ? 'opacity-100 translate-x-0'
+                : 'opacity-0 translate-x-3 pointer-events-none'
               }
             `}
           >
@@ -371,8 +370,9 @@ export default function SeedMorphingStickyBar({
               style={{
                 fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 fontWeight: 500,
+                color: '#fcfcf7',
               }}
-              className="block text-xs md:text-sm lg:text-base text-[#1c3a13] tracking-tight leading-snug truncate"
+              className="block text-xs md:text-sm lg:text-base text-[#fcfcf7] tracking-tight leading-snug truncate"
             >
               {cleanProductName(productName)}
             </span>
@@ -382,10 +382,9 @@ export default function SeedMorphingStickyBar({
           <div
             className={`
               shrink-0 flex-none transition-all duration-300 cubic-bezier(0.34,1.56,0.64,1)
-              ${
-                animStage >= 4
-                  ? 'opacity-100 scale-100 overflow-visible'
-                  : 'opacity-0 scale-75 max-w-0 overflow-hidden pointer-events-none'
+              ${animStage >= 4
+                ? 'opacity-100 scale-100 overflow-visible'
+                : 'opacity-0 scale-75 max-w-0 overflow-hidden pointer-events-none'
               }
             `}
           >
@@ -397,7 +396,7 @@ export default function SeedMorphingStickyBar({
                 fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 fontWeight: 650,
               }}
-              className="group flex items-center justify-center gap-1.5 px-3 md:px-4 min-w-[96px] md:min-w-[120px] h-[40px] md:h-[48px] rounded-full bg-white hover:bg-white/95 text-[#1c3a13] text-xs md:text-sm tracking-tight shadow-[0_2px_10px_rgba(0,0,0,0.25)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+              className="group flex items-center justify-center gap-1.5 px-3.5 md:px-5 min-w-[96px] md:min-w-[120px] h-[40px] md:h-[48px] rounded-full bg-white hover:bg-stone-100 text-[#1c3a13] font-bold text-xs md:text-sm tracking-tight shadow-[0_2px_10px_rgba(0,0,0,0.25)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
               aria-label="Add to Cart and Open Drawer"
             >
               {isAdding ? (

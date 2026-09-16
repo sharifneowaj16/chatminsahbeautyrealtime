@@ -292,11 +292,11 @@ export default function ProductClient({
     : null;
   const variantColor = selectedVariantObj
     ? getAttributeValue(selectedVariantObj.attributes, [
-        "color",
-        "Color",
-        "shade",
-        "Shade",
-      ])
+      "color",
+      "Color",
+      "shade",
+      "Shade",
+    ])
     : null;
   const variantImage = selectedVariantObj?.image ?? null;
 
@@ -352,14 +352,14 @@ export default function ProductClient({
         relatedProducts={
           relatedProducts && Array.isArray(relatedProducts) && relatedProducts.length > 0
             ? relatedProducts.map((p) => ({
-                id: p.id,
-                name: p.name,
-                slug: p.slug,
-                price: p.price,
-                originalPrice: p.originalPrice,
-                image: safeImageUrl(p?.image),
-                category: product.category || 'Formulation',
-              }))
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              price: p.price,
+              originalPrice: p.originalPrice,
+              image: safeImageUrl(p?.image),
+              category: product.category || 'Formulation',
+            }))
             : undefined
         }
       />
@@ -403,22 +403,22 @@ export default function ProductClient({
           relatedProductsList={
             relatedProducts && relatedProducts.length > 0
               ? relatedProducts.map((p) => ({
-                  id: p.id,
-                  name: p.name,
-                  price: p.price,
-                  costPrice: p.costPrice ?? null,
-                  image: p.image || '/images/categories/Skincare.png',
-                  stock: p.stock,
-                  hasFreeDelivery: Boolean(p.deliveryOfferType === 'FREE' || p.deliveryOfferEnabled),
-                  weight: p.weight ?? null,
-                  shippingWeight: p.shippingWeight ?? null,
-                  deliveryOfferType: p.deliveryOfferType ?? null,
-                  deliveryOfferAmount: p.deliveryOfferAmount ?? null,
-                  deliveryChargeInsideDhaka: p.deliveryChargeInsideDhaka ?? null,
-                  deliveryChargeOutsideDhaka: p.deliveryChargeOutsideDhaka ?? null,
-                  category: product.category || 'Skincare',
-                  variants: (p.variants as any) || [],
-                }))
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                costPrice: p.costPrice ?? null,
+                image: p.image || '/images/categories/Skincare.png',
+                stock: p.stock,
+                hasFreeDelivery: Boolean(p.deliveryOfferType === 'FREE' || p.deliveryOfferEnabled),
+                weight: p.weight ?? null,
+                shippingWeight: p.shippingWeight ?? null,
+                deliveryOfferType: p.deliveryOfferType ?? null,
+                deliveryOfferAmount: p.deliveryOfferAmount ?? null,
+                deliveryChargeInsideDhaka: p.deliveryChargeInsideDhaka ?? null,
+                deliveryChargeOutsideDhaka: p.deliveryChargeOutsideDhaka ?? null,
+                category: product.category || 'Skincare',
+                variants: (p.variants as any) || [],
+              }))
               : undefined
           }
           onVariantChange={handleVariantChange}
@@ -438,20 +438,20 @@ export default function ProductClient({
       {/* SEED.COM MEMBER REVIEWS & VERIFIED BUYER PHOTO MATRIX                    */}
       {/* ========================================================================= */}
       <SeedMemberReviewsSection
-          product={product as any}
-          ratingData={{
-            average: rating?.average || product.rating || 5.0,
-            total: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
-            distribution: rating?.distribution || {
-              5: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
-              4: 0,
-              3: 0,
-              2: 0,
-              1: 0,
-            },
-          }}
-          customReviews={reviews}
-        />
+        product={product as any}
+        ratingData={{
+          average: rating?.average || product.rating || 5.0,
+          total: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
+          distribution: rating?.distribution || {
+            5: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
+            4: 0,
+            3: 0,
+            2: 0,
+            1: 0,
+          },
+        }}
+        customReviews={reviews}
+      />
 
       {/* Seed.com-Inspired Dynamic Scroll-Morphing Sticky Capsule Bar */}
       <SeedMorphingStickyBar
