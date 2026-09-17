@@ -2,6 +2,7 @@
 
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDeliveryLocation } from "@/contexts/DeliveryLocationContext";
 import { useState, useRef, Suspense, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -246,6 +247,7 @@ function CheckoutContent() {
     removeItem,
     clearCart,
   } = useCart();
+  const { savedLocation, saveLocation } = useDeliveryLocation();
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const [, setExpandedSection] = useState<
@@ -514,6 +516,25 @@ function CheckoutContent() {
     }));
   }, [user]);
 
+  // Auto-fill from DeliveryLocationContext (saved via "Deliver to" flyout)
+  const hasAutoFilledLocationRef = useRef(false);
+  useEffect(() => {
+    if (!savedLocation || hasAutoFilledLocationRef.current) return;
+    hasAutoFilledLocationRef.current = true;
+
+    setShippingForm((current) => ({
+      fullName: current.fullName || savedLocation.fullName || "",
+      phoneNumber: current.phoneNumber || savedLocation.phoneNumber || "",
+      city: current.city || savedLocation.city || "",
+      zone: current.zone || savedLocation.zone || "",
+      area: current.area || savedLocation.area || "",
+      streetAddress: current.streetAddress || savedLocation.streetAddress || "",
+      pathao_city_id: current.pathao_city_id ?? savedLocation.pathao_city_id,
+      pathao_zone_id: current.pathao_zone_id ?? savedLocation.pathao_zone_id,
+      pathao_area_id: current.pathao_area_id ?? savedLocation.pathao_area_id,
+    }));
+  }, [savedLocation]);
+
   useEffect(() => {
     let isCancelled = false;
     const controller = new AbortController();
@@ -722,6 +743,21 @@ function CheckoutContent() {
       setCheckoutError("Home delivery is not available in the selected area");
       setExpandedSection("address");
       return;
+    }
+
+    // Persist verified checkout address back to DeliveryLocationContext
+    if (shippingForm.city && shippingForm.pathao_city_id) {
+      saveLocation({
+        fullName: shippingForm.fullName.trim(),
+        phoneNumber: shippingForm.phoneNumber.trim(),
+        city: shippingForm.city.trim(),
+        zone: shippingForm.zone.trim(),
+        area: shippingForm.area.trim(),
+        streetAddress: shippingForm.streetAddress.trim(),
+        pathao_city_id: shippingForm.pathao_city_id,
+        pathao_zone_id: shippingForm.pathao_zone_id,
+        pathao_area_id: shippingForm.pathao_area_id,
+      });
     }
 
     setIsPlacingOrder(true);

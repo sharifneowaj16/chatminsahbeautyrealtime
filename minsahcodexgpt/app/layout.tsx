@@ -6,6 +6,7 @@ import { TrackingProvider } from '@/contexts/TrackingContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { CartDrawerProvider } from '@/contexts/CartDrawerContext';
+import { DeliveryLocationProvider } from '@/contexts/DeliveryLocationContext';
 import { getSiteConfig } from '@/lib/site-config';
 import { getSiteUrl } from '@/lib/seo';
 import { ToastProvider } from '@/components/ui/ToastProvider';
@@ -209,7 +210,9 @@ export default function RootLayout({
           <TrackingProvider>
             <AuthProvider>
               <CartProvider>
-                <CartDrawerProvider>{children}</CartDrawerProvider>
+                <CartDrawerProvider>
+                  <DeliveryLocationProvider>{children}</DeliveryLocationProvider>
+                </CartDrawerProvider>
               </CartProvider>
             </AuthProvider>
           </TrackingProvider>

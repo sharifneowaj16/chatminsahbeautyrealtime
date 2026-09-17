@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import HomeSearch from '@/app/components/HomeSearch';
 import CategoryRail from '@/components/catalog/CategoryRail';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { useDeliveryLocation } from '@/contexts/DeliveryLocationContext';
+import DeliveryFlyout from '@/components/layout/DeliveryFlyout';
 import {
   isPrimaryNavigationItemActive,
   primaryNavigationItems,
@@ -18,7 +20,13 @@ export default function SiteHeader() {
   const { items } = useCart();
   const { openDrawer } = useCartDrawer();
   const { user, loading } = useAuth();
+  const { savedLocation } = useDeliveryLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const deliveryBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Derive display label from saved location
+  const deliveryDisplayCity = savedLocation?.area || savedLocation?.city || 'Bangladesh';
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const accountHref = !loading && user ? '/account' : '/login';
@@ -89,11 +97,19 @@ export default function SiteHeader() {
             </Link>
 
             {/* Delivery Location */}
-            <button className="header-control delivery" type="button" aria-label="Delivery location">
+            <button
+              ref={deliveryBtnRef}
+              className="header-control delivery"
+              type="button"
+              aria-label={`Deliver to ${deliveryDisplayCity}, change location`}
+              aria-expanded={deliveryOpen}
+              aria-haspopup="dialog"
+              onClick={() => setDeliveryOpen((v) => !v)}
+            >
               <svg
                 className="accent-icon"
-                width="15"
-                height="15"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -106,19 +122,23 @@ export default function SiteHeader() {
                 <circle cx="12" cy="10" r="3" />
               </svg>
               <span className="delivery-copy">
-                <span className="delivery-label">Deliver to:</span>
+                <span className="delivery-label">Deliver to</span>
                 <span className="delivery-city">
-                  Dhaka
+                  {deliveryDisplayCity}
                   <svg
-                    width="11"
-                    height="11"
+                    width="12"
+                    height="12"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
+                    style={{
+                      transition: 'transform 0.2s ease',
+                      transform: deliveryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
                   >
                     <path d="m6 9 6 6 6-6" />
                   </svg>
@@ -275,6 +295,13 @@ export default function SiteHeader() {
         </nav>
       </header>
 
+      {/* Delivery Flyout */}
+      <DeliveryFlyout
+        open={deliveryOpen}
+        onClose={() => setDeliveryOpen(false)}
+        anchorRef={deliveryBtnRef}
+      />
+
       {/* Category Rail (Modular Component) */}
       <CategoryRail />
 
@@ -282,6 +309,36 @@ export default function SiteHeader() {
       {menuOpen && (
         <div id="minsah-mobile-site-menu" className="border-t border-white/10 bg-[#141210] lg:hidden">
           <nav className="mx-auto grid max-w-7xl grid-cols-2 gap-2 px-4 py-4" aria-label="Mobile navigation">
+            {/* Mobile Deliver To Action */}
+            <button
+              type="button"
+              onClick={() => {
+                closeMenu();
+                setDeliveryOpen(true);
+              }}
+              className="col-span-2 flex min-h-11 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white hover:bg-white/[0.08] transition"
+            >
+              <span className="flex items-center gap-2.5">
+                <svg
+                  className="accent-icon text-minsah-action-primary"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span>Deliver to: <span className="text-white/90">{deliveryDisplayCity}</span></span>
+              </span>
+              <span className="text-xs font-normal text-white/50 underline underline-offset-2">Change</span>
+            </button>
+
             {primaryNavigationItems.map((item) => {
               const active = isPrimaryNavigationItemActive(pathname, item.href);
               return (
