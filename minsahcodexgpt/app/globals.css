@@ -1281,6 +1281,17 @@ img {
   transform: scale(1.05);
 }
 
+.search-desktop-split {
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+@media (min-width: 1024px) {
+  .search-desktop-split {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
 /* Right actions */
 .header-actions {
   display: flex;
