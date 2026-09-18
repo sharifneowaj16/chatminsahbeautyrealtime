@@ -55,7 +55,7 @@ test('AppShell is the only storefront owner of header, footer, bottom nav, skip 
   assert.equal((appShell.match(/href="#main-content"/g) ?? []).length, 1);
 
   const files = [...sourceFiles(storefrontRoot), ...sourceFiles('components')]
-    .filter((file) => file !== 'components/layout/AppShell.tsx');
+    .filter((file) => file.replace(/\\/g, '/') !== 'components/layout/AppShell.tsx');
   const forbidden = /<(?:SiteHeader|SiteFooter|BottomNavigation|HomeHeader|HomeBottomNav|MobileBottomNav|Footer|Navbar|TopBar)\b|id=["']main-content["']|<main\b/;
   for (const file of files) {
     const source = fs.readFileSync(file, 'utf8');

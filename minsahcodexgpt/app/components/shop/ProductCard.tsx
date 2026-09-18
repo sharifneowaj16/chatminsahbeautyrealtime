@@ -157,17 +157,17 @@ export default function ProductCard({ product, onQuickView, index, listName = 'S
             <span className="text-xs text-minsah-secondary">({product.reviewCount || 0})</span>
           </div>
 
-          <div className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <div className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-price">
             <span className="text-lg font-bold text-minsah-primary md:text-xl">
-              ৳{formatPrice(product.price)}
+              {formatPrice(product.price)}
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
               <>
                 <span className="text-sm text-minsah-secondary line-through">
-                  ৳{formatPrice(product.originalPrice)}
+                  {formatPrice(product.originalPrice)}
                 </span>
                 <span className="text-xs font-semibold text-green-600">
-                  Save ৳{formatPrice(product.originalPrice - product.price)}
+                  Save {formatPrice(product.originalPrice - product.price)}
                 </span>
               </>
             )}
@@ -179,10 +179,10 @@ export default function ProductCard({ product, onQuickView, index, listName = 'S
             fullWidth
             onClick={handleBuyNowClick}
             disabled={isDisabled}
-            className="rounded-full bg-minsah-primary px-4 py-2.5 text-sm font-semibold tracking-wide text-white shadow-xs hover:bg-minsah-dark disabled:bg-stone-300 disabled:text-stone-500"
+            className="rounded-full bg-minsah-primary px-4 py-2.5 text-sm font-semibold tracking-wide text-white shadow-xs hover:bg-minsah-dark disabled:bg-stone-300 disabled:text-stone-500 font-price"
           >
             <ShoppingBag size={15} aria-hidden="true" />
-            {isDisabled ? 'Out of Stock' : `BUY NOW • ৳${formatPrice(product.price)}`}
+            {isDisabled ? 'Out of Stock' : `BUY NOW • ${formatPrice(product.price)}`}
           </Button>
 
           {onQuickView && (

@@ -1326,93 +1326,13 @@ img {
 }
 
 .menu-btn { display: none; }
-
-/* Bottom navigation */
-.desktop-nav {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: var(--nav);
-}
-
-.nav-container {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  padding-block: 8px;
-  color: rgba(255, 255, 255, 0.70);
-  scrollbar-width: none;
-}
-
-.nav-container::-webkit-scrollbar { display: none; }
-
-.nav-link,
-.category-link,
-.flash-link {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 26px;
-  border-radius: 8px;
-  padding: 4px 10px;
-  white-space: nowrap;
-  font-size: 12px;
-  transition: 0.2s ease;
-}
-
-.nav-link {
-  color: rgba(255, 255, 255, 0.70);
-  font-weight: 600;
-}
-
-.nav-link:hover,
-.category-link:hover {
-  color: var(--white);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.nav-link.active {
-  color: var(--white);
-  background: rgba(255, 255, 255, 0.15);
-  font-weight: 700;
-}
-
-.flash-link {
-  gap: 6px;
-  border: 1px solid rgba(229, 139, 36, 0.30);
-  color: var(--accent);
-  background: rgba(229, 139, 36, 0.15);
-  font-weight: 700;
-}
-
-.flash-link:hover {
-  color: #000;
-  background: var(--accent);
-}
-
-.nav-divider {
-  width: 1px;
-  height: 14px;
-  flex: 0 0 1px;
-  margin-inline: 4px;
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.category-list {
-  min-width: max-content;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.category-link {
-  color: rgba(255, 255, 255, 0.60);
-}
+.mobile-search-btn { display: none; }
 
 /* Category rail styles */
 .mb-category-strip {
-  position: relative;
+  position: sticky;
+  top: 56px;
+  z-index: 40;
   width: 100%;
   height: var(--rail-h);
   padding-left: 12px;
@@ -1422,9 +1342,17 @@ img {
   box-shadow: 0 2px 8px rgba(24, 28, 26, 0.04) !important;
   overflow: hidden;
   opacity: 1;
-  transition: opacity 300ms ease-in-out, height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 250ms ease;
+  will-change: transform, opacity;
   isolation: isolate;
   touch-action: pan-x;
+}
+
+.mb-category-strip.is-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Edge gradient fade masks */
@@ -1678,10 +1606,16 @@ img {
 /* Responsive adjustments */
 @media (max-width: 1023px) {
   .header-container { padding-inline: 16px; }
-  .header-main { flex-wrap: wrap; column-gap: 12px; row-gap: 8px; }
-  .search-area { order: 3; max-width: none; flex: 0 0 100%; }
+  .header-main {
+    min-height: 52px;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 4px;
+  }
   .menu-btn { display: inline-flex; }
-  .desktop-nav { display: none; }
+  .mobile-search-btn { display: inline-flex; }
+  .mb-category-strip { top: 52px; }
 }
 
 @media (max-width: 767px) {
@@ -1706,21 +1640,23 @@ img {
 }
 
 @media (max-width: 639px) {
-  .header-main { padding-block: 4px; }
+  .header-main { min-height: 48px; padding-block: 3px; }
   .delivery, .wishlist, .signin { display: none; }
   .brand-name { font-size: 16px; }
-  .header-actions { margin-left: auto; }
-  .cart { width: 44px; padding: 0; }
-  .cart-badge { right: auto; left: -6px; }
+  .header-actions { margin-left: auto; gap: 6px; }
+  .cart { width: 40px; height: 40px; padding: 0; }
+  .cart-badge { right: auto; left: -4px; }
   .shortcut { display: none; }
   .search-input { font-size: 13px; }
+  .mb-category-strip { top: 48px; }
 }
 
 @media (max-width: 380px) {
-  .brand { gap: 8px; }
-  .brand-icon { width: 38px; height: 38px; flex-basis: 38px; }
-  .header-actions { gap: 6px; }
-  .icon-control, .cart, .menu-btn { width: 42px; height: 42px; }
+  .brand { gap: 6px; }
+  .brand-icon { width: 34px; height: 34px; flex-basis: 34px; }
+  .brand-name { font-size: 15px; }
+  .header-actions { gap: 4px; }
+  .icon-control, .cart, .menu-btn { width: 38px; height: 38px; }
 }
 
 /* Scoped Admin Workspace & Magic Blue Utilities */

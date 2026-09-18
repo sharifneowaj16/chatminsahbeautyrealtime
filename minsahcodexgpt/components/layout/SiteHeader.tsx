@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 import HomeSearch from '@/app/components/HomeSearch';
 import CategoryRail from '@/components/catalog/CategoryRail';
@@ -10,18 +9,15 @@ import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { useDeliveryLocation } from '@/contexts/DeliveryLocationContext';
 import DeliveryFlyout from '@/components/layout/DeliveryFlyout';
-import {
-  isPrimaryNavigationItemActive,
-  primaryNavigationItems,
-} from '@/components/navigation/navigation-config';
+import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
 
 export default function SiteHeader() {
-  const pathname = usePathname();
   const { items } = useCart();
   const { openDrawer } = useCartDrawer();
   const { user, loading } = useAuth();
   const { savedLocation } = useDeliveryLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const deliveryBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -146,14 +142,35 @@ export default function SiteHeader() {
               </span>
             </button>
 
-            {/* Search Area */}
-            <div className="search-area">
+            {/* Search Area (Desktop) */}
+            <div className="search-area hidden lg:block">
               <HomeSearch showTrendingChips={false} />
             </div>
 
             {/* Right Action Controls */}
             <div className="header-actions">
-              <Link className="header-control icon-control wishlist" href="/wishlist" aria-label="Open wishlist">
+              {/* Mobile Search Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((v) => !v)}
+                aria-expanded={mobileSearchOpen}
+                aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
+                className="header-control icon-control mobile-search-btn lg:hidden"
+              >
+                {mobileSearchOpen ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                )}
+              </button>
+
+              <Link className="header-control icon-control wishlist hidden lg:inline-flex" href="/wishlist" aria-label="Open wishlist">
                 <svg
                   width="18"
                   height="18"
@@ -170,7 +187,7 @@ export default function SiteHeader() {
               </Link>
 
               <Link
-                className="header-control signin"
+                className="header-control signin hidden lg:inline-flex"
                 href={accountHref}
                 aria-label={user ? 'Sign in or view account' : 'Sign in to your account'}
               >
@@ -245,54 +262,27 @@ export default function SiteHeader() {
           </div>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="desktop-nav" aria-label="Main navigation">
-          <div className="nav-container">
-            <Link className="flash-link" href="/flash-sale">
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+        {/* Mobile Expandable Search Bar (Click-to-expand full-width below navbar) */}
+        {mobileSearchOpen && (
+          <div className="mobile-search-dropdown border-t border-white/10 bg-[#141d17]/98 px-3 py-2.5 backdrop-blur-xl lg:hidden">
+            <div className="flex items-center gap-2 max-w-2xl mx-auto">
+              <div className="flex-1 min-w-0">
+                <HomeSearch showTrendingChips={false} />
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen(false)}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white transition"
+                aria-label="Close search"
               >
-                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
-              </svg>
-              <span>Flash Sale</span>
-            </Link>
-
-            <Link className={`nav-link ${pathname === '/' ? 'active' : ''}`} href="/">
-              Home
-            </Link>
-            <Link className={`nav-link ${pathname === '/shop' ? 'active' : ''}`} href="/shop">
-              Shop
-            </Link>
-            <Link className={`nav-link ${pathname.startsWith('/categories') ? 'active' : ''}`} href="/categories">
-              Categories
-            </Link>
-            <Link className={`nav-link ${pathname.startsWith('/brands') ? 'active' : ''}`} href="/brands">
-              Brands
-            </Link>
-            <Link className={`nav-link ${pathname === '/flash-sale' ? 'active' : ''}`} href="/flash-sale">
-              Offers
-            </Link>
-
-            <span className="nav-divider" aria-hidden="true" />
-
-            {/* Dynamic Category List (100% Controlled by Admin Database) */}
-            <div className="category-list">
-              {navCategories.map((cat) => (
-                <Link key={cat.id} className="category-link" href={cat.href}>
-                  {cat.name}
-                </Link>
-              ))}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
             </div>
           </div>
-        </nav>
+        )}
       </header>
 
       {/* Delivery Flyout */}
@@ -302,76 +292,18 @@ export default function SiteHeader() {
         anchorRef={deliveryBtnRef}
       />
 
-      {/* Category Rail (Modular Component) */}
+      {/* Category Rail (Modular Component with auto-hide on down-scroll) */}
       <CategoryRail />
 
-      {/* Mobile Drawer Menu */}
-      {menuOpen && (
-        <div id="minsah-mobile-site-menu" className="border-t border-white/10 bg-[#141210] lg:hidden">
-          <nav className="mx-auto grid max-w-7xl grid-cols-2 gap-2 px-4 py-4" aria-label="Mobile navigation">
-            {/* Mobile Deliver To Action */}
-            <button
-              type="button"
-              onClick={() => {
-                closeMenu();
-                setDeliveryOpen(true);
-              }}
-              className="col-span-2 flex min-h-11 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white hover:bg-white/[0.08] transition"
-            >
-              <span className="flex items-center gap-2.5">
-                <svg
-                  className="accent-icon text-minsah-action-primary"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                <span>Deliver to: <span className="text-white/90">{deliveryDisplayCity}</span></span>
-              </span>
-              <span className="text-xs font-normal text-white/50 underline underline-offset-2">Change</span>
-            </button>
-
-            {primaryNavigationItems.map((item) => {
-              const active = isPrimaryNavigationItemActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeMenu}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex min-h-11 items-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-bold transition ${
-                    active ? 'bg-minsah-action-primary text-white border-transparent' : 'bg-white/[0.04] text-white hover:bg-white/[0.08]'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-            <Link
-              href="/wishlist"
-              onClick={closeMenu}
-              className="flex min-h-11 items-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white hover:bg-white/[0.08] sm:hidden"
-            >
-              Wishlist
-            </Link>
-            <Link
-              href={accountHref}
-              onClick={closeMenu}
-              className="flex min-h-11 items-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white hover:bg-white/[0.08] sm:hidden"
-            >
-              {user ? 'Account' : 'Sign In'}
-            </Link>
-          </nav>
-        </div>
-      )}
+      {/* Mobile Navigation Drawer Sheet (High-End 3-Tab Bottom Sheet) */}
+      <MobileNavDrawer
+        isOpen={menuOpen}
+        onClose={closeMenu}
+        deliveryDisplayCity={deliveryDisplayCity}
+        onOpenDelivery={() => setDeliveryOpen(true)}
+        categories={navCategories}
+        user={user}
+      />
     </>
   );
 }

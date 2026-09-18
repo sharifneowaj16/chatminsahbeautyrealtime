@@ -1717,7 +1717,7 @@ function CheckoutContent() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-[#984B29]">
+                          <span className="font-bold text-xs text-[#984B29] font-price">
                             {formatPrice(item.price * item.quantity)}
                           </span>
                           <button
@@ -1739,7 +1739,7 @@ function CheckoutContent() {
               <div className="mt-4 space-y-2.5 border-t border-[#F4EFEA] pt-4 text-xs">
                 <div className="flex justify-between text-[#7A6E65]">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-[#2D1F18]">{formatPrice(subtotal)}</span>
+                  <span className="font-semibold text-[#2D1F18] font-price">{formatPrice(subtotal)}</span>
                 </div>
 
                 {discount > 0 && (
@@ -1747,7 +1747,7 @@ function CheckoutContent() {
                     <span className="flex items-center gap-1.5 font-medium">
                       <Sparkles size={13} className="text-emerald-600" /> কুপন ডিসকাউন্ট {promoCode ? `(${promoCode})` : ""}
                     </span>
-                    <span className="font-bold">-{formatPrice(discount)}</span>
+                    <span className="font-bold font-price">-{formatPrice(discount)}</span>
                   </div>
                 )}
 
@@ -1755,7 +1755,7 @@ function CheckoutContent() {
                   <span className="flex items-center gap-1.5">
                     <Truck size={14} className="text-[#984B29]" /> Delivery Fee
                   </span>
-                  <span className="font-semibold text-[#2D1F18]">
+                  <span className="font-semibold text-[#2D1F18] font-price">
                     {isFreeDeliveryUnlocked ? (
                       <span className="font-bold text-emerald-700">🎉 FREE</span>
                     ) : deliveryState === "loading"
@@ -1780,7 +1780,7 @@ function CheckoutContent() {
 
                 <div className="flex justify-between border-t border-[#F4EFEA] pt-3 text-sm font-bold text-[#2D1F18]">
                   <span>Total</span>
-                  <span className="text-base text-[#984B29]">{formatPrice(finalTotal)}</span>
+                  <span className="text-base text-[#984B29] font-price font-bold">{formatPrice(finalTotal)}</span>
                 </div>
               </div>
 

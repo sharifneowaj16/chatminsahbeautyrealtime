@@ -200,7 +200,7 @@ function MerchProductTile({ product, index, section }: { product: Product; index
       <p className="line-clamp-2 min-h-[2rem] text-xs font-semibold leading-snug text-minsah-dark group-hover:text-minsah-primary">
         {product.name}
       </p>
-      <p className="mt-1 text-sm font-bold text-minsah-primary">৳{formatPrice(product.price)}</p>
+      <p className="mt-1 text-sm font-bold text-minsah-primary font-price">{formatPrice(product.price)}</p>
     </Link>
   );
 }

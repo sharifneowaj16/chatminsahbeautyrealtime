@@ -68,6 +68,38 @@ export default function CategoryRail({
     width: '76px',
   });
 
+  const [isScrollingDown, setIsScrollingDown] = useState(false);
+
+  // Auto-hide CategoryRail on down-scroll and reveal on up-scroll
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          if (currentScrollY <= 30) {
+            setIsScrollingDown(false);
+          } else {
+            const delta = currentScrollY - lastScrollY;
+            if (delta > 8) {
+              setIsScrollingDown(true);
+            } else if (delta < -8) {
+              setIsScrollingDown(false);
+            }
+          }
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const railRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
 
@@ -248,7 +280,10 @@ export default function CategoryRail({
   };
 
   return (
-    <nav aria-label="Minsah Beauty categories" className={`mb-category-strip group/rail ${className}`}>
+    <nav
+      aria-label="Minsah Beauty categories"
+      className={`mb-category-strip group/rail ${isScrollingDown ? 'is-hidden' : ''} ${className}`}
+    >
       {/* Left Edge Gradient Fade */}
       <div
         className={`mb-rail-fade mb-rail-fade-left ${canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}

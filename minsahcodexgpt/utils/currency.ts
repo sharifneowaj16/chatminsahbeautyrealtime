@@ -4,7 +4,7 @@
  */
 
 export const CURRENCY_CODE = 'BDT';
-export const CURRENCY_SYMBOL = 'Tk ';
+export const CURRENCY_SYMBOL = '৳';
 export const CURRENCY_LOCALE = 'en-BD';
 
 /**

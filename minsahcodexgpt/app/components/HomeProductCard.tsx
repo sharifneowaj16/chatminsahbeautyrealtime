@@ -156,7 +156,7 @@ export default function HomeProductCard({
               <HomeWishlistButton productId={product.id} productName={product.name} size="sm" />
             </div>
             <RatingRow product={product} compact />
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 font-price">
               <span className="text-base font-bold text-minsah-primary">{formatPrice(product.price)}</span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <span className="text-xs font-normal text-stone-400 line-through">
@@ -223,7 +223,7 @@ export default function HomeProductCard({
           <RatingRow product={product} compact={isCompact} />
         </div>
 
-        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-price">
           <span className={`${isCompact ? 'text-sm' : 'text-base'} font-bold text-minsah-primary`}>
             {formatPrice(product.price)}
           </span>

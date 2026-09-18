@@ -102,7 +102,7 @@ export default function ProductCard({
             </h3>
           </Link>
 
-          <div className="mb-3 flex flex-wrap items-baseline gap-2">
+          <div className="mb-3 flex flex-wrap items-baseline gap-2 font-price">
             <span className="text-lg font-bold text-minsah-primary">{formatPrice(price)}</span>
             {originalPrice && originalPrice > price && (
               <span className="text-sm text-minsah-secondary line-through">{formatPrice(originalPrice)}</span>

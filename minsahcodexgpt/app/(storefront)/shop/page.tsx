@@ -181,7 +181,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <Suspense
           fallback={
             <div className="space-y-4">
@@ -198,7 +198,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
         {/* Lightweight Editorial Education Module */}
         <ShopEducationSection />
-      </main>
+      </div>
     </div>
   );
 }

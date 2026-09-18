@@ -105,11 +105,11 @@ export default function CartDrawer({
         <div className="flex items-center justify-between">
           <span className="text-[18px] md:text-[15px] font-[350] text-[#1B361B] tracking-tight font-sans">Total</span>
           <div className="text-right">
-            <span className="text-[20px] md:text-[17px] font-[350] text-[#1B361B] font-sans">
+            <span className="text-[20px] md:text-[17px] font-bold text-[#1B361B] font-price">
               {formatPrice(Math.max(0, subtotal - discount))}
             </span>
             {discount > 0 && (
-              <span className="block text-[11px] md:text-[10px] font-[350] text-emerald-700">
+              <span className="block text-[11px] md:text-[10px] font-medium text-emerald-700 font-price">
                 Saved -{formatPrice(discount)}
               </span>
             )}
@@ -180,7 +180,7 @@ export default function CartDrawer({
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
                     <span className="font-[350] tracking-wider text-emerald-900">{promoCode}</span>
-                    <span className="font-[350] text-emerald-700">(-{formatPrice(discount)} OFF)</span>
+                    <span className="font-medium text-emerald-700 font-price">(-{formatPrice(discount)} OFF)</span>
                   </div>
                   <button
                     type="button"

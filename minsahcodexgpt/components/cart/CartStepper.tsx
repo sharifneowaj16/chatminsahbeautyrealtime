@@ -503,7 +503,7 @@ export default function CartStepper({
   const showAddButton = qty === 0 && zeroStateMode === 'button';
   const showZeroStepper = qty === 0 && zeroStateMode === 'stepper';
   const plusDisabled = disabled || isBusy || isOutOfStock || (!isVariantProduct && qty >= safeMaxStock);
-  const priceSuffix = price > 0 ? ` • ৳${formatPrice(price)}` : '';
+  const priceSuffix = price > 0 ? ` • ${formatPrice(price)}` : '';
   const addButtonLabel = isOutOfStock
     ? 'Out of Stock'
     : hasRequiredVariants && !currentVariantId
@@ -603,7 +603,7 @@ export default function CartStepper({
           onClick={() => void handleAddToCart()}
           disabled={disabled || isBusy || isOutOfStock}
           aria-label={addButtonAriaLabel}
-          className={`rounded-full uppercase tracking-wider text-xs font-semibold ${className}`}
+          className={`rounded-full uppercase tracking-wider text-xs font-semibold font-price ${className}`}
         >
           {isBusy ? (
             <Spinner size="sm" decorative />

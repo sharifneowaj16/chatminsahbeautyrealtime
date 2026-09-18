@@ -295,7 +295,7 @@ export default function VariantModal({
                       <h3 className="break-words text-sm font-bold text-minsah-text-primary">{toVariantLabel(variant)}</h3>
                       {isSelected ? <Badge tone="success">Selected</Badge> : null}
                     </div>
-                    <p className="mt-1 text-xs text-minsah-text-muted">
+                    <p className="mt-1 text-xs text-minsah-text-muted font-price">
                       {outOfStock ? UI_COPY.cart.outOfStock : `${formatPrice(variant.price)} · ${variant.stock} available`}
                     </p>
                   </div>
@@ -335,7 +335,7 @@ export default function VariantModal({
             </div>
             <div className="mt-2 flex items-center justify-between">
               <dt className="text-minsah-text-muted">{UI_COPY.cart.subtotal}</dt>
-              <dd className="font-bold text-minsah-text-primary">
+              <dd className="font-bold text-minsah-text-primary font-price">
                 {formatPrice(selectedVariant ? selectedVariant.price * selectedQuantity : 0)}
               </dd>
             </div>
@@ -383,7 +383,7 @@ export default function VariantModal({
                     <p className="mt-1 text-xs text-minsah-text-muted">
                       {variant.stock > 0 ? `${variant.stock} available` : UI_COPY.cart.outOfStock}
                     </p>
-                    <p className="mt-2 text-sm font-bold text-minsah-text-primary">{formatPrice(variant.price)}</p>
+                    <p className="mt-2 text-sm font-bold text-minsah-text-primary font-price">{formatPrice(variant.price)}</p>
                   </div>
                 </div>
                 <div className="mt-3 flex justify-end">

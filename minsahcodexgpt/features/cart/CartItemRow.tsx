@@ -440,7 +440,7 @@ export default function CartItemRow({
             <div className={`flex items-center justify-between gap-2 ${isCompact ? "mt-2.5 md:mt-1.5" : "mt-3"}`}>
               <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                 <p
-                  className={`${isCompact ? "text-[14px] sm:text-[15px] md:text-[13px] font-bold text-[#181C1A]" : "text-base font-black text-minsah-primary"}`}
+                  className={`${isCompact ? "text-[14px] sm:text-[15px] md:text-[13px] font-bold text-[#181C1A]" : "text-base font-black text-minsah-primary"} font-price`}
                 >
                   {formatPrice(
                     optimisticVariant
@@ -451,7 +451,7 @@ export default function CartItemRow({
                   )}
                 </p>
                 {saveAmount > 0 && (
-                  <span className="inline-flex items-center px-1.5 md:px-1 py-0.5 md:py-[1px] rounded-md bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 text-[#1E6839] dark:text-emerald-300 font-inter text-[10px] md:text-[9px] font-bold leading-tight shadow-2xs">
+                  <span className="inline-flex items-center px-1.5 md:px-1 py-0.5 md:py-[1px] rounded-md bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 text-[#1E6839] dark:text-emerald-300 font-price text-[10px] md:text-[9px] font-bold leading-tight shadow-2xs">
                     Save ৳{Math.round(saveAmount)}
                   </span>
                 )}
@@ -570,7 +570,7 @@ export default function CartItemRow({
         </div>
 
         {isSummary && (
-          <p className="whitespace-nowrap text-sm font-bold text-minsah-primary">
+          <p className="whitespace-nowrap text-sm font-bold text-minsah-primary font-price">
             {formatPrice(item.price * item.quantity)}
           </p>
         )}

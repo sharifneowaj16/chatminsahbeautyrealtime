@@ -97,7 +97,7 @@ export default function HomeCombosSection({
             </div>
             <div>
               <h4 className="font-semibold text-sm text-minsah-dark">Makeup Combos</h4>
-              <p className="text-xs font-normal text-stone-500">From Tk 1001</p>
+              <p className="text-xs font-normal text-stone-500 font-price">From ৳1001</p>
             </div>
           </Link>
           <Link href={viewAllHref} className="bg-minsah-surface-subtle border border-stone-200/70 rounded-lg p-4 flex items-center gap-3 transition hover:border-stone-300 hover:shadow-sm">
@@ -106,7 +106,7 @@ export default function HomeCombosSection({
             </div>
             <div>
               <h4 className="font-semibold text-sm text-minsah-dark">Skincare Sets</h4>
-              <p className="text-xs font-normal text-stone-500">From Tk 1001</p>
+              <p className="text-xs font-normal text-stone-500 font-price">From ৳1001</p>
             </div>
           </Link>
         </div>

@@ -1,4 +1,5 @@
 import type { Product, ShopFilters, SortOption, ActiveFilter } from '@/types/product';
+import { formatPrice as formatCurrencyPrice } from '@/utils/currency';
 
 export const SHOP_LEGACY_QUERY_PARAM_MAP = {
   mfCategory: 'category',
@@ -312,7 +313,7 @@ export function getActiveFilters(filters: ShopFilters): ActiveFilter[] {
     const max = filters.maxPrice || Infinity;
     active.push({
       type: 'price',
-      label: `৳${formatPrice(min)} - ৳${formatPrice(max)}`,
+      label: `${formatPrice(min)} - ${formatPrice(max)}`,
       value: `${min}-${max}`,
       param: 'price',
     });
@@ -381,9 +382,9 @@ export function getActiveFilters(filters: ShopFilters): ActiveFilter[] {
   return active;
 }
 
-// Format price with BDT
+// Format price with BDT (delegated to canonical currency utility)
 export function formatPrice(price: number): string {
-  return price.toLocaleString('en-BD');
+  return formatCurrencyPrice(price);
 }
 
 // Calculate savings
@@ -440,7 +441,7 @@ export function generateMetaDescription(filters: ShopFilters, totalProducts?: nu
   parts.push('beauty, skincare, makeup and personal care products');
 
   if (filters.minPrice && filters.maxPrice) {
-    parts.push(`under ৳${formatPrice(filters.maxPrice)}`);
+    parts.push(`under ${formatPrice(filters.maxPrice)}`);
   }
 
   parts.push('in Bangladesh. Cash on Delivery, bKash/Nagad payment and fast delivery available.');

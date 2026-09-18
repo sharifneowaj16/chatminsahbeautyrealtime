@@ -961,7 +961,7 @@ export default function BuyNowModal({
                             </h3>
                             {isCurrent ? <Badge tone="info">Initial choice</Badge> : null}
                           </div>
-                          <p className="mt-1 text-xs text-minsah-text-muted">
+                          <p className="mt-1 text-xs text-minsah-text-muted font-price">
                             {formatPrice(variant.price)} · {variant.stock > 0 ? `${variant.stock} available` : "Out of stock"}
                           </p>
                         </div>
@@ -1067,7 +1067,7 @@ export default function BuyNowModal({
               </div>
               <div className="mt-2 flex items-center justify-between">
                 <dt className="text-minsah-text-muted">Subtotal</dt>
-                <dd className="font-bold text-minsah-text-primary">{formatPrice(subtotal)}</dd>
+                <dd className="font-bold text-minsah-text-primary font-price">{formatPrice(subtotal)}</dd>
               </div>
             </dl>
 
@@ -1099,7 +1099,7 @@ export default function BuyNowModal({
                         ×{item.quantity} · {formatWeight(item.totalWeightKg)}
                       </p>
                     </div>
-                    <p className="text-sm font-bold text-minsah-text-primary">{formatPrice(item.subtotal)}</p>
+                    <p className="text-sm font-bold text-minsah-text-primary font-price">{formatPrice(item.subtotal)}</p>
                   </div>
                 ))}
               </div>
@@ -1222,7 +1222,7 @@ export default function BuyNowModal({
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex items-center justify-between">
                   <dt className="text-minsah-text-muted">Subtotal</dt>
-                  <dd className="font-bold text-minsah-text-primary">{formatPrice(subtotal)}</dd>
+                  <dd className="font-bold text-minsah-text-primary font-price">{formatPrice(subtotal)}</dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt className="text-minsah-text-muted">Package Weight</dt>
@@ -1240,7 +1240,7 @@ export default function BuyNowModal({
                 </div>
                 <div className="flex items-center justify-between border-t border-minsah-border-default pt-3">
                   <dt className="font-bold text-minsah-text-primary">Grand Total</dt>
-                  <dd className="text-lg font-black text-minsah-action-primary">{formatPrice(grandTotal)}</dd>
+                  <dd className="text-lg font-black text-minsah-action-primary font-price">{formatPrice(grandTotal)}</dd>
                 </div>
               </dl>
               {deliveryMessage ? (

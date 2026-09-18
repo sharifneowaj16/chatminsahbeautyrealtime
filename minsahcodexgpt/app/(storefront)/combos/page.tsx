@@ -6,8 +6,8 @@ import { formatPrice } from '@/utils/currency';
 // Combo data organized by price range
 const comboRanges = [
   {
-    title: '1001-1500 Taka Combos',
-    priceRange: 'Tk 1001-1500',
+    title: '৳1001–1500 Combos',
+    priceRange: '৳1001–1500',
     combos: [
       { id: 'c1', name: 'Makeup Combo', price: 1200, image: '💄' },
       { id: 'c2', name: 'Skincare Combo', price: 1350, image: '🧴' },
@@ -16,8 +16,8 @@ const comboRanges = [
     ]
   },
   {
-    title: '1501-2000 Taka Combos',
-    priceRange: 'Tk 1501-2000',
+    title: '৳1501–2000 Combos',
+    priceRange: '৳1501–2000',
     combos: [
       { id: 'c5', name: 'Premium Makeup Set', price: 1800, image: '💎' },
       { id: 'c6', name: 'Facial Kit Combo', price: 1650, image: '🌸' },
@@ -26,8 +26,8 @@ const comboRanges = [
     ]
   },
   {
-    title: '2001-2500 Taka Combos',
-    priceRange: 'Tk 2001-2500',
+    title: '৳2001–2500 Combos',
+    priceRange: '৳2001–2500',
     combos: [
       { id: 'c9', name: 'Luxury Beauty Box', price: 2200, image: '👑' },
       { id: 'c10', name: 'Complete Skincare Set', price: 2400, image: '✨' },
@@ -36,8 +36,8 @@ const comboRanges = [
     ]
   },
   {
-    title: '2501-3000 Taka Combos',
-    priceRange: 'Tk 2501-3000',
+    title: '৳2501–3000 Combos',
+    priceRange: '৳2501–3000',
     combos: [
       { id: 'c13', name: 'Deluxe Beauty Set', price: 2800, image: '🌟' },
       { id: 'c14', name: 'Ultimate Skincare', price: 2900, image: '💧' },
@@ -46,8 +46,8 @@ const comboRanges = [
     ]
   },
   {
-    title: '3001-3500 Taka Combos',
-    priceRange: 'Tk 3001-3500',
+    title: '৳3001–3500 Combos',
+    priceRange: '৳3001–3500',
     combos: [
       { id: 'c17', name: 'Elite Beauty Bundle', price: 3200, image: '💎' },
       { id: 'c18', name: 'Premium Spa Set', price: 3400, image: '🧖‍♀️' },
@@ -56,8 +56,8 @@ const comboRanges = [
     ]
   },
   {
-    title: '3501-5000 Taka Combos',
-    priceRange: 'Tk 3501-5000',
+    title: '৳3501–5000 Combos',
+    priceRange: '৳3501–5000',
     combos: [
       { id: 'c21', name: 'Ultimate Beauty Collection', price: 4500, image: '👑' },
       { id: 'c22', name: 'Luxury Spa Experience', price: 4200, image: '✨' },
@@ -104,7 +104,7 @@ export default function CombosPage() {
                   <h3 className="font-semibold text-sm text-minsah-dark mb-1 text-center">
                     {combo.name}
                   </h3>
-                  <p className="text-xs text-center font-bold text-minsah-primary">
+                  <p className="text-xs text-center font-bold text-minsah-primary font-price">
                     {formatPrice(combo.price)}
                   </p>
                 </div>
