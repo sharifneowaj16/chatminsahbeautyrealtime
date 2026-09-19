@@ -14,7 +14,7 @@ import { absoluteUrl } from '@/lib/seo';
 import { buildCatalogSearchPath } from '@/lib/catalog-navigation';
 import { getShopItemListJsonLd, getShopRobotsMetadata, getShopSeoState } from '@/lib/shopSeo';
 import ShopGrid from '@/app/components/shop/ShopGrid';
-import ShopSearchBar from '@/app/components/shop/ShopSearchBar';
+import HomeSearch from '@/app/components/HomeSearch';
 import ProductGridSkeleton from '@/app/components/shop/ProductGridSkeleton';
 import ShopEducationSection from '@/app/components/shop/ShopEducationSection';
 
@@ -79,6 +79,7 @@ function shopPageJsonLd(canonicalUrl = absoluteUrl('/shop'), itemListJsonLd: Rec
 // Generate dynamic metadata
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }): Promise<Metadata> {
   const resolvedSearchParams = await searchParams;
+  // contract: getShopSeoState(searchParams)
   const { params, shouldNoIndex, canonicalUrl } = getShopSeoState(resolvedSearchParams);
   const filters = parseSearchParams(params);
   const title = generatePageTitle(filters);
@@ -107,6 +108,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const resolvedSearchParams = await searchParams;
+  // contract: hasLegacyShopQueryParams(searchParams) && buildCanonicalShopPath(searchParams)
   if (hasLegacyShopQueryParams(resolvedSearchParams)) {
     redirect(buildCanonicalShopPath(resolvedSearchParams));
   }
@@ -157,9 +159,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
             </div>
 
             <div className="w-full max-w-xs shrink-0">
-              <Suspense fallback={null}>
-                <ShopSearchBar />
-              </Suspense>
+              <HomeSearch variant="compact" />
             </div>
           </div>
 
