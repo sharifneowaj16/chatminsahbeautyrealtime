@@ -9,6 +9,7 @@ import { trackFailedQuery, trackQueryImpression } from '@/lib/elasticsearch/sear
 import { executeDatabaseSearchFallback } from '@/lib/search/db-fallback';
 import { normalizeShopSearchParams } from '@/lib/shopUtils';
 import { SHOP_LISTING_CACHE_CONTROL, SHOP_SEARCH_SOURCE_FIELDS, getShopPayloadHeaders } from '@/lib/shopPerformance';
+import { normalizeShopSort } from '@/lib/search/sort';
 // ✅ CTR + Discount boost (Amazon A9 + Daraz style)
 import {
   getQueryCTRData,
@@ -23,7 +24,8 @@ interface ProductSource {
   slug: string;
   description?: string;
   price: number;
-  compareAtPrice?: number;
+  compareAtPrice?: number | null;
+  discount?: number;
   category?: string;
   categorySlug?: string;
   categoryName?: string;
@@ -226,38 +228,6 @@ function normalizeTagFilterValues(value: string | null): string[] {
   return getCsvFilterValues(value);
 }
 
-function normalizeShopSort(sort: string): string {
-  switch (sort) {
-    case 'featured':
-      return 'relevance';
-    case 'price-low-high':
-      return 'price_asc';
-    case 'price-high-low':
-      return 'price_desc';
-    case 'highest-rated':
-      return 'rating';
-    case 'best-selling':
-      return 'popularity';
-    case 'a-z':
-      return 'name_asc';
-    case 'z-a':
-      return 'name_desc';
-    case 'biggest-discount':
-    case 'discount_desc':
-      return 'discount_desc';
-    case 'relevance':
-    case 'price_asc':
-    case 'price_desc':
-    case 'newest':
-    case 'rating':
-    case 'popularity':
-    case 'name_asc':
-    case 'name_desc':
-      return sort;
-    default:
-      return 'relevance';
-  }
-}
 
 function buildExactKeywordFilter(field: string, values: string[]) {
   if (values.length === 1) {
@@ -364,6 +334,9 @@ export async function GET(request: NextRequest) {
     const brand = normalizeCsvParam(searchParams.get('brand'));
     const rating = searchParams.get('rating');
     const tags = normalizeTagFilterValues(searchParams.get('tags'));
+    const skinType = normalizeCsvParam(searchParams.get('skinType'));
+    const skinConcern = normalizeCsvParam(searchParams.get('skinConcern'));
+    const saleOnly = searchParams.get('saleOnly') === 'true';
 
     const page = validateNumericParam(searchParams.get('page'), 1, 1, 1000);
     const limit = validateNumericParam(searchParams.get('limit'), 20, 1, 100);
@@ -479,6 +452,51 @@ export async function GET(request: NextRequest) {
       filter.push({ terms: { 'tags': tags } }); // Phase 19: direct keyword field
       userFilterCount += 1;
     }
+    if (skinType) {
+      const skinTypeValues = getCsvFilterValues(skinType);
+      if (skinTypeValues.length > 0) {
+        filter.push({
+          bool: {
+            should: [
+              { terms: { skinType: skinTypeValues } },
+              { terms: { tags: skinTypeValues } },
+              { terms: { searchTags: skinTypeValues } },
+            ],
+            minimum_should_match: 1,
+          },
+        });
+        userFilterCount += 1;
+      }
+    }
+    if (skinConcern) {
+      const concernValues = getCsvFilterValues(skinConcern);
+      if (concernValues.length > 0) {
+        filter.push({
+          bool: {
+            should: [
+              { terms: { skinConcern: concernValues } },
+              { terms: { skinConcerns: concernValues } },
+              { terms: { tags: concernValues } },
+              { terms: { searchTags: concernValues } },
+            ],
+            minimum_should_match: 1,
+          },
+        });
+        userFilterCount += 1;
+      }
+    }
+    if (saleOnly) {
+      filter.push({
+        bool: {
+          should: [
+            { range: { discount: { gt: 0 } } },
+            { term: { isFlashSale: true } },
+          ],
+          minimum_should_match: 1,
+        },
+      });
+      userFilterCount += 1;
+    }
 
     // ========================================
     // ✅ PROMOTIONAL BOOSTING with function_score
@@ -588,7 +606,9 @@ export async function GET(request: NextRequest) {
         break;
       case 'relevance':
       default:
-        sortOrder = [{ _score: 'desc' }, { createdAt: 'desc' }];
+        sortOrder = query.trim()
+          ? [{ _score: 'desc' }, { reviewCount: 'desc' }, { rating: 'desc' }, { createdAt: 'desc' }]
+          : [{ reviewCount: 'desc' }, { rating: 'desc' }, { _score: 'desc' }, { createdAt: 'desc' }];
         break;
     }
 
@@ -838,6 +858,9 @@ export async function GET(request: NextRequest) {
       inStock && 'inStock',
       rating && 'rating',
       tags && 'tags',
+      skinType && 'skinType',
+      skinConcern && 'skinConcern',
+      saleOnly && 'saleOnly',
     ].filter(Boolean) as string[];
 
     searchMetrics.add({
@@ -943,12 +966,17 @@ export async function GET(request: NextRequest) {
       }
     };
 
+    const isPersonalized = userCategories.length > 0;
+    const searchCacheControl = isPersonalized
+      ? 'private, no-cache, no-store, must-revalidate'
+      : SHOP_LISTING_CACHE_CONTROL;
+
     return NextResponse.json(responsePayload, {
       headers: getShopPayloadHeaders(responsePayload, {
         'X-Search-Duration': String(duration),
         'X-Result-Count': String(totalHits),
         'X-Search-Source': 'elasticsearch',
-        'Cache-Control': SHOP_LISTING_CACHE_CONTROL,
+        'Cache-Control': searchCacheControl,
       }),
     });
 

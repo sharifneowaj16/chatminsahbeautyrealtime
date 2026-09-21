@@ -22,6 +22,8 @@ import {
 } from "@/lib/shopUtils";
 import { productPath } from "@/lib/product-url";
 import { buildCatalogPath, buildCatalogSearchPath } from "@/lib/catalog-navigation";
+import { mapShopSortToSearchApiSort } from "@/lib/search/sort";
+import { isUnifiedBrowseEnabled } from "@/lib/shopPerformance";
 import {
   trackShopEmptyResult,
   trackShopFilterApply,
@@ -41,7 +43,11 @@ import ShopSortSheet from "./ShopSortSheet";
 import ProductGridSkeleton from "./ProductGridSkeleton";
 import ShopEmptyState from "./ShopEmptyState";
 import ShopErrorState from "./ShopErrorState";
-import type { Product as ShopProduct, SortOption } from "@/types/product";
+import AroggaControlsBar from "./AroggaControlsBar";
+import AroggaFilterSidebar from "./AroggaFilterSidebar";
+import AroggaMobileFilterDrawer from "./AroggaMobileFilterDrawer";
+import AroggaPagination from "./AroggaPagination";
+import type { Product as ShopProduct, SortOption, ShopViewMode } from "@/types/product";
 
 function toSlug(str: string): string {
   return str
@@ -102,6 +108,8 @@ interface ApiProduct {
       color?: string;
     };
   }>;
+  skinType?: string;
+  skinConcerns?: string[];
 }
 
 // Maps an Elasticsearch product source to ApiProduct shape
@@ -144,6 +152,15 @@ interface EsProduct {
   confirmedOrderCount?: number;
   deliveredOrderCount?: number;
   tags?: string[];
+  skinType?: string;
+  skinConcern?: string;
+  skinConcerns?: string[];
+  isFeatured?: boolean;
+  isFlashSale?: boolean;
+  isNewArrival?: boolean;
+  isNew?: boolean;
+  hasVariants?: boolean;
+  variants?: ApiProduct['variants'];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -183,8 +200,8 @@ function esProductToApiProduct(p: EsProduct): ApiProduct {
     reviews: p.reviewCount ?? 0,
     description: p.description ?? "",
     shortDescription: p.description?.substring(0, 100) ?? p.name,
-    featured: false,
-    isNew: false,
+    featured: Boolean(p.isFeatured),
+    isNew: Boolean(p.isNewArrival ?? p.isNew),
     tags: Array.isArray(p.tags) ? p.tags.join(",") : (p.tags ?? ""),
     codAvailable: p.codAvailable ?? p.isCODAvailable,
     isCODAvailable: p.isCODAvailable ?? p.codAvailable,
@@ -197,6 +214,10 @@ function esProductToApiProduct(p: EsProduct): ApiProduct {
     orderCount: p.orderCount,
     confirmedOrderCount: p.confirmedOrderCount,
     deliveredOrderCount: p.deliveredOrderCount ?? p.salesCount,
+    hasVariants: Boolean(p.hasVariants || (p.variants && p.variants.length > 0)),
+    variants: p.variants,
+    skinType: p.skinType,
+    skinConcerns: p.skinConcerns ?? (p.skinConcern ? [p.skinConcern] : []),
     createdAt: p.createdAt ?? new Date().toISOString(),
     updatedAt: p.updatedAt ?? new Date().toISOString(),
   };
@@ -253,8 +274,8 @@ function apiProductToShopProduct(p: ApiProduct): ShopProduct {
     isBestSeller: salesCount > 0,
     isExclusive: false,
     isTrending: p.featured || p.isFeatured || false,
-    skinType: undefined,
-    skinConcerns: [],
+    skinType: p.skinType ? (Array.isArray(p.skinType) ? p.skinType : [p.skinType]) as ('oily' | 'dry' | 'combination' | 'normal' | 'sensitive')[] : undefined,
+    skinConcerns: (p.skinConcerns ?? []) as ('acne' | 'aging' | 'dryness' | 'sensitivity' | 'dark-spots' | 'pores')[],
     tags: p.tags
       ? p.tags
           .split(",")
@@ -269,14 +290,16 @@ function apiProductToShopProduct(p: ApiProduct): ShopProduct {
     isImported: false,
     hasVariants: p.hasVariants ?? !!(p.variants && p.variants.length > 0),
     variants: p.variants?.map((variant) => {
-      const size = variant.attributes?.size || "";
-      const color = variant.attributes?.color || "";
-      const value = size || color || variant.name || variant.sku;
+      const attrs = (variant.attributes || {}) as Record<string, string>;
+      const size = attrs.size || "";
+      const shade = attrs.shade || attrs.color || "";
+      const option = size ? "Size" : shade ? "Shade" : "Variant";
+      const value = size || shade || variant.name || variant.sku;
 
       return {
         id: variant.id,
         name: variant.name || value,
-        option: size ? "Size" : color ? "Color" : "Variant",
+        option,
         value,
         price: Number(variant.price ?? p.price),
         stock: Number(variant.stock ?? variant.quantity ?? 0),
@@ -437,6 +460,9 @@ export default function ShopGrid() {
   const [facets, setFacets] = useState<ShopFacetState>(EMPTY_SHOP_FACETS);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>([]);
+  const [selectedSkinConcerns, setSelectedSkinConcerns] = useState<string[]>([]);
+  const [isSaleOnly, setIsSaleOnly] = useState(false);
   const [selectedSortFlags, setSelectedSortFlags] = useState<string[]>([]);
   const [priceMinInput, setPriceMinInput] = useState("");
   const [priceMaxInput, setPriceMaxInput] = useState("");
@@ -465,25 +491,6 @@ export default function ShopGrid() {
     pendingFilterParamsRef.current = normalizedParams.toString();
   }, [normalizedParams]);
 
-  const mapShopSortToSearchApiSort = (sort?: SortOption): string => {
-    switch (sort) {
-      case "price-low-high":
-        return "price_asc";
-      case "price-high-low":
-        return "price_desc";
-      case "newest":
-        return "newest";
-      case "highest-rated":
-        return "rating";
-      case "best-selling":
-        return "popularity";
-      case "biggest-discount":
-        return "discount_desc";
-      default:
-        return "relevance";
-    }
-  };
-
   useEffect(() => {
     const categories = (normalizedParams.get("category") || "")
       .split(",")
@@ -493,12 +500,24 @@ export default function ShopGrid() {
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean);
+    const skinTypes = (normalizedParams.get("skinType") || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const skinConcerns = (normalizedParams.get("skinConcern") || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const saleOnly = normalizedParams.get("saleOnly") === "true";
     const sortFlags = normalizedParams.get("sort")
       ? [normalizedParams.get("sort") as string]
       : [];
 
     setSelectedCategories(categories);
     setSelectedBrands(brands);
+    setSelectedSkinTypes(skinTypes);
+    setSelectedSkinConcerns(skinConcerns);
+    setIsSaleOnly(saleOnly);
     setSelectedSortFlags(sortFlags);
     setPriceMinInput(normalizedParams.get("minPrice") || "");
     setPriceMaxInput(normalizedParams.get("maxPrice") || "");
@@ -550,6 +569,9 @@ export default function ShopGrid() {
             "maxPrice",
             "inStock",
             "rating",
+            "skinType",
+            "skinConcern",
+            "saleOnly",
           ].includes(canonicalKey)
         ) {
           trackShopFilterApply(
@@ -595,22 +617,30 @@ export default function ShopGrid() {
       setLoading(true);
       setError(null);
       try {
-        if (q.trim()) {
-          // ── Elasticsearch path ──────────────────────────────────────
+        const shouldUseElasticsearch = Boolean(q.trim()) || isUnifiedBrowseEnabled();
+
+        if (shouldUseElasticsearch) {
+          // ── Unified Elasticsearch path (/api/search with DB fallback) ─────
           const params = new URLSearchParams();
-          params.set("q", q);
+          if (q) params.set("q", q);
           params.set("page", String(page));
           params.set("limit", String(pageSize));
 
           const category = normalizedParams.get("category");
+          const subcategory = normalizedParams.get("subcategory");
           const brand = normalizedParams.get("brand");
           const minPrice = normalizedParams.get("minPrice");
           const maxPrice = normalizedParams.get("maxPrice");
           const sort = normalizedParams.get("sort");
           const inStock = normalizedParams.get("inStock");
           const rating = normalizedParams.get("rating");
+          const skinType = normalizedParams.get("skinType");
+          const skinConcern = normalizedParams.get("skinConcern");
+          const saleOnly = normalizedParams.get("saleOnly");
+          const tags = normalizedParams.get("tags");
 
           if (category) params.set("category", category);
+          if (subcategory) params.set("subcategory", subcategory);
           if (brand) params.set("brand", brand);
           if (minPrice) params.set("minPrice", minPrice);
           if (maxPrice) params.set("maxPrice", maxPrice);
@@ -618,6 +648,10 @@ export default function ShopGrid() {
             params.set("sort", mapShopSortToSearchApiSort(sort as SortOption));
           if (inStock === "true") params.set("inStock", "true");
           if (rating) params.set("rating", rating);
+          if (skinType) params.set("skinType", skinType);
+          if (skinConcern) params.set("skinConcern", skinConcern);
+          if (saleOnly === "true") params.set("saleOnly", "true");
+          if (tags) params.set("tags", tags);
 
           const res = await fetch(`/api/search?${params.toString()}`);
           if (!res.ok) throw new Error("Search failed");
@@ -651,14 +685,20 @@ export default function ShopGrid() {
           const maxPrice = normalizedParams.get("maxPrice");
           const sort = normalizedParams.get("sort");
           const inStock = normalizedParams.get("inStock");
+          const skinType = normalizedParams.get("skinType");
+          const skinConcern = normalizedParams.get("skinConcern");
+          const saleOnly = normalizedParams.get("saleOnly");
 
           if (category) params.set("category", category);
           if (brand) params.set("brand", brand);
-          if (search) params.set("search", search);
+          if (search) params.set("q", q);
           if (minPrice) params.set("minPrice", minPrice);
           if (maxPrice) params.set("maxPrice", maxPrice);
           if (sort) params.set("sort", sort);
           if (inStock === "true") params.set("inStock", "true");
+          if (skinType) params.set("skinType", skinType);
+          if (skinConcern) params.set("skinConcern", skinConcern);
+          if (saleOnly === "true") params.set("saleOnly", "true");
 
           const res = await fetch(`/api/products?${params.toString()}`);
           if (!res.ok) throw new Error("Failed to fetch products");
@@ -695,7 +735,7 @@ export default function ShopGrid() {
   );
 
   const brandOptions = useMemo(
-    () => mergeActiveFacetOptions(facets.brands, selectedBrands, Number.POSITIVE_INFINITY),
+    () => mergeActiveFacetOptions(facets.brands, selectedBrands),
     [facets.brands, selectedBrands],
   );
 
@@ -713,6 +753,32 @@ export default function ShopGrid() {
 
     return [...selected, ...matched].slice(0, 24);
   }, [brandOptions, brandSearchQuery, selectedBrands]);
+
+  const skinTypeOptions = useMemo(() => {
+    const serverOptions = mergeActiveFacetOptions(facets.skinTypes, selectedSkinTypes);
+    if (serverOptions.length > 0) return serverOptions;
+    return [
+      { slug: "oily", label: "Oily", count: 0 },
+      { slug: "dry", label: "Dry", count: 0 },
+      { slug: "combination", label: "Combination", count: 0 },
+      { slug: "sensitive", label: "Sensitive", count: 0 },
+      { slug: "normal", label: "Normal", count: 0 },
+      { slug: "acne-prone", label: "Acne-Prone", count: 0 },
+    ];
+  }, [facets.skinTypes, selectedSkinTypes]);
+
+  const skinConcernOptions = useMemo(() => {
+    const serverOptions = mergeActiveFacetOptions(facets.concerns, selectedSkinConcerns);
+    if (serverOptions.length > 0) return serverOptions;
+    return [
+      { slug: "acne", label: "Acne & Blemishes", count: 0 },
+      { slug: "brightening", label: "Brightening", count: 0 },
+      { slug: "dark-spots", label: "Dark Spots", count: 0 },
+      { slug: "anti-aging", label: "Anti-Aging", count: 0 },
+      { slug: "pores", label: "Pores & Blackheads", count: 0 },
+      { slug: "hydration", label: "Dryness & Hydration", count: 0 },
+    ];
+  }, [facets.concerns, selectedSkinConcerns]);
 
   const popularDiscoveryChips = useMemo(() => {
     const chips: Array<{ label: string; patch: Record<string, string | null>; ariaLabel: string }> = [];
@@ -760,16 +826,36 @@ export default function ShopGrid() {
     return chips.slice(0, 5);
   }, [brandOptions, categoryOptions, selectedBrands, selectedCategories]);
 
+  const rawView = normalizedParams.get("view");
+  const [viewMode, setViewMode] = useState<ShopViewMode>(rawView === "list" ? "list" : "grid");
+  const discountParam = normalizedParams.get("discount");
+  const selectedDiscount = discountParam ? Number(discountParam) : null;
+
+  useEffect(() => {
+    if (rawView === "list" || rawView === "grid") {
+      setViewMode(rawView);
+    }
+  }, [rawView]);
+
+  const handleViewModeChange = (mode: ShopViewMode) => {
+    setViewMode(mode);
+    updateUrlFilters({ view: mode === "grid" ? null : "list" });
+  };
+
   // Server APIs now own filtering, sorting, pagination, and count accuracy.
   // Keep the client grid as a renderer only to avoid URL-selected filters diverging from API results.
-  const displayProducts = allProducts;
+  const displayProducts = useMemo(() => {
+    if (selectedDiscount === null) return allProducts;
+    return allProducts.filter((p) => (p.discount || 0) >= selectedDiscount);
+  }, [allProducts, selectedDiscount]);
+
   const totalCount = esTotal ?? allProducts.length;
   const totalPages =
     esTotalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
 
   const start = (page - 1) * pageSize;
   const hasMore = page < totalPages;
-  const activeSort = selectedSortFlags[0] || "featured";
+  const activeSort = (selectedSortFlags[0] as SortOption) || "featured";
   const isSearchRelevanceDefault = Boolean(q.trim()) && selectedSortFlags.length === 0;
   const activeSortLabel = isSearchRelevanceDefault
     ? "Relevance"
@@ -983,6 +1069,15 @@ export default function ShopGrid() {
     normalizedParams.get("rating")
       ? { label: "Remove rating", onClick: () => clearOneFilterGroup(["rating"]) }
       : null,
+    normalizedParams.get("skinType")
+      ? { label: "Remove skin type", onClick: () => clearOneFilterGroup(["skinType"]) }
+      : null,
+    normalizedParams.get("skinConcern")
+      ? { label: "Remove skin concern", onClick: () => clearOneFilterGroup(["skinConcern"]) }
+      : null,
+    normalizedParams.get("saleOnly")
+      ? { label: "Remove sale filter", onClick: () => clearOneFilterGroup(["saleOnly"]) }
+      : null,
   ].filter(Boolean) as Array<{ label: string; onClick: () => void }>;
 
   if (error) {
@@ -1167,6 +1262,90 @@ export default function ShopGrid() {
           </div>
         )}
 
+        {skinTypeOptions.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Skin Type
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {skinTypeOptions.map((item) => (
+                <Button
+                  key={item.slug}
+                  type="button"
+                  variant={selectedSkinTypes.includes(item.slug) ? "primary" : "secondary"}
+                  aria-pressed={selectedSkinTypes.includes(item.slug)}
+                  aria-label={`${selectedSkinTypes.includes(item.slug) ? "Remove" : "Apply"} skin type filter ${item.label}`}
+                  onClick={() =>
+                    toggleSelection(
+                      selectedSkinTypes,
+                      item.slug,
+                      "skinType",
+                    )
+                  }
+                  className="rounded-full px-3 py-1.5 text-xs"
+                >
+                  {item.label}
+                  {item.count > 0 && <span className="opacity-70"> ({item.count})</span>}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {skinConcernOptions.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Skin Concern
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {skinConcernOptions.map((item) => (
+                <Button
+                  key={item.slug}
+                  type="button"
+                  variant={selectedSkinConcerns.includes(item.slug) ? "primary" : "secondary"}
+                  aria-pressed={selectedSkinConcerns.includes(item.slug)}
+                  aria-label={`${selectedSkinConcerns.includes(item.slug) ? "Remove" : "Apply"} skin concern filter ${item.label}`}
+                  onClick={() =>
+                    toggleSelection(
+                      selectedSkinConcerns,
+                      item.slug,
+                      "skinConcern",
+                    )
+                  }
+                  className="rounded-full px-3 py-1.5 text-xs"
+                >
+                  {item.label}
+                  {item.count > 0 && <span className="opacity-70"> ({item.count})</span>}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Offers & Deals
+          </p>
+          <Button
+            type="button"
+            variant={isSaleOnly ? "primary" : "secondary"}
+            aria-pressed={isSaleOnly}
+            aria-label="Filter products on sale or flash sale"
+            onClick={() =>
+              updateUrlFilters({
+                saleOnly: isSaleOnly ? null : "true",
+              })
+            }
+            className="w-full justify-between rounded-xl px-3 py-2 text-sm font-medium"
+          >
+            <span className="flex items-center gap-1.5">
+              <span>🔥</span>
+              <span>On Sale / Flash Sale Only</span>
+            </span>
+            {isSaleOnly && <Check size={15} aria-hidden="true" />}
+          </Button>
+        </div>
+
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
             Price
@@ -1265,7 +1444,8 @@ export default function ShopGrid() {
         </div>
       )}
 
-      {fallbackMessage && (
+      {/* fallbackMessage: dev-only — hidden per user request ("hide this dont remove") */}
+      {false && process.env.NODE_ENV === 'development' && fallbackMessage && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
           <AlertCircle size={16} className="shrink-0 text-blue-600" />
           {fallbackMessage}
@@ -1300,37 +1480,58 @@ export default function ShopGrid() {
         />
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="hidden lg:block" aria-label="Shop filters sidebar">
-          {renderFilterPanel("sidebar")}
+      {/* Full-width Formulation Header & Controls Bar: Spanning from Left (above Filters) to Right (above Grid) */}
+      <AroggaControlsBar
+        totalCount={totalCount}
+        query={q}
+        category={normalizedParams.get("category") || undefined}
+        activeSort={activeSort}
+        onSortChange={(sort) => {
+          trackShopSortApply(sort, totalCount, shopAnalyticsFilters);
+          updateUrlFilters({ sort: sort === 'featured' ? null : sort });
+        }}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+        sortOptions={SHOP_SORT_OPTIONS}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[270px_1fr] xl:grid-cols-[280px_1fr]">
+        <aside className="hidden lg:block shrink-0" aria-label="Shop filters sidebar">
+          <AroggaFilterSidebar
+            inStockOnly={normalizedParams.get("inStock") === "true"}
+            onInStockChange={(inStock) => updateUrlFilters({ inStock: inStock ? "true" : null })}
+            priceMin={priceMinInput}
+            priceMax={priceMaxInput}
+            onPriceChange={applyPriceRange}
+            selectedDiscount={selectedDiscount}
+            onDiscountChange={(discount) => updateUrlFilters({ discount: discount ? String(discount) : null })}
+            categories={categoryOptions}
+            selectedCategories={selectedCategories}
+            onCategoryToggle={(slug) => toggleSelection(selectedCategories, slug, "category")}
+            onCategoryClear={() => clearOneFilterGroup(["category", "subcategory"])}
+            brands={brandOptions}
+            selectedBrands={selectedBrands}
+            onBrandToggle={(slug) => toggleSelection(selectedBrands, slug, "brand")}
+            onBrandClear={() => clearOneFilterGroup(["brand"])}
+            skinTypes={skinTypeOptions}
+            selectedSkinTypes={selectedSkinTypes}
+            onSkinTypeToggle={(slug) => toggleSelection(selectedSkinTypes, slug, "skinType")}
+            onSkinTypeClear={() => clearOneFilterGroup(["skinType"])}
+            skinConcerns={skinConcernOptions}
+            selectedSkinConcerns={selectedSkinConcerns}
+            onSkinConcernToggle={(slug) => toggleSelection(selectedSkinConcerns, slug, "skinConcern")}
+            onSkinConcernClear={() => clearOneFilterGroup(["skinConcern"])}
+            onClearAll={clearAllShopFilters}
+            hasActiveFilters={activeFilterCount > 0}
+          />
         </aside>
 
-        <section>
-          <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 shadow-xs">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-minsah-dark">
-                  Showing {totalCount} products
-                </p>
-                <p className="text-xs text-minsah-secondary">
-                  Authentic beauty, skincare and personal care formulations in Bangladesh
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => openFilterPanel("content_filter_button")}
-                aria-haspopup="dialog"
-                aria-expanded={openPanel === "filter"}
-                className="rounded-full px-3 text-xs font-semibold lg:hidden"
-              >
-                <Filter size={15} aria-hidden="true" />
-                Filter
-              </Button>
+        <section className="min-w-0 flex-1">
+          {activeFilterCount > 0 && (
+            <div className="mb-4">
+              <ActiveFilters totalProducts={totalCount} />
             </div>
-            <ActiveFilters totalProducts={totalCount} />
-            {renderPopularDiscoveryChips()}
-          </div>
+          )}
 
           {itemListJsonLd && (
             <script
@@ -1343,44 +1544,54 @@ export default function ShopGrid() {
 
           {displayProducts.length > 0 ? (
             <>
-              <ShopMerchandisingSections
-                excludeProductIds={displayProducts.map((product) => product.id)}
-                totalProducts={totalCount}
-              />
+              {/* Arogga layout: Carousels removed permanently from search results */}
+              {false && (
+                <ShopMerchandisingSections
+                  excludeProductIds={displayProducts.map((product) => product.id)}
+                  totalProducts={totalCount}
+                />
+              )}
 
-              <div className="grid grid-cols-2 gap-3.5 sm:gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-3 2xl:grid-cols-4">
-                {displayProducts.map((product, index) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    index={start + index + 1}
-                    listName={SHOP_LIST_NAME}
-                  />
-                ))}
-              </div>
-
-              {hasMore && (
-                <div className="mt-10 flex justify-center">
-                  <Link
-                    href={buildCatalogPath(new URLSearchParams({
-                      ...Object.fromEntries(searchParams.entries()),
-                      page: String(page + 1),
-                    }))}
-                    onClick={() =>
-                      trackShopPageChange(page + 1, totalCount, {
-                        ...shopAnalyticsFilters,
-                        page: page + 1,
-                      })
-                    }
-                    className="flex min-h-12 items-center gap-2 rounded-full bg-minsah-primary px-8 py-3 font-semibold text-white shadow-xs transition-colors hover:bg-minsah-dark"
-                  >
-                    Next Page
-                    <ChevronRight size={18} />
-                  </Link>
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
+                  {displayProducts.map((product, index) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      index={start + index + 1}
+                      listName={SHOP_LIST_NAME}
+                      layout="grid"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {displayProducts.map((product, index) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      index={start + index + 1}
+                      listName={SHOP_LIST_NAME}
+                      layout="list"
+                    />
+                  ))}
                 </div>
               )}
 
-              <div className="mt-6 text-center text-sm text-minsah-secondary">
+              {/* Arogga Numeric Pagination Bar */}
+              <AroggaPagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={(newPage) => {
+                  trackShopPageChange(newPage, totalCount, {
+                    ...shopAnalyticsFilters,
+                    page: newPage,
+                  });
+                  updateUrlFilters({ page: newPage > 1 ? String(newPage) : null });
+                }}
+              />
+
+              <div className="mt-4 text-center text-xs sm:text-sm text-stone-500">
                 Showing {start + 1}&ndash;
                 {Math.min(start + pageSize, totalCount)} of {totalCount}{" "}
                 products
@@ -1404,6 +1615,37 @@ export default function ShopGrid() {
           )}
         </section>
       </div>
+
+      {/* Floating Arogga Mobile Filter Pill & Slide-Up Bottom Drawer */}
+      <AroggaMobileFilterDrawer
+        totalCount={totalCount}
+        inStockOnly={normalizedParams.get("inStock") === "true"}
+        onInStockChange={(inStock) => updateUrlFilters({ inStock: inStock ? "true" : null })}
+        priceMin={priceMinInput}
+        priceMax={priceMaxInput}
+        onPriceChange={applyPriceRange}
+        selectedDiscount={selectedDiscount}
+        onDiscountChange={(discount) => updateUrlFilters({ discount: discount ? String(discount) : null })}
+        categories={categoryOptions}
+        selectedCategories={selectedCategories}
+        onCategoryToggle={(slug) => toggleSelection(selectedCategories, slug, "category")}
+        onCategoryClear={() => clearOneFilterGroup(["category", "subcategory"])}
+        brands={brandOptions}
+        selectedBrands={selectedBrands}
+        onBrandToggle={(slug) => toggleSelection(selectedBrands, slug, "brand")}
+        onBrandClear={() => clearOneFilterGroup(["brand"])}
+        skinTypes={skinTypeOptions}
+        selectedSkinTypes={selectedSkinTypes}
+        onSkinTypeToggle={(slug) => toggleSelection(selectedSkinTypes, slug, "skinType")}
+        onSkinTypeClear={() => clearOneFilterGroup(["skinType"])}
+        skinConcerns={skinConcernOptions}
+        selectedSkinConcerns={selectedSkinConcerns}
+        onSkinConcernToggle={(slug) => toggleSelection(selectedSkinConcerns, slug, "skinConcern")}
+        onSkinConcernClear={() => clearOneFilterGroup(["skinConcern"])}
+        onClearAll={clearAllShopFilters}
+        hasActiveFilters={activeFilterCount > 0}
+        activeFilterCount={activeFilterCount}
+      />
     </>
   );
 }

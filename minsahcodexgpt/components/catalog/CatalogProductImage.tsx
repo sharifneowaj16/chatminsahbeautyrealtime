@@ -1,5 +1,7 @@
+'use client';
+
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 type CatalogProductImageProps = {
   src?: string | null;
@@ -55,7 +57,8 @@ export default function CatalogProductImage({
   fit = 'contain',
   padding = 'md',
 }: CatalogProductImageProps) {
-  const normalizedSrc = src?.trim() || '';
+  const [hasError, setHasError] = useState(false);
+  const normalizedSrc = hasError || !src?.trim() ? '/images/placeholder.png' : src.trim();
   const fitClass = fit === 'cover' ? 'object-cover' : 'object-contain';
   const paddingClass = getPaddingClass(padding);
   const imageClassName = `h-full w-full ${fitClass} ${paddingClass} transition-transform duration-300 motion-reduce:transition-none ${className}`.trim();
@@ -71,6 +74,7 @@ export default function CatalogProductImage({
         sizes={sizes}
         priority={priority}
         quality={quality}
+        onError={() => setHasError(true)}
         className={imageClassName}
       />
     );
@@ -87,14 +91,19 @@ export default function CatalogProductImage({
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
         fetchPriority={priority ? 'high' : 'auto'}
+        onError={() => setHasError(true)}
         className={imageClassName}
       />
     );
   } else {
     media = (
-      <span className="flex h-full w-full items-center justify-center text-5xl text-minsah-secondary" aria-hidden="true">
-        {fallback}
-      </span>
+      <Image
+        src="/images/placeholder.png"
+        alt={alt}
+        fill
+        sizes={sizes}
+        className={imageClassName}
+      />
     );
   }
 

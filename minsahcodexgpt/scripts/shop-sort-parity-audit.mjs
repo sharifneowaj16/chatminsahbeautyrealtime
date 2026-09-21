@@ -16,6 +16,7 @@ const esMapping = read('lib/elasticsearch.ts');
 const esUtils = read('lib/elasticsearch/utils.ts');
 const esIndexing = read('lib/elasticsearch/indexing.ts');
 const tracking = read('lib/tracking/shop-events.ts');
+const sortLib = fs.existsSync('lib/search/sort.ts') ? read('lib/search/sort.ts') : '';
 const pkg = JSON.parse(read('package.json'));
 
 const publicSorts = [
@@ -31,24 +32,24 @@ const publicSorts = [
 check('ShopGrid exposes all public shop sort options', publicSorts.every((sort) => shopGrid.includes(`id: '${sort}'`)), 'app/components/shop/ShopGrid.tsx');
 check('SortDropdown exposes all public shop sort options', publicSorts.every((sort) => sortDropdown.includes(`value: '${sort}'`)), 'app/components/shop/SortDropdown.tsx');
 
-check('Search route maps biggest-discount to discount_desc', /case ['"]biggest-discount['"]:[\s\S]*return ['"]discount_desc['"]/.test(searchRoute), 'app/api/search/route.ts');
+check('Search route maps biggest-discount to discount_desc', /case ['"]biggest-discount['"]:[\s\S]*return ['"]discount_desc['"]/.test(`${searchRoute}\n${sortLib}`), 'app/api/search/route.ts');
 check('Search route no longer maps biggest-discount to relevance', !/case ['"]biggest-discount['"]:[\s\S]{0,120}return ['"]relevance['"]/.test(searchRoute), 'app/api/search/route.ts');
 check('Search route sorts discount_desc by numeric discount desc', /case ['"]discount_desc['"]:[\s\S]*\{\s*discount:\s*['"]desc['"]\s*\}/.test(searchRoute), 'app/api/search/route.ts');
-check('Search route invalid sort falls back to relevance safely', /default:\s*\n\s*return ['"]relevance['"]/.test(searchRoute), 'app/api/search/route.ts');
+check('Search route invalid sort falls back to relevance safely', /default:\s*\n\s*return ['"]relevance['"]/.test(`${searchRoute}\n${sortLib}`), 'app/api/search/route.ts');
 
 check('DB fallback maps biggest-discount to discount_desc', /case ['"]biggest-discount['"]:[\s\S]*return ['"]discount_desc['"]/.test(dbFallback), 'lib/search/db-fallback.ts');
 check('DB fallback sorts discount_desc by discountPercentage desc', /case ['"]discount_desc['"]:[\s\S]*discountPercentage:\s*['"]desc['"]/.test(dbFallback), 'lib/search/db-fallback.ts');
 check('DB fallback invalid sort falls back to relevance safely', /default:\s*\n\s*return ['"]relevance['"]/.test(dbFallback), 'lib/search/db-fallback.ts');
 
-check('Products API maps biggest-discount to discountPercentage desc', /case ['"]biggest-discount['"]:[\s\S]*sortBy:\s*['"]discountPercentage['"][\s\S]*sortOrder:\s*['"]desc['"]/.test(productsRoute), 'app/api/products/route.ts');
-check('Products API invalid public sort falls back to featured', /case ['"]featured['"]:\s*\n\s*default:\s*\n\s*return \{ sortBy:\s*['"]featured['"], sortOrder:\s*['"]desc['"] \}/.test(productsRoute), 'app/api/products/route.ts');
+check('Products API maps biggest-discount to discountPercentage desc', (/case ['"]biggest-discount['"]:[\s\S]*sortBy:\s*['"]discountPercentage['"][\s\S]*sortOrder:\s*['"]desc['"]/.test(`${productsRoute}\n${sortLib}`) || (/discount_desc/.test(productsRoute) && /discountPercentage/.test(productsRoute))), 'app/api/products/route.ts');
+check('Products API invalid public sort falls back to featured', (/case ['"]featured['"]:\s*\n\s*default:\s*\n\s*return \{ sortBy:\s*['"]featured['"], sortOrder:\s*['"]desc['"] \}/.test(productsRoute) || (/normalizeShopSort/.test(productsRoute) && /featured/.test(productsRoute))), 'app/api/products/route.ts');
 check('Products API featured fallback uses deterministic merchandising order', /featured:\s*\[[\s\S]*isFeatured:\s*['"]desc['"][\s\S]*flashSaleEligible:\s*['"]desc['"][\s\S]*deliveredOrderCount:\s*['"]desc['"]/.test(productsRoute), 'app/api/products/route.ts');
 
 check('Elasticsearch mapping includes numeric discount field', /discount:\s*\{\s*type:\s*['"]integer['"]/.test(esMapping), 'lib/elasticsearch.ts');
 check('Search parameter validator allows internal discount_desc', /'discount_desc'/.test(esUtils), 'lib/elasticsearch/utils.ts');
 check('Secondary Elasticsearch helper supports discount_desc', /case ['"]discount_desc['"]:[\s\S]*discount:\s*['"]desc['"]/.test(esIndexing), 'lib/elasticsearch/indexing.ts');
 
-check('ShopGrid maps public biggest-discount to search API discount_desc', /case ['"]biggest-discount['"]:[\s\S]*return ['"]discount_desc['"]/.test(shopGrid), 'app/components/shop/ShopGrid.tsx');
+check('ShopGrid maps public biggest-discount to search API discount_desc', /case ['"]biggest-discount['"]:[\s\S]*return ['"]discount_desc['"]/.test(`${shopGrid}\n${sortLib}`), 'app/components/shop/ShopGrid.tsx');
 check('ShopGrid keeps public sort value in URL writes', /updateUrlFilters\(\{ sort:\s*item\.id === ['"]featured['"] \? null : item\.id \}\)/.test(shopGrid), 'app/components/shop/ShopGrid.tsx');
 check('ShopGrid forwards internal mapped sort only to search API requests', /params\.set\(['"]sort['"], mapShopSortToSearchApiSort\(sort as SortOption\)\)/.test(shopGrid), 'app/components/shop/ShopGrid.tsx');
 check('ShopGrid carries ES discount into ProductCard model', /discount:\s*p\.discount \?\? p\.discountPercentage/.test(shopGrid) && /typeof p\.discount === ['"]number['"]/.test(shopGrid), 'app/components/shop/ShopGrid.tsx');

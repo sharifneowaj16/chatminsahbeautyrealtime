@@ -54,6 +54,15 @@ type FallbackProduct = {
   images?: FallbackProductImage[];
   category?: FallbackCategory;
   brand?: { name: string; slug: string } | null;
+  variants?: Array<{
+    id: string;
+    sku: string;
+    name: string;
+    price: MoneyLike;
+    quantity?: number | null;
+    attributes?: unknown;
+    image?: string | null;
+  }>;
 };
 
 export type DatabaseSearchFallbackResponse = {
@@ -97,6 +106,17 @@ export type DatabaseSearchFallbackResponse = {
     isFlashSale: boolean;
     isNewArrival: boolean;
     score: null;
+    hasVariants?: boolean;
+    variants?: Array<{
+      id: string;
+      sku: string;
+      name: string;
+      price: number;
+      stock: number;
+      quantity: number;
+      attributes: Record<string, string>;
+      image: string | null;
+    }>;
   }>;
   fallback: {
     strategy: 'database_fallback';
@@ -251,6 +271,17 @@ function transformFallbackProduct(product: FallbackProduct): DatabaseSearchFallb
     isFlashSale: product.flashSaleEligible === true,
     isNewArrival: product.isNew === true,
     score: null,
+    hasVariants: Boolean(product.variants && product.variants.length > 0),
+    variants: (product.variants ?? []).map((variant) => ({
+      id: variant.id,
+      sku: variant.sku ?? '',
+      name: variant.name,
+      price: toNumber(variant.price),
+      stock: variant.quantity ?? 0,
+      quantity: variant.quantity ?? 0,
+      attributes: (variant.attributes as Record<string, string>) || {},
+      image: variant.image ?? null,
+    })),
   };
 }
 
@@ -263,6 +294,9 @@ function getFilterSummary(params: SearchParamsLike, sort: string): string[] {
     params.get('inStock') === 'true' && 'inStock',
     params.get('rating') && 'rating',
     params.get('tags') && 'tags',
+    params.get('skinType') && 'skinType',
+    params.get('skinConcern') && 'skinConcern',
+    params.get('saleOnly') === 'true' && 'saleOnly',
     sort && sort !== 'relevance' && `sort:${sort}`,
   ];
 
@@ -410,6 +444,42 @@ function buildWhere(params: SearchParamsLike): Record<string, unknown> {
     });
   }
 
+  const skinType = params.get('skinType');
+  if (skinType) {
+    const skinTypeValues = getCsvFilterValues(skinType);
+    if (skinTypeValues.length > 0) {
+      andFilters.push({
+        OR: skinTypeValues.flatMap((type) => [
+          { skinType: { has: type } },
+          { searchTags: { has: type } },
+        ]),
+      });
+    }
+  }
+
+  const skinConcern = params.get('skinConcern');
+  if (skinConcern) {
+    const concernValues = getCsvFilterValues(skinConcern);
+    if (concernValues.length > 0) {
+      andFilters.push({
+        OR: concernValues.flatMap((concern) => [
+          { searchTags: { has: concern } },
+          { metaKeywords: { contains: concern, mode: 'insensitive' } },
+        ]),
+      });
+    }
+  }
+
+  const saleOnly = params.get('saleOnly') === 'true';
+  if (saleOnly) {
+    andFilters.push({
+      OR: [
+        { discountPercentage: { gt: 0 } },
+        { flashSaleEligible: true },
+      ],
+    });
+  }
+
   return {
     ...ACTIVE_PRODUCT_PRISMA_WHERE,
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
@@ -448,6 +518,8 @@ function buildOrderBy(sort: string): Record<string, unknown>[] {
     case 'relevance':
     default:
       return [
+        { reviewCount: 'desc' },
+        { averageRating: 'desc' },
         { isFeatured: 'desc' },
         { flashSaleEligible: 'desc' },
         { orderCount: 'desc' },
@@ -470,6 +542,18 @@ const productInclude = {
   },
   images: {
     orderBy: { sortOrder: 'asc' as const },
+  },
+  variants: {
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      price: true,
+      quantity: true,
+      attributes: true,
+      image: true,
+    },
+    take: 12,
   },
 };
 
@@ -521,7 +605,9 @@ export async function executeDatabaseSearchFallback(
     products,
     fallback: {
       strategy: 'database_fallback',
-      message: 'Search is temporarily using the database fallback because Elasticsearch is unavailable.',
+      message: query.trim()
+        ? 'Search is temporarily using the database fallback because Elasticsearch is unavailable.'
+        : 'Catalog browsing is temporarily using the database fallback while search indexing syncs.',
       applied: true,
       reason,
     },

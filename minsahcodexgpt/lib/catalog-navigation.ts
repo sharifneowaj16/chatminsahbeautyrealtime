@@ -1,4 +1,5 @@
 import { normalizeShopSearchParams } from '@/lib/shopUtils';
+import { SEARCH_SORT_TO_SHOP_SORT } from '@/lib/search/sort';
 
 export type CatalogSearchParamRecord = Record<string, string | string[] | undefined>;
 export type CatalogSearchParamLike = {
@@ -31,18 +32,6 @@ const CATALOG_QUERY_KEYS = [
   'fbclid',
   'ttclid',
 ] as const;
-
-const SEARCH_SORT_TO_SHOP_SORT: Record<string, string> = {
-  relevance: 'featured',
-  price_asc: 'price-low-high',
-  price_desc: 'price-high-low',
-  rating: 'highest-rated',
-  rating_desc: 'highest-rated',
-  popularity: 'best-selling',
-  name_asc: 'a-z',
-  name_desc: 'z-a',
-  discount_desc: 'biggest-discount',
-};
 
 function setTrimmed(params: URLSearchParams, key: string, value: string | null | undefined): void {
   const normalized = value?.trim();

@@ -13,6 +13,7 @@ export interface Product {
   images: string[];
   sku: string;
   stock: number;
+  inStock?: boolean;
   category: string;
   categorySlug: string;
   subcategory?: string;
@@ -208,6 +209,8 @@ export type SortOption =
   | 'a-z'
   | 'z-a';
 
+export type ShopViewMode = 'grid' | 'list';
+
 export interface ShopFilters {
   category?: string | string[];
   subcategory?: string | string[];
@@ -220,6 +223,8 @@ export interface ShopFilters {
   tags?: string | string[];
   inStockOnly?: boolean;
   saleOnly?: boolean;
+  discount?: number;
+  view?: ShopViewMode;
   search?: string;
   sort?: SortOption;
   page?: number;

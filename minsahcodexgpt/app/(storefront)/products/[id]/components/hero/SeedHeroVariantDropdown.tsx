@@ -24,6 +24,9 @@ export interface SeedHeroVariantDropdownProps {
   onVariantChange: (variantId: string | null, price: number, stock: number) => void;
   onImageChange?: (imageUrl: string | null) => void;
   onHoverImage?: (imageUrl: string | null) => void;
+  onSelectVariant?: (variant: ProductVariantItem) => void;
+  onOpenChange?: (isOpen: boolean) => void;
+  compact?: boolean;
   className?: string;
 }
 
@@ -60,6 +63,9 @@ export default function SeedHeroVariantDropdown({
   onVariantChange,
   onImageChange,
   onHoverImage,
+  onSelectVariant,
+  onOpenChange,
+  compact = false,
   className = '',
 }: SeedHeroVariantDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -126,21 +132,36 @@ export default function SeedHeroVariantDropdown({
     }
   };
 
+  const closeDropdown = () => {
+    restoreLockedImage();
+    setIsOpen(false);
+    onOpenChange?.(false);
+  };
+
+  const toggleDropdown = () => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (!next) {
+        restoreLockedImage();
+      }
+      onOpenChange?.(next);
+      return next;
+    });
+  };
+
   // Click outside / Esc key handler
   useEffect(() => {
     if (!isOpen) return;
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        restoreLockedImage();
-        setIsOpen(false);
+        closeDropdown();
       }
     }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        restoreLockedImage();
-        setIsOpen(false);
+        closeDropdown();
       }
     }
 
@@ -172,7 +193,7 @@ export default function SeedHeroVariantDropdown({
 
   // Handler for selecting a variant
   const handleSelectVariant = (targetVar: ProductVariantItem, idx: number) => {
-    setIsOpen(false);
+    closeDropdown();
     onVariantChange(targetVar.id, targetVar.price, targetVar.stock ?? 100);
     const selectedImg = resolveVariantImage(targetVar, idx);
     if (onImageChange) {
@@ -180,6 +201,9 @@ export default function SeedHeroVariantDropdown({
     }
     if (onHoverImage) {
       onHoverImage(selectedImg);
+    }
+    if (onSelectVariant) {
+      onSelectVariant(targetVar);
     }
   };
 
@@ -189,61 +213,80 @@ export default function SeedHeroVariantDropdown({
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
-      <div className="flex items-center justify-between text-xs mb-1.5 px-0.5">
-        <span className="font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 text-[11px]">
-          Select Formulation &amp; Size
-        </span>
-        <span className="font-mono text-xs font-bold text-[#1c3a13] dark:text-emerald-400">
-          {variants.length} Options
-        </span>
-      </div>
+      {!compact && (
+        <div className="flex items-center justify-between text-xs mb-1.5 px-0.5">
+          <span className="font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 text-[11px]">
+            Select Formulation &amp; Size
+          </span>
+          <span className="font-mono text-xs font-bold text-[#1c3a13] dark:text-emerald-400">
+            {variants.length} Options
+          </span>
+        </div>
+      )}
 
-      {/* Collapsed Trigger Button — 100% Matching Cart Drawer Luxury Pill */}
+      {/* Collapsed Trigger Button */}
       <button
         type="button"
-        onClick={() => {
-          if (isOpen) {
-            restoreLockedImage();
-          }
-          setIsOpen((prev) => !prev);
-        }}
+        onClick={toggleDropdown}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={`Select variant. Currently: ${activeVariant ? getVariantShadeName(activeVariant) : 'Default'}`}
-        className={`w-full h-12 sm:h-[50px] px-3 sm:px-3.5 flex items-center justify-between gap-2.5 rounded-2xl border bg-white dark:bg-zinc-800/90 text-left transition-all shadow-2xs cursor-pointer select-none ${
+        className={`w-full ${
+          compact
+            ? 'h-7.5 sm:h-8 px-2.5 sm:px-3 rounded-full'
+            : 'h-12 sm:h-[50px] px-3 sm:px-3.5 rounded-2xl'
+        } flex items-center justify-between gap-1.5 sm:gap-2.5 border bg-white dark:bg-zinc-800/90 text-left transition-all shadow-2xs cursor-pointer select-none ${
           isOpen
             ? 'border-[#1c3a13] ring-2 ring-[#1c3a13]/20 dark:border-emerald-400 dark:ring-emerald-400/30'
-            : 'border-[#1c3a13]/15 dark:border-white/12 hover:border-[#1c3a13]/35 dark:hover:border-white/30'
+            : 'border-[#1c3a13]/20 dark:border-white/12 hover:border-[#1c3a13] dark:hover:border-white/30'
         }`}
       >
         {/* Left: Thumbnail Image + Variant Shade Name + Size Badge */}
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <div className="relative h-7 w-7 sm:h-8 sm:w-8 rounded-lg overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800 aspect-square">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+          <div
+            className={`relative ${
+              compact ? 'h-5 w-5 sm:h-6 sm:w-6 rounded-full' : 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg'
+            } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800 aspect-square`}
+          >
             <Image
               src={safeImageUrl(activeVariant ? resolveVariantImage(activeVariant, activeIndex) : defaultImage)}
               alt={activeVariant?.name || 'Variant thumbnail'}
               fill
-              sizes="32px"
+              sizes={compact ? '24px' : '32px'}
               className="object-cover"
             />
           </div>
-          <span className="text-xs sm:text-[13.5px] font-bold text-[#181C1A] dark:text-white truncate">
+          <span
+            className={`${
+              compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-[13.5px]'
+            } font-bold text-[#181C1A] dark:text-white truncate`}
+          >
             {activeVariant ? getVariantShadeName(activeVariant) : 'Select a variant'}
           </span>
           {activeSize && (
-            <span className="shrink-0 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-zinc-700/80 text-[10px] sm:text-[11px] font-mono font-medium text-stone-600 dark:text-stone-300 leading-none">
+            <span
+              className={`shrink-0 ${
+                compact
+                  ? 'px-1.5 py-0.5 text-[9px] sm:text-[10px]'
+                  : 'px-2 py-0.5 text-[10px] sm:text-[11px]'
+              } rounded-md bg-stone-100 dark:bg-zinc-700/80 font-mono font-medium text-stone-600 dark:text-stone-300 leading-none`}
+            >
               {activeSize}
             </span>
           )}
         </div>
 
         {/* Right: Price + Animated Chevron */}
-        <div className="flex items-center gap-2 shrink-0 ml-1">
-          <span className="font-inter font-bold text-xs sm:text-[13.5px] text-[#1c3a13] dark:text-emerald-400">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-1">
+          <span
+            className={`font-inter font-bold ${
+              compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-[13.5px]'
+            } text-[#1c3a13] dark:text-emerald-400`}
+          >
             ৳{Math.round(activeVariant?.price ?? 0)}
           </span>
           <ChevronDown
-            size={15}
+            size={compact ? 12 : 15}
             className={`text-stone-500 transition-transform duration-200 ${
               isOpen ? 'rotate-180 text-[#1c3a13] dark:text-emerald-400' : ''
             }`}
@@ -256,16 +299,24 @@ export default function SeedHeroVariantDropdown({
         <div
           role="listbox"
           aria-label="Available variants"
-          className="absolute left-0 right-0 top-full mt-2 z-40 w-full rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className={`absolute left-0 right-0 ${
+            compact ? 'top-[calc(100%+4px)]' : 'top-full mt-2'
+          } z-50 w-full rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
         >
-          <div className="text-[10px] uppercase font-bold text-stone-400 dark:text-stone-500 px-3.5 py-2 tracking-wider bg-stone-50/80 dark:bg-zinc-800/40 border-b border-stone-100 dark:border-white/5 flex items-center justify-between">
+          <div
+            className={`${
+              compact ? 'text-[9px] px-2.5 py-1.5' : 'text-[10px] px-3.5 py-2'
+            } uppercase font-bold text-stone-400 dark:text-stone-500 tracking-wider bg-stone-50/80 dark:bg-zinc-800/40 border-b border-stone-100 dark:border-white/5 flex items-center justify-between`}
+          >
             <span>Available Formulations &amp; Sizes</span>
             <span className="font-mono text-stone-500">{variants.length} Options</span>
           </div>
 
           <div
             onMouseLeave={handleMouseLeaveList}
-            className="max-h-64 sm:max-h-72 overflow-y-auto divide-y divide-stone-100 dark:divide-white/5 py-1 scroll-smooth ios-scrollbar pr-1.5"
+            className={`${
+              compact ? 'max-h-48 sm:max-h-56' : 'max-h-64 sm:max-h-72'
+            } overflow-y-auto divide-y divide-stone-100 dark:divide-white/5 py-1 scroll-smooth ios-scrollbar pr-1`}
           >
             {variants.map((v, idx) => {
               const isSelected = v.id === selectedVariantId;
@@ -283,7 +334,9 @@ export default function SeedHeroVariantDropdown({
                   disabled={isOOS}
                   onClick={() => handleSelectVariant(v, idx)}
                   onMouseEnter={() => handleItemMouseEnter(v, idx)}
-                  className={`w-full px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center justify-between gap-3 text-left transition-all duration-150 cursor-pointer ${
+                  className={`w-full ${
+                    compact ? 'px-2 py-2 sm:px-2.5 sm:py-2.5' : 'px-3 py-2.5 sm:px-3.5 sm:py-3'
+                  } flex items-center justify-between gap-2 sm:gap-3 text-left transition-all duration-150 cursor-pointer ${
                     isSelected
                       ? 'bg-[#E5EAE1] dark:bg-emerald-950/40 text-[#1c3a13] dark:text-emerald-200 font-medium'
                       : isOOS
@@ -292,14 +345,18 @@ export default function SeedHeroVariantDropdown({
                   }`}
                 >
                   {/* Left: Thumbnail + Shade + Size */}
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div
+                      className={`relative ${
+                        compact ? 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg' : 'h-9 w-9 sm:h-10 sm:w-10 rounded-xl'
+                      } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800`}
+                    >
                       {vImage ? (
                         <Image
                           src={safeImageUrl(vImage)}
                           alt={v.name}
                           fill
-                          sizes="40px"
+                          sizes={compact ? '32px' : '40px'}
                           className="object-cover"
                         />
                       ) : (
@@ -310,13 +367,27 @@ export default function SeedHeroVariantDropdown({
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-bold truncate leading-tight">
+                      <p
+                        className={`${
+                          compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
+                        } font-bold truncate leading-tight`}
+                      >
                         {vShade}
                       </p>
-                      <div className="flex items-center gap-1.5 text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+                      <div
+                        className={`flex items-center gap-1.5 ${
+                          compact ? 'text-[10px]' : 'text-[11px]'
+                        } text-stone-500 dark:text-stone-400 mt-0.5`}
+                      >
                         {vSize && <span className="font-mono">Size: {vSize}</span>}
                         {vSize && <span>•</span>}
-                        <span className={isOOS ? 'text-rose-500 font-medium' : 'text-emerald-700 dark:text-emerald-400 font-medium'}>
+                        <span
+                          className={
+                            isOOS
+                              ? 'text-rose-500 font-medium'
+                              : 'text-emerald-700 dark:text-emerald-400 font-medium'
+                          }
+                        >
                           {isOOS ? 'Sold out' : 'In Stock'}
                         </span>
                       </div>
@@ -324,13 +395,21 @@ export default function SeedHeroVariantDropdown({
                   </div>
 
                   {/* Right: Price & Check */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-inter font-bold text-xs sm:text-sm text-[#1c3a13] dark:text-emerald-400">
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <span
+                      className={`font-inter font-bold ${
+                        compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
+                      } text-[#1c3a13] dark:text-emerald-400`}
+                    >
                       ৳{Math.round(v.price)}
                     </span>
                     {isSelected && (
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1c3a13] dark:bg-emerald-400 text-white dark:text-zinc-950 shadow-2xs">
-                        <Check size={11} strokeWidth={3} />
+                      <div
+                        className={`flex ${
+                          compact ? 'h-4 w-4' : 'h-5 w-5'
+                        } items-center justify-center rounded-full bg-[#1c3a13] dark:bg-emerald-400 text-white dark:text-zinc-950 shadow-2xs`}
+                      >
+                        <Check size={compact ? 9 : 11} strokeWidth={3} />
                       </div>
                     )}
                   </div>

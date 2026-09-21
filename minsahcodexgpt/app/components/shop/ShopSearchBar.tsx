@@ -2,21 +2,15 @@
 
 import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, X, TrendingUp, Package, Sparkles } from 'lucide-react';
+import { Search, X, TrendingUp, Package, Sparkles, Mic, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { trackShopSearch, trackShopSuggestionClick } from '@/lib/tracking/shop-events';
 import { buildCatalogPath, buildCatalogSearchPath } from '@/lib/catalog-navigation';
 import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+import type { CanonicalSuggestion } from '@/lib/search/types';
 
-interface ApiSuggestion {
-  type: 'product' | 'trending' | 'completion';
-  text: string;
-  productName?: string;
-  slug?: string;
-  price?: number;
-  image?: string;
-}
+export type ApiSuggestion = CanonicalSuggestion;
 
 function groupLabel(type: ApiSuggestion['type']): string {
   switch (type) {
@@ -57,6 +51,8 @@ export default function ShopSearchBar() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [isListening, setIsListening] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +65,17 @@ export default function ShopSearchBar() {
   useEffect(() => {
     setInputValue(searchParams.get('q') || '');
   }, [searchParams]);
+
+  // Load recent searches from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('minsah_recent_searches');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) setRecentSearches(parsed.slice(0, 5));
+      }
+    } catch {}
+  }, []);
 
   const fetchSuggestions = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -96,16 +103,76 @@ export default function ShopSearchBar() {
     debounceRef.current = setTimeout(() => fetchSuggestions(value), 280);
   };
 
-  const executeSearch = (q: string, source = 'shop_search_bar') => {
+  const saveRecentSearch = useCallback((term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    try {
+      setRecentSearches((prev) => {
+        const next = [trimmed, ...prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())].slice(0, 6);
+        localStorage.setItem('minsah_recent_searches', JSON.stringify(next));
+        return next;
+      });
+    } catch {}
+  }, []);
+
+  const executeSearch = useCallback((q: string, source = 'shop_search_bar') => {
     const trimmed = q.trim();
     if (!trimmed) return;
+    saveRecentSearch(trimmed);
     trackShopSearch(trimmed, source);
     setShowSuggestions(false);
     router.push(buildCatalogSearchPath(trimmed, searchParams));
-  };
+  }, [saveRecentSearch, searchParams, router]);
+
+  const startVoiceSearch = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    type SpeechRecognitionConstructor = new () => {
+      lang: string;
+      continuous: boolean;
+      interimResults: boolean;
+      onstart: (() => void) | null;
+      onend: (() => void) | null;
+      onerror: (() => void) | null;
+      onresult: ((event: { results: Array<Array<{ transcript: string }>> }) => void) | null;
+      start: () => void;
+      stop: () => void;
+    };
+    const SpeechRecognition =
+      (window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).SpeechRecognition ||
+      (window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Voice search is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+
+      recognition.onresult = (event) => {
+        const transcript = event.results?.[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputValue(transcript);
+          executeSearch(transcript, 'shop_voice_search');
+        }
+      };
+
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  }, [executeSearch]);
 
   const activateSuggestion = (suggestion: ApiSuggestion, index: number) => {
-    trackShopSuggestionClick(suggestion.productName || suggestion.text, suggestion.type, index + 1);
+    const text = suggestion.type === 'product' ? suggestion.productName || suggestion.text : suggestion.text;
+    trackShopSuggestionClick(text, suggestion.type, index + 1);
     setShowSuggestions(false);
     if (suggestion.type === 'product' && suggestion.slug) {
       router.push(`/products/${suggestion.slug}`);
@@ -205,7 +272,7 @@ export default function ShopSearchBar() {
               params.delete('page');
               router.push(buildCatalogPath(params));
             }}
-            className="mr-1 shrink-0 text-gray-400 hover:text-gray-600"
+            className="mr-1 min-h-11 min-w-11 shrink-0 text-gray-400 hover:text-gray-600"
             aria-label="Clear shop search"
           >
             <X size={16} aria-hidden="true" />
@@ -214,14 +281,65 @@ export default function ShopSearchBar() {
 
         <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          onClick={startVoiceSearch}
+          className={`mr-1 min-h-11 min-w-11 shrink-0 text-gray-400 hover:text-amber-500 ${
+            isListening ? '!bg-amber-500 !text-white animate-pulse' : ''
+          }`}
+          aria-label="Voice search"
+          title="Voice search"
+        >
+          <Mic size={17} aria-hidden="true" />
+        </Button>
+
+        <Button
+          type="button"
           variant="primary"
           onClick={() => executeSearch(inputValue)}
-          className="shrink-0 rounded-none px-4 py-3 text-sm"
+          className="min-h-11 flex-shrink-0 shrink-0 rounded-none px-4 py-3 text-sm"
           aria-label="Search shop"
         >
           Search
         </Button>
       </div>
+
+      {showSuggestions && !inputValue.trim() && recentSearches.length > 0 && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-gray-100 bg-white p-3.5 shadow-2xl">
+          <div className="flex items-center justify-between pb-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+            <span className="flex items-center gap-1.5 text-minsah-primary">
+              <Clock size={13} aria-hidden="true" /> Recent Searches
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setRecentSearches([]);
+                try {
+                  localStorage.removeItem('minsah_recent_searches');
+                } catch {}
+              }}
+              className="text-[11px] text-gray-400 hover:text-red-500 transition"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {recentSearches.map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => {
+                  setInputValue(term);
+                  executeSearch(term, 'shop_recent_search');
+                }}
+                className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1.5 text-xs text-gray-700 hover:bg-minsah-primary/10 hover:text-minsah-primary active:scale-95 transition"
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showSuggestions && inputValue.trim() && !isLoading && suggestions.length === 0 && (
         <div
@@ -246,12 +364,13 @@ export default function ShopSearchBar() {
               </div>
               {items.map((s) => {
                 const globalIndex = suggestions.indexOf(s);
+                const title = s.type === 'product' ? s.productName || s.text : s.text;
                 return (
                   <Button
                     id={getOptionId(globalIndex)}
                     role="option"
                     aria-selected={globalIndex === activeIndex}
-                    key={`${s.type}-${s.slug || s.text}-${globalIndex}`}
+                    key={`${s.type}-${(s.type === 'product' && s.slug) ? s.slug : s.text}-${globalIndex}`}
                     type="button"
                     variant="ghost"
                     onClick={() => activateSuggestion(s, globalIndex)}
@@ -268,11 +387,11 @@ export default function ShopSearchBar() {
                         <Sparkles size={14} className="text-minsah-action-primary" aria-hidden="true" />
                       </div>
                     ) : (
-                      <SuggestionImage src={s.image} alt={s.productName || s.text} />
+                      <SuggestionImage src={s.image} alt={title} />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900">{s.productName || s.text}</p>
-                      {s.price && s.price > 0 && (
+                      <p className="truncate text-sm font-medium text-gray-900">{title}</p>
+                      {s.type === 'product' && s.price > 0 && (
                         <p className="text-xs text-gray-500">৳{s.price.toLocaleString('en-BD')}</p>
                       )}
                     </div>

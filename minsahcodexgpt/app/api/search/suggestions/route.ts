@@ -24,6 +24,10 @@ interface ProductSuggestSource {
   isFeatured?: boolean;
   isFlashSale?: boolean;
   isNewArrival?: boolean;
+  hasVariants?: boolean;
+  inStock?: boolean;
+  quantity?: number;
+  stock?: number;
 }
 
 interface SuggestionOption {
@@ -62,6 +66,9 @@ type ApiSuggestion =
       score?: number | null;
       badges?: string[];
       source: 'elasticsearch_autocomplete' | 'trending_product';
+      hasVariants?: boolean;
+      inStock?: boolean;
+      stock?: number;
     }
   | {
       type: 'trending';
@@ -276,7 +283,7 @@ async function fetchProductSuggestions(query: string, limit: number): Promise<Ap
           },
         },
       },
-      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival'],
+      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival', 'hasVariants', 'inStock', 'quantity', 'stock'],
     });
 
     const suggestData = response.suggest as ElasticsearchSuggestResponse;
@@ -311,7 +318,7 @@ async function fetchTrendingProductSuggestions(limit: number): Promise<ApiSugges
         },
       },
       size: trendingProductIds.length,
-      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival'],
+      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival', 'hasVariants', 'inStock', 'quantity', 'stock'],
     }) as ProductSearchResponse;
 
     const byId = new Map<string, ProductSuggestSource>();
@@ -347,6 +354,10 @@ function mapProductSourceToSuggestion(
   if (source.isFlashSale) badges.push('Flash Sale');
   if (source.isNewArrival) badges.push('New');
 
+  const inStock = source.inStock !== false &&
+    (source.quantity === undefined || source.quantity > 0) &&
+    (source.stock === undefined || source.stock > 0);
+
   return {
     type: 'product',
     text: options.text,
@@ -358,5 +369,8 @@ function mapProductSourceToSuggestion(
     score: options.score,
     badges,
     source: options.source,
+    hasVariants: Boolean(source.hasVariants),
+    inStock,
+    stock: source.stock ?? source.quantity,
   };
 }

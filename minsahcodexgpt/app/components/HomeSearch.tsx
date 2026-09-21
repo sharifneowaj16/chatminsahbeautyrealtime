@@ -23,34 +23,14 @@ import { buildCatalogSearchPath } from '@/lib/catalog-navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 
-type ProductSuggestion = {
-  type: 'product';
-  text: string;
-  productId: string;
-  productName: string;
-  slug: string;
-  price: number;
-  image?: string;
-  badges?: string[];
-  source?: string;
-};
+import type {
+  CanonicalSuggestion,
+  ProductSuggestion,
+  TrendingSuggestion,
+  CompletionSuggestion,
+} from '@/lib/search/types';
 
-type TrendingSuggestion = {
-  type: 'trending';
-  text: string;
-  count?: number;
-  icon?: string;
-  source?: string;
-};
-
-type CompletionSuggestion = {
-  type: 'completion';
-  text: string;
-  icon?: string;
-  source?: string;
-};
-
-type Suggestion = ProductSuggestion | TrendingSuggestion | CompletionSuggestion;
+type Suggestion = CanonicalSuggestion;
 
 type SuggestionResponse = {
   success?: boolean;
@@ -68,6 +48,7 @@ export interface HomeSearchProps {
   isMobileFullScreen?: boolean;
   onCloseMobile?: () => void;
   autoFocus?: boolean;
+  variant?: 'default' | 'compact';
 }
 
 const RECENT_SEARCHES_KEY = 'minsah_recent_searches';
@@ -128,6 +109,7 @@ export default function HomeSearch({
   isMobileFullScreen = false,
   onCloseMobile,
   autoFocus = false,
+  variant = 'default',
 }: HomeSearchProps) {
   const router = useRouter();
   const { addItem } = useCart();
@@ -267,9 +249,25 @@ export default function HomeSearch({
     [router, addRecentSearch, onCloseMobile]
   );
 
-  // Quick 1-tap Add to Cart right from suggestion card (Arogga style)
+  // Quick 1-tap Add to Cart right from suggestion card (with variant and stock guards)
   const handleQuickAddToCart = (e: React.MouseEvent, suggestion: ProductSuggestion) => {
     e.stopPropagation();
+
+    const isOutOfStock = suggestion.inStock === false || (suggestion.stock !== undefined && suggestion.stock <= 0);
+    if (isOutOfStock) return;
+
+    const hasVariants = Boolean(
+      suggestion.hasVariants ||
+      suggestion.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
+    );
+
+    if (hasVariants) {
+      if (onCloseMobile) onCloseMobile();
+      setShowSuggestions(false);
+      router.push(`/products/${suggestion.slug}`);
+      return;
+    }
+
     setAddingProductId(suggestion.productId);
 
     addItem({
@@ -634,18 +632,55 @@ export default function HomeSearch({
                             )}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => handleQuickAddToCart(e, prod)}
-                          className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm ${
-                            isAdding
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95'
-                          }`}
-                        >
-                          {isAdding ? <Check size={12} /> : <Plus size={13} />}
-                          <span>{isAdding ? 'Added' : 'Add'}</span>
-                        </button>
+                        {(() => {
+                          const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
+                          const hasVariants = Boolean(
+                            prod.hasVariants ||
+                            prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
+                          );
+
+                          if (isOutOfStock) {
+                            return (
+                              <button
+                                type="button"
+                                disabled
+                                className="flex h-8 items-center rounded-full px-2.5 text-[11px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                                aria-label="Out of stock"
+                              >
+                                Sold Out
+                              </button>
+                            );
+                          }
+
+                          if (hasVariants) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => handleQuickAddToCart(e, prod)}
+                                className="flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95"
+                                aria-label="Select options"
+                              >
+                                <span>Options</span>
+                                <ArrowRight size={11} />
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => handleQuickAddToCart(e, prod)}
+                              className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm ${
+                                isAdding
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95'
+                              }`}
+                            >
+                              {isAdding ? <Check size={12} /> : <Plus size={13} />}
+                              <span>{isAdding ? 'Added' : 'Add'}</span>
+                            </button>
+                          );
+                        })()}
                       </div>
                     );
                   })}
@@ -681,7 +716,7 @@ export default function HomeSearch({
   // 2. DESKTOP SEARCH BAR & 2-COLUMN LUXURY SPLIT OVERLAY
   // ============================================================================
   return (
-    <div ref={searchRef} className={`relative w-full max-w-[540px] ${className}`}>
+    <div ref={searchRef} className={`relative w-full ${variant === 'compact' ? 'max-w-full' : 'max-w-[540px]'} ${className}`}>
       {/* Search Input Bar */}
       <div className="search-shell">
         <button
@@ -924,19 +959,56 @@ export default function HomeSearch({
                           </div>
                         </div>
 
-                        {/* 1-Tap Add to Cart Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleQuickAddToCart(e, prod)}
-                          className={`flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold transition-all shadow-sm ${
-                            isAdding
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95'
-                          }`}
-                        >
-                          {isAdding ? <Check size={11} /> : <Plus size={12} />}
-                          <span>{isAdding ? 'Added' : 'Add'}</span>
-                        </button>
+                        {/* 1-Tap Add to Cart or Option / Out-of-Stock Button */}
+                        {(() => {
+                          const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
+                          const hasVariants = Boolean(
+                            prod.hasVariants ||
+                            prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
+                          );
+
+                          if (isOutOfStock) {
+                            return (
+                              <button
+                                type="button"
+                                disabled
+                                className="flex h-7 items-center rounded-full px-2 text-[10.5px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                                aria-label="Out of stock"
+                              >
+                                Sold Out
+                              </button>
+                            );
+                          }
+
+                          if (hasVariants) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => handleQuickAddToCart(e, prod)}
+                                className="flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold transition-all shadow-sm bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95"
+                                aria-label="Select options"
+                              >
+                                <span>Options</span>
+                                <ArrowRight size={10} />
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => handleQuickAddToCart(e, prod)}
+                              className={`flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold transition-all shadow-sm ${
+                                isAdding
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95'
+                              }`}
+                            >
+                              {isAdding ? <Check size={11} /> : <Plus size={12} />}
+                              <span>{isAdding ? 'Added' : 'Add'}</span>
+                            </button>
+                          );
+                        })()}
                       </div>
                     );
                   })}

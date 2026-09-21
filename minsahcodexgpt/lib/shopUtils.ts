@@ -102,7 +102,10 @@ export function parseSearchParams(searchParams: ShopQueryParamInput): ShopFilter
   const minPrice = params.get('minPrice');
   const maxPrice = params.get('maxPrice');
   const rating = params.get('rating');
+  const discount = params.get('discount');
   const page = params.get('page');
+  const rawView = params.get('view');
+  const view: 'grid' | 'list' | undefined = rawView === 'list' || rawView === 'grid' ? rawView : undefined;
 
   return {
     category: params.get('category') || undefined,
@@ -116,6 +119,8 @@ export function parseSearchParams(searchParams: ShopQueryParamInput): ShopFilter
     tags: splitCsv(params.get('tags')),
     inStockOnly: params.get('inStock') === 'true',
     saleOnly: params.get('saleOnly') === 'true',
+    discount: discount ? Number(discount) : undefined,
+    view,
     search: params.get('q') || undefined,
     sort: (params.get('sort') as SortOption) || 'featured',
     page: page ? Number(page) : 1,
@@ -148,6 +153,8 @@ export function buildSearchParams(filters: Partial<ShopFilters>): string {
   }
   if (filters.inStockOnly) params.set('inStock', 'true');
   if (filters.saleOnly) params.set('saleOnly', 'true');
+  if (filters.discount !== undefined) params.set('discount', filters.discount.toString());
+  if (filters.view) params.set('view', filters.view);
   if (filters.search) params.set('q', filters.search);
   if (filters.sort && filters.sort !== 'featured') params.set('sort', filters.sort);
   if (filters.page && filters.page > 1) params.set('page', filters.page.toString());

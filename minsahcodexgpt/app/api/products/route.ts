@@ -7,6 +7,7 @@ import { AdminProductError, createAdminProduct } from '@/lib/admin-products';
 import { normalizeShopSearchParams } from '@/lib/shopUtils';
 import { resolveProductTrustBadges } from '@/lib/shopTrust';
 import { SHOP_LISTING_CACHE_CONTROL, getShopPayloadHeaders } from '@/lib/shopPerformance';
+import { normalizeShopSort } from '@/lib/search/sort';
 
 export const dynamic = 'force-dynamic';
 
@@ -202,26 +203,26 @@ async function buildProductFacets(where: Prisma.ProductWhereInput): Promise<Shop
 }
 
 function resolveProductSort(searchParams: URLSearchParams): { sortBy: string; sortOrder: 'asc' | 'desc' } {
-  const shopSort = searchParams.get('sort') || 'featured';
+  const normalizedSort = normalizeShopSort(searchParams.get('sort'));
 
-  switch (shopSort) {
-    case 'price-low-high':
+  switch (normalizedSort) {
+    case 'price_asc':
       return { sortBy: 'price', sortOrder: 'asc' };
-    case 'price-high-low':
+    case 'price_desc':
       return { sortBy: 'price', sortOrder: 'desc' };
     case 'newest':
       return { sortBy: 'createdAt', sortOrder: 'desc' };
-    case 'highest-rated':
+    case 'rating':
       return { sortBy: 'rating', sortOrder: 'desc' };
-    case 'best-selling':
+    case 'popularity':
       return { sortBy: 'deliveredOrderCount', sortOrder: 'desc' };
-    case 'biggest-discount':
+    case 'discount_desc':
       return { sortBy: 'discountPercentage', sortOrder: 'desc' };
-    case 'a-z':
+    case 'name_asc':
       return { sortBy: 'name', sortOrder: 'asc' };
-    case 'z-a':
+    case 'name_desc':
       return { sortBy: 'name', sortOrder: 'desc' };
-    case 'featured':
+    case 'relevance':
     default:
       return { sortBy: 'featured', sortOrder: 'desc' };
   }
@@ -248,6 +249,9 @@ export async function GET(request: NextRequest) {
     const minPrice = getNumericFilter(searchParams.get('minPrice'));
     const maxPrice = getNumericFilter(searchParams.get('maxPrice'));
     const inStock = searchParams.get('inStock') === 'true';
+    const skinType = searchParams.get('skinType');
+    const skinConcern = searchParams.get('skinConcern');
+    const saleOnly = searchParams.get('saleOnly') === 'true';
 
     const where: Prisma.ProductWhereInput = { deletedAt: null };
 
@@ -287,6 +291,46 @@ export async function GET(request: NextRequest) {
       where.quantity = { gt: 0 };
     }
 
+    const andFilters: Prisma.ProductWhereInput[] = [];
+
+    if (skinType) {
+      const skinTypeValues = getCsvFilterValues(skinType);
+      if (skinTypeValues.length > 0) {
+        andFilters.push({
+          OR: skinTypeValues.flatMap((type) => [
+            { skinType: { has: type } },
+            { searchTags: { has: type } },
+          ]),
+        });
+      }
+    }
+
+    if (skinConcern) {
+      const concernValues = getCsvFilterValues(skinConcern);
+      if (concernValues.length > 0) {
+        andFilters.push({
+          OR: concernValues.flatMap((concern) => [
+            { searchTags: { has: concern } },
+            { primaryConcern: { contains: concern, mode: 'insensitive' as const } },
+            { metaKeywords: { contains: concern, mode: 'insensitive' as const } },
+          ]),
+        });
+      }
+    }
+
+    if (saleOnly) {
+      andFilters.push({
+        OR: [
+          { discountPercentage: { gt: 0 } },
+          { flashSaleEligible: true },
+        ],
+      });
+    }
+
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
+    }
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -306,10 +350,11 @@ export async function GET(request: NextRequest) {
 
     const allowedSortFields: Record<string, Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[]> = {
       featured: [
+        { reviewCount: 'desc' },
+        { averageRating: 'desc' },
         { isFeatured: 'desc' },
         { flashSaleEligible: 'desc' },
         { deliveredOrderCount: 'desc' },
-        { averageRating: 'desc' },
         { createdAt: 'desc' },
       ],
       createdAt: { createdAt: sortOrder },

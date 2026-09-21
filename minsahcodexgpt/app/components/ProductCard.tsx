@@ -24,6 +24,8 @@ interface ProductCardProps {
   image: string;
   category?: string;
   stock?: number;
+  hasVariants?: boolean;
+  variants?: any[];
 }
 
 export default function ProductCard({
@@ -35,13 +37,15 @@ export default function ProductCard({
   image,
   category,
   stock,
+  hasVariants,
+  variants,
 }: ProductCardProps) {
   const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
   const discount = originalPrice && originalPrice > price
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
   const productHref = productPath({ id, slug });
-  const isOutOfStock = stock === 0;
+  const isOutOfStock = stock !== undefined ? stock <= 0 : false;
 
   return (
     <>
@@ -81,6 +85,7 @@ export default function ProductCard({
                 productImage={image}
                 price={price}
                 maxStock={stock}
+                hasRequiredVariants={Boolean(hasVariants || (variants && variants.length > 0))}
                 circleAdd
               />
             </div>
