@@ -2,10 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  Search,
-  Menu,
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import ProductShopDrawer, { ShopDrawerProduct } from './ProductShopDrawer';
@@ -82,11 +79,11 @@ export default function ProductStickyHeader({
       : `৳${Math.round(price)}`;
 
   const navTextColor = isScrolled ? 'text-[#fcfcf7]' : 'text-[#1c3a13]';
-  const navHoverBg = isScrolled ? 'hover:bg-[#fcfcf730]' : 'hover:bg-[#1c3a1310]';
+  const navHoverBg = isScrolled ? 'hover:bg-[#fcfcf726]' : 'hover:bg-[#1c3a1310]';
   const activeBtnClass = isScrolled
     ? 'bg-[#fcfcf730] text-[#fcfcf7]'
     : 'bg-[#1c3a1315] text-[#1c3a13]';
-  const inactiveBtnClass = `${navTextColor} bg-[#fcfcf71a] ${navHoverBg}`;
+  const inactiveBtnClass = `${navTextColor} bg-transparent ${navHoverBg}`;
 
   return (
     <>
@@ -97,21 +94,15 @@ export default function ProductStickyHeader({
           <div
             className={`relative flex items-center gap-3 sm:gap-4 rounded-full transition-all duration-300 ${
               isScrolled
-                ? 'bg-[#575e5559] backdrop-blur-md border border-white/12 shadow-lg shadow-black/15'
-                : 'bg-white border border-[#1c3a13]/8 shadow-sm'
+                ? 'bg-[#575e5559] backdrop-blur-md border border-white/12 shadow-lg shadow-black/15 py-1.5 px-3.5 sm:px-4'
+                : 'bg-transparent border border-transparent shadow-none py-1.5 px-0'
             }`}
-            style={{
-              paddingTop: '6px',
-              paddingBottom: '6px',
-              paddingLeft: '16px',
-              paddingRight: '16px',
-            }}
           >
 
             {/* Brand Logo - Seed.com Standard */}
             <Link
               href="/"
-              className={`flex h-8 items-center text-[18px] sm:text-[19px] font-semibold tracking-[-0.02em] hover:opacity-80 transition-opacity ${navTextColor}`}
+              className={`flex h-7 items-center text-[18px] sm:text-[19px] font-semibold tracking-[-0.02em] hover:opacity-80 transition-opacity ${navTextColor}`}
               style={{ fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
               aria-label="Minsah Beauty Home"
             >
@@ -121,7 +112,7 @@ export default function ProductStickyHeader({
             {/* Desktop Navigation Tabs (Hidden on mobile) */}
             <nav className="hidden md:flex items-center gap-1 sm:gap-1.5" aria-label="Product Page Navigation">
 
-              {/* 1. Shop Tab (Seed.com flyout dropdown) */}
+              {/* 1. Shop Tab (Option 1: slim 22px button pill) */}
               <div
                 className="relative"
                 onMouseEnter={() => handleMouseEnter('shop')}
@@ -131,7 +122,7 @@ export default function ProductStickyHeader({
                   type="button"
                   onClick={() => toggleFlyout('shop')}
                   aria-expanded={activeFlyout === 'shop'}
-                  className={`flex h-8 items-center justify-center rounded-full px-3 text-[14px] font-[350] leading-none transition-all ${
+                  className={`flex h-[22px] items-center justify-center rounded-full px-3 text-[13px] font-normal leading-none transition-all ${
                     activeFlyout === 'shop' ? activeBtnClass : inactiveBtnClass
                   }`}
                 >
@@ -156,7 +147,7 @@ export default function ProductStickyHeader({
                   type="button"
                   onClick={() => toggleFlyout('categories')}
                   aria-expanded={activeFlyout === 'categories'}
-                  className={`flex h-8 items-center justify-center rounded-full px-3 text-[14px] font-[350] leading-none transition-all ${
+                  className={`flex h-[22px] items-center justify-center rounded-full px-3 text-[13px] font-normal leading-none transition-all ${
                     activeFlyout === 'categories' ? activeBtnClass : inactiveBtnClass
                   }`}
                 >
@@ -181,7 +172,7 @@ export default function ProductStickyHeader({
                   type="button"
                   onClick={() => toggleFlyout('offers')}
                   aria-expanded={activeFlyout === 'offers'}
-                  className={`flex h-8 items-center justify-center rounded-full px-3 text-[14px] font-[350] leading-none transition-all ${
+                  className={`flex h-[22px] items-center justify-center rounded-full px-3 text-[13px] font-normal leading-none transition-all ${
                     activeFlyout === 'offers' ? activeBtnClass : inactiveBtnClass
                   }`}
                 >
@@ -198,36 +189,29 @@ export default function ProductStickyHeader({
             </nav>
           </div>
 
-          {/* ================= SEED.COM PIXEL-PERFECT RIGHT FLOATING PILL (GlassPillContainer) ================= */}
+          {/* ================= DESKTOP SEED.COM RIGHT DUAL-PILL (Hidden on Mobile) ================= */}
           <div
-            className={`flex items-center gap-1.5 sm:gap-2 rounded-full transition-all duration-300 ${
+            className={`hidden md:flex items-center gap-1 sm:gap-1.5 rounded-full transition-all duration-300 ${
               isScrolled
-                ? 'bg-[#575e5559] backdrop-blur-md border border-white/12 shadow-lg shadow-black/15'
-                : 'bg-white border border-[#1c3a13]/8 shadow-sm'
+                ? 'bg-[#575e5559] backdrop-blur-md border border-white/12 shadow-lg shadow-black/15 py-1 pl-2.5 pr-1'
+                : 'bg-transparent border border-transparent shadow-none py-1 px-0'
             }`}
-            style={{
-              paddingTop: '6px',
-              paddingBottom: '6px',
-              paddingLeft: '12px',
-              paddingRight: '6px',
-            }}
           >
-
             {/* Search Trigger */}
             <Link
               href="/search"
               aria-label="Search catalog"
-              className={`flex h-8 w-8 items-center justify-center rounded-full transition ${navTextColor} ${navHoverBg}`}
+              className={`flex h-[34px] w-[34px] sm:h-9 sm:w-9 items-center justify-center rounded-full transition ${navTextColor} ${navHoverBg}`}
             >
               <Search size={16} />
             </Link>
 
-            {/* Seed.com Exact Cart Button (No Icon, Text + Superscript Counter, Fully Nested Inside Capsule) */}
+            {/* Seed.com Desktop Cart Button */}
             <button
               type="button"
               onClick={openCartDrawer}
               aria-label={`Open shopping cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
-              className={`inline-flex h-8 items-center justify-center rounded-full px-3.5 sm:px-4 text-[14px] font-medium leading-none transition-all active:scale-95 shadow-xs ${
+              className={`inline-flex h-[34px] sm:h-9 items-center justify-center rounded-full px-3.5 sm:px-4 text-[13px] sm:text-[13.5px] font-medium tracking-[-0.01em] leading-none transition-all active:scale-95 shadow-xs ${
                 isScrolled
                   ? 'bg-[#fcfcf7] text-[#1c3a13] hover:bg-[#f0f0eb]'
                   : 'bg-[#1c3a13] text-[#fcfcf7] hover:bg-[#28521c]'
@@ -235,22 +219,72 @@ export default function ProductStickyHeader({
             >
               <span>Cart</span>
               {cartCount > 0 && (
-                <sup className="ml-0.5 text-[10px] font-bold leading-none align-super">
+                <sup className="ml-0.5 text-[10px] sm:text-[10.5px] font-medium leading-none align-super">
+                  &nbsp;{cartCount > 99 ? '99+' : cartCount}
+                </sup>
+              )}
+            </button>
+          </div>
+
+          {/* ================= MOBILE SEED.COM STANDALONE FLOATING ELEMENTS (Visible on < 768px) ================= */}
+          <div className="flex md:hidden items-center gap-2">
+            {/* Mobile Search Button */}
+            <Link
+              href="/search"
+              aria-label="Search catalog"
+              className={`flex h-[34px] w-[34px] items-center justify-center rounded-full transition-all duration-300 ${
+                isScrolled
+                  ? 'bg-[#575e5559] backdrop-blur-md border border-white/12 shadow-sm text-[#fcfcf7] hover:bg-[#fcfcf730]'
+                  : 'bg-transparent border border-transparent text-[#1c3a13] hover:bg-[#1c3a1310]'
+              }`}
+            >
+              <Search size={15} />
+            </Link>
+
+            {/* Mobile Standalone Cart Pill (Seed.com mobile pattern) */}
+            <button
+              type="button"
+              onClick={openCartDrawer}
+              aria-label={`Open shopping cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+              className={`inline-flex h-[34px] items-center justify-center rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] leading-none transition-all duration-300 active:scale-95 shadow-xs ${
+                isScrolled
+                  ? 'bg-[#1c3a13] text-[#fcfcf7] border border-white/12 shadow-md hover:bg-[#28521c]'
+                  : 'bg-[#1c3a13] text-[#fcfcf7] hover:bg-[#28521c]'
+              }`}
+            >
+              <span>Cart</span>
+              {cartCount > 0 && (
+                <sup className="ml-0.5 text-[10px] font-medium leading-none align-super">
                   &nbsp;{cartCount > 99 ? '99+' : cartCount}
                 </sup>
               )}
             </button>
 
-            {/* Mobile Hamburger Menu Icon (Visible on < 768px) */}
+            {/* Mobile Standalone Hamburger Menu Circle (Seed.com mobile pattern) */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Open mobile navigation menu"
-              className={`flex md:hidden h-8 w-8 items-center justify-center rounded-full transition ${navTextColor} ${navHoverBg}`}
+              className={`flex h-[34px] w-[34px] items-center justify-center rounded-full transition-all duration-300 ${
+                isScrolled
+                  ? 'bg-[#575e5559] backdrop-blur-md border border-white/12 shadow-sm text-[#fcfcf7] hover:bg-[#fcfcf730]'
+                  : 'bg-transparent border border-transparent text-[#1c3a13] hover:bg-[#1c3a1310]'
+              }`}
             >
-              <Menu size={18} />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                className="shrink-0"
+              >
+                <line x1="2.5" y1="5.5" x2="13.5" y2="5.5" />
+                <line x1="2.5" y1="10.5" x2="13.5" y2="10.5" />
+              </svg>
             </button>
-
           </div>
 
         </div>

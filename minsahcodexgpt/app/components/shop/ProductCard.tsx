@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Zap, Plus, Star, Sparkles } from 'lucide-react';
+import { Zap, Plus, Star, Sparkles, Check } from 'lucide-react';
 import { Product } from '@/types/product';
 import { formatPrice } from '@/lib/shopUtils';
 import { productPath } from '@/lib/product-url';
 import dynamic from 'next/dynamic';
 import type { BuyNowVariantOption } from '@/components/cart/BuyNowModal';
-import { trackShopBuyNowClick, trackShopSelectItem, trackShopWishlistAdd } from '@/lib/tracking/shop-events';
+import { trackShopBuyNowClick, trackShopSelectItem, trackShopWishlistAdd, trackShopAddToCart } from '@/lib/tracking/shop-events';
 import CatalogProductImage from '@/components/catalog/CatalogProductImage';
 import SeedHeroVariantDropdown, { type ProductVariantItem } from '@/app/(storefront)/products/[id]/components/hero/SeedHeroVariantDropdown';
 import ProductRatingPopover from '@/app/components/shop/ProductRatingPopover';
@@ -40,6 +40,7 @@ export default function ProductCard({
   const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isRatingPopoverOpen, setIsRatingPopoverOpen] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
 
   const { addItem } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
@@ -166,11 +167,30 @@ export default function ProductCard({
       const activeVar = dropdownVariants.find((v) => v.id === selectedVariantId) || dropdownVariants[0];
       if (activeVar) {
         handleSelectVariantAddToCart(activeVar);
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 800);
         return;
       }
     }
 
-    handleBuyNowClick(e);
+    const cartItem = createStandardCartItem({
+      product: {
+        id: product.id,
+        name: product.name,
+        price: currentPrice || product.price,
+        image: displayedImage || product.image,
+        sku: product.sku,
+        stock: product.stock,
+      },
+      quantity: 1,
+    });
+
+    addItem(cartItem);
+    trackShopAddToCart(product, 1, index, listName);
+    openCartDrawer();
+
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 800);
   };
 
   const variantOptions: BuyNowVariantOption[] | undefined = product.variants?.map((variant) => ({
@@ -337,10 +357,21 @@ export default function ProductCard({
               type="button"
               disabled={isDisabled}
               onClick={handleAddButtonClick}
-              className="flex items-center justify-center gap-1 rounded-full bg-[#1c3a13] hover:bg-[#14290d] text-white px-4 h-7.5 sm:h-8 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-95 disabled:bg-stone-200 disabled:text-stone-400"
+              className={`flex items-center justify-center gap-1 rounded-full text-white px-4 h-7.5 sm:h-8 text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-95 disabled:bg-stone-200 disabled:text-stone-400 ${
+                isAdded ? 'bg-emerald-700' : 'bg-[#1c3a13] hover:bg-[#14290d]'
+              }`}
             >
-              <Plus size={13} strokeWidth={2.5} />
-              <span>{isDisabled ? 'OUT OF STOCK' : 'ADD'}</span>
+              {isAdded ? (
+                <>
+                  <Check size={13} strokeWidth={2.5} />
+                  <span>ADDED</span>
+                </>
+              ) : (
+                <>
+                  <Plus size={13} strokeWidth={2.5} />
+                  <span>{isDisabled ? 'OUT OF STOCK' : 'ADD'}</span>
+                </>
+              )}
             </button>
           </div>
         </article>
@@ -524,10 +555,21 @@ export default function ProductCard({
                 type="button"
                 disabled={isDisabled}
                 onClick={handleAddButtonClick}
-                className="flex-1 max-w-[105px] sm:max-w-[125px] h-7 sm:h-7.5 flex items-center justify-center gap-1 rounded-full bg-[#1c3a13] hover:bg-[#14290d] text-white px-3 text-[11px] sm:text-xs font-bold transition-all shadow-xs active:scale-95 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed"
+                className={`flex-1 max-w-[105px] sm:max-w-[125px] h-7 sm:h-7.5 flex items-center justify-center gap-1 rounded-full text-white px-3 text-[11px] sm:text-xs font-bold transition-all shadow-xs active:scale-95 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed ${
+                  isAdded ? 'bg-emerald-700' : 'bg-[#1c3a13] hover:bg-[#14290d]'
+                }`}
               >
-                <Plus size={12} strokeWidth={2.5} />
-                <span>{isDisabled ? 'SOLD' : 'ADD'}</span>
+                {isAdded ? (
+                  <>
+                    <Check size={12} strokeWidth={2.5} />
+                    <span>ADDED</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus size={12} strokeWidth={2.5} />
+                    <span>{isDisabled ? 'SOLD' : 'ADD'}</span>
+                  </>
+                )}
               </button>
             </div>
           )}
