@@ -48,23 +48,23 @@ export default function AroggaControlsBar({
   const currentSortLabel = sortOptions.find((s) => s.id === activeSort)?.label || 'Relevance';
 
   return (
-    <div className="mb-3 sm:mb-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-200/80 pb-2 sm:pb-2.5">
+    <div className="mb-3 sm:mb-3.5 flex flex-row items-center justify-between gap-2 sm:gap-4 border-b border-stone-200/80 pb-2 sm:pb-2.5">
       {/* Result Headline */}
-      <div>
-        <h2 className="text-base sm:text-lg font-bold text-[#1c3a13] tracking-tight">
+      <div className="min-w-0 flex-1">
+        <h2 className="text-xs sm:text-lg font-bold text-[#1c3a13] tracking-tight truncate">
           {query
             ? `Showing all results for "${query}"`
             : category
             ? `Showing results in ${category}`
             : `Showing all formulations`}
         </h2>
-        <p className="text-xs text-stone-500 mt-0.5">
+        <p className="text-[10px] sm:text-xs text-stone-500 mt-0.5 truncate">
           {totalCount} {totalCount === 1 ? 'product' : 'products'} available in stock
         </p>
       </div>
 
-      {/* Controls: Sort Dropdown & View Dropdown */}
-      <div className="flex items-center gap-3 self-end sm:self-auto text-xs sm:text-sm">
+      {/* Controls: Sort Dropdown & View Dropdown (Inline on Mobile & Desktop) */}
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 text-xs sm:text-sm">
         {/* Sort Dropdown */}
         <div className="relative" ref={sortRef}>
           <button
@@ -75,11 +75,11 @@ export default function AroggaControlsBar({
             }}
             aria-expanded={sortOpen}
             aria-haspopup="listbox"
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 sm:py-2 text-stone-700 hover:border-[#1c3a13] hover:text-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/20 transition-colors shadow-2xs font-medium"
+            className="flex items-center gap-1 sm:gap-1.5 rounded-lg border border-stone-200 bg-white px-2 sm:px-3 py-1.5 sm:py-2 text-stone-700 hover:border-[#1c3a13] hover:text-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/20 transition-colors shadow-2xs font-medium text-xs sm:text-sm"
           >
             <span className="text-stone-500 font-normal">Sort:</span>
             <span className="font-semibold text-[#1c3a13]">{currentSortLabel}</span>
-            <ChevronDown size={15} className={`text-stone-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`text-stone-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {sortOpen && (
@@ -124,21 +124,21 @@ export default function AroggaControlsBar({
             }}
             aria-expanded={viewOpen}
             aria-haspopup="listbox"
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 sm:py-2 text-stone-700 hover:border-[#1c3a13] hover:text-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/20 transition-colors shadow-2xs font-medium"
+            className="flex items-center gap-1 sm:gap-1.5 rounded-lg border border-stone-200 bg-white px-2 sm:px-3 py-1.5 sm:py-2 text-stone-700 hover:border-[#1c3a13] hover:text-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/20 transition-colors shadow-2xs font-medium text-xs sm:text-sm"
           >
             <span className="text-stone-500 font-normal">View:</span>
             <span className="inline-flex items-center gap-1 font-semibold text-[#1c3a13]">
               {viewMode === 'grid' ? (
                 <>
-                  <LayoutGrid size={14} className="text-[#1c3a13]" /> Grid
+                  <LayoutGrid size={13} className="text-[#1c3a13]" /> Grid
                 </>
               ) : (
                 <>
-                  <List size={14} className="text-[#1c3a13]" /> List
+                  <List size={13} className="text-[#1c3a13]" /> List
                 </>
               )}
             </span>
-            <ChevronDown size={15} className={`text-stone-400 transition-transform ${viewOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`text-stone-400 transition-transform ${viewOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {viewOpen && (

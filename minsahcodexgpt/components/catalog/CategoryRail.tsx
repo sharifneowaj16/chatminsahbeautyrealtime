@@ -61,11 +61,11 @@ export default function CategoryRail({
 
   const [indicatorStyle, setIndicatorStyle] = useState<{ transform: string; width: string }>({
     transform: 'translateX(0px)',
-    width: '108px',
+    width: '68px',
   });
   const [activeBgStyle, setActiveBgStyle] = useState<{ transform: string; width: string }>({
-    transform: 'translateX(16px)',
-    width: '76px',
+    transform: 'translateX(10px)',
+    width: '48px',
   });
 
   const [isScrollingDown, setIsScrollingDown] = useState(false);

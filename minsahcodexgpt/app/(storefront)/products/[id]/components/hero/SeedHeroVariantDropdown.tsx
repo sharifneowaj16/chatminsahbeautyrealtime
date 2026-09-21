@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ChevronDown, Check } from 'lucide-react';
 import { extractVariantAttributes } from '@/utils/cartItemHelper';
@@ -27,6 +28,7 @@ export interface SeedHeroVariantDropdownProps {
   onSelectVariant?: (variant: ProductVariantItem) => void;
   onOpenChange?: (isOpen: boolean) => void;
   compact?: boolean;
+  layout?: 'grid' | 'list';
   className?: string;
 }
 
@@ -66,10 +68,19 @@ export default function SeedHeroVariantDropdown({
   onSelectVariant,
   onOpenChange,
   compact = false,
+  layout = 'grid',
   className = '',
 }: SeedHeroVariantDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [placementSide, setPlacementSide] = useState<'left' | 'right'>('right');
+  const [cardWidth, setCardWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Helper to resolve variant image with gallery image fallback
   const resolveVariantImage = (v: ProductVariantItem, index: number): string => {
@@ -139,6 +150,19 @@ export default function SeedHeroVariantDropdown({
   };
 
   const toggleDropdown = () => {
+    if (!isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const isLeftHalf = typeof window !== 'undefined' ? centerX < window.innerWidth / 2 : true;
+      setPlacementSide(isLeftHalf ? 'right' : 'left');
+
+      const cardEl = containerRef.current.closest('article');
+      if (cardEl) {
+        const cardRect = cardEl.getBoundingClientRect();
+        setCardWidth(cardRect.width);
+      }
+    }
+
     setIsOpen((prev) => {
       const next = !prev;
       if (!next) {
@@ -154,7 +178,11 @@ export default function SeedHeroVariantDropdown({
     if (!isOpen) return;
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node) &&
+        (!modalRef.current || !modalRef.current.contains(e.target as Node))
+      ) {
         closeDropdown();
       }
     }
@@ -210,6 +238,126 @@ export default function SeedHeroVariantDropdown({
   if (!variants || variants.length <= 1) {
     return null;
   }
+
+  // Common Dropdown List Content (preserving 100% design and logic)
+  const dropdownListContent = (
+    <>
+      <div
+        className={`${
+          compact ? 'text-[9px] px-2.5 py-1.5' : 'text-[10px] px-3.5 py-2'
+        } uppercase font-bold text-stone-400 dark:text-stone-500 tracking-wider bg-stone-50/80 dark:bg-zinc-800/40 border-b border-stone-100 dark:border-white/5 flex items-center justify-between`}
+      >
+        <span>Available Formulations &amp; Sizes</span>
+        <span className="font-mono text-stone-500">{variants.length} Options</span>
+      </div>
+
+      <div
+        onMouseLeave={handleMouseLeaveList}
+        className={`${
+          compact ? 'max-h-48 sm:max-h-56' : 'max-h-64 sm:max-h-72'
+        } overflow-y-auto divide-y divide-stone-100 dark:divide-white/5 py-1 scroll-smooth ios-scrollbar pr-1`}
+      >
+        {variants.map((v, idx) => {
+          const isSelected = v.id === selectedVariantId;
+          const isOOS = v.stock !== undefined && v.stock <= 0;
+          const vSize = getVariantSize(v);
+          const vShade = getVariantShadeName(v);
+          const vImage = resolveVariantImage(v, idx);
+
+          return (
+            <button
+              key={`hero-var-${v.id}`}
+              type="button"
+              role="option"
+              aria-selected={isSelected}
+              disabled={isOOS}
+              onClick={() => handleSelectVariant(v, idx)}
+              onMouseEnter={() => handleItemMouseEnter(v, idx)}
+              className={`w-full ${
+                compact ? 'px-2 py-2 sm:px-2.5 sm:py-2.5' : 'px-3 py-2.5 sm:px-3.5 sm:py-3'
+              } flex items-center justify-between gap-2 sm:gap-3 text-left transition-all duration-150 cursor-pointer ${
+                isSelected
+                  ? 'bg-[#E5EAE1] dark:bg-emerald-950/40 text-[#1c3a13] dark:text-emerald-200 font-medium'
+                  : isOOS
+                  ? 'opacity-40 cursor-not-allowed bg-stone-50/40 dark:bg-zinc-800/30'
+                  : 'hover:bg-stone-100/75 dark:hover:bg-zinc-800/80 text-stone-800 dark:text-stone-200'
+              }`}
+            >
+              {/* Left: Thumbnail + Shade + Size */}
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div
+                  className={`relative ${
+                    compact ? 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg' : 'h-9 w-9 sm:h-10 sm:w-10 rounded-xl'
+                  } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800`}
+                >
+                  {vImage ? (
+                    <Image
+                      src={safeImageUrl(vImage)}
+                      alt={v.name}
+                      fill
+                      sizes={compact ? '32px' : '40px'}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-stone-500">
+                      {v.name.slice(0, 3)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={`${
+                      compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
+                    } font-bold truncate leading-tight`}
+                  >
+                    {vShade}
+                  </p>
+                  <div
+                    className={`flex items-center gap-1.5 ${
+                      compact ? 'text-[10px]' : 'text-[11px]'
+                    } text-stone-500 dark:text-stone-400 mt-0.5`}
+                  >
+                    {vSize && <span className="font-mono">Size: {vSize}</span>}
+                    {vSize && <span>•</span>}
+                    <span
+                      className={
+                        isOOS
+                          ? 'text-rose-500 font-medium'
+                          : 'text-emerald-700 dark:text-emerald-400 font-medium'
+                      }
+                    >
+                      {isOOS ? 'Sold out' : 'In Stock'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Price & Check */}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <span
+                  className={`font-inter font-bold ${
+                    compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
+                  } text-[#1c3a13] dark:text-emerald-400`}
+                >
+                  ৳{Math.round(v.price)}
+                </span>
+                {isSelected && (
+                  <div
+                    className={`flex ${
+                      compact ? 'h-4 w-4' : 'h-5 w-5'
+                    } items-center justify-center rounded-full bg-[#1c3a13] dark:bg-emerald-400 text-white dark:text-zinc-950 shadow-2xs`}
+                  >
+                    <Check size={compact ? 9 : 11} strokeWidth={3} />
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -294,129 +442,119 @@ export default function SeedHeroVariantDropdown({
         </div>
       </button>
 
-      {/* Floating Luxury Vertical Track Dropdown with iOS Momentum Scrollbar */}
-      {isOpen && (
+      {/* 1. GRID VIEW: Side flyout (docked left or right of product card with connecting side arrow) */}
+      {isOpen && compact && layout === 'grid' && (
+        <div
+          ref={modalRef}
+          role="listbox"
+          aria-label="Available variants"
+          style={{
+            width: cardWidth ? `${Math.min(cardWidth, 280)}px` : undefined,
+            maxWidth: 'calc(100vw - 28px)',
+          }}
+          className={`absolute ${
+            placementSide === 'right'
+              ? 'left-[calc(100%+12px)] sm:left-[calc(100%+16px)]'
+              : 'right-[calc(100%+12px)] sm:right-[calc(100%+16px)]'
+          } bottom-0 z-[60] w-[180px] sm:w-[240px] md:w-[260px] rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-150`}
+        >
+          {/* Connecting Side Arrow pointing to selector */}
+          {placementSide === 'right' ? (
+            <>
+              {/* Outer arrow border */}
+              <svg
+                className="absolute -left-[9px] bottom-2 sm:bottom-2.5 w-[9px] h-4 text-stone-200 dark:text-white/15 pointer-events-none z-10"
+                viewBox="0 0 9 16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M9 0 L0 8 L9 16 Z" />
+              </svg>
+              {/* Inner arrow fill */}
+              <svg
+                className="absolute -left-2 bottom-2 sm:bottom-2.5 w-2 h-4 text-white dark:text-zinc-900 pointer-events-none z-20"
+                viewBox="0 0 8 16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M8 0 L0 8 L8 16 Z" />
+              </svg>
+            </>
+          ) : (
+            <>
+              {/* Outer arrow border */}
+              <svg
+                className="absolute -right-[9px] bottom-2 sm:bottom-2.5 w-[9px] h-4 text-stone-200 dark:text-white/15 pointer-events-none z-10"
+                viewBox="0 0 9 16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M0 0 L9 8 L0 16 Z" />
+              </svg>
+              {/* Inner arrow fill */}
+              <svg
+                className="absolute -right-2 bottom-2 sm:bottom-2.5 w-2 h-4 text-white dark:text-zinc-900 pointer-events-none z-20"
+                viewBox="0 0 8 16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M0 0 L8 8 L0 16 Z" />
+              </svg>
+            </>
+          )}
+
+          {/* Rounded inner container */}
+          <div className="w-full h-full rounded-2xl overflow-hidden">
+            {dropdownListContent}
+          </div>
+        </div>
+      )}
+
+      {/* Shared Full-Screen Backdrop Blur (z-40): Blurs background except active product card (z-50) */}
+      {mounted && isOpen && compact && typeof document !== 'undefined' && (
+        createPortal(
+          <div
+            className="fixed inset-0 z-40 bg-black/35 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeDropdown();
+            }}
+            aria-hidden="true"
+          />,
+          document.body
+        )
+      )}
+
+      {/* 2. LIST VIEW: Centered Modal Dialog in the middle of screen (Portal to document.body) */}
+      {mounted && isOpen && compact && layout === 'list' && typeof document !== 'undefined' && (
+        createPortal(
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Available variants"
+          >
+            {/* Centered Modal Card in the middle of screen */}
+            <div
+              ref={modalRef}
+              className="relative z-10 w-full max-w-[320px] rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border border-stone-200 dark:border-white/15 overflow-hidden animate-in zoom-in-95 duration-150 pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {dropdownListContent}
+            </div>
+          </div>,
+          document.body
+        )
+      )}
+
+      {/* 3. PRODUCT DETAIL HERO / NON-COMPACT: Standard Luxury Dropdown below trigger */}
+      {isOpen && !compact && (
         <div
           role="listbox"
           aria-label="Available variants"
-          className={`absolute left-0 right-0 ${
-            compact ? 'top-[calc(100%+4px)]' : 'top-full mt-2'
-          } z-50 w-full rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
+          className="absolute left-0 right-0 top-full mt-2 z-50 w-full rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
-          <div
-            className={`${
-              compact ? 'text-[9px] px-2.5 py-1.5' : 'text-[10px] px-3.5 py-2'
-            } uppercase font-bold text-stone-400 dark:text-stone-500 tracking-wider bg-stone-50/80 dark:bg-zinc-800/40 border-b border-stone-100 dark:border-white/5 flex items-center justify-between`}
-          >
-            <span>Available Formulations &amp; Sizes</span>
-            <span className="font-mono text-stone-500">{variants.length} Options</span>
-          </div>
-
-          <div
-            onMouseLeave={handleMouseLeaveList}
-            className={`${
-              compact ? 'max-h-48 sm:max-h-56' : 'max-h-64 sm:max-h-72'
-            } overflow-y-auto divide-y divide-stone-100 dark:divide-white/5 py-1 scroll-smooth ios-scrollbar pr-1`}
-          >
-            {variants.map((v, idx) => {
-              const isSelected = v.id === selectedVariantId;
-              const isOOS = v.stock !== undefined && v.stock <= 0;
-              const vSize = getVariantSize(v);
-              const vShade = getVariantShadeName(v);
-              const vImage = resolveVariantImage(v, idx);
-
-              return (
-                <button
-                  key={`hero-var-${v.id}`}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  disabled={isOOS}
-                  onClick={() => handleSelectVariant(v, idx)}
-                  onMouseEnter={() => handleItemMouseEnter(v, idx)}
-                  className={`w-full ${
-                    compact ? 'px-2 py-2 sm:px-2.5 sm:py-2.5' : 'px-3 py-2.5 sm:px-3.5 sm:py-3'
-                  } flex items-center justify-between gap-2 sm:gap-3 text-left transition-all duration-150 cursor-pointer ${
-                    isSelected
-                      ? 'bg-[#E5EAE1] dark:bg-emerald-950/40 text-[#1c3a13] dark:text-emerald-200 font-medium'
-                      : isOOS
-                      ? 'opacity-40 cursor-not-allowed bg-stone-50/40 dark:bg-zinc-800/30'
-                      : 'hover:bg-stone-100/75 dark:hover:bg-zinc-800/80 text-stone-800 dark:text-stone-200'
-                  }`}
-                >
-                  {/* Left: Thumbnail + Shade + Size */}
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div
-                      className={`relative ${
-                        compact ? 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg' : 'h-9 w-9 sm:h-10 sm:w-10 rounded-xl'
-                      } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800`}
-                    >
-                      {vImage ? (
-                        <Image
-                          src={safeImageUrl(vImage)}
-                          alt={v.name}
-                          fill
-                          sizes={compact ? '32px' : '40px'}
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-stone-500">
-                          {v.name.slice(0, 3)}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`${
-                          compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
-                        } font-bold truncate leading-tight`}
-                      >
-                        {vShade}
-                      </p>
-                      <div
-                        className={`flex items-center gap-1.5 ${
-                          compact ? 'text-[10px]' : 'text-[11px]'
-                        } text-stone-500 dark:text-stone-400 mt-0.5`}
-                      >
-                        {vSize && <span className="font-mono">Size: {vSize}</span>}
-                        {vSize && <span>•</span>}
-                        <span
-                          className={
-                            isOOS
-                              ? 'text-rose-500 font-medium'
-                              : 'text-emerald-700 dark:text-emerald-400 font-medium'
-                          }
-                        >
-                          {isOOS ? 'Sold out' : 'In Stock'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Price & Check */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                    <span
-                      className={`font-inter font-bold ${
-                        compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
-                      } text-[#1c3a13] dark:text-emerald-400`}
-                    >
-                      ৳{Math.round(v.price)}
-                    </span>
-                    {isSelected && (
-                      <div
-                        className={`flex ${
-                          compact ? 'h-4 w-4' : 'h-5 w-5'
-                        } items-center justify-center rounded-full bg-[#1c3a13] dark:bg-emerald-400 text-white dark:text-zinc-950 shadow-2xs`}
-                      >
-                        <Check size={compact ? 9 : 11} strokeWidth={3} />
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          {dropdownListContent}
         </div>
       )}
     </div>

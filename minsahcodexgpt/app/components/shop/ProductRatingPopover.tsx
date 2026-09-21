@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Star, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { Product } from '@/types/product';
@@ -29,30 +30,42 @@ function computeStarDistribution(rating: number): StarBreakdown[] {
   let p2 = 0;
   let p1 = 0;
 
-  if (r >= 4.7) {
-    p5 = Math.round(75 + (r - 4.7) * 40); // 75% - 87%
-    p4 = Math.round(10 + (5 - r) * 20);   // 10% - 16%
+  if (r >= 4.8) {
+    p5 = 82;
+    p4 = 12;
     p3 = 4;
+    p2 = 1;
+    p1 = 1;
+  } else if (r >= 4.5) {
+    p5 = 72;
+    p4 = 18;
+    p3 = 6;
     p2 = 2;
-    p1 = 100 - (p5 + p4 + p3 + p2);
-  } else if (r >= 4.3) {
-    p5 = Math.round(60 + (r - 4.3) * 35);
-    p4 = Math.round(20 + (r - 4.3) * 10);
-    p3 = 8;
-    p2 = 3;
-    p1 = 100 - (p5 + p4 + p3 + p2);
-  } else if (r >= 3.8) {
-    p5 = 45;
+    p1 = 2;
+  } else if (r >= 4.0) {
+    p5 = 55;
+    p4 = 25;
+    p3 = 12;
+    p2 = 5;
+    p1 = 3;
+  } else if (r >= 3.5) {
+    p5 = 40;
     p4 = 28;
-    p3 = 14;
-    p2 = 7;
-    p1 = 6;
-  } else {
+    p3 = 18;
+    p2 = 9;
+    p1 = 5;
+  } else if (r >= 3.0) {
     p5 = 30;
     p4 = 25;
-    p3 = 20;
-    p2 = 15;
-    p1 = 10;
+    p3 = 25;
+    p2 = 12;
+    p1 = 8;
+  } else {
+    p5 = 15;
+    p4 = 20;
+    p3 = 25;
+    p2 = 20;
+    p1 = 20;
   }
 
   return [
@@ -129,31 +142,73 @@ export default function ProductRatingPopover({
   onOpenChange,
 }: ProductRatingPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const distribution = useMemo(() => computeStarDistribution(rating), [rating]);
 
   const targetReviewUrl = `${productPath(product)}#reviews-section`;
 
-  const handleOpen = () => {
+  const isMobileViewport = () => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 640;
+  };
+
+  const handleMouseEnter = () => {
+    // In mobile view (< 640px): completely ignore hover/touch events.
+    // The rating breakdown modal opens ONLY on explicit click/tap.
+    if (isMobileViewport()) return;
+
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    setIsOpen(true);
-    onOpenChange?.(true);
+    // Desktop: intentional hover delay (180ms) so accidental pointer sweeps don't flash the popover
+    openTimeoutRef.current = setTimeout(() => {
+      setIsOpen(true);
+      onOpenChange?.(true);
+    }, 180);
   };
 
-  const handleClose = () => {
+  const handleMouseLeave = () => {
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
+    }
+    if (isMobileViewport()) return;
+
     closeTimeoutRef.current = setTimeout(() => {
       setIsOpen(false);
       onOpenChange?.(false);
     }, 220);
   };
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
+    }
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setIsOpen((prev) => {
+      const next = !prev;
+      onOpenChange?.(next);
+      return next;
+    });
+  };
+
   useEffect(() => {
     return () => {
+      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
       if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
   }, []);
@@ -179,23 +234,96 @@ export default function ProductRatingPopover({
 
   const formattedCount = reviewCount >= 1000 ? `${(reviewCount / 1000).toFixed(1)}K` : reviewCount;
 
+  const breakdownContent = (
+    <>
+      {/* Popover Header: Fractional Stars + Score + Close Button */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <FractionalStarRow rating={rating} size={14} />
+            <span className="font-bold text-sm text-stone-900">
+              {rating.toFixed(1)} out of 5
+            </span>
+          </div>
+          <p className="text-xs text-stone-500 mt-1">
+            {reviewCount.toLocaleString()} customer ratings
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(false);
+            onOpenChange?.(false);
+          }}
+          className="p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+          aria-label="Close"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {/* 5-Star Distribution Matrix (5 star down to 1 star) */}
+      <div className="mt-3.5 space-y-2">
+        {distribution.map((item) => (
+          <Link
+            key={`dist-${item.star}`}
+            href={targetReviewUrl}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+              onOpenChange?.(false);
+            }}
+            className="group/row flex items-center gap-2.5 text-xs select-none hover:bg-stone-50/70 p-0.5 rounded-md transition-colors"
+          >
+            <span className="w-10 text-[#007185] group-hover/row:underline group-hover/row:text-[#c7511f] font-medium shrink-0">
+              {item.star} star
+            </span>
+
+            <div className="flex-1 h-4 rounded-md border border-stone-300 bg-stone-50 overflow-hidden p-0.5">
+              <div
+                className="h-full bg-amber-500 rounded-xs transition-all duration-300"
+                style={{ width: `${item.percentage}%` }}
+              />
+            </div>
+
+            <span className="w-8 text-right text-[#007185] group-hover/row:underline group-hover/row:text-[#c7511f] font-medium shrink-0">
+              {item.percentage}%
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-stone-100 my-3.5" />
+
+      {/* Footer Link */}
+      <Link
+        href={targetReviewUrl}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(false);
+          onOpenChange?.(false);
+        }}
+        className="inline-flex items-center gap-1 text-xs font-semibold text-[#007185] hover:text-[#c7511f] hover:underline transition-colors"
+      >
+        <span>See customer reviews</span>
+        <ChevronRight size={13} strokeWidth={2.5} />
+      </Link>
+    </>
+  );
+
   return (
     <div
       ref={containerRef}
       className="relative inline-block"
-      onMouseEnter={handleOpen}
-      onMouseLeave={handleClose}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* 1. Review Trigger: 5 Stars (Amber) + Score (#1c3a13) + Down Arrow + Count */}
       <div
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen((prev) => {
-            const next = !prev;
-            onOpenChange?.(next);
-            return next;
-          });
-        }}
+        onClick={handleTriggerClick}
         className="flex items-center gap-1 cursor-pointer select-none py-0.5 group/trigger"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
@@ -227,86 +355,49 @@ export default function ProductRatingPopover({
         </Link>
       </div>
 
-      {/* 2. Amazon-Style Rating Breakdown Popover Card */}
+      {/* 2. Desktop Amazon-Style Rating Breakdown Popover Card (Anchored directly under stars) */}
       {isOpen && (
         <div
           role="dialog"
           aria-label="Customer review breakdown"
-          className="absolute top-[calc(100%+6px)] -left-2 z-50 w-72 sm:w-80 bg-white rounded-xl shadow-2xl border border-stone-200/90 p-4 font-sans text-stone-900 text-left animate-in fade-in zoom-in-95 duration-150"
-          onMouseEnter={handleOpen}
-          onMouseLeave={handleClose}
+          className="hidden sm:block absolute top-[calc(100%+6px)] -left-2 z-50 w-80 bg-white rounded-xl shadow-2xl border border-stone-200/90 p-4 font-sans text-stone-900 text-left animate-in fade-in zoom-in-95 duration-150"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Top Caret Triangle Arrow pointing up to the chevron */}
           <div className="absolute -top-2 left-6 w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-white drop-shadow-[0_-2px_2px_rgba(0,0,0,0.06)] pointer-events-none" />
-
-          {/* Popover Header: Fractional Stars + Score + Close Button */}
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <FractionalStarRow rating={rating} size={14} />
-                <span className="font-bold text-sm text-stone-900">
-                  {rating.toFixed(1)} out of 5
-                </span>
-              </div>
-              <p className="text-xs text-stone-500 mt-1">
-                {reviewCount.toLocaleString()} customer ratings
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsOpen(false);
-                onOpenChange?.(false);
-              }}
-              className="p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X size={15} />
-            </button>
-          </div>
-
-          {/* 5-Star Distribution Matrix (5 star down to 1 star) */}
-          <div className="mt-3.5 space-y-2">
-            {distribution.map((item) => (
-              <Link
-                key={`dist-${item.star}`}
-                href={targetReviewUrl}
-                onClick={(e) => e.stopPropagation()}
-                className="group/row flex items-center gap-2.5 text-xs select-none hover:bg-stone-50/70 p-0.5 rounded-md transition-colors"
-              >
-                <span className="w-10 text-[#007185] group-hover/row:underline group-hover/row:text-[#c7511f] font-medium shrink-0">
-                  {item.star} star
-                </span>
-
-                <div className="flex-1 h-4 rounded-md border border-stone-300 bg-stone-50 overflow-hidden p-0.5">
-                  <div
-                    className="h-full bg-amber-500 rounded-xs transition-all duration-300"
-                    style={{ width: `${item.percentage}%` }}
-                  />
-                </div>
-
-                <span className="w-8 text-right text-[#007185] group-hover/row:underline group-hover/row:text-[#c7511f] font-medium shrink-0">
-                  {item.percentage}%
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div className="border-t border-stone-100 my-3.5" />
-
-          {/* Footer Link */}
-          <Link
-            href={targetReviewUrl}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#007185] hover:text-[#c7511f] hover:underline transition-colors"
-          >
-            <span>See customer reviews</span>
-            <ChevronRight size={13} strokeWidth={2.5} />
-          </Link>
+          {breakdownContent}
         </div>
+      )}
+
+      {/* 3. Mobile View: Centered Modal Dialog in the middle of phone screen (Portal to document.body) */}
+      {mounted && isOpen && typeof document !== 'undefined' && (
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:hidden animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Customer review breakdown"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+              onOpenChange?.(false);
+            }}
+          >
+            {/* Dimmed backdrop overlay */}
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-2xs" />
+
+            {/* Centered Modal Card in the middle of phone screen */}
+            <div
+              className="relative z-10 w-full max-w-[320px] rounded-2xl bg-white p-5 shadow-2xl border border-stone-200 text-stone-900 text-left animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {breakdownContent}
+            </div>
+          </div>,
+          document.body
+        )
       )}
     </div>
   );

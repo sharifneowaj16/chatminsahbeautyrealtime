@@ -977,12 +977,12 @@ img {
   --mb-icon-accent-soft: #D5E5DC;
   --mb-text: #181C1A;
   --mb-border: #D9E2DC;
-  --cell: 108px;
-  --rail-h: 104px;
-  --item-h: 94px;
-  --indicator-h: 4px;
-  --active-bg-w: 76px;
-  --active-bg-offset: 16px;
+  --cell: 68px;
+  --rail-h: 64px;
+  --item-h: 58px;
+  --indicator-h: 3px;
+  --active-bg-w: 48px;
+  --active-bg-offset: 10px;
   --mb-rose-soft: #E8EFEA;
   --mb-rose-wash: #F2F7F4;
   --mb-ink-soft: #5E6D64;
@@ -1390,10 +1390,10 @@ img {
 /* Desktop Floating Chevron Arrows */
 .mb-rail-arrow {
   position: absolute;
-  top: calc(50% - 15px);
+  top: calc(50% - 12px);
   z-index: 15;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   display: none;
   place-items: center;
   border-radius: 999px;
@@ -1459,8 +1459,8 @@ img {
   z-index: 2;
   flex: 0 0 var(--cell);
   width: var(--cell);
-  height: 100px;
-  padding-bottom: 4px;
+  height: 60px;
+  padding-bottom: 2px;
 }
 
 .mb-category {
@@ -1497,7 +1497,7 @@ img {
   top: 1px;
   left: var(--active-bg-offset);
   width: var(--active-bg-w);
-  height: 80px;
+  height: 50px;
   border-radius: 8px;
   background: var(--color-surface-subtle) !important;
   opacity: 0;
@@ -1514,9 +1514,9 @@ img {
 .mb-category.active::before { opacity: 0; }
 
 .mb-cat-icon {
-  width: 60px;
-  height: 60px;
-  flex: 0 0 60px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1528,11 +1528,11 @@ img {
   transform: scale(1.04) !important;
 }
 
-.mb-cat-icon svg { width: 32px; height: 32px; overflow: visible; }
-.mb-category[data-category="For You"] .mb-cat-icon svg { width: 40px; height: 40px; }
+.mb-cat-icon svg { width: 20px; height: 20px; overflow: visible; }
+.mb-category[data-category="For You"] .mb-cat-icon svg { width: 24px; height: 24px; }
 .mb-cat-icon img {
-  width: 54px;
-  height: 54px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
   object-position: center;
   user-select: none;
@@ -1550,16 +1550,16 @@ img {
 .mb-cat-label {
   display: block;
   width: 100%;
-  max-width: 102px;
-  min-height: 18px;
+  max-width: 66px;
+  min-height: 14px;
   margin-top: 0;
-  padding: 0 2px;
+  padding: 0 1px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 11px;
+  line-height: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
   transition: font-weight 160ms ease, color 200ms ease;
@@ -1578,7 +1578,7 @@ img {
   top: 1px;
   left: 0;
   width: var(--active-bg-w);
-  height: 80px;
+  height: 50px;
   border-radius: 8px;
   background: var(--color-surface-soft) !important;
   transform: translateX(var(--active-bg-offset));

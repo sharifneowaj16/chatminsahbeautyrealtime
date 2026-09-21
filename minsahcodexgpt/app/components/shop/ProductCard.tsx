@@ -198,7 +198,7 @@ export default function ProductCard({
       <>
         <article
           className={`group relative flex flex-col sm:flex-row items-stretch rounded-[28px] border border-stone-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:border-[#1c3a13]/25 hover:shadow-lg transition-all duration-300 font-sans ${
-            isDropdownOpen || isRatingPopoverOpen ? 'z-40' : 'z-0'
+            isDropdownOpen || isRatingPopoverOpen ? 'z-50 shadow-2xl ring-1 ring-stone-200/80' : 'z-0'
           }`}
           aria-label={product.name}
         >
@@ -309,6 +309,7 @@ export default function ProductCard({
                     selectedVariantId={selectedVariantId}
                     defaultImage={product.image}
                     compact
+                    layout="list"
                     onOpenChange={setIsDropdownOpen}
                     onVariantChange={handleVariantChange}
                     onImageChange={handleImageChange}
@@ -366,7 +367,7 @@ export default function ProductCard({
     <>
       <article
         className={`group relative flex flex-col justify-between rounded-[28px] border border-stone-200/80 bg-white p-3 sm:p-3.5 shadow-xs hover:border-[#1c3a13]/25 hover:shadow-lg transition-all duration-300 font-sans ${
-          isDropdownOpen || isRatingPopoverOpen ? 'z-40' : 'z-0'
+          isDropdownOpen || isRatingPopoverOpen ? 'z-50 shadow-2xl ring-1 ring-stone-200/80' : 'z-0'
         }`}
         aria-label={product.name}
       >
@@ -497,6 +498,7 @@ export default function ProductCard({
                 selectedVariantId={selectedVariantId}
                 defaultImage={product.image}
                 compact
+                layout="grid"
                 onOpenChange={setIsDropdownOpen}
                 onVariantChange={handleVariantChange}
                 onImageChange={handleImageChange}

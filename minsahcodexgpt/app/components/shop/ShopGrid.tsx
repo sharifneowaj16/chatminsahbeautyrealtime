@@ -1452,8 +1452,6 @@ export default function ShopGrid() {
         </div>
       )}
 
-      {renderMobileStickyControls()}
-
       {openPanel === "filter" && (
         <ShopFilterDrawer
           open={openPanel === "filter"}
