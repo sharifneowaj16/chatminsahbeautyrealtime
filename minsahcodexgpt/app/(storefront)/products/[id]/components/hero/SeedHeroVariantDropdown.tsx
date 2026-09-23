@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ChevronDown, Check } from 'lucide-react';
 import { extractVariantAttributes } from '@/utils/cartItemHelper';
 import { safeImageUrl } from '@/lib/safe-image';
+import NodeConnector, { type NodeTarget } from '@/components/ui/NodeConnector';
 
 export interface ProductVariantItem {
   id: string;
@@ -45,16 +46,55 @@ export function getVariantSize(v: ProductVariantItem): string | null {
   return null;
 }
 
-export function getVariantShadeName(v: ProductVariantItem): string {
+export function parseVariantParts(v: ProductVariantItem): { shade: string; size: string | null } {
+  const rawSize = getVariantSize(v);
+  let shade = '';
+
   if (v.attributes && typeof v.attributes === 'object') {
     const shadeKeys = ['shade', 'Shade', 'shadeName', 'color', 'Color', 'colour', 'tone', 'formulation'];
     for (const key of shadeKeys) {
       if (v.attributes[key]) {
-        return String(v.attributes[key]).trim();
+        shade = String(v.attributes[key]).trim();
+        break;
       }
     }
   }
-  return v.name || 'Default';
+
+  if (!shade && v.name) {
+    shade = v.name.trim();
+  }
+
+  // If shade contains slash like "30g / Rose" or "Rose / 30g", clean it up
+  if (shade && shade.includes('/')) {
+    const parts = shade.split('/').map((p) => p.trim());
+    const sizePart = parts.find((p) => /\b\d+(?:\*\d+)?\s*(?:ml|g|oz|kg|l|pcs?|pack)\b/i.test(p));
+    const shadePart = parts.find((p) => p !== sizePart);
+    if (shadePart) shade = shadePart;
+    if (!rawSize && sizePart) {
+      return { shade, size: sizePart };
+    }
+  }
+
+  // If shade contains the extracted size (e.g. "Rose 30g"), separate them cleanly
+  if (rawSize && shade) {
+    const regex = new RegExp(`\\b${rawSize.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    const cleaned = shade.replace(regex, '').replace(/\s+/g, ' ').trim();
+    if (cleaned) {
+      shade = cleaned;
+    } else {
+      // If cleaned is empty, the variant is purely a size (e.g. "50ml")
+      return { shade: rawSize, size: null };
+    }
+  }
+
+  return {
+    shade: shade || 'Default',
+    size: rawSize || null,
+  };
+}
+
+export function getVariantShadeName(v: ProductVariantItem): string {
+  return parseVariantParts(v).shade;
 }
 
 export default function SeedHeroVariantDropdown({
@@ -72,11 +112,113 @@ export default function SeedHeroVariantDropdown({
   className = '',
 }: SeedHeroVariantDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [hoveredVariantId, setHoveredVariantId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [placementSide, setPlacementSide] = useState<'left' | 'right'>('right');
   const [cardWidth, setCardWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [dynamicTargets, setDynamicTargets] = useState<NodeTarget[] | null>(null);
+
+  // Safe fallback targets clamped within the visible popbar (max 5 items)
+  const safeStaticTargets: NodeTarget[] = useMemo(() => {
+    const ROW_HEIGHT = 44;
+    const maxVisible = Math.min(variants.length, 5);
+    const activeId = hoveredVariantId || selectedVariantId || (variants[0]?.id ?? '');
+    return variants.slice(0, maxVisible).map((v, idx) => {
+      const bottomDistance = (maxVisible - 1 - idx) * ROW_HEIGHT + ROW_HEIGHT / 2;
+      const yOffset = -(bottomDistance - 15);
+      return {
+        id: v.id,
+        yOffset,
+        isActive: v.id === activeId,
+        label: v.name,
+      };
+    });
+  }, [variants, selectedVariantId, hoveredVariantId]);
+
+  // Update connector targets based on actual DOM row positions within the visible popbar
+  const updateConnectorPositions = useCallback(() => {
+    if (!modalRef.current || !listRef.current || variants.length === 0) return;
+
+    const modalRect = modalRef.current.getBoundingClientRect();
+    const listRect = listRef.current.getBoundingClientRect();
+    const activeId = hoveredVariantId || selectedVariantId || (variants[0]?.id ?? '');
+
+    // Visible bounds inside list container (with 6px padding for socket radius)
+    const minVisibleY = listRect.top + 6;
+    const maxVisibleY = listRect.bottom - 6;
+
+    // Find all option buttons
+    const optionEls = listRef.current.querySelectorAll<HTMLButtonElement>('button[role="option"]');
+    if (!optionEls || optionEls.length === 0) return;
+
+    const newTargets: NodeTarget[] = [];
+    let hasActiveTarget = false;
+    let activeRowY = 0;
+
+    optionEls.forEach((btn, idx) => {
+      const v = variants[idx];
+      if (!v) return;
+
+      const btnRect = btn.getBoundingClientRect();
+      const rowCenterY = btnRect.top + btnRect.height / 2;
+      const isItemActive = v.id === activeId;
+
+      if (isItemActive) {
+        hasActiveTarget = true;
+        activeRowY = rowCenterY;
+      }
+
+      // Check if row is visible within the list viewport
+      const isVisible = rowCenterY >= minVisibleY && rowCenterY <= maxVisibleY;
+
+      if (isVisible) {
+        const bottomDistance = modalRect.bottom - rowCenterY;
+        const yOffset = -(bottomDistance - 15);
+
+        newTargets.push({
+          id: v.id,
+          yOffset,
+          isActive: isItemActive,
+          label: v.name,
+        });
+      }
+    });
+
+    // Smart Edge Clamping for Active/Selected Variant:
+    // If the active variant is scrolled out of view (above top or below bottom),
+    // clamp its socket right to the top or bottom visible edge of the popbar!
+    if (!hasActiveTarget || !newTargets.some((t) => t.isActive)) {
+      const activeVar = variants.find((v) => v.id === activeId) || variants[0];
+      if (activeVar) {
+        let clampedCenterY: number;
+        if (activeRowY > 0 && activeRowY < minVisibleY) {
+          clampedCenterY = minVisibleY;
+        } else if (activeRowY > maxVisibleY) {
+          clampedCenterY = maxVisibleY;
+        } else {
+          const activeIdx = variants.findIndex((v) => v.id === activeId);
+          clampedCenterY = activeIdx === 0 ? minVisibleY : maxVisibleY;
+        }
+
+        const bottomDistance = modalRect.bottom - clampedCenterY;
+        const yOffset = -(bottomDistance - 15);
+
+        newTargets.push({
+          id: activeVar.id,
+          yOffset,
+          isActive: true,
+          label: activeVar.name,
+        });
+      }
+    }
+
+    setDynamicTargets(newTargets);
+  }, [variants, selectedVariantId, hoveredVariantId]);
+
+  const connectorTargets = dynamicTargets && dynamicTargets.length > 0 ? dynamicTargets : safeStaticTargets;
 
   useEffect(() => {
     setMounted(true);
@@ -112,9 +254,36 @@ export default function SeedHeroVariantDropdown({
     return idx >= 0 ? idx : 0;
   }, [variants, activeVariant]);
 
-  const activeSize = useMemo(() => {
-    return activeVariant ? getVariantSize(activeVariant) : null;
+  const { shade: activeShade, size: activeSize } = useMemo(() => {
+    if (!activeVariant) return { shade: 'Select variant', size: null };
+    return parseVariantParts(activeVariant);
   }, [activeVariant]);
+
+  // Hovered variant resolution for live interactive hover preview
+  const hoveredVariant = useMemo(() => {
+    if (!hoveredVariantId) return null;
+    return variants.find((v) => v.id === hoveredVariantId) || null;
+  }, [variants, hoveredVariantId]);
+
+  const hoveredIndex = useMemo(() => {
+    if (!hoveredVariant) return -1;
+    const idx = variants.findIndex((v) => v.id === hoveredVariant.id);
+    return idx >= 0 ? idx : -1;
+  }, [variants, hoveredVariant]);
+
+  // Displayed variant on the trigger button (previews hovered variant if hovering, else locked activeVariant)
+  const displayVariant = hoveredVariant || activeVariant;
+  const displayIndex = hoveredIndex >= 0 ? hoveredIndex : activeIndex;
+
+  const displayImage = useMemo(() => {
+    if (!displayVariant) return defaultImage || null;
+    return resolveVariantImage(displayVariant, displayIndex);
+  }, [displayVariant, displayIndex, defaultImage, galleryImages]);
+
+  const { shade: displayShade, size: displaySize } = useMemo(() => {
+    if (!displayVariant) return { shade: 'Select variant', size: null };
+    return parseVariantParts(displayVariant);
+  }, [displayVariant]);
 
   // The permanent locked image of the active selected variant
   const lockedImage = useMemo(() => {
@@ -144,6 +313,7 @@ export default function SeedHeroVariantDropdown({
   };
 
   const closeDropdown = () => {
+    setHoveredVariantId(null);
     restoreLockedImage();
     setIsOpen(false);
     onOpenChange?.(false);
@@ -163,14 +333,12 @@ export default function SeedHeroVariantDropdown({
       }
     }
 
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (!next) {
-        restoreLockedImage();
-      }
-      onOpenChange?.(next);
-      return next;
-    });
+    const next = !isOpen;
+    setIsOpen(next);
+    if (!next) {
+      restoreLockedImage();
+    }
+    onOpenChange?.(next);
   };
 
   // Click outside / Esc key handler
@@ -204,13 +372,38 @@ export default function SeedHeroVariantDropdown({
     };
   }, [isOpen, lockedImage]);
 
+  // Synchronize connector targets and auto-scroll to selected variant on open
+  useEffect(() => {
+    if (!isOpen) {
+      setDynamicTargets(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      updateConnectorPositions();
+      const activeEl = listRef.current?.querySelector('[aria-selected="true"]') as HTMLElement | null;
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest' });
+      }
+      updateConnectorPositions();
+    }, 40);
+
+    window.addEventListener('resize', updateConnectorPositions);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateConnectorPositions);
+    };
+  }, [isOpen, updateConnectorPositions]);
+
   // Mouse leave handler for option list
   const handleMouseLeaveList = () => {
+    setHoveredVariantId(null);
     restoreLockedImage();
   };
 
   // Live hover preview handler
   const handleItemMouseEnter = (v: ProductVariantItem, idx: number) => {
+    setHoveredVariantId(v.id);
     const targetImg = resolveVariantImage(v, idx);
     if (onHoverImage) {
       onHoverImage(targetImg);
@@ -245,23 +438,24 @@ export default function SeedHeroVariantDropdown({
       <div
         className={`${
           compact ? 'text-[9px] px-2.5 py-1.5' : 'text-[10px] px-3.5 py-2'
-        } uppercase font-bold text-stone-400 dark:text-stone-500 tracking-wider bg-stone-50/80 dark:bg-zinc-800/40 border-b border-stone-100 dark:border-white/5 flex items-center justify-between`}
+        } uppercase font-bold text-stone-400 dark:text-stone-500 tracking-wider bg-stone-50/80 dark:bg-zinc-800/40 border-b border-stone-200/80 dark:border-white/10 flex items-center justify-between`}
       >
         <span>Available Formulations &amp; Sizes</span>
         <span className="font-mono text-stone-500">{variants.length} Options</span>
       </div>
 
       <div
+        ref={listRef}
+        onScroll={updateConnectorPositions}
         onMouseLeave={handleMouseLeaveList}
         className={`${
           compact ? 'max-h-48 sm:max-h-56' : 'max-h-64 sm:max-h-72'
-        } overflow-y-auto divide-y divide-stone-100 dark:divide-white/5 py-1 scroll-smooth ios-scrollbar pr-1`}
+        } overflow-y-auto flex flex-col gap-[1px] bg-stone-200/60 dark:bg-white/10 p-[1px] scroll-smooth ios-scrollbar`}
       >
         {variants.map((v, idx) => {
           const isSelected = v.id === selectedVariantId;
           const isOOS = v.stock !== undefined && v.stock <= 0;
-          const vSize = getVariantSize(v);
-          const vShade = getVariantShadeName(v);
+          const { shade: vShade, size: vSize } = parseVariantParts(v);
           const vImage = resolveVariantImage(v, idx);
 
           return (
@@ -273,84 +467,97 @@ export default function SeedHeroVariantDropdown({
               disabled={isOOS}
               onClick={() => handleSelectVariant(v, idx)}
               onMouseEnter={() => handleItemMouseEnter(v, idx)}
+              onMouseOver={() => handleItemMouseEnter(v, idx)}
+              onFocus={() => handleItemMouseEnter(v, idx)}
               className={`w-full ${
                 compact ? 'px-2 py-2 sm:px-2.5 sm:py-2.5' : 'px-3 py-2.5 sm:px-3.5 sm:py-3'
-              } flex items-center justify-between gap-2 sm:gap-3 text-left transition-all duration-150 cursor-pointer ${
+              } flex items-center gap-2 sm:gap-2.5 text-left transition-all duration-150 cursor-pointer ${
                 isSelected
                   ? 'bg-[#E5EAE1] dark:bg-emerald-950/40 text-[#1c3a13] dark:text-emerald-200 font-medium'
                   : isOOS
                   ? 'opacity-40 cursor-not-allowed bg-stone-50/40 dark:bg-zinc-800/30'
-                  : 'hover:bg-stone-100/75 dark:hover:bg-zinc-800/80 text-stone-800 dark:text-stone-200'
+                  : 'bg-white dark:bg-zinc-900 hover:bg-stone-50 dark:hover:bg-zinc-800/80 text-stone-800 dark:text-stone-200'
               }`}
             >
-              {/* Left: Thumbnail + Shade + Size */}
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div
-                  className={`relative ${
-                    compact ? 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg' : 'h-9 w-9 sm:h-10 sm:w-10 rounded-xl'
-                  } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800`}
-                >
-                  {vImage ? (
-                    <Image
-                      src={safeImageUrl(vImage)}
-                      alt={v.name}
-                      fill
-                      sizes={compact ? '32px' : '40px'}
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-stone-500">
-                      {v.name.slice(0, 3)}
-                    </div>
-                  )}
-                </div>
+              {/* Left: Thumbnail Image */}
+              <div
+                className={`relative ${
+                  compact ? 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg' : 'h-9 w-9 sm:h-10 sm:w-10 rounded-xl'
+                } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800`}
+              >
+                {vImage ? (
+                  <Image
+                    src={safeImageUrl(vImage)}
+                    alt={v.name}
+                    fill
+                    sizes={compact ? '32px' : '40px'}
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-stone-500">
+                    {v.name.slice(0, 3)}
+                  </div>
+                )}
+              </div>
 
-                <div className="min-w-0 flex-1">
+              {/* 3-Column Content: Left (Shade + Stock) | Center (Product Size in Middle) | Right (Price + Check) */}
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 min-w-0 flex-1">
+                {/* Column 1: Left - Shade Name with In Stock below */}
+                <div className="min-w-0 pr-1">
                   <p
                     className={`${
                       compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
-                    } font-bold truncate leading-tight`}
+                    } font-bold truncate leading-tight text-stone-900 dark:text-stone-100`}
                   >
                     {vShade}
                   </p>
-                  <div
-                    className={`flex items-center gap-1.5 ${
-                      compact ? 'text-[10px]' : 'text-[11px]'
-                    } text-stone-500 dark:text-stone-400 mt-0.5`}
+                  <p
+                    className={`mt-0.5 ${
+                      compact ? 'text-[9.5px]' : 'text-[10.5px]'
+                    } ${
+                      isOOS
+                        ? 'text-rose-500 font-medium'
+                        : 'text-emerald-700 dark:text-emerald-400 font-medium'
+                    }`}
                   >
-                    {vSize && <span className="font-mono">Size: {vSize}</span>}
-                    {vSize && <span>•</span>}
+                    {isOOS ? 'Sold out' : 'In Stock'}
+                  </p>
+                </div>
+
+                {/* Column 2: Exact Middle - Product Size with Semi-Bold Font */}
+                <div className="flex items-center justify-center px-1.5">
+                  {vSize ? (
                     <span
-                      className={
-                        isOOS
-                          ? 'text-rose-500 font-medium'
-                          : 'text-emerald-700 dark:text-emerald-400 font-medium'
-                      }
+                      className={`font-semibold text-stone-800 dark:text-stone-200 font-mono tracking-tight ${
+                        compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-[13px]'
+                      }`}
                     >
-                      {isOOS ? 'Sold out' : 'In Stock'}
+                      {vSize}
                     </span>
+                  ) : null}
+                </div>
+
+                {/* Column 3: Right - Price + Selection Checkmark */}
+                <div className="flex items-center justify-end gap-1.5 shrink-0 pl-1">
+                  <span
+                    className={`font-inter font-bold ${
+                      compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
+                    } text-[#1c3a13] dark:text-emerald-400`}
+                  >
+                    ৳{Math.round(v.price)}
+                  </span>
+                  <div className={`shrink-0 flex items-center justify-center ${compact ? 'w-4 h-4' : 'w-5 h-5'}`}>
+                    {isSelected ? (
+                      <div
+                        className={`flex ${
+                          compact ? 'h-4 w-4' : 'h-5 w-5'
+                        } items-center justify-center rounded-full bg-[#1c3a13] dark:bg-emerald-400 text-white dark:text-zinc-950 shadow-2xs`}
+                      >
+                        <Check size={compact ? 9 : 11} strokeWidth={3} />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-              </div>
-
-              {/* Right: Price & Check */}
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <span
-                  className={`font-inter font-bold ${
-                    compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm'
-                  } text-[#1c3a13] dark:text-emerald-400`}
-                >
-                  ৳{Math.round(v.price)}
-                </span>
-                {isSelected && (
-                  <div
-                    className={`flex ${
-                      compact ? 'h-4 w-4' : 'h-5 w-5'
-                    } items-center justify-center rounded-full bg-[#1c3a13] dark:bg-emerald-400 text-white dark:text-zinc-950 shadow-2xs`}
-                  >
-                    <Check size={compact ? 9 : 11} strokeWidth={3} />
-                  </div>
-                )}
               </div>
             </button>
           );
@@ -378,7 +585,7 @@ export default function SeedHeroVariantDropdown({
         onClick={toggleDropdown}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        aria-label={`Select variant. Currently: ${activeVariant ? getVariantShadeName(activeVariant) : 'Default'}`}
+        aria-label={`Select variant. Currently: ${displayShade}${displaySize ? ` ${displaySize}` : ''}`}
         className={`w-full ${
           compact
             ? 'h-7.5 sm:h-8 px-2.5 sm:px-3 rounded-full'
@@ -389,57 +596,55 @@ export default function SeedHeroVariantDropdown({
             : 'border-[#1c3a13]/20 dark:border-white/12 hover:border-[#1c3a13] dark:hover:border-white/30'
         }`}
       >
-        {/* Left: Thumbnail Image + Variant Shade Name + Size Badge */}
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-          <div
-            className={`relative ${
-              compact ? 'h-5 w-5 sm:h-6 sm:w-6 rounded-full' : 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg'
-            } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800 aspect-square`}
-          >
-            <Image
-              src={safeImageUrl(activeVariant ? resolveVariantImage(activeVariant, activeIndex) : defaultImage)}
-              alt={activeVariant?.name || 'Variant thumbnail'}
-              fill
-              sizes={compact ? '24px' : '32px'}
-              className="object-cover"
-            />
-          </div>
+        {/* Left: Thumbnail Image */}
+        <div
+          className={`relative ${
+            compact ? 'h-5 w-5 sm:h-6 sm:w-6 rounded-full' : 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg'
+          } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800 aspect-square`}
+        >
+          <Image
+            src={safeImageUrl(displayImage || defaultImage)}
+            alt={displayVariant?.name || 'Variant thumbnail'}
+            fill
+            sizes={compact ? '24px' : '32px'}
+            className="object-cover transition-opacity duration-150"
+          />
+        </div>
+
+        {/* Middle Content: [ Rose - same space - 30g - same space - ৳450 ] */}
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 min-w-0 flex-1">
           <span
             className={`${
               compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-[13.5px]'
             } font-bold text-[#181C1A] dark:text-white truncate`}
           >
-            {activeVariant ? getVariantShadeName(activeVariant) : 'Select a variant'}
+            {displayShade}
           </span>
-          {activeSize && (
+          {displaySize && (
             <span
-              className={`shrink-0 ${
-                compact
-                  ? 'px-1.5 py-0.5 text-[9px] sm:text-[10px]'
-                  : 'px-2 py-0.5 text-[10px] sm:text-[11px]'
-              } rounded-md bg-stone-100 dark:bg-zinc-700/80 font-mono font-medium text-stone-600 dark:text-stone-300 leading-none`}
+              className={`shrink-0 font-mono font-medium text-stone-600 dark:text-stone-300 ${
+                compact ? 'text-[10px] sm:text-[11px]' : 'text-xs sm:text-[12.5px]'
+              }`}
             >
-              {activeSize}
+              {displaySize}
             </span>
           )}
-        </div>
-
-        {/* Right: Price + Animated Chevron */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-1">
           <span
-            className={`font-inter font-bold ${
+            className={`shrink-0 font-inter font-bold ${
               compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-[13.5px]'
             } text-[#1c3a13] dark:text-emerald-400`}
           >
-            ৳{Math.round(activeVariant?.price ?? 0)}
+            ৳{Math.round(displayVariant?.price ?? 0)}
           </span>
-          <ChevronDown
-            size={compact ? 12 : 15}
-            className={`text-stone-500 transition-transform duration-200 ${
-              isOpen ? 'rotate-180 text-[#1c3a13] dark:text-emerald-400' : ''
-            }`}
-          />
         </div>
+
+        {/* Right: Animated Chevron */}
+        <ChevronDown
+          size={compact ? 12 : 15}
+          className={`shrink-0 text-stone-500 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-[#1c3a13] dark:text-emerald-400' : ''
+          }`}
+        />
       </button>
 
       {/* 1. GRID VIEW: Side flyout (docked left or right of product card with connecting side arrow) */}
@@ -454,54 +659,23 @@ export default function SeedHeroVariantDropdown({
           }}
           className={`absolute ${
             placementSide === 'right'
-              ? 'left-[calc(100%+12px)] sm:left-[calc(100%+16px)]'
-              : 'right-[calc(100%+12px)] sm:right-[calc(100%+16px)]'
-          } bottom-0 z-[60] w-[180px] sm:w-[240px] md:w-[260px] rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-150`}
+              ? 'left-[calc(100%+32px)]'
+              : 'right-[calc(100%+32px)]'
+          } bottom-0 z-[60] w-[190px] sm:w-[240px] md:w-[260px] rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-150`}
         >
-          {/* Connecting Side Arrow pointing to selector */}
-          {placementSide === 'right' ? (
-            <>
-              {/* Outer arrow border */}
-              <svg
-                className="absolute -left-[9px] bottom-2 sm:bottom-2.5 w-[9px] h-4 text-stone-200 dark:text-white/15 pointer-events-none z-10"
-                viewBox="0 0 9 16"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M9 0 L0 8 L9 16 Z" />
-              </svg>
-              {/* Inner arrow fill */}
-              <svg
-                className="absolute -left-2 bottom-2 sm:bottom-2.5 w-2 h-4 text-white dark:text-zinc-900 pointer-events-none z-20"
-                viewBox="0 0 8 16"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M8 0 L0 8 L8 16 Z" />
-              </svg>
-            </>
-          ) : (
-            <>
-              {/* Outer arrow border */}
-              <svg
-                className="absolute -right-[9px] bottom-2 sm:bottom-2.5 w-[9px] h-4 text-stone-200 dark:text-white/15 pointer-events-none z-10"
-                viewBox="0 0 9 16"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M0 0 L9 8 L0 16 Z" />
-              </svg>
-              {/* Inner arrow fill */}
-              <svg
-                className="absolute -right-2 bottom-2 sm:bottom-2.5 w-2 h-4 text-white dark:text-zinc-900 pointer-events-none z-20"
-                viewBox="0 0 8 16"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M0 0 L8 8 L0 16 Z" />
-              </svg>
-            </>
-          )}
+          {/* NodeConnector: n8n-style dark green curved bezier wire spanning the gap */}
+          <div
+            className={`absolute ${
+              placementSide === 'right' ? '-left-[32px]' : '-right-[32px]'
+            } bottom-[15px] pointer-events-none z-[65]`}
+          >
+            <NodeConnector
+              direction={placementSide === 'right' ? 'popover-right' : 'popover-left'}
+              gapWidth={32}
+              color="#1c3a13"
+              targets={connectorTargets}
+            />
+          </div>
 
           {/* Rounded inner container */}
           <div className="w-full h-full rounded-2xl overflow-hidden">

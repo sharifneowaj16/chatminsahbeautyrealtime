@@ -88,7 +88,8 @@ export default function ProductCard({
   }, [currentImage, product.images, product.image]);
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
-  const displayedImage = productImages[activeImageIdx] || currentImage || product.image;
+  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const displayedImage = hoveredImage || productImages[activeImageIdx] || currentImage || product.image;
 
   const handleVariantChange = (variantId: string | null, price: number) => {
     setSelectedVariantId(variantId);
@@ -100,6 +101,10 @@ export default function ProductCard({
       setCurrentImage(imgUrl);
       setActiveImageIdx(0);
     }
+  };
+
+  const handleHoverImage = (imgUrl: string | null) => {
+    setHoveredImage(imgUrl);
   };
 
   const handleSelectVariantAddToCart = (selectedVar: ProductVariantItem) => {
@@ -533,6 +538,7 @@ export default function ProductCard({
                 onOpenChange={setIsDropdownOpen}
                 onVariantChange={handleVariantChange}
                 onImageChange={handleImageChange}
+                onHoverImage={handleHoverImage}
                 onSelectVariant={handleSelectVariantAddToCart}
               />
             </div>

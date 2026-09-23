@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import { ChevronRight, Flame, TimerReset } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { Product } from '@/contexts/ProductsContext';
-import type { VariantOption } from '@/components/cart/VariantModal';
+import type { Product as ContextProduct } from '@/contexts/ProductsContext';
 import type { HomeSection, HomeSectionBrand } from '@/types/admin';
 import { defaultBrands, defaultHomeSections } from '@/lib/homeData';
 import { DESIGN_TOKEN_VALUES } from '@/lib/design-tokens';
 import HomeCountdownTimer from './HomeCountdownTimer';
-import { productPath } from '@/lib/product-url';
-import HomeProductCard, { type HomeProductCardData } from './HomeProductCard';
+import ProductCard from '@/app/components/shop/ProductCard';
+import type { Product as ShopProduct, ProductVariant } from '@/types/product';
+import { adminProductToShopProduct } from '@/lib/productAdapter';
 
 type ProductSectionType = 'flash-sale' | 'new-arrivals' | 'for-you' | 'recommendations' | 'favourites' | 'brands';
 
@@ -30,36 +30,7 @@ function toFiniteNumber(value: unknown, fallback = 0) {
   return fallback;
 }
 
-function normalizeVariantName(size: string, color: string) {
-  return [size, color].filter(Boolean).join(' / ') || 'Option';
-}
-
-function mapVariants(product: Product): VariantOption[] {
-  return (product.variants ?? [])
-    .map((variant) => {
-      const size = variant.size ?? '';
-      const color = variant.color ?? '';
-      const name = normalizeVariantName(size, color);
-      const price = toFiniteNumber(variant.price, product.price);
-      const stock = toFiniteNumber(variant.stock, 0);
-
-      return {
-        id: variant.id,
-        name,
-        price,
-        stock,
-        sku: variant.sku || undefined,
-        image: variant.image || null,
-        attributes: {
-          ...(size ? { size } : {}),
-          ...(color ? { color } : {}),
-        },
-      };
-    })
-    .filter((variant) => variant.id);
-}
-
-function getCardPrice(product: Product) {
+function getCardPrice(product: ContextProduct) {
   const salePrice = toFiniteNumber(product.salePrice, 0);
   const basePrice = toFiniteNumber(product.price, 0);
   const price = salePrice > 0 && salePrice < basePrice ? salePrice : basePrice;
@@ -73,7 +44,7 @@ function getCardPrice(product: Product) {
   return { price, originalPrice };
 }
 
-function isActiveFlashSale(product: Product, now = Date.now()) {
+function isActiveFlashSale(product: ContextProduct, now = Date.now()) {
   if (!product.flashSaleEligible || !product.offerStartDate || !product.offerEndDate) return false;
 
   const startsAt = new Date(product.offerStartDate).getTime();
@@ -84,7 +55,7 @@ function isActiveFlashSale(product: Product, now = Date.now()) {
   return startsAt <= now && endsAt >= now;
 }
 
-function getNearestOfferEnd(products: Product[]) {
+function getNearestOfferEnd(products: ContextProduct[]) {
   const activeEndTimes = products
     .filter((product) => isActiveFlashSale(product))
     .map((product) => product.offerEndDate)
@@ -97,36 +68,54 @@ function getNearestOfferEnd(products: Product[]) {
   return new Date(Math.min(...activeEndTimes)).toISOString();
 }
 
-function mapProduct(product: Product): HomeProductCardData {
-  const variants = mapVariants(product);
+function mapProduct(product: ContextProduct): ShopProduct {
+  const baseShopProduct = adminProductToShopProduct(product);
   const { price, originalPrice } = getCardPrice(product);
   const discountPercentage = toFiniteNumber(product.discountPercentage, 0);
+  const discount = discountPercentage > 0
+    ? discountPercentage
+    : originalPrice && originalPrice > price
+      ? Math.round(((originalPrice - price) / originalPrice) * 100)
+      : undefined;
+
+  const variants: ProductVariant[] = (product.variants ?? []).map((variant) => {
+    const size = variant.size ?? '';
+    const color = variant.color ?? '';
+    const name = [color, size].filter(Boolean).join(' ') || variant.sku || 'Option';
+    const option = color ? 'Shade' : size ? 'Size' : 'Option';
+    const value = name;
+    const variantPrice = toFiniteNumber(variant.price, price);
+    const variantStock = toFiniteNumber(variant.stock, 0);
+
+    return {
+      id: variant.id,
+      name,
+      option,
+      value,
+      price: variantPrice,
+      originalPrice,
+      stock: variantStock,
+      sku: variant.sku || '',
+      image: variant.image || undefined,
+    };
+  });
+
+  const slug = product.slug || product.urlSlug || baseShopProduct.slug;
 
   return {
-    id: product.id,
-    slug: product.slug,
-    urlSlug: product.urlSlug,
-    href: productPath(product),
-    name: product.name,
-    category: product.category,
-    brand: product.brand,
+    ...baseShopProduct,
+    slug,
     price,
     originalPrice,
-    discount: discountPercentage > 0 ? discountPercentage : undefined,
-    image: product.image,
+    discount,
     stock: toFiniteNumber(product.stock, 0),
-    lowStockThreshold: toFiniteNumber(product.lowStockThreshold, 5),
-    rating: product.rating,
-    reviews: product.reviews,
-    soldCount: product.soldCount,
-    isNew: product.isNew,
-    featured: product.featured,
+    rating: toFiniteNumber(product.rating, 0),
+    reviewCount: toFiniteNumber(product.reviews, 0),
+    hasVariants: variants.length > 0 || Boolean(product.variantCount && product.variantCount > 0),
+    variants,
     flashSaleEligible: product.flashSaleEligible,
     offerEndDate: product.offerEndDate,
-    hasVariants: variants.length > 0 || Boolean(product.variantCount && product.variantCount > 0),
-    variantCount: product.variantCount ?? variants.length,
-    variantsFullyLoaded: product.variantsFullyLoaded ?? true,
-    variants,
+    isBestSeller: Boolean(product.featured || (product.soldCount && product.soldCount > 20) || product.rating >= 4.5),
   };
 }
 
@@ -181,16 +170,20 @@ function selectedSet(section: HomeSection, key: 'selectedProductIds' | 'selected
   return new Set((section.settings[key] ?? []).map((item) => item.toLowerCase()));
 }
 
-function filterSelectedProducts(products: HomeProductCardData[], section: HomeSection) {
+function filterSelectedProducts(products: ShopProduct[], section: HomeSection) {
   const selected = selectedSet(section, 'selectedProductIds');
   if (selected.size === 0) return null;
 
   return products
-    .filter((product) => selected.has(product.id.toLowerCase()) || selected.has((product.slug ?? '').toLowerCase()) || selected.has((product.urlSlug ?? '').toLowerCase()))
+    .filter((product) => 
+      selected.has(product.id.toLowerCase()) || 
+      selected.has(product.slug.toLowerCase()) || 
+      ((product as any).urlSlug && selected.has(String((product as any).urlSlug).toLowerCase()))
+    )
     .sort((a, b) => {
       const selectedIds = section.settings.selectedProductIds ?? [];
-      const indexA = selectedIds.findIndex((id) => id === a.id || id === a.slug || id === a.urlSlug);
-      const indexB = selectedIds.findIndex((id) => id === b.id || id === b.slug || id === b.urlSlug);
+      const indexA = selectedIds.findIndex((id) => id === a.id || id === a.slug || id === (a as any).urlSlug);
+      const indexB = selectedIds.findIndex((id) => id === b.id || id === b.slug || id === (b as any).urlSlug);
       return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
     });
 }
@@ -205,7 +198,7 @@ function getProductsForSection({
   createdAtById,
 }: {
   section: HomeSection;
-  cardProducts: HomeProductCardData[];
+  cardProducts: ShopProduct[];
   createdAtById: Map<string, string>;
 }) {
   const manualProducts = filterSelectedProducts(cardProducts, section);
@@ -234,7 +227,7 @@ function getProductsForSection({
 
   if (type === 'favourites') {
     return [...cardProducts]
-      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
+      .sort((a, b) => Number(Boolean(b.isTrending || b.isBestSeller)) - Number(Boolean(a.isTrending || a.isBestSeller)))
       .slice(0, limit);
   }
 
@@ -242,37 +235,40 @@ function getProductsForSection({
 }
 
 function gridClass(section: HomeSection) {
-  if (section.settings.layout === 'grid-3') return 'grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6 md:gap-4';
-  if (section.settings.layout === 'grid-4') return 'grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-6';
-  return 'grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-6';
+  if (section.settings.layout === 'grid-3') return 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4';
+  if (section.settings.layout === 'grid-4') return 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4';
+  return 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4';
 }
 
-function ProductGrid({ section, products }: { section: HomeSection; products: HomeProductCardData[] }) {
+function ProductGrid({ section, products }: { section: HomeSection; products: ShopProduct[] }) {
   if (products.length === 0) return null;
 
   if (section.settings.layout === 'horizontal-scroll') {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-        {products.map((product) => (
-          <div key={product.id} className="w-44 shrink-0 sm:w-52">
-            <HomeProductCard product={product} showCategory={false} />
+      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pt-1">
+        {products.map((product, index) => (
+          <div key={product.id} className="w-[180px] sm:w-[220px] md:w-[250px] shrink-0">
+            <ProductCard
+              product={product}
+              layout="grid"
+              index={index}
+              listName={section.title || section.type}
+            />
           </div>
         ))}
       </div>
     );
   }
 
-  const compact = section.settings.layout === 'grid-3';
-
   return (
     <div className={gridClass(section)}>
-      {products.map((product) => (
-        <HomeProductCard
+      {products.map((product, index) => (
+        <ProductCard
           key={product.id}
           product={product}
-          priority={false}
-          variant={compact ? 'compact' : 'standard'}
-          showCategory={section.type !== 'flash-sale'}
+          layout="grid"
+          index={index}
+          listName={section.title || section.type}
         />
       ))}
     </div>
@@ -290,7 +286,7 @@ function BrandsSection({ section, brands }: { section: HomeSection; brands: Home
   if (filteredBrands.length === 0) return null;
 
   return (
-    <section className="minsah-fade-up px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || DESIGN_TOKEN_VALUES.surface.panel }}>
+    <section className="px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || DESIGN_TOKEN_VALUES.surface.panel }}>
       <SectionHeader
         title={section.title}
         subtitle={section.subtitle}
@@ -320,7 +316,7 @@ export default function HomeProductSections({
   sections,
   brands = defaultBrands,
 }: {
-  products: Product[];
+  products: ContextProduct[];
   sections?: HomeSection[];
   brands?: HomeSectionBrand[];
 }) {
@@ -355,7 +351,7 @@ export default function HomeProductSections({
     if (sectionProducts.length === 0) return null;
 
     return (
-      <section key={section.id} className="minsah-fade-up px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || undefined }}>
+      <section key={section.id} className="px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || undefined }}>
         <SectionHeader
           title={section.title}
           subtitle={section.subtitle}
