@@ -774,15 +774,20 @@ export async function GET(request: NextRequest) {
           email: user?.email || "",
           phone: user?.phone || "",
         },
-        items: order.items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: toNumber(item.price),
-          image: item.productId
-            ? productMap.get(item.productId)?.images?.[0]?.url || ""
-            : "",
-        })),
+        items: order.items.map((item) => {
+          const price = toNumber(item.price);
+          const quantity = item.quantity || 1;
+          return {
+            id: item.id,
+            name: item.name,
+            quantity,
+            price,
+            total: price * quantity,
+            image: item.productId
+              ? productMap.get(item.productId)?.images?.[0]?.url || ""
+              : "",
+          };
+        }),
         total: toNumber(order.total),
         shippingCost: toNumber(order.shippingCost),
         courierDeliveryCharge:

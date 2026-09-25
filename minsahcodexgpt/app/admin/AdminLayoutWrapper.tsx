@@ -202,7 +202,14 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   const pathname = usePathname();
   const { user, logout, hasPermission, isLoading } = useAdminAuth();
   const isInboxPage = pathname.startsWith('/admin/inbox');
+  const isOrdersPage = pathname.startsWith('/admin/orders');
   const [inboxChromeHidden, setInboxChromeHidden] = useState(false);
+
+  useEffect(() => {
+    const handleOpenSidebar = () => setSidebarOpen(true);
+    window.addEventListener('open-admin-sidebar', handleOpenSidebar);
+    return () => window.removeEventListener('open-admin-sidebar', handleOpenSidebar);
+  }, []);
 
   useEffect(() => {
     if (isInboxPage) {
@@ -572,7 +579,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
   return (
     <div
       lang="en"
-      className="admin-workspace min-h-screen bg-[#0b0d14] flex"
+      className={clsx(
+        "admin-workspace min-h-screen flex",
+        isOrdersPage ? "bg-[#051424]" : "bg-[#0b0d14]"
+      )}
       style={{
         fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       }}
@@ -581,7 +591,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
         <>
           <aside
             aria-label="Admin navigation"
-            className="hidden h-screen w-[240px] shrink-0 bg-[#090a0f] border-r border-[#232636] lg:block select-none"
+            className={clsx(
+              "hidden h-screen w-[240px] shrink-0 border-r select-none lg:block",
+              isOrdersPage ? "bg-[#051424] border-[#1f2f45]" : "bg-[#090a0f] border-[#232636]"
+            )}
           >
             {renderSidebarContent('desktop')}
           </aside>
@@ -592,18 +605,25 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
             size="sm"
             ariaLabel="Admin navigation"
             showCloseButton={false}
-            bodyClassName="p-0 sm:p-0 bg-[#090a0f]"
-            panelClassName="max-w-[260px] w-[80vw] bg-[#090a0f] border-r border-[#232636]"
+            bodyClassName={clsx("p-0 sm:p-0", isOrdersPage ? "bg-[#051424]" : "bg-[#090a0f]")}
+            panelClassName={clsx("max-w-[260px] w-[80vw] border-r", isOrdersPage ? "bg-[#051424] border-[#1f2f45]" : "bg-[#090a0f] border-[#232636]")}
           >
             {renderSidebarContent('mobile')}
           </Drawer>
         </>
       ) : null}
 
-      {/* Main workspace container with Linear's signature rounded-tl frame */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#10121b] lg:rounded-tl-xl lg:border-t lg:border-l lg:border-[#232636] overflow-hidden">
-        {/* Top Header / Toolbar */}
-        {!inboxChromeHidden && (
+      {/* Main workspace container with Stitch/Linear seamless frame */}
+      <div
+        className={clsx(
+          "flex-1 flex flex-col min-w-0 overflow-hidden",
+          isOrdersPage
+            ? "bg-[#051424]"
+            : "bg-[#10121b] lg:rounded-tl-xl lg:border-t lg:border-l lg:border-[#232636]"
+        )}
+      >
+        {/* Top Header / Toolbar (suppressed on orders page to avoid double header stacking) */}
+        {!inboxChromeHidden && !isOrdersPage && (
           <header className="h-11 bg-[#10121b] border-b border-[#232636] px-3 sm:px-4 flex items-center justify-between shrink-0 select-none">
             <div className="flex items-center space-x-2">
               <Button
@@ -667,15 +687,18 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
         {/* Page content */}
         <main
           className={clsx(
-            'flex-1 overflow-y-auto bg-[#10121b] text-[#f7f8f8]',
+            'flex-1 overflow-y-auto',
+            isOrdersPage
+              ? 'bg-[#051424] text-[#d4e4fa]'
+              : 'bg-[#10121b] text-[#f7f8f8]',
             inboxChromeHidden && 'bg-transparent'
           )}
         >
           {children}
         </main>
 
-        {/* Bottom Status Bar (matching Linear) */}
-        {!inboxChromeHidden && (
+        {/* Bottom Status Bar (suppressed on orders page) */}
+        {!inboxChromeHidden && !isOrdersPage && (
           <div className="h-7 border-t border-[#232636] bg-[#10121b] px-3.5 flex items-center justify-between text-[11px] text-[#8a8f98]/60 shrink-0 select-none">
             <div className="flex items-center gap-2">
               <span>Minsah Admin</span>

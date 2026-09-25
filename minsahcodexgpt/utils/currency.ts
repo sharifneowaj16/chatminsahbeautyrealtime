@@ -18,6 +18,11 @@ export function formatPrice(
     locale?: string;
   } = {}
 ): string {
+  const safeAmount =
+    typeof amount === "number" && Number.isFinite(amount)
+      ? amount
+      : Number(amount) || 0;
+
   const {
     showSymbol = true,
     showCode = false,
@@ -25,18 +30,18 @@ export function formatPrice(
   } = options;
 
   if (showSymbol && showCode) {
-    return `${CURRENCY_SYMBOL}${amount.toLocaleString(locale)} ${CURRENCY_CODE}`;
+    return `${CURRENCY_SYMBOL}${safeAmount.toLocaleString(locale)} ${CURRENCY_CODE}`;
   }
 
   if (showSymbol) {
-    return `${CURRENCY_SYMBOL}${amount.toLocaleString(locale)}`;
+    return `${CURRENCY_SYMBOL}${safeAmount.toLocaleString(locale)}`;
   }
 
   if (showCode) {
-    return `${amount.toLocaleString(locale)} ${CURRENCY_CODE}`;
+    return `${safeAmount.toLocaleString(locale)} ${CURRENCY_CODE}`;
   }
 
-  return amount.toLocaleString(locale);
+  return safeAmount.toLocaleString(locale);
 }
 
 /**

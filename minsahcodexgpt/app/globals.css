@@ -1761,3 +1761,58 @@ img {
   background-color: rgba(255, 255, 255, 0.5);
 }
 
+/* ========================================================================= */
+/* Minsah Beauty Orders Management Design System (Stitch Parity)            */
+/* ========================================================================= */
+
+/* Custom 6px dark scrollbars without layout shift */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #051424;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2f45;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2e4463;
+}
+
+/* Custom interactive focus ring */
+.custom-ring:focus-visible {
+  outline: 2px solid #5E6AD2;
+  outline-offset: 1px;
+}
+
+/* Slide-over Drawer Sheet keyframe animation */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-in.slide-in-from-right {
+  animation: slideInFromRight 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slide-up Bottom Sheet keyframe animation for mobile */
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-in.slide-in-from-bottom {
+  animation: slideInFromBottom 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
