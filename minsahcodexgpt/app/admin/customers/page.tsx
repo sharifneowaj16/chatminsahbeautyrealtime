@@ -280,7 +280,7 @@ export default function CustomersPage() {
                 selectedCustomers.forEach(id => handleStatusUpdate(id, 'suspended'));
                 setSelectedCustomers([]);
               }}
-              className="px-3 py-1.5 text-xs bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/30 rounded-md hover:bg-[#f59e0b]/25 transition"
+              className="px-4 py-1.5 text-xs bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/30 rounded-md hover:bg-[#f59e0b]/25 transition"
             >
               Suspend Selected
             </Button>
@@ -289,7 +289,7 @@ export default function CustomersPage() {
                 selectedCustomers.forEach(id => handleStatusUpdate(id, 'active'));
                 setSelectedCustomers([]);
               }}
-              className="px-3 py-1.5 text-xs bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30 rounded-md hover:bg-[#10b981]/25 transition"
+              className="px-4 py-1.5 text-xs bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30 rounded-md hover:bg-[#10b981]/25 transition"
             >
               Activate Selected
             </Button>
@@ -493,7 +493,7 @@ export default function CustomersPage() {
             <Button
               onClick={() => fetchCustomers(pagination.page - 1)}
               disabled={pagination.page <= 1}
-              className="px-2.5 py-1 text-xs border border-[#232636] bg-[#161824] text-[#f7f8f8] rounded-md disabled:opacity-40 hover:bg-[#1b1e2c] transition"
+              className="px-4 py-1.5 text-xs border border-[#232636] bg-[#161824] text-[#f7f8f8] rounded-md disabled:opacity-40 hover:bg-[#1b1e2c] transition"
             >
               Previous
             </Button>
@@ -505,7 +505,7 @@ export default function CustomersPage() {
                   key={p}
                   onClick={() => fetchCustomers(p)}
                   className={clsx(
-                    'px-2.5 py-1 text-xs rounded-md transition',
+                    'px-3.5 py-1.5 text-xs rounded-md transition min-w-[32px] justify-center',
                     p === pagination.page
                       ? 'bg-[#5e6ad2] text-white'
                       : 'border border-[#232636] bg-[#161824] text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#1b1e2c]'
@@ -518,7 +518,7 @@ export default function CustomersPage() {
             <Button
               onClick={() => fetchCustomers(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
-              className="px-2.5 py-1 text-xs border border-[#232636] bg-[#161824] text-[#f7f8f8] rounded-md disabled:opacity-40 hover:bg-[#1b1e2c] transition"
+              className="px-4 py-1.5 text-xs border border-[#232636] bg-[#161824] text-[#f7f8f8] rounded-md disabled:opacity-40 hover:bg-[#1b1e2c] transition"
             >
               Next
             </Button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import {
   Order,
   TimelineEvent,
@@ -350,15 +351,16 @@ export default function OrderDetailDrawer({
           <div className="flex items-center gap-1.5">
             {/* Print Options Dropdown Matching Stitch */}
             <div className="relative group">
-              <button
-                type="button"
-                className="p-1.5 rounded-md hover:bg-[#1c2b3c] text-[#d4e4fa] hover:text-white transition-colors flex items-center gap-1 border border-[#1f2f45] bg-[#122131] cursor-pointer"
+              <Button
+                variant="unstyled"
+                size="sm"
+                className="hover:bg-[#1c2b3c] text-[#d4e4fa] hover:text-white border border-[#1f2f45] bg-[#122131] cursor-pointer"
                 title="Print Options"
               >
                 <Printer className="w-4 h-4 text-[#8C98FB]" />
                 <span className="text-[11px] font-semibold text-white">Print</span>
                 <ChevronDown className="w-3 h-3 text-[#908fa0]" />
-              </button>
+              </Button>
               <div className="absolute right-0 top-full mt-1 w-64 bg-[#0d1c2d] border border-[#1f2f45] rounded-lg shadow-2xl p-1.5 z-50 space-y-1 hidden group-hover:block transition-all">
                 <div className="px-2 py-1 text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider border-b border-[#1f2f45]/70">
                   Print Templates
@@ -1184,51 +1186,51 @@ export default function OrderDetailDrawer({
                 </div>
 
                 {/* Quick Filter Pills with Dynamic Counts */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#1f2f45]">
-                  <button
-                    type="button"
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#1f2f45]">
+                  <Button
                     onClick={() => setTimelineFilter("all")}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
+                    variant="unstyled"
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       timelineFilter === "all"
-                        ? "bg-[#5E6AD2] text-white shadow-sm"
+                        ? "bg-[#5E6AD2] text-white shadow-sm shadow-indigo-900/30"
                         : "bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45]"
                     }`}
                   >
                     All Events ({allTimelineEvents.length})
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={() => setTimelineFilter("logistics")}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all cursor-pointer ${
+                    variant="unstyled"
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                       timelineFilter === "logistics"
-                        ? "bg-[#5E6AD2] text-white shadow-sm"
+                        ? "bg-[#5E6AD2] text-white shadow-sm shadow-indigo-900/30"
                         : "bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45]"
                     }`}
                   >
                     Courier / Logistics ({logisticsEvents.length})
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={() => setTimelineFilter("payment")}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all cursor-pointer ${
+                    variant="unstyled"
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                       timelineFilter === "payment"
-                        ? "bg-[#5E6AD2] text-white shadow-sm"
+                        ? "bg-[#5E6AD2] text-white shadow-sm shadow-indigo-900/30"
                         : "bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45]"
                     }`}
                   >
                     Payment & Gateway ({paymentEvents.length})
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={() => setTimelineFilter("staff")}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all cursor-pointer ${
+                    variant="unstyled"
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                       timelineFilter === "staff"
-                        ? "bg-[#5E6AD2] text-white shadow-sm"
+                        ? "bg-[#5E6AD2] text-white shadow-sm shadow-indigo-900/30"
                         : "bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45]"
                     }`}
                   >
                     Staff Actions ({staffEvents.length})
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -1287,39 +1289,39 @@ export default function OrderDetailDrawer({
                   <span className="text-[10px] text-[#908fa0]">Logged as MA</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
+                  <Button
                     onClick={() => setCustomActivityType("note")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium cursor-pointer ${
+                    variant="unstyled"
+                    className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       customActivityType === "note"
                         ? "bg-[#5E6AD2]/20 text-indigo-300 border border-[#5E6AD2]/30"
                         : "bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] border border-[#1f2f45]"
                     }`}
                   >
                     Note
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={() => setCustomActivityType("call")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium cursor-pointer ${
+                    variant="unstyled"
+                    className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       customActivityType === "call"
                         ? "bg-[#5E6AD2]/20 text-indigo-300 border border-[#5E6AD2]/30"
                         : "bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] border border-[#1f2f45]"
                     }`}
                   >
                     Call Log
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={() => setCustomActivityType("courier")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium cursor-pointer ${
+                    variant="unstyled"
+                    className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       customActivityType === "courier"
                         ? "bg-[#5E6AD2]/20 text-indigo-300 border border-[#5E6AD2]/30"
                         : "bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] border border-[#1f2f45]"
                     }`}
                   >
                     Courier Issue
-                  </button>
+                  </Button>
                 </div>
                 <textarea
                   value={customActivityText}
@@ -1329,14 +1331,15 @@ export default function OrderDetailDrawer({
                   rows={2}
                 />
                 <div className="flex justify-end">
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleAddActivity}
                     disabled={!customActivityText.trim()}
-                    className="px-3 py-1 rounded bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-[11px] font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-40"
+                    variant="unstyled"
+                    size="sm"
+                    className="bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-[11px] font-semibold shadow-sm cursor-pointer disabled:opacity-40"
                   >
                     Post Update
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1345,8 +1348,7 @@ export default function OrderDetailDrawer({
 
         {/* Drawer Footer Action Bar (Sticky Bottom) */}
         <div className="p-4 border-t border-[#1f2f45] bg-[#071628] flex items-center gap-3 sticky bottom-0 shrink-0">
-          <button
-            type="button"
+          <Button
             onClick={async () => {
               setUpdating(true);
               try {
@@ -1366,7 +1368,9 @@ export default function OrderDetailDrawer({
               order.status === "completed" ||
               order.status === "cancelled"
             }
-            className="flex-1 py-2 rounded-md bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition-all custom-ring flex items-center justify-center gap-2 disabled:opacity-50"
+            variant="unstyled"
+            size="md"
+            className="flex-1 bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white font-semibold shadow-md shadow-indigo-500/20 custom-ring disabled:opacity-50"
           >
             {updating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1378,9 +1382,8 @@ export default function OrderDetailDrawer({
                 ? "Mark As Delivered"
                 : "Mark As Shipped"}
             </span>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={() => {
               if (
                 window.confirm(
@@ -1395,10 +1398,12 @@ export default function OrderDetailDrawer({
               order.status === "cancelled" ||
               order.status === "completed"
             }
-            className="py-2 px-4 rounded-md bg-[#122131] hover:bg-rose-950/40 text-rose-300 border border-rose-500/30 text-xs font-medium transition-all disabled:opacity-50"
+            variant="unstyled"
+            size="md"
+            className="bg-[#122131] hover:bg-rose-950/40 text-rose-300 border border-rose-500/30 font-medium disabled:opacity-50"
           >
             Cancel Order
-          </button>
+          </Button>
         </div>
       </div>
     </>

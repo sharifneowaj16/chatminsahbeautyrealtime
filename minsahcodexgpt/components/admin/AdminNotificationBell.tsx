@@ -212,7 +212,7 @@ export default function AdminNotificationBell() {
                     size="sm"
                     onClick={markAllRead}
                     disabled={loading}
-                    className="px-2 text-xs text-white hover:bg-transparent hover:text-white-hover"
+                    className="px-3.5 text-xs text-white hover:bg-transparent hover:text-white-hover"
                   >
                     <Check className="w-3 h-3 mr-1" aria-hidden="true" />
                     Mark read

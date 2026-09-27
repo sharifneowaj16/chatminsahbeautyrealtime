@@ -222,9 +222,9 @@ export default function InventoryPage() {
           <p className="text-xs text-[#8A8F98] mt-0.5">Realtime stock, supplier, shortlist, and purchase-rate control in one place.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => setSupplierModalOpen(true)} className="h-8 rounded-lg border border-[#232636] bg-white/[0.05] px-3 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98]">Supplier Add</Button>
-          <Button type="button" onClick={() => setPurchaseOrderModalOpen(true)} className="h-8 rounded-lg bg-[#5e6ad2] hover:bg-[#6d78d5] text-white px-3.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]">Purchase Order</Button>
-          <Button type="button" onClick={() => refreshWorkspace(true)} disabled={refreshing} className="h-8 inline-flex items-center rounded-lg border border-[#232636] bg-white/[0.05] px-3 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98] disabled:opacity-50">
+          <Button type="button" onClick={() => setSupplierModalOpen(true)} className="h-8 rounded-lg border border-[#232636] bg-white/[0.05] px-4 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98]">Supplier Add</Button>
+          <Button type="button" onClick={() => setPurchaseOrderModalOpen(true)} className="h-8 rounded-lg bg-[#5e6ad2] hover:bg-[#6d78d5] text-white px-4.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]">Purchase Order</Button>
+          <Button type="button" onClick={() => refreshWorkspace(true)} disabled={refreshing} className="h-8 inline-flex items-center rounded-lg border border-[#232636] bg-white/[0.05] px-4 text-xs font-medium text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.98] disabled:opacity-50">
             <RefreshCw className={clsx('mr-1.5 h-3.5 w-3.5', refreshing && 'animate-spin')} />
             Refresh
           </Button>
@@ -282,11 +282,11 @@ export default function InventoryPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs font-semibold text-[#F7F8F8]">{selectedIds.length} products selected</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" onClick={() => openBulkModal('add')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Add</Button>
-                  <Button type="button" onClick={() => openBulkModal('remove')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Remove</Button>
-                  <Button type="button" onClick={() => openBulkModal('set')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Qty</Button>
-                  <Button type="button" onClick={() => openBulkModal('reorder')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-2.5 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Reorder</Button>
-                  <Button type="button" onClick={() => setSelectedIds([])} className="h-7 rounded-md px-2.5 text-xs text-[#8A8F98] hover:text-white transition-all active:scale-[0.97]">Clear</Button>
+                  <Button type="button" onClick={() => openBulkModal('add')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-4 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Add</Button>
+                  <Button type="button" onClick={() => openBulkModal('remove')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-4 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Bulk Remove</Button>
+                  <Button type="button" onClick={() => openBulkModal('set')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-4 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Qty</Button>
+                  <Button type="button" onClick={() => openBulkModal('reorder')} className="h-7 rounded-md border border-[#232636] bg-white/[0.05] px-4 text-xs text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]">Set Reorder</Button>
+                  <Button type="button" onClick={() => setSelectedIds([])} className="h-7 rounded-md px-3.5 text-xs text-[#8A8F98] hover:text-white transition-all active:scale-[0.97]">Clear</Button>
                 </div>
               </div>
             </div>
@@ -421,7 +421,7 @@ export default function InventoryPage() {
                     <td className="px-4 py-4 text-sm text-[#D0D6E0]">{po.supplier.name} ({po.supplier.code})</td>
                     <td className="px-4 py-4 text-sm text-[#D0D6E0]">{formatPrice(convertUSDtoBDT(po.totalAmount))}</td>
                     <td className="px-4 py-4 text-sm"><span className="rounded-full bg-white/[0.04] border border-[#232636] px-3 py-1 text-xs font-medium text-[#8A8F98]">{po.status.replace(/_/g, ' ')}</span></td>
-                    <td className="px-4 py-4">{po.status !== 'RECEIVED' && <button type="button" onClick={() => handleReceivePurchaseOrder(po.id)} className="inline-flex items-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]"><Truck className="mr-1.5 h-3.5 w-3.5" />Receive</button>}</td>
+                    <td className="px-4 py-4">{po.status !== 'RECEIVED' && <button type="button" onClick={() => handleReceivePurchaseOrder(po.id)} className="inline-flex items-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]"><Truck className="mr-1.5 h-3.5 w-3.5" />Receive</button>}</td>
                   </tr>
                 ))}
               </tbody>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Button } from "@/components/ui/Button";
 import { useAdminAuth, PERMISSIONS } from "@/contexts/AdminAuthContext";
 import { useToast } from "@/components/ui/ToastProvider";
 import {
@@ -536,10 +537,11 @@ export default function OrdersPage() {
 
           {/* Top Right Action Cluster */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
               onClick={() => fetchOrders(pagination.page, true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#0d1c2d] hover:bg-[#122131] text-[#d4e4fa] border border-[#1f2f45] hover:border-[#2c3e58] transition-all cursor-pointer"
+              variant="unstyled"
+              size="md"
+              className="bg-[#0d1c2d] hover:bg-[#122131] text-[#d4e4fa] border border-[#1f2f45] hover:border-[#2c3e58] cursor-pointer"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 text-[#908fa0] ${
@@ -547,18 +549,19 @@ export default function OrdersPage() {
                 }`}
               />
               <span>Refresh</span>
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#0d1c2d] hover:bg-[#122131] text-[#d4e4fa] border border-[#1f2f45] hover:border-[#2c3e58] transition-all cursor-pointer"
+              variant="unstyled"
+              size="md"
+              className="bg-[#0d1c2d] hover:bg-[#122131] text-[#d4e4fa] border border-[#1f2f45] hover:border-[#2c3e58] cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-[#908fa0]" />
               <span>Export CSV</span>
-            </button>
+            </Button>
             <Link
               href="/admin/orders/new"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white shadow-md shadow-indigo-500/25 transition-all cursor-pointer"
+              className="h-8 min-h-8 rounded-md px-5 py-1.5 inline-flex items-center justify-center gap-1.5 text-xs font-semibold bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white shadow-md shadow-indigo-500/25 transition-all cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Create Order</span>
@@ -852,8 +855,7 @@ export default function OrdersPage() {
 
             {/* Reset Button */}
             {(statusFilter || paymentFilter || dateRange || search) && (
-              <button
-                type="button"
+              <Button
                 onClick={() => {
                   setStatusFilter("");
                   setPaymentFilter("");
@@ -861,21 +863,23 @@ export default function OrdersPage() {
                   setSearch("");
                   setSortBy("created");
                 }}
-                className="px-2.5 py-1.5 text-xs text-[#908fa0] hover:text-white flex items-center gap-1.5 hover:bg-[#0d1c2d] border border-[#1f2f45] rounded-md transition-all cursor-pointer"
+                variant="unstyled"
+                size="sm"
+                className="text-[#908fa0] hover:text-white hover:bg-[#0d1c2d] border border-[#1f2f45] cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Reset</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {/* ── Mobile Horizontal Filter Chips Bar (Matching Stitch Screen 9) ── */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4 lg:hidden">
-          <button
-            type="button"
+          <Button
             onClick={() => setStatusFilter("")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+            variant="unstyled"
+            className={`flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               !statusFilter
                 ? "bg-[#e91e63] text-white shadow-sm shadow-[#e91e63]/25"
                 : "bg-[#0d1c2d] text-[#908fa0] hover:text-white border border-[#1f2f45]"
@@ -891,14 +895,14 @@ export default function OrdersPage() {
             >
               {pagination.total || orders.length}
             </span>
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
             onClick={() =>
               setStatusFilter(statusFilter === "pending" ? "" : "pending")
             }
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+            variant="unstyled"
+            className={`flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               statusFilter === "pending"
                 ? "bg-[#e91e63] text-white shadow-sm shadow-[#e91e63]/25"
                 : "bg-[#0d1c2d] text-[#908fa0] hover:text-white border border-[#1f2f45]"
@@ -915,14 +919,14 @@ export default function OrdersPage() {
             >
               {stats.pending}
             </span>
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
             onClick={() =>
               setStatusFilter(statusFilter === "processing" ? "" : "processing")
             }
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+            variant="unstyled"
+            className={`flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               statusFilter === "processing"
                 ? "bg-[#e91e63] text-white shadow-sm shadow-[#e91e63]/25"
                 : "bg-[#0d1c2d] text-[#908fa0] hover:text-white border border-[#1f2f45]"
@@ -939,14 +943,14 @@ export default function OrdersPage() {
             >
               {stats.processing}
             </span>
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
             onClick={() =>
               setStatusFilter(statusFilter === "shipped" ? "" : "shipped")
             }
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+            variant="unstyled"
+            className={`flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               statusFilter === "shipped"
                 ? "bg-[#e91e63] text-white shadow-sm shadow-[#e91e63]/25"
                 : "bg-[#0d1c2d] text-[#908fa0] hover:text-white border border-[#1f2f45]"
@@ -963,14 +967,14 @@ export default function OrdersPage() {
             >
               {stats.shipped}
             </span>
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
             onClick={() =>
               setStatusFilter(statusFilter === "delivered" ? "" : "delivered")
             }
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+            variant="unstyled"
+            className={`flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               statusFilter === "delivered"
                 ? "bg-[#e91e63] text-white shadow-sm shadow-[#e91e63]/25"
                 : "bg-[#0d1c2d] text-[#908fa0] hover:text-white border border-[#1f2f45]"
@@ -978,14 +982,14 @@ export default function OrdersPage() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             <span>Delivered</span>
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
             onClick={() =>
               setStatusFilter(statusFilter === "cancelled" ? "" : "cancelled")
             }
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+            variant="unstyled"
+            className={`flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               statusFilter === "cancelled"
                 ? "bg-[#e91e63] text-white shadow-sm shadow-[#e91e63]/25"
                 : "bg-[#0d1c2d] text-[#908fa0] hover:text-white border border-[#1f2f45]"
@@ -993,7 +997,7 @@ export default function OrdersPage() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
             <span>Cancelled</span>
-          </button>
+          </Button>
         </div>
 
         {/* ── Bulk Selection Alert Bar (Screen 1 - Active with selected items) ── */}
@@ -1023,14 +1027,15 @@ export default function OrdersPage() {
                   fetchOrders(pagination.page, true);
                 }}
               />
-              <button
-                type="button"
+              <Button
                 onClick={exportCSV}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#0d1c2d] hover:bg-[#16263d] text-[#d4e4fa] border border-[#1f2f45] text-xs font-medium transition-all cursor-pointer"
+                variant="unstyled"
+                size="sm"
+                className="bg-[#0d1c2d] hover:bg-[#16263d] text-[#d4e4fa] border border-[#1f2f45] cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5 text-[#908fa0]" />
                 <span>Export Selected</span>
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={() => setSelectedIds(new Set())}
@@ -1076,13 +1081,14 @@ export default function OrdersPage() {
             <AlertCircle className="w-10 h-10 text-rose-400 mb-3" />
             <p className="text-white font-medium mb-1">Failed to load orders</p>
             <p className="text-[#908fa0] text-xs mb-4">{error}</p>
-            <button
-              type="button"
+            <Button
               onClick={() => fetchOrders(1)}
-              className="px-3 py-1.5 rounded-md bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-xs font-semibold"
+              variant="unstyled"
+              size="md"
+              className="bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white font-semibold cursor-pointer"
             >
               Try again
-            </button>
+            </Button>
           </div>
         ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-6">
@@ -1269,10 +1275,11 @@ export default function OrdersPage() {
                     {/* Actions Row */}
                     <div className="grid grid-cols-[1fr_1fr_auto] gap-2 pt-1 border-t border-[#1f2f45]">
                       {/* View Details Button */}
-                      <button
-                        type="button"
+                      <Button
                         onClick={() => openOrderDetail(order)}
-                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                        variant="unstyled"
+                        size="sm"
+                        className={`text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
                           isDrawerOpen
                             ? "bg-[#5E6AD2] text-white"
                             : "bg-[#122131] hover:bg-[#1a2c42] text-[#d4e4fa] border border-[#1f2f45]"
@@ -1280,7 +1287,7 @@ export default function OrdersPage() {
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>View Details</span>
-                      </button>
+                      </Button>
 
                       {/* Dispatch / Track Button */}
                       {trackingCode ? (
@@ -1288,43 +1295,46 @@ export default function OrdersPage() {
                           href={`/track?code=${trackingCode}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="py-1.5 px-3 rounded-lg bg-[#06B6D4]/15 hover:bg-[#06B6D4]/25 text-cyan-200 border border-[#06B6D4]/30 text-xs font-medium transition-all flex items-center justify-center gap-1.5"
+                          className="h-7 px-4 rounded-md bg-[#06B6D4]/15 hover:bg-[#06B6D4]/25 text-cyan-200 border border-[#06B6D4]/30 text-xs font-medium transition-all flex items-center justify-center gap-1.5"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           <span>Track</span>
                         </a>
                       ) : order.status === "cancelled" ? (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => openOrderDetail(order)}
-                          className="py-1.5 px-3 rounded-lg bg-[#122131] hover:bg-[#1a2c42] text-[#908fa0] border border-[#1f2f45] text-xs font-semibold transition-all flex items-center justify-center"
+                          variant="unstyled"
+                          size="sm"
+                          className="bg-[#122131] hover:bg-[#1a2c42] text-[#908fa0] border border-[#1f2f45] text-xs font-semibold transition-all flex items-center justify-center cursor-pointer"
                         >
                           Details
-                        </button>
+                        </Button>
                       ) : order.shippingMethod === "pathao" ? (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => {
                             setShipPanelOrder(order);
                             setShipPanelOpen(true);
                           }}
-                          className="py-1.5 px-3 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 border border-rose-500/30 text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          variant="unstyled"
+                          size="sm"
+                          className="bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 border border-rose-500/30 text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <Truck className="w-3.5 h-3.5" />
                           <span>Pathao</span>
-                        </button>
+                        </Button>
                       ) : (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => {
                             setShipPanelOrder(order);
                             setShipPanelOpen(true);
                           }}
-                          className="py-1.5 px-3 rounded-lg bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-900/30"
+                          variant="unstyled"
+                          size="sm"
+                          className="bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-900/30"
                         >
                           <Truck className="w-3.5 h-3.5" />
                           <span>Dispatch</span>
-                        </button>
+                        </Button>
                       )}
 
                       {/* 3-Dots Menu Dropdown */}
@@ -1565,10 +1575,11 @@ export default function OrdersPage() {
                     {/* Col 5: Quick Actions (22%) */}
                     <div className="w-full min-w-0 flex items-center lg:justify-end gap-1.5">
                       {/* View Button with subtle unselected state vs brand active state */}
-                      <button
-                        type="button"
+                      <Button
                         onClick={() => openOrderDetail(order)}
-                        className={`h-8 px-2.5 rounded-md text-xs font-semibold shadow-sm transition-all custom-ring inline-flex items-center gap-1 cursor-pointer shrink-0 ${
+                        variant="unstyled"
+                        size="md"
+                        className={`text-xs font-semibold shadow-sm transition-all custom-ring inline-flex items-center gap-1 cursor-pointer shrink-0 ${
                           isDrawerOpen
                             ? "bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white"
                             : "bg-[#122131] hover:bg-[#1c2b3c] text-[#d4e4fa] border border-[#1f2f45]"
@@ -1576,7 +1587,7 @@ export default function OrdersPage() {
                       >
                         <span>View</span>
                         {isDrawerOpen && <ChevronRight className="w-3.5 h-3.5" />}
-                      </button>
+                      </Button>
 
                       {/* Dynamic Courier Dispatch / Track / Assign Button */}
                       {trackingCode ? (
@@ -1584,46 +1595,49 @@ export default function OrdersPage() {
                           href={`/track?code=${trackingCode}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="h-8 px-2.5 rounded-md bg-[#06B6D4]/15 hover:bg-[#06B6D4]/25 text-cyan-200 border border-[#06B6D4]/30 text-xs font-medium transition-all inline-flex items-center gap-1 shrink-0"
+                          className="h-8 px-5 rounded-md bg-[#06B6D4]/15 hover:bg-[#06B6D4]/25 text-cyan-200 border border-[#06B6D4]/30 text-xs font-medium transition-all inline-flex items-center gap-1 shrink-0"
                           title="Track Parcel on Courier Live"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">Track</span>
                         </a>
                       ) : order.status === "cancelled" ? (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => openOrderDetail(order)}
-                          className="h-8 px-2.5 rounded-md bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45] text-xs font-semibold transition-all cursor-pointer shrink-0"
+                          variant="unstyled"
+                          size="md"
+                          className="bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45] text-xs font-semibold transition-all cursor-pointer shrink-0"
                         >
                           Details
-                        </button>
+                        </Button>
                       ) : order.shippingMethod === "pathao" ? (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => {
                             setShipPanelOrder(order);
                             setShipPanelOpen(true);
                           }}
-                          className="h-8 px-2.5 rounded-md bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 border border-rose-500/30 text-xs font-medium transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
+                          variant="unstyled"
+                          size="md"
+                          className="bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 border border-rose-500/30 text-xs font-medium transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
                           title="Assign Pathao Courier"
                         >
                           <Truck className="w-3.5 h-3.5" />
                           <span>Pathao</span>
-                        </button>
+                        </Button>
                       ) : (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => {
                             setShipPanelOrder(order);
                             setShipPanelOpen(true);
                           }}
-                          className="h-8 px-2.5 rounded-md bg-[#122131] hover:bg-[#1c2b3c] text-orange-400 border border-[#1f2f45] hover:border-orange-500/40 text-xs font-medium transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
+                          variant="unstyled"
+                          size="md"
+                          className="bg-[#122131] hover:bg-[#1c2b3c] text-orange-400 border border-[#1f2f45] hover:border-orange-500/40 text-xs font-medium transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
                           title="Dispatch parcel via Steadfast"
                         >
                           <Truck className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">Dispatch</span>
-                        </button>
+                        </Button>
                       )}
 
                       {/* 3-Dots Menu Dropdown */}
@@ -1729,14 +1743,15 @@ export default function OrdersPage() {
             </div>
 
             <div className="flex items-center gap-1.5 mt-2 sm:mt-0">
-              <button
-                type="button"
+              <Button
                 onClick={() => fetchOrders(pagination.page - 1)}
                 disabled={pagination.page <= 1}
-                className="px-3 py-1 rounded bg-[#0d1c2d] border border-[#1f2f45] text-[#908fa0] hover:text-white disabled:opacity-40 disabled:hover:text-[#908fa0] transition-colors cursor-pointer"
+                variant="unstyled"
+                size="sm"
+                className="bg-[#0d1c2d] border border-[#1f2f45] text-[#908fa0] hover:text-white disabled:opacity-40 disabled:hover:text-[#908fa0] cursor-pointer"
               >
                 Previous
-              </button>
+              </Button>
               <button
                 type="button"
                 className="px-2.5 py-1 rounded bg-[#5E6AD2] text-white font-medium text-xs shadow-xs"
@@ -1764,17 +1779,18 @@ export default function OrdersPage() {
                   </button>
                 </>
               )}
-              <button
-                type="button"
+              <Button
                 onClick={() => fetchOrders(pagination.page + 1)}
                 disabled={
                   pagination.page >= pagination.pages ||
                   pagination.pages === 0
                 }
-                className="px-3 py-1 rounded bg-[#0d1c2d] border border-[#1f2f45] text-[#d4e4fa] hover:text-white hover:bg-[#122131] disabled:opacity-40 disabled:hover:bg-[#0d1c2d] transition-colors cursor-pointer"
+                variant="unstyled"
+                size="sm"
+                className="bg-[#0d1c2d] border border-[#1f2f45] text-[#d4e4fa] hover:text-white hover:bg-[#122131] disabled:opacity-40 disabled:hover:bg-[#0d1c2d] cursor-pointer"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}

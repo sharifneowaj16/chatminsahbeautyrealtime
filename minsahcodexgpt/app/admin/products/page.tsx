@@ -396,13 +396,13 @@ export default function ProductsPage() {
             {selectedProducts.length} product{selectedProducts.length > 1 ? 's' : ''} selected
           </span>
           <div className="flex items-center space-x-2">
-            <Button onClick={() => setSelectedProducts([])} className="h-7 px-2.5 text-xs text-white/60 hover:text-white rounded-md">
+            <Button onClick={() => setSelectedProducts([])} className="h-7 px-3.5 text-xs text-white/60 hover:text-white rounded-md">
               Clear
             </Button>
             {hasPermission(PERMISSIONS.PRODUCTS_DELETE) && (
               <Button
                 onClick={handleBulkDelete}
-                className="h-7 px-2.5 text-xs font-medium bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.15] rounded-md active:scale-[0.97] transition-all"
+                className="h-7 px-4 text-xs font-medium bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.15] rounded-md active:scale-[0.97] transition-all"
               >
                 Delete Selected
               </Button>
@@ -415,7 +415,7 @@ export default function ProductsPage() {
       {fetchError && (
         <div className="linear-card bg-white/[0.04] border border-white/[0.15] rounded-lg p-3 mb-4 flex items-center justify-between">
           <p className="text-xs text-white/80">Failed to load products: {fetchError}</p>
-          <Button onClick={() => fetchProducts()} className="h-7 px-2.5 text-xs bg-[#5e6ad2] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-medium rounded-md">
+          <Button onClick={() => fetchProducts()} className="h-7 px-4 text-xs bg-[#5e6ad2] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-medium rounded-md">
             Retry
           </Button>
         </div>
@@ -623,7 +623,7 @@ export default function ProductsPage() {
                   type="button"
                   disabled={pagination.page <= 1}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-                  className="inline-flex items-center rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[#1b1e2c] transition-colors"
+                  className="inline-flex items-center rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-4 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[#1b1e2c] transition-colors"
                 >
                   <ChevronLeft className="mr-1 h-3.5 w-3.5 text-[#8A8F98]" />
                   Previous
@@ -635,7 +635,7 @@ export default function ProductsPage() {
                   type="button"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => setPagination((prev) => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
-                  className="inline-flex items-center rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[#1b1e2c] transition-colors"
+                  className="inline-flex items-center rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] px-4 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[#1b1e2c] transition-colors"
                 >
                   Next
                   <ChevronRight className="ml-1 h-3.5 w-3.5 text-[#8A8F98]" />

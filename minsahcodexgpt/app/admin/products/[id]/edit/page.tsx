@@ -1754,14 +1754,14 @@ export default function EditProductPage() {
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, deliveryChargeInsideDhaka: '0', deliveryChargeOutsideDhaka: '120', deliveryOfferBadgeText: 'ঢাকার ভেতরে ফ্রি ডেলিভারি' }))}
-                      className="text-xs px-2.5 py-1 rounded bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition"
+                      className="text-xs px-3.5 py-1.5 rounded-lg bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition active:scale-[0.98]"
                     >
                       ⚡ ঢাকার ভেতরে ফ্রি (৳০) + বাইরে ১২০৳
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, deliveryChargeInsideDhaka: '60', deliveryChargeOutsideDhaka: '120', deliveryOfferBadgeText: 'স্পেশাল ডেলিভারি অফার' }))}
-                      className="text-xs px-2.5 py-1 rounded bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition"
+                      className="text-xs px-3.5 py-1.5 rounded-lg bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition active:scale-[0.98]"
                     >
                       ⚡ ভেতরে ৬০৳ + বাইরে ১২০৳
                     </button>

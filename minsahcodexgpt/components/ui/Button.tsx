@@ -54,9 +54,9 @@ const sizes: Record<ButtonSize, string> = {
 
 const adminSizes: Record<ButtonSize, string> = {
   xs: 'h-6 min-h-6 rounded-md px-2 py-0.5 text-[11px] font-medium tracking-tight',
-  sm: 'h-7 min-h-7 rounded-md px-2.5 py-1 text-xs font-medium tracking-tight',
-  md: 'h-8 min-h-8 rounded-md px-3 py-1.5 text-xs font-medium tracking-tight',
-  lg: 'h-9 min-h-9 rounded-md px-4 py-2 text-sm font-medium tracking-tight',
+  sm: 'h-7 min-h-7 rounded-md px-4 py-1 text-xs font-medium tracking-tight',
+  md: 'h-8 min-h-8 rounded-md px-5 py-1.5 text-xs font-medium tracking-tight',
+  lg: 'h-9 min-h-9 rounded-md px-6 py-2 text-sm font-medium tracking-tight',
   icon: 'h-7 min-h-7 w-7 min-w-7 rounded-md p-0',
 };
 

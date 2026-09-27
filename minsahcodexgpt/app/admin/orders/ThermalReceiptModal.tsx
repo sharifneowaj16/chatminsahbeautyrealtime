@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { Order } from "./types";
 import { formatPrice } from "@/utils/currency";
 import { Printer, Copy, Check, Download, X } from "lucide-react";
@@ -395,10 +396,11 @@ export default function ThermalReceiptModal({
           {/* Modal Footer Controls */}
           <div className="px-4 py-3 bg-[#0d1c2d] border-t border-[#1f2f45] flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
                 onClick={handleCopyMemo}
-                className="px-2.5 py-1.5 rounded-md bg-[#122131] hover:bg-[#1c2b3c] text-[#d4e4fa] border border-[#1f2f45] text-xs font-medium transition-all inline-flex items-center gap-1.5"
+                variant="unstyled"
+                size="sm"
+                className="bg-[#122131] hover:bg-[#1c2b3c] text-[#d4e4fa] border border-[#1f2f45] cursor-pointer"
               >
                 {copiedMemo ? (
                   <>
@@ -411,34 +413,37 @@ export default function ThermalReceiptModal({
                     <span>Copy Text Memo</span>
                   </>
                 )}
-              </button>
+              </Button>
 
-              <button
-                type="button"
+              <Button
                 onClick={handleDownloadTxt}
-                className="px-2.5 py-1.5 rounded-md bg-[#122131] hover:bg-[#1c2b3c] text-[#d4e4fa] border border-[#1f2f45] text-xs font-medium transition-all inline-flex items-center gap-1.5"
+                variant="unstyled"
+                size="sm"
+                className="bg-[#122131] hover:bg-[#1c2b3c] text-[#d4e4fa] border border-[#1f2f45] cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5 text-[#908fa0]" />
                 <span>Save .TXT</span>
-              </button>
+              </Button>
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
                 onClick={() => window.print()}
-                className="px-4 py-1.5 rounded-md bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-xs font-semibold shadow-md shadow-indigo-500/25 transition-all inline-flex items-center gap-2"
+                variant="unstyled"
+                size="md"
+                className="bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white font-semibold shadow-md shadow-indigo-500/25 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Print Thermal Slip</span>
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-md bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45] text-xs font-medium transition-all"
+                variant="unstyled"
+                size="sm"
+                className="bg-[#122131] hover:bg-[#1c2b3c] text-[#908fa0] hover:text-white border border-[#1f2f45] cursor-pointer"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>

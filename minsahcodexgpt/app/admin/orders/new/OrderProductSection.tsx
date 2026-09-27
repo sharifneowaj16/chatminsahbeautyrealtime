@@ -312,7 +312,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                             <Button
                               type="button"
                               onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: null }))}
-                              className={`text-xs px-2 py-1 rounded border transition-colors ${
+                              className={`text-xs px-3.5 py-1 rounded-md border transition-colors ${
                                 selVariantId === null
                                   ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] border-admin-primary'
                                   : 'bg-[#161824] text-[#8a8f98] border-[#232636] hover:border-admin-primary'
@@ -325,7 +325,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                                 key={v.id}
                                 type="button"
                                 onClick={() => setSelectedVariants(p => ({ ...p, [product.id]: v.id }))}
-                                className={`text-xs px-2 py-1 rounded border transition-colors ${
+                                className={`text-xs px-3.5 py-1 rounded-md border transition-colors ${
                                   selVariantId === v.id
                                     ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] border-admin-primary'
                                     : 'bg-[#161824] text-[#8a8f98] border-[#232636] hover:border-admin-primary'
@@ -344,7 +344,7 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                     <Button
                       type="button"
                       onClick={() => addDbProduct(product, selVariantId)}
-                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/90 text-white text-xs rounded-lg transition-colors"
+                      className="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] text-xs font-medium rounded-lg transition-colors active:scale-[0.98]"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Add{selVariant ? ` (${formatPrice(selVariant.price)})` : ''}
@@ -503,14 +503,14 @@ export default function OrderProductSection({ orderItems, onChange }: Props) {
                       <Button
                         type="button"
                         onClick={cancelEdit}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs border border-[#232636] text-[#8a8f98] rounded-lg hover:bg-[#10121b] transition-colors"
+                        className="flex items-center gap-1 px-4 py-1.5 text-xs border border-[#232636] text-[#8a8f98] rounded-lg hover:bg-[#10121b] transition-colors"
                       >
                         <X className="w-3.5 h-3.5" /> Cancel
                       </Button>
                       <Button
                         type="button"
                         onClick={() => commitEdit(item.key)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg transition-colors"
+                        className="flex items-center gap-1 px-4 py-1.5 text-xs bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" /> Save
                       </Button>

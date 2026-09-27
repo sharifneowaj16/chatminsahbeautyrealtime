@@ -36,3 +36,4 @@ realtime-service/prisma/generated/
 meta-webhook-search.txt
 phase31-*.txt
 next-env.d.ts
+scratch/

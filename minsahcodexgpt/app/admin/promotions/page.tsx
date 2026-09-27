@@ -457,7 +457,7 @@ export default function UniversalOfferEngineAdminPage() {
                       <button
                         type="button"
                         onClick={() => handleToggleCoupon(idx)}
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
+                        className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                           coupon.isActive
                             ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                             : 'bg-[#10121b] text-[#8A8F98] hover:bg-white/[0.12]'
@@ -1064,7 +1064,7 @@ export default function UniversalOfferEngineAdminPage() {
             <button
               type="button"
               onClick={fetchConfig}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 transition-all"
+              className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 transition-all"
             >
               Discard
             </button>
@@ -1072,7 +1072,7 @@ export default function UniversalOfferEngineAdminPage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/90 text-white transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all shadow-sm active:scale-[0.98]"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Save Changes
