@@ -12,7 +12,8 @@ interface WholesaleTableProps {
   onToggleSelectRow: (skuId: string) => void;
   onAcquireSku: (skuId: string) => void;
   onAssignRunner?: (skuId: string) => void;
-  onOpenRowMenu?: (skuId: string) => void;
+  onTogglePriority?: (skuId: string) => void;
+  onCopyText?: (text: string, label: string) => void;
 }
 
 export default function WholesaleTable({
@@ -21,8 +22,17 @@ export default function WholesaleTable({
   onToggleSelectRow,
   onAcquireSku,
   onAssignRunner,
-  onOpenRowMenu,
+  onTogglePriority,
+  onCopyText,
 }: WholesaleTableProps) {
+  const [openMenuSkuId, setOpenMenuSkuId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const handleGlobalClick = () => setOpenMenuSkuId(null);
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
+
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[#142336] bg-[#071321] shadow-md">
       <table className="w-full table-fixed text-left border-collapse">
@@ -271,7 +281,7 @@ export default function WholesaleTable({
                       <span>{sku.isAcquired ? 'Acquired' : 'Acquire'}</span>
                     </button>
 
-                    <div className="flex items-center gap-1 w-full">
+                    <div className="flex items-center gap-1 w-full relative">
                       <button
                         type="button"
                         onClick={() => onAssignRunner && onAssignRunner(sku.id)}
@@ -282,12 +292,81 @@ export default function WholesaleTable({
                       </button>
                       <button
                         type="button"
-                        onClick={() => onOpenRowMenu && onOpenRowMenu(sku.id)}
-                        className="p-0.5 px-1.5 rounded bg-[#0c1a29] hover:bg-[#13263b] border border-[#182a3d] text-indigo-400 flex items-center justify-center transition-colors cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuSkuId(openMenuSkuId === sku.id ? null : sku.id);
+                        }}
+                        className={`p-0.5 px-1.5 rounded border transition-colors cursor-pointer ${
+                          openMenuSkuId === sku.id
+                            ? 'bg-indigo-600 text-white border-indigo-500'
+                            : 'bg-[#0c1a29] hover:bg-[#13263b] border-[#182a3d] text-indigo-400'
+                        }`}
                         title="Options"
                       >
                         <span className="text-[10px]">⋮</span>
                       </button>
+
+                      {/* Dropdown Popover */}
+                      {openMenuSkuId === sku.id && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-full mt-1 z-50 w-44 rounded-lg bg-[#0a1626] border border-[#1d3350] shadow-2xl py-1 text-left font-mono text-xs animate-in fade-in zoom-in-95 duration-100"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onTogglePriority && onTogglePriority(sku.id);
+                              setOpenMenuSkuId(null);
+                            }}
+                            className="w-full px-2.5 py-1.5 text-left text-slate-200 hover:bg-[#11243d] flex items-center gap-1.5 cursor-pointer text-[11px]"
+                          >
+                            <span>⭐</span>
+                            <span>{sku.priority === 'URGENT' ? 'Set Normal Priority' : 'Mark URGENT Priority'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onCopyText && onCopyText(sku.sku, 'SKU Code');
+                              setOpenMenuSkuId(null);
+                            }}
+                            className="w-full px-2.5 py-1.5 text-left text-slate-200 hover:bg-[#11243d] flex items-center gap-1.5 cursor-pointer text-[11px]"
+                          >
+                            <span>📋</span>
+                            <span>Copy SKU ({sku.sku})</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onCopyText && onCopyText(sku.barcode, 'Barcode');
+                              setOpenMenuSkuId(null);
+                            }}
+                            className="w-full px-2.5 py-1.5 text-left text-slate-200 hover:bg-[#11243d] flex items-center gap-1.5 cursor-pointer text-[11px]"
+                          >
+                            <span>🔢</span>
+                            <span>Copy Barcode</span>
+                          </button>
+                          <a
+                            href={`tel:${sku.vendor.phone.replace(/[^0-9+]/g, '')}`}
+                            onClick={() => setOpenMenuSkuId(null)}
+                            className="w-full px-2.5 py-1.5 text-left text-indigo-300 hover:bg-[#11243d] flex items-center gap-1.5 cursor-pointer text-[11px]"
+                          >
+                            <span>📞</span>
+                            <span>Call Vendor Rep</span>
+                          </a>
+                          <div className="h-px bg-[#16273f] my-1"></div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onAssignRunner && onAssignRunner(sku.id);
+                              setOpenMenuSkuId(null);
+                            }}
+                            className="w-full px-2.5 py-1.5 text-left text-emerald-400 hover:bg-[#11243d] flex items-center gap-1.5 cursor-pointer text-[11px]"
+                          >
+                            <span>🧾</span>
+                            <span>Open in Pick List</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>

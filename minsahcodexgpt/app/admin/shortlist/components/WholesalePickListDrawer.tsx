@@ -144,16 +144,25 @@ export default function WholesalePickListDrawer({
               <span className="text-indigo-400 text-xs">🛣️</span> Optimized Walking Route
             </span>
             <span className="text-emerald-400">
-              {manifest.walkingSteps.length} Stops
+              {manifest.walkingSteps.length} Stop{manifest.walkingSteps.length !== 1 ? 's' : ''}
             </span>
           </div>
 
-          {/* Dynamic Walking Stops */}
-          {manifest.walkingSteps.map((step) => (
-            <div
-              key={step.stepIndex}
-              className="bg-[#0d1525] border border-[#1c2c47] rounded-xl overflow-hidden shadow-lg"
-            >
+          {/* Empty State if no steps */}
+          {manifest.walkingSteps.length === 0 ? (
+            <div className="p-8 text-center rounded-xl bg-[#0d1525] border border-[#1c2c47] text-slate-400 font-mono text-xs space-y-2">
+              <span className="text-2xl block">🛒</span>
+              <p className="text-slate-300 font-bold">No SKUs selected for this manifest</p>
+              <p className="text-[11px] text-slate-500">
+                Select items from the Wholesale Matrix table to generate the walking route.
+              </p>
+            </div>
+          ) : (
+            manifest.walkingSteps.map((step) => (
+              <div
+                key={step.stepIndex}
+                className="bg-[#0d1525] border border-[#1c2c47] rounded-xl overflow-hidden shadow-lg"
+              >
               {/* Stop Header */}
               <div className="bg-[#101b30] px-3.5 py-2 border-b border-[#1c2c47] flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -306,13 +315,27 @@ export default function WholesalePickListDrawer({
                 </div>
               </div>
             </div>
-          ))}
+          ))
+        )}
 
           {/* Verification Checklist Note */}
           <div className="bg-[#0b1220] border border-[#18263d] rounded-xl p-3 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200">
-              <span className="text-indigo-400 text-sm">🛡️</span>
-              <span>Procurement Quality Protocol</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200">
+                <span className="text-indigo-400 text-sm">🛡️</span>
+                <span>Procurement Quality Protocol</span>
+              </div>
+              <span
+                className={`text-[9px] font-mono px-2 py-0.5 rounded border font-bold ${
+                  (protocolChecked && expiryChecked && memoChecked)
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}
+              >
+                {(protocolChecked && expiryChecked && memoChecked)
+                  ? '3/3 Protocol Cleared ✓'
+                  : `${(protocolChecked ? 1 : 0) + (expiryChecked ? 1 : 0) + (memoChecked ? 1 : 0)}/3 Verification Pending`}
+              </span>
             </div>
             <div className="space-y-1.5 text-[11px] text-slate-300 font-mono">
               <label className="flex items-start gap-2 cursor-pointer select-none">

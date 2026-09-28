@@ -27,6 +27,31 @@ export default function ThermalPickSlipDrawer({
 
   return (
     <>
+      {/* 80mm Thermal Receipt Print CSS */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-80mm-slip, #printable-80mm-slip * {
+            visibility: visible !important;
+          }
+          #printable-80mm-slip {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 76mm !important;
+            max-width: 76mm !important;
+            margin: 0 !important;
+            padding: 2mm !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+            color: black !important;
+          }
+        }
+      `}</style>
+
       {/* Secondary Backdrop */}
       <div
         id="thermal-drawer-backdrop"
