@@ -46,6 +46,7 @@ import {
   Phone,
   Eye,
   Menu,
+  CheckCircle2,
 } from "lucide-react";
 
 interface ApiOrderItem {
@@ -100,12 +101,44 @@ export default function OrdersPage() {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string>("processing");
+  const [bulkUpdating, setBulkUpdating] = useState<boolean>(false);
   const [activeMenuOrderId, setActiveMenuOrderId] = useState<string | null>(null);
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
 
   // Steadfast ship panel state
   const [shipPanelOrder, setShipPanelOrder] = useState<Order | null>(null);
   const [shipPanelOpen, setShipPanelOpen] = useState(false);
+
+  // Bulk status update handler
+  const handleBulkStatusUpdate = async () => {
+    if (selectedIds.size === 0 || !bulkStatus) return;
+    try {
+      setBulkUpdating(true);
+      const promises = Array.from(selectedIds).map((id) =>
+        fetch(`/api/admin/orders/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ status: bulkStatus }),
+        }),
+      );
+      await Promise.all(promises);
+      pushToast({
+        tone: "success",
+        description: `Successfully updated ${selectedIds.size} orders to ${bulkStatus}`,
+      });
+      setSelectedIds(new Set());
+      fetchOrders(pagination.page, true);
+    } catch (err: any) {
+      pushToast({
+        tone: "danger",
+        description: err?.message || "Failed to update selected orders",
+      });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
 
   // POS Thermal Receipt preview modal state (Screen 10)
   const [posReceiptOrder, setPosReceiptOrder] = useState<Order | null>(null);
@@ -569,8 +602,8 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* ── 7 KPI Metrics Row (Touch Carousel on Mobile, 7-col Grid on Desktop) ── */}
-        <div className="overflow-x-auto no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 flex lg:grid lg:grid-cols-7 gap-2.5 pt-3.5 pb-2 lg:pb-0">
+        {/* ── 8 KPI Metrics Row (Touch Carousel on Mobile, 8-col Grid on Desktop) ── */}
+        <div className="overflow-x-auto no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 flex lg:grid lg:grid-cols-8 gap-2.5 pt-3.5 pb-2 lg:pb-0">
           {/* Card 1: Pending */}
           <div
             onClick={() =>
@@ -657,6 +690,34 @@ export default function OrdersPage() {
             </div>
           </div>
 
+          {/* Card: Delivered */}
+          <div
+            onClick={() =>
+              setStatusFilter(statusFilter === "delivered" ? "" : "delivered")
+            }
+            className={`bg-[#0d1c2d] hover:bg-[#122131] border rounded-lg p-2.5 cursor-pointer transition-all group shrink-0 w-36 lg:w-auto ${
+              statusFilter === "delivered"
+                ? "border-emerald-500/60 ring-1 ring-emerald-500/30 bg-[#122131]"
+                : "border-[#1f2f45] hover:border-emerald-500/30"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#908fa0] group-hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Delivered
+              </span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#908fa0] group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <div className="mt-1 flex items-baseline justify-between">
+              <span className="text-base font-bold text-white font-mono">
+                {stats.delivered ?? 0}
+              </span>
+              <span className="text-[10px] text-emerald-400/90 font-medium">
+                Completed
+              </span>
+            </div>
+          </div>
+
           {/* Card 4: Revenue */}
           <div className="bg-[#0d1c2d] hover:bg-[#122131] border border-[#1f2f45] rounded-lg p-2.5 transition-all shrink-0 w-40 lg:w-auto">
             <div className="flex items-center justify-between">
@@ -669,9 +730,6 @@ export default function OrdersPage() {
               <span className="text-base font-bold text-white font-mono">
                 <span className="font-sans mr-0.5">৳</span>
                 {stats.totalRevenue.toLocaleString()}
-              </span>
-              <span className="text-[10px] text-emerald-400 font-medium">
-                +14.2%
               </span>
             </div>
           </div>
@@ -795,6 +853,7 @@ export default function OrdersPage() {
                 <option value="shipped">Status: Shipped</option>
                 <option value="completed">Status: Completed</option>
                 <option value="delivered">Status: Delivered</option>
+                <option value="returned">Status: Returned</option>
                 <option value="cancelled">Status: Cancelled</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#908fa0]">
@@ -982,6 +1041,15 @@ export default function OrdersPage() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             <span>Delivered</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-semibold ${
+                statusFilter === "delivered"
+                  ? "bg-white/20 text-white"
+                  : "bg-[#122131] text-emerald-300"
+              }`}
+            >
+              {stats.delivered ?? 0}
+            </span>
           </Button>
 
           <Button
@@ -997,6 +1065,21 @@ export default function OrdersPage() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
             <span>Cancelled</span>
+          </Button>
+
+          <Button
+            onClick={() =>
+              setStatusFilter(statusFilter === "returned" ? "" : "returned")
+            }
+            variant="unstyled"
+            className={`flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              statusFilter === "returned"
+                ? "bg-[#e91e63] text-white shadow-sm shadow-[#e91e63]/25"
+                : "bg-[#0d1c2d] text-[#908fa0] hover:text-white border border-[#1f2f45]"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+            <span>Returned</span>
           </Button>
         </div>
 
@@ -1019,7 +1102,34 @@ export default function OrdersPage() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 bg-[#091524] border border-[#1f2f45] rounded-md px-2 py-1">
+                <select
+                  value={bulkStatus}
+                  onChange={(e) => setBulkStatus(e.target.value)}
+                  className="bg-transparent text-xs text-[#d4e4fa] focus:outline-none cursor-pointer"
+                  disabled={bulkUpdating}
+                >
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <Button
+                  onClick={handleBulkStatusUpdate}
+                  disabled={bulkUpdating}
+                  variant="unstyled"
+                  size="sm"
+                  className="bg-[#5E6AD2] hover:bg-[#4F5BC0] text-white text-[11px] px-2.5 py-1 rounded font-medium disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                >
+                  {bulkUpdating ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    "Update Status"
+                  )}
+                </Button>
+              </div>
+
               <SteadfastBulkDispatch
                 selectedIds={selectedIds}
                 onComplete={() => {

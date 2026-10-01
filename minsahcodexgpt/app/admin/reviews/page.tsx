@@ -6,8 +6,9 @@
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import {
   Search,
   Star,
@@ -15,6 +16,7 @@ import {
   XCircle,
   Eye,
   Trash2,
+  Loader2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -31,28 +33,62 @@ interface Review {
 
 export default function ReviewsManagementPage() {
   const { hasPermission } = useAdminAuth();
-  const [reviews, setReviews] = useState<Review[]>([
-    {
-      id: '1',
-      product: 'Luxury Foundation Pro',
-      customer: 'Sarah Johnson',
-      rating: 5,
-      title: 'Amazing Product!',
-      content: 'This product exceeded my expectations...',
-      status: 'approved',
-      createdAt: '2024-01-20',
-    },
-    {
-      id: '2',
-      product: 'Organic Face Serum',
-      customer: 'Emma Davis',
-      rating: 4,
-      title: 'Good but could be better',
-      content: 'Overall satisfied with the product...',
-      status: 'pending',
-      createdAt: '2024-01-19',
-    },
-  ]);
+  const { pushToast } = useToast();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReviews = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/reviews', { credentials: 'include' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to fetch reviews');
+      }
+      const data = await res.json();
+      setReviews(data.reviews || []);
+    } catch (err: any) {
+      setError(err?.message || 'Error loading reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const handleUpdateStatus = async (reviewId: string, newStatus: 'approved' | 'rejected') => {
+    const previousReviews = [...reviews];
+    setReviews((prev) =>
+      prev.map((r) => (r.id === reviewId ? { ...r, status: newStatus } : r))
+    );
+
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed to ${newStatus === 'approved' ? 'approve' : 'reject'} review`);
+      }
+      pushToast({
+        tone: 'success',
+        description: `Review marked as ${newStatus}`,
+      });
+    } catch (err: any) {
+      setReviews(previousReviews);
+      pushToast({
+        tone: 'danger',
+        description: err?.message || 'Failed to update review',
+      });
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -113,6 +149,13 @@ export default function ReviewsManagementPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="bg-red-950/70 border border-red-800/40 text-red-300 px-4 py-3 rounded-xl mb-6 text-sm flex justify-between items-center">
+          <span>{error}</span>
+          <Button onClick={fetchReviews} className="text-xs px-3 py-1 bg-red-800/50 hover:bg-red-700/50 text-white rounded">Retry</Button>
+        </div>
+      )}
+
       <div className="bg-[#161824] rounded-xl border border-[#232636] overflow-hidden shadow-sm">
         <table className="w-full">
           <thead className="bg-[#10121b]">
@@ -126,9 +169,23 @@ export default function ReviewsManagementPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#232636]">
-            {filteredReviews.map((review) => (
-              <tr key={review.id} className="hover:bg-[#1b1e2c]/70 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-[#F7F8F8]">{review.product}</td>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-[#8A8F98]">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#5e6ad2]" />
+                  <p className="text-xs">Loading reviews...</p>
+                </td>
+              </tr>
+            ) : filteredReviews.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-[#8A8F98]">
+                  <p className="text-sm">No reviews found</p>
+                </td>
+              </tr>
+            ) : (
+              filteredReviews.map((review) => (
+                <tr key={review.id} className="hover:bg-[#1b1e2c]/70 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-[#F7F8F8]">{review.product}</td>
                 <td className="px-6 py-4 text-sm text-[#8A8F98]">{review.customer}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center">
@@ -153,8 +210,20 @@ export default function ReviewsManagementPage() {
                   <div className="flex items-center space-x-2">
                     {review.status === 'pending' && (
                       <>
-                        <Button className="text-green-600"><CheckCircle className="w-4 h-4" /></Button>
-                        <Button className="text-red-600"><XCircle className="w-4 h-4" /></Button>
+                        <Button
+                          onClick={() => handleUpdateStatus(review.id, 'approved')}
+                          className="text-green-600 hover:text-green-400 p-1"
+                          title="Approve Review"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => handleUpdateStatus(review.id, 'rejected')}
+                          className="text-red-600 hover:text-red-400 p-1"
+                          title="Reject Review"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
                       </>
                     )}
                     <Button className="text-[#5e6ad2]"><Eye className="w-4 h-4" /></Button>
@@ -162,7 +231,7 @@ export default function ReviewsManagementPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>

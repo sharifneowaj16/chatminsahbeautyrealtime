@@ -299,6 +299,7 @@ model Product {
   price            Decimal  @db.Decimal(10, 2)
   compareAtPrice   Decimal? @db.Decimal(10, 2)
   costPrice        Decimal? @db.Decimal(10, 2)
+  lastCostPrice    Decimal? @db.Decimal(10, 2)
 
   // Inventory
   quantity          Int     @default(0)
@@ -317,6 +318,8 @@ model Product {
   isActive   Boolean @default(true)
   isFeatured Boolean @default(false)
   isNew      Boolean @default(false)
+  isClearanceSale          Boolean @default(false)
+  clearanceDiscountPercent Int     @default(0)
 
   // SEO
   metaTitle          String?
@@ -464,12 +467,15 @@ model Product {
   purchaseItems      PurchaseOrderItem[]
   shortlistItems     InventoryShortlist[]
   purchaseShortlist  PurchaseShortlist[]
+  stockMovements     StockMovement[]
 
   @@index([slug])
   @@index([sku])
   @@index([categoryId])
   @@index([brandId])
   @@index([deletedAt])
+  @@index([quantity])
+  @@index([quantity, lowStockThreshold])
   @@index([isActive, isFeatured])
   @@index([isActive, deletedAt])
   @@index([canonicalUrl])
@@ -484,6 +490,7 @@ model Product {
   @@index([refundedOrderCount])
   @@index([deliveryOfferEnabled])
   @@index([deliveryOfferType])
+  @@index([isClearanceSale])
 }
 
 model ProductImage {
@@ -693,6 +700,17 @@ model PurchaseShortlist {
   buyPrice    Decimal  @db.Decimal(10, 2)
   sellPrice   Decimal  @db.Decimal(10, 2)
 
+  // Actual Sourcing & Reconciliation Intelligence Fields
+  actualBuyPrice      Decimal?  @db.Decimal(10, 2)
+  actualSpent         Decimal?  @db.Decimal(10, 2)
+  cashGiven           Decimal?  @db.Decimal(10, 2)
+  cashReturned        Decimal?  @db.Decimal(10, 2)
+  reconciledStatus    String    @default("PENDING")
+  runnerId            String?
+  runnerName          String?
+  reconciledAt        DateTime?
+  reconciledByAdminId String?
+
   purchased   Boolean  @default(false)
   purchasedAt DateTime?
   priority    String   @default("NORMAL")
@@ -710,6 +728,84 @@ model PurchaseShortlist {
   @@index([adminId])
   @@index([purchased])
   @@index([priority])
+  @@index([reconciledStatus])
+  @@index([runnerId])
+}
+
+enum StockMovementType {
+  PURCHASE
+  ORDER_FULFILLMENT
+  RETURN_RESTOCK
+  MANUAL_ADJUSTMENT
+  DAMAGED_LOSS
+  EXPIRED_DISCARD
+  VENDOR_DEFECT_CLAIM
+  VENDOR_DEFECT_EXCHANGED
+}
+
+model StockMovement {
+  id               String            @id @default(cuid())
+  productId        String
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  delta            Int
+  type             StockMovementType
+  referenceId      String?
+  costPriceAtTime  Decimal?          @db.Decimal(10, 2)
+  notes            String?           @db.Text
+  createdByAdminId String?
+  createdAt        DateTime          @default(now())
+
+  @@index([productId])
+  @@index([type])
+  @@index([referenceId])
+  @@index([createdAt])
+}
+
+model RunnerCashLedger {
+  id              String    @id @default(cuid())
+  shortlistId     String?
+  runnerId        String?
+  runnerName      String
+  cashGiven       Decimal   @db.Decimal(10, 2)
+  actualSpent     Decimal   @default(0) @db.Decimal(10, 2)
+  cashReturned    Decimal   @default(0) @db.Decimal(10, 2)
+  discrepancy     Decimal   @default(0) @db.Decimal(10, 2)
+  previousDue     Decimal   @default(0) @db.Decimal(10, 2)
+  effectiveBudget Decimal   @default(0) @db.Decimal(10, 2)
+  status          String    @default("PENDING")
+  notes           String?   @db.Text
+  slipPhotoUrl    String?
+  adminSignoffBy  String?
+  settledAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([shortlistId])
+  @@index([runnerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DailyCashRegister {
+  id                        String    @id @default(cuid())
+  date                      String    @unique // YYYY-MM-DD
+  openingCash               Decimal   @db.Decimal(10, 2)
+  codCollected              Decimal   @default(0) @db.Decimal(10, 2)
+  runnerExpenses            Decimal   @default(0) @db.Decimal(10, 2)
+  officeExpenses            Decimal   @default(0) @db.Decimal(10, 2)
+  courierPendingReceivables Decimal   @default(0) @db.Decimal(10, 2)
+  courierSettledBank        Decimal   @default(0) @db.Decimal(10, 2)
+  expectedCash              Decimal   @db.Decimal(10, 2)
+  actualCashCounted         Decimal   @db.Decimal(10, 2)
+  discrepancy               Decimal   @default(0) @db.Decimal(10, 2)
+  status                    String    @default("OPEN") // OPEN, CLOSED, DISCREPANCY
+  closedByAdminId           String?
+  notes                     String?   @db.Text
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@index([date])
+  @@index([status])
 }
 
 // ==========================================
@@ -918,6 +1014,11 @@ model Order {
   confirmationNote     String?   @db.Text
   confirmedByAdminId   String?
 
+  // Courier Delivery Risk & Fraud Scoring
+  fraudRiskScore       Int?
+  fraudRiskLevel       String?  // LOW, MEDIUM, HIGH
+  fraudRiskDetails     Json?
+
   // Tracking consent / privacy filters
   trackingConsent       String?  @default("unknown")
   trackingConsentVersion String?
@@ -987,6 +1088,7 @@ model Order {
   @@index([deliveryPricingSource])
   @@index([deliveryOfferProductId])
   @@index([confirmationStatus])
+  @@index([fraudRiskLevel])
   @@index([trackingConsent])
   @@index([nonEssentialTrackingAllowed])
 }
@@ -1055,11 +1157,15 @@ model OrderItem {
   quantity  Int
   total     Decimal @db.Decimal(10, 2)
 
+  itemStatus   String   @default("FULFILLED") // FULFILLED, RETURNED_GOOD, RETURNED_DAMAGED, EXCHANGED
+  returnReason String?
+
   order   Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
   variant ProductVariant?  @relation(fields: [variantId], references: [id])
 
   @@index([orderId])
+  @@index([itemStatus])
 }
 
 model Payment {

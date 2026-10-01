@@ -10,6 +10,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import AdminNotificationBell from '@/components/admin/AdminNotificationBell';
+import AdminTopProfitTicker from '@/components/admin/AdminTopProfitTicker';
 import {
   Home,
   AlertTriangle,
@@ -162,7 +163,7 @@ const menuItems: MenuItem[] = [
   },
   {
     title: 'Content',
-    href: '/admin/content',
+    href: '/admin/home-sections',
     icon: FileText,
     permission: PERMISSIONS.CONTENT_MANAGE,
     children: [
@@ -672,6 +673,9 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps
                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                 <span>Operational</span>
               </div>
+
+              {/* Live Daily Profit Ticker (Pillar 5 & 10) */}
+              <AdminTopProfitTicker />
 
               {/* Notification Bell */}
               <AdminNotificationBell />

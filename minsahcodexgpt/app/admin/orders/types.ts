@@ -7,6 +7,8 @@ export interface OrderItem {
   quantity: number;
   price: number;
   total: number;
+  itemStatus?: string; // FULFILLED, RETURNED_GOOD, RETURNED_DAMAGED, EXCHANGED
+  returnReason?: string | null;
   image?: string;
   variant?: {
     name: string;
@@ -98,12 +100,20 @@ export interface Order {
   consignmentId?: string | null;
   currentStatus?: string | null;
   lastUpdatedAt?: string | null;
+  // Courier recipient fields
+  recipientPhone?: string;
+  recipientName?: string;
+  // Pillar 6: Courier Return Risk & Fraud Engine
+  fraudRiskScore?: number | null;
+  fraudRiskLevel?: string | null; // LOW, MEDIUM, HIGH
+  fraudRiskDetails?: any;
 }
 
 export interface Stats {
   pending: number;
   processing: number;
   shipped: number;
+  delivered?: number;
   totalRevenue: number;
   customerDeliveryCollected: number;
   courierDeliveryActual: number;

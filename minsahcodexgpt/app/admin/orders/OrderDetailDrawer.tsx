@@ -15,6 +15,7 @@ import {
   STATUS_CONFIG,
 } from "./types";
 import { formatPrice } from "@/utils/currency";
+import OrderFraudAndReturnPanel from "@/components/admin/OrderFraudAndReturnPanel";
 import {
   X,
   Printer,
@@ -103,13 +104,13 @@ export default function OrderDetailDrawer({
     order.pathaoTrackingCode ||
     order.steadfastTrackingCode ||
     order.tracking ||
-    `ST-${orderNum}`;
+    null;
 
   const currentConsignmentId =
     order.consignmentId ||
     order.pathaoConsignmentId ||
     order.steadfastConsignmentId ||
-    `ST-992144-DH`;
+    null;
 
   // Delivery accounting calculations
   const customerPaid = toSafeMoney(order.shippingCost);
@@ -145,65 +146,64 @@ export default function OrderDetailDrawer({
     const t: TimelineEvent[] = [
       {
         timestamp: order.createdAt,
-        status: "Order Created via Storefront",
-        note: `Customer ${order.customer.name} placed order for ${order.items.length} items via Direct Web Store.`,
-        actor: "Storefront Webhook",
+        status: "Order Created",
+        note: `Customer ${order.customer.name} placed order for ${order.items.length} item(s).`,
+        actor: "System",
       },
     ];
     if (order.paidAt || order.paymentStatus === "paid") {
       t.push({
-        timestamp: order.paidAt || new Date(new Date(order.createdAt).getTime() + 2 * 60000).toISOString(),
+        timestamp: order.paidAt || order.createdAt,
         status: `Payment Confirmed (${isBkash ? "bKash" : "Gateway"})`,
-        note: `Payment transaction ${trxId} of ৳${order.total.toLocaleString()} successfully received via ${
+        note: `Payment of ৳${order.total.toLocaleString()} received via ${
           PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod
-        }. Auto-reconciled.`,
-        actor: "Payment IPN",
+        }.`,
+        actor: "Payment Gateway",
       });
     }
-    if (order.status === "processing" || order.status === "shipped" || order.status === "completed") {
+    if (order.status === "processing" || order.status === "shipped" || order.status === "delivered" || order.status === "completed") {
       t.push({
-        timestamp: new Date(new Date(order.createdAt).getTime() + 8 * 60000).toISOString(),
-        status: "Warehouse Hub Allocation",
-        note: `Order routed automatically to Uttara Fulfillment Hub (Zone B, Trolley #04) based on delivery address proximity. Status transitioned to Processing.`,
-        actor: "System Ruleset",
+        timestamp: order.updatedAt || order.createdAt,
+        status: "Order Processing",
+        note: "Order moved to Processing.",
+        actor: "System",
       });
     }
     if (order.adminNote) {
       t.push({
-        timestamp: new Date(new Date(order.createdAt).getTime() + 11 * 60000).toISOString(),
+        timestamp: order.updatedAt || order.createdAt,
         status: "Admin Staff Note Added",
         note: order.adminNote,
-        actor: "Minsah Admin",
+        actor: "Admin",
       });
     }
-    if (order.steadfastSentAt || order.shippedAt || order.status === "shipped" || order.status === "completed") {
+    if (order.steadfastSentAt || order.shippedAt || order.status === "shipped") {
       t.push({
         timestamp:
           order.steadfastSentAt ||
           order.shippedAt ||
-          new Date(new Date(order.createdAt).getTime() + 15 * 60000).toISOString(),
-        status: "Consignment Generated & Label Printed",
-        note: `${courierName} API assigned tracking code ${currentTrackingId}. Courier handoff booked.`,
-        actor: `${courierName} API`,
+          order.updatedAt ||
+          order.createdAt,
+        status: "Dispatched to Courier",
+        note: currentTrackingId
+          ? `${courierName} assigned tracking code ${currentTrackingId}.`
+          : `Dispatched via ${courierName}.`,
+        actor: courierName,
       });
     }
-    if (order.deliveredAt || order.status === "completed") {
+    if (order.deliveredAt || order.status === "delivered" || order.status === "completed") {
       t.push({
-        timestamp:
-          order.deliveredAt ||
-          new Date(new Date(order.createdAt).getTime() + 180 * 60000).toISOString(),
-        status: "Delivered & POD Verified",
-        note: "Rider completed delivery. Customer signed acknowledgement receipt.",
-        actor: "Steadfast Rider",
+        timestamp: order.deliveredAt || order.updatedAt || order.createdAt,
+        status: "Delivered",
+        note: "Order marked Delivered.",
+        actor: courierName,
       });
     }
     if (order.cancelledAt || order.status === "cancelled") {
       t.push({
-        timestamp:
-          order.cancelledAt ||
-          new Date(new Date(order.createdAt).getTime() + 30 * 60000).toISOString(),
+        timestamp: order.cancelledAt || order.updatedAt || order.createdAt,
         status: "Order Cancelled",
-        note: "Order was cancelled and stock returned to central warehouse inventory.",
+        note: "Order was cancelled and stock returned to inventory.",
         actor: "System",
       });
     }
@@ -530,6 +530,17 @@ export default function OrderDetailDrawer({
                 </div>
               </div>
 
+              {/* Pillar 4, 6, 7 & 8: Fraud & Return Quality Inspection Panel */}
+              <OrderFraudAndReturnPanel
+                orderId={order.dbId || order.id}
+                orderNumber={order.id}
+                customerPhone={order.customer.phone}
+                initialFraudScore={order.fraudRiskScore}
+                initialFraudLevel={order.fraudRiskLevel}
+                initialFraudDetails={order.fraudRiskDetails}
+                items={order.items}
+              />
+
               {/* Shipping Address & Courier Card */}
               <div className="bg-[#0d1c2d] border border-[#1f2f45] rounded-lg p-3.5">
                 <div className="flex items-center justify-between mb-2">
@@ -551,7 +562,7 @@ export default function OrderDetailDrawer({
                     order.shipping?.country || "Bangladesh",
                   ]
                     .filter(Boolean)
-                    .join(", ") || "House 42, Road 11, Sector 4, Uttara, Dhaka-1230"}
+                    .join(", ") || "No shipping address provided"}
                 </p>
                 <div className="mt-3 pt-3 border-t border-[#1f2f45] flex items-center justify-between text-xs">
                   <div>
@@ -559,7 +570,7 @@ export default function OrderDetailDrawer({
                       Consignment Code
                     </div>
                     <div className="font-mono text-white font-medium mt-0.5">
-                      {currentTrackingId || currentConsignmentId}
+                      {currentTrackingId || currentConsignmentId || "Not dispatched yet"}
                     </div>
                   </div>
                   {currentTrackingId ? (

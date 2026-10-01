@@ -67,7 +67,8 @@
       "layer_8_7": "PASS â€” 8/8 cumulative gate tests + static audit",
       "layer_8": "SOURCE/OFFLINE GATE PASS â€” flags, kill switches, cutover, rollback and bypass audits complete; live runtime/provider evidence pending Layer 9",
       "dependency_security_2026_07_29": "Main/realtime compatible updates complete; clean installs PASS; Prisma generation PASS; lint PASS; realtime audit/typecheck/build PASS; main full audit retains 9 dev-only lint-chain records",
-      "layer_9_8": "14/14 artifacts verified; 8 PASS, 6 BLOCKED; main source typecheck/build plus PostgreSQL, Redis/BullMQ, live Meta and package reproduction remain blocked"
+      "layer_9_8": "14/14 artifacts verified; 8 PASS, 6 BLOCKED; main source typecheck/build plus PostgreSQL, Redis/BullMQ, live Meta and package reproduction remain blocked",
+      "admin_panel_audit_35_items": "35/35 audit issues resolved sequentially, 0 tsc errors across all modules, verified"
     },
     "implementation_archive": "minsahbeauty_phase31_layer8_complete.zip",
     "implementation_verification_log": "phase31_layer8_verification.log",
@@ -147,7 +148,7 @@
     "checkpoint_command": "npm run ai:advance-item"
   },
   "repository_access": {
-    "expected_repository_root": "minsahbeauty-meta-v6-update",
+    "expected_repository_root": "minsahcodexgpt",
     "minimum_repository_file_count": 1500,
     "preflight_command": "npm run ai:preflight",
     "required_paths": [

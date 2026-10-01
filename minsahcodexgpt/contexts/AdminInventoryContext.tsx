@@ -166,6 +166,8 @@ interface AdminInventoryContextType {
   adjustInventory: (input: AdjustInventoryInput) => Promise<void>;
   updateShortlist: (input: ShortlistInput) => Promise<void>;
   createSupplier: (input: SupplierInput) => Promise<void>;
+  updateSupplier: (supplierId: string, input: Partial<SupplierInput>) => Promise<void>;
+  deleteSupplier: (supplierId: string) => Promise<void>;
   createPurchaseOrder: (input: PurchaseOrderInput) => Promise<void>;
   receivePurchaseOrder: (purchaseOrderId: string) => Promise<void>;
 }
@@ -287,6 +289,26 @@ export function AdminInventoryProvider({ children }: { children: ReactNode }) {
     );
   }, [mutateAndRefresh]);
 
+  const updateSupplier = useCallback(async (supplierId: string, input: Partial<SupplierInput>) => {
+    await mutateAndRefresh(() =>
+      fetch(`/api/admin/inventory/suppliers/${supplierId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(input),
+      })
+    );
+  }, [mutateAndRefresh]);
+
+  const deleteSupplier = useCallback(async (supplierId: string) => {
+    await mutateAndRefresh(() =>
+      fetch(`/api/admin/inventory/suppliers/${supplierId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+    );
+  }, [mutateAndRefresh]);
+
   const createPurchaseOrder = useCallback(async (input: PurchaseOrderInput) => {
     await mutateAndRefresh(() =>
       fetch('/api/admin/inventory/purchase-orders', {
@@ -324,6 +346,8 @@ export function AdminInventoryProvider({ children }: { children: ReactNode }) {
     adjustInventory,
     updateShortlist,
     createSupplier,
+    updateSupplier,
+    deleteSupplier,
     createPurchaseOrder,
     receivePurchaseOrder,
   }), [

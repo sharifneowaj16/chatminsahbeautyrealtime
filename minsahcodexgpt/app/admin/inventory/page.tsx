@@ -10,8 +10,9 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import {
@@ -26,11 +27,19 @@ import {
   Star,
   Truck,
   X,
+  History,
+  Edit,
+  Trash2,
 } from 'lucide-react';
+import StockMovementAuditModal from './components/StockMovementAuditModal';
+import LowStockAlertBanner from './components/LowStockAlertBanner';
+import DeadStockCapitalCard from '@/components/admin/DeadStockCapitalCard';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
   useAdminInventory,
   type AdminInventoryItem,
+  type AdminInventorySupplier,
+  type AdminInventoryPurchaseOrder,
 } from '@/contexts/AdminInventoryContext';
 import { convertUSDtoBDT, formatPrice } from '@/utils/currency';
 
@@ -50,16 +59,32 @@ export default function InventoryPage() {
   const { hasPermission } = useAdminAuth();
   const { pushToast } = useToast();
   const canEdit = hasPermission(PERMISSIONS.PRODUCTS_EDIT);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as InventoryTab) || 'inventory';
   const [activeTab, setActiveTab] = useState<InventoryTab>(initialTab);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [detailItem, setDetailItem] = useState<AdminInventoryItem | null>(null);
   const [stockModal, setStockModal] = useState<StockModalState>({ item: null, ids: [], action: null, amount: '' });
+  const [auditModal, setAuditModal] = useState<{ isOpen: boolean; productId: string | null; productName: string | null }>({
+    isOpen: false,
+    productId: null,
+    productName: null,
+  });
   const [saving, setSaving] = useState(false);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [purchaseOrderModalOpen, setPurchaseOrderModalOpen] = useState(false);
   const [supplierForm, setSupplierForm] = useState({ code: '', name: '', contactPerson: '', email: '', phone: '', address: '', paymentTerms: '', notes: '' });
+  const [editingSupplier, setEditingSupplier] = useState<AdminInventorySupplier | null>(null);
+  const [editSupplierForm, setEditSupplierForm] = useState({
+    name: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
+    address: '',
+    paymentTerms: '',
+    notes: '',
+  });
   const [purchaseOrderForm, setPurchaseOrderForm] = useState({
     supplierId: '',
     notes: '',
@@ -84,9 +109,55 @@ export default function InventoryPage() {
     adjustInventory,
     updateShortlist,
     createSupplier,
+    updateSupplier,
+    deleteSupplier,
     createPurchaseOrder,
     receivePurchaseOrder,
   } = useAdminInventory();
+
+  const [deletingSupplier, setDeletingSupplier] = useState<AdminInventorySupplier | null>(null);
+  const [deletingSupplierLoading, setDeletingSupplierLoading] = useState(false);
+
+  const handleConfirmDeleteSupplier = async () => {
+    if (!deletingSupplier) return;
+    setDeletingSupplierLoading(true);
+    try {
+      await deleteSupplier(deletingSupplier.id);
+      showToast('success', 'Supplier deleted successfully');
+      setDeletingSupplier(null);
+    } catch (err: any) {
+      showToast('error', err?.message || 'Failed to delete supplier');
+    } finally {
+      setDeletingSupplierLoading(false);
+    }
+  };
+
+  const handleOpenEditSupplier = (supplier: AdminInventorySupplier) => {
+    setEditingSupplier(supplier);
+    setEditSupplierForm({
+      name: supplier.name || '',
+      contactPerson: supplier.contactPerson || '',
+      email: supplier.email || '',
+      phone: supplier.phone || '',
+      address: '',
+      paymentTerms: supplier.paymentTerms || '',
+      notes: '',
+    });
+  };
+
+  const handleSaveEditSupplier = async () => {
+    if (!editingSupplier) return;
+    setSaving(true);
+    try {
+      await updateSupplier(editingSupplier.id, editSupplierForm);
+      showToast('success', 'Supplier updated successfully');
+      setEditingSupplier(null);
+    } catch (err: any) {
+      showToast('error', err?.message || 'Failed to update supplier');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const allVisibleSelected = inventory.length > 0 && selectedIds.length === inventory.length;
   const lowStockVisible = inventory.filter((item) => item.status === 'low_stock' || item.status === 'out_of_stock').length;
@@ -118,7 +189,12 @@ export default function InventoryPage() {
   const handleAdjustInventory = async () => {
     if (!stockModal.action || !stockModal.ids.length) return;
     const parsed = parseInt(stockModal.amount, 10);
-    if (Number.isNaN(parsed) || parsed < 0) {
+    if (stockModal.action === 'reorder') {
+      if (Number.isNaN(parsed) || parsed < 1) {
+        showToast('error', 'Reorder level must be at least 1. Use 0 only for non-tracked items.');
+        return;
+      }
+    } else if (Number.isNaN(parsed) || parsed < 0) {
       showToast('error', 'Valid quantity din.');
       return;
     }
@@ -198,12 +274,73 @@ export default function InventoryPage() {
     }
   };
 
-  const handleReceivePurchaseOrder = async (purchaseOrderId: string) => {
+  interface ReceivingItem {
+    id: string;
+    productId: string;
+    productName: string;
+    sku: string;
+    orderedQty: number;
+    receivedQty: number;
+    actualQtyToReceive: number;
+  }
+
+  const [receivingPO, setReceivingPO] = useState<AdminInventoryPurchaseOrder | null>(null);
+  const [receivingItems, setReceivingItems] = useState<ReceivingItem[]>([]);
+  const [loadingPOItems, setLoadingPOItems] = useState(false);
+
+  const handleOpenReceiveModal = async (po: AdminInventoryPurchaseOrder) => {
+    setReceivingPO(po);
+    setLoadingPOItems(true);
+    try {
+      const res = await fetch(`/api/admin/inventory/purchase-orders/${po.id}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to load purchase order items');
+      const data = await res.json();
+      const items: ReceivingItem[] = (data.purchaseOrder?.items || []).map((item: any) => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.product?.name || 'Product',
+        sku: item.product?.sku || '',
+        orderedQty: item.quantity,
+        receivedQty: item.receivedQuantity || 0,
+        actualQtyToReceive: Math.max(0, item.quantity - (item.receivedQuantity || 0)),
+      }));
+      setReceivingItems(items);
+    } catch (err: any) {
+      showToast('error', err?.message || 'Failed to load order items');
+      setReceivingPO(null);
+    } finally {
+      setLoadingPOItems(false);
+    }
+  };
+
+  const handleConfirmReceive = async () => {
+    if (!receivingPO) return;
     setSaving(true);
     try {
-      await receivePurchaseOrder(purchaseOrderId);
+      const payload = {
+        items: receivingItems.map((item) => ({
+          purchaseOrderItemId: item.id,
+          productId: item.productId,
+          receivedQuantity: Number(item.actualQtyToReceive) || 0,
+          receivedQty: Number(item.actualQtyToReceive) || 0,
+        })),
+      };
+      const res = await fetch(`/api/admin/inventory/purchase-orders/${receivingPO.id}/receive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to receive purchase order');
+      }
       showToast('success', 'Stock received. Inventory has been updated in real time.');
-    } catch (err) {
+      setReceivingPO(null);
+      refreshWorkspace(true);
+    } catch (err: any) {
       showToast('error', err instanceof Error ? err.message : 'Receive failed');
     } finally {
       setSaving(false);
@@ -242,7 +379,15 @@ export default function InventoryPage() {
 
       <div className="mb-5 flex flex-wrap gap-1.5 p-1 bg-[#10121b] border border-[#232636] rounded-xl w-fit">
         {(['inventory', 'shortlist', 'suppliers', 'purchase-orders'] as InventoryTab[]).map((tab) => (
-          <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={clsx('rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-all active:scale-[0.98]', activeTab === tab ? 'bg-white/[0.12] text-[#F7F8F8] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]' : 'text-[#8A8F98] hover:text-white hover:bg-white/[0.04]')}>
+          <button
+            key={tab}
+            type="button"
+            onClick={() => {
+              setActiveTab(tab);
+              router.replace(`/admin/inventory?tab=${tab}`, { scroll: false });
+            }}
+            className={clsx('rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-all active:scale-[0.98]', activeTab === tab ? 'bg-white/[0.12] text-[#F7F8F8] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]' : 'text-[#8A8F98] hover:text-white hover:bg-white/[0.04]')}
+          >
             {tab.replace('-', ' ')}
           </button>
         ))}
@@ -256,6 +401,16 @@ export default function InventoryPage() {
 
       {activeTab === 'inventory' && (
         <>
+          <LowStockAlertBanner
+            outOfStockCount={stats.outOfStockCount}
+            lowStockCount={stats.lowStockCount}
+            onFilterLowStock={() => setFilters({ status: 'low_stock' })}
+            onShortlistSuccess={() => refreshWorkspace(true)}
+          />
+
+          {/* Pillar 9: Dead-Stock & Tied-Up Capital Release Engine */}
+          <DeadStockCapitalCard />
+
           <div className="mb-4 rounded-xl border border-[#232636] bg-[#10121b] p-3.5 linear-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
               <div className="relative lg:col-span-2">
@@ -340,7 +495,8 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-3.5 py-2.5">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" onClick={() => setDetailItem(item)} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Eye className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => setDetailItem(item)} title="View Details" className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Eye className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => setAuditModal({ isOpen: true, productId: item.id, productName: item.productName })} title="Stock Movement Audit Trail" className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-indigo-300 hover:text-indigo-200 hover:bg-white/[0.08] transition-all active:scale-[0.97]"><History className="h-3.5 w-3.5" /></button>
                         {canEdit && <>
                           <button type="button" onClick={() => openSingleModal(item, 'add')} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Plus className="h-3.5 w-3.5" /></button>
                           <button type="button" onClick={() => openSingleModal(item, 'remove')} className="h-7 w-7 p-0 flex items-center justify-center rounded-md border border-[#232636] bg-white/[0.05] text-[#D0D6E0] hover:text-white hover:bg-white/[0.08] transition-all active:scale-[0.97]"><Minus className="h-3.5 w-3.5" /></button>
@@ -386,7 +542,31 @@ export default function InventoryPage() {
             <div key={supplier.id} className="rounded-xl border border-[#232636] bg-[#161824] p-5">
               <div className="flex items-start justify-between gap-3">
                 <div><h3 className="font-semibold text-[#F7F8F8]">{supplier.name}</h3><p className="text-sm text-[#8A8F98]">{supplier.code}</p></div>
-                <span className={clsx('rounded-full px-3 py-1 text-xs font-medium', supplier.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/[0.04] text-[#8A8F98] border border-[#232636]')}>{supplier.isActive ? 'Active' : 'Inactive'}</span>
+                <div className="flex items-center gap-2">
+                  <span className={clsx('rounded-full px-3 py-1 text-xs font-medium', supplier.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/[0.04] text-[#8A8F98] border border-[#232636]')}>{supplier.isActive ? 'Active' : 'Inactive'}</span>
+                  {canEdit && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditSupplier(supplier)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#232636] bg-[#10121b] px-2.5 py-1 text-xs text-[#D0D6E0] hover:text-white hover:bg-[#1b1e2c] transition"
+                        title="Edit Supplier"
+                      >
+                        <Edit className="h-3 w-3 text-[#8A8F98]" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingSupplier(supplier)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs text-rose-400 hover:bg-rose-500/20 transition"
+                        title="Delete Supplier"
+                      >
+                        <Trash2 className="h-3 w-3 text-rose-400" />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="mt-4 grid gap-2 text-sm text-[#8A8F98]">
                 <p>Contact: {supplier.contactPerson || 'N/A'}</p>
@@ -421,7 +601,7 @@ export default function InventoryPage() {
                     <td className="px-4 py-4 text-sm text-[#D0D6E0]">{po.supplier.name} ({po.supplier.code})</td>
                     <td className="px-4 py-4 text-sm text-[#D0D6E0]">{formatPrice(convertUSDtoBDT(po.totalAmount))}</td>
                     <td className="px-4 py-4 text-sm"><span className="rounded-full bg-white/[0.04] border border-[#232636] px-3 py-1 text-xs font-medium text-[#8A8F98]">{po.status.replace(/_/g, ' ')}</span></td>
-                    <td className="px-4 py-4">{po.status !== 'RECEIVED' && <button type="button" onClick={() => handleReceivePurchaseOrder(po.id)} className="inline-flex items-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]"><Truck className="mr-1.5 h-3.5 w-3.5" />Receive</button>}</td>
+                    <td className="px-4 py-4">{po.status !== 'RECEIVED' && <button type="button" onClick={() => handleOpenReceiveModal(po)} className="inline-flex items-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98]"><Truck className="mr-1.5 h-3.5 w-3.5" />Receive</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -523,6 +703,105 @@ export default function InventoryPage() {
               </div>
             </div>
       </Modal>
+
+      {editingSupplier && (
+        <SimpleModal
+          title={`Edit Supplier: ${editingSupplier.name}`}
+          onClose={() => setEditingSupplier(null)}
+          onSubmit={handleSaveEditSupplier}
+          saving={saving}
+        >
+          <TwoColInput label="Supplier Name" value={editSupplierForm.name} onChange={(value) => setEditSupplierForm((prev) => ({ ...prev, name: value }))} required />
+          <TwoColInput label="Contact Person" value={editSupplierForm.contactPerson} onChange={(value) => setEditSupplierForm((prev) => ({ ...prev, contactPerson: value }))} />
+          <TwoColInput label="Email" value={editSupplierForm.email} onChange={(value) => setEditSupplierForm((prev) => ({ ...prev, email: value }))} />
+          <TwoColInput label="Phone" value={editSupplierForm.phone} onChange={(value) => setEditSupplierForm((prev) => ({ ...prev, phone: value }))} />
+          <TwoColInput label="Payment Terms" value={editSupplierForm.paymentTerms} onChange={(value) => setEditSupplierForm((prev) => ({ ...prev, paymentTerms: value }))} />
+          <TwoColInput label="Address" value={editSupplierForm.address} onChange={(value) => setEditSupplierForm((prev) => ({ ...prev, address: value }))} />
+        </SimpleModal>
+      )}
+
+      <StockMovementAuditModal
+        isOpen={auditModal.isOpen}
+        onClose={() => setAuditModal({ isOpen: false, productId: null, productName: null })}
+        productId={auditModal.productId}
+        productName={auditModal.productName}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deletingSupplier)}
+        onClose={() => setDeletingSupplier(null)}
+        onConfirm={handleConfirmDeleteSupplier}
+        title="Delete Supplier"
+        description={`Are you sure you want to delete "${deletingSupplier?.name}"? If purchase orders exist for this supplier, it will be deactivated to maintain financial ledger records.`}
+        confirmLabel={deletingSupplierLoading ? "Deleting..." : "Delete Supplier"}
+        tone="danger"
+        loading={deletingSupplierLoading}
+      />
+
+      {/* Partial Receive Modal */}
+      {receivingPO && (
+        <Modal
+          open={Boolean(receivingPO)}
+          onClose={() => setReceivingPO(null)}
+          title={`Receive Purchase Order: ${receivingPO.orderNumber}`}
+          size="lg"
+          footer={
+            <>
+              <Button type="button" variant="secondary" onClick={() => setReceivingPO(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmReceive}
+                disabled={saving || loadingPOItems}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white"
+              >
+                {saving ? 'Receiving...' : 'Confirm Receive'}
+              </Button>
+            </>
+          }
+        >
+          {loadingPOItems ? (
+            <div className="py-12 text-center text-[#8A8F98]">
+              <p className="text-sm">Loading order line items...</p>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-2">
+              <p className="text-xs text-[#8A8F98]">
+                Enter the actual quantity received for each line item below.
+              </p>
+              <div className="divide-y divide-[#232636] border border-[#232636] rounded-xl overflow-hidden">
+                {receivingItems.map((item, idx) => (
+                  <div key={item.id || idx} className="p-3 bg-[#10121b] flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-[#F7F8F8]">{item.productName}</p>
+                      <p className="text-xs text-[#8A8F98]">
+                        SKU: {item.sku} | Ordered: {item.orderedQty} | Already received: {item.receivedQty}
+                      </p>
+                    </div>
+                    <div className="w-40 flex items-center gap-2">
+                      <label className="text-xs text-[#8A8F98] whitespace-nowrap">Receive:</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max={item.orderedQty - item.receivedQty}
+                        value={String(item.actualQtyToReceive)}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setReceivingItems((prev) =>
+                            prev.map((it, i) => (i === idx ? { ...it, actualQtyToReceive: val } : it))
+                          );
+                        }}
+                        className="w-20 text-center"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

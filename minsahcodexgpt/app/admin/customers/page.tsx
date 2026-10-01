@@ -8,7 +8,9 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { useState, useEffect, useCallback } from 'react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
   Search,
@@ -73,6 +75,7 @@ interface CustomerFilters {
 }
 
 export default function CustomersPage() {
+  const router = useRouter();
   const { pushToast } = useToast();
   const { hasPermission } = useAdminAuth();
 
@@ -95,6 +98,110 @@ export default function CustomersPage() {
 
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Edit Customer Modal State
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    status: 'active',
+  });
+  const [savingCustomer, setSavingCustomer] = useState(false);
+
+  const handleOpenEdit = (c: Customer) => {
+    setEditingCustomer(c);
+    setEditForm({
+      name: c.name || '',
+      email: c.email || '',
+      phone: c.phone || '',
+      status: c.status || 'active',
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+    setSavingCustomer(true);
+    try {
+      const res = await fetch(`/api/admin/customers/${editingCustomer.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update customer');
+      }
+      pushToast({ tone: 'success', description: 'Customer updated successfully' });
+      setEditingCustomer(null);
+      fetchCustomers(pagination.page);
+    } catch (err: any) {
+      pushToast({ tone: 'danger', description: err?.message || 'Failed to update customer' });
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
+  // Delete Customer State & Handler
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deletingCustomer) return;
+    const target = deletingCustomer;
+    setDeletingLoading(true);
+    // Optimistic removal
+    setCustomers((prev) => prev.filter((c) => c.id !== target.id));
+    try {
+      const res = await fetch(`/api/admin/customers/${target.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete customer');
+      }
+      pushToast({ tone: 'success', description: 'Customer deleted successfully' });
+      setDeletingCustomer(null);
+    } catch (err: any) {
+      pushToast({ tone: 'danger', description: err?.message || 'Failed to delete customer' });
+      fetchCustomers(pagination.page);
+    } finally {
+      setDeletingLoading(false);
+    }
+  };
+
+  // Add Customer State & Handler
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+  });
+  const [addingCustomer, setAddingCustomer] = useState(false);
+
+  const handleAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddingCustomer(true);
+    try {
+      const res = await fetch('/api/admin/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addForm),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to add customer');
+      }
+      pushToast({ tone: 'success', description: 'Customer created successfully' });
+      setAddModalOpen(false);
+      setAddForm({ firstName: '', lastName: '', email: '', phone: '' });
+      fetchCustomers(1);
+    } catch (err: any) {
+      pushToast({ tone: 'danger', description: err?.message || 'Failed to add customer' });
+    } finally {
+      setAddingCustomer(false);
+    }
+  };
 
   // ─── Fetch customers from API ───────────────────────────────────────────────
   const fetchCustomers = useCallback(async (page = 1) => {
@@ -126,8 +233,22 @@ export default function CustomersPage() {
     }
   }, [filters]);
 
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    fetchCustomers(1);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchCustomers(1);
+    }, 400);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, [fetchCustomers]);
 
   // ─── Status update ──────────────────────────────────────────────────────────
@@ -145,6 +266,19 @@ export default function CustomersPage() {
       );
     } catch (err) {
       pushToast({ tone: 'danger', description: 'Failed to update customer status. Please try again.' });
+    }
+  };
+
+  const [bulkStatusTarget, setBulkStatusTarget] = useState<'suspended' | 'active' | null>(null);
+
+  const handleConfirmBulkStatus = async () => {
+    if (!bulkStatusTarget) return;
+    const target = bulkStatusTarget;
+    const ids = [...selectedCustomers];
+    setBulkStatusTarget(null);
+    setSelectedCustomers([]);
+    for (const id of ids) {
+      await handleStatusUpdate(id, target);
     }
   };
 
@@ -192,7 +326,10 @@ export default function CustomersPage() {
             Refresh
           </Button>
           {hasPermission(PERMISSIONS.CUSTOMERS_EDIT) && (
-            <Button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#5e6ad2] text-white hover:bg-[#6d78d5] rounded-md text-xs sm:text-sm font-medium shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] transition">
+            <Button
+              onClick={() => setAddModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#5e6ad2] text-white hover:bg-[#6d78d5] rounded-md text-xs sm:text-sm font-medium shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] transition"
+            >
               <UserPlus size={15} />
               Add Customer
             </Button>
@@ -257,6 +394,8 @@ export default function CustomersPage() {
             <option value="lastLoginAt">Last Login</option>
             <option value="loyaltyPoints">Loyalty Points</option>
             <option value="email">Email</option>
+            <option value="totalOrders">Total Orders</option>
+            <option value="totalSpent">Total Spent</option>
           </Select>
         </div>
       </div>
@@ -276,19 +415,13 @@ export default function CustomersPage() {
           </span>
           <div className="flex gap-2">
             <Button
-              onClick={() => {
-                selectedCustomers.forEach(id => handleStatusUpdate(id, 'suspended'));
-                setSelectedCustomers([]);
-              }}
+              onClick={() => setBulkStatusTarget('suspended')}
               className="px-4 py-1.5 text-xs bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/30 rounded-md hover:bg-[#f59e0b]/25 transition"
             >
               Suspend Selected
             </Button>
             <Button
-              onClick={() => {
-                selectedCustomers.forEach(id => handleStatusUpdate(id, 'active'));
-                setSelectedCustomers([]);
-              }}
+              onClick={() => setBulkStatusTarget('active')}
               className="px-4 py-1.5 text-xs bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30 rounded-md hover:bg-[#10b981]/25 transition"
             >
               Activate Selected
@@ -444,6 +577,7 @@ export default function CustomersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <Button
+                          onClick={() => router.push(`/admin/orders?search=${encodeURIComponent(customer.email)}`)}
                           className="p-1.5 hover:bg-[#10121b] border border-[#232636] text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition"
                           title="View Profile"
                         >
@@ -451,6 +585,7 @@ export default function CustomersPage() {
                         </Button>
                         {hasPermission(PERMISSIONS.CUSTOMERS_EDIT) && (
                           <Button
+                            onClick={() => handleOpenEdit(customer)}
                             className="p-1.5 hover:bg-[#10121b] border border-[#232636] text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition"
                             title="Edit"
                           >
@@ -458,6 +593,7 @@ export default function CustomersPage() {
                           </Button>
                         )}
                         <Button
+                          onClick={() => router.push(`/admin/orders?search=${encodeURIComponent(customer.email)}`)}
                           className="p-1.5 hover:bg-[#10121b] border border-[#232636] text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition"
                           title="Orders"
                         >
@@ -465,6 +601,7 @@ export default function CustomersPage() {
                         </Button>
                         {hasPermission(PERMISSIONS.CUSTOMERS_DELETE) && (
                           <Button
+                            onClick={() => setDeletingCustomer(customer)}
                             className="p-1.5 hover:bg-[#ef4444]/20 border border-[#ef4444]/30 text-[#f87171] rounded-md transition"
                             title="Delete"
                           >
@@ -525,6 +662,162 @@ export default function CustomersPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Customer Modal */}
+      {editingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[#161824] border border-[#232636] rounded-xl p-6 shadow-2xl text-left">
+            <h3 className="text-base font-semibold text-[#f7f8f8] mb-4">
+              Edit Customer: {editingCustomer.name}
+            </h3>
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[#8a8f98] mb-1">Full Name</label>
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Customer Name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#8a8f98] mb-1">Email Address</label>
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder="customer@example.com"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#8a8f98] mb-1">Phone Number</label>
+                <Input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
+                  placeholder="+8801..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#8a8f98] mb-1">Status</label>
+                <Select
+                  value={editForm.status}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                  <option value="banned">Banned</option>
+                </Select>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setEditingCustomer(null)}
+                  className="px-4 py-2 text-xs bg-[#10121b] border border-[#232636] text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={savingCustomer}
+                  className="px-4 py-2 text-xs bg-[#5e6ad2] hover:bg-[#5e6ad2]/80 text-white rounded-md transition font-medium"
+                >
+                  {savingCustomer ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Customer Confirmation */}
+      <ConfirmDialog
+        open={Boolean(deletingCustomer)}
+        onClose={() => setDeletingCustomer(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Customer"
+        description={`Are you sure you want to delete "${deletingCustomer?.name || deletingCustomer?.email}"? If this customer has order history, they will be archived/banned instead of completely erased.`}
+        confirmLabel={deletingLoading ? "Deleting..." : "Delete Customer"}
+        tone="danger"
+        loading={deletingLoading}
+      />
+
+      {/* Add Customer Modal */}
+      {addModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[#161824] border border-[#232636] rounded-xl p-6 shadow-2xl text-left">
+            <h3 className="text-base font-semibold text-[#f7f8f8] mb-4">
+              Add New Customer
+            </h3>
+            <form onSubmit={handleAddCustomer} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[#8a8f98] mb-1">First Name</label>
+                  <Input
+                    value={addForm.firstName}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, firstName: e.target.value }))}
+                    placeholder="First name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#8a8f98] mb-1">Last Name</label>
+                  <Input
+                    value={addForm.lastName}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, lastName: e.target.value }))}
+                    placeholder="Last name"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#8a8f98] mb-1">Email Address *</label>
+                <Input
+                  type="email"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder="customer@example.com"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#8a8f98] mb-1">Phone Number</label>
+                <Input
+                  value={addForm.phone}
+                  onChange={(e) => setAddForm((prev) => ({ ...prev, phone: e.target.value }))}
+                  placeholder="+8801..."
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setAddModalOpen(false)}
+                  className="px-4 py-2 text-xs bg-[#10121b] border border-[#232636] text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={addingCustomer}
+                  className="px-4 py-2 text-xs bg-[#5e6ad2] hover:bg-[#5e6ad2]/80 text-white rounded-md transition font-medium"
+                >
+                  {addingCustomer ? 'Adding...' : 'Add Customer'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Status Update Confirmation */}
+      <ConfirmDialog
+        open={Boolean(bulkStatusTarget)}
+        onClose={() => setBulkStatusTarget(null)}
+        onConfirm={handleConfirmBulkStatus}
+        title={`${bulkStatusTarget === 'suspended' ? 'Suspend' : 'Activate'} Customers`}
+        description={`You are about to ${bulkStatusTarget === 'suspended' ? 'suspend' : 'activate'} ${selectedCustomers.length} customers. This cannot be undone immediately. Continue?`}
+        confirmLabel={bulkStatusTarget === 'suspended' ? 'Suspend Selected' : 'Activate Selected'}
+        tone={bulkStatusTarget === 'suspended' ? 'danger' : 'primary'}
+      />
     </div>
   );
 }

@@ -191,6 +191,16 @@ export async function PATCH(
       updateData.status = mapped;
     }
 
+    if (typeof body.firstName === 'string') updateData.firstName = body.firstName.trim();
+    if (typeof body.lastName === 'string') updateData.lastName = body.lastName.trim();
+    if (typeof body.name === 'string') {
+      const parts = body.name.trim().split(' ');
+      updateData.firstName = parts[0] || '';
+      updateData.lastName = parts.slice(1).join(' ') || '';
+    }
+    if (typeof body.phone === 'string') updateData.phone = body.phone.trim();
+    if (typeof body.email === 'string') updateData.email = body.email.trim().toLowerCase();
+
     // Role update (SUPER_ADMIN only)
     if (body.role) {
       if (payload.role !== 'SUPER_ADMIN') {
@@ -248,6 +258,51 @@ export async function PATCH(
     });
   } catch (error) {
     console.error('Admin customer PATCH error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/customers/[id]
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const accessToken = request.cookies.get('admin_access_token')?.value;
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+    const payload = await verifyAdminAccessToken(accessToken);
+    if (!payload || !['SUPER_ADMIN', 'ADMIN'].includes(payload.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const { id } = await params;
+
+    const existing = await prisma.user.findUnique({
+      where: { id },
+      include: { _count: { select: { orders: true } } },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+
+    if (existing._count.orders > 0) {
+      await prisma.user.update({
+        where: { id },
+        data: { status: 'BANNED' },
+      });
+      return NextResponse.json({ success: true, message: 'Customer has order history and was marked BANNED' });
+    } else {
+      await prisma.address.deleteMany({ where: { userId: id } });
+      await prisma.cartItem.deleteMany({ where: { userId: id } });
+      await prisma.wishlistItem.deleteMany({ where: { userId: id } });
+      await prisma.user.delete({ where: { id } });
+      return NextResponse.json({ success: true, message: 'Customer deleted successfully' });
+    }
+  } catch (error) {
+    console.error('Admin customer DELETE error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

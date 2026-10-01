@@ -25,6 +25,7 @@ import {
 import { clsx } from 'clsx';
 import { PERMISSIONS, useAdminAuth } from '@/contexts/AdminAuthContext';
 import { formatPrice } from '@/utils/currency';
+import DailyProfitIntelligenceCard from './components/DailyProfitIntelligenceCard';
 
 type DateRange = '7d' | '30d' | '90d';
 
@@ -238,6 +239,17 @@ export default function AnalyticsPage() {
   const [productsData, setProductsData] = useState<ProductsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<keyof ProductWinner>('deliveredRevenue');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: keyof ProductWinner) => {
+    if (sortField === field) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDir('desc');
+    }
+  };
 
   const canView = hasPermission(PERMISSIONS.ANALYTICS_VIEW);
   const adSpend = useMemo(() => {
@@ -308,7 +320,23 @@ export default function AnalyticsPage() {
   }
 
   const summary = revenueData?.summary;
-  const products = productsData?.products ?? [];
+  const rawProducts = productsData?.products ?? [];
+  const products = useMemo(() => {
+    return [...rawProducts].sort((a, b) => {
+      const valA = a[sortField];
+      const valB = b[sortField];
+      if (valA === valB) return 0;
+      if (valA === null || valA === undefined) return 1;
+      if (valB === null || valB === undefined) return -1;
+      let cmp = 0;
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        cmp = valA.localeCompare(valB);
+      } else {
+        cmp = (valA as number) < (valB as number) ? -1 : 1;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [rawProducts, sortField, sortDir]);
 
   return (
     <div className="space-y-6 p-6">
@@ -347,6 +375,9 @@ export default function AnalyticsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Real Net Profit Financial Intelligence Card */}
+      <DailyProfitIntelligenceCard />
 
       {error ? (
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-400">
@@ -454,18 +485,45 @@ export default function AnalyticsPage() {
             <table className="min-w-full divide-y divide-[#232636] text-sm">
               <thead className="bg-[#10121b] border-b border-[#232636] text-left text-xs font-semibold uppercase tracking-wide text-[#8A8F98]">
                 <tr>
-                  <th className="px-5 py-3">Product</th>
-                  <th className="px-5 py-3">Grade</th>
-                  <th className="px-5 py-3 text-right">Delivered Revenue</th>
-                  <th className="px-5 py-3 text-right">Gross Profit</th>
-                  <th className="px-5 py-3 text-right">Confirmed</th>
-                  <th className="px-5 py-3 text-right">Delivered</th>
-                  <th className="px-5 py-3 text-right">Delivery Rate</th>
-                  <th className="px-5 py-3 text-right">Return Rate</th>
-                  <th className="px-5 py-3 text-right">ATC Rate</th>
-                  <th className="px-5 py-3 text-right">Checkout Rate</th>
-                  <th className="px-5 py-3 text-right">Payment Rate</th>
-                  <th className="px-5 py-3 text-right">Stock</th>
+                  <th onClick={() => handleSort('name')} className="px-5 py-3 cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center gap-1">Product {sortField === 'name' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('grade')} className="px-5 py-3 cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center gap-1">Grade {sortField === 'grade' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('deliveredRevenue')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Delivered Revenue {sortField === 'deliveredRevenue' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('estimatedGrossProfit')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Gross Profit {sortField === 'estimatedGrossProfit' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('confirmedOrders')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Confirmed {sortField === 'confirmedOrders' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('deliveredOrders')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Delivered {sortField === 'deliveredOrders' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('cancelledOrders')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Cancelled {sortField === 'cancelledOrders' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('deliveryRate')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Delivery Rate {sortField === 'deliveryRate' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('returnRate')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Return Rate {sortField === 'returnRate' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('addToCartRate')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">ATC Rate {sortField === 'addToCartRate' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('checkoutRate')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Checkout Rate {sortField === 'checkoutRate' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('paymentInfoRate')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Payment Rate {sortField === 'paymentInfoRate' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
+                  <th onClick={() => handleSort('stockLeft')} className="px-5 py-3 text-right cursor-pointer select-none hover:text-white transition-colors">
+                    <span className="inline-flex items-center justify-end gap-1">Stock {sortField === 'stockLeft' && (sortDir === 'asc' ? '↑' : '↓')}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#232636] bg-[#161824]">
@@ -488,6 +546,7 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="px-5 py-4 text-right">{formatNumber(product.confirmedOrders)}</td>
                     <td className="px-5 py-4 text-right">{formatNumber(product.deliveredOrders)}</td>
+                    <td className="px-5 py-4 text-right">{formatNumber(product.cancelledOrders)}</td>
                     <td className="px-5 py-4 text-right">{formatPercent(product.deliveryRate)}</td>
                     <td className={clsx('px-5 py-4 text-right', product.returnRate >= 20 ? 'font-semibold text-red-600' : '')}>{formatPercent(product.returnRate)}</td>
                     <td className="px-5 py-4 text-right">{formatPercent(product.addToCartRate)}</td>

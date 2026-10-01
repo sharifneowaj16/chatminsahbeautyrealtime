@@ -517,13 +517,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 });
     }
 
-    await prisma.$transaction(
-      products.map((product) => {
+    await prisma.$transaction(async (tx) => {
+      for (const product of products) {
         if (action === 'reorder') {
-          return prisma.product.update({
+          await tx.product.update({
             where: { id: product.id },
             data: { lowStockThreshold: amount },
           });
+          continue;
         }
 
         const nextQuantity =
@@ -533,12 +534,27 @@ export async function PATCH(request: NextRequest) {
               ? Math.max(0, product.quantity - amount)
               : amount;
 
-        return prisma.product.update({
+        const delta = nextQuantity - product.quantity;
+
+        await tx.product.update({
           where: { id: product.id },
           data: { quantity: nextQuantity },
         });
-      })
-    );
+
+        if (delta !== 0) {
+          await tx.stockMovement.create({
+            data: {
+              productId: product.id,
+              delta,
+              type: 'MANUAL_ADJUSTMENT',
+              referenceId: `ADMIN_MANUAL_${action.toUpperCase()}`,
+              notes: `Manual inventory ${action} (${delta > 0 ? `+${delta}` : delta} units) by ${admin.name || admin.email}`,
+              createdByAdminId: admin.adminId,
+            },
+          });
+        }
+      }
+    });
 
     return NextResponse.json({
       success: true,

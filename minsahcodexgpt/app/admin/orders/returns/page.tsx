@@ -298,6 +298,30 @@ export default function ReturnsPage() {
         : prev
     );
 
+    if (status === 'approved' || status === 'rejected') {
+      const targetReturn = returns.find((r) => r.id === returnId) || selectedReturn;
+      const customerEmail = targetReturn?.customer?.email || '';
+      try {
+        await fetch('/api/admin/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            type: 'return_status_update',
+            returnId,
+            newStatus: status,
+            customerId: customerEmail,
+          }),
+        });
+        pushToast({
+          tone: 'success',
+          description: `Notification sent to customer (${customerEmail || 'Customer'}).`,
+        });
+      } catch (notifErr) {
+        console.error('Failed to send return status notification:', notifErr);
+      }
+    }
+
     fetchReturns();
     return data;
   };

@@ -632,14 +632,18 @@ export async function GET(request: NextRequest) {
       }
     }
     if (paymentStatus) {
-      const paymentAliases: Record<string, $Enums.PaymentStatus> = {
-        paid: $Enums.PaymentStatus.COMPLETED,
-      };
-      const upperPayment =
-        paymentAliases[paymentStatus.toLowerCase()] ??
-        (paymentStatus.toUpperCase() as $Enums.PaymentStatus);
-      if (Object.values($Enums.PaymentStatus).includes(upperPayment)) {
-        where.paymentStatus = upperPayment;
+      if (paymentStatus.toLowerCase() === "cod") {
+        where.paymentMethod = "cash_on_delivery";
+      } else {
+        const paymentAliases: Record<string, $Enums.PaymentStatus> = {
+          paid: $Enums.PaymentStatus.COMPLETED,
+        };
+        const upperPayment =
+          paymentAliases[paymentStatus.toLowerCase()] ??
+          (paymentStatus.toUpperCase() as $Enums.PaymentStatus);
+        if (Object.values($Enums.PaymentStatus).includes(upperPayment)) {
+          where.paymentStatus = upperPayment;
+        }
       }
     }
     if (Object.keys(dateFilter).length > 0) {
@@ -651,6 +655,7 @@ export async function GET(request: NextRequest) {
         { user: { email: { contains: search, mode: "insensitive" } } },
         { user: { firstName: { contains: search, mode: "insensitive" } } },
         { user: { lastName: { contains: search, mode: "insensitive" } } },
+        { user: { phone: { contains: search, mode: "insensitive" } } },
       ];
     }
 
@@ -703,6 +708,9 @@ export async function GET(request: NextRequest) {
           },
           shippingAddress: {
             select: {
+              firstName: true,
+              lastName: true,
+              phone: true,
               street1: true,
               city: true,
               state: true,
@@ -825,6 +833,10 @@ export async function GET(request: NextRequest) {
           : { address: "", city: "", state: "", postalCode: "", country: "" },
         tracking: order.trackingNumber || undefined,
         shippingMethod: order.shippingMethod || undefined,
+        recipientPhone: order.shippingAddress?.phone || undefined,
+        recipientName: order.shippingAddress
+          ? `${order.shippingAddress.firstName || ""} ${order.shippingAddress.lastName || ""}`.trim() || undefined
+          : undefined,
         steadfastStatus: order.steadfastStatus || undefined,
         steadfastTrackingCode: order.steadfastTrackingCode || undefined,
         pathaoStatus: order.pathaoStatus || undefined,
@@ -836,26 +848,45 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Stats
+    // Stats (respecting dateFilter)
+    const statsDateClause =
+      Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
     const [
       pendingCount,
       processingCount,
       shippedCount,
+      deliveredCount,
       totalRevenue,
       deliveryAccountingTotals,
     ] = await Promise.all([
-      prisma.order.count({ where: { status: $Enums.OrderStatus.PENDING } }),
-      prisma.order.count({ where: { status: $Enums.OrderStatus.PROCESSING } }),
-      prisma.order.count({ where: { status: $Enums.OrderStatus.SHIPPED } }),
+      prisma.order.count({
+        where: { status: $Enums.OrderStatus.PENDING, ...statsDateClause },
+      }),
+      prisma.order.count({
+        where: { status: $Enums.OrderStatus.PROCESSING, ...statsDateClause },
+      }),
+      prisma.order.count({
+        where: { status: $Enums.OrderStatus.SHIPPED, ...statsDateClause },
+      }),
+      prisma.order.count({
+        where: { status: $Enums.OrderStatus.DELIVERED, ...statsDateClause },
+      }),
       prisma.order.aggregate({
         _sum: { total: true },
-        where: { paymentStatus: $Enums.PaymentStatus.COMPLETED },
+        where: {
+          paymentStatus: $Enums.PaymentStatus.COMPLETED,
+          ...statsDateClause,
+        },
       }),
       prisma.order.aggregate({
         _sum: {
           shippingCost: true,
           courierDeliveryCharge: true,
           deliveryDiscountAmount: true,
+        },
+        where: {
+          ...statsDateClause,
         },
       }),
     ]);
@@ -867,6 +898,7 @@ export async function GET(request: NextRequest) {
         pending: pendingCount,
         processing: processingCount,
         shipped: shippedCount,
+        delivered: deliveredCount,
         totalRevenue: toNumber(totalRevenue._sum.total),
         customerDeliveryCollected: toNumber(
           deliveryAccountingTotals._sum.shippingCost,

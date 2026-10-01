@@ -23,6 +23,7 @@ import {
   awardLoyaltyPointsForOrder,
   clawbackLoyaltyPointsForOrder,
 } from "@/lib/loyalty";
+import { reconcileOrderStockOnStatusTransition } from "@/lib/inventory/order-stock-reconciliation";
 
 function normalizeStatusInput(status?: string | null) {
   return String(status ?? "")
@@ -452,6 +453,15 @@ export async function PATCH(
           forceClawback: true,
         });
       }
+
+      // 3. Real-time Order-to-Stock Reconciliation
+      await reconcileOrderStockOnStatusTransition(
+        tx,
+        existing.id,
+        prevStatus,
+        nextStatus,
+        payload.adminId
+      );
 
       if (shouldQueueCodPurchase && !existing.isTest) {
         const outbox = await createMetaPurchaseOutboxInTransaction(

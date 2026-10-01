@@ -21,10 +21,9 @@ const files = [
   "phases.md",
   "memory.md",
   "docs/roadmaps/phase31-fast-execution-policy.md",
-  "docs/roadmaps/phase31-layers-3-to-9-implementation-roadmap.md",
-  "phase31_layer4_verification.log",
+  ...(existsSync(resolve(root, "phase31_layer4_verification.log")) ? ["phase31_layer4_verification.log"] : []),
   ...(checkpointLog && existsSync(resolve(root, checkpointLog)) ? [checkpointLog] : []),
-];
+].filter((path) => existsSync(resolve(root, path)));
 
 function sha256(path) {
   return createHash("sha256").update(readFileSync(resolve(root, path))).digest("hex");

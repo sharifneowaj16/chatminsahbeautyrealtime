@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
@@ -182,7 +182,7 @@ ${state.known_blockers.map((entry) => `- ${entry}`).join('\n')}
 const phasesPath = resolve(root, 'phases.md');
 let phases = readFileSync(phasesPath, 'utf8');
 const replacement = `**Status:** \`${state.project.phase_status}\` — ${state.checkpoint.completed_through} is verified. Latest working archive: \`${state.checkpoint.verified_archive}\`; implementation evidence: \`${implementationLog}\`. **Active Layer: ${activeLayerId}. Exact current item: ${item.id} — ${item.title}.** No full build/lint/database/Redis/realtime/live-provider PASS is claimed unless separately executed.`;
-const phase31Pattern = /(## Phase 31 —[^\n]+\n\n)\*\*Status:\*\*[^\n]*/;
+const phase31Pattern = /(## Phase 31 —[^\r\n]+\r?\n\r?\n)\*\*Status:\*\*[^\r\n]*/;
 if (!phase31Pattern.test(phases)) {
   console.error('Cannot sync phases.md: Phase 31 status line was not found');
   process.exit(1);
@@ -193,6 +193,7 @@ writeFileSync(phasesPath, phases);
 
 function replaceCheckpointSurface(path, pattern, replacement) {
   const absolute = resolve(root, path);
+  if (!existsSync(absolute)) return;
   const current = readFileSync(absolute, 'utf8');
   if (!pattern.test(current)) {
     console.error(`Cannot sync ${path}: checkpoint marker was not found`);

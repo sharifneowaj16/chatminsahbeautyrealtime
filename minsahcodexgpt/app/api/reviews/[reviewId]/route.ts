@@ -119,3 +119,43 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete review' }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ reviewId: string }> }
+) {
+  try {
+    const { reviewId } = await context.params;
+    const body = await request.json();
+    const status = String(body.status || '').toLowerCase();
+
+    if (!['approved', 'rejected', 'pending'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+    }
+
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true, productId: true },
+    });
+
+    if (!review) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+    }
+
+    const isApproved = status === 'approved';
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const saved = await tx.review.update({
+        where: { id: reviewId },
+        data: { isApproved },
+      });
+      await updateProductReviewStats(tx, review.productId);
+      return saved;
+    });
+
+    return NextResponse.json({ success: true, review: updated });
+  } catch (error) {
+    console.error('Error in review PATCH:', error);
+    return NextResponse.json({ error: 'Failed to update review status' }, { status: 500 });
+  }
+}

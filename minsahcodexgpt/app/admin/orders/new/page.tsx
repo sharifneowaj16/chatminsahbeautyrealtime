@@ -1022,12 +1022,36 @@ export default function CreateOrderPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Coupon Code</label>
-                <Input
-                  type="text"
-                  value={couponCode}
-                  onChange={e => setCouponCode(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={couponCode}
+                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. SAVE20"
+                    className="flex-1 px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-white/20"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const trimmed = couponCode.trim().toUpperCase();
+                      if (!trimmed) {
+                        showToast('error', 'Enter a coupon code');
+                        return;
+                      }
+                      if (!/^[A-Z0-9_-]+$/.test(trimmed)) {
+                        showToast('error', 'Coupon code must be alphanumeric');
+                        return;
+                      }
+                      setCouponCode(trimmed);
+                      showToast('success', `Coupon ${trimmed} applied`);
+                    }}
+                    className="px-3 h-9 text-xs"
+                  >
+                    Apply
+                  </Button>
+                </div>
               </div>
             </div>
 

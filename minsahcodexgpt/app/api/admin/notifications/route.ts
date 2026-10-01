@@ -117,3 +117,29 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// POST /api/admin/notifications — create notification
+export async function POST(request: NextRequest) {
+  try {
+    const accessToken = request.cookies.get('admin_access_token')?.value;
+    if (!accessToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const payload = await verifyAdminAccessToken(accessToken);
+    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+
+    const body = await request.json();
+    const { type, returnId, newStatus, customerId } = body;
+
+    const notification = await prisma.adminNotification.create({
+      data: {
+        type: type || 'RETURN_STATUS',
+        title: `Return #${returnId ? String(returnId).slice(-6) : ''} marked ${newStatus || 'updated'}`,
+        message: `Return request ${returnId || 'N/A'} for customer ${customerId || 'N/A'} was marked as ${newStatus || 'updated'}. Notification dispatched.`,
+      },
+    });
+
+    return NextResponse.json({ success: true, notification });
+  } catch (error) {
+    console.error('POST /api/admin/notifications error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

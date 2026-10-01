@@ -67,12 +67,18 @@ export async function POST(
     }
 
     const receiveMap = new Map<string, number>();
+    const receiveByProductMap = new Map<string, number>();
     if (requestedItems.length > 0) {
       for (const item of requestedItems) {
         const itemId = typeof item.purchaseOrderItemId === 'string' ? item.purchaseOrderItemId.trim() : '';
-        const receivedQuantity = parseNonNegativeInt(item.receivedQuantity, -1);
+        const prodId = typeof item.productId === 'string' ? item.productId.trim() : '';
+        const rawQty = item.receivedQuantity !== undefined ? item.receivedQuantity : item.receivedQty;
+        const receivedQuantity = parseNonNegativeInt(rawQty, -1);
         if (itemId && receivedQuantity >= 0) {
           receiveMap.set(itemId, receivedQuantity);
+        }
+        if (prodId && receivedQuantity >= 0) {
+          receiveByProductMap.set(prodId, receivedQuantity);
         }
       }
     }
@@ -80,7 +86,12 @@ export async function POST(
     const normalizedReceipts = orderItems
       .map((item) => {
         const remaining = item.quantity - item.receivedQuantity;
-        const requested = receiveMap.has(item.id) ? receiveMap.get(item.id)! : remaining;
+        let requested = remaining;
+        if (receiveMap.has(item.id)) {
+          requested = receiveMap.get(item.id)!;
+        } else if (receiveByProductMap.has(item.productId)) {
+          requested = receiveByProductMap.get(item.productId)!;
+        }
         return {
           ...item,
           receiveNow: Math.min(remaining, Math.max(0, requested)),

@@ -162,6 +162,7 @@ export interface WalkingRouteStep {
   unitsPicked: number;
   totalUnitsRequired: number;
   warningAlert?: string;
+  retailPrice?: number;
 }
 
 export interface WholesalePickListManifestData {
