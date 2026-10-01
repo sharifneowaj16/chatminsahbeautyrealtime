@@ -14,6 +14,9 @@ interface WholesaleTableProps {
   onAssignRunner?: (skuId: string) => void;
   onTogglePriority?: (skuId: string) => void;
   onCopyText?: (text: string, label: string) => void;
+  currentPage: number;
+  totalRows: number;
+  onPageChange: (page: number) => void;
 }
 
 export default function WholesaleTable({
@@ -24,6 +27,9 @@ export default function WholesaleTable({
   onAssignRunner,
   onTogglePriority,
   onCopyText,
+  currentPage,
+  totalRows,
+  onPageChange,
 }: WholesaleTableProps) {
   const [openMenuSkuId, setOpenMenuSkuId] = React.useState<string | null>(null);
 
@@ -32,6 +38,9 @@ export default function WholesaleTable({
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
+
+  const totalPages = Math.max(1, Math.ceil(totalRows / 25));
+  const displayedSkus = skus.slice((currentPage - 1) * 25, currentPage * 25);
 
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[#142336] bg-[#071321] shadow-md">
@@ -60,7 +69,7 @@ export default function WholesaleTable({
         </thead>
 
         <tbody className="divide-y divide-[#101d2c] text-xs text-slate-200">
-          {skus.map((sku) => {
+          {displayedSkus.map((sku) => {
             const isSelected = selectedSkuIds.has(sku.id);
             return (
               <tr
@@ -374,6 +383,38 @@ export default function WholesaleTable({
             );
           })}
         </tbody>
+        <tfoot>
+          <tr className="bg-[#050f1a] border-t border-[#142336] text-[11px] font-mono text-slate-400">
+            <td colSpan={6} className="py-2.5 px-3">
+              <div className="flex items-center justify-between">
+                <span>
+                  Showing {skus.length === 0 ? 0 : (currentPage - 1) * 25 + 1} - {Math.min(currentPage * 25, totalRows)} of {totalRows} SKUs
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => onPageChange(currentPage - 1)}
+                    className="px-2.5 py-1 rounded bg-[#0a1727] border border-[#172a3e] text-slate-300 hover:text-white hover:bg-[#11243d] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-xs"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-slate-300 font-semibold px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => onPageChange(currentPage + 1)}
+                    className="px-2.5 py-1 rounded bg-[#0a1727] border border-[#172a3e] text-slate-300 hover:text-white hover:bg-[#11243d] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-xs"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   );

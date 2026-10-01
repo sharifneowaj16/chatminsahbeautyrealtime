@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       actualSpent,
       cashGiven,
       cashReturned,
+      batchNumber,
     } = body;
 
     const isAcquired = typeof acquired === 'boolean' ? acquired : true;
@@ -77,10 +78,30 @@ export async function POST(request: NextRequest) {
               reconciledAt: isAcquired ? now : null,
               reconciledByAdminId: payload.adminId ?? null,
               notes: isAcquired
-                ? `Acquired at ৳${parsedActualBuyPrice ?? affectedItem.buyPrice} by ${runnerName || 'Shakil'}`
+                ? (batchNumber
+                    ? `[${batchNumber}] Acquired at ৳${parsedActualBuyPrice ?? affectedItem.buyPrice} by ${runnerName || 'Shakil'}`
+                    : `Acquired at ৳${parsedActualBuyPrice ?? affectedItem.buyPrice} by ${runnerName || 'Shakil'}`)
                 : null,
             },
           });
+
+          if (parsedCashGiven != null) {
+            const spent = calculatedSpent ?? 0;
+            const returned = parsedCashReturned ?? 0;
+            const discrepancy = parsedCashGiven - spent - returned;
+            await tx.runnerCashLedger.create({
+              data: {
+                shortlistId: affectedItem.id,
+                runnerId: runnerId ?? null,
+                runnerName: runnerName ?? 'Shakil',
+                cashGiven: new Prisma.Decimal(parsedCashGiven),
+                actualSpent: new Prisma.Decimal(spent),
+                cashReturned: new Prisma.Decimal(returned),
+                discrepancy: new Prisma.Decimal(discrepancy),
+                status: reconciledStatus,
+              },
+            });
+          }
 
           // If linked to product and acquired, update product inventory and lastCostPrice
           if (isAcquired && affectedItem.productId) {
@@ -126,7 +147,9 @@ export async function POST(request: NextRequest) {
               actualBuyPrice: parsedActualBuyPrice != null ? new Prisma.Decimal(parsedActualBuyPrice) : undefined,
               runnerName: runnerName || 'Shakil',
               notes: isAcquired
-                ? `Acquired at ৳${parsedActualBuyPrice ?? product.costPrice ?? 0} by ${runnerName || 'Shakil'}`
+                ? (batchNumber
+                    ? `[${batchNumber}] Acquired at ৳${parsedActualBuyPrice ?? product.costPrice ?? 0} by ${runnerName || 'Shakil'}`
+                    : `Acquired at ৳${parsedActualBuyPrice ?? product.costPrice ?? 0} by ${runnerName || 'Shakil'}`)
                 : null,
             },
           });

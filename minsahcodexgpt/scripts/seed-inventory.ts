@@ -589,9 +589,10 @@ async function main() {
 
         await prisma.purchaseShortlist.upsert({
           where: {
-            orderId_productId: {
+            orderId_productId_productName: {
               orderId: order.id,
               productId: item.productId,
+              productName: item.name,
             },
           },
           update: {

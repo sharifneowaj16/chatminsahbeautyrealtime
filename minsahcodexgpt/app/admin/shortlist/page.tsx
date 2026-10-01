@@ -22,6 +22,12 @@ import BulkSourcingBar from './components/BulkSourcingBar';
 import WholesalePickListDrawer from './components/WholesalePickListDrawer';
 import ThermalPickSlipDrawer from './components/ThermalPickSlipDrawer';
 import SuppliersMatrix from './components/SuppliersMatrix';
+import MobileShortlistFeed, { MobileZoneFilter } from './components/mobile/MobileShortlistFeed';
+import MobileAcquireModal from './components/mobile/MobileAcquireModal';
+import MobileOrdersDemandSheet, { EnrichedOrderDemand } from './components/mobile/MobileOrdersDemandSheet';
+import MobileOrderPreviewSheet from './components/mobile/MobileOrderPreviewSheet';
+import MobileOrderDetailView from './components/mobile/MobileOrderDetailView';
+import MobileThermalSlipModal from './components/mobile/MobileThermalSlipModal';
 
 export default function ShortlistPage() {
   // ── 1. Data State ──────────────────────────────────────────
@@ -33,6 +39,12 @@ export default function ShortlistPage() {
   const [activeTab, setActiveTab] = useState<WholesaleStatusTab>('SKU_MATRIX');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [serverPaginationMeta, setServerPaginationMeta] = useState<{
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  } | null>(null);
   const [runnerName, setRunnerName] = useState('Shakil');
   const [runnerCode, setRunnerCode] = useState('MSB-R04');
   const [feedbackToast, setFeedbackToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
@@ -40,8 +52,25 @@ export default function ShortlistPage() {
 
   // ── 2. Dual-Drawer State Machine ───────────────────────────
   // Default to open matching Stitch ground truth screenshot where both drawers are rendered
-  const [isPickListOpen, setIsPickListOpen] = useState(true);
-  const [isThermalOpen, setIsThermalOpen] = useState(true);
+  const [isPickListOpen, setIsPickListOpen] = useState(false);
+  const [isThermalOpen, setIsThermalOpen] = useState(false);
+
+  // ── 2b. Mobile Flow State (Screens 1 to 8) ────────────────
+  const [mobileActiveZone, setMobileActiveZone] = useState<MobileZoneFilter>('ALL');
+  const [isMobileAcquireOpen, setIsMobileAcquireOpen] = useState(false);
+  const [mobileModalSku, setMobileModalSku] = useState<WholesaleSkuRow | null>(null);
+
+  const [isMobileOrdersOpen, setIsMobileOrdersOpen] = useState(false);
+  const [mobileOrdersSku, setMobileOrdersSku] = useState<WholesaleSkuRow | null>(null);
+
+  const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
+  const [mobilePreviewOrder, setMobilePreviewOrder] = useState<EnrichedOrderDemand | null>(null);
+
+  const [isMobileInspectionOpen, setIsMobileInspectionOpen] = useState(false);
+  const [mobileInspectionOrderId, setMobileInspectionOrderId] = useState<string>('ORD-65412890');
+
+  const [isMobileThermalModalOpen, setIsMobileThermalModalOpen] = useState(false);
+  const [mobileSpentAmount, setMobileSpentAmount] = useState(0);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,9 +88,13 @@ export default function ShortlistPage() {
       });
       if (res.ok) {
         const json = await res.json();
-        if (json.success && Array.isArray(json.data?.orders) && json.data.orders.length > 0) {
-          // If server has real orders, merge them into Wholesale SKU rows while preserving ground truth metadata
-          const serverOrderItems: WholesaleSkuRow[] = [];
+        if (json.success) {
+          if (json.data?.meta) {
+            setServerPaginationMeta(json.data.meta);
+          }
+          if (Array.isArray(json.data?.orders) && json.data.orders.length > 0) {
+            // If server has real orders, merge them into Wholesale SKU rows while preserving ground truth metadata
+            const serverOrderItems: WholesaleSkuRow[] = [];
           for (const order of json.data.orders) {
             for (const item of order.items || []) {
               serverOrderItems.push({
@@ -90,9 +123,9 @@ export default function ShortlistPage() {
                   standLocation: 'Stand 14, Lane 2, Paltan',
                   contactPerson: 'Vendor Rep',
                   phone: item.supplierPhone || '+880 1711-892401',
-                  isVerified: true,
-                  statusTag: 'Verified Vendor · In Stock',
-                  statusTagType: 'verified',
+                  isVerified: Boolean(item.supplierName),
+                  statusTag: item.supplierName ? 'Verified Vendor · In Stock' : 'Direct Sourcing · Pending Vendor',
+                  statusTagType: item.supplierName ? 'verified' : 'default',
                 },
                 financials: {
                   unitCost: item.buyPrice || 320,
@@ -114,10 +147,11 @@ export default function ShortlistPage() {
           }
         }
       }
-    } catch {
-      // Deterministic fallback ensures flawless dev/offline behavior
     }
-  }, []);
+  } catch {
+    // Deterministic fallback ensures flawless dev/offline behavior
+  }
+}, []);
 
   useEffect(() => {
     fetchLiveShortlist();
@@ -178,6 +212,11 @@ export default function ShortlistPage() {
     });
   }, [skus, activeZone, activeTab, searchQuery]);
 
+  // Reset pagination to page 1 when filtered skus length changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredSkus.length]);
+
   // ── 6. Selection & Route Engine Computation ────────────────
   const selectedSkusList = useMemo(() => {
     return skus.filter((s) => selectedSkuIds.has(s.id));
@@ -228,22 +267,38 @@ export default function ShortlistPage() {
     }
   };
 
-  const handleAcquireSku = async (skuId: string) => {
+  const handleAcquireSku = async (skuId: string, customUnitPrice?: number) => {
     const targetSku = skus.find((s) => s.id === skuId);
     if (!targetSku) return;
 
     const newAcquiredState = !targetSku.isAcquired;
+    const finalUnitCost = customUnitPrice ?? targetSku.financials.unitCost;
 
     // Optimistic UI Update
     setSkus((prev) =>
       prev.map((item) => {
         if (item.id === skuId) {
+          const reqQty = item.requiredQuantity;
+          const totalCost = finalUnitCost * reqQty;
+          const netProfit = item.financials.retailValue - totalCost;
+          const marginPercent =
+            item.financials.retailValue > 0
+              ? Math.round((netProfit / item.financials.retailValue) * 100)
+              : item.financials.marginPercent;
+
           return {
             ...item,
             isAcquired: newAcquiredState,
-            pickedQuantity: newAcquiredState ? item.requiredQuantity : 0,
+            pickedQuantity: newAcquiredState ? reqQty : 0,
             progressPercent: newAcquiredState ? 100 : 0,
             statusNote: newAcquiredState ? 'Fully acquired' : '0 pcs picked',
+            financials: {
+              ...item.financials,
+              unitCost: finalUnitCost,
+              totalCost,
+              netProfit,
+              marginPercent,
+            },
           };
         }
         return item;
@@ -265,7 +320,10 @@ export default function ShortlistPage() {
           sku: targetSku.sku,
           itemId: targetSku.id,
           acquired: newAcquiredState,
+          actualBuyPrice: finalUnitCost,
+          actualSpent: finalUnitCost * targetSku.requiredQuantity,
           runnerName,
+          batchNumber: manifestData.batchNumber,
         }),
       });
     } catch {
@@ -307,7 +365,7 @@ export default function ShortlistPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          skuIds: idsToAcquire,
+          itemIds: idsToAcquire,
           runnerName,
           notes: `Batch #${manifestData.batchNumber} - ${manifestData.hubsCovered}`,
         }),
@@ -327,13 +385,16 @@ export default function ShortlistPage() {
     return new Set(skus.map((s) => s.vendor.stallName)).size;
   }, [skus]);
 
-  const handleTogglePriority = (skuId: string) => {
+  const handleTogglePriority = async (skuId: string) => {
+    const targetSku = skus.find((item) => item.id === skuId);
+    if (!targetSku) return;
+
+    const newPriority = targetSku.priority === 'URGENT' ? 'NORMAL' : 'URGENT';
+    const newDemandTag = newPriority === 'URGENT' ? 'Urgent Stock' : 'Required';
+
     setSkus((prev) =>
       prev.map((item) => {
         if (item.id === skuId) {
-          const newPriority = item.priority === 'URGENT' ? 'NORMAL' : 'URGENT';
-          const newDemandTag = newPriority === 'URGENT' ? 'Urgent Stock' : 'Required';
-          showToast(`${item.sku} priority set to ${newPriority} ⭐`, 'info');
           return {
             ...item,
             priority: newPriority,
@@ -343,6 +404,22 @@ export default function ShortlistPage() {
         return item;
       })
     );
+
+    showToast(`${targetSku.sku} priority set to ${newPriority} ⭐`, 'info');
+
+    try {
+      await fetch(`/api/admin/shortlist/${skuId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          purchased: targetSku.isAcquired,
+          priority: newPriority,
+        }),
+      });
+    } catch {
+      // Silent failure
+    }
   };
 
   const handleCopyText = (text: string, label: string) => {
@@ -382,7 +459,7 @@ export default function ShortlistPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          skuIds,
+          itemIds: skuIds,
           runnerName,
           notes: `Stall Direct Batch Dispatch`,
         }),
@@ -395,7 +472,9 @@ export default function ShortlistPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#051424] text-[#e2eaf5] font-sans antialiased flex flex-col w-full -m-6 p-6">
+    <>
+      {/* ── DESKTOP VIEWPORT (>= 1024px) STRICT ISOLATION ── */}
+      <div className="hidden lg:flex min-h-screen bg-[#051424] text-[#e2eaf5] font-sans antialiased flex-col w-full -m-6 p-6">
       {/* ── Feedback Toast Notification ── */}
       {feedbackToast && (
         <div className="fixed top-5 right-5 z-[60] px-4 py-2.5 rounded-lg bg-[#0e2136] border border-[#213860] text-emerald-300 font-mono text-xs shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -606,6 +685,9 @@ export default function ShortlistPage() {
             }}
             onTogglePriority={handleTogglePriority}
             onCopyText={handleCopyText}
+            currentPage={currentPage}
+            totalRows={filteredSkus.length}
+            onPageChange={setCurrentPage}
           />
         )}
 
@@ -695,5 +777,102 @@ export default function ShortlistPage() {
         receiptData={thermalPayload}
       />
     </div>
+
+      {/* ── MOBILE VIEWPORT (< 1024px) 8-SCREEN SHORTLIST EXPERIENCE ── */}
+      <div className="block lg:hidden min-h-screen bg-[#051424] text-[#d4e4fa] font-sans w-full overflow-x-hidden">
+        {isMobileInspectionOpen ? (
+          <MobileOrderDetailView
+            orderId={mobileInspectionOrderId}
+            sku={mobileOrdersSku}
+            onBack={() => setIsMobileInspectionOpen(false)}
+            runnerName={runnerName}
+          />
+        ) : (
+          <MobileShortlistFeed
+            skus={skus}
+            selectedSkuIds={selectedSkuIds}
+            onToggleSelectRow={handleToggleSelectRow}
+            onToggleSelectAll={handleToggleSelectAll}
+            isAllSelected={isAllSelected}
+            activeZone={mobileActiveZone}
+            onSelectZone={setMobileActiveZone}
+            onAcquireClick={(sku) => {
+              setMobileModalSku(sku);
+              setIsMobileAcquireOpen(true);
+            }}
+            onOrdersDemandClick={(sku) => {
+              setMobileOrdersSku(sku);
+              setIsMobileOrdersOpen(true);
+            }}
+            onPrintThermalSlipClick={() => {
+              setIsMobileThermalModalOpen(true);
+            }}
+            runnerName={runnerName}
+            runnerBudget={manifestData.totalCashFloat || 15000}
+            spentAmount={mobileSpentAmount}
+            onRefresh={fetchLiveShortlist}
+            isSyncing={isProcessing}
+          />
+        )}
+
+        {/* Screen 3: Mobile Acquire Modal */}
+        <MobileAcquireModal
+          sku={mobileModalSku}
+          isOpen={isMobileAcquireOpen}
+          onClose={() => setIsMobileAcquireOpen(false)}
+          onAcquisitionSuccess={(skuId, qty, unitCost) => {
+            handleAcquireSku(skuId, unitCost);
+            setMobileSpentAmount((prev) => prev + unitCost * qty);
+            showToast('Acquisition logged to local float tally! ✓', 'success');
+          }}
+          runnerName={runnerName}
+        />
+
+        {/* Screen 4: Mobile Orders Demand Breakdown Sheet */}
+        <MobileOrdersDemandSheet
+          sku={mobileOrdersSku}
+          isOpen={isMobileOrdersOpen}
+          onClose={() => setIsMobileOrdersOpen(false)}
+          onSelectOrder={(order) => {
+            setMobilePreviewOrder(order);
+            setIsMobilePreviewOpen(true);
+          }}
+          onAcquireClick={(sku) => {
+            setMobileModalSku(sku);
+            setIsMobileAcquireOpen(true);
+          }}
+          onPrintThermalSlipClick={() => {
+            setIsMobileThermalModalOpen(true);
+          }}
+        />
+
+        {/* Screen 5: Mobile Customer Order Preview Sheet */}
+        <MobileOrderPreviewSheet
+          order={mobilePreviewOrder}
+          sku={mobileOrdersSku}
+          isOpen={isMobilePreviewOpen}
+          onClose={() => setIsMobilePreviewOpen(false)}
+          onOpenFullOrder={(orderId) => {
+            setMobileInspectionOrderId(orderId);
+            setIsMobilePreviewOpen(false);
+            setIsMobileOrdersOpen(false);
+            setIsMobileInspectionOpen(true);
+          }}
+          onPrintOrderSlip={() => {
+            setIsMobileThermalModalOpen(true);
+          }}
+        />
+
+        {/* Screens 7 & 8: 80mm ESC/POS Thermal Slip — unified with desktop engine */}
+        <MobileThermalSlipModal
+          receiptData={thermalPayload}
+          isOpen={isMobileThermalModalOpen}
+          onClose={() => setIsMobileThermalModalOpen(false)}
+          onPrintSuccess={() => {
+            showToast('ESC/POS Command Dispatched (203 DPI OK)', 'success');
+          }}
+        />
+      </div>
+    </>
   );
 }

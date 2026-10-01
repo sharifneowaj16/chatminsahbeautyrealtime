@@ -20,34 +20,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { skuIds, runnerName, notes } = body;
+    const itemIds = body.itemIds || body.skuIds;
+    const { runnerName, notes, actualBuyPrice } = body;
 
-    if (!Array.isArray(skuIds) || skuIds.length === 0) {
+    if (!Array.isArray(itemIds) || itemIds.length === 0) {
       return NextResponse.json(
-        { error: 'skuIds array must contain at least one identifier' },
+        { error: 'itemIds array must contain at least one identifier' },
         { status: 400 }
       );
     }
 
     const now = new Date();
 
-    // 1. Find product IDs for given SKUs
-    const products = await prisma.product.findMany({
-      where: {
-        sku: { in: skuIds },
-      },
-      select: { id: true, sku: true },
-    });
-
-    const productIds = products.map((p) => p.id);
-
-    // 2. Find unpurchased items before marking acquired
+    // 1. Find unpurchased items by shortlist ID directly (do not query product.sku)
     const unpurchasedItems = await prisma.purchaseShortlist.findMany({
       where: {
-        OR: [
-          { productId: { in: productIds } },
-          { id: { in: skuIds } },
-        ],
+        id: { in: itemIds },
         purchased: false,
       },
       select: {
@@ -66,18 +54,30 @@ export async function POST(request: NextRequest) {
       data: {
         purchased: true,
         purchasedAt: now,
+        reconciledStatus: 'SETTLED',
+        runnerName: runnerName || 'Shakil',
         notes: notes ? `${notes} (Runner: ${runnerName || 'Shakil'})` : `Acquired by ${runnerName || 'Shakil'}`,
       },
     });
 
-    // 2b. Replenish inventory & log StockMovements
+    // 2. Set actualBuyPrice (with buyPrice fallback) and replenish inventory
     for (const item of unpurchasedItems) {
+      const itemActualBuyPrice = actualBuyPrice != null ? actualBuyPrice : item.buyPrice;
+      await prisma.purchaseShortlist.update({
+        where: { id: item.id },
+        data: {
+          actualBuyPrice: itemActualBuyPrice,
+          actualSpent: new Prisma.Decimal(Number(itemActualBuyPrice) * item.quantity),
+          reconciledStatus: 'SETTLED',
+        },
+      });
+
       if (item.productId) {
         await prisma.product.update({
           where: { id: item.productId },
           data: {
             quantity: { increment: item.quantity },
-            lastCostPrice: item.buyPrice,
+            lastCostPrice: itemActualBuyPrice,
           },
         });
         await recordStockMovement({
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           delta: item.quantity,
           type: 'PURCHASE',
           referenceId: item.orderId || item.id,
-          costPriceAtTime: Number(item.buyPrice),
+          costPriceAtTime: Number(itemActualBuyPrice),
           notes: `Batch procurement acquired by ${runnerName || 'Shakil'}`,
           createdByAdminId: payload.adminId || null,
         });
@@ -95,10 +95,7 @@ export async function POST(request: NextRequest) {
     // 3. Find affected orders to re-verify completion status
     const affectedRecords = await prisma.purchaseShortlist.findMany({
       where: {
-        OR: [
-          { productId: { in: productIds } },
-          { id: { in: skuIds } },
-        ],
+        id: { in: itemIds },
       },
       select: { orderId: true },
     });
@@ -129,12 +126,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        acquiredCount: updateResult.count || skuIds.length,
+        acquiredCount: updateResult.count || itemIds.length,
         affectedOrders: affectedOrderIds.length,
         completedOrders: completedOrdersCount,
         acquiredAt: now.toISOString(),
       },
-      message: `Successfully acquired ${updateResult.count || skuIds.length} items.`,
+      message: `Successfully acquired ${updateResult.count || itemIds.length} items.`,
     });
   } catch (err: any) {
     console.error('[batch-acquire] Error:', err);

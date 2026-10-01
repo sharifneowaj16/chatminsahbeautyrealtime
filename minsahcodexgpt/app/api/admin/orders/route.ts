@@ -474,19 +474,21 @@ export async function POST(request: NextRequest) {
 
     // Create purchase shortlist for out-of-stock items
     for (const shortItem of shortlistItems) {
+      const pName =
+        orderItems.find((oi) => oi.productId === shortItem.productId)?.name ||
+        "";
       await prisma.purchaseShortlist.upsert({
         where: {
-          orderId_productId: {
+          orderId_productId_productName: {
             orderId: order.id,
             productId: shortItem.productId,
+            productName: pName,
           },
         },
         create: {
           orderId: order.id,
           productId: shortItem.productId,
-          productName:
-            orderItems.find((oi) => oi.productId === shortItem.productId)
-              ?.name || "",
+          productName: pName,
           quantity: shortItem.quantity,
           buyPrice: new Decimal(0),
           sellPrice: shortItem.price,

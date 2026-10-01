@@ -9,6 +9,10 @@ interface ShortlistItem {
   orderId: string;
   productId: string | null;
   productName: string;
+  sku: string;
+  barcode: string;
+  supplierName: string | null;
+  supplierPhone: string | null;
   quantity: number;
   buyPrice: number;
   sellPrice: number;
@@ -67,6 +71,10 @@ export async function GET(request: NextRequest) {
     const dateRange   = searchParams.get('dateRange') || 'all';
     const searchQuery = searchParams.get('search')    || '';
     const sortBy      = searchParams.get('sort')      || 'recent';
+    const pageParam   = parseInt(searchParams.get('page') || '1', 10);
+    const page        = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+    const limitParam  = parseInt(searchParams.get('limit') || '50', 10);
+    const limit       = isNaN(limitParam) || limitParam < 1 ? 50 : Math.min(limitParam, 200);
 
     const now     = new Date();
     const today   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -76,20 +84,50 @@ export async function GET(request: NextRequest) {
     if (dateRange === 'today') dateFilter.gte = today;
     else if (dateRange === 'week') dateFilter.gte = weekAgo;
 
+    const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
+    const totalOrderCount = await prisma.order.count({
+      where: dateWhere,
+    });
+
     const orders = await prisma.order.findMany({
-      where: {
-        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
-      },
+      where: dateWhere,
+      take: limit,
+      skip: (page - 1) * limit,
       include: {
         user:  { select: { firstName: true, lastName: true, phone: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, costPrice: true, price: true } },
+            product: {
+              select: {
+                id: true,
+                name: true,
+                costPrice: true,
+                price: true,
+                sku: true,
+                barcode: true,
+                supplierLinks: {
+                  include: {
+                    supplier: {
+                      select: { name: true, phone: true },
+                    },
+                  },
+                  take: 1,
+                },
+              },
+            },
           },
         },
       },
       orderBy: sortBy === 'recent' ? { createdAt: 'desc' } : { updatedAt: 'desc' },
     });
+
+    const meta = {
+      total: totalOrderCount,
+      page,
+      limit,
+      pages: Math.ceil(totalOrderCount / limit),
+    };
 
     if (orders.length === 0) {
       return NextResponse.json({
@@ -101,7 +139,9 @@ export async function GET(request: NextRequest) {
             productsRemaining: 0, productsPurchased: 0,
             totalPotentialRevenue: 0, expectedProfit: 0, completionRate: 0,
           },
+          meta,
         },
+        meta,
       });
     }
 
@@ -224,11 +264,17 @@ export async function GET(request: NextRequest) {
           if (dbItem) usedCustomIds.add(dbItem.id);
         }
 
+        const preferredSupplier = item.product?.supplierLinks?.[0]?.supplier;
+
         return {
           id:          dbItem?.id          ?? `fallback-${order.id}-${item.id}`,
           orderId:     order.id,
           productId:   item.productId ?? null,
           productName: item.product?.name ?? item.name,
+          sku:         item.product?.sku ?? item.sku ?? 'MSB-SKU',
+          barcode:     item.product?.barcode ?? (item as { barcode?: string }).barcode ?? '',
+          supplierName: preferredSupplier?.name ?? null,
+          supplierPhone: preferredSupplier?.phone ?? null,
           quantity:    item.quantity,
           buyPrice:    item.product?.costPrice
                          ? parseFloat(item.product.costPrice.toString())
@@ -332,7 +378,11 @@ export async function GET(request: NextRequest) {
       completionRate: totalCount > 0 ? Math.round((purchasedCount / totalCount) * 100) : 0,
     };
 
-    return NextResponse.json({ success: true, data: { orders: filteredOrders, stats } });
+    return NextResponse.json({
+      success: true,
+      data: { orders: filteredOrders, stats, meta },
+      meta,
+    });
 
   } catch (error) {
     console.error('Shortlist GET error:', error);

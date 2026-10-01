@@ -16,11 +16,23 @@ import {
 export function buildWalkingManifest(
   selectedSkus: WholesaleSkuRow[],
   runnerName: string = 'Shakil',
-  runnerCode: string = 'MSB-R04'
+  runnerCode: string = 'MSB-R04',
+  pinnedBatchNumber?: string
 ): WholesalePickListManifestData {
+  const generateBatchNumber = () => {
+    if (pinnedBatchNumber) return pinnedBatchNumber;
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    return `PL-${dd}${mm}-${rand}`;
+  };
+
+  const batchNumber = generateBatchNumber();
+
   if (selectedSkus.length === 0) {
     return {
-      batchNumber: 'PL-84920',
+      batchNumber,
       selectedSkusCount: 0,
       selectedUnitsCount: 0,
       totalCashFloat: 0,
@@ -98,7 +110,7 @@ export function buildWalkingManifest(
   const hubsCovered = zones.join(' & ') || 'Dhaka Central Hub';
 
   return {
-    batchNumber: 'PL-84920',
+    batchNumber,
     selectedSkusCount: selectedSkus.length,
     selectedUnitsCount: totalUnits,
     totalCashFloat,
