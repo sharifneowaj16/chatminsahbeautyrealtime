@@ -1,6 +1,6 @@
 // app/admin/shortlist/page.tsx
-// 100% Desktop Pixel Parity for Minsah Beauty Purchase Shortlist & Dual-Drawer Architecture
-// Enhanced with End-to-End Hybrid Logic: Dynamic Walking Route Engine + Real Database Persistence
+// 100% Desktop & Mobile Pixel Parity for Minsah Beauty Purchase Shortlist & Dual-Drawer Architecture
+// Master Container composed via Atomic Component Libraries (Loops 1–9)
 
 'use client';
 
@@ -18,7 +18,6 @@ import {
   buildThermalReceiptPayload,
 } from '@/lib/shortlist/walkingRouteEngine';
 import WholesaleTable from './components/WholesaleTable';
-import BulkSourcingBar from './components/BulkSourcingBar';
 import WholesalePickListDrawer from './components/WholesalePickListDrawer';
 import ThermalPickSlipDrawer from './components/ThermalPickSlipDrawer';
 import SuppliersMatrix from './components/SuppliersMatrix';
@@ -28,21 +27,25 @@ import MobileOrdersDemandSheet, { EnrichedOrderDemand } from './components/mobil
 import MobileOrderPreviewSheet from './components/mobile/MobileOrderPreviewSheet';
 import MobileOrderDetailView from './components/mobile/MobileOrderDetailView';
 import MobileThermalSlipModal from './components/mobile/MobileThermalSlipModal';
-import { ProcurementZoneBadge } from '@/components/admin/shortlist/ProcurementZoneBadge';
-import { RunnerAssignmentChip } from '@/components/admin/shortlist/RunnerAssignmentChip';
-import { StockDemandProgressBar } from '@/components/admin/shortlist/StockDemandProgressBar';
+
+// Desktop Atomic Components (Loop 1)
+import { ShortlistDesktopHeader } from '@/components/admin/shortlist/desktop/table/ShortlistDesktopHeader';
+import { ShortlistStatusTabs } from '@/components/admin/shortlist/desktop/table/ShortlistStatusTabs';
+import { ShortlistZoneFilterPills } from '@/components/admin/shortlist/desktop/table/ShortlistZoneFilterPills';
+import { ShortlistBulkSourcingBar } from '@/components/admin/shortlist/desktop/table/ShortlistBulkSourcingBar';
+import { ShortlistPaginationBar } from '@/components/admin/shortlist/desktop/table/ShortlistPaginationBar';
 
 export default function ShortlistPage() {
   // ── 1. Data State ──────────────────────────────────────────
   const [skus, setSkus] = useState<WholesaleSkuRow[]>(INITIAL_WHOLESALE_SKUS);
   const [selectedSkuIds, setSelectedSkuIds] = useState<Set<string>>(
-    new Set(['sku_lip_01', 'sku_serum_01']) // Ground truth pre-selected 2 SKUs
+    new Set(['sku_lip_01', 'sku_serum_01'])
   );
   const [activeZone, setActiveZone] = useState<WholesaleZone>('ALL');
   const [activeTab, setActiveTab] = useState<WholesaleStatusTab>('SKU_MATRIX');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [serverPaginationMeta, setServerPaginationMeta] = useState<{
+  const [, setServerPaginationMeta] = useState<{
     total: number;
     page: number;
     limit: number;
@@ -54,7 +57,6 @@ export default function ShortlistPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // ── 2. Dual-Drawer State Machine ───────────────────────────
-  // Default to open matching Stitch ground truth screenshot where both drawers are rendered
   const [isPickListOpen, setIsPickListOpen] = useState(false);
   const [isThermalOpen, setIsThermalOpen] = useState(false);
 
@@ -96,65 +98,64 @@ export default function ShortlistPage() {
             setServerPaginationMeta(json.data.meta);
           }
           if (Array.isArray(json.data?.orders) && json.data.orders.length > 0) {
-            // If server has real orders, merge them into Wholesale SKU rows while preserving ground truth metadata
             const serverOrderItems: WholesaleSkuRow[] = [];
-          for (const order of json.data.orders) {
-            for (const item of order.items || []) {
-              serverOrderItems.push({
-                id: item.id || `sku_${item.sku || 'gen'}`,
-                sku: item.sku || 'MSB-SKU',
-                barcode: item.barcode || '890123450912',
-                title: item.productName || 'Beauty Product',
-                variantOrShade: 'Default',
-                volumeSpec: 'Standard',
-                categoryTag: 'Skincare',
-                batchFormulaNote: 'Direct Store Demand',
-                requiredQuantity: item.quantity || 1,
-                demandTag: item.priority === 'URGENT' ? 'Urgent Stock' : 'Required',
-                priority: item.priority === 'URGENT' ? 'URGENT' : 'NORMAL',
-                linkedOrders: [
-                  {
-                    orderId: order.id,
-                    orderNumber: order.orderNumber,
-                    quantity: item.quantity || 1,
-                    shippingType: 'Standard',
+            for (const order of json.data.orders) {
+              for (const item of order.items || []) {
+                serverOrderItems.push({
+                  id: item.id || `sku_${item.sku || 'gen'}`,
+                  sku: item.sku || 'MSB-SKU',
+                  barcode: item.barcode || '890123450912',
+                  title: item.productName || 'Beauty Product',
+                  variantOrShade: 'Default',
+                  volumeSpec: 'Standard',
+                  categoryTag: 'Skincare',
+                  batchFormulaNote: 'Direct Store Demand',
+                  requiredQuantity: item.quantity || 1,
+                  demandTag: item.priority === 'URGENT' ? 'Urgent Stock' : 'Required',
+                  priority: item.priority === 'URGENT' ? 'URGENT' : 'NORMAL',
+                  linkedOrders: [
+                    {
+                      orderId: order.id,
+                      orderNumber: order.orderNumber,
+                      quantity: item.quantity || 1,
+                      shippingType: 'Standard',
+                    },
+                  ],
+                  vendor: {
+                    stallName: item.supplierName || 'Paltan Heritage Trading',
+                    zone: 'Paltan',
+                    standLocation: 'Stand 14, Lane 2, Paltan',
+                    contactPerson: 'Vendor Rep',
+                    phone: item.supplierPhone || '+880 1711-892401',
+                    isVerified: Boolean(item.supplierName),
+                    statusTag: item.supplierName ? 'Verified Vendor · In Stock' : 'Direct Sourcing · Pending Vendor',
+                    statusTagType: item.supplierName ? 'verified' : 'default',
                   },
-                ],
-                vendor: {
-                  stallName: item.supplierName || 'Paltan Heritage Trading',
-                  zone: 'Paltan',
-                  standLocation: 'Stand 14, Lane 2, Paltan',
-                  contactPerson: 'Vendor Rep',
-                  phone: item.supplierPhone || '+880 1711-892401',
-                  isVerified: Boolean(item.supplierName),
-                  statusTag: item.supplierName ? 'Verified Vendor · In Stock' : 'Direct Sourcing · Pending Vendor',
-                  statusTagType: item.supplierName ? 'verified' : 'default',
-                },
-                financials: {
-                  unitCost: item.buyPrice || 320,
-                  totalCost: (item.buyPrice || 320) * (item.quantity || 1),
-                  retailValue: (item.sellPrice || 750) * (item.quantity || 1),
-                  netProfit: ((item.sellPrice || 750) - (item.buyPrice || 320)) * (item.quantity || 1),
-                  marginPercent: 50,
-                },
-                pickedQuantity: item.purchased ? (item.quantity || 1) : 0,
-                progressPercent: item.purchased ? 100 : 0,
-                statusNote: item.purchased ? 'Acquired' : 'Pending pickup',
-                isAcquired: Boolean(item.purchased),
-              });
+                  financials: {
+                    unitCost: item.buyPrice || 320,
+                    totalCost: (item.buyPrice || 320) * (item.quantity || 1),
+                    retailValue: (item.sellPrice || 750) * (item.quantity || 1),
+                    netProfit: ((item.sellPrice || 750) - (item.buyPrice || 320)) * (item.quantity || 1),
+                    marginPercent: 50,
+                  },
+                  pickedQuantity: item.purchased ? (item.quantity || 1) : 0,
+                  progressPercent: item.purchased ? 100 : 0,
+                  statusNote: item.purchased ? 'Acquired' : 'Pending pickup',
+                  isAcquired: Boolean(item.purchased),
+                });
+              }
             }
-          }
-          if (serverOrderItems.length > 0) {
-            setSkus(serverOrderItems);
-            setSelectedSkuIds(new Set(serverOrderItems.slice(0, 2).map((s) => s.id)));
+            if (serverOrderItems.length > 0) {
+              setSkus(serverOrderItems);
+              setSelectedSkuIds(new Set(serverOrderItems.slice(0, 2).map((s) => s.id)));
+            }
           }
         }
       }
+    } catch {
+      // Deterministic fallback ensures flawless dev/offline behavior
     }
-  } catch {
-    // Deterministic fallback ensures flawless dev/offline behavior
-  }
-}, []);
+  }, []);
 
   useEffect(() => {
     fetchLiveShortlist();
@@ -163,14 +164,12 @@ export default function ShortlistPage() {
   // ── 4. Keyboard Shortcuts & Global ESC Stack ───────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // ⌘K or Ctrl+K to focus search input
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         searchInputRef.current?.focus();
         return;
       }
 
-      // Hierarchical ESC handler: closes the topmost active drawer
       if (e.key === 'Escape') {
         if (isThermalOpen) {
           e.preventDefault();
@@ -189,16 +188,13 @@ export default function ShortlistPage() {
   // ── 5. Filtering Logic ─────────────────────────────────────
   const filteredSkus = useMemo(() => {
     return skus.filter((item) => {
-      // Zone filter
       if (activeZone === 'PALTAN' && item.vendor.zone !== 'Paltan') return false;
       if (activeZone === 'CHAWKBAZAR' && item.vendor.zone !== 'Chawkbazar') return false;
       if (activeZone === 'ELEPHANT_RD' && item.vendor.zone !== 'Elephant Rd') return false;
 
-      // Status Tab filter
       if (activeTab === 'PENDING' && item.isAcquired) return false;
       if (activeTab === 'URGENT' && item.priority !== 'URGENT') return false;
 
-      // Search query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesSku = item.sku.toLowerCase().includes(q);
@@ -215,7 +211,6 @@ export default function ShortlistPage() {
     });
   }, [skus, activeZone, activeTab, searchQuery]);
 
-  // Reset pagination to page 1 when filtered skus length changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredSkus.length]);
@@ -239,12 +234,10 @@ export default function ShortlistPage() {
     filteredSkus.length > 0 &&
     filteredSkus.every((item) => selectedSkuIds.has(item.id));
 
-  // Dynamically cluster walking stops using walkingRouteEngine
   const manifestData = useMemo(() => {
     return buildWalkingManifest(selectedSkusList, runnerName, runnerCode);
   }, [selectedSkusList, runnerName, runnerCode]);
 
-  // Dynamically format 80mm ESC/POS thermal receipt payload
   const thermalPayload = useMemo(() => {
     return buildThermalReceiptPayload(manifestData, selectedSkusList);
   }, [manifestData, selectedSkusList]);
@@ -277,7 +270,6 @@ export default function ShortlistPage() {
     const newAcquiredState = !targetSku.isAcquired;
     const finalUnitCost = customUnitPrice ?? targetSku.financials.unitCost;
 
-    // Optimistic UI Update
     setSkus((prev) =>
       prev.map((item) => {
         if (item.id === skuId) {
@@ -313,24 +305,49 @@ export default function ShortlistPage() {
       'success'
     );
 
-    // Backend Persistence
     try {
       await fetch('/api/admin/shortlist/acquire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
+          itemId: skuId,
           sku: targetSku.sku,
-          itemId: targetSku.id,
           acquired: newAcquiredState,
           actualBuyPrice: finalUnitCost,
           actualSpent: finalUnitCost * targetSku.requiredQuantity,
-          runnerName,
-          batchNumber: manifestData.batchNumber,
+          runnerName: runnerName,
+          supplierName: targetSku.vendor.stallName,
         }),
       });
     } catch {
-      // Graceful fallback keeping local state
+      // Deterministic fallback maintains UI fluidity
+    }
+  };
+
+  const handleTogglePriority = (skuId: string) => {
+    setSkus((prev) =>
+      prev.map((item) => {
+        if (item.id === skuId) {
+          const newPriority = item.priority === 'URGENT' ? 'NORMAL' : 'URGENT';
+          showToast(
+            `${item.sku} priority changed to ${newPriority}`,
+            newPriority === 'URGENT' ? 'info' : 'success'
+          );
+          return {
+            ...item,
+            priority: newPriority,
+            demandTag: newPriority === 'URGENT' ? 'Urgent Stock' : 'Required',
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleCopyText = (text: string, label: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      showToast(`${label} copied to clipboard`, 'info');
     }
   };
 
@@ -338,9 +355,8 @@ export default function ShortlistPage() {
     if (selectedSkuIds.size === 0) return;
     setIsProcessing(true);
 
-    const idsToAcquire = Array.from(selectedSkuIds);
+    const acquiredIds = Array.from(selectedSkuIds);
 
-    // Optimistic UI Update
     setSkus((prev) =>
       prev.map((item) => {
         if (selectedSkuIds.has(item.id)) {
@@ -349,38 +365,29 @@ export default function ShortlistPage() {
             isAcquired: true,
             pickedQuantity: item.requiredQuantity,
             progressPercent: 100,
-            statusNote: 'Batch Acquired ✓',
+            statusNote: 'Batch Acquired',
           };
         }
         return item;
       })
     );
 
-    showToast(
-      `Batch Acquired! ${selectedCount} SKUs (${selectedUnits} units) • Cash Float ৳${selectedCost.toLocaleString()} logged`,
-      'success'
-    );
+    showToast(`Batch acquired ${acquiredIds.length} SKUs (${selectedUnits} units)`, 'success');
 
-    // Backend Persistence via /api/admin/shortlist/batch-acquire
     try {
-      const res = await fetch('/api/admin/shortlist/batch-acquire', {
+      await fetch('/api/admin/shortlist/batch-acquire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
-          itemIds: idsToAcquire,
-          runnerName,
-          notes: `Batch #${manifestData.batchNumber} - ${manifestData.hubsCovered}`,
+          itemIds: acquiredIds,
+          runnerName: runnerName,
         }),
       });
-      if (res.ok) {
-        const json = await res.json();
-        console.log('[batch-acquire] Success:', json);
-      }
     } catch {
       // Local state preserved
     } finally {
       setIsProcessing(false);
+      setIsPickListOpen(false);
     }
   };
 
@@ -388,83 +395,43 @@ export default function ShortlistPage() {
     return new Set(skus.map((s) => s.vendor.stallName)).size;
   }, [skus]);
 
-  const handleTogglePriority = async (skuId: string) => {
-    const targetSku = skus.find((item) => item.id === skuId);
-    if (!targetSku) return;
-
-    const newPriority = targetSku.priority === 'URGENT' ? 'NORMAL' : 'URGENT';
-    const newDemandTag = newPriority === 'URGENT' ? 'Urgent Stock' : 'Required';
-
-    setSkus((prev) =>
-      prev.map((item) => {
-        if (item.id === skuId) {
-          return {
-            ...item,
-            priority: newPriority,
-            demandTag: newDemandTag,
-          };
-        }
-        return item;
-      })
-    );
-
-    showToast(`${targetSku.sku} priority set to ${newPriority} ⭐`, 'info');
-
-    try {
-      await fetch(`/api/admin/shortlist/${skuId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          purchased: targetSku.isAcquired,
-          priority: newPriority,
-        }),
-      });
-    } catch {
-      // Silent failure
-    }
-  };
-
-  const handleCopyText = (text: string, label: string) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      showToast(`${label} copied to clipboard! ✓`, 'info');
-    }
-  };
-
   const handleSelectVendorSkus = (vendorSkus: WholesaleSkuRow[]) => {
     setSelectedSkuIds(new Set(vendorSkus.map((s) => s.id)));
-    setIsPickListOpen(true);
-    showToast(`Loaded ${vendorSkus.length} SKUs for ${vendorSkus[0]?.vendor.stallName || 'Stall'}`, 'info');
+    showToast(`Selected ${vendorSkus.length} SKUs for manifest generation`, 'info');
   };
 
-  const handleMarkBatchAcquiredVendor = async (skuIds: string[]) => {
+  const handleMarkBatchAcquiredVendor = async (vendorSkusOrIds: WholesaleSkuRow[] | string[]) => {
+    const ids = vendorSkusOrIds.map((s) => (typeof s === 'string' ? s : s.id));
+    const idSet = new Set(ids);
     setIsProcessing(true);
+
     setSkus((prev) =>
       prev.map((item) => {
-        if (skuIds.includes(item.id)) {
+        if (idSet.has(item.id)) {
           return {
             ...item,
             isAcquired: true,
             pickedQuantity: item.requiredQuantity,
             progressPercent: 100,
-            statusNote: 'Stall Batch Acquired ✓',
+            statusNote: 'Vendor Batch Acquired',
           };
         }
         return item;
       })
     );
-    showToast(`Acquired ${skuIds.length} items from merchant stall! ✓`, 'success');
+
+    const firstFound = skus.find((s) => idSet.has(s.id));
+    const vendorName = firstFound?.vendor.stallName || 'Vendor';
+    showToast(`Acquired all ${ids.length} SKUs for ${vendorName}`, 'success');
 
     try {
       await fetch('/api/admin/shortlist/batch-acquire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
-          itemIds: skuIds,
-          runnerName,
-          notes: `Stall Direct Batch Dispatch`,
+          itemIds: ids,
+          runnerName: runnerName,
+          vendorName: vendorName,
         }),
       });
     } catch {
@@ -478,313 +445,117 @@ export default function ShortlistPage() {
     <>
       {/* ── DESKTOP VIEWPORT (>= 1024px) STRICT ISOLATION ── */}
       <div className="hidden lg:flex min-h-screen bg-[#051424] text-[#e2eaf5] font-sans antialiased flex-col w-full -m-6 p-6">
-      {/* ── Feedback Toast Notification ── */}
-      {feedbackToast && (
-        <div className="fixed top-5 right-5 z-[60] px-4 py-2.5 rounded-lg bg-[#0e2136] border border-[#213860] text-emerald-300 font-mono text-xs shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
-          <span className="text-emerald-400 font-bold">✓</span>
-          <span>{feedbackToast.message}</span>
-        </div>
-      )}
-
-      {/* ── Top Header Strip ── */}
-      <header className="sticky top-0 z-40 h-14 bg-[#061220]/95 backdrop-blur-md border border-[#142336] rounded-xl flex items-center justify-between px-5 mb-4 shadow-sm">
-        {/* Left Breadcrumb & Live Pulse */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
-            <span className="hover:text-slate-200 cursor-pointer">Ops</span>
-            <span>/</span>
-            <span className="hover:text-slate-200 cursor-pointer">Sourcing</span>
-            <span>/</span>
-            <span className="text-white font-semibold">Purchase Shortlist</span>
+        {feedbackToast && (
+          <div className="fixed top-5 right-5 z-[60] px-4 py-2.5 rounded-lg bg-[#0e2136] border border-[#213860] text-emerald-300 font-mono text-xs shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            <span className="text-emerald-400 font-bold">✓</span>
+            <span>{feedbackToast.message}</span>
           </div>
-          <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono text-[10px] font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
-            LIVE BATCH #{manifestData.batchNumber}
-          </span>
-        </div>
-
-        {/* Center Search Input */}
-        <div className="relative w-80">
-          <input
-            ref={searchInputRef}
-            type="text"
-            id="procurement-search"
-            placeholder="Search SKU, order or barcode (Ctrl+K)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-8 pl-8 pr-8 rounded-lg bg-[#0a1727] border border-[#192b42] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition-colors"
-          />
-          <span className="absolute left-2.5 top-2 text-slate-500 text-xs">🔍</span>
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1.5 text-slate-400 hover:text-white text-xs cursor-pointer"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Right Status Badges & Runner Selector */}
-        <div className="flex items-center gap-3">
-          <span className="px-2.5 py-1 rounded-md bg-[#0a1727] border border-[#182a3d] text-[11px] font-mono text-slate-300 flex items-center gap-1.5">
-            <span className="text-emerald-400 text-xs">●</span>
-            <span>Product-Centric Sourcing Mode</span>
-          </span>
-          <div className="h-4 w-px bg-[#192b42]"></div>
-          <div className="flex items-center gap-2">
-            <RunnerAssignmentChip
-              runnerName={runnerName}
-              runnerCode={runnerCode}
-              compact
-            />
-            <select
-              value={runnerName}
-              onChange={(e) => {
-                const val = e.target.value;
-                setRunnerName(val);
-                setRunnerCode(val === 'Shakil' ? 'MSB-R04' : val === 'Rahim' ? 'MSB-R02' : 'MSB-R01');
-                showToast(`Runner assigned: ${val}`, 'info');
-              }}
-              className="bg-[#0a1727] border border-[#192b42] text-xs text-slate-200 font-mono rounded px-2 py-1 cursor-pointer focus:outline-none"
-            >
-              <option value="Shakil">Rig 04 (Shakil)</option>
-              <option value="Rahim">Rig 02 (Rahim)</option>
-              <option value="Tanvir">Rig 01 (Tanvir)</option>
-            </select>
-          </div>
-        </div>
-      </header>
-
-      {/* ── Main Workspace ── */}
-      <main className="space-y-4 w-full">
-        {/* Status Matrix Tabs & Zone Multi-Pills Bar */}
-        <div className="flex items-center justify-between gap-4 flex-wrap pb-1">
-          {/* Left Status Tabs */}
-          <div className="flex items-center gap-1 bg-[#091524] p-1 rounded-lg border border-[#152538]">
-            <button
-              type="button"
-              onClick={() => setActiveTab('SKU_MATRIX')}
-              className={`px-3 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                activeTab === 'SKU_MATRIX'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              SKU Matrix ({skus.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('PENDING')}
-              className={`px-3 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                activeTab === 'PENDING'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Pending ({skus.filter((s) => !s.isAcquired).length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('URGENT')}
-              className={`px-3 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                activeTab === 'URGENT'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Urgent ({skus.filter((s) => s.priority === 'URGENT').length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('SUPPLIERS')}
-              className={`px-3 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                activeTab === 'SUPPLIERS'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Suppliers ({distinctSuppliersCount})
-            </button>
-          </div>
-
-          {/* Right Zone Pills */}
-          <div className="flex items-center gap-1.5 text-xs font-mono">
-            <span className="text-slate-400 font-semibold mr-1">Zone:</span>
-            <button
-              type="button"
-              onClick={() => setActiveZone('ALL')}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
-                activeZone === 'ALL'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[#081320] hover:bg-[#112134] text-slate-300 border border-[#17273a]'
-              }`}
-            >
-              All ({skus.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveZone('PALTAN')}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
-                activeZone === 'PALTAN'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[#081320] hover:bg-[#112134] text-slate-300 border border-[#17273a]'
-              }`}
-            >
-              Paltan ({skus.filter((s) => s.vendor.zone === 'Paltan').length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveZone('CHAWKBAZAR')}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
-                activeZone === 'CHAWKBAZAR'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[#081320] hover:bg-[#112134] text-slate-300 border border-[#17273a]'
-              }`}
-            >
-              Chawkbazar ({skus.filter((s) => s.vendor.zone === 'Chawkbazar').length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveZone('ELEPHANT_RD')}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
-                activeZone === 'ELEPHANT_RD'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[#081320] hover:bg-[#112134] text-slate-300 border border-[#17273a]'
-              }`}
-            >
-              Elephant Rd ({skus.filter((s) => s.vendor.zone === 'Elephant Rd').length})
-            </button>
-          </div>
-        </div>
-
-        {/* Floating Bulk Selection Toolbar */}
-        <BulkSourcingBar
-          totalCount={filteredSkus.length}
-          selectedCount={selectedCount}
-          selectedUnits={selectedUnits}
-          selectedCost={selectedCost}
-          isAllSelected={isAllSelected}
-          onToggleSelectAll={handleToggleSelectAll}
-          onOpenPickList={() => setIsPickListOpen(true)}
-          onMarkBatchAcquired={handleMarkBatchAcquired}
-        />
-
-        {/* Wholesale SKU Matrix 6-Column Data Table OR Dedicated Suppliers Directory */}
-        {activeTab === 'SUPPLIERS' ? (
-          <SuppliersMatrix
-            skus={filteredSkus}
-            onSelectVendorSkus={handleSelectVendorSkus}
-            onAcquireSku={handleAcquireSku}
-            onMarkBatchAcquiredVendor={handleMarkBatchAcquiredVendor}
-          />
-        ) : (
-          <WholesaleTable
-            skus={filteredSkus}
-            selectedSkuIds={selectedSkuIds}
-            onToggleSelectRow={handleToggleSelectRow}
-            onAcquireSku={handleAcquireSku}
-            onAssignRunner={(skuId) => {
-              setSelectedSkuIds(new Set([skuId]));
-              setIsPickListOpen(true);
-              const found = skus.find((s) => s.id === skuId);
-              showToast(`Assigned ${found?.sku || 'SKU'} to ${runnerName}`, 'info');
-            }}
-            onTogglePriority={handleTogglePriority}
-            onCopyText={handleCopyText}
-            currentPage={currentPage}
-            totalRows={filteredSkus.length}
-            onPageChange={setCurrentPage}
-          />
         )}
 
-        {/* Footer Pagination & Rig Sync Note */}
-        <div className="flex items-center justify-between pt-2 text-xs font-mono text-slate-400 select-none">
-          <p>
-            Showing 1 - {filteredSkus.length} of {skus.length} SKUs •{' '}
-            <span className="text-emerald-400 font-semibold">
-              Scanner Rig 04 synced 2m ago
-            </span>
-            {isProcessing && (
-              <span className="ml-2 text-indigo-400 animate-pulse font-bold">
-                Syncing to database...
-              </span>
-            )}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="h-7 px-2.5 rounded bg-[#0a1727] border border-[#172a3e] text-slate-400 hover:text-white flex items-center gap-0.5 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
-            >
-              ← Prev
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentPage(1)}
-              className={`h-7 w-7 rounded flex items-center justify-center font-bold shadow-xs cursor-pointer ${
-                currentPage === 1
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[#0a1727] hover:bg-[#122336] border border-[#172a3e] text-slate-300'
-              }`}
-            >
-              1
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentPage(2)}
-              className={`h-7 w-7 rounded flex items-center justify-center font-bold cursor-pointer ${
-                currentPage === 2
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[#0a1727] hover:bg-[#122336] border border-[#172a3e] text-slate-300'
-              }`}
-            >
-              2
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentPage(3)}
-              className={`h-7 w-7 rounded flex items-center justify-center font-bold cursor-pointer ${
-                currentPage === 3
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[#0a1727] hover:bg-[#122336] border border-[#172a3e] text-slate-300'
-              }`}
-            >
-              3
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(3, p + 1))}
-              className="h-7 px-2.5 rounded bg-[#0a1727] hover:bg-[#122336] border border-[#172a3e] text-slate-300 hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
-            >
-              Next →
-            </button>
+        {/* ── Top Header Strip ── */}
+        <ShortlistDesktopHeader
+          batchNumber={manifestData.batchNumber}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          runnerName={runnerName}
+          runnerCode={runnerCode}
+          onRunnerChange={(name, code) => {
+            setRunnerName(name);
+            setRunnerCode(code);
+            showToast(`Runner assigned: ${name}`, 'info');
+          }}
+        />
+
+        {/* ── Main Workspace ── */}
+        <main className="space-y-4 w-full">
+          <div className="flex items-center justify-between gap-4 flex-wrap pb-1">
+            <ShortlistStatusTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              totalSkus={skus.length}
+              pendingCount={skus.filter((s) => !s.isAcquired).length}
+              urgentCount={skus.filter((s) => s.priority === 'URGENT').length}
+              suppliersCount={distinctSuppliersCount}
+            />
+
+            <ShortlistZoneFilterPills
+              activeZone={activeZone}
+              onZoneChange={setActiveZone}
+              totalCount={skus.length}
+              paltanCount={skus.filter((s) => s.vendor.zone === 'Paltan').length}
+              chawkbazarCount={skus.filter((s) => s.vendor.zone === 'Chawkbazar').length}
+              elephantCount={skus.filter((s) => s.vendor.zone === 'Elephant Rd').length}
+            />
           </div>
-        </div>
-      </main>
 
-      {/* ── Drawer 1: Wholesale Pick List Manifest (#pick-list-drawer) ── */}
-      <WholesalePickListDrawer
-        isOpen={isPickListOpen}
-        onClose={() => setIsPickListOpen(false)}
-        manifest={manifestData}
-        onOpenThermalSlip={() => setIsThermalOpen(true)}
-        onMarkAcquired={handleMarkBatchAcquired}
-      />
+          <ShortlistBulkSourcingBar
+            totalCount={filteredSkus.length}
+            selectedCount={selectedCount}
+            selectedUnits={selectedUnits}
+            selectedCost={selectedCost}
+            isAllSelected={isAllSelected}
+            onToggleSelectAll={handleToggleSelectAll}
+            onOpenPickList={() => setIsPickListOpen(true)}
+            onMarkBatchAcquired={handleMarkBatchAcquired}
+          />
 
-      {/* ── Drawer 2: 80mm ESC/POS Thermal Receipt Slip LIVE (#thermal-drawer) ── */}
-      <ThermalPickSlipDrawer
-        isOpen={isThermalOpen}
-        onBackToManifest={() => setIsThermalOpen(false)}
-        onClose={() => {
-          setIsThermalOpen(false);
-          setIsPickListOpen(false);
-        }}
-        receiptData={thermalPayload}
-      />
-    </div>
+          {activeTab === 'SUPPLIERS' ? (
+            <SuppliersMatrix
+              skus={filteredSkus}
+              onSelectVendorSkus={handleSelectVendorSkus}
+              onAcquireSku={handleAcquireSku}
+              onMarkBatchAcquiredVendor={handleMarkBatchAcquiredVendor}
+            />
+          ) : (
+            <WholesaleTable
+              skus={filteredSkus}
+              selectedSkuIds={selectedSkuIds}
+              onToggleSelectRow={handleToggleSelectRow}
+              onAcquireSku={handleAcquireSku}
+              onAssignRunner={(skuId) => {
+                setSelectedSkuIds(new Set([skuId]));
+                setIsPickListOpen(true);
+                const found = skus.find((s) => s.id === skuId);
+                showToast(`Assigned ${found?.sku || 'SKU'} to ${runnerName}`, 'info');
+              }}
+              onTogglePriority={handleTogglePriority}
+              onCopyText={handleCopyText}
+              currentPage={currentPage}
+              totalRows={filteredSkus.length}
+              onPageChange={setCurrentPage}
+            />
+          )}
+
+          <ShortlistPaginationBar
+            currentPage={currentPage}
+            totalPages={3}
+            totalRows={filteredSkus.length}
+            totalSkus={skus.length}
+            onPageChange={setCurrentPage}
+            isProcessing={isProcessing}
+          />
+        </main>
+
+        {/* ── Drawer 1: Wholesale Pick List Manifest (#pick-list-drawer) ── */}
+        <WholesalePickListDrawer
+          isOpen={isPickListOpen}
+          onClose={() => setIsPickListOpen(false)}
+          manifest={manifestData}
+          onOpenThermalSlip={() => setIsThermalOpen(true)}
+          onMarkAcquired={handleMarkBatchAcquired}
+        />
+
+        {/* ── Drawer 2: 80mm ESC/POS Thermal Receipt Slip LIVE (#thermal-drawer) ── */}
+        <ThermalPickSlipDrawer
+          isOpen={isThermalOpen}
+          onBackToManifest={() => setIsThermalOpen(false)}
+          onClose={() => {
+            setIsThermalOpen(false);
+            setIsPickListOpen(false);
+          }}
+          receiptData={thermalPayload}
+        />
+      </div>
 
       {/* ── MOBILE VIEWPORT (< 1024px) 8-SCREEN SHORTLIST EXPERIENCE ── */}
       <div className="block lg:hidden min-h-screen bg-[#051424] text-[#d4e4fa] font-sans w-full overflow-x-hidden">
