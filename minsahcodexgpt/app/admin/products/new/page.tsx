@@ -1,274 +1,200 @@
 'use client';
 
-
-
-
-
-
 import { useToast } from '@/components/ui/ToastProvider';
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
-import { Select } from '@/components/ui/Select';
-import { Button } from '@/components/ui/Button';
-import { useState, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
-import { useCategories } from '@/contexts/CategoriesContext';
-import ProductFaqSection, { FaqItem } from '@/components/admin/ProductFaqSection';
-import ProductHeroVisualController from '@/components/admin/ProductHeroVisualController';
-import ProductTimelineVisualManager from '@/components/admin/ProductTimelineVisualManager';
 import { adminFetchJson } from '@/lib/adminFetch';
 import { DEFAULT_SITE_URL } from '@/lib/seo';
+import ProductFaqSection from '@/components/admin/ProductFaqSection';
+
+// Shared Types
 import {
-  ArrowLeft,
-  Save,
-  X,
-  Upload,
-  Plus,
-  Trash2,
-  Image as ImageIcon,
-  Package,
-  Tag,
-  Search,
-  TruckIcon,
-  Percent,
-  AlertCircle,
-  Settings,
-  Sparkles,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Megaphone,
-} from 'lucide-react';
+  ProductFormData,
+  ProductImage,
+  ProductVariant,
+  DeliveryOfferType,
+} from '@/components/admin/products/types';
+
+// Loop 3: Common & Form & Media
+import { ProductFormHeader } from '@/components/admin/products/common/ProductFormHeader';
+import { ProductStickyActionsBar } from '@/components/admin/products/common/ProductStickyActionsBar';
+import { ProductBasicInfoCard } from '@/components/admin/products/form/ProductBasicInfoCard';
+import { ProductNameInput } from '@/components/admin/products/form/ProductNameInput';
+import { ProductCategoryCascadePicker } from '@/components/admin/products/form/ProductCategoryCascadePicker';
+import { ProductBrandSelector } from '@/components/admin/products/form/ProductBrandSelector';
+import { ProductOriginCountrySelect } from '@/components/admin/products/form/ProductOriginCountrySelect';
+import { ProductStatusToggleGroup } from '@/components/admin/products/form/ProductStatusToggleGroup';
+import { ProductFeaturedToggle } from '@/components/admin/products/form/ProductFeaturedToggle';
+import { ProductDescriptionEditor } from '@/components/admin/products/form/ProductDescriptionEditor';
+import { ProductImageUploaderCard } from '@/components/admin/products/media/ProductImageUploaderCard';
+import { ProductImageDropzone } from '@/components/admin/products/media/ProductImageDropzone';
+import { ProductImageGrid } from '@/components/admin/products/media/ProductImageGrid';
+import { ProductImageAltEditor } from '@/components/admin/products/media/ProductImageAltEditor';
+import { ProductVisualManagersWrapper } from '@/components/admin/products/media/ProductVisualManagersWrapper';
+
+// Loop 4: Variants & Pricing
+import { ProductVariantMatrixCard } from '@/components/admin/products/variants/ProductVariantMatrixCard';
+import { ProductVariantRowItem } from '@/components/admin/products/variants/ProductVariantRowItem';
+import { ProductStockThresholdInput } from '@/components/admin/products/variants/ProductStockThresholdInput';
+import { ProductBarcodeScannerInput } from '@/components/admin/products/variants/ProductBarcodeScannerInput';
+import { ProductDiscountOffersCard } from '@/components/admin/products/pricing/ProductDiscountOffersCard';
+import { ProductFlashSaleToggle } from '@/components/admin/products/pricing/ProductFlashSaleToggle';
+import { ProductPolicyTogglesCard } from '@/components/admin/products/pricing/ProductPolicyTogglesCard';
+
+// Loop 5: Specifications
+import { ProductSpecificationsCard } from '@/components/admin/products/specs/ProductSpecificationsCard';
+import { ProductSkinTypePills } from '@/components/admin/products/specs/ProductSkinTypePills';
+import { ProductWeightInput } from '@/components/admin/products/specs/ProductWeightInput';
+import { ProductShelfLifeInputs } from '@/components/admin/products/specs/ProductShelfLifeInputs';
+import { ProductConditionSelect } from '@/components/admin/products/specs/ProductConditionSelect';
+import { ProductGtinInput } from '@/components/admin/products/specs/ProductGtinInput';
+import { ProductRatingReviewsInputs } from '@/components/admin/products/specs/ProductRatingReviewsInputs';
+import { ProductIngredientsTextarea } from '@/components/admin/products/specs/ProductIngredientsTextarea';
+
+// Loop 6: SEO & Structured Data
+import { ProductSeoSettingsCard } from '@/components/admin/products/seo/ProductSeoSettingsCard';
+import { ProductMetaTitleDescriptionInputs } from '@/components/admin/products/seo/ProductMetaTitleDescriptionInputs';
+import { ProductSlugInput } from '@/components/admin/products/seo/ProductSlugInput';
+import { ProductKeywordChipsInput } from '@/components/admin/products/seo/ProductKeywordChipsInput';
+import { ProductBilingualMetaCard } from '@/components/admin/products/seo/ProductBilingualMetaCard';
+import { ProductSocialOgCard } from '@/components/admin/products/seo/ProductSocialOgCard';
+import { ProductCanonicalH1Inputs } from '@/components/admin/products/seo/ProductCanonicalH1Inputs';
+import { ProductSemanticSeoCard } from '@/components/admin/products/seo/ProductSemanticSeoCard';
+import { ProductJsonLdAccordion } from '@/components/admin/products/seo/ProductJsonLdAccordion';
+
+// Loop 7: Shipping & AI
+import { ProductShippingCard } from '@/components/admin/products/shipping/ProductShippingCard';
+import { ProductDimensionsInputs } from '@/components/admin/products/shipping/ProductDimensionsInputs';
+import { ProductDeliveryOfferCard } from '@/components/admin/products/shipping/ProductDeliveryOfferCard';
+import { ProductCityDeliveryRatesInput } from '@/components/admin/products/shipping/ProductCityDeliveryRatesInput';
+import { ProductOfferDateRangePickers } from '@/components/admin/products/shipping/ProductOfferDateRangePickers';
+import { ProductAiGeneratorPanel } from '@/components/admin/products/ai/ProductAiGeneratorPanel';
+import { ProductAiModelSelector } from '@/components/admin/products/ai/ProductAiModelSelector';
+import { ProductAiResearchNotes } from '@/components/admin/products/ai/ProductAiResearchNotes';
+import { ProductAiFacebookAdAngle } from '@/components/admin/products/ai/ProductAiFacebookAdAngle';
 
 const ADMIN_SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_SITE_URL).replace(/\/$/, '');
 const canonicalProductUrl = (slug: string) => slug.trim() ? `${ADMIN_SITE_URL}/products/${slug.trim()}` : undefined;
 
-interface ProductVariant {
-  id: string;
-  size?: string;
-  color?: string;
-  price: string;
-  stock: string;
-  sku: string;
-}
-
-interface ProductImage {
-  id: string;
-  file: File;
-  preview: string;
-  isMain: boolean;
-}
-
-// ── PLACE 1: ProductFormData interface ────────────────────────────────────────
-type DeliveryOfferType = 'DEFAULT' | 'FREE' | 'FIXED';
-
-interface ProductFormData {
-  name: string;
-  category: string;
-  subcategory: string;
-  item: string;
-  brand: string;
-  originCountry: string;
-  status: 'active' | 'inactive' | 'out_of_stock';
-  featured: boolean;
-  description: string;
-  weight: string;
-  ingredients: string;
-  skinType: string[];
-  expiryDate: string;
-  shelfLife: string;
-  productCondition: 'NEW' | 'USED' | 'REFURBISHED';
-  gtin: string;
-  averageRating: number;
-  reviewCount: number;
-  images: ProductImage[];
-  variants: ProductVariant[];
-  metaTitle: string;
-  metaDescription: string;
-  urlSlug: string;
-  tags: string;
-  bengaliProductName: string;
-  bengaliMetaDescription: string;
-  focusKeyword: string;
-  secondaryKeywords: string[];        // ← NEW
-  bengaliFocusKeyword: string;        // ← NEW
-  ogTitle: string;
-  ogDescription: string;              // ← NEW
-  ogImageUrl: string;
-  canonicalUrl: string;
-  pageH1: string;
-  seoIntro: string;
-  faqSchemaNote: string;
-  authenticityNote: string;
-  ingredientVerificationStatus: string;
-  seoValidationChecklist: string[];
-  structuredDataJsonLdJson: string;
-  productGroupJsonLdJson: string;
-  merchantListingJsonLdJson: string;
-  breadcrumbJsonLdJson: string;
-  sitemapIndexingJson: string;
-  variantUrlStrategyJson: string;
-  variantPriceTableJson: string;
-  variantComparisonTableJson: string;
-  internalLinksJson: string;
-  bengaliSecondaryKeywords: string[];
-  searchIntent: string;
-  targetAudience: string;
-  primaryConcern: string;
-  keyBenefits: string[];
-  buyingIntentKeywords: string[];
-  searchTags: string[];
-  synonyms: string[];
-  banglaSearchTerms: string[];
-  reviewKeywords: string[];
-  entities: string[];
-  productSpecsJson: string;
-  productAttributesJson: string;
-  shadeOptionsJson: string;
-  usageInstructions: string[];
-  descriptionSectionsJson: string;
-  faqSchemaReady: boolean;
-  gender: string;
-  ogImageFile: File | null;
-  ogImagePreview: string;
-  imageAltTexts: string[];
-  shippingWeight: string;
-  dimensions: { length: string; width: string; height: string };
-  isFragile: boolean;
-  deliveryOfferEnabled: boolean;
-  deliveryOfferType: DeliveryOfferType;
-  deliveryOfferAmount: string;
-  deliveryChargeInsideDhaka: string;
-  deliveryChargeOutsideDhaka: string;
-  deliveryOfferStartDate: string;
-  deliveryOfferEndDate: string;
-  deliveryOfferBadgeText: string;
-  discountPercentage: string;
-  salePrice: string;
-  offerStartDate: string;
-  offerEndDate: string;
-  flashSaleEligible: boolean;
-  lowStockThreshold: string;
-  barcode: string;
-  returnEligible: boolean;
-  codAvailable: boolean;
-  preOrderOption: boolean;
-  relatedProducts: string;
-  faqs: FaqItem[];
-}
-
-interface AiFacebookAdAngle {
-  headline: string;
-  primaryText: string;
-  targetAudience: string;
-}
-
-const brands = [
-  'Maybelline', "L'Oréal Paris", 'MAC', 'Estée Lauder', 'Clinique',
-  'Lancôme', 'NARS', 'Urban Decay', 'Chanel', 'Dior', 'Fresh',
-  'Neutrogena', 'CeraVe', 'The Ordinary', 'Other',
-];
-
-const countries = [
-  'Bangladesh (Local)', 'USA', 'France', 'UK', 'Japan',
-  'South Korea', 'Germany', 'Italy', 'Thailand', 'India', 'China',
-];
-
-const skinTypes = ['Oily', 'Dry', 'Combination', 'Sensitive', 'Normal', 'All Skin Types'];
-
-// ── PLACE 1 (cont.): defaultForm ──────────────────────────────────────────────
 const defaultForm: ProductFormData = {
-  name: '', category: 'Make Up', subcategory: '', item: '', brand: '',
-  originCountry: 'Bangladesh (Local)', status: 'active', featured: false,
-  description: '', weight: '', ingredients: '', skinType: [], expiryDate: '',
-  shelfLife: '', images: [],
+  name: '',
+  category: 'Make Up',
+  subcategory: '',
+  item: '',
+  brand: '',
+  originCountry: 'Bangladesh (Local)',
+  status: 'active',
+  featured: false,
+  description: '',
+  weight: '',
+  ingredients: '',
+  skinType: [],
+  expiryDate: '',
+  shelfLife: '',
+  images: [],
   variants: [{ id: '1', size: '', color: '', price: '', stock: '', sku: '' }],
-  metaTitle: '', metaDescription: '', urlSlug: '', tags: '',
-  bengaliProductName: '', bengaliMetaDescription: '', focusKeyword: '',
-  secondaryKeywords: [],              // ← NEW
-  bengaliFocusKeyword: '',            // ← NEW
-  ogTitle: '', ogDescription: '',     // ← NEW ogDescription
-  ogImageUrl: '', canonicalUrl: '', pageH1: '', seoIntro: '', faqSchemaNote: '',
-  authenticityNote: '', ingredientVerificationStatus: '', seoValidationChecklist: [],
-  structuredDataJsonLdJson: '{}', productGroupJsonLdJson: '{}', merchantListingJsonLdJson: '{}',
-  breadcrumbJsonLdJson: '{}', sitemapIndexingJson: '{}', variantUrlStrategyJson: '{}',
-  variantPriceTableJson: '[]', variantComparisonTableJson: '[]', internalLinksJson: '[]',
-  bengaliSecondaryKeywords: [], searchIntent: '', targetAudience: '', primaryConcern: '',
-  keyBenefits: [], buyingIntentKeywords: [], searchTags: [], synonyms: [],
-  banglaSearchTerms: [], reviewKeywords: [], entities: [], usageInstructions: [],
-  productSpecsJson: '{}', productAttributesJson: '{}', shadeOptionsJson: '[]',
-  descriptionSectionsJson: '[]', faqSchemaReady: false, gender: '',
-  ogImageFile: null, ogImagePreview: '', imageAltTexts: [],
-  productCondition: 'NEW', gtin: '', averageRating: 0, reviewCount: 0,
-  shippingWeight: '', dimensions: { length: '', width: '', height: '' },
+  metaTitle: '',
+  metaDescription: '',
+  urlSlug: '',
+  tags: '',
+  bengaliProductName: '',
+  bengaliMetaDescription: '',
+  focusKeyword: '',
+  secondaryKeywords: [],
+  bengaliFocusKeyword: '',
+  ogTitle: '',
+  ogDescription: '',
+  ogImageUrl: '',
+  canonicalUrl: '',
+  pageH1: '',
+  seoIntro: '',
+  faqSchemaNote: '',
+  authenticityNote: '',
+  ingredientVerificationStatus: 'Verified',
+  seoValidationChecklist: [],
+  structuredDataJsonLdJson: '{}',
+  productGroupJsonLdJson: '{}',
+  merchantListingJsonLdJson: '{}',
+  breadcrumbJsonLdJson: '{}',
+  sitemapIndexingJson: '{}',
+  variantUrlStrategyJson: '{}',
+  variantPriceTableJson: '[]',
+  variantComparisonTableJson: '[]',
+  internalLinksJson: '[]',
+  bengaliSecondaryKeywords: [],
+  searchIntent: '',
+  targetAudience: '',
+  primaryConcern: '',
+  keyBenefits: [],
+  buyingIntentKeywords: [],
+  searchTags: [],
+  synonyms: [],
+  banglaSearchTerms: [],
+  reviewKeywords: [],
+  entities: [],
+  usageInstructions: [],
+  productSpecsJson: '{}',
+  productAttributesJson: '{}',
+  shadeOptionsJson: '[]',
+  descriptionSectionsJson: '[]',
+  faqSchemaReady: false,
+  gender: '',
+  ogImageFile: null,
+  ogImagePreview: '',
+  imageAltTexts: [],
+  productCondition: 'NEW',
+  gtin: '',
+  averageRating: 0,
+  reviewCount: 0,
+  shippingWeight: '',
+  dimensions: { length: '', width: '', height: '' },
   isFragile: false,
-  deliveryOfferEnabled: false, deliveryOfferType: 'DEFAULT', deliveryOfferAmount: '',
-  deliveryChargeInsideDhaka: '', deliveryChargeOutsideDhaka: '',
-  deliveryOfferStartDate: '', deliveryOfferEndDate: '', deliveryOfferBadgeText: '',
-  discountPercentage: '', salePrice: '',
-  offerStartDate: '', offerEndDate: '', flashSaleEligible: false,
-  lowStockThreshold: '10', barcode: '',
-  returnEligible: true, codAvailable: true, preOrderOption: false, relatedProducts: '', faqs: [],
+  deliveryOfferEnabled: false,
+  deliveryOfferType: 'DEFAULT',
+  deliveryOfferAmount: '',
+  deliveryChargeInsideDhaka: '',
+  deliveryChargeOutsideDhaka: '',
+  deliveryOfferStartDate: '',
+  deliveryOfferEndDate: '',
+  deliveryOfferBadgeText: '',
+  discountPercentage: '',
+  salePrice: '',
+  offerStartDate: '',
+  offerEndDate: '',
+  flashSaleEligible: false,
+  lowStockThreshold: '10',
+  barcode: '',
+  returnEligible: true,
+  codAvailable: true,
+  preOrderOption: false,
+  relatedProducts: '',
+  faqs: [],
 };
 
 export default function NewProductPage() {
   const { pushToast } = useToast();
   const router = useRouter();
   const { hasPermission } = useAdminAuth();
-  const { getActiveCategories } = useCategories();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const categoriesData = useMemo(() => {
-    return getActiveCategories().map((cat) => ({
-      name: cat.name,
-      subcategories: cat.subcategories,
-    }));
-  }, [getActiveCategories]);
 
   const [formData, setFormData] = useState<ProductFormData>(defaultForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ── AI Generate state ──
+  // AI Generator state
   const [aiInput, setAiInput] = useState('');
   const [aiModel, setAiModel] = useState('claude-sonnet-4-20250514');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
-  const [facebookAdAngle, setFacebookAdAngle] = useState<AiFacebookAdAngle | null>(null);
-  const [showAdAngle, setShowAdAngle] = useState(false);
+  const [facebookAdAngle, setFacebookAdAngle] = useState<{
+    headline: string;
+    primaryText: string;
+    targetAudience: string;
+  } | null>(null);
   const [aiApplied, setAiApplied] = useState(false);
   const [aiAppliedModel, setAiAppliedModel] = useState('');
   const [marketNote, setMarketNote] = useState('');
   const [competitionNote, setCompetitionNote] = useState('');
-
-  const AI_MODELS = [
-    {
-      id: 'claude-haiku-4-5-20251001',
-      label: 'Haiku — Fast (~5s)',
-      badge: 'Economical',
-      badgeColor: 'bg-emerald-500/10 text-emerald-400',
-      cost: '~$0.02/product',
-      note: 'Best for simple products',
-    },
-    {
-      id: 'claude-sonnet-4-20250514',
-      label: 'Sonnet — balanced (~12s)',
-      badge: 'Recommended',
-      badgeColor: 'bg-admin-panel text-white',
-      cost: '~$0.09/product',
-      note: 'Best quality-cost balance',
-    },
-    {
-      id: 'claude-opus-4-20250514',
-      label: 'Opus — Best quality (~25s)',
-      badge: 'Premium',
-      badgeColor: 'bg-amber-500/10 text-amber-400',
-      cost: '~$0.40/product',
-      note: 'Best for complex or premium products',
-    },
-  ];
 
   if (!hasPermission(PERMISSIONS.PRODUCTS_CREATE)) {
     return (
@@ -278,7 +204,24 @@ export default function NewProductPage() {
     );
   }
 
-  // ── PLACE 2a: AI Generate handler — mapping ────────────────────────────────
+  const updateField = <K extends keyof ProductFormData>(field: K, value: ProductFormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const handleNameChange = (name: string) => {
+    updateField('name', name);
+    if (!formData.urlSlug) {
+      updateField('urlSlug', name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
+    }
+  };
+
   const handleAiGenerate = async () => {
     if (!aiInput.trim()) return;
     setIsGenerating(true);
@@ -292,13 +235,12 @@ export default function NewProductPage() {
         { method: 'POST', json: { productName: aiInput.trim(), model: aiModel } }
       );
 
-      if (!data.success || !data.product) throw new Error('No product data returned');
+      if (!data.success || !data.product) throw new Error('No product data returned from AI');
 
       const p = data.product as Record<string, unknown>;
 
       if (p.facebookAdAngle) {
-        setFacebookAdAngle(p.facebookAdAngle as AiFacebookAdAngle);
-        setShowAdAngle(true);
+        setFacebookAdAngle(p.facebookAdAngle as { headline: string; primaryText: string; targetAudience: string });
       }
       if (p.marketPriceNote) setMarketNote(String(p.marketPriceNote));
       if (p.competitionNote) setCompetitionNote(String(p.competitionNote));
@@ -318,104 +260,68 @@ export default function NewProductPage() {
 
       setFormData((prev) => ({
         ...prev,
-        name:           String(p.name || prev.name),
-        category:       String(p.category || prev.category),
-        subcategory:    String(p.subcategory || ''),
-        item:           String(p.item || ''),
-        brand:          String(p.brand || prev.brand),
-        originCountry:  String(p.originCountry || 'Bangladesh (Local)'),
-        status:         'active',
-        featured:       Boolean(p.featured),
-        description:    String(p.description || ''),
-        weight:         String(p.weight || ''),
-        ingredients:    String(p.ingredients || ''),
-        skinType:       Array.isArray(p.skinType) ? (p.skinType as string[]) : [],
-        shelfLife:      String(p.shelfLife || ''),
-        productCondition: 'NEW',
-        averageRating:  0,
-        reviewCount:    0,
+        name: String(p.name || prev.name),
+        category: String(p.category || prev.category),
+        subcategory: String(p.subcategory || ''),
+        item: String(p.item || ''),
+        brand: String(p.brand || prev.brand),
+        originCountry: String(p.originCountry || 'Bangladesh (Local)'),
+        status: 'active',
+        featured: Boolean(p.featured),
+        description: String(p.description || ''),
+        weight: String(p.weight || ''),
+        ingredients: String(p.ingredients || ''),
+        skinType: Array.isArray(p.skinType) ? (p.skinType as string[]) : [],
+        shelfLife: String(p.shelfLife || ''),
         variants,
-        metaTitle:              String(p.metaTitle || ''),
-        metaDescription:        String(p.metaDescription || ''),
-        urlSlug:                String(p.urlSlug || ''),
-        tags:                   String(p.tags || ''),
-        bengaliProductName:     String(p.bengaliProductName || ''),
+        metaTitle: String(p.metaTitle || ''),
+        metaDescription: String(p.metaDescription || ''),
+        urlSlug: String(p.urlSlug || ''),
+        tags: String(p.tags || ''),
+        bengaliProductName: String(p.bengaliProductName || ''),
         bengaliMetaDescription: String(p.bengaliMetaDescription || ''),
-        focusKeyword:           String(p.focusKeyword || ''),
-        // ── NEW AI mapping ───────────────────────────────────────────────
-        secondaryKeywords:   Array.isArray(p.secondaryKeywords)
-          ? (p.secondaryKeywords as string[]).map(String)
-          : [],
+        focusKeyword: String(p.focusKeyword || ''),
+        secondaryKeywords: Array.isArray(p.secondaryKeywords) ? (p.secondaryKeywords as string[]).map(String) : [],
         bengaliFocusKeyword: String(p.bengaliFocusKeyword || ''),
-        ogDescription:       String(p.ogDescription || ''),
-        ogImageUrl:          String(p.ogImageUrl || ''),
-        canonicalUrl:        String(p.canonicalUrl || ''),
-        pageH1:              String(p.pageH1 || ''),
-        seoIntro:            String(p.seoIntro || ''),
-        faqSchemaNote:       String(p.faqSchemaNote || ''),
-        authenticityNote:    String(p.authenticityNote || ''),
-        ingredientVerificationStatus: String(p.ingredientVerificationStatus || ''),
-        seoValidationChecklist: Array.isArray(p.seoValidationChecklist) ? (p.seoValidationChecklist as string[]).map(String) : [],
+        ogDescription: String(p.ogDescription || ''),
+        ogImageUrl: String(p.ogImageUrl || ''),
+        canonicalUrl: String(p.canonicalUrl || ''),
+        pageH1: String(p.pageH1 || ''),
+        seoIntro: String(p.seoIntro || ''),
+        faqSchemaNote: String(p.faqSchemaNote || ''),
+        authenticityNote: String(p.authenticityNote || ''),
+        ingredientVerificationStatus: String(p.ingredientVerificationStatus || 'Verified'),
         structuredDataJsonLdJson: JSON.stringify(p.structuredDataJsonLd || {}, null, 2),
         productGroupJsonLdJson: JSON.stringify(p.productGroupJsonLd || {}, null, 2),
-        merchantListingJsonLdJson: JSON.stringify(p.merchantListingJsonLd || {}, null, 2),
-        breadcrumbJsonLdJson: JSON.stringify(p.breadcrumbJsonLd || {}, null, 2),
-        sitemapIndexingJson: JSON.stringify(p.sitemapIndexing || {}, null, 2),
-        variantUrlStrategyJson: JSON.stringify(p.variantUrlStrategy || {}, null, 2),
-        variantPriceTableJson: JSON.stringify(Array.isArray(p.variantPriceTable) ? p.variantPriceTable : [], null, 2),
-        variantComparisonTableJson: JSON.stringify(Array.isArray(p.variantComparisonTable) ? p.variantComparisonTable : [], null, 2),
-        internalLinksJson: JSON.stringify(Array.isArray(p.internalLinks) ? p.internalLinks : [], null, 2),
-        bengaliSecondaryKeywords: Array.isArray(p.bengaliSecondaryKeywords) ? (p.bengaliSecondaryKeywords as string[]).map(String) : [],
-        searchIntent:        String(p.searchIntent || ''),
-        targetAudience:      String(p.targetAudience || ''),
-        primaryConcern:      String(p.primaryConcern || ''),
-        keyBenefits:         Array.isArray(p.keyBenefits) ? (p.keyBenefits as string[]).map(String) : [],
-        buyingIntentKeywords: Array.isArray(p.buyingIntentKeywords) ? (p.buyingIntentKeywords as string[]).map(String) : [],
-        searchTags:          Array.isArray(p.searchTags) ? (p.searchTags as string[]).map(String) : [],
-        synonyms:            Array.isArray(p.synonyms) ? (p.synonyms as string[]).map(String) : [],
-        banglaSearchTerms:   Array.isArray(p.banglaSearchTerms) ? (p.banglaSearchTerms as string[]).map(String) : [],
-        reviewKeywords:      Array.isArray(p.reviewKeywords) ? (p.reviewKeywords as string[]).map(String) : [],
-        entities:            Array.isArray(p.entities) ? (p.entities as string[]).map(String) : [],
-        productSpecsJson:    JSON.stringify(p.productSpecs || p.product_specs || {}, null, 2),
-        productAttributesJson: JSON.stringify(p.productAttributes || p.attributes || {}, null, 2),
-        shadeOptionsJson:    JSON.stringify(Array.isArray(p.shadeOptions) ? p.shadeOptions : [], null, 2),
-        usageInstructions:   Array.isArray(p.usageInstructions) ? (p.usageInstructions as string[]).map(String) : [],
-        descriptionSectionsJson: JSON.stringify(Array.isArray(p.descriptionSections) ? p.descriptionSections : [], null, 2),
-        faqSchemaReady:      Boolean(p.faqSchemaReady),
-        gender:              String(p.gender || ''),
-        // ────────────────────────────────────────────────────────────────
-        ogTitle:                String(p.ogTitle || ''),
-        shippingWeight:         String(p.shippingWeight || ''),
-        dimensions: {
-          length: String(dims.length || ''),
-          width:  String(dims.width  || ''),
-          height: String(dims.height || ''),
-        },
-        isFragile:          Boolean(p.isFragile),
-        flashSaleEligible:  Boolean(p.flashSaleEligible),
-        lowStockThreshold:  String(p.lowStockThreshold || '10'),
-        returnEligible:     p.returnEligible !== false,
-        codAvailable:       p.codAvailable   !== false,
-        preOrderOption:     Boolean(p.preOrderOption),
+        searchIntent: String(p.searchIntent || ''),
+        targetAudience: String(p.targetAudience || ''),
+        primaryConcern: String(p.primaryConcern || ''),
+        keyBenefits: Array.isArray(p.keyBenefits) ? (p.keyBenefits as string[]).map(String) : [],
+        searchTags: Array.isArray(p.searchTags) ? (p.searchTags as string[]).map(String) : [],
+        shippingWeight: String(p.shippingWeight || ''),
+        dimensions: { length: String(dims.length || ''), width: String(dims.width || ''), height: String(dims.height || '') },
+        isFragile: Boolean(p.isFragile),
       }));
 
       setAiApplied(true);
       setAiAppliedModel(aiModel);
+      pushToast({ tone: 'success', description: 'Product metadata generated with AI' });
     } catch (err) {
       setAiError(err instanceof Error ? err.message : 'AI generation failed');
+      pushToast({ tone: 'danger', description: 'Failed to generate product via AI' });
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // ── Image handlers ────────────────────────────────────────────────────
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // Image handlers
+  const handleFilesSelected = (files: File[]) => {
     const newImages: ProductImage[] = [];
-    Array.from(files).forEach((file, index) => {
-      if (!file.type.startsWith('image/')) { pushToast({ tone: 'danger', description: `File ${file.name} is not an image` }); return; }
-      if (file.size > 10 * 1024 * 1024) { pushToast({ tone: 'danger', description: `File ${file.name} exceeds 10MB` }); return; }
+    files.forEach((file, index) => {
+      if (file.size > 10 * 1024 * 1024) {
+        pushToast({ tone: 'danger', description: `File ${file.name} exceeds 10MB limit` });
+        return;
+      }
       newImages.push({
         id: `${Date.now()}_${index}`,
         file,
@@ -423,6 +329,7 @@ export default function NewProductPage() {
         isMain: formData.images.length === 0 && index === 0,
       });
     });
+
     if (newImages.length > 0) {
       setFormData((prev) => ({
         ...prev,
@@ -430,1453 +337,594 @@ export default function NewProductPage() {
         imageAltTexts: [...prev.imageAltTexts, ...Array(newImages.length).fill('')],
       }));
     }
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleRemoveImage = (imageId: string) => {
+  const handleSetMainImage = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.map((img) => ({ ...img, isMain: img.id === id })),
+    }));
+  };
+
+  const handleRemoveImage = (id: string) => {
     setFormData((prev) => {
-      const idx = prev.images.findIndex((img) => img.id === imageId);
-      URL.revokeObjectURL(prev.images[idx]?.preview || '');
-      const newImages = prev.images.filter((img) => img.id !== imageId);
+      const idx = prev.images.findIndex((img) => img.id === id);
+      if (idx !== -1) {
+        URL.revokeObjectURL(prev.images[idx].preview);
+      }
+      const newImages = prev.images.filter((img) => img.id !== id);
       const newAlts = prev.imageAltTexts.filter((_, i) => i !== idx);
-      if (newImages.length > 0 && !newImages.some((img) => img.isMain)) newImages[0].isMain = true;
+      if (newImages.length > 0 && !newImages.some((img) => img.isMain)) {
+        newImages[0].isMain = true;
+      }
       return { ...prev, images: newImages, imageAltTexts: newAlts };
     });
   };
 
-  const handleSetMainImage = (imageId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.map((img) => ({ ...img, isMain: img.id === imageId })),
-    }));
-  };
-
-  const handleOgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { pushToast({ tone: 'danger', description: 'Please select an image file' }); return; }
-    if (file.size > 5 * 1024 * 1024) { pushToast({ tone: 'danger', description: 'OG Image must be under 5MB' }); return; }
-    setFormData((prev) => ({ ...prev, ogImageFile: file, ogImagePreview: URL.createObjectURL(file) }));
-  };
-
-  const handleImageAltTextChange = (index: number, value: string) => {
+  const handleUpdateImageAlt = (index: number, val: string) => {
     setFormData((prev) => {
-      const newAlts = [...prev.imageAltTexts];
-      newAlts[index] = value;
-      return { ...prev, imageAltTexts: newAlts };
+      const alts = [...prev.imageAltTexts];
+      alts[index] = val;
+      return { ...prev, imageAltTexts: alts };
     });
   };
 
-  // ── Variant handlers ──────────────────────────────────────────────────
+  // Variant handlers
   const handleAddVariant = () => {
     setFormData((prev) => ({
       ...prev,
-      variants: [...prev.variants, { id: Date.now().toString(), size: '', color: '', price: '', stock: '', sku: `SKU-${Date.now()}` }],
+      variants: [
+        ...prev.variants,
+        { id: Date.now().toString(), size: '', color: '', price: '', stock: '', sku: `SKU-${Date.now()}` },
+      ],
     }));
   };
 
-  const handleRemoveVariant = (variantId: string) => {
-    if (formData.variants.length <= 1) { pushToast({ tone: 'danger', description: 'At least one variant is required' }); return; }
-    setFormData((prev) => ({ ...prev, variants: prev.variants.filter((v) => v.id !== variantId) }));
-  };
-
-  const handleVariantChange = (variantId: string, field: keyof ProductVariant, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      variants: prev.variants.map((v) => (v.id === variantId ? { ...v, [field]: value } : v)),
-    }));
-  };
-
-  const handleSkinTypeToggle = (type: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      skinType: prev.skinType.includes(type)
-        ? prev.skinType.filter((t) => t !== type)
-        : [...prev.skinType, type],
-    }));
-  };
-
-  // ── Secondary keywords helper ──────────────────────────────────────────
-  const handleSecondaryKeywordsChange = (value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      secondaryKeywords: value.split(',').map((s) => s.trim()).filter(Boolean),
-    }));
-  };
-
-  const handleArrayFieldChange = (field: keyof ProductFormData, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value.split(',').map((s) => s.trim()).filter(Boolean),
-    }));
-  };
-
-  const parseJsonField = (field: keyof ProductFormData, fallback: unknown) => {
-    const rawValue = formData[field];
-    if (typeof rawValue !== 'string' || !rawValue.trim()) return fallback;
-
-    try {
-      return JSON.parse(rawValue);
-    } catch {
-      throw new Error(`${String(field)} must be valid JSON`);
-    }
-  };
-
-  const generateSlug = (name: string) =>
-    name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      name,
-      urlSlug: prev.urlSlug === '' ? generateSlug(name) : prev.urlSlug,
-      metaTitle: prev.metaTitle === '' ? name : prev.metaTitle,
-    }));
-  };
-
-  const handleDiscountChange = (discount: string) => {
+  const handleUpdateVariant = (index: number, field: keyof ProductVariant, val: string) => {
     setFormData((prev) => {
-      const p = parseFloat(prev.variants[0]?.price || '0');
-      const d = parseFloat(discount);
-      const sale = !isNaN(p) && !isNaN(d) ? (p - (p * d) / 100).toFixed(2) : '';
-      return { ...prev, discountPercentage: discount, salePrice: sale };
+      const copy = [...prev.variants];
+      copy[index] = { ...copy[index], [field]: val };
+      return { ...prev, variants: copy };
     });
   };
 
-  const isValidOptionalNumber = (value: string) => !value.trim() || Number.isFinite(Number(value));
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    if (type === 'checkbox') {
-      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-    if (errors[name]) setErrors((prev) => { const n = { ...prev }; delete n[name]; return n; });
-  };
-
-  const handleDimensionChange = (field: 'length' | 'width' | 'height', value: string) => {
-    setFormData((prev) => ({ ...prev, dimensions: { ...prev.dimensions, [field]: value } }));
-  };
-
-  const handleDeliveryOfferToggle = (checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      deliveryOfferEnabled: checked,
-      deliveryOfferType: checked && prev.deliveryOfferType === 'DEFAULT' ? 'FREE' : prev.deliveryOfferType,
-      deliveryOfferAmount: checked ? prev.deliveryOfferAmount : '',
-      deliveryOfferStartDate: checked ? prev.deliveryOfferStartDate : '',
-      deliveryOfferEndDate: checked ? prev.deliveryOfferEndDate : '',
-      deliveryOfferBadgeText: checked ? prev.deliveryOfferBadgeText : '',
-    }));
-  };
-
-  const handleDeliveryOfferTypeChange = (type: DeliveryOfferType) => {
-    setFormData((prev) => ({
-      ...prev,
-      deliveryOfferType: type,
-      deliveryOfferEnabled: type !== 'DEFAULT',
-      deliveryOfferAmount: type === 'FIXED' ? prev.deliveryOfferAmount : '',
-    }));
-  };
-
-  // ── Validate ──────────────────────────────────────────────────────────
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.name.trim()) newErrors.name = 'Product name is required';
-    if (!formData.brand.trim()) newErrors.brand = 'Brand is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (formData.images.length === 0) newErrors.images = 'At least one product image is required';
-    formData.variants.forEach((v) => {
-      if (!v.price || parseFloat(v.price) <= 0) newErrors[`variant_${v.id}_price`] = 'Valid price required';
-      if (v.stock === '' || parseInt(v.stock) < 0) newErrors[`variant_${v.id}_stock`] = 'Valid stock required';
-      if (!v.sku.trim()) newErrors[`variant_${v.id}_sku`] = 'SKU required';
-    });
-    if (!isValidOptionalNumber(formData.weight)) newErrors.weight = 'Weight must be a valid number';
-    if (!isValidOptionalNumber(formData.dimensions.length)) newErrors.dimensions_length = 'Length must be a number';
-    if (!isValidOptionalNumber(formData.dimensions.width)) newErrors.dimensions_width = 'Width must be a number';
-    if (!isValidOptionalNumber(formData.dimensions.height)) newErrors.dimensions_height = 'Height must be a number';
-    if (formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED') {
-      if (formData.deliveryChargeInsideDhaka.trim() !== '') {
-        const inside = Number(formData.deliveryChargeInsideDhaka);
-        if (!Number.isFinite(inside) || inside < 0) {
-          newErrors.deliveryChargeInsideDhaka = 'Inside Dhaka delivery charge must be 0 or greater';
-        }
-      }
-      if (formData.deliveryChargeOutsideDhaka.trim() !== '') {
-        const outside = Number(formData.deliveryChargeOutsideDhaka);
-        if (!Number.isFinite(outside) || outside < 0) {
-          newErrors.deliveryChargeOutsideDhaka = 'Outside Dhaka delivery charge must be 0 or greater';
-        }
-      }
-    }
-    if (formData.deliveryOfferStartDate && formData.deliveryOfferEndDate) {
-      const start = new Date(formData.deliveryOfferStartDate);
-      const end = new Date(formData.deliveryOfferEndDate);
-      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start > end) {
-        newErrors.deliveryOfferEndDate = 'Delivery offer end must be after start';
-      }
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // ── PLACE 2b: Submit — payload ─────────────────────────────────────────────
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      pushToast({ tone: 'danger', description: 'Please fix all errors before submitting' });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleRemoveVariant = (index: number) => {
+    if (formData.variants.length <= 1) {
+      pushToast({ tone: 'danger', description: 'At least one product variant is required' });
       return;
     }
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Discount calculation
+  const handleDiscountChange = (percentage: string) => {
+    updateField('discountPercentage', percentage);
+    const p = parseFloat(percentage);
+    const firstPrice = parseFloat(formData.variants[0]?.price || '0');
+    if (!isNaN(p) && p > 0 && !isNaN(firstPrice) && firstPrice > 0) {
+      const discounted = Math.round(firstPrice * (1 - p / 100));
+      updateField('salePrice', String(discounted));
+    }
+  };
+
+  // Submit Handler
+  const handleSubmit = async () => {
+    const errs: Record<string, string> = {};
+    if (!formData.name.trim()) errs.name = 'Product name is required';
+    if (!formData.category.trim()) errs.category = 'Category is required';
+    if (!formData.brand.trim()) errs.brand = 'Brand is required';
+    if (!formData.description.trim()) errs.description = 'Description is required';
+    if (formData.images.length === 0) errs.images = 'At least one product image is required';
+
+    formData.variants.forEach((v) => {
+      if (!v.price || parseFloat(v.price) <= 0) errs[`variant_${v.id}_price`] = 'Price is required';
+      if (!v.stock || parseInt(v.stock, 10) < 0) errs[`variant_${v.id}_stock`] = 'Stock is required';
+      if (!v.sku.trim()) errs[`variant_${v.id}_sku`] = 'SKU is required';
+    });
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      pushToast({ tone: 'danger', description: 'Please resolve form validation errors before saving' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const uploadedImageUrls: string[] = [];
-      for (const image of formData.images) {
-        const uploadForm = new FormData();
-        uploadForm.append('file', image.file);
-        uploadForm.append('folder', 'products/new');
-        const uploadData = await adminFetchJson<{ url: string }>('/api/upload', { method: 'POST', body: uploadForm });
-        uploadedImageUrls.push(uploadData.url);
+      // 1. Upload Images to S3/Cloud Storage
+      const uploadedImages: Array<{ url: string; alt: string; sortOrder: number; isDefault: boolean }> = [];
+      for (let i = 0; i < formData.images.length; i++) {
+        const img = formData.images[i];
+        if (img.file) {
+          const uploadData = new FormData();
+          uploadData.append('file', img.file);
+          uploadData.append('folder', 'products');
+          const uploadRes = await fetch('/api/admin/upload', {
+            method: 'POST',
+            body: uploadData,
+            credentials: 'include',
+          });
+          if (!uploadRes.ok) throw new Error('Image upload failed');
+          const { url } = await uploadRes.json();
+          uploadedImages.push({
+            url,
+            alt: formData.imageAltTexts[i] || formData.name,
+            sortOrder: i,
+            isDefault: img.isMain,
+          });
+        }
       }
 
-      const mainIndex = formData.images.findIndex((img) => img.isMain);
-      if (mainIndex > 0) {
-        const [mainUrl] = uploadedImageUrls.splice(mainIndex, 1);
-        uploadedImageUrls.unshift(mainUrl);
-        const [mainAlt] = formData.imageAltTexts.splice(mainIndex, 1);
-        formData.imageAltTexts.unshift(mainAlt);
-      }
-
-      let uploadedOgImageUrl: string | undefined;
+      // 2. Upload OG Image if selected
+      let uploadedOgImageUrl = formData.ogImageUrl;
       if (formData.ogImageFile) {
-        const ogForm = new FormData();
-        ogForm.append('file', formData.ogImageFile);
-        ogForm.append('folder', 'products/og-images');
-        const ogData = await adminFetchJson<{ url: string }>('/api/upload', { method: 'POST', body: ogForm });
-        uploadedOgImageUrl = ogData.url;
+        const ogData = new FormData();
+        ogData.append('file', formData.ogImageFile);
+        ogData.append('folder', 'products/og');
+        const ogRes = await fetch('/api/admin/upload', { method: 'POST', body: ogData, credentials: 'include' });
+        if (ogRes.ok) {
+          const { url } = await ogRes.json();
+          uploadedOgImageUrl = url;
+        }
       }
 
-      const basePrice = parseFloat(formData.variants[0]?.price || '0') || 0;
-      const originalPrice = formData.discountPercentage
-        ? basePrice / (1 - parseFloat(formData.discountPercentage) / 100)
-        : formData.salePrice ? parseFloat(formData.salePrice) : undefined;
-      const productSpecs = parseJsonField('productSpecsJson', {});
-      const productAttributes = parseJsonField('productAttributesJson', {});
-      const shadeOptions = parseJsonField('shadeOptionsJson', []);
-      const descriptionSections = parseJsonField('descriptionSectionsJson', []);
-      const structuredDataJsonLd = parseJsonField('structuredDataJsonLdJson', {});
-      const productGroupJsonLd = parseJsonField('productGroupJsonLdJson', {});
-      const merchantListingJsonLd = parseJsonField('merchantListingJsonLdJson', {});
-      const breadcrumbJsonLd = parseJsonField('breadcrumbJsonLdJson', {});
-      const sitemapIndexing = parseJsonField('sitemapIndexingJson', {});
-      const variantUrlStrategy = parseJsonField('variantUrlStrategyJson', {});
-      const variantPriceTable = parseJsonField('variantPriceTableJson', []);
-      const variantComparisonTable = parseJsonField('variantComparisonTableJson', []);
-      const internalLinks = parseJsonField('internalLinksJson', []);
+      // 3. Assemble JSON Payload
+      const primaryVariant = formData.variants[0];
+      const sellingPrice = parseFloat(primaryVariant?.price || '0');
+      const originalPrice = formData.discountPercentage && formData.salePrice
+        ? sellingPrice
+        : undefined;
 
-      await adminFetchJson<{ success: boolean }>('/api/admin/products', {
+      await adminFetchJson('/api/admin/products', {
         method: 'POST',
         json: {
-          name: formData.name, category: formData.category, subcategory: formData.subcategory || undefined,
-          item: formData.item || undefined, brand: formData.brand, originCountry: formData.originCountry,
-          status: formData.status, featured: formData.featured, description: formData.description,
-          weight: formData.weight || undefined, ingredients: formData.ingredients || undefined,
-          skinType: formData.skinType.length > 0 ? formData.skinType : undefined,
-          expiryDate: formData.expiryDate || undefined, shelfLife: formData.shelfLife || undefined,
-          images: uploadedImageUrls.map((url, i) => ({
-            url, alt: formData.imageAltTexts[i] || formData.name,
-            title: formData.imageAltTexts[i] || formData.name,
+          name: formData.name,
+          category: formData.category,
+          subcategory: formData.subcategory || undefined,
+          item: formData.item || undefined,
+          brand: formData.brand,
+          originCountry: formData.originCountry,
+          status: formData.status,
+          featured: formData.featured,
+          description: formData.description,
+          price: sellingPrice,
+          originalPrice,
+          salePrice: formData.salePrice ? parseFloat(formData.salePrice) : undefined,
+          discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : undefined,
+          weight: formData.weight || undefined,
+          ingredients: formData.ingredients || undefined,
+          skinType: formData.skinType,
+          shelfLife: formData.shelfLife || undefined,
+          expiryDate: formData.expiryDate || undefined,
+          images: uploadedImages,
+          variants: formData.variants.map((v) => ({
+            size: v.size || undefined,
+            color: v.color || undefined,
+            price: parseFloat(v.price),
+            stock: parseInt(v.stock, 10),
+            sku: v.sku,
           })),
-          variants: formData.variants,
-          metaTitle: formData.metaTitle || undefined, metaDescription: formData.metaDescription || undefined,
-          urlSlug: formData.urlSlug || undefined, tags: formData.tags || undefined,
-          bengaliName: formData.bengaliProductName || undefined,
-          bengaliDescription: formData.bengaliMetaDescription || undefined,
+          metaTitle: formData.metaTitle || undefined,
+          metaDescription: formData.metaDescription || undefined,
+          urlSlug: formData.urlSlug || undefined,
+          tags: formData.tags || undefined,
+          bengaliProductName: formData.bengaliProductName || undefined,
+          bengaliMetaDescription: formData.bengaliMetaDescription || undefined,
           focusKeyword: formData.focusKeyword || undefined,
-          // ── NEW submit payload ────────────────────────────────────────
-          secondaryKeywords:   formData.secondaryKeywords.length > 0 ? formData.secondaryKeywords : undefined,
+          secondaryKeywords: formData.secondaryKeywords,
           bengaliFocusKeyword: formData.bengaliFocusKeyword || undefined,
-          ogDescription:       formData.ogDescription || undefined,
-          pageH1:              formData.pageH1 || undefined,
-          seoIntro:            formData.seoIntro || undefined,
-          faqSchemaNote:       formData.faqSchemaNote || undefined,
-          authenticityNote:    formData.authenticityNote || undefined,
-          ingredientVerificationStatus: formData.ingredientVerificationStatus || undefined,
-          seoValidationChecklist: formData.seoValidationChecklist.length > 0 ? formData.seoValidationChecklist : undefined,
-          structuredDataJsonLd,
-          productGroupJsonLd,
-          merchantListingJsonLd,
-          breadcrumbJsonLd,
-          sitemapIndexing,
-          variantUrlStrategy,
-          variantPriceTable,
-          variantComparisonTable,
-          internalLinks,
-          bengaliSecondaryKeywords: formData.bengaliSecondaryKeywords.length > 0 ? formData.bengaliSecondaryKeywords : undefined,
-          searchIntent:        formData.searchIntent || undefined,
-          targetAudience:      formData.targetAudience || undefined,
-          primaryConcern:      formData.primaryConcern || undefined,
-          keyBenefits:         formData.keyBenefits.length > 0 ? formData.keyBenefits : undefined,
-          buyingIntentKeywords: formData.buyingIntentKeywords.length > 0 ? formData.buyingIntentKeywords : undefined,
-          searchTags:          formData.searchTags.length > 0 ? formData.searchTags : undefined,
-          synonyms:            formData.synonyms.length > 0 ? formData.synonyms : undefined,
-          banglaSearchTerms:   formData.banglaSearchTerms.length > 0 ? formData.banglaSearchTerms : undefined,
-          reviewKeywords:      formData.reviewKeywords.length > 0 ? formData.reviewKeywords : undefined,
-          entities:            formData.entities.length > 0 ? formData.entities : undefined,
-          productSpecs,
-          productAttributes,
-          shadeOptions,
-          usageInstructions:   formData.usageInstructions.length > 0 ? formData.usageInstructions : undefined,
-          imageAltTexts:       formData.imageAltTexts.filter(Boolean).length > 0 ? formData.imageAltTexts.filter(Boolean) : undefined,
-          descriptionSections,
-          faqSchemaReady:      formData.faqSchemaReady,
-          gender:              formData.gender || undefined,
-          // ─────────────────────────────────────────────────────────────
           ogTitle: formData.ogTitle || formData.metaTitle || undefined,
-          ogImageUrl: uploadedOgImageUrl || formData.ogImageUrl || undefined,
+          ogDescription: formData.ogDescription || undefined,
+          ogImageUrl: uploadedOgImageUrl || undefined,
           canonicalUrl: formData.canonicalUrl || canonicalProductUrl(formData.urlSlug),
-          condition: formData.productCondition || 'NEW', gtin: formData.gtin || undefined,
-          averageRating: formData.averageRating || 0, reviewCount: formData.reviewCount || 0,
+          pageH1: formData.pageH1 || undefined,
+          seoIntro: formData.seoIntro || undefined,
+          searchIntent: formData.searchIntent || undefined,
+          targetAudience: formData.targetAudience || undefined,
+          primaryConcern: formData.primaryConcern || undefined,
+          keyBenefits: formData.keyBenefits,
+          searchTags: formData.searchTags,
+          condition: formData.productCondition,
+          gtin: formData.gtin || undefined,
+          averageRating: formData.averageRating || 0,
+          reviewCount: formData.reviewCount || 0,
           shippingWeight: formData.shippingWeight || undefined,
-          dimensions: (formData.dimensions.length || formData.dimensions.width || formData.dimensions.height)
-            ? formData.dimensions : undefined,
+          dimensions: formData.dimensions.length ? formData.dimensions : undefined,
           isFragile: formData.isFragile,
           deliveryOfferEnabled: formData.deliveryOfferEnabled && formData.deliveryOfferType !== 'DEFAULT',
-          deliveryOfferType: formData.deliveryOfferEnabled ? formData.deliveryOfferType : 'DEFAULT',
-          deliveryOfferAmount: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? (formData.deliveryChargeInsideDhaka || formData.deliveryOfferAmount || undefined) : undefined,
-          deliveryChargeInsideDhaka: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? formData.deliveryChargeInsideDhaka || undefined : (formData.deliveryOfferType === 'FREE' ? '0' : undefined),
-          deliveryChargeOutsideDhaka: formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' ? formData.deliveryChargeOutsideDhaka || undefined : (formData.deliveryOfferType === 'FREE' ? '0' : undefined),
-          deliveryOfferStartDate: formData.deliveryOfferEnabled ? formData.deliveryOfferStartDate || undefined : undefined,
-          deliveryOfferEndDate: formData.deliveryOfferEnabled ? formData.deliveryOfferEndDate || undefined : undefined,
-          deliveryOfferBadgeText: formData.deliveryOfferEnabled ? formData.deliveryOfferBadgeText || undefined : undefined,
-          discountPercentage: formData.discountPercentage || undefined,
-          salePrice: formData.salePrice || undefined, originalPrice,
-          offerStartDate: formData.offerStartDate || undefined, offerEndDate: formData.offerEndDate || undefined,
+          deliveryOfferType: formData.deliveryOfferType,
+          deliveryChargeInsideDhaka: formData.deliveryOfferEnabled ? formData.deliveryChargeInsideDhaka : undefined,
+          deliveryChargeOutsideDhaka: formData.deliveryOfferEnabled ? formData.deliveryChargeOutsideDhaka : undefined,
+          deliveryOfferBadgeText: formData.deliveryOfferBadgeText || undefined,
           flashSaleEligible: formData.flashSaleEligible,
-          lowStockThreshold: formData.lowStockThreshold || undefined,
+          lowStockThreshold: formData.lowStockThreshold ? parseInt(formData.lowStockThreshold, 10) : 10,
           barcode: formData.barcode || undefined,
-          returnEligible: formData.returnEligible, codAvailable: formData.codAvailable,
-          preOrderOption: formData.preOrderOption, relatedProducts: formData.relatedProducts || undefined,
+          returnEligible: formData.returnEligible,
+          codAvailable: formData.codAvailable,
+          preOrderOption: formData.preOrderOption,
+          relatedProducts: formData.relatedProducts || undefined,
           faqs: formData.faqs.length > 0 ? formData.faqs : undefined,
         },
       });
 
-      pushToast({ tone: 'success', description: 'Product created successfully!' });
+      pushToast({ tone: 'success', description: 'Product successfully published to catalogue!' });
       router.push('/admin/products');
-    } catch (error) {
-      pushToast({ tone: 'danger', description: error instanceof Error ? error.message : 'Failed to create product. Please try again.' });
+    } catch (err) {
+      console.error('Failed to create product:', err);
+      pushToast({ tone: 'danger', description: err instanceof Error ? err.message : 'Failed to publish product' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const selectedCategoryData = categoriesData.find((c) => c.name === formData.category);
-  const subcategories = selectedCategoryData?.subcategories || [];
-  const selectedSubcategoryData = subcategories.find((s: { name: string }) => s.name === formData.subcategory);
-  const items = (selectedSubcategoryData as { name: string; items?: string[] } | undefined)?.items || [];
-
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <Link href="/admin/products" className="inline-flex items-center text-white hover:text-white mb-4">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
-        </Link>
-        <h1 className="text-3xl font-bold text-[#F7F8F8]">Add New Product</h1>
-        <p className="text-sm text-[#8A8F98] mt-1">Create a comprehensive beauty product listing</p>
-      </div>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* 1. Header */}
+      <ProductFormHeader
+        title="Add New Product"
+        subtitle="Create a comprehensive beauty catalogue listing with SEO, media, and delivery rules"
+        backHref="/admin/products"
+      />
 
-      {/* ─── AI GENERATE PANEL ───────────────────────────────────────────── */}
-      <div className={`mb-6 rounded-xl border-2 p-5 shadow-sm transition-all ${aiApplied ? 'border-emerald-500/50 bg-emerald-950/40' : 'border-[#232636] bg-[#161824]'}`}>
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className={`w-5 h-5 ${aiApplied ? 'text-green-600' : 'text-white'}`} />
-          <span className={`text-base font-semibold ${aiApplied ? 'text-emerald-300' : 'text-[#F7F8F8]'}`}>
-            {aiApplied
-              ? `✅ Generated with ${AI_MODELS.find(m => m.id === aiAppliedModel)?.badge || 'AI'} — review and adjust the result`
-              : 'AI Product Generator'}
-          </span>
-          {aiApplied && (
-            <Button
-              type="button"
-              onClick={() => { setAiApplied(false); setAiAppliedModel(''); setFormData(defaultForm); setFacebookAdAngle(null); setMarketNote(''); setCompetitionNote(''); setAiInput(''); }}
-              className="ml-auto text-xs text-[#8a8f98] hover:text-red-600 underline"
-            >
-              Reset & start fresh
-            </Button>
-          )}
-        </div>
+      {/* 2. AI Marketing Copilot */}
+      <ProductAiGeneratorPanel
+        aiInput={aiInput}
+        isGenerating={isGenerating}
+        aiApplied={aiApplied}
+        aiAppliedModelName={aiAppliedModel}
+        aiError={aiError}
+        onChangeInput={setAiInput}
+        onGenerate={handleAiGenerate}
+        onReset={() => {
+          setAiApplied(false);
+          setAiInput('');
+          setFormData(defaultForm);
+          setFacebookAdAngle(null);
+        }}
+      >
+        <ProductAiModelSelector selectedModel={aiModel} onSelectModel={setAiModel} />
+        <ProductAiResearchNotes marketNote={marketNote} competitionNote={competitionNote} />
+        <ProductAiFacebookAdAngle adAngle={facebookAdAngle} />
+      </ProductAiGeneratorPanel>
 
-        {!aiApplied && (
-          <>
-            <p className="text-sm text-white mb-3">
-              Enter a product name or keyword. AI will fill the supported fields automatically; you only need to provide the price and images.
-            </p>
-
-            {/* Model selector */}
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-white mb-2">Choose an AI model:</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {AI_MODELS.map((m) => (
-                  <Button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setAiModel(m.id)}
-                    className={`text-left px-3 py-2.5 rounded-lg border-2 transition-all ${
-                      aiModel === m.id
-                        ? 'border-admin-primary bg-[#1b1e2c] shadow-md'
-                        : 'border-[#232636] bg-[#10121b] hover:border-white/[0.15]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-[#F7F8F8]">{m.label}</span>
-                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${m.badgeColor}`}>{m.badge}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#8a8f98]">{m.note}</span>
-                      <span className="text-xs font-mono text-[#62666d]">{m.cost}</span>
-                    </div>
-                    {aiModel === m.id && (
-                      <div className="mt-1.5 h-0.5 bg-admin-panel0 rounded" />
-                    )}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Input
-                type="text"
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !isGenerating && handleAiGenerate()}
-                placeholder="e.g., Vitamin C Serum, Korean Sheet Mask, Matte Lipstick..."
-                className="flex-1 px-4 py-2.5 border-2 border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 focus:border-admin-primary text-sm bg-[#10121b] text-[#F7F8F8] placeholder-[#62666D]"
-                disabled={isGenerating}
-              />
-              <Button
-                type="button"
-                onClick={handleAiGenerate}
-                disabled={isGenerating || !aiInput.trim()}
-                className="inline-flex items-center px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg disabled:opacity-50 font-medium text-sm shadow"
-              >
-                {isGenerating
-                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating with {AI_MODELS.find(m => m.id === aiModel)?.badge}…</>
-                  : <><Sparkles className="w-4 h-4 mr-2" /> Generate</>}
-              </Button>
-            </div>
-          </>
-        )}
-
-        {aiError && (
-          <div className="mt-3 flex items-center gap-2 text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 text-sm">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {aiError}
-          </div>
-        )}
-
-        {/* Market insights */}
-        {aiApplied && (marketNote || competitionNote) && (
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {marketNote && (
-              <div className="bg-[#161824] border border-emerald-500/20 rounded-lg px-4 py-3">
-                <p className="text-xs font-semibold text-emerald-400 mb-1">💰 Market Price Research</p>
-                <p className="text-sm text-[#d0d6e0]">{marketNote}</p>
-              </div>
-            )}
-            {competitionNote && (
-              <div className="bg-[#161824] border border-amber-500/20 rounded-lg px-4 py-3">
-                <p className="text-xs font-semibold text-amber-400 mb-1">📊 Competition Insight</p>
-                <p className="text-sm text-[#d0d6e0]">{competitionNote}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Facebook Ad Angle panel */}
-        {facebookAdAngle && (
-          <div className="mt-4 border border-[#232636] rounded-lg bg-[#10121b] overflow-hidden">
-            <Button
-              type="button"
-              onClick={() => setShowAdAngle((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-white hover:bg-admin-panel"
-            >
-              <span className="flex items-center gap-2"><Megaphone className="w-4 h-4" /> Facebook Ad Copy (AI Generated)</span>
-              {showAdAngle ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </Button>
-            {showAdAngle && (
-              <div className="px-4 pb-4 space-y-3 border-t border-admin-border">
-                <div>
-                  <p className="text-xs font-medium text-[#8a8f98] mb-1">Headline</p>
-                  <p className="text-sm bg-admin-panel rounded px-3 py-2 font-medium">{facebookAdAngle.headline}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-[#8a8f98] mb-1">Primary Text</p>
-                  <p className="text-sm bg-admin-panel rounded px-3 py-2 whitespace-pre-line">{facebookAdAngle.primaryText}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-[#8a8f98] mb-1">Target Audience</p>
-                  <p className="text-sm bg-admin-panel rounded px-3 py-2">{facebookAdAngle.targetAudience}</p>
-                </div>
-                <p className="text-xs text-[#62666d]">Copy these before creating your Meta ad campaign.</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ─── FORM ────────────────────────────────────────────────────────── */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-
-        {/* 1. Basic Information */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <Package className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Basic Information</h2>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Product Name *</label>
-              <Input type="text" name="name" value={formData.name} onChange={handleNameChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-white/20 ${errors.name ? 'border-red-500' : 'border-[#232636]'}`}
-                placeholder="e.g., Hydrating Face Serum with Hyaluronic Acid" />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Category *</label>
-                <Select name="category" value={formData.category}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value, subcategory: '', item: '' }))}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20">
-                  {categoriesData.map((cat) => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Subcategory</label>
-                <Select name="subcategory" value={formData.subcategory}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, subcategory: e.target.value, item: '' }))}
-                  disabled={!formData.category}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 disabled:opacity-50">
-                  <option value="">Select subcategory</option>
-                  {subcategories.map((s: { name: string }) => <option key={s.name} value={s.name}>{s.name}</option>)}
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Product Type/Item</label>
-                <Select name="item" value={formData.item} onChange={handleChange}
-                  disabled={!formData.subcategory || items.length === 0}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 disabled:opacity-50">
-                  <option value="">Select item</option>
-                  {items.map((item: string) => <option key={item} value={item}>{item}</option>)}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Brand *</label>
-                <Input type="text" name="brand" value={formData.brand} onChange={handleChange} list="brands"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-white/20 ${errors.brand ? 'border-red-500' : 'border-[#232636]'}`}
-                  placeholder="Select or type brand" />
-                <datalist id="brands">{brands.map((b) => <option key={b} value={b} />)}</datalist>
-                {errors.brand && <p className="mt-1 text-sm text-red-600">{errors.brand}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Origin Country</label>
-                <Select name="originCountry" value={formData.originCountry} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20">
-                  {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Status *</label>
-                <Select name="status" value={formData.status} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20">
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="out_of_stock">Out of Stock</option>
-                </Select>
-              </div>
-              <div className="flex items-center pt-6">
-                <label className="flex items-center">
-                  <Input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange}
-                    className="w-4 h-4 text-white border-[#232636] rounded" />
-                  <span className="ml-2 text-sm text-[#d0d6e0]">Featured Product</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Product Description *</label>
-              <Textarea name="description" value={formData.description} onChange={handleChange} rows={6}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-white/20 ${errors.description ? 'border-red-500' : 'border-[#232636]'}`}
-                placeholder="Detailed product description..." />
-              {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Product Images */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-2">
-            <ImageIcon className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Product Images</h2>
-          </div>
-          <p className="text-sm text-[#8a8f98] mb-4">Max 10MB per image. First/main image is the display image.</p>
-          <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleImageUpload} />
-
-          <Button type="button" onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg font-medium">
-            <Upload className="w-5 h-5 mr-2" /> Upload Images
-          </Button>
-          {errors.images && <p className="mt-2 text-sm text-red-600 flex items-center gap-1"><AlertCircle className="w-4 h-4" />{errors.images}</p>}
-
-          {formData.images.length > 0 && (
-            <div className="mt-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
-                {formData.images.map((image, index) => (
-                  <div key={image.id}
-                    className={`relative group rounded-lg overflow-hidden border-2 transition-all ${image.isMain ? 'border-admin-primary ring-2 ring-admin-primary/40' : 'border-[#232636]'}`}>
-                    <div className="aspect-square">
-                      <img src={image.preview} alt={`Product image preview ${index + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                    {image.isMain && <div className="absolute top-2 left-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] text-xs font-semibold px-2 py-1 rounded">Main</div>}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
-                      {!image.isMain && (
-                        <Button type="button" aria-label={`Set image ${index + 1} as main image`} onClick={() => handleSetMainImage(image.id)} className="p-2 bg-[#161824] rounded-full hover:bg-[#10121b]">
-                          <ImageIcon className="w-4 h-4 text-[#d0d6e0]" />
-                        </Button>
-                      )}
-                      <Button type="button" aria-label={`Remove image ${index + 1}`} onClick={() => handleRemoveImage(image.id)} className="p-2 bg-red-500 rounded-full hover:bg-red-600">
-                        <Trash2 className="w-4 h-4 text-white" />
-                      </Button>
-                    </div>
-                    <div className="sr-only">{index + 1}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold text-[#F7F8F8] mb-3">Image Alt Texts (SEO)</h3>
-                <div className="space-y-3">
-                  {formData.images.map((image, index) => (
-                    <div key={image.id} className="flex gap-3">
-                      <img src={image.preview} alt={`Product image preview ${index + 1}`} className="w-16 h-16 object-cover rounded border flex-shrink-0" />
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Image {index + 1} {image.isMain && '(Main)'}</label>
-                        <Input type="text" value={formData.imageAltTexts[index] || ''}
-                          onChange={(e) => handleImageAltTextChange(index, e.target.value)}
-                          className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
-                          placeholder="Rhode Peptide Lip Tint Ribbon Bangladesh" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 3. Variants */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <Tag className="w-5 h-5 text-white mr-2" />
-              <div>
-                <h2 className="text-lg font-semibold text-[#F7F8F8]">Product Variants</h2>
-                <p className="text-sm text-[#8a8f98]">Size, color, price, stock per variant</p>
-              </div>
-            </div>
-            <Button type="button" onClick={handleAddVariant}
-              className="inline-flex items-center px-4 py-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg text-sm font-medium">
-              <Plus className="w-4 h-4 mr-1" /> Add Variant
-            </Button>
-          </div>
-
-          {aiApplied && (
-            <div className="mb-4 flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-sm text-amber-300">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              Price fields are intentionally blank — enter your selling prices below.
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {formData.variants.map((variant, index) => (
-              <div key={variant.id} className="border border-[#232636] rounded-lg p-4 bg-[#10121b]">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-[#F7F8F8]">Variant #{index + 1}</h3>
-                  {formData.variants.length > 1 && (
-                    <Button type="button" aria-label={`Remove variant ${index + 1}`} onClick={() => handleRemoveVariant(variant.id)} className="text-red-600 hover:text-rose-300">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                  {(['size', 'color', 'price', 'stock', 'sku'] as const).map((field) => (
-                    <div key={field}>
-                      <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-                        {field === 'size' ? 'Size/Volume' : field === 'color' ? 'Color/Shade' : field === 'price' ? 'Price (BDT ৳) *' : field === 'stock' ? 'Stock *' : 'SKU *'}
-                      </label>
-                      <Input
-                        type={field === 'price' || field === 'stock' ? 'number' : 'text'}
-                        value={variant[field] || ''}
-                        onChange={(e) => handleVariantChange(variant.id, field, e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-white/20 text-sm ${errors[`variant_${variant.id}_${field}`] ? 'border-red-500' : 'border-[#232636]'} ${field === 'price' && aiApplied ? 'bg-amber-500/10 border-amber-300' : ''}`}
-                        placeholder={field === 'price' ? '0.00' : field === 'stock' ? '0' : ''}
-                        step={field === 'price' ? '0.01' : undefined}
-                        min={field === 'price' || field === 'stock' ? '0' : undefined}
-                      />
-                      {errors[`variant_${variant.id}_${field}`] && (
-                        <p className="mt-1 text-xs text-red-600">{errors[`variant_${variant.id}_${field}`]}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 4. Specifications */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <Settings className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Product Specifications</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Net Weight/Volume (numeric)</label>
-                <Input type="text" name="weight" value={formData.weight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="e.g., 30" />
-                {errors.weight && <p className="mt-1 text-sm text-red-600">{errors.weight}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Shelf Life</label>
-                <Input type="text" name="shelfLife" value={formData.shelfLife} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="e.g., 24 months" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Expiry Date</label>
-                <Input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-2">Suitable Skin Type</label>
-              <div className="flex flex-wrap gap-2">
-                {skinTypes.map((type) => (
-                  <Button key={type} type="button" onClick={() => handleSkinTypeToggle(type)}
-                    className={`px-4 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
-                      formData.skinType.includes(type)
-                        ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] border-admin-primary text-white'
-                        : 'bg-[#161824] border-[#232636] text-[#d0d6e0] hover:border-admin-border'
-                    }`}>
-                    {type}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Product Condition</label>
-                <Select name="productCondition" value={formData.productCondition} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20">
-                  <option value="NEW">New</option>
-                  <option value="USED">Used</option>
-                  <option value="REFURBISHED">Refurbished</option>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">GTIN/EAN/UPC</label>
-                <Input type="text" name="gtin" value={formData.gtin} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="1234567890123" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Average Rating (0–5)</label>
-                <Input type="number" name="averageRating" value={formData.averageRating} onChange={handleChange}
-                  min="0" max="5" step="0.1"
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Review Count</label>
-                <Input type="number" name="reviewCount" value={formData.reviewCount} onChange={handleChange}
-                  min="0" className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Ingredients List</label>
-              <Textarea name="ingredients" value={formData.ingredients} onChange={handleChange} rows={4}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="Aqua, Glycerin, Hyaluronic Acid..." />
-            </div>
-          </div>
-        </div>
-
-        {/* ── PLACE 3: 5. SEO Settings — updated UI ─────────────────────────── */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <Search className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">SEO Settings</h2>
-          </div>
-          <div className="space-y-4">
-
-            {/* Meta Title */}
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Meta Title</label>
-              <Input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} maxLength={60}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="SEO title — include focus keyword" />
-              <p className="text-xs text-[#62666d] mt-1 text-right">{formData.metaTitle.length}/60</p>
-            </div>
-
-            {/* Meta Description */}
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Meta Description</label>
-              <Textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} maxLength={160} rows={3}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder='150–160 chars. Include "Cash on Delivery" or price signal.' />
-              <p className="text-xs text-[#62666d] mt-1 text-right">{formData.metaDescription.length}/160</p>
-            </div>
-
-            {/* Bangla Product Name + Focus Keyword */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Bangla Product Name</label>
-                <Input type="text" name="bengaliProductName" value={formData.bengaliProductName} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="বাংলা নাম" lang="bn-BD" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Focus Keyword</label>
-                <Input type="text" name="focusKeyword" value={formData.focusKeyword} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="e.g., vitamin c serum bangladesh" />
-                <p className="text-xs text-[#62666d] mt-1">Must appear in Meta Title, description first 100 words, and URL Slug</p>
-              </div>
-            </div>
-
-            {/* Secondary Keywords — NEW */}
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">
-                Secondary Keywords
-                <span className="ml-2 text-xs font-normal text-[#62666d]">comma-separated, 3–5 long-tail terms</span>
-              </label>
-              <Input
-                type="text"
-                value={formData.secondaryKeywords.join(', ')}
-                onChange={(e) => handleSecondaryKeywordsChange(e.target.value)}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="lip oil for dry lips bangladesh, non sticky lip gloss bd price, tinted lip oil buy online bd"
-              />
-              {formData.secondaryKeywords.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {formData.secondaryKeywords.map((kw, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-admin-panel border border-admin-border rounded-full text-xs text-white">
-                      {kw}
-                      <Button
-                        type="button"
-                        aria-label={`Remove secondary keyword ${kw}`}
-                        onClick={() => setFormData((prev) => ({
-                          ...prev,
-                          secondaryKeywords: prev.secondaryKeywords.filter((_, idx) => idx !== i),
-                        }))}
-                        className="text-admin-text-muted hover:text-white"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Bangla Focus Keyword + OG Description — NEW */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">
-                  Bangla Focus Keyword
-                  <span className="ml-2 text-xs font-normal text-[#62666d]">Bengali script only</span>
-                </label>
-                <Input
-                  type="text"
-                  name="bengaliFocusKeyword"
-                  value={formData.bengaliFocusKeyword}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="লিপ অয়েল দাম বাংলাদেশ"
-                  lang="bn-BD"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">
-                  OG Description
-                  <span className="ml-2 text-xs font-normal text-[#62666d]">Facebook/WhatsApp share — 100–130 chars</span>
-                </label>
-                <Input
-                  type="text"
-                  name="ogDescription"
-                  value={formData.ogDescription}
-                  onChange={handleChange}
-                  maxLength={130}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="Glass lips in one swipe. Non-sticky & deeply nourishing."
-                />
-                <p className={`text-xs mt-1 text-right ${formData.ogDescription.length > 130 ? 'text-red-500' : 'text-[#62666d]'}`}>
-                  {formData.ogDescription.length}/130
-                </p>
-              </div>
-            </div>
-
-            {/* Bangla Meta Description */}
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Bangla Meta Description</label>
-              <Textarea name="bengaliMetaDescription" value={formData.bengaliMetaDescription} onChange={handleChange} maxLength={160} rows={2}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-            </div>
-
-            {/* OG Title + URL Slug */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Open Graph Title</label>
-                <Input type="text" name="ogTitle" value={formData.ogTitle} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="Leave blank to use Meta Title" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">URL Slug</label>
-                <Input type="text" name="urlSlug" value={formData.urlSlug} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="product-url-slug" />
-                <p className="text-xs text-[#62666d] mt-1">/products/<strong>{formData.urlSlug || 'product-url-slug'}</strong></p>
-              </div>
-            </div>
-
-            {/* Canonical, H1 and visible SEO intro */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Canonical URL</label>
-                <Input
-                  type="text"
-                  name="canonicalUrl"
-                  value={formData.canonicalUrl}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder={`${ADMIN_SITE_URL}/products/product-url-slug`}
-                />
-                <p className="text-xs text-[#62666d] mt-1">Leave blank to auto-generate from slug.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Page H1</label>
-                <Input
-                  type="text"
-                  name="pageH1"
-                  value={formData.pageH1}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="Sunsilk Power Shot Hair Treatment Price in Bangladesh"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">SEO Intro / Top Visible Intro</label>
-              <Textarea
-                name="seoIntro"
-                value={formData.seoIntro}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="Short visible intro with price, sizes, variants and Bangladesh buying intent."
-              />
-            </div>
-
-            {/* Manual OG Image URL */}
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">OG Image URL</label>
-              <Input
-                type="text"
-                name="ogImageUrl"
-                value={formData.ogImageUrl}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="https://cdn.example.com/products/og-image.webp"
-              />
-              <p className="text-xs text-[#62666d] mt-1">Uploading a social image below will override this URL.</p>
-            </div>
-
-            {/* Social Sharing Image */}
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Social Sharing Image (1200×630px)</label>
-              {formData.ogImagePreview && (
-                <img src={formData.ogImagePreview} alt="OG" className="w-full max-w-md rounded-lg border mb-2" />
-              )}
-              <input type="file" accept="image/*" onChange={handleOgImageUpload}
-                className="text-sm text-[#8a8f98] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-admin-panel file:text-white" />
-            </div>
-
-            {/* Tags */}
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">
-                Tags/Keywords
-                <span className="ml-2 text-xs font-normal text-[#62666d]">15–20 tags, priority order: focusKeyword first</span>
-              </label>
-              <Input type="text" name="tags" value={formData.tags} onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="beauty glazed lip oil bangladesh, lip oil bd, লিপ অয়েল, ..." />
-            </div>
-
-          </div>
-        </div>
-
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <Sparkles className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Semantic SEO & Structured Content</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Search Intent</label>
-                <Input type="text" name="searchIntent" value={formData.searchIntent} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Primary Concern</label>
-                <Input type="text" name="primaryConcern" value={formData.primaryConcern} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Gender</label>
-                <Input type="text" name="gender" value={formData.gender} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Target Audience</label>
-              <Textarea name="targetAudience" value={formData.targetAudience} onChange={handleChange} rows={2}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">FAQ Schema Note</label>
-                <Textarea
-                  name="faqSchemaNote"
-                  value={formData.faqSchemaNote}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
-                  placeholder="FAQ content is for customers; Product/Merchant schema is SEO priority."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Authenticity Note</label>
-                <Textarea
-                  name="authenticityNote"
-                  value={formData.authenticityNote}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
-                  placeholder="Imported product. Check packaging, expiry and batch/barcode after receiving."
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Ingredient Verification Status</label>
-              <Input
-                type="text"
-                name="ingredientVerificationStatus"
-                value={formData.ingredientVerificationStatus}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="Pending physical packaging verification"
-              />
-            </div>
-
-            {[
-              ['keyBenefits', 'Key Benefits'],
-              ['buyingIntentKeywords', 'Buying Intent Keywords'],
-              ['searchTags', 'Search Tags'],
-              ['synonyms', 'Synonyms'],
-              ['banglaSearchTerms', 'Bangla Search Terms'],
-              ['reviewKeywords', 'Review Keywords'],
-              ['entities', 'Entities'],
-              ['bengaliSecondaryKeywords', 'Bengali Secondary Keywords'],
-              ['seoValidationChecklist', 'SEO Validation Checklist'],
-              ['usageInstructions', 'Usage Instructions'],
-            ].map(([field, label]) => (
-              <div key={field}>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">{label}</label>
-                <Textarea value={(formData[field as keyof ProductFormData] as string[]).join(', ')}
-                  onChange={(e) => handleArrayFieldChange(field as keyof ProductFormData, e.target.value)}
-                  rows={2}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-sm" />
-              </div>
-            ))}
-
-            {/* 1-Click Product Hero Visual Controller (Phase 4, 5, 6 UI) */}
-            <div className="pt-2">
-              <ProductHeroVisualController
-                descriptionSectionsJson={formData.descriptionSectionsJson}
-                productSpecsJson={formData.productSpecsJson}
-                relatedProducts={formData.relatedProducts}
-                ingredients={formData.ingredients}
-                skinType={formData.skinType}
-                shelfLife={formData.shelfLife}
-                originCountry={formData.originCountry}
-                deliveryOfferEnabled={formData.deliveryOfferEnabled}
-                onDescriptionSectionsChange={(jsonStr) => setFormData((prev) => ({ ...prev, descriptionSectionsJson: jsonStr }))}
-                onProductSpecsChange={(jsonStr) => setFormData((prev) => ({ ...prev, productSpecsJson: jsonStr }))}
-                onRelatedProductsChange={(val) => setFormData((prev) => ({ ...prev, relatedProducts: val }))}
-                onDeliveryOfferToggle={(enabled) => setFormData((prev) => ({ ...prev, deliveryOfferEnabled: enabled }))}
-                onSkinTypeChange={(types) => setFormData((prev) => ({ ...prev, skinType: types }))}
-              />
-            </div>
-
-            {/* 1-Click Product Routine & Benefits Timeline Manager (Phase 2 UI) */}
-            <div className="pt-2">
-              <ProductTimelineVisualManager
-                productName={formData.name || 'This Product'}
-                descriptionSectionsJson={formData.descriptionSectionsJson}
-                onTimelineChange={(_stages, jsonStr) => setFormData((prev) => ({ ...prev, descriptionSectionsJson: jsonStr }))}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                ['productSpecsJson', 'Product Specs JSON'],
-                ['productAttributesJson', 'Product Attributes JSON'],
-                ['shadeOptionsJson', 'Shade Options JSON'],
-                ['descriptionSectionsJson', 'Description Sections JSON'],
-                ['variantPriceTableJson', 'Variant Price Table JSON'],
-                ['variantComparisonTableJson', 'Variant Comparison Table JSON'],
-                ['internalLinksJson', 'Internal Links JSON'],
-                ['structuredDataJsonLdJson', 'Full Structured Data JSON-LD'],
-                ['productGroupJsonLdJson', 'ProductGroup JSON-LD'],
-                ['merchantListingJsonLdJson', 'Merchant Listing JSON-LD'],
-                ['breadcrumbJsonLdJson', 'Breadcrumb JSON-LD'],
-                ['sitemapIndexingJson', 'Sitemap / Indexing JSON'],
-                ['variantUrlStrategyJson', 'Variant URL Strategy JSON'],
-              ].map(([field, label]) => (
-                <div key={field}>
-                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">{label}</label>
-                  <Textarea name={field} value={formData[field as keyof ProductFormData] as string}
-                    onChange={handleChange} rows={7}
-                    className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-xs font-mono" />
-                </div>
-              ))}
-            </div>
-
-            <label className="flex items-center gap-2">
-              <Input type="checkbox" name="faqSchemaReady" checked={formData.faqSchemaReady} onChange={handleChange}
-                className="w-4 h-4 text-white border-[#232636] rounded" />
-              <span className="text-sm text-[#d0d6e0]">FAQ schema ready</span>
-            </label>
-          </div>
-        </div>
-
-        {/* FAQ Section */}
-        <ProductFaqSection
-          faqs={formData.faqs}
-          onChange={(faqs) => setFormData((prev) => ({ ...prev, faqs }))}
+      {/* 3. Basic Information */}
+      <ProductBasicInfoCard>
+        <ProductNameInput
+          value={formData.name}
+          onChange={handleNameChange}
+          error={errors.name}
         />
 
-        {/* 6. Shipping */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <TruckIcon className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Shipping & Delivery</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Shipping Weight</label>
-                <Input type="text" name="shippingWeight" value={formData.shippingWeight} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="e.g., 150g" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Dimensions (L × W × H cm)</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['length', 'width', 'height'] as const).map((dim) => (
-                    <div key={dim}>
-                      <Input type="text" value={formData.dimensions[dim]}
-                        onChange={(e) => handleDimensionChange(dim, e.target.value)}
-                        className="w-full px-3 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20 text-sm"
-                        placeholder={dim.charAt(0).toUpperCase()} />
-                      <p className="text-xs text-[#62666d] mt-0.5 text-center">{dim.charAt(0).toUpperCase()} (cm)</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <label className="flex items-center">
-              <Input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange}
-                className="w-4 h-4 text-white border-[#232636] rounded" />
-              <span className="ml-2 text-sm text-[#d0d6e0]">Fragile Item</span>
-            </label>
+        <ProductCategoryCascadePicker
+          category={formData.category}
+          subcategory={formData.subcategory}
+          item={formData.item}
+          onChange={(vals) => {
+            updateField('category', vals.category);
+            updateField('subcategory', vals.subcategory);
+            updateField('item', vals.item);
+          }}
+          error={errors.category}
+        />
 
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-emerald-900">Product Delivery Offer</h3>
-                  <p className="mt-1 text-xs text-emerald-700">
-                    Customer-facing offer only. Courier actual charge will still be calculated later in checkout/order phases.
-                  </p>
-                </div>
-                <label className="flex items-center gap-2 rounded-lg bg-[#161824] px-3 py-2 text-sm font-medium text-emerald-900 shadow-sm">
-                  <Input
-                    type="checkbox"
-                    checked={formData.deliveryOfferEnabled}
-                    onChange={(e) => handleDeliveryOfferToggle(e.target.checked)}
-                    className="w-4 h-4 text-emerald-600 border-[#232636] rounded"
-                  />
-                  Enable delivery offer
-                </label>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Offer Type</label>
-                  <Select
-                    value={formData.deliveryOfferEnabled ? formData.deliveryOfferType : 'DEFAULT'}
-                    onChange={(e) => handleDeliveryOfferTypeChange(e.target.value as DeliveryOfferType)}
-                    className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-emerald-500 bg-[#161824]"
-                  >
-                    <option value="DEFAULT">Courier calculated / No product offer</option>
-                    <option value="FREE">Full Free Delivery (সারা দেশে সম্পূর্ণ ফ্রি ডেলিভারি)</option>
-                    <option value="FIXED">Custom City Delivery (ঢাকার ভেতরে ও বাইরে নির্ধারিত চার্জ)</option>
-                  </Select>
-                </div>
-              </div>
-
-              {formData.deliveryOfferEnabled && formData.deliveryOfferType === 'FIXED' && (
-                <div className="mt-4 p-4 rounded-lg bg-[#10121b] border border-[#232636] space-y-3">
-                  <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
-                    শহরভিত্তিক ডেলিভারি চার্জ নির্ধারণ করুন:
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-                        🏠 ঢাকার ভেতরে ডেলিভারি চার্জ (৳)
-                      </label>
-                      <Input
-                        type="number"
-                        name="deliveryChargeInsideDhaka"
-                        value={formData.deliveryChargeInsideDhaka}
-                        onChange={handleChange}
-                        min="0"
-                        step="1"
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-[#161824] ${errors.deliveryChargeInsideDhaka ? 'border-red-500' : 'border-[#232636]'}`}
-                        placeholder="যেমন: ৬০ (ফ্রি হলে ০)"
-                      />
-                      {errors.deliveryChargeInsideDhaka && (
-                        <p className="mt-1 text-xs text-red-500">{errors.deliveryChargeInsideDhaka}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-                        🚚 ঢাকার বাইরে ডেলিভারি চার্জ (৳)
-                      </label>
-                      <Input
-                        type="number"
-                        name="deliveryChargeOutsideDhaka"
-                        value={formData.deliveryChargeOutsideDhaka}
-                        onChange={handleChange}
-                        min="0"
-                        step="1"
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-[#161824] ${errors.deliveryChargeOutsideDhaka ? 'border-red-500' : 'border-[#232636]'}`}
-                        placeholder="যেমন: ১২০"
-                      />
-                      {errors.deliveryChargeOutsideDhaka && (
-                        <p className="mt-1 text-xs text-red-500">{errors.deliveryChargeOutsideDhaka}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, deliveryChargeInsideDhaka: '0', deliveryChargeOutsideDhaka: '120', deliveryOfferBadgeText: 'ঢাকার ভেতরে ফ্রি ডেলিভারি' }))}
-                      className="text-xs px-3.5 py-1.5 rounded-lg bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition active:scale-[0.98]"
-                    >
-                      ⚡ ঢাকার ভেতরে ফ্রি (৳০) + বাইরে ১২০৳
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, deliveryChargeInsideDhaka: '60', deliveryChargeOutsideDhaka: '120', deliveryOfferBadgeText: 'স্পেশাল ডেলিভারি অফার' }))}
-                      className="text-xs px-3.5 py-1.5 rounded-lg bg-[#232636] hover:bg-emerald-950 text-emerald-300 border border-emerald-800 transition active:scale-[0.98]"
-                    >
-                      ⚡ ভেতরে ৬০৳ + বাইরে ১২০৳
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Offer Start</label>
-                  <Input type="datetime-local" name="deliveryOfferStartDate" value={formData.deliveryOfferStartDate} onChange={handleChange}
-                    disabled={!formData.deliveryOfferEnabled}
-                    className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-[#10121b]" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Offer End</label>
-                  <Input type="datetime-local" name="deliveryOfferEndDate" value={formData.deliveryOfferEndDate} onChange={handleChange}
-                    disabled={!formData.deliveryOfferEnabled}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-[#10121b] ${errors.deliveryOfferEndDate ? 'border-red-500' : 'border-[#232636]'}`} />
-                  {errors.deliveryOfferEndDate && <p className="mt-1 text-sm text-red-600">{errors.deliveryOfferEndDate}</p>}
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Badge Text</label>
-                <Input
-                  type="text"
-                  name="deliveryOfferBadgeText"
-                  value={formData.deliveryOfferBadgeText}
-                  onChange={handleChange}
-                  disabled={!formData.deliveryOfferEnabled}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-emerald-500 disabled:bg-[#10121b]"
-                  placeholder="এই পণ্যে ফ্রি ডেলিভারি"
-                  lang="bn-BD"
-                />
-                <p className="mt-2 text-xs text-emerald-700">
-                  If a free-delivery product is in the cart, delivery becomes free for the entire order.
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ProductBrandSelector
+            value={formData.brand}
+            onChange={(b) => updateField('brand', b)}
+            error={errors.brand}
+          />
+          <ProductOriginCountrySelect
+            value={formData.originCountry}
+            onChange={(c) => updateField('originCountry', c)}
+          />
+          <ProductStatusToggleGroup
+            value={formData.status}
+            onChange={(s) => updateField('status', s)}
+          />
         </div>
 
-        {/* 7. Discount */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <Percent className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Discount & Offers</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Discount %</label>
-                <Input type="number" value={formData.discountPercentage}
-                  onChange={(e) => handleDiscountChange(e.target.value)}
-                  min="0" max="100" step="0.01"
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="0" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Sale Price (৳)</label>
-                <Input type="number" name="salePrice" value={formData.salePrice} onChange={handleChange}
-                  step="1" min="0"
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                  placeholder="Auto-calculated" />
-              </div>
-              <div className="flex items-center pt-6">
-                <label className="flex items-center">
-                  <Input type="checkbox" name="flashSaleEligible" checked={formData.flashSaleEligible} onChange={handleChange}
-                    className="w-4 h-4 text-white border-[#232636] rounded" />
-                  <span className="ml-2 text-sm text-[#d0d6e0]">Flash Sale Eligible</span>
-                </label>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Offer Start</label>
-                <Input type="datetime-local" name="offerStartDate" value={formData.offerStartDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Offer End</label>
-                <Input type="datetime-local" name="offerEndDate" value={formData.offerEndDate} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20" />
-              </div>
-            </div>
-          </div>
+        <ProductFeaturedToggle
+          checked={formData.featured}
+          onChange={(f) => updateField('featured', f)}
+        />
+
+        <ProductDescriptionEditor
+          value={formData.description}
+          onChange={(d) => updateField('description', d)}
+          error={errors.description}
+        />
+      </ProductBasicInfoCard>
+
+      {/* 4. Product Images */}
+      <ProductImageUploaderCard imageCount={formData.images.length}>
+        <ProductImageDropzone
+          onFilesSelected={handleFilesSelected}
+          error={errors.images}
+        />
+        <ProductImageGrid
+          images={formData.images}
+          onSetMain={handleSetMainImage}
+          onRemove={handleRemoveImage}
+        />
+        <ProductImageAltEditor
+          imageAltTexts={formData.imageAltTexts}
+          images={formData.images}
+          onChangeAlt={handleUpdateImageAlt}
+        />
+      </ProductImageUploaderCard>
+
+      {/* 5. Product Variants & Stock */}
+      <ProductVariantMatrixCard
+        variantCount={formData.variants.length}
+        onAddVariant={handleAddVariant}
+        aiApplied={aiApplied}
+      >
+        {formData.variants.map((variant, index) => (
+          <ProductVariantRowItem
+            key={variant.id}
+            index={index}
+            variant={variant}
+            canRemove={formData.variants.length > 1}
+            aiApplied={aiApplied}
+            errors={errors}
+            onChange={(field, val) => handleUpdateVariant(index, field, val)}
+            onRemove={() => handleRemoveVariant(index)}
+          />
+        ))}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-[#232636]">
+          <ProductStockThresholdInput
+            value={formData.lowStockThreshold}
+            onChange={(val) => updateField('lowStockThreshold', val)}
+          />
+          <ProductBarcodeScannerInput
+            value={formData.barcode}
+            onChange={(val) => updateField('barcode', val)}
+          />
+        </div>
+      </ProductVariantMatrixCard>
+
+      {/* 6. Product Specifications */}
+      <ProductSpecificationsCard>
+        <ProductSkinTypePills
+          selected={formData.skinType}
+          onToggle={(type) => {
+            const next = formData.skinType.includes(type)
+              ? formData.skinType.filter((t) => t !== type)
+              : [...formData.skinType, type];
+            updateField('skinType', next);
+          }}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ProductWeightInput
+            value={formData.weight}
+            onChange={(w) => updateField('weight', w)}
+          />
+          <ProductShelfLifeInputs
+            shelfLife={formData.shelfLife}
+            expiryDate={formData.expiryDate}
+            onChangeShelfLife={(s) => updateField('shelfLife', s)}
+            onChangeExpiryDate={(d) => updateField('expiryDate', d)}
+          />
         </div>
 
-        {/* 8. Stock */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <AlertCircle className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Stock Management</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Low Stock Alert Threshold</label>
-              <Input type="number" name="lowStockThreshold" value={formData.lowStockThreshold} onChange={handleChange} min="0"
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="10" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Barcode/UPC</label>
-              <Input type="text" name="barcode" value={formData.barcode} onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="Enter barcode" />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ProductConditionSelect
+            value={formData.productCondition}
+            onChange={(c) => updateField('productCondition', c)}
+          />
+          <ProductGtinInput
+            value={formData.gtin}
+            onChange={(g) => updateField('gtin', g)}
+          />
         </div>
 
-        {/* 9. Additional Options */}
-        <div className="bg-[#161824] rounded-lg border border-[#232636] p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <Settings className="w-5 h-5 text-white mr-2" />
-            <h2 className="text-lg font-semibold text-[#F7F8F8]">Additional Options</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { name: 'returnEligible', label: 'Return Eligible' },
-                { name: 'codAvailable',   label: 'Cash on Delivery' },
-                { name: 'preOrderOption', label: 'Pre-order Option' },
-              ].map((opt) => (
-                <label key={opt.name} className="flex items-center p-3 border border-[#232636] rounded-lg hover:bg-[#10121b] cursor-pointer">
-                  <Input type="checkbox" name={opt.name}
-                    checked={formData[opt.name as keyof ProductFormData] as boolean}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-white border-[#232636] rounded" />
-                  <span className="ml-2 text-sm text-[#d0d6e0]">{opt.label}</span>
-                </label>
-              ))}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#d0d6e0] mb-1">Related Products</label>
-              <Input type="text" name="relatedProducts" value={formData.relatedProducts} onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#232636] rounded-lg focus:ring-2 focus:ring-white/20"
-                placeholder="Product IDs separated by commas" />
-            </div>
-          </div>
+        <ProductRatingReviewsInputs
+          rating={formData.averageRating}
+          reviews={formData.reviewCount}
+          onChangeRating={(r) => updateField('averageRating', r)}
+          onChangeReviews={(rc) => updateField('reviewCount', rc)}
+        />
+
+        <ProductIngredientsTextarea
+          ingredients={formData.ingredients}
+          verificationStatus={formData.ingredientVerificationStatus}
+          onChangeIngredients={(i) => updateField('ingredients', i)}
+          onChangeStatus={(s) => updateField('ingredientVerificationStatus', s)}
+        />
+      </ProductSpecificationsCard>
+
+      {/* 7. Interactive Visual & Routine Controllers */}
+      <ProductVisualManagersWrapper
+        productName={formData.name}
+        descriptionSectionsJson={formData.descriptionSectionsJson}
+        productSpecsJson={formData.productSpecsJson}
+        relatedProducts={formData.relatedProducts}
+        ingredients={formData.ingredients}
+        skinType={formData.skinType}
+        shelfLife={formData.shelfLife}
+        originCountry={formData.originCountry}
+        deliveryOfferEnabled={formData.deliveryOfferEnabled}
+        onDescriptionSectionsChange={(json) => updateField('descriptionSectionsJson', json)}
+        onProductSpecsChange={(json) => updateField('productSpecsJson', json)}
+        onRelatedProductsChange={(r) => updateField('relatedProducts', r)}
+        onDeliveryOfferToggle={(enabled) => updateField('deliveryOfferEnabled', enabled)}
+        onSkinTypeChange={(types) => updateField('skinType', types)}
+      />
+
+      {/* 8. SEO & Social Metadata */}
+      <ProductSeoSettingsCard>
+        <ProductMetaTitleDescriptionInputs
+          metaTitle={formData.metaTitle}
+          metaDescription={formData.metaDescription}
+          onChangeTitle={(t) => updateField('metaTitle', t)}
+          onChangeDescription={(d) => updateField('metaDescription', d)}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ProductSlugInput
+            slug={formData.urlSlug}
+            onChange={(s) => updateField('urlSlug', s)}
+          />
+          <ProductCanonicalH1Inputs
+            pageH1={formData.pageH1}
+            seoIntro={formData.seoIntro}
+            canonicalUrl={formData.canonicalUrl}
+            onChangeH1={(h) => updateField('pageH1', h)}
+            onChangeSeoIntro={(si) => updateField('seoIntro', si)}
+            onChangeCanonicalUrl={(cu) => updateField('canonicalUrl', cu)}
+          />
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between bg-[#161824]/95 backdrop-blur rounded-lg border border-[#232636] p-6 shadow-2xl sticky bottom-0 z-10">
-          <Link href="/admin/products"
-            className="inline-flex items-center px-6 py-3 border border-[#232636] rounded-lg text-[#8A8F98] hover:text-[#F7F8F8] hover:bg-[#1b1e2c] font-medium transition-colors">
-            <X className="w-5 h-5 mr-2" /> Cancel
-          </Link>
-          <Button type="submit" disabled={isSubmitting}
-            className="inline-flex items-center px-8 py-3 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg disabled:opacity-50 font-medium shadow-lg">
-            {isSubmitting
-              ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creating...</>
-              : <><Save className="w-5 h-5 mr-2" /> Create Product</>}
-          </Button>
-        </div>
+        <ProductKeywordChipsInput
+          label="Secondary Keywords (Long-tail Search Terms)"
+          keywords={formData.secondaryKeywords}
+          onChange={(kws) => updateField('secondaryKeywords', kws)}
+        />
 
-      </form>
+        <ProductBilingualMetaCard
+          bengaliName={formData.bengaliProductName}
+          bengaliMetaDescription={formData.bengaliMetaDescription}
+          bengaliFocusKeyword={formData.bengaliFocusKeyword}
+          focusKeyword={formData.focusKeyword}
+          onChangeName={(n) => updateField('bengaliProductName', n)}
+          onChangeDescription={(d) => updateField('bengaliMetaDescription', d)}
+          onChangeBengaliKeyword={(bk) => updateField('bengaliFocusKeyword', bk)}
+          onChangeFocusKeyword={(fk) => updateField('focusKeyword', fk)}
+        />
+
+        <ProductSocialOgCard
+          ogTitle={formData.ogTitle}
+          ogDescription={formData.ogDescription}
+          ogImageUrl={formData.ogImageUrl}
+          ogImagePreview={formData.ogImagePreview}
+          onChangeTitle={(t) => updateField('ogTitle', t)}
+          onChangeDescription={(d) => updateField('ogDescription', d)}
+          onChangeImageUrl={(url) => updateField('ogImageUrl', url)}
+          onFileSelected={(file) =>
+            setFormData((prev) => ({
+              ...prev,
+              ogImageFile: file,
+              ogImagePreview: URL.createObjectURL(file),
+            }))
+          }
+          onClearImage={() =>
+            setFormData((prev) => ({ ...prev, ogImageFile: null, ogImagePreview: '' }))
+          }
+        />
+
+        <ProductSemanticSeoCard
+          searchIntent={formData.searchIntent}
+          targetAudience={formData.targetAudience}
+          primaryConcern={formData.primaryConcern}
+          keyBenefits={formData.keyBenefits}
+          searchTags={formData.searchTags}
+          onChangeSearchIntent={(si) => updateField('searchIntent', si)}
+          onChangeTargetAudience={(ta) => updateField('targetAudience', ta)}
+          onChangePrimaryConcern={(pc) => updateField('primaryConcern', pc)}
+          onChangeKeyBenefits={(kb) => updateField('keyBenefits', kb)}
+          onChangeSearchTags={(st) => updateField('searchTags', st)}
+        />
+
+        <ProductJsonLdAccordion
+          title="Product Schema (JSON-LD Structured Data)"
+          jsonString={formData.structuredDataJsonLdJson}
+          onChange={(j) => updateField('structuredDataJsonLdJson', j)}
+        />
+      </ProductSeoSettingsCard>
+
+      {/* 9. Shipping & Delivery Offers */}
+      <ProductShippingCard>
+        <ProductDimensionsInputs
+          shippingWeight={formData.shippingWeight}
+          dimensions={formData.dimensions}
+          isFragile={formData.isFragile}
+          onChangeWeight={(w) => updateField('shippingWeight', w)}
+          onChangeDimension={(dim, val) =>
+            setFormData((prev) => ({
+              ...prev,
+              dimensions: { ...prev.dimensions, [dim]: val },
+            }))
+          }
+          onToggleFragile={(f) => updateField('isFragile', f)}
+        />
+
+        <ProductDeliveryOfferCard
+          enabled={formData.deliveryOfferEnabled}
+          type={formData.deliveryOfferType}
+          badgeText={formData.deliveryOfferBadgeText}
+          onToggleEnabled={(e) => updateField('deliveryOfferEnabled', e)}
+          onChangeType={(t) => updateField('deliveryOfferType', t)}
+          onChangeBadgeText={(b) => updateField('deliveryOfferBadgeText', b)}
+        >
+          {formData.deliveryOfferType === 'FIXED' && (
+            <ProductCityDeliveryRatesInput
+              chargeInsideDhaka={formData.deliveryChargeInsideDhaka}
+              chargeOutsideDhaka={formData.deliveryChargeOutsideDhaka}
+              onChangeInside={(val) => updateField('deliveryChargeInsideDhaka', val)}
+              onChangeOutside={(val) => updateField('deliveryChargeOutsideDhaka', val)}
+              onApplyPreset={(inside, outside, badge) => {
+                updateField('deliveryChargeInsideDhaka', inside);
+                updateField('deliveryChargeOutsideDhaka', outside);
+                updateField('deliveryOfferBadgeText', badge);
+              }}
+            />
+          )}
+
+          <ProductOfferDateRangePickers
+            startDate={formData.deliveryOfferStartDate}
+            endDate={formData.deliveryOfferEndDate}
+            onChangeStart={(sd) => updateField('deliveryOfferStartDate', sd)}
+            onChangeEnd={(ed) => updateField('deliveryOfferEndDate', ed)}
+          />
+        </ProductDeliveryOfferCard>
+      </ProductShippingCard>
+
+      {/* 10. Discount & Policies */}
+      <ProductDiscountOffersCard
+        discountPercentage={formData.discountPercentage}
+        salePrice={formData.salePrice}
+        offerStartDate={formData.offerStartDate}
+        offerEndDate={formData.offerEndDate}
+        onChangeDiscount={handleDiscountChange}
+        onChangeSalePrice={(sp) => updateField('salePrice', sp)}
+        onChangeStartDate={(sd) => updateField('offerStartDate', sd)}
+        onChangeEndDate={(ed) => updateField('offerEndDate', ed)}
+      >
+        <ProductFlashSaleToggle
+          checked={formData.flashSaleEligible}
+          onChange={(fse) => updateField('flashSaleEligible', fse)}
+        />
+      </ProductDiscountOffersCard>
+
+      <ProductPolicyTogglesCard
+        returnEligible={formData.returnEligible}
+        codAvailable={formData.codAvailable}
+        preOrderOption={formData.preOrderOption}
+        relatedProducts={formData.relatedProducts}
+        onToggleReturn={(r) => updateField('returnEligible', r)}
+        onToggleCod={(c) => updateField('codAvailable', c)}
+        onTogglePreOrder={(po) => updateField('preOrderOption', po)}
+        onChangeRelatedProducts={(rp) => updateField('relatedProducts', rp)}
+      />
+
+      {/* 11. Optional Product FAQs */}
+      <ProductFaqSection
+        faqs={formData.faqs}
+        onChange={(faqs) => updateField('faqs', faqs)}
+      />
+
+      {/* 12. Floating Sticky Actions Bar */}
+      <ProductStickyActionsBar
+        isSubmitting={isSubmitting}
+        cancelHref="/admin/products"
+        onSubmit={handleSubmit}
+        submitLabel="Publish Product"
+        submittingLabel="Publishing Product..."
+      />
     </div>
   );
 }

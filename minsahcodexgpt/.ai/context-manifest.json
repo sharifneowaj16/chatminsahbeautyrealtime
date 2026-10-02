@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-10-01T11:14:19.076Z",
+  "generated_at": "2026-10-02T17:04:36.558Z",
   "second_brain_version": "4.0",
   "checkpoint": {
     "completed_through": "Phase 31 Layer 8",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "expected_root": "minsahcodexgpt",
-    "file_count": 2275,
+    "file_count": 2395,
     "minimum_file_count": 1500
   },
   "context_files": {

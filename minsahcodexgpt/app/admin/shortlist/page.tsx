@@ -28,6 +28,9 @@ import MobileOrdersDemandSheet, { EnrichedOrderDemand } from './components/mobil
 import MobileOrderPreviewSheet from './components/mobile/MobileOrderPreviewSheet';
 import MobileOrderDetailView from './components/mobile/MobileOrderDetailView';
 import MobileThermalSlipModal from './components/mobile/MobileThermalSlipModal';
+import { ProcurementZoneBadge } from '@/components/admin/shortlist/ProcurementZoneBadge';
+import { RunnerAssignmentChip } from '@/components/admin/shortlist/RunnerAssignmentChip';
+import { StockDemandProgressBar } from '@/components/admin/shortlist/StockDemandProgressBar';
 
 export default function ShortlistPage() {
   // ── 1. Data State ──────────────────────────────────────────
@@ -531,6 +534,11 @@ export default function ShortlistPage() {
           </span>
           <div className="h-4 w-px bg-[#192b42]"></div>
           <div className="flex items-center gap-2">
+            <RunnerAssignmentChip
+              runnerName={runnerName}
+              runnerCode={runnerCode}
+              compact
+            />
             <select
               value={runnerName}
               onChange={(e) => {

@@ -1,1115 +1,675 @@
 'use client';
 
-
-
-
-
-
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
-import { formatPrice } from '@/utils/currency';
+
+// Atomic Primitives
+import { CustomerContactCard } from '@/components/admin/customer/CustomerContactCard';
+import { PathaoLocationSelector, PathaoLocationValue } from '@/components/admin/courier/PathaoLocationSelector';
+import { CourierProviderSelector, CourierProvider } from '@/components/admin/courier/CourierProviderSelector';
+import { CourierWeightPicker } from '@/components/admin/courier/CourierWeightPicker';
+import { OrderFinancialSummaryCard } from '@/components/admin/finance/OrderFinancialSummaryCard';
+import { AdvancePaymentInput, AdvancePaymentData } from '@/components/admin/finance/AdvancePaymentInput';
+import { ProductSearchAutocomplete, SearchedProduct } from '@/components/admin/products/ProductSearchAutocomplete';
+import { ProductVariantOption } from '@/components/admin/products/ProductVariantSelector';
+import { OrderItemRow } from '@/components/admin/products/OrderItemRow';
+import { CustomItemCreateModal } from '@/components/admin/products/CustomItemCreateModal';
+
 import {
-  Search,
-  Plus,
-  X,
-  AlertCircle,
-  Loader2,
-  Check,
-  Trash2,
-  MapPin,
+  ArrowLeft,
   User,
-  Package,
-  DollarSign,
-  Edit3,
+  ShoppingBag,
+  Plus,
+  Loader2,
+  CheckCircle2,
+  MapPin,
+  CreditCard,
+  Truck,
+  PackagePlus,
+  AlertCircle,
 } from 'lucide-react';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface PathaoCity { id: number; name: string }
-interface PathaoZone { id: number; name: string }
-interface PathaoArea { id: number; name: string }
-
-interface CustomerData {
+export interface CustomerData {
   id?: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  orderCount?: number;
 }
 
-interface AddressData {
-  firstName: string;
-  lastName: string;
-  street1: string;
-  street2: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  phone: string;
-  pathaoCityId?: number;
-  pathaoZoneId?: number;
-  pathaoAreaId?: number;
-}
-
-interface VariantOption {
-  id: string;
-  name: string;
-  sku: string;
-  price: number;
-  stock: number;
-  attributes: Record<string, string>;
-  image?: string;
-}
-
-interface SearchedProduct {
-  id: string;
-  name: string;
-  sku: string;
-  price: number;
-  stock: number;
-  variants: VariantOption[];
-}
-
-type ProductType = 'new' | 'old' | 'virtual';
-
-interface OrderLineItem {
+export interface OrderItemLine {
   key: string;
   productId: string | null;
-  variantId: string | null;
+  variantId?: string | null;
   name: string;
   sku: string;
   price: number;
   quantity: number;
-  productType: ProductType;
+  productType: 'new' | 'old' | 'virtual';
   isCustom: boolean;
-  variant?: string;
-  size?: string;
+  variantName?: string;
+  imageUrl?: string;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const PAYMENT_METHODS = [
-  { value: 'cash_on_delivery', label: 'Cash on Delivery' },
-  { value: 'bkash',            label: 'bKash' },
-  { value: 'nagad',            label: 'Nagad' },
-  { value: 'rocket',           label: 'Rocket' },
-];
-
-const PAYMENT_STATUSES = [
-  { value: 'PENDING',   label: 'Pending' },
-  { value: 'COMPLETED', label: 'Paid' },
-  { value: 'FAILED',    label: 'Failed' },
-];
-
-const ORDER_STATUSES = [
-  { value: 'PENDING',    label: 'Pending' },
-  { value: 'CONFIRMED',  label: 'Confirmed' },
-  { value: 'PROCESSING', label: 'Processing' },
-  { value: 'SHIPPED',    label: 'Shipped' },
-];
-
-const PRODUCT_TYPE_META: Record<ProductType, { label: string; color: string }> = {
-  new:     { label: 'New',     color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
-  old:     { label: 'Old',     color: 'bg-amber-500/10  text-amber-400  border-amber-300'  },
-  virtual: { label: 'Virtual', color: 'bg-admin-panel text-white border-admin-border' },
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function genKey() {
-  return Math.random().toString(36).slice(2, 9);
-}
-
-function formatVariantLabel(variant: VariantOption): string {
-  const attrs = variant.attributes;
-  if (!attrs || Object.keys(attrs).length === 0) return variant.name || variant.sku;
-  return Object.entries(attrs).map(([k, v]) => `${k}: ${v}`).join(' / ');
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CreateOrderPage() {
   const router = useRouter();
   const { hasPermission } = useAdminAuth();
   const { pushToast } = useToast();
 
-  // ── Customer state ──────────────────────────────────────────────────────────
-  const [customerSearch,   setCustomerSearch]   = useState('');
-  const [customerResults,  setCustomerResults]  = useState<CustomerData[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(null);
-  const [showCustomerDrop, setShowCustomerDrop] = useState(false);
-  const [customer,         setCustomer]         = useState<Partial<CustomerData>>({});
-
-  // ── Address state ───────────────────────────────────────────────────────────
-  const [cities,  setCities]  = useState<PathaoCity[]>([]);
-  const [zones,   setZones]   = useState<PathaoZone[]>([]);
-  const [areas,   setAreas]   = useState<PathaoArea[]>([]);
-  const [address, setAddress] = useState<Partial<AddressData>>({});
-
-  // ── Product search state ────────────────────────────────────────────────────
-  const [productQuery,      setProductQuery]      = useState('');
-  const [productResults,    setProductResults]    = useState<SearchedProduct[]>([]);
-  const [productSearching,  setProductSearching]  = useState(false);
-  const [showProductDrop,   setShowProductDrop]   = useState(false);
-  const [addQty,            setAddQty]            = useState(1);
-  // per-product selected variant in dropdown
-  const [dropVariants,      setDropVariants]      = useState<Record<string, string | null>>({});
-
-  // ── Order items state ───────────────────────────────────────────────────────
-  const [orderItems, setOrderItems] = useState<OrderLineItem[]>([]);
-  // inline editor
-  const [editingKey,  setEditingKey]  = useState<string | null>(null);
-  const [editValues,  setEditValues]  = useState<Partial<OrderLineItem>>({});
-
-  // ── Order settings ──────────────────────────────────────────────────────────
-  const [paymentMethod,  setPaymentMethod]  = useState('cash_on_delivery');
-  const [paymentStatus,  setPaymentStatus]  = useState('PENDING');
-  const [orderStatus,    setOrderStatus]    = useState('PENDING');
-  const [shippingCost,   setShippingCost]   = useState(0);
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [couponCode,     setCouponCode]     = useState('');
-  const [adminNote,      setAdminNote]      = useState('');
-
-  // ── UI ──────────────────────────────────────────────────────────────────────
-  const [loading, setLoading] = useState(false);
-
-  const custDebounce    = useRef<NodeJS.Timeout | null>(null);
-  const productDebounce = useRef<NodeJS.Timeout | null>(null);
-  const productDropRef  = useRef<HTMLDivElement>(null);
-  const custDropRef     = useRef<HTMLDivElement>(null);
-
-  // ── Permission guard — must come AFTER all hooks ─────────────────────────────
   const hasAccess = hasPermission(PERMISSIONS.ORDERS_VIEW);
 
-  // ── Toast helper ────────────────────────────────────────────────────────────
-  const showToast = useCallback((type: 'success' | 'error', message: string) => {
-    pushToast({ tone: type === 'success' ? 'success' : 'danger', description: message });
-  }, [pushToast]);
+  // 1. Customer State
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerResults, setCustomerResults] = useState<CustomerData[]>([]);
+  const [searchingCustomer, setSearchingCustomer] = useState(false);
+  const [showCustomerDrop, setShowCustomerDrop] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(null);
 
-  // ── Close dropdowns on outside click ────────────────────────────────────────
+  const [customer, setCustomer] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+  });
+
+  // 2. Shipping Address & Pathao Location
+  const [address, setAddress] = useState({
+    street1: '',
+    street2: '',
+    city: 'Dhaka',
+    postalCode: '',
+  });
+
+  const [pathaoLocation, setPathaoLocation] = useState<PathaoLocationValue>({});
+
+  // 3. Products & Cart
+  const [orderItems, setOrderItems] = useState<OrderItemLine[]>([]);
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
+
+  // 4. Logistics & Courier
+  const [courierProvider, setCourierProvider] = useState<CourierProvider>('steadfast');
+  const [weightKg, setWeightKg] = useState(0.5);
+
+  // 5. Payment & Financials
+  const [paymentMethod, setPaymentMethod] = useState<'cash_on_delivery' | 'bkash' | 'nagad'>('cash_on_delivery');
+  const [shippingCost, setShippingCost] = useState(60);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [advancePayment, setAdvancePayment] = useState<AdvancePaymentData>({
+    amount: 0,
+    method: 'bkash',
+    trxId: '',
+  });
+
+  const [adminNote, setAdminNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const custDropRef = useRef<HTMLDivElement>(null);
+
+  // Customer search debounce
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (productDropRef.current && !productDropRef.current.contains(e.target as Node)) {
-        setShowProductDrop(false);
+    if (!customerSearch.trim() || customerSearch.length < 2) {
+      setCustomerResults([]);
+      setShowCustomerDrop(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setSearchingCustomer(true);
+        const res = await fetch(`/api/admin/customers/search?q=${encodeURIComponent(customerSearch.trim())}`, {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCustomerResults(data.customers || data.data || []);
+          setShowCustomerDrop(true);
+        }
+      } catch (err) {
+        console.error('Error searching customers:', err);
+      } finally {
+        setSearchingCustomer(false);
       }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [customerSearch]);
+
+  // Click outside to dismiss customer drop
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
       if (custDropRef.current && !custDropRef.current.contains(e.target as Node)) {
         setShowCustomerDrop(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // ── Customer search debounce ────────────────────────────────────────────────
-  useEffect(() => {
-    if (custDebounce.current) clearTimeout(custDebounce.current);
-    if (!customerSearch.trim()) { setCustomerResults([]); return; }
-    custDebounce.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `/api/admin/customers/search?q=${encodeURIComponent(customerSearch)}`,
-          { credentials: 'include' }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setCustomerResults(data.customers || []);
-        }
-      } catch { /* ignore */ }
-    }, 400);
-    return () => { if (custDebounce.current) clearTimeout(custDebounce.current); };
-  }, [customerSearch]);
-
-  // ── Pathao cities on mount ──────────────────────────────────────────────────
-  useEffect(() => {
-    fetch('/api/shipping/pathao/cities', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setCities(d || []))
-      .catch(() => {});
-  }, []);
-
-  // ── Zones when city changes ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (!address.pathaoCityId) {
-      setZones([]);
-      setAddress(p => ({ ...p, pathaoZoneId: undefined, pathaoAreaId: undefined }));
-      return;
-    }
-    fetch(`/api/shipping/pathao/zones?city_id=${address.pathaoCityId}`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setZones(d || []))
-      .catch(() => {});
-  }, [address.pathaoCityId]);
-
-  // ── Areas when zone changes ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (!address.pathaoZoneId) {
-      setAreas([]);
-      setAddress(p => ({ ...p, pathaoAreaId: undefined }));
-      return;
-    }
-    fetch(`/api/shipping/pathao/areas?zone_id=${address.pathaoZoneId}`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setAreas(d || []))
-      .catch(() => {});
-  }, [address.pathaoZoneId]);
-
-  // ── Product search debounce ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (productDebounce.current) clearTimeout(productDebounce.current);
-    if (!productQuery.trim()) { setProductResults([]); setProductSearching(false); return; }
-    setProductSearching(true);
-    productDebounce.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `/api/admin/products/search?q=${encodeURIComponent(productQuery.trim())}`,
-          { credentials: 'include' }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setProductResults(data.products || []);
-        }
-      } catch { setProductResults([]); }
-      finally   { setProductSearching(false); }
-    }, 380);
-    return () => { if (productDebounce.current) clearTimeout(productDebounce.current); };
-  }, [productQuery]);
-
-  // ── Customer handlers ───────────────────────────────────────────────────────
-  const handleSelectCustomer = (cust: CustomerData) => {
-    setSelectedCustomer(cust);
-    setCustomer({ id: cust.id, firstName: cust.firstName, lastName: cust.lastName, email: cust.email, phone: cust.phone });
+  const handleSelectCustomer = (c: CustomerData) => {
+    setSelectedCustomer(c);
+    setCustomer({
+      firstName: c.firstName || '',
+      lastName: c.lastName || '',
+      email: c.email || '',
+      phone: c.phone || '',
+    });
     setCustomerSearch('');
-    setCustomerResults([]);
     setShowCustomerDrop(false);
   };
 
-  // ── Product handlers ────────────────────────────────────────────────────────
-  const addDbProduct = (product: SearchedProduct, variantId: string | null) => {
-    const variant = variantId ? product.variants.find(v => v.id === variantId) : null;
-    const price   = variant ? variant.price : product.price;
-    const sku     = variant ? variant.sku   : product.sku;
-    const name    = variant ? `${product.name} — ${formatVariantLabel(variant)}` : product.name;
-
-    const existing = orderItems.find(
-      i => i.productId === product.id && i.variantId === variantId
-    );
-
-    if (existing) {
-      setOrderItems(prev =>
-        prev.map(i => i.key === existing.key ? { ...i, quantity: i.quantity + addQty } : i)
-      );
-    } else {
-      setOrderItems(prev => [...prev, {
-        key: genKey(),
-        productId: product.id,
-        variantId: variantId,
-        name,
-        sku,
-        price,
-        quantity: addQty,
-        productType: 'new',
-        isCustom: false,
-      }]);
-    }
-
-    setProductQuery('');
-    setProductResults([]);
-    setShowProductDrop(false);
-    setAddQty(1);
-    setDropVariants({});
-  };
-
-  const addCustomProduct = () => {
-    const name = productQuery.trim();
-    if (!name) return;
-    const newKey = genKey();
-    const newItem: OrderLineItem = {
-      key: newKey,
-      productId: null,
-      variantId: null,
-      name,
-      sku: `CUSTOM-${Date.now()}`,
-      price: 0,
-      quantity: addQty,
+  // Add Product from Autocomplete
+  const handleAddProduct = (prod: SearchedProduct, variant?: ProductVariantOption) => {
+    const key = `${prod.id}_${variant?.id || 'base'}_${Date.now()}`;
+    const newItem: OrderItemLine = {
+      key,
+      productId: prod.id,
+      variantId: variant?.id || null,
+      name: prod.name,
+      sku: variant?.sku || prod.sku,
+      price: variant ? variant.price : prod.price,
+      quantity: 1,
       productType: 'new',
-      isCustom: true,
+      isCustom: false,
+      variantName: variant?.name,
+      imageUrl: variant?.image || prod.image,
     };
-    setOrderItems(prev => [...prev, newItem]);
-    setProductQuery('');
-    setProductResults([]);
-    setShowProductDrop(false);
-    setAddQty(1);
-    // auto open edit so user sets price
-    setEditingKey(newKey);
-    setEditValues({ price: 0, name, sku: newItem.sku, productType: 'new' });
+    setOrderItems((prev) => [...prev, newItem]);
   };
 
-  const removeItem = (key: string) => setOrderItems(prev => prev.filter(i => i.key !== key));
-
-  const updateQty = (key: string, qty: number) => {
-    if (qty <= 0) { removeItem(key); return; }
-    setOrderItems(prev => prev.map(i => i.key === key ? { ...i, quantity: qty } : i));
+  // Add Custom Item
+  const handleAddCustomItem = (item: {
+    name: string;
+    sku: string;
+    price: number;
+    quantity: number;
+    productType: 'new' | 'old' | 'virtual';
+  }) => {
+    const key = `custom_${Date.now()}`;
+    setOrderItems((prev) => [
+      ...prev,
+      {
+        key,
+        productId: null,
+        variantId: null,
+        name: item.name,
+        sku: item.sku,
+        price: item.price,
+        quantity: item.quantity,
+        productType: item.productType,
+        isCustom: true,
+      },
+    ]);
   };
 
-  const startEdit = (item: OrderLineItem) => {
-    setEditingKey(item.key);
-    setEditValues({ price: item.price, name: item.name, sku: item.sku, productType: item.productType, variant: item.variant, size: item.size });
-  };
+  // Totals
+  const subtotal = orderItems.reduce((acc, it) => acc + it.price * it.quantity, 0);
+  const grandTotal = Math.max(0, subtotal + shippingCost - discountAmount);
 
-  const commitEdit = (key: string) => {
-    setOrderItems(prev => prev.map(i => i.key === key ? { ...i, ...editValues } as OrderLineItem : i));
-    setEditingKey(null);
-    setEditValues({});
-  };
-
-  const cancelEdit = () => { setEditingKey(null); setEditValues({}); };
-
-  // ── Totals ──────────────────────────────────────────────────────────────────
-  const subtotal = orderItems.reduce((s, i) => s + i.price * i.quantity, 0);
-  const total    = subtotal + shippingCost - discountAmount;
-
-  // ── Submit ──────────────────────────────────────────────────────────────────
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Submit Order
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const customerName = (customer.firstName || address.firstName || '').trim();
-    const customerPhone = (customer.phone || address.phone || '').trim();
+    const recipientName = (customer.firstName + ' ' + (customer.lastName || '')).trim();
+    if (!recipientName) {
+      pushToast({ tone: 'danger', description: 'Customer name is required' });
+      return;
+    }
+    if (!customer.phone.trim()) {
+      pushToast({ tone: 'danger', description: 'Customer phone number is required' });
+      return;
+    }
+    if (!address.street1.trim()) {
+      pushToast({ tone: 'danger', description: 'Delivery street address is required' });
+      return;
+    }
+    if (orderItems.length === 0) {
+      pushToast({ tone: 'danger', description: 'Add at least one product to the order' });
+      return;
+    }
 
-    if (!customerName || !customerPhone) { showToast('error', 'Customer name and phone required'); return; }
-    if (!address.street1 || !address.city)       { showToast('error', 'Street and city required');        return; }
-    if (orderItems.length === 0)                  { showToast('error', 'Add at least one product');        return; }
-
-    setLoading(true);
     try {
+      setSubmitting(true);
+      const payload = {
+        customer: {
+          firstName: customer.firstName.trim(),
+          lastName: customer.lastName.trim(),
+          email: customer.email.trim() || `${Date.now()}@minsahorder.local`,
+          phone: customer.phone.trim(),
+        },
+        shippingAddress: {
+          firstName: customer.firstName.trim(),
+          lastName: customer.lastName.trim(),
+          street1: address.street1.trim(),
+          street2: address.street2.trim(),
+          city: pathaoLocation.cityName || address.city || 'Dhaka',
+          postalCode: address.postalCode.trim(),
+          phone: customer.phone.trim(),
+          pathaoCityId: pathaoLocation.cityId,
+          pathaoZoneId: pathaoLocation.zoneId,
+          pathaoAreaId: pathaoLocation.areaId,
+        },
+        items: orderItems.map((it) => ({
+          productId: it.productId,
+          variantId: it.variantId,
+          name: it.name,
+          sku: it.sku,
+          quantity: it.quantity,
+          price: it.price,
+          productType: it.productType,
+          isCustom: it.isCustom,
+        })),
+        paymentMethod,
+        paymentStatus: advancePayment.amount >= grandTotal ? 'PAID' : 'PENDING',
+        shippingCost,
+        discountAmount,
+        advancePayment: advancePayment.amount,
+        advancePaymentTrxId: advancePayment.trxId,
+        courier: courierProvider,
+        adminNote: adminNote.trim() || undefined,
+        status: 'PENDING',
+      };
+
       const res = await fetch('/api/admin/orders', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer: {
-            firstName: customerName,
-            lastName:  customer.lastName  || '',
-            email:     customer.email     || `${Date.now()}@order.local`,
-            phone:     customerPhone,
-          },
-          shippingAddress: {
-            firstName:    address.firstName || customerName,
-            lastName:     address.lastName  || customer.lastName || '',
-            street1:      address.street1,
-            street2:      address.street2   || '',
-            city:         address.city,
-            state:        address.state     || '',
-            postalCode:   address.postalCode || '',
-            phone:        address.phone     || customerPhone,
-            pathaoCityId: address.pathaoCityId,
-            pathaoZoneId: address.pathaoZoneId,
-            pathaoAreaId: address.pathaoAreaId,
-          },
-          items: orderItems.map(item => ({
-            productId:   item.productId,
-            variantId:   item.variantId,
-            name:        item.name,
-            sku:         item.sku,
-            quantity:    item.quantity,
-            price:       item.price,
-            productType: item.productType,
-            isCustom:    item.isCustom,
-          })),
-          paymentMethod,
-          paymentStatus,
-          shippingCost,
-          discountAmount,
-          couponCode: couponCode || undefined,
-          adminNote:  adminNote  || undefined,
-          status:     orderStatus,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || 'Failed to create order');
       }
 
-      const data = await res.json();
-      showToast('success', `Order created: ${data.order.orderNumber}`);
-      setTimeout(() => router.push(`/admin/orders/${data.order.orderNumber}`), 1500);
-    } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'Failed to create order');
+      pushToast({
+        tone: 'success',
+        description: `Order #${data.order?.orderNumber || 'Created'} successfully!`,
+      });
+      setTimeout(() => router.push('/admin/orders'), 1200);
+    } catch (err: any) {
+      pushToast({ tone: 'danger', description: err.message || 'Order creation failed' });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
   if (!hasAccess) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="w-10 h-10 text-red-300 mx-auto mb-3" />
-          <p className="text-[#8a8f98] font-medium">No permission to create orders.</p>
-        </div>
+      <div className="p-8 text-center text-slate-400">
+        <AlertCircle className="w-8 h-8 mx-auto text-rose-500 mb-2" />
+        <p>You do not have permission to create orders.</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Header */}
-        <div className="mb-6">
-          <Button
-            onClick={() => router.back()}
-            className="text-sm text-white hover:text-white-hover mb-3 flex items-center gap-1"
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* Top Header */}
+      <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/orders"
+            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-colors"
           >
-            ← Back to Orders
-          </Button>
-          <h1 className="text-3xl font-bold text-[#F7F8F8]">Create Order</h1>
-          <p className="text-sm text-[#8A8F98] mt-1">Add order for customer</p>
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+              Create New Order
+            </h1>
+            <p className="text-xs text-slate-400">
+              Manual administrative order booking & courier consignment mapping
+            </p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          onClick={handleSubmitOrder}
+          disabled={submitting}
+          className="bg-rose-600 hover:bg-rose-500 text-white font-bold flex items-center gap-1.5 shadow-lg shadow-rose-900/30 px-5"
+        >
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+          <span>Place & Create Order</span>
+        </Button>
+      </div>
 
-          {/* ════════════════════════════════════════
-              CUSTOMER
-          ════════════════════════════════════════ */}
-          <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
-            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-white" /> Customer
-            </h2>
-
-            {/* Selected customer chip */}
-            {selectedCustomer ? (
-              <div className="mb-4 p-3 bg-[#10121b] rounded-lg border border-[#232636] flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-[#F7F8F8]">
-                    {selectedCustomer.firstName} {selectedCustomer.lastName}
-                  </p>
-                  <p className="text-sm text-[#8A8F98]">{selectedCustomer.email}</p>
-                </div>
-                <Button
+      {/* 3-Column Responsive Grid */}
+      <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* COLUMN 1: Customer & Destination (4 cols) */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Customer Search / Input Card */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs font-semibold text-slate-300">
+              <span className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-rose-400" />
+                Customer Identity
+              </span>
+              {selectedCustomer && (
+                <button
                   type="button"
-                  onClick={() => { setSelectedCustomer(null); setCustomer({}); }}
-                  className="text-white hover:text-white-hover"
+                  onClick={() => {
+                    setSelectedCustomer(null);
+                    setCustomer({ firstName: '', lastName: '', email: '', phone: '' });
+                  }}
+                  className="text-[10px] text-rose-400 hover:text-rose-300"
                 >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            ) : (
-              /* Customer search */
-              <div className="relative mb-4" ref={custDropRef}>
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#62666D]" />
+                  Clear Selection
+                </button>
+              )}
+            </div>
+
+            {/* Customer Search Dropdown */}
+            <div ref={custDropRef} className="relative">
+              <label className="text-[11px] text-slate-400 block mb-1">
+                Lookup Registered Customer
+              </label>
+              <Input
+                type="text"
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+                placeholder="Search by phone, name, or email..."
+                className="h-9 text-xs"
+              />
+              {searchingCustomer && (
+                <Loader2 className="w-4 h-4 text-rose-400 animate-spin absolute right-3 top-7" />
+              )}
+
+              {showCustomerDrop && customerResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-40 max-h-48 overflow-y-auto divide-y divide-slate-800">
+                  {customerResults.map((c, i) => (
+                    <div
+                      key={c.id || i}
+                      onClick={() => handleSelectCustomer(c)}
+                      className="p-2.5 hover:bg-slate-800 cursor-pointer transition-colors"
+                    >
+                      <span className="text-xs font-bold text-white block">
+                        {c.firstName} {c.lastName}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {c.phone} {c.email ? `• ${c.email}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selectedCustomer && (
+              <CustomerContactCard
+                name={`${selectedCustomer.firstName} ${selectedCustomer.lastName}`.trim()}
+                phone={selectedCustomer.phone}
+                email={selectedCustomer.email}
+                orderCount={selectedCustomer.orderCount}
+                compact
+              />
+            )}
+
+            {/* Direct Editable Fields */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">
+                  First Name <span className="text-rose-400">*</span>
+                </label>
                 <Input
                   type="text"
-                  placeholder="Search existing customer…"
-                  value={customerSearch}
-                  onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDrop(true); }}
-                  onFocus={() => setShowCustomerDrop(true)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#10121b] border border-[#232636] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
+                  value={customer.firstName}
+                  onChange={(e) => setCustomer({ ...customer, firstName: e.target.value })}
+                  placeholder="e.g. Tanzila"
+                  className="h-8 text-xs"
                 />
-                {showCustomerDrop && customerResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#161824] border border-[#232636] rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto">
-                    {customerResults.map(cust => (
-                      <Button
-                        key={cust.id}
-                        type="button"
-                        onClick={() => handleSelectCustomer(cust)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-[#1b1e2c] border-b border-[#232636] last:border-0"
-                      >
-                        <p className="font-medium text-sm text-[#F7F8F8]">
-                          {cust.firstName} {cust.lastName}
-                        </p>
-                        <p className="text-xs text-[#8A8F98]">{cust.email}</p>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-          </div>
-
-          {/* ════════════════════════════════════════
-              DELIVERY ADDRESS
-          ════════════════════════════════════════ */}
-          <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
-            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-white" /> Delivery Address
-            </h2>
-
-            {/* Full Name */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Full Name *</label>
-              <Input
-                type="text"
-                value={address.firstName || ''}
-                onChange={e => setAddress(p => ({ ...p, firstName: e.target.value, lastName: '' }))}
-                placeholder={`${customer.firstName || ''} ${customer.lastName || ''}`.trim()}
-                className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-              />
-            </div>
-
-            {/* Street */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Street Address *</label>
-              <Input
-                type="text"
-                value={address.street1 || ''}
-                onChange={e => setAddress(p => ({ ...p, street1: e.target.value }))}
-                required
-                placeholder="House no, road, area…"
-                className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-              />
-            </div>
-            {/* Pathao cascading */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">City *</label>
-                <Select
-                  value={address.pathaoCityId || ''}
-                  onChange={e => setAddress(p => ({
-                    ...p,
-                    pathaoCityId: e.target.value ? parseInt(e.target.value) : undefined,
-                    city: cities.find(c => c.id === parseInt(e.target.value))?.name,
-                    pathaoZoneId: undefined,
-                    pathaoAreaId: undefined,
-                  }))}
-                  required
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                >
-                  <option value="">Select city</option>
-                  {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Zone *</label>
-                <Select
-                  value={address.pathaoZoneId || ''}
-                  onChange={e => setAddress(p => ({
-                    ...p,
-                    pathaoZoneId: e.target.value ? parseInt(e.target.value) : undefined,
-                    state: zones.find(z => z.id === parseInt(e.target.value))?.name,
-                    pathaoAreaId: undefined,
-                  }))}
-                  disabled={!address.pathaoCityId}
-                  required
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
-                >
-                  <option value="">Select zone</option>
-                  {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Area *</label>
-                <Select
-                  value={address.pathaoAreaId || ''}
-                  onChange={e => setAddress(p => ({
-                    ...p,
-                    pathaoAreaId: e.target.value ? parseInt(e.target.value) : undefined,
-                  }))}
-                  disabled={!address.pathaoZoneId}
-                  required
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
-                >
-                  <option value="">Select area</option>
-                  {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </Select>
+                <label className="text-[11px] text-slate-400 block mb-1">Last Name</label>
+                <Input
+                  type="text"
+                  value={customer.lastName}
+                  onChange={(e) => setCustomer({ ...customer, lastName: e.target.value })}
+                  placeholder="e.g. Akter"
+                  className="h-8 text-xs"
+                />
               </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Phone *</label>
-              <Input
-                type="tel"
-                value={address.phone || ''}
-                onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))}
-                placeholder={customer.phone}
-                className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">
+                  Phone Number <span className="text-rose-400">*</span>
+                </label>
+                <Input
+                  type="text"
+                  value={customer.phone}
+                  onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                  placeholder="017XXXXXXXX"
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">Email (Optional)</label>
+                <Input
+                  type="email"
+                  value={customer.email}
+                  onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+                  placeholder="customer@email.com"
+                  className="h-8 text-xs"
+                />
+              </div>
             </div>
           </div>
 
-          {/* ════════════════════════════════════════
-              PRODUCTS
-          ════════════════════════════════════════ */}
-          <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
-            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5 text-white" /> Products
-            </h2>
-
-            {/* ── Search bar ── */}
-            <div className="relative mb-4" ref={productDropRef}>
-              <div className="flex gap-2">
-                {/* Qty */}
-                <Input
-                  type="number"
-                  min={1}
-                  value={addQty}
-                  onChange={e => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-16 px-2 py-2.5 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-white/20"
-                  title="Quantity to add"
-                />
-                {/* Search */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#62666D]" />
-                  <Input
-                    type="text"
-                    placeholder="Search products — or type a custom name and press Enter"
-                    value={productQuery}
-                    onChange={e => { setProductQuery(e.target.value); setShowProductDrop(true); }}
-                    onFocus={() => productQuery && setShowProductDrop(true)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && productResults.length === 0 && productQuery.trim()) {
-                        e.preventDefault();
-                        addCustomProduct();
-                      }
-                    }}
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#10121b] border border-[#232636] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                  />
-                </div>
-              </div>
-
-              {/* ── Dropdown ── */}
-              {showProductDrop && productQuery.trim() && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[#161824] border border-[#232636] rounded-xl shadow-xl z-20 max-h-96 overflow-y-auto">
-
-                  {/* Loading */}
-                  {productSearching && (
-                    <div className="px-4 py-3 text-sm text-[#8A8F98] flex items-center gap-2">
-                      <span className="inline-block w-4 h-4 border-2 border-admin-primary border-t-transparent rounded-full animate-spin" />
-                      Searching…
-                    </div>
-                  )}
-
-                  {/* DB results */}
-                  {!productSearching && productResults.map(product => {
-                    const selVarId  = dropVariants[product.id] ?? null;
-                    const selVariant = selVarId ? product.variants.find(v => v.id === selVarId) : null;
-                    const displayPrice = selVariant ? selVariant.price : product.price;
-
-                    return (
-                      <div key={product.id} className="border-b border-[#232636] last:border-0">
-                        <div className="px-4 py-3 hover:bg-[#1b1e2c] flex items-start gap-3">
-                          <div className="flex-1 min-w-0">
-                            {/* Product name + meta */}
-                            <p className="text-sm font-semibold text-[#F7F8F8] truncate">{product.name}</p>
-                            <p className="text-xs text-[#8A8F98] mt-0.5">
-                              SKU: {product.sku} &nbsp;·&nbsp; Stock: {product.stock} &nbsp;·&nbsp; {formatPrice(product.price)}
-                            </p>
-
-                            {/* Variant chips */}
-                            {(product.variants ?? []).length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-xs text-[#8A8F98] mb-1">Variant:</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {/* Base (no variant) */}
-                                  <Button
-                                    type="button"
-                                    onClick={() => setDropVariants(p => ({ ...p, [product.id]: null }))}
-                                    className={`text-xs px-2 py-1 rounded border transition-colors ${
-                                      selVarId === null
-                                        ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] border-admin-primary'
-                                        : 'bg-[#10121b] text-[#8A8F98] border-[#232636] hover:border-admin-primary hover:text-[#F7F8F8]'
-                                    }`}
-                                  >
-                                    Base ({formatPrice(product.price)})
-                                  </Button>
-                                   {(product.variants ?? []).map(v => (
-                                    <Button
-                                      key={v.id}
-                                      type="button"
-                                      onClick={() => setDropVariants(p => ({ ...p, [product.id]: v.id }))}
-                                      className={`text-xs px-2 py-1 rounded border transition-colors ${
-                                        selVarId === v.id
-                                          ? 'bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] border-admin-primary'
-                                          : 'bg-[#10121b] text-[#8A8F98] border-[#232636] hover:border-admin-primary hover:text-[#F7F8F8]'
-                                      }`}
-                                      title={`Stock: ${v.stock}`}
-                                    >
-                                      {formatVariantLabel(v)} ({formatPrice(v.price)})
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Add button */}
-                          <Button
-                            type="button"
-                            onClick={() => addDbProduct(product, selVarId)}
-                            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/90 text-white text-xs rounded-lg transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            Add · {formatPrice(displayPrice)}
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* "No results" hint + custom add */}
-                  {!productSearching && (
-                    <Button
-                      type="button"
-                      onClick={addCustomProduct}
-                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[#1b1e2c] border-t border-dashed border-[#232636] group transition-colors"
-                    >
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#10121b] group-hover:bg-[rgba(255,255,255,0.08)] flex items-center justify-center transition-colors">
-                        <Plus className="w-3.5 h-3.5 text-white" />
-                      </span>
-                      <span className="text-sm">
-                        Add <strong className="text-white">"{productQuery}"</strong> as{' '}
-                        <span className="text-[#8A8F98]">custom / unlisted product</span>
-                      </span>
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* ── Order Items List ── */}
-            {orderItems.length === 0 ? (
-              <p className="text-sm text-[#62666D] text-center py-10 border-2 border-dashed border-[#232636] rounded-lg">
-                No products added yet
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {orderItems.map(item => {
-                  const isEditing = editingKey === item.key;
-                  const typeMeta  = PRODUCT_TYPE_META[item.productType];
-
-                  return (
-                    <div
-                      key={item.key}
-                      className={`rounded-lg border transition-all ${
-                        isEditing
-                          ? 'border-admin-primary bg-[#1b1e2c]'
-                          : 'border-[#232636] bg-[#10121b] hover:border-white/[0.15]'
-                      }`}
-                    >
-                      {/* View mode */}
-                      {!isEditing ? (
-                        <div className="flex items-center gap-2 px-3 py-2.5 flex-wrap sm:flex-nowrap">
-                          {/* Badges + name */}
-                          <div className="flex flex-col gap-1 min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border font-medium ${typeMeta.color}`}>
-                                {typeMeta.label}
-                              </span>
-                              {item.isCustom && (
-                                <span className="text-xs px-1.5 py-0.5 rounded border bg-rose-950/60 text-rose-400 border-rose-800/40 font-medium">
-                                  Custom
-                                </span>
-                              )}
-                              <p className="text-sm font-medium text-[#F7F8F8] truncate">{item.name}</p>
-                            </div>
-                            <p className="text-xs text-[#8A8F98]">
-                              SKU: {item.sku} &nbsp;·&nbsp; Unit: {formatPrice(item.price)}
-                              {item.variant && <span className="ml-1">&nbsp;·&nbsp; {item.variant}</span>}
-                              {item.size && <span className="ml-1">&nbsp;·&nbsp; Size: {item.size}</span>}
-                            </p>
-                          </div>
-
-                          {/* Qty */}
-                          <Input
-                            type="number"
-                            min={1}
-                            value={item.quantity}
-                            onChange={e => updateQty(item.key, parseInt(e.target.value) || 1)}
-                            className="w-14 px-1.5 py-1 border border-[#232636] rounded text-xs text-center bg-[#161824] text-[#F7F8F8] focus:outline-none focus:ring-1 focus:ring-white/20"
-                          />
-
-                          {/* Line total */}
-                          <span className="text-sm font-semibold text-[#F7F8F8] w-24 text-right shrink-0">
-                            {formatPrice(item.price * item.quantity)}
-                          </span>
-
-                          {/* Edit */}
-                          <Button
-                            type="button"
-                            onClick={() => startEdit(item)}
-                            title="Edit"
-                            className="p-1.5 text-[#8A8F98] hover:text-white hover:bg-[#1b1e2c] rounded transition-colors"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </Button>
-
-                          {/* Delete */}
-                          <Button
-                            type="button"
-                            onClick={() => removeItem(item.key)}
-                            className="p-1.5 text-[#8A8F98] hover:text-white/60 hover:bg-red-950/50 rounded transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      ) : (
-                        /* Edit mode */
-                        <div className="p-4 space-y-3">
-                          {/* Name */}
-                          <div>
-                            <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Product Name</label>
-                            <Input
-                              type="text"
-                              value={editValues.name ?? item.name}
-                              onChange={e => setEditValues(p => ({ ...p, name: e.target.value }))}
-                              className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#10121b] text-[#F7F8F8]"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-3">
-                            {/* Price */}
-                            <div>
-                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Unit Price (৳)</label>
-                              <Input
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                value={editValues.price ?? item.price}
-                                onChange={e => setEditValues(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-                                className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#10121b] text-[#F7F8F8]"
-                              />
-                            </div>
-                            {/* SKU */}
-                            <div>
-                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">SKU</label>
-                              <Input
-                                type="text"
-                                value={editValues.sku ?? item.sku}
-                                onChange={e => setEditValues(p => ({ ...p, sku: e.target.value }))}
-                                className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#10121b] text-[#F7F8F8]"
-                              />
-                            </div>
-                            {/* Product type */}
-                            <div>
-                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Type</label>
-                              <Select
-                                value={editValues.productType ?? item.productType}
-                                onChange={e => setEditValues(p => ({ ...p, productType: e.target.value as ProductType }))}
-                                className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#10121b] text-[#F7F8F8]"
-                              >
-                                <option value="new">New</option>
-                                <option value="old">Old</option>
-                                <option value="virtual">Virtual</option>
-                              </Select>
-                            </div>
-                          </div>
-                          {/* Variant + Size */}
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Variant</label>
-                              <Input
-                                type="text"
-                                placeholder="e.g. Red, 100ml"
-                                value={editValues.variant ?? item.variant ?? ''}
-                                onChange={e => setEditValues(p => ({ ...p, variant: e.target.value }))}
-                                className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#10121b] text-[#F7F8F8] placeholder-[#62666D]"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-[#8A8F98] mb-1 block">Size</label>
-                              <Input
-                                type="text"
-                                placeholder="e.g. S, M, L, XL"
-                                value={editValues.size ?? item.size ?? ''}
-                                onChange={e => setEditValues(p => ({ ...p, size: e.target.value }))}
-                                className="w-full px-3 py-2 border border-[#232636] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20 bg-[#10121b] text-[#F7F8F8] placeholder-[#62666D]"
-                              />
-                            </div>
-                          </div>
-                          {/* Save / Cancel */}
-                          <div className="flex gap-2 justify-end pt-1">
-                            <Button
-                              type="button"
-                              onClick={cancelEdit}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs border border-[#232636] text-[#8A8F98] rounded-lg hover:bg-[#1b1e2c] hover:text-[#F7F8F8] transition-colors"
-                            >
-                              <X className="w-3.5 h-3.5" /> Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              onClick={() => commitEdit(item.key)}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-lg transition-colors"
-                            >
-                              <Check className="w-3.5 h-3.5" /> Save
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Items subtotal */}
-                <div className="flex justify-end pt-2 border-t border-[#232636]">
-                  <span className="text-sm font-semibold text-[#8A8F98]">
-                    Items subtotal:&nbsp;
-                    <span className="text-[#F7F8F8]">{formatPrice(subtotal)}</span>
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ════════════════════════════════════════
-              ORDER SETTINGS
-          ════════════════════════════════════════ */}
-          <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
-            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-white" /> Order Settings
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Payment Method</label>
-                <Select
-                  value={paymentMethod}
-                  onChange={e => setPaymentMethod(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                >
-                  {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Payment Status</label>
-                <Select
-                  value={paymentStatus}
-                  onChange={e => setPaymentStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                >
-                  {PAYMENT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Order Status</label>
-                <Select
-                  value={orderStatus}
-                  onChange={e => setOrderStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                >
-                  {ORDER_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Shipping Cost</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={shippingCost}
-                  onChange={e => setShippingCost(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Discount Amount</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={discountAmount}
-                  onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Coupon Code</label>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={couponCode}
-                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. SAVE20"
-                    className="flex-1 px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-white/20"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      const trimmed = couponCode.trim().toUpperCase();
-                      if (!trimmed) {
-                        showToast('error', 'Enter a coupon code');
-                        return;
-                      }
-                      if (!/^[A-Z0-9_-]+$/.test(trimmed)) {
-                        showToast('error', 'Coupon code must be alphanumeric');
-                        return;
-                      }
-                      setCouponCode(trimmed);
-                      showToast('success', `Coupon ${trimmed} applied`);
-                    }}
-                    className="px-3 h-9 text-xs"
-                  >
-                    Apply
-                  </Button>
-                </div>
-              </div>
+          {/* Delivery Address & Pathao Location Card */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3.5">
+            <div className="pb-2 border-b border-slate-800 text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-rose-400" />
+              Delivery Destination
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#8A8F98] mb-1.5">Admin Note</label>
+              <label className="text-[11px] text-slate-400 block mb-1">
+                Street Address <span className="text-rose-400">*</span>
+              </label>
               <Textarea
-                value={adminNote}
-                onChange={e => setAdminNote(e.target.value)}
-                rows={3}
-                placeholder="Internal notes…"
-                className="w-full px-3 py-2 bg-[#10121b] border border-[#232636] text-[#F7F8F8] placeholder-[#62666D] rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-white/20"
+                rows={2}
+                value={address.street1}
+                onChange={(e) => setAddress({ ...address, street1: e.target.value })}
+                placeholder="House #, Road #, Sector/Block, Landmark..."
+                className="text-xs"
+              />
+            </div>
+
+            {/* Pathao Cascading Location Selector */}
+            <PathaoLocationSelector
+              value={pathaoLocation}
+              onChange={setPathaoLocation}
+            />
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">City / District</label>
+                <Input
+                  type="text"
+                  value={pathaoLocation.cityName || address.city}
+                  onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">Postal Code (Optional)</label>
+                <Input
+                  type="text"
+                  value={address.postalCode}
+                  onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
+                  placeholder="e.g. 1209"
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* COLUMN 2: Products & Order Items (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                <ShoppingBag className="w-3.5 h-3.5 text-rose-400" />
+                Order Line Items ({orderItems.length})
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsCustomModalOpen(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 border border-slate-700 text-slate-200 hover:text-white hover:border-slate-600 transition-colors"
+              >
+                <PackagePlus className="w-3.5 h-3.5 text-rose-400" />
+                <span>+ Custom Item</span>
+              </button>
+            </div>
+
+            {/* Product Live Search Autocomplete */}
+            <ProductSearchAutocomplete onSelect={handleAddProduct} />
+
+            {/* Order Items List */}
+            <div className="space-y-2 pt-2 max-h-[460px] overflow-y-auto pr-1">
+              {orderItems.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-1">
+                  <ShoppingBag className="w-6 h-6 mx-auto text-slate-600 mb-1" />
+                  <p className="text-xs font-medium">No products added yet</p>
+                  <p className="text-[11px] text-slate-600">
+                    Use search above or click "+ Custom Item"
+                  </p>
+                </div>
+              ) : (
+                orderItems.map((item) => (
+                  <OrderItemRow
+                    key={item.key}
+                    title={item.name}
+                    sku={item.sku}
+                    variantName={item.variantName}
+                    imageUrl={item.imageUrl}
+                    unitPrice={item.price}
+                    quantity={item.quantity}
+                    productType={item.productType}
+                    isCustom={item.isCustom}
+                    editable
+                    onQuantityChange={(qty) =>
+                      setOrderItems((prev) =>
+                        prev.map((it) => (it.key === item.key ? { ...it, quantity: qty } : it))
+                      )
+                    }
+                    onDelete={() =>
+                      setOrderItems((prev) => prev.filter((it) => it.key !== item.key))
+                    }
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Admin Note */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
+            <label className="text-xs font-semibold text-slate-300 block">
+              Internal Staff Note / Customer Instructions
+            </label>
+            <Textarea
+              rows={2}
+              value={adminNote}
+              onChange={(e) => setAdminNote(e.target.value)}
+              placeholder="e.g. Call before delivery; Fragile item requested special box..."
+              className="text-xs"
+            />
+          </div>
+        </div>
+
+        {/* COLUMN 3: Logistics, Financials & Actions (3 cols) */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Courier Selection */}
+          <CourierProviderSelector
+            selected={courierProvider}
+            onSelect={setCourierProvider}
+          />
+
+          {/* Weight Picker */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5">
+            <CourierWeightPicker weightKg={weightKg} onChange={setWeightKg} />
+          </div>
+
+          {/* Advance Payment Input */}
+          <AdvancePaymentInput
+            value={advancePayment}
+            onChange={setAdvancePayment}
+            orderTotal={grandTotal}
+            deliveryFee={shippingCost}
+          />
+
+          {/* Financial Summary */}
+          <OrderFinancialSummaryCard
+            subtotal={subtotal}
+            deliveryFee={shippingCost}
+            discount={discountAmount}
+            advancePaid={advancePayment.amount}
+            total={grandTotal}
+            isCod={paymentMethod === 'cash_on_delivery'}
+          />
+
+          {/* Delivery & Discount Tuning */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 space-y-2.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400">Delivery Fee (৳):</span>
+              <input
+                type="number"
+                min={0}
+                value={shippingCost}
+                onChange={(e) => setShippingCost(Number(e.target.value) || 0)}
+                className="w-20 h-7 text-xs font-bold text-center bg-slate-950 border border-slate-700 rounded-lg text-slate-100 tabular-nums"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400">Discount Amount (৳):</span>
+              <input
+                type="number"
+                min={0}
+                value={discountAmount}
+                onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
+                className="w-20 h-7 text-xs font-bold text-center bg-slate-950 border border-slate-700 rounded-lg text-slate-100 tabular-nums"
               />
             </div>
           </div>
 
-          {/* ════════════════════════════════════════
-              ORDER SUMMARY
-          ════════════════════════════════════════ */}
-          <div className="bg-[#161824] rounded-xl border border-[#232636] p-6">
-            <h2 className="text-lg font-bold text-[#F7F8F8] mb-4">Order Summary</h2>
+          {/* Submit Order Button */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={submitting}
+            className="h-11 bg-rose-600 hover:bg-rose-500 text-white font-bold flex items-center justify-center gap-2 shadow-xl shadow-rose-900/30"
+          >
+            {submitting ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5" />
+            )}
+            <span>Confirm & Create Order</span>
+          </Button>
+        </div>
+      </form>
 
-            <div className="space-y-2 text-sm mb-4">
-              <div className="flex justify-between text-[#8A8F98]">
-                <span>Subtotal</span>
-                <span className="text-[#F7F8F8]">{formatPrice(subtotal)}</span>
-              </div>
-              {shippingCost > 0 && (
-                <div className="flex justify-between text-[#8A8F98]">
-                  <span>Shipping</span>
-                  <span className="text-[#F7F8F8]">{formatPrice(shippingCost)}</span>
-                </div>
-              )}
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-white">
-                  <span>Discount</span>
-                  <span>-{formatPrice(discountAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold text-[#F7F8F8] pt-2 border-t border-[#232636] text-base">
-                <span>Total</span>
-                <span>{formatPrice(total)}</span>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading || orderItems.length === 0}
-              className="w-full flex items-center justify-center gap-2 bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/90 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
-                : <><Check className="w-4 h-4" /> Create Order</>
-              }
-            </Button>
-          </div>
-
-        </form>
-      </div>
+      {/* Custom Item Modal */}
+      <CustomItemCreateModal
+        isOpen={isCustomModalOpen}
+        onClose={() => setIsCustomModalOpen(false)}
+        onAddCustomItem={handleAddCustomItem}
+      />
     </div>
   );
 }
