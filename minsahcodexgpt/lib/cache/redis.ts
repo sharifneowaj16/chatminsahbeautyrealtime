@@ -195,7 +195,14 @@ export async function checkRateLimit(
   }
 
   try {
-    const count = await redis.incr(key);
+    const timeoutPromise = new Promise<number>((_, reject) =>
+      setTimeout(() => reject(new Error('Redis rate-limit timeout')), 1500)
+    );
+
+    const count = await Promise.race([
+      redis.incr(key),
+      timeoutPromise,
+    ]);
 
     // Set TTL only on the first request
     if (count === 1) {
@@ -209,7 +216,7 @@ export async function checkRateLimit(
 
     return { allowed, remaining, resetIn };
   } catch (error) {
-    console.error('Redis rate limit error:', error);
+    console.warn('Redis rate limit bypassed due to error/timeout:', error);
     // On error, allow the request to proceed
     return { allowed: true, remaining: maxAttempts, resetIn: 0 };
   }

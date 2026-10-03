@@ -104,13 +104,24 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        if (!response.ok) {
+          setIsLoading(false);
+          return {
+            success: false,
+            error: `Server error (${response.status}). Please check server logs.`,
+          };
+        }
+      }
 
       if (!response.ok) {
         setIsLoading(false);
         return {
           success: false,
-          error: data.error || 'Login failed',
+          error: data?.error || 'Login failed',
         };
       }
 
@@ -130,7 +141,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return {
         success: false,
-        error: 'Network error. Please try again.',
+        error: 'Network error. Please ensure the server is running and try again.',
       };
     }
   };

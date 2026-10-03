@@ -9,7 +9,7 @@ import { recordStockMovement } from '@/lib/inventory/stock-service';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // GET: Fetch all items for an order with their granular statuses
