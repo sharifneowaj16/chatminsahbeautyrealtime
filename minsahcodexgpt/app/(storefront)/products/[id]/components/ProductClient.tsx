@@ -1,5 +1,6 @@
-import { ProductOfferProvider } from '@/components/offer/ProductOfferProvider';
 "use client";
+
+import { ProductOfferProvider } from '@/components/offer/ProductOfferProvider';
 
 /* eslint-disable react-hooks/preserve-manual-memoization */
 
