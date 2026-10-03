@@ -7,6 +7,7 @@ import { money } from './domain/pricing';
 import { resolveCatalogSale } from './domain/sale-period';
 import type { CanonicalCatalogItem, CatalogCondition, CatalogMappedItem } from './domain/types';
 import { validateCanonicalCatalogItem } from './validator';
+import { resolveProductOffer } from '@/lib/commerce/product-offer';
 
 export type CatalogIdentity = { itemId: string; groupId?: string };
 export type CatalogIdentityResolver = (input: {
@@ -99,37 +100,14 @@ function buildItem(input: {
 }): CatalogMappedItem | null {
   const { product, variant } = input;
   const isVariant = Boolean(variant);
-  const isActive = product.isActive && (variant?.isActive ?? true);
-  const deletedAt = product.deletedAt ?? variant?.deletedAt;
-  const availabilityMode = variant?.availabilityMode
-    ?? product.availabilityMode
-    ?? (product.preOrderOption ? 'PREORDER' : 'STANDARD');
-  const preorderAvailableOn = variant?.preorderAvailableOn ?? product.preorderAvailableOn;
-  const allowBackorder = variant?.allowBackorder ?? product.allowBackorder;
-  const quantity = variant?.quantity ?? product.quantity;
-  const reservedQuantity = variant?.reservedQuantity ?? product.reservedQuantity;
-  const availability = resolveCatalogAvailability({
-    isActive,
-    deletedAt,
-    availabilityMode,
-    preorderAvailableOn,
-    trackInventory: product.trackInventory,
-    quantity,
-    reservedQuantity,
-    allowBackorder,
-  });
-  if (!availability.includeInUpdates) return null;
 
-  const regularPrice = variant?.price ?? product.price;
-  const usesVariantSale = variant?.salePrice != null;
-  const sale = resolveCatalogSale({
-    regularPrice,
-    salePrice: usesVariantSale ? variant?.salePrice : product.salePrice,
-    offerStartDate: usesVariantSale ? variant?.offerStartDate : product.offerStartDate,
-    offerEndDate: usesVariantSale ? variant?.offerEndDate : product.offerEndDate,
-    currency: input.currency,
+  const offer = resolveProductOffer({
+    product,
+    variant,
     now: input.now,
+    siteUrl: input.siteUrl,
   });
+  if (!offer.includeInUpdates) return null;
 
   const productImages = uniqueCatalogImages(
     [product.images.find((image) => image.isDefault)?.url, ...product.images.map((image) => image.url), product.ogImageUrl],
@@ -150,7 +128,11 @@ function buildItem(input: {
   const category = cleanCatalogCategory(product.category?.name);
   const title = text(variant ? `${product.name} - ${variant.name}` : product.name, 150);
   const description = text(product.description ?? product.shortDescription ?? product.name);
-  const link = absoluteCatalogUrl(product.canonicalUrl ?? `/products/${product.slug}`, input.siteUrl) ?? '';
+  const baseLink = product.canonicalUrl ?? `/products/${product.slug}`;
+  const linkWithVariant = variant?.id
+    ? `${baseLink}?variant=${encodeURIComponent(variant.id)}`
+    : baseLink;
+  const link = absoluteCatalogUrl(linkWithVariant, input.siteUrl) ?? '';
 
   const item: CanonicalCatalogItem = {
     sourceType: isVariant ? 'VARIANT' : 'PRODUCT',
@@ -159,12 +141,12 @@ function buildItem(input: {
     itemGroupId: isVariant ? input.identity.groupId : undefined,
     title,
     description,
-    availability: availability.availability,
-    availabilityDate: availability.availabilityDate,
-    quantityToSellOnFacebook: availability.quantityToSellOnFacebook,
+    availability: offer.availability,
+    availabilityDate: offer.preorderAvailableOn ?? undefined,
+    quantityToSellOnFacebook: offer.availableQuantity,
     condition: condition(variant?.condition ?? product.condition),
-    price: money(regularPrice, input.currency),
-    sale: sale.sale,
+    price: money(offer.regularPrice, input.currency),
+    sale: offer.catalogSale,
     link,
     imageLink,
     additionalImageLinks,
@@ -179,12 +161,12 @@ function buildItem(input: {
       custom_label_0: product.isNew ? 'new_arrival' : 'standard',
       custom_label_1: product.isFeatured ? 'featured' : 'standard',
       ...(category ? { custom_label_2: category } : {}),
-      custom_label_3: sale.state,
+      custom_label_3: offer.saleState,
       custom_label_4: isVariant ? 'variant' : 'simple',
     },
   };
   const validation = validateCanonicalCatalogItem(item);
-  if (sale.error) validation.errors.push(sale.error);
+  if (offer.saleError) validation.errors.push(offer.saleError);
   return { item, validation };
 }
 

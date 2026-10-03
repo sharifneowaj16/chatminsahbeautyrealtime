@@ -68,7 +68,22 @@ export type TikTokPurchaseJobData = {
   queuedAt: string;
 };
 
-export type MetaCapiJobData = MetaCapiPurchaseJobData | MetaCapiCoreJobData;
+export type MetaCapiRefundJobData = {
+  type: 'meta_refund';
+  orderId: string;
+  source:
+    | 'admin_refund'
+    | 'return_completed'
+    | 'manual_retry'
+    | 'steadfast_return'
+    | 'pathao_return'
+    | 'admin_order_status_refunded'
+    | 'admin_order_status_cancelled';
+  refundAmount?: number;
+  queuedAt: string;
+};
+
+export type MetaCapiJobData = MetaCapiPurchaseJobData | MetaCapiCoreJobData | MetaCapiRefundJobData;
 export type Ga4JobData = Ga4PurchaseJobData | Ga4RefundJobData;
 export type TikTokJobData = TikTokPurchaseJobData;
 
@@ -118,6 +133,9 @@ export function enqueueMetaCapiPurchase(input: Omit<MetaCapiPurchaseJobData, 'qu
 }
 export function enqueueMetaCapiCoreEvent(input: Omit<MetaCapiCoreJobData, 'queuedAt' | 'type'>, jobOptions?: JobsOptions) {
   return metaCapiPurchaseQueue.add('core_event', { type: 'core_event', ...input, queuedAt: new Date().toISOString() }, options(`core_event-${input.eventId}`, jobOptions));
+}
+export function enqueueMetaCapiRefund(input: Omit<MetaCapiRefundJobData, 'queuedAt' | 'type'>, jobOptions?: JobsOptions) {
+  return metaCapiPurchaseQueue.add('meta_refund', { type: 'meta_refund', ...input, queuedAt: new Date().toISOString() }, options(`meta_refund-${input.orderId}`, jobOptions));
 }
 export function enqueueGa4Purchase(input: Omit<Ga4PurchaseJobData, 'queuedAt' | 'type'>, jobOptions?: JobsOptions) {
   return ga4EventsQueue.add('ga4_purchase', { type: 'ga4_purchase', ...input, queuedAt: new Date().toISOString() }, options(`ga4_purchase-${input.orderId}`, jobOptions));

@@ -9,6 +9,8 @@ import { productPath } from '@/lib/product-url';
 import { getSiteUrl, safeCanonicalUrl } from '@/lib/seo';
 
 import { getProductDetail } from '@/lib/products/get-product';
+import { ProductJsonLd } from './components/seo/ProductJsonLd';
+import { buildProductOgOther } from './components/seo/buildProductOgOther';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -37,6 +39,7 @@ const ATTRIBUTION_QUERY_KEYS = [
   'gbraid',
   'wbraid',
   'msclkid',
+  'variant',
 ] as const;
 
 function withPreservedAttributionParams(
@@ -153,6 +156,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         ? [{ url: ogImage, width: 1200, height: 630, alt: ogTitle }]
         : [],
     },
+    other: buildProductOgOther({ product, offer: product.offer }),
     twitter: {
       card:        'summary_large_image',
       title:       ogTitle,
@@ -163,96 +167,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // ── Schema builders ───────────────────────────────────────────────────────────
-function buildProductSchema(product: Record<string, unknown>, rating: { average: number; total: number }, productUrl: string) {
-  const activeDeliveryOffer = product.activeDeliveryOffer as { type?: string; amount?: number | null } | null | undefined;
-  const isFreeDeliveryOffer = activeDeliveryOffer?.type === 'FREE';
-
-  // Image array — prefer full image objects, fallback to main image
-  const images: string[] = [];
-  if (Array.isArray(product.images) && (product.images as Array<{url: string}>).length > 0) {
-    (product.images as Array<{url: string}>).forEach((img) => { if (img.url) images.push(img.url); });
-  } else if (product.image) {
-    images.push(product.image as string);
-  }
-
-  const schema: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type':    'Product',
-    '@id':      `${productUrl}#product`,
-    name:        product.name,
-    description: product.description || product.shortDescription,
-    sku:         product.sku,
-    url:         productUrl,
-    image:       images.length > 0 ? images : undefined,
-    brand: {
-      '@type': 'Brand',
-      name:     product.brand || 'Minsah Beauty',
-    },
-    offers: {
-      '@type':           'Offer',
-      '@id':             `${productUrl}#offer`,
-      url:               productUrl,
-      price:             product.salePrice || product.price,
-      priceCurrency:     'BDT',
-      priceValidUntil:   new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      availability:      (product.inStock || (product as {stock?: number}).stock !== 0)
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-      itemCondition: product.condition === 'USED'
-        ? 'https://schema.org/UsedCondition'
-        : product.condition === 'REFURBISHED'
-        ? 'https://schema.org/RefurbishedCondition'
-        : 'https://schema.org/NewCondition',
-      seller: {
-        '@type': 'Organization',
-        name:    'Minsah Beauty',
-        url:     BASE_URL,
-      },
-      hasMerchantReturnPolicy: product.returnEligible
-        ? { '@type': 'MerchantReturnPolicy', returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow' }
-        : undefined,
-      shippingDetails: {
-        '@type':               'OfferShippingDetails',
-        shippingDestination: {
-          '@type':          'DefinedRegion',
-          addressCountry:   'BD',
-        },
-        shippingRate: isFreeDeliveryOffer
-          ? {
-              '@type': 'MonetaryAmount',
-              value: 0,
-              currency: 'BDT',
-            }
-          : undefined,
-      },
-    },
-  };
-
-  // GTIN
-  if (product.gtin) schema.gtin13 = product.gtin;
-
-  // Rating
-  if (rating.total > 0) {
-    schema.aggregateRating = {
-      '@type':       'AggregateRating',
-      ratingValue:   rating.average,
-      reviewCount:   rating.total,
-      bestRating:    5,
-      worstRating:   1,
-    };
-  }
-
-  // Weight
-  if (product.weight) {
-    schema.weight = {
-      '@type': 'QuantitativeValue',
-      value:    product.weight,
-      unitCode: 'GRM',
-    };
-  }
-
-  return schema;
-}
 
 function buildBreadcrumbSchema(product: Record<string, unknown>, productUrl: string) {
   const items = [
@@ -324,7 +238,6 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
 
   const faqs: FaqItem[] = Array.isArray(product.faqs) ? product.faqs : [];
 
-  const productSchema    = parseJsonLd(product.structuredDataJsonLd) || buildProductSchema(product, rating, productUrl);
   const breadcrumbSchema = parseJsonLd(product.breadcrumbJsonLd) || buildBreadcrumbSchema(product, productUrl);
   const faqSchema        = product.faqSchemaReady || faqs.length > 0 ? buildFaqSchema(faqs) : null;
   const extraJsonLdSchemas = [
@@ -383,10 +296,11 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
 
       {/* ── JSON-LD schemas ── */}
 
-      {/* 1. Product schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      {/* 1. Dynamic Product schema from resolver */}
+      <ProductJsonLd
+        product={product}
+        rating={rating}
+        productUrl={productUrl}
       />
 
       {/* 2. Breadcrumb schema */}

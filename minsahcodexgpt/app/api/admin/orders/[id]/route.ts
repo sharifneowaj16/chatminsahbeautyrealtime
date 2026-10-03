@@ -4,6 +4,7 @@ import { verifyAdminAccessToken } from "@/lib/auth/jwt";
 import {
   enqueueGa4Purchase,
   enqueueGa4Refund,
+  enqueueMetaCapiRefund,
   enqueueTikTokPurchase,
 } from "@/lib/queue/metaCapiQueue";
 import {
@@ -309,6 +310,7 @@ export async function PATCH(
       isCodPaymentMethod(existing.paymentMethod);
     let shouldQueueCodPurchase = false;
     let shouldQueueGa4Refund = false;
+    let shouldQueueMetaRefund = false;
 
     if (status) {
       const statusMap: Record<string, string> = {
@@ -338,11 +340,14 @@ export async function PATCH(
         !existing.deliveredAt
       )
         updateData.deliveredAt = new Date();
-      if (normalizedStatus === "cancelled" && !existing.cancelledAt)
+      if (normalizedStatus === "cancelled" && !existing.cancelledAt) {
         updateData.cancelledAt = new Date();
+        shouldQueueMetaRefund = existing.metaPurchaseSent && !existing.isTest;
+      }
       if (normalizedStatus === "refunded") {
         updateData.refundedAt = existing.refundedAt ?? new Date();
         shouldQueueGa4Refund = !existing.gaRefundSent && !existing.isTest;
+        shouldQueueMetaRefund = existing.metaPurchaseSent && !existing.isTest;
       }
 
       if (codPhoneConfirmedFromAdmin) {
@@ -406,6 +411,7 @@ export async function PATCH(
       if (normalizedPaymentStatus === "refunded") {
         updateData.refundedAt = existing.refundedAt ?? new Date();
         shouldQueueGa4Refund = !existing.gaRefundSent && !existing.isTest;
+        shouldQueueMetaRefund = existing.metaPurchaseSent && !existing.isTest;
       }
     }
 
@@ -526,6 +532,17 @@ export async function PATCH(
         );
       } catch (error) {
         console.error("Admin GA4 Refund queue enqueue failed:", error);
+      }
+    }
+
+    if (shouldQueueMetaRefund) {
+      try {
+        await enqueueMetaCapiRefund(
+          { orderId: existing.id, source: "admin_refund" },
+          { jobId: `admin_refund:meta_refund:${existing.id}:${Date.now()}` },
+        );
+      } catch (error) {
+        console.error("Admin Meta Refund queue enqueue failed:", error);
       }
     }
 

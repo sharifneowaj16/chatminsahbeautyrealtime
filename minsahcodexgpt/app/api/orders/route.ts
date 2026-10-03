@@ -46,6 +46,7 @@ import {
   getOnlinePaymentExpiresAt,
   reserveOnlineOrderStockInTransaction,
 } from "@/lib/online-payment-stock";
+import { triggerEventDrivenCatalogSync } from "@/lib/meta-platform/domains/catalog/event-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -795,6 +796,15 @@ export async function POST(request: NextRequest) {
 
       return newOrder;
     });
+
+    // Trigger event-driven Meta Catalog sync for ordered product IDs (debounced 60s, cache invalidated immediately)
+    const affectedProductIds = orderItems.map((item) => item.productId).filter(Boolean);
+    if (affectedProductIds.length > 0) {
+      void triggerEventDrivenCatalogSync({
+        productIds: affectedProductIds,
+        reason: 'checkout_order_completed',
+      });
+    }
 
     // Pathao delivery এখন এখানে create হবে না - Telegram থেকে Confirm করার পর হবে।
     // Online payment orders notify admin only after verified payment finalizes stock.

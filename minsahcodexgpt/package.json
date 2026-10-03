@@ -45,6 +45,7 @@
     "qa:phase11": "node scripts/phase11-final-production-readiness-audit.mjs",
     "qa:product-page-roadmap": "node scripts/phase11-final-production-readiness-audit.mjs",
     "qa:product-url-tracking": "node scripts/product-url-tracking-regression-audit.mjs",
+    "qa:meta-catalog-landing-parity": "node --import tsx scripts/meta-catalog-landing-parity-audit.mjs",
     "qa:phase12": "node scripts/tracking-phase12-capi-schema-audit.mjs",
     "qa:tracking-env": "node scripts/tracking-env-audit.mjs --production",
     "qa:tracking-runtime-health": "node scripts/tracking-runtime-health-check.mjs --production",

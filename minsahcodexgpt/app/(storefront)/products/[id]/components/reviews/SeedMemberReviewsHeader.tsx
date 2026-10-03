@@ -20,11 +20,11 @@ export interface SeedMemberReviewsHeaderProps {
 }
 
 const DEFAULT_DISTRIBUTION: RatingDistribution = {
-  5: 13486,
-  4: 1256,
-  3: 338,
-  2: 102,
-  1: 125,
+  5: 0,
+  4: 0,
+  3: 0,
+  2: 0,
+  1: 0,
 };
 
 /**
@@ -39,8 +39,8 @@ const DEFAULT_DISTRIBUTION: RatingDistribution = {
  */
 export function SeedMemberReviewsHeader({
   title = "Member\nReviews",
-  averageRating = 4.8,
-  totalReviews = 15307,
+  averageRating = 0,
+  totalReviews = 0,
   distribution = DEFAULT_DISTRIBUTION,
   className = "",
 }: SeedMemberReviewsHeaderProps) {
@@ -68,6 +68,19 @@ export function SeedMemberReviewsHeader({
   }, [distribution, totalReviews]);
 
   const displayTotal = totalReviews || totalCount;
+
+  if (displayTotal === 0) {
+    return (
+      <div className={`w-full max-w-[880px] mx-auto text-center mb-10 sm:mb-14 ${className}`}>
+        <h2 className="text-[34px] sm:text-[42px] lg:text-[48px] font-normal text-[#1C3A13] leading-[1.12] sm:leading-[52.8px] tracking-[-0.6px] sm:tracking-[-0.96px] mb-4 whitespace-pre-line antialiased">
+          {title}
+        </h2>
+        <p className="text-sm sm:text-base text-[#1C3A13]/70 font-normal">
+          No reviews yet. Be the first to share your experience with this product!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full max-w-[880px] mx-auto text-center mb-10 sm:mb-14 ${className}`}>

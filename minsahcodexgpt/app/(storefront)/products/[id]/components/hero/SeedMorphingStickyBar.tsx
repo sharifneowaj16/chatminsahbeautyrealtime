@@ -8,6 +8,7 @@ import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { safeImageUrl } from '@/lib/safe-image';
 import { createStandardCartItem } from '@/utils/cartItemHelper';
 import { cleanProductName } from './cleanProductName';
+import { useProductOffer } from '@/components/offer/useProductOffer';
 
 export interface SeedMorphingStickyBarProps {
   productId: string;
@@ -59,6 +60,7 @@ export default function SeedMorphingStickyBar({
   quantity = 1,
   className = '',
 }: SeedMorphingStickyBarProps) {
+  const { offer } = useProductOffer();
   const [isVisible, setIsVisible] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const { addItem } = useCart();
@@ -203,7 +205,7 @@ export default function SeedMorphingStickyBar({
   // Handle 1-Click CTA click
   const handleCtaClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!inStock || isAdding) return;
+    if (!offer.canPurchase || isAdding) return;
 
     setIsAdding(true);
 
@@ -213,7 +215,7 @@ export default function SeedMorphingStickyBar({
         product: {
           id: productId,
           name: productName,
-          price: price,
+          price: offer.effectivePrice,
           image: productImage,
           sku: sku || undefined,
         },
@@ -221,7 +223,7 @@ export default function SeedMorphingStickyBar({
           ? {
             id: variantId,
             name: variantName,
-            price: price,
+            price: offer.effectivePrice,
             image: productImage,
             sku: sku || undefined,
           }
@@ -396,7 +398,7 @@ export default function SeedMorphingStickyBar({
             <button
               type="button"
               onClick={handleCtaClick}
-              disabled={!inStock || isAdding}
+              disabled={!offer.canPurchase || isAdding}
               style={{
                 fontFamily: '"Seed Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 fontWeight: 650,

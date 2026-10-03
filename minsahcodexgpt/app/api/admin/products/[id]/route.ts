@@ -5,6 +5,7 @@ import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
 import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQueue';
 import { normalizeProductCondition } from '@/lib/products/product-condition';
+import { triggerEventDrivenCatalogSync } from '@/lib/meta-platform/domains/catalog/event-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -1171,6 +1172,10 @@ export async function PUT(
     }
 
     const searchSyncQueued = await enqueueProductIndex(product.id, 'admin product update');
+    void triggerEventDrivenCatalogSync({
+      productIds: [product.id],
+      reason: 'admin_product_update',
+    });
 
     return NextResponse.json({
       success: true,
@@ -1244,6 +1249,10 @@ export async function DELETE(
       ]);
 
       const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product soft-delete');
+      void triggerEventDrivenCatalogSync({
+        productIds: [existing.id],
+        reason: 'admin_product_soft_delete',
+      });
 
       return NextResponse.json({ success: true, archived: true, searchSyncQueued });
     }
@@ -1255,6 +1264,10 @@ export async function DELETE(
     ]);
 
     const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product hard-delete');
+    void triggerEventDrivenCatalogSync({
+      productIds: [existing.id],
+      reason: 'admin_product_hard_delete',
+    });
 
     return NextResponse.json({ success: true, archived: false, searchSyncQueued });
   } catch (error) {

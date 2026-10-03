@@ -8,6 +8,16 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
+        userAgent: [
+          'facebookexternalhit',
+          'Facebot',
+          'meta-externalagent',
+          'meta-externalfetcher',
+        ],
+        allow: ['/', '/products/', '/api/meta/catalog/feed', '/api/meta/catalog/'],
+        disallow: ['/admin/'],
+      },
+      {
         userAgent: '*',
         allow: '/',
         disallow: [

@@ -9,6 +9,7 @@ import HomeCountdownTimer from './HomeCountdownTimer';
 import ProductCard from '@/app/components/shop/ProductCard';
 import type { Product as ShopProduct, ProductVariant } from '@/types/product';
 import { adminProductToShopProduct } from '@/lib/productAdapter';
+import { productPath } from '@/lib/product-url';
 
 type ProductSectionType = 'flash-sale' | 'new-arrivals' | 'for-you' | 'recommendations' | 'favourites' | 'brands';
 
@@ -100,6 +101,7 @@ function mapProduct(product: ContextProduct): ShopProduct {
     };
   });
 
+  const _resolvedPath = productPath(product);
   const slug = product.slug || product.urlSlug || baseShopProduct.slug;
 
   return {

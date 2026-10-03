@@ -213,10 +213,10 @@ export function SeedMemberReviewsSection({
   };
 
   // Resolved Rating Data
-  const averageScore = ratingData?.average || product.rating || 5.0;
+  const averageScore = ratingData?.average ?? product.rating ?? 0;
   const totalReviewsCount = ratingData?.total != null ? ratingData.total : (typeof product.reviews === "number" ? product.reviews : reviewsPool.length);
   const distributionData = ratingData?.distribution || {
-    5: totalReviewsCount,
+    5: 0,
     4: 0,
     3: 0,
     2: 0,

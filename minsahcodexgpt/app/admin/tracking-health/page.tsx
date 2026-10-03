@@ -30,6 +30,7 @@ import {
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { MetricCard } from './MetricCard';
 import { TikTokEventsApiHealth } from './TikTokEventsApiHealth';
+import { MetaCapiDiagnosticsCenter } from './MetaCapiDiagnosticsCenter';
 
 type HealthStatus = 'OK' | 'WARN' | 'CRITICAL';
 
@@ -644,6 +645,8 @@ export default function TrackingHealthPage() {
             <MetricCard title="Online Paid" value={snapshot.metrics.onlinePaid} />
             <MetricCard title="Pending Meta Orders" value={snapshot.metrics.pendingMetaPurchaseOrders} tone={snapshot.metrics.pendingMetaPurchaseOrders > 0 ? 'warn' : 'good'} />
           </div>
+
+          <MetaCapiDiagnosticsCenter metrics={snapshot.metrics} />
 
           <TikTokEventsApiHealth metrics={snapshot.metrics} />
 

@@ -10,9 +10,14 @@ import { dispatchMetaBrowserEvent } from '@/lib/meta/browser/client';
 interface FacebookPixelProps {
   pixelId: string;
   enabled?: boolean;
+  lduEnabled?: boolean;
 }
 
-export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixelProps) {
+export default function FacebookPixel({
+  pixelId,
+  enabled = true,
+  lduEnabled = process.env.NEXT_PUBLIC_META_LDU_ENABLED === 'true',
+}: FacebookPixelProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const lastPageViewKey = useRef<string | null>(null);
@@ -97,6 +102,9 @@ export default function FacebookPixel({ pixelId, enabled = true }: FacebookPixel
               document.cookie = name + '=' + encodeURIComponent(value) + ';max-age=' + maxAge + ';path=/;SameSite=Lax' + secure;
             }
             fbq('consent', 'grant');
+            if (${Boolean(lduEnabled)} || String(mbReadCookie('mb_ldu') || '').trim() === 'true') {
+              fbq('dataProcessingOptions', ['LDU'], 0, 0);
+            }
             var mbVid = mbReadCookie('mb_vid');
             if (!mbVid) {
               mbVid = window.crypto && window.crypto.randomUUID

@@ -12,6 +12,7 @@ import { catalogPayloadHash } from '@/lib/meta/catalog/fingerprint';
 import { mapProductToCatalogItems, type CatalogProductSource } from '@/lib/meta/catalog/mapper';
 import { MetaPlatformCatalogService } from './service';
 import { assertCatalogDeletePlanIntegrity, buildCatalogDeletePlanPayload, stableCatalogHash } from './normalization';
+import { evaluateManagedCatalogHideTransitions } from './hide-governance';
 import type { MetaCatalogDeletePlanPayload, MetaCatalogPreparedSubmission } from './types';
 import { assertMetaPhase30MassDeleteOverride, assertMetaPhase30WriteAllowed } from '../../migration/phase30-cutover';
 
@@ -330,6 +331,47 @@ export async function syncCatalogProducts(input: { catalogId?: string; inventory
         sourceType: entry.item.sourceType,
         sourceId: entry.item.sourceId,
         payloadHash: entry.payloadHash,
+        state: 'SUBMITTED' as const,
+        attempt: 1,
+      }));
+    }
+
+    const desiredMap = new Map(plan.updates.map((entry) => [entry.item.retailerId, entry.item]));
+    const hideEvaluation = evaluateManagedCatalogHideTransitions({
+      previouslyManaged,
+      desiredActiveItems: desiredMap,
+      managedTotalCount: previouslyManaged.length,
+    });
+
+    if (hideEvaluation.shouldBrake) {
+      throw new Error(`META_CATALOG_MASS_HIDE_BRAKE: ${hideEvaluation.brakeReason}`);
+    }
+
+    for (const itemToHide of hideEvaluation.itemsToHide) {
+      const previous = managed.get(itemToHide.retailerId);
+      const hidePayloadHash = stableCatalogHash({
+        retailerId: itemToHide.retailerId,
+        availability: 'out of stock',
+        visibility: 'staging',
+      });
+      if (previous?.payloadHash === hidePayloadHash && previous.status === 'ACTIVE') {
+        unchangedItems.push(itemToHide.retailerId);
+        continue;
+      }
+      submissions.push(Object.freeze({
+        request: {
+          method: 'UPDATE' as const,
+          retailer_id: itemToHide.retailerId,
+          data: {
+            availability: 'out of stock',
+            visibility: 'staging',
+            quantity_to_sell_on_facebook: 0,
+          },
+        },
+        retailerId: itemToHide.retailerId,
+        sourceType: itemToHide.sourceType ?? 'PRODUCT',
+        sourceId: itemToHide.sourceId ?? itemToHide.retailerId,
+        payloadHash: hidePayloadHash,
         state: 'SUBMITTED' as const,
         attempt: 1,
       }));

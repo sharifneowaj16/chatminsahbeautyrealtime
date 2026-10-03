@@ -282,6 +282,7 @@ export async function POST(request: NextRequest) {
       deliveryDiscountAmount: true,
       steadfastStatus: true,
       trackingNumber: true,
+      metaPurchaseSent: true,
     },
   })
 
@@ -363,6 +364,18 @@ export async function POST(request: NextRequest) {
       },
     })
   })
+
+  if (mappedStatus === 'CANCELLED' && order.metaPurchaseSent && !order.isTest) {
+    try {
+      const { enqueueMetaCapiRefund } = await import('@/lib/queue/metaCapiQueue');
+      await enqueueMetaCapiRefund(
+        { orderId: order.id, source: 'steadfast_return' },
+        { jobId: `steadfast_return:meta_refund:${order.id}:${Date.now()}` }
+      );
+    } catch (error) {
+      console.error('Steadfast return Meta Refund enqueue failed:', error);
+    }
+  }
 
   return jsonSuccess({
     eventId: event.id,

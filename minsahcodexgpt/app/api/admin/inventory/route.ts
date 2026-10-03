@@ -7,6 +7,7 @@ import {
   getVerifiedAdmin,
   parseNonNegativeInt,
 } from '@/app/api/admin/_utils';
+import { triggerEventDrivenCatalogSync } from '@/lib/meta-platform/domains/catalog/event-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -554,6 +555,11 @@ export async function PATCH(request: NextRequest) {
           });
         }
       }
+    });
+
+    void triggerEventDrivenCatalogSync({
+      productIds: products.map((product) => product.id),
+      reason: `admin_inventory_${action}`,
     });
 
     return NextResponse.json({

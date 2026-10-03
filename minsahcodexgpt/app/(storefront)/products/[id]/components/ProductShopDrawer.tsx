@@ -25,79 +25,30 @@ interface ProductShopDrawerProps {
   currentProductId?: string;
 }
 
-// Default curated fallback products from Minsah Beauty's top lines
-const defaultShopProducts: ShopDrawerProduct[] = [
-  {
-    id: 'prod-ds-serum',
-    name: 'Advanced Niacinamide Glow Serum',
-    slug: 'advanced-niacinamide-glow-serum',
-    price: 1450,
-    image: '/images/categories/Serum.png',
-    category: 'Serum Formula',
-    code: 'NS-01®',
-    badge: 'Best Seller',
-  },
-  {
-    id: 'prod-sunscreen',
-    name: 'Ultra-Light Invisible Sunscreen SPF50+',
-    slug: 'ultra-light-invisible-sunscreen-spf50',
-    price: 1250,
-    image: '/images/categories/Sunscreen.png',
-    category: 'UV Defense',
-    code: 'UV-50™',
-    badge: 'Popular',
-  },
-  {
-    id: 'prod-lip-treatment',
-    name: 'Hydra-Peptide Lip Therapy Balm',
-    slug: 'hydra-peptide-lip-therapy-balm',
-    price: 850,
-    image: '/images/categories/Lip_Care.png',
-    category: 'Lip Care',
-    code: 'LP-02™',
-  },
-  {
-    id: 'prod-daily-duo',
-    name: 'Radiance Essentials Duo Bundle',
-    slug: 'radiance-essentials-duo-bundle',
-    price: 2450,
-    originalPrice: 2700,
-    image: '/images/categories/Skincare.png',
-    category: 'Clinical Duo',
-    code: 'DUO-01®',
-    badge: 'Save 15%',
-  },
-  {
-    id: 'prod-hair-vital',
-    name: 'Rosemary Scalp & Hair Vitality Elixir',
-    slug: 'rosemary-scalp-hair-vitality-elixir',
-    price: 1650,
-    image: '/images/categories/Hair_Care.png',
-    category: 'Hair Care',
-    code: 'HC-03™',
-  },
-];
-
 export default function ProductShopDrawer({
   isOpen,
   onClose,
-  products = defaultShopProducts,
+  products = [],
   currentProductId,
 }: ProductShopDrawerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Synchronize dynamic items synchronously with guaranteed non-empty image strings
+  // Synchronize authentic dynamic items only
   const items = useMemo(() => {
-    const list = products && Array.isArray(products) && products.length > 0 ? products : defaultShopProducts;
+    const list = Array.isArray(products) ? products : [];
     const filtered = currentProductId
       ? list.filter((p) => p && p.id !== currentProductId && p.slug !== currentProductId)
       : list;
-    const final = filtered.length > 0 ? filtered : defaultShopProducts;
-    return final.map((p) => ({
+    return filtered.map((p) => ({
       ...p,
       image: safeImageUrl(p?.image, DEFAULT_SKINCARE_PLACEHOLDER),
     }));
   }, [products, currentProductId]);
+
+  if (!isOpen || items.length === 0) {
+    return null;
+  }
 
   // Handle escape key to close
   useEffect(() => {

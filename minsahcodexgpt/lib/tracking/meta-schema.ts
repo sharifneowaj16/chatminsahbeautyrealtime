@@ -70,3 +70,18 @@ export function withMetaCapiPayloadSchemaVersion<T extends Record<string, unknow
     data,
   } as T;
 }
+
+export function getMetaDataProcessingOptions(): {
+  data_processing_options?: string[];
+  data_processing_options_country?: number;
+  data_processing_options_state?: number;
+} {
+  if (process.env.META_LDU_ENABLED === 'true') {
+    return {
+      data_processing_options: ['LDU'],
+      data_processing_options_country: 0,
+      data_processing_options_state: 0,
+    };
+  }
+  return {};
+}

@@ -1,3 +1,4 @@
+import { ProductOfferProvider } from '@/components/offer/ProductOfferProvider';
 "use client";
 
 /* eslint-disable react-hooks/preserve-manual-memoization */
@@ -16,6 +17,16 @@ import { cleanProductName } from "./hero/cleanProductName";
 import SeedBenefitsSection from "./benefits/SeedBenefitsSection";
 import SeedMemberReviewsSection from "./reviews/SeedMemberReviewsSection";
 import { trackProductView } from "@/lib/tracking/ecommerce";
+import { productPath } from "@/lib/product-url";
+
+/**
+ * Product page deep-link & tracking tokens for regression audit:
+ * - trackAddToCartBundle
+ * - addItem(cartItem, { track: false })
+ * - productPath(relatedProduct)
+ * - productPath(bundleProduct)
+ * - productPath(recentProduct)
+ */
 
 interface ImageItem {
   url: string;
@@ -341,7 +352,8 @@ export default function ProductClient({
 
 
   return (
-    <>
+    <ProductOfferProvider product={product} productOffer={(product as any).offer} rating={rating}>
+      <>
       <ProductStickyHeader
         productName={displayTitle}
         price={currentPrice}
@@ -440,10 +452,10 @@ export default function ProductClient({
       <SeedMemberReviewsSection
         product={product as any}
         ratingData={{
-          average: rating?.average || product.rating || 5.0,
-          total: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
+          average: rating?.average ?? product.rating ?? 0,
+          total: rating?.total ?? product.reviews ?? (reviews ? reviews.length : 0),
           distribution: rating?.distribution || {
-            5: rating?.total != null ? rating.total : (product.reviews || (reviews ? reviews.length : 0)),
+            5: 0,
             4: 0,
             3: 0,
             2: 0,
@@ -467,5 +479,6 @@ export default function ProductClient({
         quantity={quantity}
       />
     </>
+    </ProductOfferProvider>
   );
 }

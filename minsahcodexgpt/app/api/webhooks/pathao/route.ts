@@ -175,6 +175,7 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
       pathaoStatus: true,
       pathaoTrackingCode: true,
       pathaoConsignmentId: true,
+      metaPurchaseSent: true,
     },
   });
 
@@ -259,6 +260,18 @@ async function processPathaoEvent(payload: Record<string, unknown>, eventId: str
       },
     });
   });
+
+  if (mappedStatus === 'CANCELLED' && order.metaPurchaseSent && !order.isTest) {
+    try {
+      const { enqueueMetaCapiRefund } = await import('@/lib/queue/metaCapiQueue');
+      await enqueueMetaCapiRefund(
+        { orderId: order.id, source: 'pathao_return' },
+        { jobId: `pathao_return:meta_refund:${order.id}:${Date.now()}` }
+      );
+    } catch (error) {
+      console.error('Pathao return Meta Refund enqueue failed:', error);
+    }
+  }
 }
 
 export async function POST(request: NextRequest) {

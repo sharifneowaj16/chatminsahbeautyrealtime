@@ -10,6 +10,7 @@ import { sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
 import { normalizeMetaExternalId } from '@/lib/tracking/meta-external-id';
 import { classifyStoredOrderTraffic } from '@/lib/tracking/traffic-filter';
 import {
+  getMetaDataProcessingOptions,
   getMetaTestEventCode,
   TRACKING_SCHEMA_VERSION,
   withMetaSafePayloadSchema,
@@ -581,8 +582,10 @@ export async function sendCodPurchaseToMeta(params: {
           num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
           ...buildPurchaseAttributionCustomData(order),
         }),
+        ...getMetaDataProcessingOptions(),
       },
     ],
+    ...getMetaDataProcessingOptions(),
     ...(process.env.NODE_ENV !== 'production' && META_TEST_EVENT_CODE
       ? { test_event_code: META_TEST_EVENT_CODE }
       : {}),
@@ -840,8 +843,10 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
           num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
           ...buildPurchaseAttributionCustomData(order),
         }),
+        ...getMetaDataProcessingOptions(),
       },
     ],
+    ...getMetaDataProcessingOptions(),
     ...(process.env.NODE_ENV !== 'production' && META_TEST_EVENT_CODE
       ? { test_event_code: META_TEST_EVENT_CODE }
       : {}),

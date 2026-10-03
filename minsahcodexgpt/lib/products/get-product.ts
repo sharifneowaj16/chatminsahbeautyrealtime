@@ -1,5 +1,7 @@
 import prisma from '@/lib/prisma';
 import { getDeliveryOfferBadgeText, isDeliveryOfferActive } from '@/lib/delivery-pricing';
+import { resolveProductOffer, type ProductOfferSnapshot } from '@/lib/commerce/product-offer';
+import { resolveProductRating } from '@/lib/commerce/product-rating';
 
 const PUBLIC_PRODUCT_FILTER = {
   deletedAt: null,
@@ -15,6 +17,19 @@ export interface CompanionVariantData {
   attributes: Record<string, string>;
   image: string;
 }
+
+export type ProductVariantDetail = {
+  id: string;
+  sku: string;
+  name: string;
+  price: number;
+  stock: number;
+  attributes: Record<string, string>;
+  image: string;
+  offer: ProductOfferSnapshot;
+  inStock: boolean;
+  [key: string]: any;
+};
 
 export type ProductDetail = {
   id: string;
@@ -34,15 +49,8 @@ export type ProductDetail = {
   reviews: number;
   inStock: boolean;
   isNew: boolean;
-  variants: Array<{
-    id: string;
-    sku: string;
-    name: string;
-    price: number;
-    stock: number;
-    attributes: Record<string, string>;
-    image: string;
-  }>;
+  offer: ProductOfferSnapshot;
+  variants: ProductVariantDetail[];
   [key: string]: any;
 };
 
@@ -271,11 +279,12 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
         }
       : null;
 
-    const ratingAvg = product.averageRating
-      ? product.averageRating.toNumber()
-      : reviews.length > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        : 0;
+    const ratingSummary = resolveProductRating({
+      ratingValue: product.averageRating ? product.averageRating.toNumber() : null,
+      reviewCount: product.reviewCount,
+      reviews,
+    });
+    const productOffer = resolveProductOffer({ product });
 
     return {
       product: {
@@ -293,9 +302,10 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
         category: product.category?.name || '',
         categorySlug: product.category?.slug || '',
         brand: product.brand?.name || '',
-        rating: ratingAvg,
-        reviews: product.reviewCount || reviews.length,
-        inStock: product.quantity > 0,
+        rating: ratingSummary.average ?? 0,
+        reviews: ratingSummary.total,
+        inStock: productOffer.canPurchase,
+        offer: productOffer,
         isNew: product.isNew,
         isFeatured: product.isFeatured,
         ingredients: product.ingredients || '',
@@ -392,30 +402,35 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
         gtin: product.gtin || '',
 
         // Variants
-        variants: product.variants.map((v) => ({
-          id: v.id,
-          sku: v.sku,
-          name: v.name,
-          price: v.price ? v.price.toNumber() : product.price.toNumber(),
-          stock: v.quantity,
-          attributes: (v.attributes as Record<string, string>) || {},
-          image: v.image || '',
-          weight:
-            typeof v.attributes === 'object' &&
-            v.attributes !== null &&
-            'weight' in v.attributes &&
-            typeof (v.attributes as any).weight === 'number'
-              ? (v.attributes as any).weight
-              : product.weight
-                ? product.weight.toNumber()
-                : null,
-        })),
+        variants: product.variants.map((v) => {
+          const variantOffer = resolveProductOffer({ product, variant: v });
+          return {
+            id: v.id,
+            sku: v.sku,
+            name: v.name,
+            price: v.price ? v.price.toNumber() : product.price.toNumber(),
+            stock: variantOffer.availableQuantity,
+            inStock: variantOffer.canPurchase,
+            attributes: (v.attributes as Record<string, string>) || {},
+            image: v.image || '',
+            weight:
+              typeof v.attributes === 'object' &&
+              v.attributes !== null &&
+              'weight' in v.attributes &&
+              typeof (v.attributes as any).weight === 'number'
+                ? (v.attributes as any).weight
+                : product.weight
+                  ? product.weight.toNumber()
+                  : null,
+            offer: variantOffer,
+          };
+        }),
       },
       reviews,
       rating: {
-        average: ratingAvg,
-        total: reviews.length || product.reviewCount || 0,
-        distribution,
+        average: ratingSummary.average ?? 0,
+        total: ratingSummary.total,
+        distribution: ratingSummary.distribution,
       },
       relatedProducts: relatedProducts.map((p) => {
         const pImage = p.images.find((i) => i.isDefault) || p.images[0];
