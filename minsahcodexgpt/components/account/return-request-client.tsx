@@ -12,6 +12,8 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { formatPrice } from '@/utils/currency';
 import { productPath } from '@/lib/product-url';
 import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+import { ReturnReasonMobileView } from './mobile/returns/ReturnReasonMobileView';
+import { ReturnStatusMobileView } from './mobile/return-status/ReturnStatusMobileView';
 
 interface ReturnableItem {
   id: string;
@@ -296,9 +298,28 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
   const canCancelExistingReturn = order.latestReturn?.status === 'pending';
 
   if (order.latestReturn) {
+    const returnRecordData = {
+      returnNumber: order.latestReturn.returnNumber,
+      orderNumber: order.orderNumber,
+      orderId: order.id,
+      status: order.latestReturn.status,
+      refundAmount: order.latestReturn.refundAmount,
+      items: order.latestReturn.items.map((it) => ({
+        name: it.name,
+        quantity: it.quantity,
+        price: it.price,
+      })),
+    };
+
     return (
-      <div className="space-y-6">
-        {errorMessage && (
+      <>
+        <ReturnStatusMobileView
+          returnRecord={returnRecordData}
+          onCancelReturn={canCancelExistingReturn ? handleCancelReturn : undefined}
+        />
+
+        <div className="hidden lg:block space-y-6">
+          {errorMessage && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}
           </div>
@@ -398,16 +419,47 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
           </div>
         )}
       </div>
+      </>
     );
   }
 
+  const handleMobileSubmit = async () => {
+    const itemsToSelect = { ...selectedItems };
+    if (Object.keys(itemsToSelect).length === 0) {
+      order.items.forEach((item) => {
+        itemsToSelect[item.id] = item.quantity;
+      });
+      setSelectedItems(itemsToSelect);
+    }
+
+    setTimeout(() => {
+      const form = document.querySelector('form');
+      if (form) {
+        form.requestSubmit();
+      }
+    }, 50);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Request Return</h1>
-          <p className="text-gray-600">Order {order.orderNumber}</p>
-        </div>
+    <>
+      <ReturnReasonMobileView
+        order={{
+          id: order.id,
+          orderNumber: order.orderNumber,
+          items: order.items,
+        }}
+        reason={reason}
+        onReasonChange={setReason}
+        onContinue={handleMobileSubmit}
+        isSubmitting={isSubmitting}
+      />
+
+      <div className="hidden lg:block space-y-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Request Return</h1>
+            <p className="text-gray-600">Order {order.orderNumber}</p>
+          </div>
         <Link
           href={`/account/orders/${order.id}`}
           className="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -602,5 +654,6 @@ export function ReturnRequestClient({ order }: ReturnRequestClientProps) {
         </div>
       </form>
     </div>
+    </>
   );
 }

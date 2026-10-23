@@ -150,7 +150,7 @@ export function Modal({
       {children ? (
         <div
           className={joinClassNames(
-            'max-h-[min(70dvh,48rem)] overflow-y-auto px-5 py-5 sm:px-6',
+            'max-h-[min(70dvh,48rem)] overflow-y-auto overflow-x-hidden no-scrollbar px-5 py-5 sm:px-6',
             isAdmin && 'text-[#f7f8f8]',
             bodyClassName,
           )}

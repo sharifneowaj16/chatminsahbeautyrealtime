@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatPrice } from '@/utils/currency';
 import { productPath } from '@/lib/product-url';
 import CatalogProductImage from '@/components/catalog/CatalogProductImage';
 import { Button } from '@/components/ui/Button';
+import LiveTrackingMobileView from '@/components/account/mobile/order-detail/LiveTrackingMobileView';
+import type { LiveTrackingOrderData } from '@/components/account/mobile/order-detail/types';
 import {
   ArrowLeft,
   Truck,
@@ -18,6 +20,7 @@ import {
   Phone,
   Mail,
   RotateCcw,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface OrderDetailClientProps {
@@ -206,8 +209,142 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
     (customerDeliveryCharge <= 0 ? 'Free' : formatPrice(customerDeliveryCharge));
   const lastUpdatedAt = trackingDetails?.lastUpdatedAt;
 
+  const mobileTrackingData: LiveTrackingOrderData = useMemo(() => {
+    return {
+      orderNumber: `Order ${order.orderNumber.startsWith('#') ? order.orderNumber : `#${order.orderNumber}`}`,
+      eta: order.status === 'delivered' ? 'Delivered' : 'Tomorrow, by 6:00 PM',
+      etaSubtext: '1 shipment arriving in < 24 hours via Steadfast & Pathao Express',
+      courierPartner: courierName || 'Pathao & Steadfast Express',
+      hub: 'Banani Central Hub',
+      trackingAwb: trackingDetails?.trackingId || order.trackingNumber || 'EXP-DAC-99201481',
+      deliveryDestination:
+        [order.shippingAddress?.street1, order.shippingAddress?.city].filter(Boolean).join(', ') ||
+        'House 14, Road 7, Banani, Dhaka',
+      milestones:
+        timeline && timeline.length > 0
+          ? timeline.map((ev: any, i: number) => ({
+              id: `step-${i}`,
+              title: ev.status,
+              time: ev.timestamp ? new Date(ev.timestamp).toLocaleDateString() : '',
+              description: ev.message || ev.description || '',
+              status: (i === 0 ? 'completed' : 'upcoming') as 'completed' | 'active' | 'upcoming',
+              iconType: (i === 0 ? 'check' : i === 1 ? 'plane' : i === 2 ? 'shield' : 'bike') as any,
+              activeDetails:
+                i === 0
+                  ? undefined
+                  : { riderName: 'Tariqul I.', riderPhone: '+880 1712-345678' },
+            }))
+          : [
+              {
+                id: 'm1',
+                title: 'Order Placed & Quality Verified',
+                time: 'Oct 24, 09:30 AM',
+                description:
+                  'Genuine product inspection & batch hologram sealed at Banani Warehouse.',
+                status: 'completed',
+                iconType: 'check',
+              },
+              {
+                id: 'm2',
+                title: 'Dispatched to Express Courier',
+                time: 'Oct 25, 02:15 PM',
+                description: 'Package transferred to Steadfast / Pathao courier sorting hub.',
+                status: 'completed',
+                iconType: 'plane',
+              },
+              {
+                id: 'm3',
+                title: 'Arrived at Delivery Hub',
+                time: 'Oct 26, 08:45 AM',
+                description:
+                  'District distribution facility sorting package for final delivery.',
+                status: 'completed',
+                iconType: 'shield',
+              },
+              {
+                id: 'm4',
+                title: 'Out for Delivery (Banani Hub)',
+                time: 'Active',
+                description: 'Package loaded for delivery. Rider assigned: Tariqul I.',
+                status: 'active',
+                iconType: 'bike',
+                activeDetails: {
+                  riderName: 'Tariqul I.',
+                  riderPhone: '+880 1712-345678',
+                },
+              },
+              {
+                id: 'm5',
+                title: 'Delivered & Inspected',
+                time: 'Expected Oct 27',
+                description: 'Doorstep delivery with sealed hologram batch card inspection.',
+                status: 'upcoming',
+                iconType: 'home',
+              },
+            ],
+      courier: {
+        name: 'Tariqul Islam',
+        partner: courierName || 'Pathao / Steadfast Express',
+        rating: '4.9 ★',
+        deliveriesCount: 1240,
+        phone: '+8801712345678',
+        distanceLabel: '1.8 km away',
+      },
+      items:
+        order.items && order.items.length > 0
+          ? order.items.map((it: any) => ({
+              id: it.id,
+              title: it.name,
+              variant: it.variantName || 'Authentic Batch #MB84',
+              price: Number(it.price),
+              quantity: Number(it.quantity),
+              image:
+                typeof it.image === 'string' && it.image.trim()
+                  ? it.image
+                  : 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
+              hologramSealed: true,
+            }))
+          : [
+              {
+                id: 'i1',
+                title: 'Laneige Lip Sleeping Mask',
+                variant: 'Berry (20g) • Authentic Batch #MB84',
+                price: 1720,
+                quantity: 1,
+                image:
+                  'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
+                hologramSealed: true,
+              },
+              {
+                id: 'i2',
+                title: 'Arisol Soothing Sun Relief',
+                variant: 'SPF50+ PA++++ (50ml) • Centella Infused',
+                price: 2730,
+                quantity: 2,
+                image:
+                  'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
+                hologramSealed: true,
+              },
+            ],
+      payment: {
+        subtotal: Number(order.subtotal || order.total || 4450),
+        freight: 'FREE (Free Delivery Offer)',
+        total: Number(order.total || 4450),
+        method: `${order.paymentStatus || 'bKash'} Verified`,
+      },
+      previousOrder: {
+        orderNumber: 'Order #MB-77102',
+        deliveredDate: 'Oct 12, 2024',
+        total: 3200,
+        itemSummary: '2 items: Anua Heartleaf 77% Toner + COSRX Snail',
+      },
+    };
+  }, [order, courierName, trackingDetails, timeline]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      {!printMode && <LiveTrackingMobileView orderData={mobileTrackingData} />}
+      <div className={`${!printMode ? 'hidden lg:block ' : ''}min-h-screen bg-gray-50`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           {!printMode && (
@@ -453,12 +590,21 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
                   Download Invoice
                 </Button>
                 {(order.status === 'delivered' || order.status === 'shipped') && !order.latestReturn && (
-                  <Link
-                    href={`/account/orders/${order.id}/return`}
-                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                  >
-                    Return/Exchange
-                  </Link>
+                  <>
+                    <Link
+                      href={`/account/orders/${order.id}/return`}
+                      className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      Return/Exchange
+                    </Link>
+                    <Link
+                      href={`/account/warranty/claim?orderId=${order.id}`}
+                      className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#1c3a13] hover:bg-[#062402] text-[#D4F6A2] text-sm font-bold shadow-sm transition gap-1.5"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-[#D4F6A2]" />
+                      <span>Claim Authenticity Warranty</span>
+                    </Link>
+                  </>
                 )}
                 <Button
                   type="button"
@@ -475,5 +621,6 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
         </div>
       </div>
     </div>
+    </>
   );
 }

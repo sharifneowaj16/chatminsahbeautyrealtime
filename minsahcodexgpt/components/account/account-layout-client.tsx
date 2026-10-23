@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Users,
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { User } from '@/lib/auth';
@@ -39,6 +40,12 @@ const navigation = [
     href: '/account/returns',
     icon: RotateCcw,
     description: 'Return requests and refunds'
+  },
+  {
+    name: 'Warranty & Claims',
+    href: '/account/warranty',
+    icon: ShieldCheck,
+    description: 'Authenticity & doorstep replacements'
   },
   {
     name: 'Wishlist',

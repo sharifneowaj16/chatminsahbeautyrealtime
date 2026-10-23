@@ -6,6 +6,7 @@ import {
   normalizeHomeBrands,
   normalizeHomeCategories,
   normalizeHomeSections,
+  normalizeFlashDealsConfig,
 } from '@/lib/homepageConfig';
 import type { HomeSection } from '@/types/admin';
 
@@ -14,6 +15,7 @@ export const HOME_CONFIG_KEYS = [
   'homeHero',
   'homeCategories',
   'homeBrands',
+  'flashDeals',
 ] as const;
 
 export type HomeConfigKey = (typeof HOME_CONFIG_KEYS)[number];
@@ -43,6 +45,7 @@ export function normalizeHomeConfigValue(key: HomeConfigKey, value: unknown) {
   if (key === 'homeSections') return normalizeHomeSections(value);
   if (key === 'homeHero') return normalizeHeroConfig(value);
   if (key === 'homeCategories') return normalizeHomeCategories(value);
+  if (key === 'flashDeals') return normalizeFlashDealsConfig(value);
   return normalizeHomeBrands(value);
 }
 
@@ -183,6 +186,17 @@ export async function validateHomeConfigValue(key: HomeConfigKey, normalizedValu
         field: 'value',
         code: 'UNSAFE_HERO_URL',
         message: 'Hero links and image URL cannot use executable URL schemes.',
+      });
+    }
+    if (Array.isArray(hero.slides)) {
+      hero.slides.forEach((slide, idx) => {
+        if (hasUnsafeUrl(slide.linkHref) || hasUnsafeUrl(slide.imageUrl)) {
+          issues.push({
+            field: `value.slides[${idx}]`,
+            code: 'UNSAFE_SLIDE_URL',
+            message: 'Slide link and image URL cannot use executable URL schemes.',
+          });
+        }
       });
     }
   }

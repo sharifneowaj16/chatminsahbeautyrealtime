@@ -1,8 +1,9 @@
 import { DESIGN_TOKEN_VALUES } from '@/lib/design-tokens';
 import prisma from '@/lib/prisma';
 import { defaultBrands, defaultCategories, defaultHomeHeroConfig, defaultHomeSections } from '@/lib/homeData';
-import type { HomeHeroConfig, HomeSection, HomeSectionBrand, HomeSectionCategory } from '@/types/admin';
+import type { HeroSlide, HomeHeroConfig, HomeSection, HomeSectionBrand, HomeSectionCategory } from '@/types/admin';
 import { logOperationalError } from '@/lib/observability/logger';
+import { DEFAULT_FLASH_DEALS_CONFIG, type FlashDealsConfig, type FlashDealItem } from '@/components/home/flash-deals/types';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
@@ -91,6 +92,32 @@ export function normalizeHomeSections(raw: unknown): HomeSection[] {
   return merged.sort((a, b) => a.order - b.order);
 }
 
+function normalizeHeroSlides(raw: unknown): HeroSlide[] {
+  if (!Array.isArray(raw)) return defaultHomeHeroConfig.slides || [];
+  const slides: HeroSlide[] = [];
+
+  for (let idx = 0; idx < raw.length; idx++) {
+    const item = raw[idx];
+    if (!isRecord(item)) continue;
+    const imageUrl = toString(item.imageUrl);
+    if (!imageUrl) continue;
+
+    slides.push({
+      id: toString(item.id, `slide-${idx}`),
+      imageUrl,
+      ...(item.mobileImageUrl ? { mobileImageUrl: toString(item.mobileImageUrl) } : {}),
+      title: toString(item.title, ''),
+      subtitle: toString(item.subtitle, ''),
+      linkHref: toString(item.linkHref, ''),
+      order: toNumber(item.order, idx + 1),
+      isActive: toBoolean(item.isActive, true),
+    });
+  }
+
+  slides.sort((a, b) => a.order - b.order);
+  return slides.length > 0 ? slides : (defaultHomeHeroConfig.slides || []);
+}
+
 export function normalizeHeroConfig(raw: unknown): HomeHeroConfig {
   const hero = isRecord(raw) ? raw : {};
 
@@ -109,6 +136,7 @@ export function normalizeHeroConfig(raw: unknown): HomeHeroConfig {
     badgeOne: toString(hero.badgeOne, defaultHomeHeroConfig.badgeOne ?? ''),
     badgeTwo: toString(hero.badgeTwo, defaultHomeHeroConfig.badgeTwo ?? ''),
     backgroundClass: toString(hero.backgroundClass, defaultHomeHeroConfig.backgroundClass ?? ''),
+    slides: normalizeHeroSlides(hero.slides),
   };
 }
 
@@ -169,12 +197,53 @@ async function getSiteConfigValue(key: string): Promise<unknown> {
   }
 }
 
+export function normalizeFlashDealsConfig(raw: unknown): FlashDealsConfig {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return DEFAULT_FLASH_DEALS_CONFIG;
+  }
+  const obj = raw as Record<string, unknown>;
+  const rawItems = Array.isArray(obj.items) ? obj.items : DEFAULT_FLASH_DEALS_CONFIG.items;
+
+  const items: FlashDealItem[] = rawItems.map((item, index) => {
+    const it = (item && typeof item === 'object') ? (item as Record<string, unknown>) : {};
+    return {
+      id: String(it.id || `flash-deal-${index}`),
+      productId: String(it.productId || ''),
+      slug: it.slug ? String(it.slug) : undefined,
+      title: String(it.title || 'Flash Deal Item'),
+      subtitle: it.subtitle ? String(it.subtitle) : undefined,
+      imageUrl: String(it.imageUrl || '/images/hero-image.jpg'),
+      originalPrice: Number(it.originalPrice) || 0,
+      salePrice: Number(it.salePrice) || 0,
+      discountBadge: it.discountBadge ? String(it.discountBadge) : undefined,
+      rating: it.rating ? Number(it.rating) : undefined,
+      ratingCount: it.ratingCount ? Number(it.ratingCount) : undefined,
+      stockUrgencyText: it.stockUrgencyText ? String(it.stockUrgencyText) : undefined,
+      claimedPercentage: it.claimedPercentage != null ? Number(it.claimedPercentage) : undefined,
+      order: Number(it.order) || index + 1,
+      isActive: it.isActive !== false,
+      variants: Array.isArray(it.variants) ? it.variants : undefined,
+    };
+  });
+
+  return {
+    isVisible: obj.isVisible !== false,
+    badgeText: String(obj.badgeText || DEFAULT_FLASH_DEALS_CONFIG.badgeText),
+    title: String(obj.title || DEFAULT_FLASH_DEALS_CONFIG.title),
+    subtitle: String(obj.subtitle || DEFAULT_FLASH_DEALS_CONFIG.subtitle),
+    timerLabel: String(obj.timerLabel || DEFAULT_FLASH_DEALS_CONFIG.timerLabel),
+    endsAt: String(obj.endsAt || DEFAULT_FLASH_DEALS_CONFIG.endsAt),
+    items,
+  };
+}
+
 export async function getHomePageConfig() {
-  const [sectionsRaw, categoriesRaw, brandsRaw, heroRaw] = await Promise.all([
+  const [sectionsRaw, categoriesRaw, brandsRaw, heroRaw, flashDealsRaw] = await Promise.all([
     getSiteConfigValue('homeSections'),
     getSiteConfigValue('homeCategories'),
     getSiteConfigValue('homeBrands'),
     getSiteConfigValue('homeHero'),
+    getSiteConfigValue('flashDeals'),
   ]);
 
   return {
@@ -182,6 +251,7 @@ export async function getHomePageConfig() {
     categories: normalizeHomeCategories(categoriesRaw),
     brands: normalizeHomeBrands(brandsRaw),
     hero: normalizeHeroConfig(heroRaw),
+    flashDeals: normalizeFlashDealsConfig(flashDealsRaw),
   };
 }
 

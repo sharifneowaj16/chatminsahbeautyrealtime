@@ -7,6 +7,8 @@ import SocialFloatingButtons from '@/app/components/SocialFloatingButtons';
 import SiteFooter from './SiteFooter';
 import SiteHeader from './SiteHeader';
 import { getShellPolicy } from './shell-policy';
+import { CookieConsentModal } from '@/components/privacy/mobile/CookieConsentModal';
+import WelcomeDiscountModal from '@/components/promotions/welcome/WelcomeDiscountModal';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,6 +40,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {policy.showCartDrawer ? <CartDrawer /> : null}
       {policy.showFloatingActions ? <SocialFloatingButtons /> : null}
+
+      {/* Stitch Flow 1: Global Privacy & Welcome Modals */}
+      <CookieConsentModal />
+      <WelcomeDiscountModal />
     </>
   );
 }

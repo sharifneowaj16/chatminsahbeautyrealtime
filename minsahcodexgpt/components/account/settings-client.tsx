@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import AccountSettingsMobileView from '@/components/account/mobile/settings/AccountSettingsMobileView';
 import {
   User as UserIcon,
   Mail,
@@ -234,8 +235,39 @@ export function SettingsClient() {
     }
   };
 
+  const mobileProfile = useMemo(
+    () => ({
+      name:
+        [profileData.firstName || user?.firstName, profileData.lastName || user?.lastName]
+          .filter(Boolean)
+          .join(' ') || 'Tasneem Ahmed',
+      email: user?.email || 'tasneem.ahmed@example.com',
+      phone: profileData.phone || user?.phone || '+880 1712-345678',
+      avatarUrl:
+        user?.avatar ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+      isKycVerified: true,
+      vipTier: 'Glow VIP',
+      stats: {
+        glowPoints: user?.loyaltyPoints || 850,
+        ordersCount: 5,
+        walletBalance: 400,
+      },
+    }),
+    [profileData, user]
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <AccountSettingsMobileView
+        initialProfile={mobileProfile}
+        onEditProfile={() => setActiveTab('profile')}
+        onChangePassword={() => {
+          setActiveTab('security');
+          setShowPasswordForm(true);
+        }}
+      />
+      <div className="hidden lg:block min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -643,5 +675,6 @@ export function SettingsClient() {
         </div>
       </div>
     </div>
+    </>
   );
 }

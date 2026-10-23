@@ -1,0 +1,1454 @@
+<!DOCTYPE html><html lang="en" style="width: 791px; height: 2338px; overflow: hidden; position: relative;"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.no-scrollbar::-webkit-scrollbar{display:none;}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}
+/* iOS Fluid Spring & Easing curves */
+.ios-spring-in {
+  transition: all 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ios-spring-out {
+  transition: all 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-container": "#516d29", "error": "#ba1a1a", "on-tertiary-container": "#c78aa6", "on-secondary-fixed": "#111f00", "surface": "#faf9f6", "inverse-surface": "#2f312f", "primary-fixed": "#c7edb5", "surface-container-low": "#F8FAF7", "surface-bright": "#FFFFFF", "tertiary-fixed-dim": "#f5b4d2", "surface-container-highest": "#e3e2e0", "outline-variant": "#c3c8bc", "on-secondary": "#1c3a13", "secondary": "#4b6723", "on-primary-fixed-variant": "#2f4e25", "on-surface-variant": "#43483f", "tertiary-container": "#51243c", "error-container": "#ffdad6", "surface-container": "#efeeeb", "primary": "#062402", "tertiary": "#380f26", "primary-container": "#28531c", "on-surface": "#1a1c1a", "on-tertiary": "#ffffff", "on-primary-container": "#82a573", "on-primary": "#ffffff", "secondary-container": "#EAF7D8", "inverse-on-surface": "#f2f1ee", "on-tertiary-fixed": "#340c23", "on-primary-fixed": "#042101", "background": "#faf9f6", "surface-tint": "#46673a", "surface-variant": "#e3e2e0", "surface-dim": "#F4F3EF", "secondary-fixed": "#ccee9b", "on-tertiary-fixed-variant": "#683750", "primary-fixed-dim": "#acd19b", "secondary-fixed-dim": "#b1d181", "outline": "#E2DED8", "on-error-container": "#93000a", "surface-container-high": "#e9e8e5", "surface-container-lowest": "#ffffff", "inverse-primary": "#acd19b", "tertiary-fixed": "#ffd8e8", "on-secondary-fixed-variant": "#344e0c", "on-error": "#ffffff", "on-background": "#1a1c1a" }, borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }, spacing: { "space-xl": "2rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "margin": "2rem", "space-md": "1rem", "space-sm": "0.5rem", "gutter": "1.5rem" }, fontFamily: { "display-hero": ["Plus Jakarta Sans"], "title-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "title-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"] }, fontSize: { "display-hero": ["48px", { "lineHeight": "56px", "fontWeight": "700" }], "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "700" }], "display-hero-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "title-md": ["6px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "700" }] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(6,36,2,0.04)]"><div class="h-20 px-space-md flex flex-col justify-center gap-space-xs relative overflow-hidden"><div class="flex items-center justify-between transition-all duration-300" id="header-default-bar"><div class="flex items-center gap-space-sm"><span class="font-headline-lg-mobile text-headline-lg-mobile tracking-tight text-primary font-bold">MINSAH</span><div class="relative inline-block">
+<button aria-label="Delivery Location: Dhaka" class="inline-flex items-center gap-1 px-space-sm py-0.5 rounded-full bg-secondary-container text-on-secondary-container min-h-[28px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm" id="location-trigger-btn" onclick="openLocationModal()">
+<span class="material-symbols-outlined text-[16px] text-secondary">location_on</span>
+<span class="font-label-md text-label-md font-bold" id="selected-location-label">Banani</span>
+<span class="material-symbols-outlined text-[14px] transition-transform duration-200" id="location-chevron" style="transform: rotate(0deg);">expand_more</span>
+</button>
+</div></div><div class="flex items-center gap-space-xs"><button aria-label="Search catalog" class="group relative w-11 h-11 flex items-center justify-center text-on-surface hover:text-primary active:scale-90 transition-all duration-200 rounded-full hover:bg-secondary-container/40" id="search-trigger-btn" onclick="openHeaderSearch()"><span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform duration-200">search</span></button><button aria-label="Shopping Bag" class="relative w-11 h-11 flex items-center justify-center text-on-surface hover:text-primary transition-colors"><span class="material-symbols-outlined text-[24px]">shopping_bag</span><span class="absolute top-2 right-2 w-4 h-4 rounded-full bg-primary text-on-primary font-label-md text-[10px] leading-none flex items-center justify-center">2</span></button><button id="header-profile-btn" onclick="openAuthAccountModal()" aria-label="Account Profile &amp; Authentication" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary cursor-pointer active:scale-90 hover:bg-primary-container transition-all shadow-sm"><span class="material-symbols-outlined text-[18px]">person</span></button></div></div>
+<!-- iOS Spring-Animated Expanding Search Overlay -->
+<div class="absolute inset-x-0 inset-y-0 px-space-md flex items-center gap-2.5 bg-surface/98 backdrop-blur-2xl transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] transform pointer-events-none opacity-0 translate-y-[-100%] scale-[0.98]" id="header-search-bar" style="transform-origin: top center;">
+<div class="flex-1 relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-[20px] text-secondary pointer-events-none transition-transform duration-300">search</span>
+<input aria-label="Search catalog input" autocomplete="off" class="w-full pl-10 pr-9 py-2.5 rounded-full bg-surface-container text-on-surface placeholder:text-on-surface-variant/70 text-xs font-medium border border-outline/40 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 shadow-inner transition-all duration-200" id="header-search-input" placeholder="Search 100% authentic K-Beauty..." type="text">
+<button aria-label="Clear search" class="material-symbols-outlined absolute right-3 text-[16px] text-on-surface-variant/70 hover:text-primary transition-colors hidden cursor-pointer" id="header-search-clear-btn" onclick="clearHeaderSearch()" type="button">cancel</button>
+</div>
+<button aria-label="Cancel search" class="text-xs font-semibold text-secondary hover:text-primary active:scale-95 px-2 py-1.5 transition-all cursor-pointer shrink-0" onclick="closeHeaderSearch()" type="button">
+    Cancel
+  </button>
+</div>
+</div>
+<!-- iOS Spotlight Recent & Quick Trend Tags Dropdown -->
+<div class="fixed inset-x-0 top-20 bg-surface-bright/95 backdrop-blur-2xl border-b border-outline/40 shadow-xl z-40 transition-all duration-300 transform select-none opacity-0 -translate-y-2 hidden" id="search-spotlight-dropdown">
+<div class="px-space-md py-3 flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-secondary">trending_up</span> Popular Searches
+      </span>
+<span class="text-[10px] text-secondary font-medium">Verified Seoul Batches</span>
+</div>
+<div class="flex flex-wrap gap-1.5 pb-1">
+<button class="px-3 py-1 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface text-[11px] font-medium transition-all active:scale-95 flex items-center gap-1" onclick="applySearchQuery('Anua Heartleaf Toner')">
+<span class="material-symbols-outlined text-[12px] text-secondary">history</span> Anua Toner
+      </button>
+<button class="px-3 py-1 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface text-[11px] font-medium transition-all active:scale-95 flex items-center gap-1" onclick="applySearchQuery('Laneige Lip Mask')">
+<span class="material-symbols-outlined text-[12px] text-secondary">history</span> Laneige Lip Mask
+      </button>
+<button class="px-3 py-1 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface text-[11px] font-medium transition-all active:scale-95 flex items-center gap-1" onclick="applySearchQuery('Centella SPF50')">
+<span class="material-symbols-outlined text-[12px] text-secondary">wb_sunny</span> Centella SPF50
+      </button>
+<button class="px-3 py-1 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface text-[11px] font-medium transition-all active:scale-95 flex items-center gap-1" onclick="applySearchQuery('COSRX Snail 96')">
+<span class="material-symbols-outlined text-[12px] text-secondary">spa</span> COSRX Snail 96
+      </button>
+</div>
+</div>
+</div>
+<!-- Backdrop for Expanded Search Spotlight -->
+<div class="fixed inset-0 top-20 bg-primary/30 backdrop-blur-xs z-30 transition-opacity duration-300 opacity-0 hidden" id="search-backdrop" onclick="closeHeaderSearch()"></div>
+</header><main class="flex-1 flex flex-col relative w-full pt-20 pb-20 bg-surface"><div class="flex flex-col w-full">
+<!-- Top Promotion & Trust Banner -->
+<section class="px-space-md pt-2 pb-space-xs">
+<div class="relative overflow-hidden rounded-lg bg-on-secondary text-surface p-space-md shadow-md"><!-- Ambient botanical blur overlay -->
+<div class="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-secondary-fixed/15 blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-space-xs">
+<div class="flex items-center justify-between flex-wrap gap-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span class="font-label-md text-[11px] uppercase tracking-wider">100% Authentic Seoul Direct</span>
+</div>
+<div class="inline-flex items-center gap-1 text-surface-container-high font-label-md text-[11px]">
+<span class="material-symbols-outlined text-[14px] text-secondary-fixed">bolt</span>
+<span class="">Express Dhaka 24-48h</span>
+</div>
+</div>
+<!-- Swipeable Hero Slides with iOS momentum & snap -->
+<div class="flex overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory select-none cursor-grab active:cursor-grabbing -mx-1 px-1 mt-1" id="hero-slides-carousel" style="-webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory;">
+<!-- Slide 1 -->
+<div class="w-full shrink-0 snap-start pr-2" style="scroll-snap-align: start;">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-surface-bright leading-tight">
+        Dewy Glow, Direct from Seoul.
+      </h2>
+<p class="font-body-md text-body-md text-surface-container-high text-xs mt-0.5 opacity-90">
+        Fresh batch Korean skincare dispatched safely to your doorstep.
+      </p>
+</div>
+<!-- Slide 2 -->
+<div class="w-full shrink-0 snap-start pr-2" style="scroll-snap-align: start;">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-surface-bright leading-tight">
+        Monsoon Shield &amp; UV Defence.
+      </h2>
+<p class="font-body-md text-body-md text-surface-container-high text-xs mt-0.5 opacity-90">
+        Weightless non-sticky sunscreens formulated for humid Dhaka.
+      </p>
+</div>
+<!-- Slide 3 -->
+<div class="w-full shrink-0 snap-start pr-2" style="scroll-snap-align: start;">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-surface-bright leading-tight">
+        Glass Skin Barrier Rituals.
+      </h2>
+<p class="font-body-md text-body-md text-surface-container-high text-xs mt-0.5 opacity-90">
+        Centella, Heartleaf &amp; Hyaluronic complexes for radiant recovery.
+      </p>
+</div>
+</div>
+<!-- Slide Progress Dots Indicator -->
+<div class="flex items-center gap-1.5 pt-1.5" id="hero-dots-container">
+<div class="h-1.5 w-6 rounded-full bg-secondary-fixed transition-all duration-300" id="hero-dot-0"></div>
+<div class="h-1.5 w-1.5 rounded-full bg-surface-bright/30 transition-all duration-300" id="hero-dot-1"></div>
+<div class="h-1.5 w-1.5 rounded-full bg-surface-bright/30 transition-all duration-300" id="hero-dot-2"></div>
+</div>
+<!-- Quick filter micro-pills with smooth momentum scrolling -->
+<div id="hero-pills-carousel" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 snap-x select-none cursor-grab active:cursor-grabbing scroll-smooth" style="scrollbar-width: none;"><button class="px-3 py-1.5 rounded-full bg-surface-bright text-primary font-label-md text-label-md whitespace-nowrap shadow-sm active:scale-95 transition-transform flex items-center gap-1 shrink-0 snap-start"><span class="material-symbols-outlined text-[15px] text-secondary">wb_sunny</span> Sunscreens</button><button class="px-3 py-1.5 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md whitespace-nowrap active:scale-95 transition-transform flex items-center gap-1 shrink-0 snap-start"><span class="material-symbols-outlined text-[15px] text-primary-fixed">water_drop</span> Serums</button><button class="px-3 py-1.5 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md whitespace-nowrap active:scale-95 transition-transform flex items-center gap-1 shrink-0 snap-start"><span class="material-symbols-outlined text-[15px] text-primary-fixed">spa</span> Toners</button><button class="px-3 py-1.5 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md whitespace-nowrap active:scale-95 transition-transform flex items-center gap-1 shrink-0 snap-start"><span class="material-symbols-outlined text-[15px] text-primary-fixed">favorite</span> Lip Care</button><button class="px-3 py-1.5 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md whitespace-nowrap active:scale-95 transition-transform flex items-center gap-1 shrink-0 snap-start"><span class="material-symbols-outlined text-[15px] text-primary-fixed">clean_hands</span> Cleansers</button></div>
+</div></div>
+</section>
+<!-- New Arrivals (Horizontal Swipe Mosaic with iOS Momentum & Auto-Advancement) -->
+<section class="py-space-md"><div class="px-space-md flex items-center justify-between mb-space-sm">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary">Direct Import</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">New In</h3>
+</div>
+<button class="inline-flex items-center gap-0.5 text-secondary font-label-md text-label-md hover:underline font-semibold">
+    See All (42) <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+<div class="flex gap-space-md overflow-x-auto px-space-md no-scrollbar select-none cursor-grab active:cursor-grabbing" id="new-in-carousel" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth; scroll-snap-type: x mandatory;">
+<!-- Item 1: Laneige Lip Sleeping Mask -->
+<article class="min-w-[210px] w-[210px] shrink-0 flex flex-col rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40" style="scroll-snap-align: start;">
+<div class="relative w-full aspect-square rounded-[20px] bg-surface-container overflow-hidden">
+<img alt="Laneige Lip Sleeping Mask Berry" class="w-full h-full object-cover pointer-events-none" src="https://lh3.googleusercontent.com/aida/AEtjO1Xa6lXDN36h0oeeHol5o5WlwVX7BwAP5c7XhfuWq_4PUJw4hIA7EL_DhokfZw128qkdprixURVOM65g7PgpWJ27-CpWK90Ls9Ld76NILla67RQqok7n4KgU0tfmmllzEGjpsGQJHH2HRk76aL8jbs2kED-LlLeQq-dpvhpVqa0Z8z74hE26MVRnWOUOo_zJ7TzZpsoIKFl34yeSgR0QdsFNH0MDJWxzEMV5CcoSgA0-0wPzvwLsZ6UZgQ">
+<span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-md text-[10px] font-bold shadow-sm backdrop-blur-sm">
+        -18%
+      </span>
+<button aria-label="Add to wishlist" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-bright/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[15px]">favorite</span>
+</button>
+<div class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur-md text-primary font-label-md text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-secondary">verified</span> Seoul Direct
+      </div>
+</div>
+<div class="pt-2.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-bold text-on-surface">4.9</span>
+<span class="opacity-70">(340)</span>
+</div>
+<h4 class="font-label-md text-on-surface font-bold text-[13px] line-clamp-1">Laneige Lip Mask Berry</h4>
+<p class="font-body-md text-[11px] text-on-surface-variant truncate">Berry Complex &amp; Vitamin C</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-outline/30">
+<div>
+<span class="text-[11px] text-on-surface-variant line-through block leading-none">৳ 2,100</span>
+<span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,720</span>
+</div>
+<button aria-label="Add to bag" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 transition-transform shadow-md hover:bg-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Item 2: Arisol Soothing Sun Relief -->
+<article class="min-w-[210px] w-[210px] shrink-0 flex flex-col rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40" style="scroll-snap-align: start;">
+<div class="relative w-full aspect-square rounded-[20px] bg-surface-container overflow-hidden">
+<img alt="Arisol Soothing Sun Relief SPF50" class="w-full h-full object-cover pointer-events-none" src="https://lh3.googleusercontent.com/aida/AEtjO1WQKLQjtYr8-m5wUHURt2VQpNSRGlfExIam11VdZTOBqSOtHcvPQ9A-0q4brQ5CPIMz4g-28hRikYHOa55cc-VDfpBLXj6xvbCHDla3d2RE5_nZOkWoq-e4rWwapT7nGFT1xkZr3x18yEMwtGFf_rgJZeZ6YC73JbM0cQc9n3Kao1muaZxBdiHdle1p1LghEB4xVsCFIFoKnE0h3Fgb7mhGfWdTAFSElirLyAJpfFtTwzYJAu_AM0xFtA">
+<span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-md text-[10px] font-bold shadow-sm backdrop-blur-sm">
+        -15%
+      </span>
+<button aria-label="Add to wishlist" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-bright/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[15px]">favorite</span>
+</button>
+<div class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur-md text-primary font-label-md text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-secondary">eco</span> Calming SPF50+
+      </div>
+</div>
+<div class="pt-2.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-bold text-on-surface">4.8</span>
+<span class="opacity-70">(189)</span>
+</div>
+<h4 class="font-label-md text-on-surface font-bold text-[13px] line-clamp-1">Arisol Soothing Sun Relief</h4>
+<p class="font-body-md text-[11px] text-on-surface-variant truncate">Centella &amp; Green Tea 50ml</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-outline/30">
+<div>
+<span class="text-[11px] text-on-surface-variant line-through block leading-none">৳ 1,950</span>
+<span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,650</span>
+</div>
+<button aria-label="Add to bag" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 transition-transform shadow-md hover:bg-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Item 3: Anua Heartleaf 77% Soothing Toner -->
+<article class="min-w-[210px] w-[210px] shrink-0 flex flex-col rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40" style="scroll-snap-align: start;">
+<div class="relative w-full aspect-square rounded-[20px] bg-surface-container overflow-hidden">
+<img alt="Anua Heartleaf 77 Soothing Toner" class="w-full h-full object-cover pointer-events-none" src="https://lh3.googleusercontent.com/aida/AEtjO1URTpnvMsQcZt1gq8bjXODhaQMqL54m8apcguUR4J7vZA8SLMKw0Uy2sOHoPuUOqelsozjfpzd08Oc-LuGyVAjqxpGmqxBojKkfGSS-EOD1y8NpnJXc3n01u3DxBUH1uNZC1fsSJW5iGo3cEiWm-zbQnggy6ISoKpKykiAYwimAGtlEfw0HA9zmjR6rpjxJ6OucngoQw7SlpSKnX8hkDbicsLFE4dS7sD7MjQKwRuG0zAngLiGxNYB3-g">
+<span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-md text-[10px] font-bold shadow-sm backdrop-blur-sm">
+        -12%
+      </span>
+<button aria-label="Add to wishlist" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-bright/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[15px]">favorite</span>
+</button>
+<div class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur-md text-primary font-label-md text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-secondary">water_drop</span> pH Calming
+      </div>
+</div>
+<div class="pt-2.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-bold text-on-surface">5.0</span>
+<span class="opacity-70">(512)</span>
+</div>
+<h4 class="font-label-md text-on-surface font-bold text-[13px] line-clamp-1">Anua Heartleaf 77% Toner</h4>
+<p class="font-body-md text-[11px] text-on-surface-variant truncate">Acne-safe formula 250ml</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-outline/30">
+<div>
+<span class="text-[11px] text-on-surface-variant line-through block leading-none">৳ 2,400</span>
+<span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 2,100</span>
+</div>
+<button aria-label="Add to bag" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 transition-transform shadow-md hover:bg-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Item 4: Elixir Vital Hydrating Serum -->
+<article class="min-w-[210px] w-[210px] shrink-0 flex flex-col rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40" style="scroll-snap-align: start;">
+<div class="relative w-full aspect-square rounded-[20px] bg-surface-container overflow-hidden">
+<img alt="Elixir Vital Hydrating Serum K-Beauty" class="w-full h-full object-cover pointer-events-none" src="https://lh3.googleusercontent.com/aida/AEtjO1UgNFhQJm0q9z6JgiSsIA6u_17Tvv1xdy5h7jksGdIf09Jbw5TpkDZCmz2_i2ntK9Rt67yVp_KXDYYLcA8CC1JU7FnKyZGZrDLkQByluXWH8YKLFKI-3bsr8AkLM9bWb-uX4b73gFR4Bus3ONNPIOx30E4zr5bHNMf-ysFN15bNqb8r-somwS0G4VlA5KeAEe3xSm_aJBCYMb8i9gekk7ldzgyueIzNB6PD-R48KmquXmRDXjBpfsMO-g">
+<span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-md text-[10px] font-bold shadow-sm backdrop-blur-sm">
+        -20%
+      </span>
+<button aria-label="Add to wishlist" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-bright/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[15px]">favorite</span>
+</button>
+<div class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur-md text-primary font-label-md text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-secondary">auto_awesome</span> Glass Skin
+      </div>
+</div>
+<div class="pt-2.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-bold text-on-surface">4.9</span>
+<span class="opacity-70">(278)</span>
+</div>
+<h4 class="font-label-md text-on-surface font-bold text-[13px] line-clamp-1">Elixir Vital Glow Serum</h4>
+<p class="font-body-md text-[11px] text-on-surface-variant truncate">Rejuvenating K-Beauty 30ml</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-outline/30">
+<div>
+<span class="text-[11px] text-on-surface-variant line-through block leading-none">৳ 2,650</span>
+<span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 2,120</span>
+</div>
+<button aria-label="Add to bag" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 transition-transform shadow-md hover:bg-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Item 5: Round Lab 1025 Dokdo Cleanser -->
+<article class="min-w-[210px] w-[210px] shrink-0 flex flex-col rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40" style="scroll-snap-align: start;">
+<div class="relative w-full aspect-square rounded-[20px] bg-surface-container overflow-hidden">
+<img alt="Round Lab Dokdo Cleanser" class="w-full h-full object-cover pointer-events-none" src="https://lh3.googleusercontent.com/aida/AEtjO1WQKLQjtYr8-m5wUHURt2VQpNSRGlfExIam11VdZTOBqSOtHcvPQ9A-0q4brQ5CPIMz4g-28hRikYHOa55cc-VDfpBLXj6xvbCHDla3d2RE5_nZOkWoq-e4rWwapT7nGFT1xkZr3x18yEMwtGFf_rgJZeZ6YC73JbM0cQc9n3Kao1muaZxBdiHdle1p1LghEB4xVsCFIFoKnE0h3Fgb7mhGfWdTAFSElirLyAJpfFtTwzYJAu_AM0xFtA">
+<span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-md text-[10px] font-bold shadow-sm backdrop-blur-sm">
+        -10%
+      </span>
+<button aria-label="Add to wishlist" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-bright/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[15px]">favorite</span>
+</button>
+<div class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur-md text-primary font-label-md text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-secondary">clean_hands</span> Mild Deep Clean
+      </div>
+</div>
+<div class="pt-2.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-bold text-on-surface">4.9</span>
+<span class="opacity-70">(418)</span>
+</div>
+<h4 class="font-label-md text-on-surface font-bold text-[13px] line-clamp-1">Round Lab Dokdo Cleanser</h4>
+<p class="font-body-md text-[11px] text-on-surface-variant truncate">Mineral Barrier Foam 150ml</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-outline/30">
+<div>
+<span class="text-[11px] text-on-surface-variant line-through block leading-none">৳ 1,850</span>
+<span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,665</span>
+</div>
+<button aria-label="Add to bag" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 transition-transform shadow-md hover:bg-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Item 6: Beauty of Joseon Dynasty Cream -->
+<article class="min-w-[210px] w-[210px] shrink-0 flex flex-col rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40" style="scroll-snap-align: start;">
+<div class="relative w-full aspect-square rounded-[20px] bg-surface-container overflow-hidden">
+<img alt="Beauty of Joseon Dynasty Cream" class="w-full h-full object-cover pointer-events-none" src="https://lh3.googleusercontent.com/aida/AEtjO1Xa6lXDN36h0oeeHol5o5WlwVX7BwAP5c7XhfuWq_4PUJw4hIA7EL_DhokfZw128qkdprixURVOM65g7PgpWJ27-CpWK90Ls9Ld76NILla67RQqok7n4KgU0tfmmllzEGjpsGQJHH2HRk76aL8jbs2kED-LlLeQq-dpvhpVqa0Z8z74hE26MVRnWOUOo_zJ7TzZpsoIKFl34yeSgR0QdsFNH0MDJWxzEMV5CcoSgA0-0wPzvwLsZ6UZgQ">
+<span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-md text-[10px] font-bold shadow-sm backdrop-blur-sm">
+        -15%
+      </span>
+<button aria-label="Add to wishlist" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-bright/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[15px]">favorite</span>
+</button>
+<div class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur-md text-primary font-label-md text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-secondary">spa</span> Hanbang Glow
+      </div>
+</div>
+<div class="pt-2.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-bold text-on-surface">4.8</span>
+<span class="opacity-70">(324)</span>
+</div>
+<h4 class="font-label-md text-on-surface font-bold text-[13px] line-clamp-1">Beauty of Joseon Dynasty Cream</h4>
+<p class="font-body-md text-[11px] text-on-surface-variant truncate">Rice Bran &amp; Ginseng 50ml</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-outline/30">
+<div>
+<span class="text-[11px] text-on-surface-variant line-through block leading-none">৳ 2,350</span>
+<span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,990</span>
+</div>
+<button aria-label="Add to bag" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 transition-transform shadow-md hover:bg-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Item 7: Cosrx Snail 96 Mucin Power Essence -->
+<article class="min-w-[210px] w-[210px] shrink-0 flex flex-col rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40" style="scroll-snap-align: start;">
+<div class="relative w-full aspect-square rounded-[20px] bg-surface-container overflow-hidden">
+<img alt="Cosrx Advanced Snail 96 Mucin Power Essence" class="w-full h-full object-cover pointer-events-none" src="https://lh3.googleusercontent.com/aida/AEtjO1URTpnvMsQcZt1gq8bjXODhaQMqL54m8apcguUR4J7vZA8SLMKw0Uy2sOHoPuUOqelsozjfpzd08Oc-LuGyVAjqxpGmqxBojKkfGSS-EOD1y8NpnJXc3n01u3DxBUH1uNZC1fsSJW5iGo3cEiWm-zbQnggy6ISoKpKykiAYwimAGtlEfw0HA9zmjR6rpjxJ6OucngoQw7SlpSKnX8hkDbicsLFE4dS7sD7MjQKwRuG0zAngLiGxNYB3-g">
+<span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-md text-[10px] font-bold shadow-sm backdrop-blur-sm">
+        -14%
+      </span>
+<button aria-label="Add to wishlist" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-bright/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[15px]">favorite</span>
+</button>
+<div class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur-md text-primary font-label-md text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-secondary">healing</span> Snail Barrier
+      </div>
+</div>
+<div class="pt-2.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<div class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-bold text-on-surface">5.0</span>
+<span class="opacity-70">(890)</span>
+</div>
+<h4 class="font-label-md text-on-surface font-bold text-[13px] line-clamp-1">Cosrx Snail 96 Mucin</h4>
+<p class="font-body-md text-[11px] text-on-surface-variant truncate">Repairing Essence 100ml</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-outline/30">
+<div>
+<span class="text-[11px] text-on-surface-variant line-through block leading-none">৳ 2,200</span>
+<span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,890</span>
+</div>
+<button aria-label="Add to bag" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 transition-transform shadow-md hover:bg-primary-container">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+<!-- New In subtle progress tracking indicator -->
+<div aria-hidden="true" class="flex items-center justify-center pt-3 pb-0.5">
+<div class="w-20 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden relative shadow-inner">
+<div class="h-full w-6 bg-primary rounded-full transition-all duration-300 relative overflow-hidden" id="new-in-progress-indicator" style="transform: translateX(0.741722px);">
+<div class="absolute inset-0 bg-surface-bright/30 rounded-full animate-pulse"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Flash Sale Block (Urgency + Pulse Timer) -->
+<section class="px-space-md py-space-sm"><div class="rounded-[24px] bg-primary text-surface-bright p-space-md shadow-lg overflow-hidden relative">
+<!-- Glow effect -->
+<div class="absolute top-0 right-0 w-44 h-44 rounded-full bg-secondary/30 blur-3xl pointer-events-none"></div>
+<!-- Urgency Header -->
+<div class="relative z-10 flex items-center justify-between pb-3">
+<div>
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error text-on-error font-label-md text-[10px] uppercase tracking-wider mb-1 font-bold shadow-sm">
+<span class="material-symbols-outlined text-[12px]">local_fire_department</span> High Demand
+      </div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-surface-bright font-bold">Flash Deals</h3>
+</div>
+<!-- Live Countdown Timer -->
+<div class="flex items-center gap-1.5 bg-surface-bright/10 backdrop-blur-md px-3 py-1.5 rounded-full text-surface-container-highest font-label-md text-xs border border-surface-bright/15">
+<span class="material-symbols-outlined text-[15px] text-secondary-fixed animate-spin">schedule</span>
+<span class="tracking-widest font-mono font-bold pointer-events-auto" id="countdown">04:16:58</span>
+</div>
+</div>
+<!-- Flash Cards Stack -->
+<div class="relative z-10 flex flex-col gap-2.5 pt-1 flash-deals-scroll" style="max-height: 255px; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: #D4F6A2 rgba(255, 255, 255, 0.1);"><style>.flash-deals-scroll::-webkit-scrollbar { width: 5px; display: block !important; } .flash-deals-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 9999px; } .flash-deals-scroll::-webkit-scrollbar-thumb { background: #D4F6A2; border-radius: 9999px; } .flash-deals-scroll::-webkit-scrollbar-thumb:hover { background: #b8e678; } .flash-deals-scroll { scrollbar-width: thin; scrollbar-color: #D4F6A2 rgba(255, 255, 255, 0.1); }</style><!-- Flash Item 1: Arisol Sun Relief --><div class="bg-surface-bright text-on-surface rounded-[22px] p-3 flex items-center gap-3 shadow-md"><div class="w-20 h-20 rounded-[18px] bg-surface-container overflow-hidden shrink-0 relative"><img alt="Arisol Sunscreen Flash Deal" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1WQKLQjtYr8-m5wUHURt2VQpNSRGlfExIam11VdZTOBqSOtHcvPQ9A-0q4brQ5CPIMz4g-28hRikYHOa55cc-VDfpBLXj6xvbCHDla3d2RE5_nZOkWoq-e4rWwapT7nGFT1xkZr3x18yEMwtGFf_rgJZeZ6YC73JbM0cQc9n3Kao1muaZxBdiHdle1p1LghEB4xVsCFIFoKnE0h3Fgb7mhGfWdTAFSElirLyAJpfFtTwzYJAu_AM0xFtA"><span class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-error text-on-error font-label-md text-[9px] font-bold">-30%</span></div><div class="flex-1 min-w-0"><div class="flex items-center justify-between"><span class="font-label-md text-[11px] text-error font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> Only 3 left!</span><span class="text-xs text-on-surface-variant line-through">৳ 1,950</span></div><h4 class="font-label-md text-on-surface truncate font-bold text-xs mt-0.5">Arisol Soothing Sun Relief</h4><div class="w-full bg-surface-container-high h-1.5 rounded-full my-1.5 overflow-hidden"><div class="bg-secondary h-full rounded-full w-[86%]"></div></div><div class="flex items-center justify-between"><span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,365</span><button class="px-3.5 py-1 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold active:scale-95 transition-transform shadow-sm hover:bg-primary-container">Claim Offer</button></div></div></div><!-- Flash Item 2: Elixir Vital Glass Skin Serum --><div class="bg-surface-bright text-on-surface rounded-[22px] p-3 flex items-center gap-3 shadow-md"><div class="w-20 h-20 rounded-[18px] bg-surface-container overflow-hidden shrink-0 relative"><img alt="Elixir Vital Serum Deal" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1Xa6lXDN36h0oeeHol5o5WlwVX7BwAP5c7XhfuWq_4PUJw4hIA7EL_DhokfZw128qkdprixURVOM65g7PgpWJ27-CpWK90Ls9Ld76NILla67RQqok7n4KgU0tfmmllzEGjpsGQJHH2HRk76aL8jbs2kED-LlLeQq-dpvhpVqa0Z8z74hE26MVRnWOUOo_zJ7TzZpsoIKFl34yeSgR0QdsFNH0MDJWxzEMV5CcoSgA0-0wPzvwLsZ6UZgQ"><span class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-error text-on-error font-label-md text-[9px] font-bold">-28%</span></div><div class="flex-1 min-w-0"><div class="flex items-center justify-between"><span class="font-label-md text-[11px] text-error font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> 5 remaining</span><span class="text-xs text-on-surface-variant line-through">৳ 2,650</span></div><h4 class="font-label-md text-on-surface truncate font-bold text-xs mt-0.5">Elixir Vital Glass Skin Serum</h4><div class="w-full bg-surface-container-high h-1.5 rounded-full my-1.5 overflow-hidden"><div class="bg-secondary h-full rounded-full w-[72%]"></div></div><div class="flex items-center justify-between"><span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,890</span><button class="px-3.5 py-1 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold active:scale-95 transition-transform shadow-sm hover:bg-primary-container">Claim Offer</button></div></div></div><!-- Flash Item 3: Anua Heartleaf 77% Soothing Toner --><div class="bg-surface-bright text-on-surface rounded-[22px] p-3 flex items-center gap-3 shadow-md"><div class="w-20 h-20 rounded-[18px] bg-surface-container overflow-hidden shrink-0 relative"><img alt="Anua Toner Flash Deal" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1URTpnvMsQcZt1gq8bjXODhaQMqL54m8apcguUR4J7vZA8SLMKw0Uy2sOHoPuUOqelsozjfpzd08Oc-LuGyVAjqxpGmqxBojKkfGSS-EOD1y8NpnJXc3n01u3DxBUH1uNZC1fsSJW5iGo3cEiWm-zbQnggy6ISoKpKykiAYwimAGtlEfw0HA9zmjR6rpjxJ6OucngoQw7SlpSKnX8hkDbicsLFE4dS7sD7MjQKwRuG0zAngLiGxNYB3-g"><span class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-error text-on-error font-label-md text-[9px] font-bold">-25%</span></div><div class="flex-1 min-w-0"><div class="flex items-center justify-between"><span class="font-label-md text-[11px] text-error font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> Only 2 left!</span><span class="text-xs text-on-surface-variant line-through">৳ 2,400</span></div><h4 class="font-label-md text-on-surface truncate font-bold text-xs mt-0.5">Anua Heartleaf 77% Toner</h4><div class="w-full bg-surface-container-high h-1.5 rounded-full my-1.5 overflow-hidden"><div class="bg-secondary h-full rounded-full w-[91%]"></div></div><div class="flex items-center justify-between"><span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,800</span><button class="px-3.5 py-1 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold active:scale-95 transition-transform shadow-sm hover:bg-primary-container">Claim Offer</button></div></div></div><!-- Flash Item 4: Laneige Lip Sleeping Mask --><div class="bg-surface-bright text-on-surface rounded-[22px] p-3 flex items-center gap-3 shadow-md"><div class="w-20 h-20 rounded-[18px] bg-surface-container overflow-hidden shrink-0 relative"><img alt="Laneige Lip Mask Flash Deal" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1Xa6lXDN36h0oeeHol5o5WlwVX7BwAP5c7XhfuWq_4PUJw4hIA7EL_DhokfZw128qkdprixURVOM65g7PgpWJ27-CpWK90Ls9Ld76NILla67RQqok7n4KgU0tfmmllzEGjpsGQJHH2HRk76aL8jbs2kED-LlLeQq-dpvhpVqa0Z8z74hE26MVRnWOUOo_zJ7TzZpsoIKFl34yeSgR0QdsFNH0MDJWxzEMV5CcoSgA0-0wPzvwLsZ6UZgQ"><span class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-error text-on-error font-label-md text-[9px] font-bold">-20%</span></div><div class="flex-1 min-w-0"><div class="flex items-center justify-between"><span class="font-label-md text-[11px] text-error font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> 4 remaining</span><span class="text-xs text-on-surface-variant line-through">৳ 2,100</span></div><h4 class="font-label-md text-on-surface truncate font-bold text-xs mt-0.5">Laneige Lip Sleeping Mask</h4><div class="w-full bg-surface-container-high h-1.5 rounded-full my-1.5 overflow-hidden"><div class="bg-secondary h-full rounded-full w-[80%]"></div></div><div class="flex items-center justify-between"><span class="font-headline-lg-mobile text-[16px] text-primary font-bold">৳ 1,680</span><button class="px-3.5 py-1 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold active:scale-95 transition-transform shadow-sm hover:bg-primary-container">Claim Offer</button></div></div></div></div>
+</div></section>
+<!-- Picked For You (Routine Switcher) -->
+<section class="py-space-md"><div class="px-space-md mb-space-sm">
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary font-bold">Personalized</span>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">For You</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-xs mt-0.5">
+    Targeted formulations curated for tropical moisture &amp; UV shield.
+  </p>
+<!-- Routine Filter Segment -->
+<div class="flex items-center gap-2 mt-3 overflow-x-auto no-scrollbar">
+<button class="routine-tab px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all shadow-sm" data-target="glass-skin">
+      ✨ Glass Skin
+    </button>
+<button class="routine-tab px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all" data-target="acne-calm">
+      🌿 Acne &amp; Calming
+    </button>
+<button class="routine-tab px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all" data-target="sun-shield">
+      ☀️ Sun Protection
+    </button>
+</div>
+</div>
+<!-- Curated Grid of 2 Columns -->
+<div class="flex overflow-x-auto no-scrollbar scroll-smooth gap-3 px-space-md pb-2 snap-x snap-mandatory" style="scroll-snap-type: x mandatory; overscroll-behavior-x: contain;">
+<!-- Routine Card 1 -->
+<div class="min-w-[170px] w-[170px] shrink-0 snap-start rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between">
+<div>
+<div class="relative w-full aspect-square rounded-[18px] bg-surface-container overflow-hidden mb-2.5">
+<img alt="Anua 77 Toner Routine" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1URTpnvMsQcZt1gq8bjXODhaQMqL54m8apcguUR4J7vZA8SLMKw0Uy2sOHoPuUOqelsozjfpzd08Oc-LuGyVAjqxpGmqxBojKkfGSS-EOD1y8NpnJXc3n01u3DxBUH1uNZC1fsSJW5iGo3cEiWm-zbQnggy6ISoKpKykiAYwimAGtlEfw0HA9zmjR6rpjxJ6OucngoQw7SlpSKnX8hkDbicsLFE4dS7sD7MjQKwRuG0zAngLiGxNYB3-g">
+<span class="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur text-primary font-label-md text-[9px] font-bold shadow-sm">
+          Step 2: Balance
+        </span>
+</div>
+<span class="inline-block px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-[10px] mb-1 font-semibold">
+        Centella + Heartleaf
+      </span>
+<h4 class="font-label-md text-on-surface font-bold text-xs line-clamp-2">Anua Soothing Toner</h4>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-outline/30 mt-2">
+<span class="font-headline-lg-mobile text-[15px] text-primary font-bold">৳ 2,100</span>
+<button aria-label="Add to cart" class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+</button>
+</div>
+</div>
+<!-- Routine Card 2 -->
+<div class="min-w-[170px] w-[170px] shrink-0 snap-start rounded-[24px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between">
+<div>
+<div class="relative w-full aspect-square rounded-[18px] bg-surface-container overflow-hidden mb-2.5">
+<img alt="Elixir Hydrating Serum Routine" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1Xa6lXDN36h0oeeHol5o5WlwVX7BwAP5c7XhfuWq_4PUJw4hIA7EL_DhokfZw128qkdprixURVOM65g7PgpWJ27-CpWK90Ls9Ld76NILla67RQqok7n4KgU0tfmmllzEGjpsGQJHH2HRk76aL8jbs2kED-LlLeQq-dpvhpVqa0Z8z74hE26MVRnWOUOo_zJ7TzZpsoIKFl34yeSgR0QdsFNH0MDJWxzEMV5CcoSgA0-0wPzvwLsZ6UZgQ">
+<span class="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-surface-bright/95 backdrop-blur text-primary font-label-md text-[9px] font-bold shadow-sm">
+          Step 3: Glow
+        </span>
+</div>
+<span class="inline-block px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-[10px] mb-1 font-semibold">
+        Triple Hyaluronic
+      </span>
+<h4 class="font-label-md text-on-surface font-bold text-xs line-clamp-2">Elixir Vital Serum</h4>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-outline/30 mt-2">
+<span class="font-headline-lg-mobile text-[15px] text-primary font-bold">৳ 2,120</span>
+<button aria-label="Add to cart" class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div></section>
+<!-- Customer Holy Grails Spotlight (Reviews + Trust) -->
+<section class="px-space-md py-space-sm"><div class="rounded-[24px] bg-surface-container-low p-space-md shadow-sm border border-outline/40 overflow-hidden">
+<div class="flex items-center justify-between mb-3">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary font-bold">Real Dhaka Reviews</span>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">Reviews</h3>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-xs font-bold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span> 4.92 / 5.0
+    </div>
+</div>
+</div>
+<!-- Auto Smooth Scrolling & iPhone-Style Gesture Speed Carousel -->
+<div class="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth cursor-grab active:cursor-grabbing select-none -mx-1 px-1 py-1" id="reviews-carousel" style="-webkit-overflow-scrolling: touch;">
+<!-- Testimonial 1: Nusrat M. (Gulshan-2) -->
+<div class="min-w-[280px] w-[280px] shrink-0 rounded-[22px] bg-surface-bright p-3.5 shadow-sm border border-outline/30 flex flex-col justify-between gap-2.5 transition-all">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-xs shadow-sm">
+          NM
+        </div>
+<div>
+<p class="font-label-md text-on-surface font-bold text-xs leading-none">Nusrat M., Gulshan-2</p>
+<span class="text-[10px] text-secondary flex items-center gap-0.5 mt-0.5 font-semibold">
+<span class="material-symbols-outlined text-[12px]">verified</span> Verified Buyer • 2 days ago
+          </span>
+</div>
+</div>
+<div class="flex text-secondary text-[14px]">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+</div>
+</div>
+<p class="font-body-md text-xs text-on-surface-variant italic leading-relaxed">
+      "The Anua toner and Laneige mask arrived in under 24 hours in Dhaka! Authenticity QR verified directly with Korea. My skin barrier has never been this calm in summer."
+    </p>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline/30 mt-auto">
+<img alt="Laneige purchased" class="w-8 h-8 rounded-lg object-cover bg-surface-container shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1Xa6lXDN36h0oeeHol5o5WlwVX7BwAP5c7XhfuWq_4PUJw4hIA7EL_DhokfZw128qkdprixURVOM65g7PgpWJ27-CpWK90Ls9Ld76NILla67RQqok7n4KgU0tfmmllzEGjpsGQJHH2HRk76aL8jbs2kED-LlLeQq-dpvhpVqa0Z8z74hE26MVRnWOUOo_zJ7TzZpsoIKFl34yeSgR0QdsFNH0MDJWxzEMV5CcoSgA0-0wPzvwLsZ6UZgQ">
+<div class="min-w-0 flex-1">
+<span class="font-label-md text-[11px] text-on-surface truncate block font-semibold">Laneige Lip Mask (20g)</span>
+<span class="text-[10px] text-secondary font-medium">Verified Batch #KR84</span>
+</div>
+</div>
+</div>
+<!-- Testimonial 2: Farhan R. (Banani) -->
+<div class="min-w-[280px] w-[280px] shrink-0 rounded-[22px] bg-surface-bright p-3.5 shadow-sm border border-outline/30 flex flex-col justify-between gap-2.5 transition-all">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-secondary text-on-primary flex items-center justify-center font-bold text-xs shadow-sm">
+          FR
+        </div>
+<div>
+<p class="font-label-md text-on-surface font-bold text-xs leading-none">Farhan R., Banani</p>
+<span class="text-[10px] text-secondary flex items-center gap-0.5 mt-0.5 font-semibold">
+<span class="material-symbols-outlined text-[12px]">verified</span> Verified Buyer • 4 days ago
+          </span>
+</div>
+</div>
+<div class="flex text-secondary text-[14px]">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+</div>
+</div>
+<p class="font-body-md text-xs text-on-surface-variant italic leading-relaxed">
+      "Zero white cast in Dhaka's intense humidity. The Arisol Sun Relief feels like weightless water on skin. Express delivery dispatched spotless with cool packaging!"
+    </p>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline/30 mt-auto">
+<img alt="Arisol Sunscreen purchased" class="w-8 h-8 rounded-lg object-cover bg-surface-container shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1WQKLQjtYr8-m5wUHURt2VQpNSRGlfExIam11VdZTOBqSOtHcvPQ9A-0q4brQ5CPIMz4g-28hRikYHOa55cc-VDfpBLXj6xvbCHDla3d2RE5_nZOkWoq-e4rWwapT7nGFT1xkZr3x18yEMwtGFf_rgJZeZ6YC73JbM0cQc9n3Kao1muaZxBdiHdle1p1LghEB4xVsCFIFoKnE0h3Fgb7mhGfWdTAFSElirLyAJpfFtTwzYJAu_AM0xFtA">
+<div class="min-w-0 flex-1">
+<span class="font-label-md text-[11px] text-on-surface truncate block font-semibold">Arisol Sun Relief SPF50</span>
+<span class="text-[10px] text-secondary font-medium">Verified Batch #AR32</span>
+</div>
+</div>
+</div>
+<!-- Testimonial 3: Samira K. (Dhanmondi) -->
+<div class="min-w-[280px] w-[280px] shrink-0 rounded-[22px] bg-surface-bright p-3.5 shadow-sm border border-outline/30 flex flex-col justify-between gap-2.5 transition-all">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-xs shadow-sm">
+          SK
+        </div>
+<div>
+<p class="font-label-md text-on-surface font-bold text-xs leading-none">Samira K., Dhanmondi</p>
+<span class="text-[10px] text-secondary flex items-center gap-0.5 mt-0.5 font-semibold">
+<span class="material-symbols-outlined text-[12px]">verified</span> Verified Buyer • 1 week ago
+          </span>
+</div>
+</div>
+<div class="flex text-secondary text-[14px]">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+</div>
+</div>
+<p class="font-body-md text-xs text-on-surface-variant italic leading-relaxed">
+      "Reduces active redness within two days. The Heartleaf formula cleared my fungal breakout so fast. Truly Korean direct batches, huge difference from local copies."
+    </p>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline/30 mt-auto">
+<img alt="Anua Toner purchased" class="w-8 h-8 rounded-lg object-cover bg-surface-container shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1URTpnvMsQcZt1gq8bjXODhaQMqL54m8apcguUR4J7vZA8SLMKw0Uy2sOHoPuUOqelsozjfpzd08Oc-LuGyVAjqxpGmqxBojKkfGSS-EOD1y8NpnJXc3n01u3DxBUH1uNZC1fsSJW5iGo3cEiWm-zbQnggy6ISoKpKykiAYwimAGtlEfw0HA9zmjR6rpjxJ6OucngoQw7SlpSKnX8hkDbicsLFE4dS7sD7MjQKwRuG0zAngLiGxNYB3-g">
+<div class="min-w-0 flex-1">
+<span class="font-label-md text-[11px] text-on-surface truncate block font-semibold">Anua Heartleaf 77% Toner</span>
+<span class="text-[10px] text-secondary font-medium">Verified Batch #AN09</span>
+</div>
+</div>
+</div>
+<!-- Testimonial 4: Tanzila H. (Uttara Sector 4) -->
+<div class="min-w-[280px] w-[280px] shrink-0 rounded-[22px] bg-surface-bright p-3.5 shadow-sm border border-outline/30 flex flex-col justify-between gap-2.5 transition-all">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-secondary text-on-primary flex items-center justify-center font-bold text-xs shadow-sm">
+          TH
+        </div>
+<div>
+<p class="font-label-md text-on-surface font-bold text-xs leading-none">Tanzila H., Uttara-4</p>
+<span class="text-[10px] text-secondary flex items-center gap-0.5 mt-0.5 font-semibold">
+<span class="material-symbols-outlined text-[12px]">verified</span> Verified Buyer • 5 days ago
+          </span>
+</div>
+</div>
+<div class="flex text-secondary text-[14px]">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+</div>
+</div>
+<p class="font-body-md text-xs text-on-surface-variant italic leading-relaxed">
+      "The dewy glass glow from Elixir serum lasts through AC room dryness all day long. Customer care answered in minutes on WhatsApp. 10/10 service!"
+    </p>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline/30 mt-auto">
+<img alt="Elixir Serum purchased" class="w-8 h-8 rounded-lg object-cover bg-surface-container shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UgNFhQJm0q9z6JgiSsIA6u_17Tvv1xdy5h7jksGdIf09Jbw5TpkDZCmz2_i2ntK9Rt67yVp_KXDYYLcA8CC1JU7FnKyZGZrDLkQByluXWH8YKLFKI-3bsr8AkLM9bWb-uX4b73gFR4Bus3ONNPIOx30E4zr5bHNMf-ysFN15bNqb8r-somwS0G4VlA5KeAEe3xSm_aJBCYMb8i9gekk7ldzgyueIzNB6PD-R48KmquXmRDXjBpfsMO-g">
+<div class="min-w-0 flex-1">
+<span class="font-label-md text-[11px] text-on-surface truncate block font-semibold">Elixir Vital Glow Serum</span>
+<span class="text-[10px] text-secondary font-medium">Verified Batch #EL51</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Dynamic Scroll Dots Indicator -->
+<div aria-hidden="true" class="flex items-center justify-center pt-3 pb-0.5"><div class="w-20 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden relative shadow-inner"><div class="h-full w-7 bg-primary rounded-full transition-all duration-300 relative overflow-hidden"><div class="absolute inset-0 bg-surface-bright/30 rounded-full animate-pulse"></div></div></div></div>
+</div></section>
+<!-- Authentic Brand Partners Grid -->
+<section class="px-space-md py-space-md"><div class="flex items-center justify-between mb-space-sm">
+<div>
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary font-bold">Direct Partners</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold tracking-tight">Official Brands</h3>
+</div>
+<span class="text-[11px] font-semibold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full">6 Partners</span>
+</div>
+<!-- Sleek Modern 2-Column Brand Grid -->
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-space-md -mx-space-md snap-x snap-mandatory">
+<!-- Brand 1: COSRX -->
+<div class="shrink-0 min-w-[135px] w-[135px] snap-start rounded-[18px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between active:scale-95 transition-all cursor-pointer">
+<div class="flex items-center justify-between mb-1.5">
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-[9px] font-bold">
+<span class="material-symbols-outlined text-[10px]">verified</span> Seoul
+      </span>
+</div>
+<div class="my-0.5">
+<h4 class="font-headline-lg-mobile text-[13px] font-bold tracking-tight text-primary truncate">COSRX</h4>
+<p class="font-body-md text-[10px] text-on-surface-variant truncate">Snail &amp; BHA</p>
+</div>
+<div class="pt-1.5 mt-1 border-t border-outline/30 flex items-center justify-between text-[10px] text-secondary font-semibold">
+<span class="text-[9px] text-secondary font-medium truncate">Genuine</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant shrink-0">arrow_forward</span>
+</div>
+</div>
+<!-- Brand 2: ANUA -->
+<div class="shrink-0 min-w-[135px] w-[135px] snap-start rounded-[18px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between active:scale-95 transition-all cursor-pointer">
+<div class="flex items-center justify-between mb-1.5">
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-[9px] font-bold">
+<span class="material-symbols-outlined text-[10px]">verified</span> Seoul
+      </span>
+</div>
+<div class="my-0.5">
+<h4 class="font-headline-lg-mobile text-[13px] font-bold tracking-tight text-primary truncate">ANUA</h4>
+<p class="font-body-md text-[10px] text-on-surface-variant truncate">Heartleaf</p>
+</div>
+<div class="pt-1.5 mt-1 border-t border-outline/30 flex items-center justify-between text-[10px] text-secondary font-semibold">
+<span class="text-[9px] text-secondary font-medium truncate">Genuine</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant shrink-0">arrow_forward</span>
+</div>
+</div>
+<!-- Brand 3: LANEIGE -->
+<div class="shrink-0 min-w-[135px] w-[135px] snap-start rounded-[18px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between active:scale-95 transition-all cursor-pointer">
+<div class="flex items-center justify-between mb-1.5">
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-[9px] font-bold">
+<span class="material-symbols-outlined text-[10px]">verified</span> Seoul
+      </span>
+</div>
+<div class="my-0.5">
+<h4 class="font-headline-lg-mobile text-[13px] font-bold tracking-tight text-primary truncate">LANEIGE</h4>
+<p class="font-body-md text-[10px] text-on-surface-variant truncate">Water Science</p>
+</div>
+<div class="pt-1.5 mt-1 border-t border-outline/30 flex items-center justify-between text-[10px] text-secondary font-semibold">
+<span class="text-[9px] text-secondary font-medium truncate">Genuine</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant shrink-0">arrow_forward</span>
+</div>
+</div>
+<!-- Brand 4: JOSEON -->
+<div class="shrink-0 min-w-[135px] w-[135px] snap-start rounded-[18px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between active:scale-95 transition-all cursor-pointer">
+<div class="flex items-center justify-between mb-1.5">
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-[9px] font-bold">
+<span class="material-symbols-outlined text-[10px]">verified</span> Seoul
+      </span>
+</div>
+<div class="my-0.5">
+<h4 class="font-headline-lg-mobile text-[13px] font-bold tracking-tight text-primary truncate">JOSEON</h4>
+<p class="font-body-md text-[10px] text-on-surface-variant truncate">Hanbang Care</p>
+</div>
+<div class="pt-1.5 mt-1 border-t border-outline/30 flex items-center justify-between text-[10px] text-secondary font-semibold">
+<span class="text-[9px] text-secondary font-medium truncate">Genuine</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant shrink-0">arrow_forward</span>
+</div>
+</div>
+<!-- Brand 5: ROUND LAB -->
+<div class="shrink-0 min-w-[135px] w-[135px] snap-start rounded-[18px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between active:scale-95 transition-all cursor-pointer">
+<div class="flex items-center justify-between mb-1.5">
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-[9px] font-bold">
+<span class="material-symbols-outlined text-[10px]">verified</span> Gangwon
+      </span>
+</div>
+<div class="my-0.5">
+<h4 class="font-headline-lg-mobile text-[13px] font-bold tracking-tight text-primary truncate">ROUND LAB</h4>
+<p class="font-body-md text-[10px] text-on-surface-variant truncate">Dokdo 1025</p>
+</div>
+<div class="pt-1.5 mt-1 border-t border-outline/30 flex items-center justify-between text-[10px] text-secondary font-semibold">
+<span class="text-[9px] text-secondary font-medium truncate">Genuine</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant shrink-0">arrow_forward</span>
+</div>
+</div>
+<!-- Brand 6: SOME BY MI -->
+<div class="shrink-0 min-w-[135px] w-[135px] snap-start rounded-[18px] bg-surface-bright p-3 shadow-sm border border-outline/40 flex flex-col justify-between active:scale-95 transition-all cursor-pointer">
+<div class="flex items-center justify-between mb-1.5">
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-[9px] font-bold">
+<span class="material-symbols-outlined text-[10px]">verified</span> Seoul
+      </span>
+</div>
+<div class="my-0.5">
+<h4 class="font-headline-lg-mobile text-[13px] font-bold tracking-tight text-primary truncate">SOME BY MI</h4>
+<p class="font-body-md text-[10px] text-on-surface-variant truncate">Miracle Clear</p>
+</div>
+<div class="pt-1.5 mt-1 border-t border-outline/30 flex items-center justify-between text-[10px] text-secondary font-semibold">
+<span class="text-[9px] text-secondary font-medium truncate">Genuine</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant shrink-0">arrow_forward</span>
+</div>
+</div>
+</div><div aria-hidden="true" class="flex items-center justify-center pt-2 pb-0.5"><div class="w-20 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden relative shadow-inner"><div class="h-full w-7 bg-primary rounded-full transition-all duration-300 relative overflow-hidden" id="brands-progress-indicator"><div class="absolute inset-0 bg-surface-bright/30 rounded-full animate-pulse"></div></div></div></div>
+<!-- Ultra-Modern Holographic Customs Verification Card -->
+<div class="mt-3.5 rounded-[20px] bg-secondary-container text-on-secondary-container p-3 flex items-center justify-between border border-outline/30 shadow-sm">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-on-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-1.5">
+<h4 class="font-label-md text-[12px] font-bold tracking-tight">Holographic QR Certified</h4>
+</div>
+<p class="font-body-md text-[10px] opacity-90 truncate">
+        Direct Seoul Customs clearance on every parcel
+      </p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-secondary shrink-0 ml-1">qr_code_2</span>
+</div></section>
+<!-- Interactive script for Countdown, Routine switcher & iOS Momentum Product & Reviews Carousels -->
+<script>
+    (function() {
+      // Countdown micro-interaction
+      let hours = 4, minutes = 18, seconds = 32;
+      const el = document.getElementById('countdown');
+      if (el) {
+        setInterval(() => {
+          seconds--;
+          if (seconds < 0) {
+            seconds = 59;
+            minutes--;
+            if (minutes < 0) {
+              minutes = 59;
+              hours--;
+              if (hours < 0) hours = 24;
+            }
+          }
+          const pad = (n) => String(n).padStart(2, '0');
+          el.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        }, 1000);
+      }
+
+      // Routine Switcher tabs
+      const tabs = document.querySelectorAll('.routine-tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => {
+            t.classList.remove('bg-primary', 'text-on-primary');
+            t.classList.add('bg-surface-container-high', 'text-on-surface');
+          });
+          tab.classList.remove('bg-surface-container-high', 'text-on-surface');
+          tab.classList.add('bg-primary', 'text-on-primary');
+        });
+      });
+
+      // New In Carousel: iOS momentum scrolling, auto-scroll and subtle progress indicator
+      const newInCarousel = document.getElementById('new-in-carousel');
+      const newInIndicator = document.getElementById('new-in-progress-indicator');
+      if (newInCarousel) {
+        let isDown = false;
+        let startX = 0;
+        let lastX = 0;
+        let lastTime = 0;
+        let velocity = 0;
+        let momentumRaf = null;
+        let isPaused = false;
+        let resumeTimer = null;
+
+        function updateNewInIndicator() {
+          if (!newInIndicator) return;
+          const maxScroll = newInCarousel.scrollWidth - newInCarousel.clientWidth;
+          if (maxScroll > 0) {
+            const ratio = Math.min(Math.max(newInCarousel.scrollLeft / maxScroll, 0), 1);
+            const trackWidth = 80; // w-20 = 80px
+            const thumbWidth = 24; // w-6 = 24px
+            const maxTranslate = trackWidth - thumbWidth;
+            newInIndicator.style.transform = `translateX(${ratio * maxTranslate}px)`;
+          }
+        }
+
+        // Smooth continuous left-to-right auto-scroll mechanism via requestAnimationFrame
+        const autoScrollSpeed = 0.5;
+        function autoScrollNewIn() {
+          if (!isDown && !isPaused) {
+            newInCarousel.scrollLeft += autoScrollSpeed;
+            if (newInCarousel.scrollLeft >= newInCarousel.scrollWidth - newInCarousel.clientWidth - 1) {
+              newInCarousel.scrollLeft = 0;
+            }
+            updateNewInIndicator();
+          }
+          requestAnimationFrame(autoScrollNewIn);
+        }
+        requestAnimationFrame(autoScrollNewIn);
+
+        // Pause on mouse hover
+        newInCarousel.addEventListener('mouseenter', () => { isPaused = true; });
+        newInCarousel.addEventListener('mouseleave', () => {
+          if (!isDown) isPaused = false;
+        });
+
+        // Touch & pointer handling with iOS gesture physics
+        function handleStart(pageX) {
+          isDown = true;
+          isPaused = true;
+          cancelAnimationFrame(momentumRaf);
+          clearTimeout(resumeTimer);
+          startX = pageX;
+          lastX = pageX;
+          lastTime = Date.now();
+          velocity = 0;
+        }
+
+        function handleMove(pageX) {
+          if (!isDown) return;
+          const currentX = pageX;
+          const currentTime = Date.now();
+          const deltaX = currentX - lastX;
+          const deltaTime = Math.max(currentTime - lastTime, 1);
+          velocity = deltaX / deltaTime;
+          newInCarousel.scrollLeft -= deltaX;
+          lastX = currentX;
+          lastTime = currentTime;
+          updateNewInIndicator();
+        }
+
+        function handleEnd() {
+          if (!isDown) return;
+          isDown = false;
+          let currentVelocity = velocity * 14;
+          const friction = 0.94;
+
+          function applyMomentum() {
+            if (Math.abs(currentVelocity) > 0.35 && !isDown) {
+              newInCarousel.scrollLeft -= currentVelocity;
+              currentVelocity *= friction;
+              updateNewInIndicator();
+              momentumRaf = requestAnimationFrame(applyMomentum);
+            } else {
+              resumeTimer = setTimeout(() => { isPaused = false; }, 1800);
+            }
+          }
+
+          if (Math.abs(currentVelocity) > 0.8) {
+            momentumRaf = requestAnimationFrame(applyMomentum);
+          } else {
+            resumeTimer = setTimeout(() => { isPaused = false; }, 1800);
+          }
+        }
+
+        newInCarousel.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          handleStart(e.pageX);
+        });
+        window.addEventListener('mousemove', (e) => {
+          if (isDown) {
+            e.preventDefault();
+            handleMove(e.pageX);
+          }
+        });
+        window.addEventListener('mouseup', () => {
+          if (isDown) handleEnd();
+        });
+
+        newInCarousel.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) handleStart(e.touches[0].pageX);
+        }, { passive: true });
+        newInCarousel.addEventListener('touchmove', (e) => {
+          if (isDown && e.touches.length === 1) handleMove(e.touches[0].pageX);
+        }, { passive: true });
+        newInCarousel.addEventListener('touchend', () => {
+          handleEnd();
+        }, { passive: true });
+
+        newInCarousel.addEventListener('scroll', updateNewInIndicator, { passive: true });
+      }
+
+      // Reviews Carousel: Auto Smooth Lazy Scroll + iPhone-Style Speed/Momentum Drag Physics
+      const carousel = document.getElementById('reviews-carousel');
+      if (carousel) {
+        let isDown = false;
+        let startX = 0;
+        let scrollStart = 0;
+        let lastX = 0;
+        let lastTime = 0;
+        let velocity = 0;
+        let momentumRafId = null;
+        let autoScrollTimer = null;
+        let isPaused = false;
+
+        // Auto lazy smooth scroll from left to right (advancing continuously)
+        const autoScrollSpeed = 0.55; // subtle smooth lazy speed
+        function autoScrollLoop() {
+          if (!isDown && !isPaused) {
+            carousel.scrollLeft += autoScrollSpeed;
+            // Loop back smoothly if reached the end
+            if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth - 1) {
+              carousel.scrollLeft = 0;
+            }
+            updateDots();
+          }
+          requestAnimationFrame(autoScrollLoop);
+        }
+        requestAnimationFrame(autoScrollLoop);
+
+        // Dot indicators update based on scroll position
+        function updateDots() {
+          const cardWidth = 280 + 12; // card min-width + gap
+          const activeIndex = Math.round(carousel.scrollLeft / cardWidth) % 4;
+          for (let i = 0; i < 4; i++) {
+            const dot = document.getElementById(`review-indicator-${i}`);
+            if (dot) {
+              if (i === activeIndex) {
+                dot.className = 'h-1.5 w-5 rounded-full bg-secondary transition-all';
+              } else {
+                dot.className = 'h-1.5 w-1.5 rounded-full bg-outline-variant transition-all';
+              }
+            }
+          }
+        }
+
+        // Pause auto-scroll on hover or touch
+        carousel.addEventListener('mouseenter', () => { isPaused = true; });
+        carousel.addEventListener('mouseleave', () => {
+          if (!isDown) isPaused = false;
+        });
+
+        // iPhone-style Touch & Pointer Drag Physics (hand speed flick & inertia)
+        function handleStart(pageX) {
+          isDown = true;
+          isPaused = true;
+          cancelAnimationFrame(momentumRafId);
+          startX = pageX;
+          scrollStart = carousel.scrollLeft;
+          lastX = pageX;
+          lastTime = Date.now();
+          velocity = 0;
+        }
+
+        function handleMove(pageX) {
+          if (!isDown) return;
+          const currentX = pageX;
+          const currentTime = Date.now();
+          const deltaX = currentX - lastX;
+          const deltaTime = Math.max(currentTime - lastTime, 1);
+
+          // Calculate hand speed velocity (px/ms)
+          velocity = deltaX / deltaTime;
+
+          carousel.scrollLeft -= deltaX;
+
+          lastX = currentX;
+          lastTime = currentTime;
+          updateDots();
+        }
+
+        function handleEnd() {
+          if (!isDown) return;
+          isDown = false;
+
+          // Apply iPhone iOS-style momentum decay
+          let currentVelocity = velocity * 15; // Amplify flick velocity
+          const friction = 0.94; // Apple iOS kinetic scroll decay coefficient
+
+          function applyMomentum() {
+            if (Math.abs(currentVelocity) > 0.4 && !isDown) {
+              carousel.scrollLeft -= currentVelocity;
+              currentVelocity *= friction;
+              updateDots();
+              momentumRafId = requestAnimationFrame(applyMomentum);
+            } else {
+              isPaused = false;
+            }
+          }
+
+          if (Math.abs(currentVelocity) > 1) {
+            momentumRafId = requestAnimationFrame(applyMomentum);
+          } else {
+            isPaused = false;
+          }
+        }
+
+        // Pointer Events (Mouse + Stylus)
+        carousel.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          handleStart(e.pageX);
+        });
+        window.addEventListener('mousemove', (e) => {
+          if (isDown) {
+            e.preventDefault();
+            handleMove(e.pageX);
+          }
+        });
+        window.addEventListener('mouseup', () => {
+          if (isDown) handleEnd();
+        });
+
+        // Touch Events (Mobile iOS / iPhone natural gestures)
+        carousel.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            handleStart(e.touches[0].pageX);
+          }
+        }, { passive: true });
+
+        carousel.addEventListener('touchmove', (e) => {
+          if (isDown && e.touches.length === 1) {
+            handleMove(e.touches[0].pageX);
+          }
+        }, { passive: true });
+
+        carousel.addEventListener('touchend', () => {
+          handleEnd();
+        }, { passive: true });
+
+        carousel.addEventListener('scroll', updateDots, { passive: true });
+      }
+    })();
+  </script>
+</div><script>(function(){const el=document.getElementById('hero-pills-carousel');if(!el)return;let isDown=false;let startX=0;let lastX=0;let lastTime=0;let velocity=0;let momentumRaf=null;function handleStart(pageX){isDown=true;cancelAnimationFrame(momentumRaf);startX=pageX;lastX=pageX;lastTime=Date.now();velocity=0;}function handleMove(pageX){if(!isDown)return;const currentX=pageX;const now=Date.now();const delta=currentX-lastX;const dt=Math.max(now-lastTime,1);velocity=delta/dt;el.scrollLeft-=delta;lastX=currentX;lastTime=now;}function handleEnd(){if(!isDown)return;isDown=false;let currVel=velocity*14;const friction=0.92;function step(){if(Math.abs(currVel)>0.35&&!isDown){el.scrollLeft-=currVel;currVel*=friction;momentumRaf=requestAnimationFrame(step);}}if(Math.abs(currVel)>0.8){momentumRaf=requestAnimationFrame(step);}}el.addEventListener('mousedown',(e)=>{handleStart(e.pageX);});window.addEventListener('mousemove',(e)=>{if(isDown){e.preventDefault();handleMove(e.pageX);}});window.addEventListener('mouseup',()=>{if(isDown)handleEnd();});el.addEventListener('touchstart',(e)=>{if(e.touches.length===1)handleStart(e.touches[0].pageX);},{passive:true});el.addEventListener('touchmove',(e)=>{if(isDown&&e.touches.length===1)handleMove(e.touches[0].pageX);},{passive:true});el.addEventListener('touchend',handleEnd,{passive:true});})();</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(6,36,2,0.05)]" data-active-classes="text-primary font-bold"><div class="flex items-center justify-around h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] transition-colors text-primary font-bold" data-path="home" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span class="font-label-md text-label-md">Home</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant transition-colors" data-path="categories" href="#"><span class="material-symbols-outlined text-[22px]">category</span><span class="font-label-md text-label-md">Categories</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant transition-colors" data-path="flash-sale" href="#"><span class="material-symbols-outlined text-[22px]">bolt</span><span class="font-label-md text-label-md">Flash Sale</span></a><a class="relative flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant transition-colors" data-path="shopping-bag" href="#"><span class="material-symbols-outlined text-[22px]">shopping_bag</span><span class="font-label-md text-label-md">Bag</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant transition-colors cursor-pointer active:scale-95" data-path="account" href="#" onclick="openAuthAccountModal(); return false;"><span class="material-symbols-outlined text-[22px]">person</span><span class="font-label-md text-label-md">Account</span></a></div></nav>
+<!-- Dedicated Location Modal / Bottom Sheet (Root Body Placement for 100% Reliable Visibility) -->
+<div aria-labelledby="modal-location-heading" aria-modal="true" class="fixed inset-0 z-[99999] select-none hidden" id="location-modal" role="dialog">
+<!-- Semi-transparent Dark Backdrop -->
+<div class="fixed inset-0 bg-[#062402]/60 backdrop-blur-sm transition-opacity duration-300" id="location-modal-backdrop" onclick="closeLocationModal()"></div>
+<!-- Bottom Sheet Modal Content Container -->
+<div class="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-surface-bright rounded-t-[32px] border-t border-outline/40 shadow-2xl p-space-md pb-safe overflow-y-auto flex flex-col gap-3.5 z-10 transition-transform duration-300 no-scrollbar"><!-- Modern Grab Handle -->
+<div class="flex justify-center pt-1 pb-1">
+<div class="w-12 h-1.5 rounded-full bg-outline-variant/60"></div>
+</div>
+<!-- Header with Luxury Seoul Direct Badge & Minimalist Close Button -->
+<div class="flex items-start justify-between pb-3 border-b border-outline/30">
+<div class="flex flex-col gap-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container w-fit">
+<span class="material-symbols-outlined text-[13px] text-secondary">verified</span>
+<span class="font-label-md text-[10px] uppercase tracking-wider font-bold">Seoul Direct Express</span>
+</div>
+<h3 class="font-headline-lg-mobile text-[18px] text-primary font-bold tracking-tight mt-0.5" id="modal-location-heading">Select Delivery Location</h3>
+<p class="text-[11px] text-on-surface-variant font-medium">Temperature-controlled dispatch &amp; customs clearance in Dhaka</p>
+</div>
+<button aria-label="Close location selector" class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all cursor-pointer shrink-0 shadow-sm" id="close-location-modal" onclick="closeLocationModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Ultra-Modern Frosted Emerald Delivery Notice Banner -->
+<!-- Search Input with Sleek Floating Style -->
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-10 py-3 rounded-full bg-surface-container text-on-surface placeholder:text-on-surface-variant/70 text-xs font-medium border border-outline/40 focus:outline-none focus:border-secondary transition-all shadow-inner" id="location-search-input" placeholder="Search Dhaka area, road, or postal code..." type="text">
+<button class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant hover:text-primary transition-colors" onclick="document.getElementById('location-search-input').value='';" type="button">cancel</button>
+</div>
+<!-- Saved Delivery Addresses Section -->
+<div class="flex flex-col gap-2 pt-0.5">
+<div class="flex items-center justify-between px-1">
+<span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">bookmark</span> Saved Addresses
+    </span>
+<span class="text-[10px] text-secondary font-bold hover:underline cursor-pointer">+ Add New</span>
+</div>
+<div class="grid grid-cols-1 gap-2.5">
+<!-- Address Option 1: Banani Home (Active Selected State) -->
+<div class="p-3.5 rounded-[20px] bg-secondary-container/40 border-2 border-secondary flex items-center justify-between cursor-pointer hover:bg-secondary-container/60 transition-all shadow-sm" onclick="selectLocation('Banani')">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-secondary-container text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">home</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-[13px] font-bold text-primary">Home (Banani)</span>
+<span class="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-primary text-on-primary">Default</span>
+</div>
+<p class="text-[11px] text-on-surface-variant truncate mt-0.5">House 14, Road 7, Block E, Banani, Dhaka</p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary text-secondary-fixed flex items-center justify-center shrink-0 ml-2 shadow-sm">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</div>
+<!-- Address Option 2: Gulshan Office -->
+<div class="p-3.5 rounded-[20px] bg-surface-bright border border-outline/40 flex items-center justify-between cursor-pointer hover:border-secondary transition-all shadow-sm" onclick="selectLocation('Gulshan-2')">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">business</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-[13px] font-bold text-primary">Office (Gulshan-2)</span>
+</div>
+<p class="text-[11px] text-on-surface-variant truncate mt-0.5">Plot 68, Avenue 4, Gulshan-2, Dhaka</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[20px] text-outline-variant shrink-0 ml-2">radio_button_unchecked</span>
+</div>
+</div>
+</div>
+<!-- Quick Dhaka Delivery Zones Grid -->
+<!-- Bottom Action Bar CTA with Glowing Contrast Button -->
+<div class="pt-2">
+<button class="w-full py-3.5 rounded-full bg-primary hover:bg-primary-container text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer" id="confirm-location-btn" onclick="confirmCurrentLocation()" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed">check_circle</span>
+<span class="">Confirm Delivery Location</span>
+</button>
+</div></div>
+</div>
+<script>
+  // Global, robust modal controls
+  let activeSelectedLocation = 'Dhaka';
+
+  function openLocationModal() {
+    const modal = document.getElementById('location-modal');
+    const chevron = document.getElementById('location-chevron');
+    if (modal) {
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    if (chevron) {
+      chevron.style.transform = 'rotate(180deg)';
+    }
+  }
+
+  function closeLocationModal() {
+    const modal = document.getElementById('location-modal');
+    const chevron = document.getElementById('location-chevron');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    if (chevron) {
+      chevron.style.transform = 'rotate(0deg)';
+    }
+  }
+
+  function selectLocation(name) {
+    activeSelectedLocation = name;
+    const label = document.getElementById('selected-location-label');
+    if (label) label.textContent = name;
+
+    // Highlight zone pills if clicked
+    document.querySelectorAll('.zone-pill').forEach(pill => {
+      const heading = pill.querySelector('span');
+      if (heading && heading.textContent.includes(name)) {
+        pill.className = 'zone-pill p-2 rounded-xl border border-secondary bg-secondary-container/50 text-left transition-all flex flex-col gap-0.5 cursor-pointer';
+      } else {
+        pill.className = 'zone-pill p-2 rounded-xl border border-outline/40 bg-surface-container-low text-left hover:border-primary transition-all flex flex-col gap-0.5 cursor-pointer';
+      }
+    });
+
+    closeLocationModal();
+  }
+
+  function confirmCurrentLocation() {
+    const searchInput = document.getElementById('location-search-input');
+    if (searchInput && searchInput.value.trim()) {
+      activeSelectedLocation = searchInput.value.trim();
+    }
+    const label = document.getElementById('selected-location-label');
+    if (label) label.textContent = activeSelectedLocation;
+    closeLocationModal();
+  }
+
+  // Safety event listener setup
+  document.addEventListener('DOMContentLoaded', () => {
+    const triggerBtn = document.getElementById('location-trigger-btn');
+    if (triggerBtn) {
+      triggerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openLocationModal();
+      });
+    }
+
+    const closeBtn = document.getElementById('close-location-modal');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeLocationModal();
+      });
+    }
+
+    const backdrop = document.getElementById('location-modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeLocationModal();
+      });
+    }
+  });
+</script>
+<script>
+  (function() {
+    const heroCarousel = document.getElementById('hero-slides-carousel');
+    const dots = [
+      document.getElementById('hero-dot-0'),
+      document.getElementById('hero-dot-1'),
+      document.getElementById('hero-dot-2')
+    ];
+
+    if (!heroCarousel) return;
+
+    function updateHeroDots() {
+      const slideWidth = heroCarousel.clientWidth;
+      if (!slideWidth) return;
+      const activeIndex = Math.min(Math.max(Math.round(heroCarousel.scrollLeft / slideWidth), 0), dots.length - 1);
+      dots.forEach((dot, index) => {
+        if (!dot) return;
+        if (index === activeIndex) {
+          dot.className = 'h-1.5 w-6 rounded-full bg-secondary-fixed transition-all duration-300';
+        } else {
+          dot.className = 'h-1.5 w-1.5 rounded-full bg-surface-bright/30 transition-all duration-300';
+        }
+      });
+    }
+
+    heroCarousel.addEventListener('scroll', updateHeroDots, { passive: true });
+
+    // iOS physics momentum & flick support
+    let isDown = false;
+    let startX = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let velocity = 0;
+    let momentumRaf = null;
+
+    function handleStart(x) {
+      isDown = true;
+      cancelAnimationFrame(momentumRaf);
+      startX = x;
+      lastX = x;
+      lastTime = Date.now();
+      velocity = 0;
+    }
+
+    function handleMove(x) {
+      if (!isDown) return;
+      const now = Date.now();
+      const delta = x - lastX;
+      const dt = Math.max(now - lastTime, 1);
+      velocity = delta / dt;
+      heroCarousel.scrollLeft -= delta;
+      lastX = x;
+      lastTime = now;
+      updateHeroDots();
+    }
+
+    function handleEnd() {
+      if (!isDown) return;
+      isDown = false;
+      let currVelocity = velocity * 12;
+      const friction = 0.92;
+      function applyMomentum() {
+        if (Math.abs(currVelocity) > 0.4 && !isDown) {
+          heroCarousel.scrollLeft -= currVelocity;
+          currVelocity *= friction;
+          updateHeroDots();
+          momentumRaf = requestAnimationFrame(applyMomentum);
+        }
+      }
+      if (Math.abs(currVelocity) > 0.8) {
+        momentumRaf = requestAnimationFrame(applyMomentum);
+      }
+    }
+
+    heroCarousel.addEventListener('mousedown', (e) => { e.preventDefault(); handleStart(e.pageX); });
+    window.addEventListener('mousemove', (e) => { if (isDown) { e.preventDefault(); handleMove(e.pageX); } });
+    window.addEventListener('mouseup', () => { if (isDown) handleEnd(); });
+
+    heroCarousel.addEventListener('touchstart', (e) => { if (e.touches.length === 1) handleStart(e.touches[0].pageX); }, { passive: true });
+    heroCarousel.addEventListener('touchmove', (e) => { if (isDown && e.touches.length === 1) handleMove(e.touches[0].pageX); }, { passive: true });
+    heroCarousel.addEventListener('touchend', handleEnd, { passive: true });
+  })();
+</script>
+<!-- Interactive iOS-Physics Animated Header Search Script -->
+<script>
+  let isSearchActive = false;
+
+  function openHeaderSearch() {
+    if (isSearchActive) return;
+    isSearchActive = true;
+
+    const defaultBar = document.getElementById('header-default-bar');
+    const searchBar = document.getElementById('header-search-bar');
+    const searchInput = document.getElementById('header-search-input');
+    const spotlight = document.getElementById('search-spotlight-dropdown');
+    const backdrop = document.getElementById('search-backdrop');
+
+    if (defaultBar) {
+      defaultBar.style.transform = 'translateY(-12px) scale(0.96)';
+      defaultBar.style.opacity = '0';
+      defaultBar.style.pointerEvents = 'none';
+    }
+
+    if (searchBar) {
+      searchBar.classList.remove('pointer-events-none', 'opacity-0', 'translate-y-[-100%]', 'scale-[0.98]');
+      searchBar.classList.add('pointer-events-auto', 'opacity-100', 'translate-y-0', 'scale-100');
+    }
+
+    if (backdrop) {
+      backdrop.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        backdrop.classList.remove('opacity-0');
+        backdrop.classList.add('opacity-100');
+      });
+    }
+
+    if (spotlight) {
+      spotlight.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        spotlight.classList.remove('opacity-0', '-translate-y-2');
+        spotlight.classList.add('opacity-100', 'translate-y-0');
+      });
+    }
+
+    if (searchInput) {
+      setTimeout(() => {
+        searchInput.focus();
+      }, 150);
+    }
+  }
+
+  function closeHeaderSearch() {
+    if (!isSearchActive) return;
+    isSearchActive = false;
+
+    const defaultBar = document.getElementById('header-default-bar');
+    const searchBar = document.getElementById('header-search-bar');
+    const searchInput = document.getElementById('header-search-input');
+    const spotlight = document.getElementById('search-spotlight-dropdown');
+    const backdrop = document.getElementById('search-backdrop');
+
+    if (searchInput) {
+      searchInput.blur();
+    }
+
+    if (searchBar) {
+      searchBar.classList.remove('pointer-events-auto', 'opacity-100', 'translate-y-0', 'scale-100');
+      searchBar.classList.add('pointer-events-none', 'opacity-0', 'translate-y-[-100%]', 'scale-[0.98]');
+    }
+
+    if (defaultBar) {
+      defaultBar.style.transform = '';
+      defaultBar.style.opacity = '';
+      defaultBar.style.pointerEvents = '';
+    }
+
+    if (spotlight) {
+      spotlight.classList.remove('opacity-100', 'translate-y-0');
+      spotlight.classList.add('opacity-0', '-translate-y-2');
+      setTimeout(() => {
+        if (!isSearchActive) spotlight.classList.add('hidden');
+      }, 250);
+    }
+
+    if (backdrop) {
+      backdrop.classList.remove('opacity-100');
+      backdrop.classList.add('opacity-0');
+      setTimeout(() => {
+        if (!isSearchActive) backdrop.classList.add('hidden');
+      }, 250);
+    }
+  }
+
+  function clearHeaderSearch() {
+    const input = document.getElementById('header-search-input');
+    const clearBtn = document.getElementById('header-search-clear-btn');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    if (clearBtn) clearBtn.classList.add('hidden');
+  }
+
+  function applySearchQuery(text) {
+    const input = document.getElementById('header-search-input');
+    const clearBtn = document.getElementById('header-search-clear-btn');
+    if (input) {
+      input.value = text;
+      input.focus();
+    }
+    if (clearBtn) clearBtn.classList.remove('hidden');
+  }
+
+  // Keyboard and Input Watchers
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('header-search-input');
+    const clearBtn = document.getElementById('header-search-clear-btn');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        if (clearBtn) {
+          if (e.target.value.length > 0) {
+            clearBtn.classList.remove('hidden');
+          } else {
+            clearBtn.classList.add('hidden');
+          }
+        }
+      });
+    }
+
+    // Keyboard ESC to dismiss
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (isSearchActive) closeHeaderSearch();
+        closeLocationModal();
+      }
+    });
+  });
+</script>
+
+
+<div id="auth-account-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" class="fixed inset-0 z-[99999] select-none hidden"><div id="auth-modal-backdrop" onclick="closeAuthAccountModal()" class="fixed inset-0 bg-[#062402]/60 backdrop-blur-sm transition-opacity duration-300"></div><div class="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-surface-bright rounded-t-[32px] border-t border-outline/40 shadow-2xl p-space-md pb-safe overflow-y-auto flex flex-col gap-3.5 z-10 transition-transform duration-300 no-scrollbar"><div class="flex justify-center pt-1 pb-0.5"><div class="w-12 h-1.5 rounded-full bg-outline-variant/60"></div></div><div class="flex items-center justify-between pb-2 border-b border-outline/30"><div class="flex items-center gap-1.5"><span class="font-headline-lg-mobile text-[17px] font-bold text-primary tracking-tight">MINSAH BEAUTY</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container flex items-center gap-0.5"><span class="material-symbols-outlined text-[11px]">verified</span> Seoul Direct</span></div><button onclick="closeAuthAccountModal()" aria-label="Close account modal" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px]">close</span></button></div><div class="grid grid-cols-3 p-1 rounded-full bg-surface-container border border-outline/30 text-xs font-bold"><button id="tab-btn-signin" onclick="switchAuthTab('signin')" class="py-2 rounded-full text-center transition-all text-on-surface-variant hover:text-primary cursor-pointer font-bold">Sign In</button><button id="tab-btn-signup" onclick="switchAuthTab('signup')" class="py-2 rounded-full text-center transition-all text-on-surface-variant hover:text-primary cursor-pointer font-bold">Sign Up</button><button id="tab-btn-account" onclick="switchAuthTab('account')" class="py-2 rounded-full text-center transition-all bg-primary text-on-primary shadow-sm cursor-pointer font-bold">My Account</button></div><div id="view-signin" class="flex flex-col gap-3 pt-1 hidden"><div class="flex flex-col gap-0.5"><h3 id="auth-modal-title" class="font-headline-lg-mobile text-[20px] text-primary font-bold leading-tight">Welcome to Minsah Beauty</h3><p class="font-body-md text-xs text-on-surface-variant">100% Authentic Korean Skincare Direct from Seoul</p></div><form onsubmit="event.preventDefault(); switchAuthTab('account');" class="flex flex-col gap-2.5"><div class="flex flex-col gap-1"><label class="font-label-md text-[11px] font-bold text-on-surface">Mobile Number or Email</label><div class="flex items-center rounded-full bg-surface-container border border-outline/40 focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20 overflow-hidden transition-all"><span class="px-3 py-2.5 text-xs font-bold text-secondary border-r border-outline/30 bg-surface-container-high/50">+880</span><input type="text" placeholder="17XX-XXXXXX or name@example.com" class="w-full px-3 py-2.5 bg-transparent text-xs text-on-surface focus:outline-none placeholder:text-on-surface-variant/70" required=""></div></div><div class="flex flex-col gap-1"><div class="flex items-center justify-between"><label class="font-label-md text-[11px] font-bold text-on-surface">Password or OTP</label><a href="#" onclick="event.preventDefault(); alert('OTP Code sent via SMS to Dhaka mobile number!');" class="text-[11px] font-semibold text-secondary hover:underline">Forgot?</a></div><div class="relative flex items-center"><input id="signin-password-input" type="password" placeholder="Enter your password or 6-digit OTP" class="w-full px-4 py-2.5 pr-10 rounded-full bg-surface-container border border-outline/40 text-xs text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all" required=""><button type="button" onclick="togglePasswordVisibility('signin-password-input', this)" class="material-symbols-outlined absolute right-3 text-[18px] text-on-surface-variant/70 hover:text-primary cursor-pointer">visibility</button></div></div><div class="flex items-center justify-between pt-0.5"><label class="flex items-center gap-2 cursor-pointer text-xs text-on-surface-variant"><input type="checkbox" checked="" class="accent-primary w-4 h-4 rounded"><span class="">Remember on this device</span></label><button type="button" onclick="openOtpModal()" class="text-[11px] font-bold text-secondary hover:underline cursor-pointer">Login via OTP</button></div><button type="submit" class="w-full py-3 rounded-full bg-primary hover:bg-primary-container text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-md mt-1 cursor-pointer flex items-center justify-center gap-1.5"><span class="material-symbols-outlined text-[18px] text-secondary-fixed">login</span><span class="">Sign In to Minsah Beauty</span></button></form><div class="flex items-center gap-2 pt-1"><div class="flex-1 h-px bg-outline/40"></div><span class="text-[10px] uppercase font-bold text-on-surface-variant/70">Or Continue With</span><div class="flex-1 h-px bg-outline/40"></div></div><div class="grid grid-cols-2 gap-2.5"><button type="button" onclick="switchAuthTab('account')" class="py-2.5 px-3 rounded-full bg-surface border border-outline/40 hover:border-secondary flex items-center justify-center gap-1.5 text-xs font-semibold text-on-surface active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px] text-[#4285F4]">account_circle</span><span class="">Google</span></button><button type="button" onclick="switchAuthTab('account')" class="py-2.5 px-3 rounded-full bg-surface border border-outline/40 hover:border-secondary flex items-center justify-center gap-1.5 text-xs font-semibold text-on-surface active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px] text-primary">sms</span><span class="">Instant OTP</span></button></div><div class="text-center pt-1"><p class="text-xs text-on-surface-variant">Don't have an account? <button type="button" onclick="switchAuthTab('signup')" class="text-secondary font-bold hover:underline cursor-pointer ml-1">Sign Up Now</button></p></div></div><div id="view-signup" class="flex flex-col gap-3 pt-1 hidden"><div class="flex flex-col gap-1"><div class="flex items-center justify-between"><h3 class="font-headline-lg-mobile text-[20px] text-primary font-bold leading-tight">Create Account</h3></div><p class="font-body-md text-xs text-on-surface-variant">Join Dhaka's premier verified Seoul K-Beauty family</p></div><form onsubmit="event.preventDefault(); switchAuthTab('account');" class="flex flex-col gap-2.5"><div class="flex flex-col gap-1"><label class="font-label-md text-[11px] font-bold text-on-surface">Full Name</label><input type="text" placeholder="e.g. Tasneem Ahmed" class="w-full px-4 py-2.5 rounded-full bg-surface-container border border-outline/40 text-xs text-on-surface focus:outline-none focus:border-secondary" required=""></div><div class="flex flex-col gap-1"><label class="font-label-md text-[11px] font-bold text-on-surface">Dhaka Mobile Number</label><div class="flex items-center rounded-full bg-surface-container border border-outline/40 focus-within:border-secondary overflow-hidden"><span class="px-3 py-2.5 text-xs font-bold text-secondary border-r border-outline/30 bg-surface-container-high/50">+880</span><input type="tel" placeholder="17XX-XXXXXX" class="w-full px-3 py-2.5 bg-transparent text-xs text-on-surface focus:outline-none" required=""></div></div><div class="flex flex-col gap-1"><label class="font-label-md text-[11px] font-bold text-on-surface">Email Address</label><input type="email" placeholder="tasneem@example.com" class="w-full px-4 py-2.5 rounded-full bg-surface-container border border-outline/40 text-xs text-on-surface focus:outline-none focus:border-secondary" required=""></div><div class="flex flex-col gap-1"><div class="flex items-center justify-between"><label class="font-label-md text-[11px] font-bold text-on-surface">Create Password</label><span class="text-[10px] text-on-surface-variant font-medium">Min. 8 characters</span></div><div class="relative flex items-center"><input id="signup-password-input" type="password" placeholder="At least 8 characters" minlength="8" class="w-full px-4 py-2.5 pr-10 rounded-full bg-surface-container border border-outline/40 text-xs text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all" required=""><button type="button" onclick="togglePasswordVisibility('signup-password-input', this)" class="material-symbols-outlined absolute right-3 text-[18px] text-on-surface-variant/70 hover:text-primary cursor-pointer">visibility</button></div></div><div class="flex flex-col gap-1.5 p-3 rounded-2xl bg-surface-container-low border border-outline/40 shadow-sm"><div class="flex items-center justify-between"><label class="font-label-md text-[11px] font-bold text-on-surface flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px] text-secondary">pin_drop</span> Delivery Destination (Dhaka &amp; Nationwide)</label><span class="text-[10px] font-bold text-secondary bg-secondary-container px-2 py-0.5 rounded-full">Seoul Dispatch Route</span></div><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-[16px] text-on-surface-variant/70 pointer-events-none">search</span><input id="reg-loc-search" type="text" placeholder="Search City, Zone, or Area (e.g. Dhaka, Banani, Block E)..." oninput="filterRegistrationLocations(this.value)" class="w-full pl-9 pr-8 py-2 rounded-full bg-surface-bright border border-outline/40 text-xs text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"><button type="button" onclick="document.getElementById('reg-loc-search').value=''; filterRegistrationLocations('');" class="material-symbols-outlined absolute right-2.5 text-[15px] text-on-surface-variant/70 hover:text-primary cursor-pointer">cancel</button></div><div class="grid grid-cols-3 gap-1.5 pt-0.5"><div class="flex flex-col gap-0.5"><span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">City</span><select id="reg-city-select" onchange="updateRegistrationZones(this.value)" class="w-full px-2 py-1.5 rounded-xl bg-surface-bright border border-outline/40 text-[11px] font-semibold text-on-surface focus:outline-none focus:border-secondary cursor-pointer"><option value="Dhaka">Dhaka</option><option value="Chittagong">Chittagong</option><option value="Sylhet">Sylhet</option></select></div><div class="flex flex-col gap-0.5"><span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Zone</span><select id="reg-zone-select" onchange="updateRegistrationAreas(this.value)" class="w-full px-2 py-1.5 rounded-xl bg-surface-bright border border-outline/40 text-[11px] font-semibold text-on-surface focus:outline-none focus:border-secondary cursor-pointer"><option value="Dhaka North">Dhaka North</option><option value="Dhaka South">Dhaka South</option><option value="Gulshan-Banani Hub">Gulshan-Banani Hub</option></select></div><div class="flex flex-col gap-0.5"><span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Area</span><select id="reg-area-select" class="w-full px-2 py-1.5 rounded-xl bg-surface-bright border border-outline/40 text-[11px] font-semibold text-on-surface focus:outline-none focus:border-secondary cursor-pointer"><option value="Banani">Banani</option><option value="Gulshan-1">Gulshan-1</option><option value="Gulshan-2">Gulshan-2</option><option value="Dhanmondi">Dhanmondi</option><option value="Uttara">Uttara</option><option value="Mirpur">Mirpur</option><option value="Bashundhara R/A">Bashundhara R/A</option></select></div></div><div class="flex items-center justify-between pt-1"><span class="text-[10px] font-semibold text-on-surface-variant">Popular Express Areas</span><span id="selected-location-badge" class="text-[10px] font-bold text-secondary truncate">Selected: Dhaka • Banani</span></div><div id="reg-quick-areas" class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none" style="-webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-behavior: smooth;"><button type="button" onclick="quickSelectArea('Dhaka', 'Gulshan-Banani Hub', 'Banani')" class="area-pill px-2.5 py-1 rounded-full bg-primary text-on-primary text-[10px] font-bold shrink-0 active:scale-95 transition-all shadow-sm">Banani</button><button type="button" onclick="quickSelectArea('Dhaka', 'Gulshan-Banani Hub', 'Gulshan-2')" class="area-pill px-2.5 py-1 rounded-full bg-surface-bright hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">Gulshan-2</button><button type="button" onclick="quickSelectArea('Dhaka', 'Dhaka South', 'Dhanmondi')" class="area-pill px-2.5 py-1 rounded-full bg-surface-bright hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">Dhanmondi</button><button type="button" onclick="quickSelectArea('Dhaka', 'Dhaka North', 'Uttara')" class="area-pill px-2.5 py-1 rounded-full bg-surface-bright hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">Uttara</button><button type="button" onclick="quickSelectArea('Dhaka', 'Dhaka North', 'Bashundhara R/A')" class="area-pill px-2.5 py-1 rounded-full bg-surface-bright hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">Bashundhara R/A</button><button type="button" onclick="quickSelectArea('Dhaka', 'Dhaka North', 'Mirpur')" class="area-pill px-2.5 py-1 rounded-full bg-surface-bright hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">Mirpur</button></div></div><div class="flex flex-col gap-1"></div><label class="flex items-start gap-2 cursor-pointer text-[11px] text-on-surface-variant pt-1"><input type="checkbox" checked="" required="" class="accent-primary w-4 h-4 rounded mt-0.5"><span class="">I agree to Minsah's&nbsp; Authenticity Guarantee and Bangladesh Delivery Terms.</span></label><button type="submit" class="w-full py-3 rounded-full bg-primary hover:bg-primary-container text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-md mt-1 cursor-pointer flex items-center justify-center gap-1.5"><span class="material-symbols-outlined text-[18px] text-secondary-fixed">card_giftcard</span><span class="">Sign Up</span></button></form><div class="text-center pt-1"><p class="text-xs text-on-surface-variant">Already a member? <button type="button" onclick="switchAuthTab('signin')" class="text-secondary font-bold hover:underline cursor-pointer ml-1">Sign In</button></p></div></div><div id="view-account" class="flex flex-col gap-3 pt-1"><div class="rounded-[22px] bg-secondary-container/40 border border-secondary/30 p-3.5 flex items-center justify-between shadow-sm"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-full bg-primary text-secondary-fixed flex items-center justify-center font-bold text-base shadow-sm"><span class="material-symbols-outlined text-[24px]">person</span></div><div><div class="flex items-center gap-1.5"><h4 class="font-label-md text-[14px] font-bold text-primary">Tasneem Ahmed</h4><span class="px-1.5 py-0.5 rounded-full bg-secondary text-surface text-[9px] font-bold">Seoul VIP</span></div><p class="text-[11px] text-on-surface-variant font-medium mt-0.5">+880 1712-894102 • Banani, Dhaka</p></div></div><div class="text-right"><span class="text-[11px] font-bold text-secondary block">850 Pts</span><span class="text-[9px] text-on-surface-variant">Glow Points</span></div></div><div class="grid grid-cols-3 gap-2"><div class="p-2.5 rounded-2xl bg-surface-container border border-outline/30 text-center"><span class="font-headline-lg-mobile text-[16px] text-primary font-bold block">2</span><span class="text-[10px] text-on-surface-variant font-medium">Active Orders</span></div><div class="p-2.5 rounded-2xl bg-surface-container border border-outline/30 text-center"><span class="font-headline-lg-mobile text-[16px] text-primary font-bold block">৳400</span><span class="text-[10px] text-on-surface-variant font-medium">Wallet Credit</span></div><div class="p-2.5 rounded-2xl bg-surface-container border border-outline/30 text-center"><span class="font-headline-lg-mobile text-[16px] text-primary font-bold block">5</span><span class="text-[10px] text-on-surface-variant font-medium">Wishlist Items</span></div></div><div class="flex flex-col rounded-2xl bg-surface border border-outline/40 overflow-hidden"><button onclick="alert('Tracking Dhaka Express Dispatches: Parcel dispatched from Seoul Incheon customs to Banani Hub.');" class="p-3 flex items-center justify-between hover:bg-surface-container transition-colors border-b border-outline/30 text-left"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-secondary">local_shipping</span><div><span class="font-label-md text-xs font-bold text-on-surface block">My Orders &amp; Live Tracking</span><span class="text-[10px] text-on-surface-variant">1 shipment arriving in 24 hours</span></div></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span></button><button onclick="closeAuthAccountModal(); openLocationModal();" class="p-3 flex items-center justify-between hover:bg-surface-container transition-colors border-b border-outline/30 text-left"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-secondary">pin_drop</span><div><span class="font-label-md text-xs font-bold text-on-surface block">Saved Delivery Addresses</span><span class="text-[10px] text-on-surface-variant">Banani (Default), Gulshan-2</span></div></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span></button><button onclick="openHologramScannerModal()" class="p-3 flex items-center justify-between hover:bg-surface-container transition-colors border-b border-outline/30 text-left"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-secondary">qr_code_scanner</span><div><span class="font-label-md text-xs font-bold text-on-surface block">Hologram Authenticity Scanner</span><span class="text-[10px] text-on-surface-variant">Verify Seoul batch QR seals</span></div></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span></button><button onclick="alert('Warranty &amp; Authenticity Claim: 14-day Seoul direct guarantee with instant replacement or refund policy.');" class="p-3 flex items-center justify-between hover:bg-surface-container transition-colors border-b border-outline/30 text-left"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-secondary">verified_user</span><div><span class="font-label-md text-xs font-bold text-on-surface block">Warranty &amp; Authenticity Claim</span><span class="text-[10px] text-on-surface-variant">14-day Seoul direct protection &amp; refund</span></div></div><div class="flex items-center gap-1.5"><span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container">Instant Swap</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span></div></button><button onclick="openWhatsAppConciergeModal()" class="p-3 flex items-center justify-between hover:bg-surface-container transition-colors text-left"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-secondary">support_agent</span><div><span class="font-label-md text-xs font-bold text-on-surface block">WhatsApp Support</span><span class="text-[10px] text-on-surface-variant">Instant skincare consultation</span></div></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span></button></div><button onclick="switchAuthTab('signin')" class="w-full py-2.5 rounded-full border border-error text-error hover:bg-error-container/30 font-label-md text-xs font-bold active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-1"><span class="material-symbols-outlined text-[16px]">logout</span><span class="">Log Out / Switch Account</span></button></div></div></div><script>function openAuthAccountModal(initialTab){const modal=document.getElementById('auth-account-modal');if(modal){modal.classList.remove('hidden');document.body.style.overflow='hidden';}if(initialTab){switchAuthTab(initialTab);}}function closeAuthAccountModal(){const modal=document.getElementById('auth-account-modal');if(modal){modal.classList.add('hidden');document.body.style.overflow='';}}function switchAuthTab(tab){const tabs=['signin','signup','account'];tabs.forEach(t=>{const view=document.getElementById('view-'+t);const btn=document.getElementById('tab-btn-'+t);if(view){if(t===tab){view.classList.remove('hidden');}else{view.classList.add('hidden');}}if(btn){if(t===tab){btn.className='py-2 rounded-full text-center transition-all bg-primary text-on-primary shadow-sm cursor-pointer font-bold';}else{btn.className='py-2 rounded-full text-center transition-all text-on-surface-variant hover:text-primary cursor-pointer font-bold';}}});}function togglePasswordVisibility(inputId,btn){const input=document.getElementById(inputId);if(input){if(input.type==='password'){input.type='text';if(btn)btn.textContent='visibility_off';}else{input.type='password';if(btn)btn.textContent='visibility';}}}</script>
+
+
+
+<div id="otp-verification-modal" role="dialog" aria-modal="true" aria-labelledby="otp-modal-title" class="fixed inset-0 z-[99999] select-none hidden"><div id="otp-modal-backdrop" onclick="closeOtpModal()" class="fixed inset-0 bg-[#062402]/60 backdrop-blur-sm transition-opacity duration-300"></div><div class="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-surface-bright rounded-t-[32px] border-t border-outline/40 shadow-2xl p-space-md pb-safe overflow-y-auto flex flex-col gap-3.5 z-10 transition-transform duration-300 no-scrollbar"><div class="flex justify-center pt-1 pb-0.5"><div class="w-12 h-1.5 rounded-full bg-outline-variant/60"></div></div><div class="flex items-center justify-between pb-2 border-b border-outline/30"><div class="flex items-center gap-1.5"><div class="w-8 h-8 rounded-full bg-secondary-container text-secondary flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">lock</span></div><div><h3 id="otp-modal-title" class="font-headline-lg-mobile text-[18px] text-primary font-bold leading-tight">Login via OTP</h3><p class="font-body-md text-[11px] text-on-surface-variant font-medium">Dhaka Instant Verification</p></div></div><button onclick="closeOtpModal()" aria-label="Close OTP verification modal" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px]">close</span></button></div><div class="flex flex-col gap-1"><div class="flex items-center justify-between"><p class="text-xs text-on-surface font-medium">Code sent to <span id="otp-display-number" class="font-bold text-primary">+880 1712-345678</span></p><button type="button" onclick="editOtpPhone()" class="text-[11px] font-bold text-secondary hover:underline cursor-pointer flex items-center gap-0.5"><span class="material-symbols-outlined text-[13px]">edit</span> Edit Number</button></div><p class="text-[11px] text-on-surface-variant">Please enter the 4-digit security code received via SMS.</p></div><div class="flex justify-center items-center gap-3 py-2"><input type="tel" maxlength="1" autofocus="" class="otp-digit w-12 h-14 rounded-2xl bg-surface-container border-2 border-outline/40 text-center font-headline-lg text-[22px] font-bold text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 shadow-inner transition-all" id="otp-box-1" oninput="handleOtpInput(this, 1)" onkeydown="handleOtpKeydown(event, 1)"><input type="tel" maxlength="1" class="otp-digit w-12 h-14 rounded-2xl bg-surface-container border-2 border-outline/40 text-center font-headline-lg text-[22px] font-bold text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 shadow-inner transition-all" id="otp-box-2" oninput="handleOtpInput(this, 2)" onkeydown="handleOtpKeydown(event, 2)"><input type="tel" maxlength="1" class="otp-digit w-12 h-14 rounded-2xl bg-surface-container border-2 border-outline/40 text-center font-headline-lg text-[22px] font-bold text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 shadow-inner transition-all" id="otp-box-3" oninput="handleOtpInput(this, 3)" onkeydown="handleOtpKeydown(event, 3)"><input type="tel" maxlength="1" class="otp-digit w-12 h-14 rounded-2xl bg-surface-container border-2 border-outline/40 text-center font-headline-lg text-[22px] font-bold text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 shadow-inner transition-all" id="otp-box-4" oninput="handleOtpInput(this, 4)" onkeydown="handleOtpKeydown(event, 4)"></div><div class="flex items-center justify-between px-1 text-xs"><div class="flex items-center gap-1 text-on-surface-variant" id="otp-timer-wrap"><span class="material-symbols-outlined text-[15px] text-secondary">schedule</span><span class="">Resend code in <strong id="otp-countdown-sec" class="text-primary font-mono">0:45</strong></span></div><button type="button" id="btn-resend-otp" onclick="resendOtp()" class="text-secondary font-bold hover:underline cursor-pointer hidden">Resend Code</button></div><div class="p-3 rounded-2xl bg-surface-container border border-outline/30 flex items-center justify-between"><div class="flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-secondary-container text-secondary flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">chat</span></div><div class="flex flex-col"><span class="font-label-md text-xs font-bold text-primary leading-tight">Delivery Channel</span><span class="text-[10px] text-on-surface-variant" id="otp-channel-desc">SMS dispatched to Dhaka network</span></div></div><button type="button" onclick="openWhatsAppSendModal()" id="btn-toggle-channel" class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-surface-bright border border-outline/40 hover:border-secondary text-secondary cursor-pointer shadow-sm">Send via WhatsApp</button></div><button type="button" onclick="verifyAndSubmitOtp()" class="w-full py-3.5 rounded-full bg-primary hover:bg-primary-container text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-md mt-1 cursor-pointer flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px] text-secondary-fixed">verified</span><span class="">Verify &amp; Continue</span></button><div class="flex items-center justify-center gap-1.5 pt-0.5 text-center"><button type="button" onclick="backToPasswordLogin()" class="text-xs text-on-surface-variant hover:text-primary font-medium flex items-center gap-1 cursor-pointer"><span class="material-symbols-outlined text-[14px]">arrow_back</span> Return to Password Sign In</button></div></div></div><script class="">let otpTimerInterval=null;let otpTimeLeft=45;let isWhatsAppMethod=false;function openOtpModal(){const authModal=document.getElementById('auth-account-modal');if(authModal)authModal.classList.add('hidden');const otpModal=document.getElementById('otp-verification-modal');if(otpModal){otpModal.classList.remove('hidden');document.body.style.overflow='hidden';}startOtpTimer();setTimeout(()=>{const firstBox=document.getElementById('otp-box-1');if(firstBox)firstBox.focus();},200);}function closeOtpModal(){const otpModal=document.getElementById('otp-verification-modal');if(otpModal){otpModal.classList.add('hidden');document.body.style.overflow='';}if(otpTimerInterval)clearInterval(otpTimerInterval);}function backToPasswordLogin(){closeOtpModal();const authModal=document.getElementById('auth-account-modal');if(authModal){authModal.classList.remove('hidden');document.body.style.overflow='hidden';switchAuthTab('signin');}}function handleOtpInput(input,index){input.value=input.value.replace(/[^0-9]/g,'');if(input.value.length===1&&index<4){const next=document.getElementById('otp-box-'+(index+1));if(next)next.focus();}}function handleOtpKeydown(e,index){if(e.key==='Backspace'&&!e.target.value&&index>1){const prev=document.getElementById('otp-box-'+(index-1));if(prev){prev.focus();prev.value='';}}}function startOtpTimer(){if(otpTimerInterval)clearInterval(otpTimerInterval);otpTimeLeft=45;const timerWrap=document.getElementById('otp-timer-wrap');const resendBtn=document.getElementById('btn-resend-otp');const countEl=document.getElementById('otp-countdown-sec');if(timerWrap)timerWrap.classList.remove('hidden');if(resendBtn)resendBtn.classList.add('hidden');otpTimerInterval=setInterval(()=>{otpTimeLeft--;if(countEl){const sec=otpTimeLeft<10?'0'+otpTimeLeft:otpTimeLeft;countEl.textContent='0:'+sec;}if(otpTimeLeft<=0){clearInterval(otpTimerInterval);if(timerWrap)timerWrap.classList.add('hidden');if(resendBtn)resendBtn.classList.remove('hidden');}},1000);}function resendOtp(){for(let i=1;i<=4;i++){const box=document.getElementById('otp-box-'+i);if(box)box.value='';}const firstBox=document.getElementById('otp-box-1');if(firstBox)firstBox.focus();alert(isWhatsAppMethod?'New OTP sent via WhatsApp!':'New OTP sent via Dhaka SMS gateway!');startOtpTimer();}function toggleOtpDeliveryMethod(){const btn=document.getElementById('btn-toggle-channel');const desc=document.getElementById('otp-channel-desc');isWhatsAppMethod=!isWhatsAppMethod;if(isWhatsAppMethod){if(btn)btn.textContent='Send via SMS';if(desc)desc.textContent='WhatsApp instant message code';alert('Code resent via WhatsApp to your number!');}else{if(btn)btn.textContent='Send via WhatsApp';if(desc)desc.textContent='SMS dispatched to Dhaka network';alert('Code resent via SMS to your number!');}startOtpTimer();}function editOtpPhone(){const newPhone=prompt('Enter your Dhaka mobile number (+880):','01712-345678');if(newPhone&&newPhone.trim()){const display=document.getElementById('otp-display-number');if(display)display.textContent='+880 '+newPhone.replace('+880','').trim();startOtpTimer();}}function verifyAndSubmitOtp(){let enteredCode='';for(let i=1;i<=4;i++){const box=document.getElementById('otp-box-'+i);if(box)enteredCode+=box.value;}if(enteredCode.length<4){alert('Please enter all 4 digits of the OTP.');return;}closeOtpModal();const authModal=document.getElementById('auth-account-modal');if(authModal){authModal.classList.remove('hidden');document.body.style.overflow='hidden';switchAuthTab('account');}}</script><div id="whatsapp-send-modal" role="dialog" aria-modal="true" aria-labelledby="whatsapp-modal-title" class="fixed inset-0 z-[99999] select-none hidden"><div id="whatsapp-modal-backdrop" onclick="closeWhatsAppSendModal()" class="fixed inset-0 bg-[#062402]/60 backdrop-blur-sm transition-opacity duration-300"></div><div class="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-surface-bright rounded-t-[32px] border-t border-outline/40 shadow-2xl p-space-md pb-safe overflow-y-auto flex flex-col gap-3.5 z-10 transition-transform duration-300 no-scrollbar"><div class="flex justify-center pt-1 pb-0.5"><div class="w-12 h-1.5 rounded-full bg-outline-variant/60"></div></div><div class="flex items-center justify-between pb-2 border-b border-outline/30"><div class="flex items-center gap-2"><div class="w-9 h-9 rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px]">chat</span></div><div><div class="flex items-center gap-1.5"><h3 id="whatsapp-modal-title" class="font-headline-lg-mobile text-[18px] text-primary font-bold leading-tight">Share via WhatsApp</h3><span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container">Instant</span></div><p class="font-body-md text-[11px] text-on-surface-variant font-medium">Dhaka Concierge &amp; Direct Verification</p></div></div><button onclick="closeWhatsAppSendModal()" aria-label="Close WhatsApp modal" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px]">close</span></button></div><div class="flex flex-col gap-1.5"><label class="font-label-md text-[11px] font-bold text-on-surface flex items-center justify-between"><span class="">Select Recipient or Phone Number</span><span class="text-[10px] text-secondary font-semibold">Dhaka &amp; Global (+880)</span></label><div class="flex items-center rounded-full bg-surface-container border border-outline/40 focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20 overflow-hidden transition-all"><span class="px-3 py-2.5 text-xs font-bold text-secondary border-r border-outline/30 bg-surface-container-high/50">+880</span><input type="tel" id="whatsapp-phone-input" value="1712-345678" class="w-full px-3 py-2.5 bg-transparent text-xs text-on-surface focus:outline-none placeholder:text-on-surface-variant/70" placeholder="17XX-XXXXXX"><button type="button" onclick="document.getElementById('whatsapp-phone-input').value='';" class="material-symbols-outlined pr-3 text-[16px] text-on-surface-variant/70 hover:text-primary cursor-pointer">cancel</button></div><div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1"><button type="button" onclick="setWhatsAppRecipient('1712-345678', 'Registered Mobile')" class="px-2.5 py-1 rounded-full bg-primary text-on-primary text-[10px] font-bold shrink-0 shadow-sm active:scale-95 transition-all">My Mobile</button><button type="button" onclick="setWhatsAppRecipient('1700-646724', 'Minsah Skincare Concierge')" class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface text-[10px] font-semibold shrink-0 border border-outline/30 active:scale-95 transition-all flex items-center gap-1"><span class="material-symbols-outlined text-[12px] text-secondary">support_agent</span> Concierge Desk</button><button type="button" onclick="setWhatsAppRecipient('', 'Send to Friend')" class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface text-[10px] font-semibold shrink-0 border border-outline/30 active:scale-95 transition-all flex items-center gap-1"><span class="material-symbols-outlined text-[12px] text-secondary">share</span> Send to Friend</button></div></div><div class="flex flex-col gap-1.5 p-3.5 rounded-[22px] bg-surface-container-low border border-outline/40"><div class="flex items-center justify-between"><span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-secondary">preview</span> Message Preview</span><span class="text-[10px] text-[#25D366] font-bold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse"></span> Encrypted</span></div><div class="p-3 rounded-2xl bg-surface-bright border border-outline/30 shadow-sm flex flex-col gap-1.5"><p class="text-xs text-on-surface font-medium leading-relaxed" id="whatsapp-message-body">🌸 <strong class="text-primary">Minsah Beauty Authentication Code:</strong><br>Your 4-digit Dhaka instant verification code is <strong class="text-secondary">7249</strong>.<br><br>📦 <em>Verified Direct Batch: Seoul Incheon Customs clearance route to Dhaka.</em><br>🔗 https://minsah.com/auth/verify?code=7249</p><div class="flex items-center justify-between pt-1 border-t border-outline/20 text-[10px] text-on-surface-variant"><span class="">Minsah Beauty • Seoul Direct</span><span class="flex items-center gap-0.5 text-secondary font-semibold"><span class="material-symbols-outlined text-[12px]">done_all</span> 12:45 PM</span></div></div></div><div class="flex flex-col gap-2 pt-1"><button type="button" onclick="triggerWhatsAppSend()" class="w-full py-3.5 rounded-full bg-primary hover:bg-primary-container text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[19px] text-secondary-fixed">send</span><span class="">Open in WhatsApp</span></button><button type="button" onclick="copyWhatsAppMessage()" class="w-full py-2.5 rounded-full bg-surface-bright hover:bg-secondary-container/40 border border-outline/40 text-on-surface font-label-md text-xs font-bold active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-secondary">content_copy</span><span id="whatsapp-copy-btn-text" class="">Copy Link &amp; Message</span></button></div></div></div><script>function openWhatsAppSendModal(){const modal=document.getElementById('whatsapp-send-modal');if(modal){modal.classList.remove('hidden');document.body.style.overflow='hidden';}}function closeWhatsAppSendModal(){const modal=document.getElementById('whatsapp-send-modal');if(modal){modal.classList.add('hidden');if(!document.getElementById('otp-verification-modal').classList.contains('hidden')||!document.getElementById('auth-account-modal').classList.contains('hidden')){document.body.style.overflow='hidden';}else{document.body.style.overflow='';}}}function setWhatsAppRecipient(phone,label){const input=document.getElementById('whatsapp-phone-input');if(input){input.value=phone;input.focus();}alert('Selected: '+label);}function triggerWhatsAppSend(){const phone=document.getElementById('whatsapp-phone-input')?.value.replace(/[^0-9]/g,'')||'1712345678';const text=encodeURIComponent('Minsah Beauty Dhaka verification code: 7249. Seoul direct authentic batch.');window.open('https://api.whatsapp.com/send?phone=880'+phone+'&text='+text,'_blank');closeWhatsAppSendModal();if(typeof toggleOtpDeliveryMethod==='function'&&!isWhatsAppMethod){toggleOtpDeliveryMethod();}}function copyWhatsAppMessage(){const text=document.getElementById('whatsapp-message-body')?.innerText||'Minsah Beauty Dhaka verification code: 7249';navigator.clipboard.writeText(text).then(()=>{const btnText=document.getElementById('whatsapp-copy-btn-text');if(btnText){btnText.textContent='Copied to Clipboard!';setTimeout(()=>{btnText.textContent='Copy Link & Message';},2000);}}).catch(()=>{alert('Message copied to clipboard!');});}</script>
+
+<div id="hologram-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="scanner-modal-title" class="fixed inset-0 z-[99999] select-none hidden"><div id="scanner-modal-backdrop" onclick="closeHologramScannerModal()" class="fixed inset-0 bg-[#062402]/60 backdrop-blur-sm transition-opacity duration-300"></div><div class="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-surface-bright rounded-t-[32px] border-t border-outline/40 shadow-2xl p-space-md pb-safe overflow-y-auto flex flex-col gap-3.5 z-10 transition-transform duration-300 no-scrollbar"><div class="flex justify-center pt-1 pb-0.5"><div class="w-12 h-1.5 rounded-full bg-outline-variant/60"></div></div><div class="flex items-center justify-between pb-2 border-b border-outline/30"><div class="flex items-center gap-2"><div class="w-9 h-9 rounded-full bg-secondary-container text-secondary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px]">qr_code_scanner</span></div><div><div class="flex items-center gap-1.5"><h3 id="scanner-modal-title" class="font-headline-lg-mobile text-[18px] text-primary font-bold leading-tight">Hologram Scanner</h3><span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container flex items-center gap-0.5"><span class="material-symbols-outlined text-[11px]">verified</span> Seoul Direct</span></div><p class="font-body-md text-[11px] text-on-surface-variant font-medium">MFDS Korean Customs Authentication</p></div></div><button onclick="closeHologramScannerModal()" aria-label="Close scanner modal" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px]">close</span></button></div><div class="relative w-full aspect-[4/3] rounded-[24px] bg-[#062402] overflow-hidden flex items-center justify-center border border-secondary/30 shadow-inner"><div class="absolute inset-0 opacity-20 bg-[radial-gradient(#D4F6A2_1px,transparent_1px)] [background-size:16px_16px]"></div><div class="relative w-[75%] h-[75%] rounded-2xl border border-secondary-fixed/30 flex items-center justify-center overflow-hidden"><div class="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-secondary-fixed rounded-tl-lg"></div><div class="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-secondary-fixed rounded-tr-lg"></div><div class="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-secondary-fixed rounded-bl-lg"></div><div class="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-secondary-fixed rounded-br-lg"></div><div class="absolute inset-x-2 top-0 h-1 bg-gradient-to-r from-transparent via-secondary-fixed to-transparent shadow-[0_0_12px_#D4F6A2] animate-pulse" style="animation: scannerLaser 2.4s ease-in-out infinite;"></div><div class="w-24 h-24 rounded-xl border border-dashed border-secondary-fixed/50 flex flex-col items-center justify-center gap-1 bg-secondary-fixed/5 backdrop-blur-xs p-2 text-center"><span class="material-symbols-outlined text-[32px] text-secondary-fixed animate-pulse">qr_code_2</span><span class="text-[9px] font-bold text-surface-container-highest tracking-wider uppercase font-mono">#KR-884102</span></div></div><div class="absolute bottom-2.5 inset-x-4 flex items-center justify-between px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] text-surface-bright"><span class="flex items-center gap-1 text-secondary-fixed font-bold"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-ping"></span> Scanner Active</span><span class="opacity-80">Align seal inside frame</span></div></div><div class="p-3.5 rounded-[22px] bg-surface-container-low border border-outline/40 flex flex-col gap-2.5 shadow-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-secondary">verified_user</span><span class="font-label-md text-xs font-bold text-primary">Verified Seoul Batch</span></div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-surface">100% Genuine</span></div><div class="grid grid-cols-2 gap-2 text-xs pt-1"><div class="p-2 rounded-xl bg-surface-bright border border-outline/30"><span class="text-[10px] text-on-surface-variant font-medium block">Batch Serial</span><span class="font-mono font-bold text-primary text-[11px]">KR-AN-884102</span></div><div class="p-2 rounded-xl bg-surface-bright border border-outline/30"><span class="text-[10px] text-on-surface-variant font-medium block">MFDS Certification</span><span class="font-bold text-primary text-[11px] truncate block">Amorepacific / Seoul</span></div><div class="p-2 rounded-xl bg-surface-bright border border-outline/30"><span class="text-[10px] text-on-surface-variant font-medium block">Import Logistics</span><span class="font-semibold text-primary text-[11px] truncate block">Incheon ✈ Dhaka Hub</span></div><div class="p-2 rounded-xl bg-surface-bright border border-outline/30"><span class="text-[10px] text-on-surface-variant font-medium block">Security Seal Status</span><span class="font-bold text-secondary text-[11px] flex items-center gap-0.5"><span class="material-symbols-outlined text-[13px]">check_circle</span> Tamper Intact</span></div></div></div><div class="flex flex-col gap-2 pt-1"><button type="button" onclick="triggerScanSample()" class="w-full py-3.5 rounded-full bg-primary hover:bg-primary-container text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[19px] text-secondary-fixed">photo_camera</span><span class="">Scan New Box / Seal</span></button><button type="button" onclick="enterSerialManually()" class="w-full py-2.5 rounded-full bg-surface-bright hover:bg-secondary-container/40 border border-outline/40 text-on-surface font-label-md text-xs font-bold active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-secondary">pin</span><span class="">Enter Serial Code Manually</span></button></div></div><style>@keyframes scannerLaser { 0% { top: 4px; opacity: 0.3; } 50% { top: calc(100% - 8px); opacity: 1; } 100% { top: 4px; opacity: 0.3; } }</style></div><script>function openHologramScannerModal(){const modal=document.getElementById('hologram-scanner-modal');if(modal){modal.classList.remove('hidden');document.body.style.overflow='hidden';}}function closeHologramScannerModal(){const modal=document.getElementById('hologram-scanner-modal');if(modal){modal.classList.add('hidden');if(document.getElementById('auth-account-modal')&&!document.getElementById('auth-account-modal').classList.contains('hidden')){document.body.style.overflow='hidden';}else{document.body.style.overflow='';}}}function triggerScanSample(){alert('Camera Viewfinder: Pointing to Seoul authenticity barcode or holographic sticker... Seal verified 100% genuine!');}function enterSerialManually(){const code=prompt('Enter 8 to 12 digit Seoul Batch Serial Number:','KR-AN-884102');if(code&&code.trim()){alert('Serial '+code.trim()+' is verified with Seoul MFDS Customs database.');}}</script>
+
+<div id="concierge-modal" role="dialog" aria-modal="true" aria-labelledby="concierge-modal-title" class="fixed inset-0 z-[99999] select-none hidden"><div id="concierge-modal-backdrop" onclick="closeConciergeModal()" class="fixed inset-0 bg-[#062402]/60 backdrop-blur-sm transition-opacity duration-300"></div><div class="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-surface-bright rounded-t-[32px] border-t border-outline/40 shadow-2xl p-space-md pb-safe overflow-y-auto flex flex-col gap-3.5 z-10 transition-transform duration-300 no-scrollbar"><div class="flex justify-center pt-1 pb-0.5"><div class="w-12 h-1.5 rounded-full bg-outline-variant/60"></div></div><div class="flex items-center justify-between pb-2 border-b border-outline/30"><div class="flex items-center gap-2.5"><div class="w-9 h-9 rounded-full bg-secondary-container text-secondary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px]">support_agent</span></div><div><div class="flex items-center gap-1.5"><h3 id="concierge-modal-title" class="font-headline-lg-mobile text-[18px] text-primary font-bold leading-tight">Dhaka Concierge Skincare Desk</h3></div><div class="flex items-center gap-1.5 mt-0.5"><span class="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span><span class="font-body-md text-[11px] text-secondary font-semibold">Online Now • 10:00 AM - 10:00 PM BST</span></div></div></div><button onclick="closeConciergeModal()" aria-label="Close Concierge Modal" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px]">close</span></button></div><div class="rounded-[22px] bg-surface-container-low border border-outline/40 p-3.5 flex flex-col gap-2 shadow-sm"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-full bg-primary text-secondary-fixed flex items-center justify-center font-bold text-base shadow-sm shrink-0"><span class="material-symbols-outlined text-[24px]">face_3</span></div><div><div class="flex items-center gap-1.5"><h4 class="font-label-md text-[13px] font-bold text-primary">Minsah Seoul K-Beauty Advisor</h4><span class="px-1.5 py-0.5 rounded-full bg-secondary text-surface text-[9px] font-bold">Dhaka HQ</span></div><p class="text-[11px] text-on-surface-variant font-medium mt-0.5">Licensed skincare expert trained in Korean glass skin routines &amp; tropical Dhaka formulations.</p></div></div><div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/60 text-on-secondary-container w-fit text-[10px] font-semibold"><span class="material-symbols-outlined text-[12px] text-secondary">speed</span> Typically replies in under 3 minutes</div></div><div class="flex flex-col gap-1.5"><span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-secondary">chat_bubble_outline</span> Quick Conversation Starters</span><div class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5"><button type="button" onclick="triggerConciergeWhatsApp('Routine consultation for humid weather')" class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">✨ Routine consultation</button><button type="button" onclick="triggerConciergeWhatsApp('Track my order dispatched to Dhaka')" class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">📦 Track my order</button><button type="button" onclick="triggerConciergeWhatsApp('Verify Seoul batch authenticity seal')" class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">🔍 Authenticity check</button><button type="button" onclick="triggerConciergeWhatsApp('Skin sensitivity and redness query')" class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface text-[10px] font-medium shrink-0 border border-outline/30 active:scale-95 transition-all">🌿 Skin sensitivity</button></div></div><div class="flex flex-col gap-2 pt-1"><button type="button" onclick="triggerConciergeWhatsApp('Hello Minsah Beauty Dhaka Concierge, I need assistance with Korean skincare.')" class="w-full py-3.5 rounded-full bg-[#062402] hover:bg-[#28531c] text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[20px] text-[#25D366]">chat</span><span class="">Chat on WhatsApp</span></button><a href="tel:+8801700646724" class="w-full py-3 rounded-full bg-surface-bright hover:bg-secondary-container/40 border border-outline/40 text-on-surface font-label-md text-xs font-bold active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm text-center"><span class="material-symbols-outlined text-[16px] text-secondary">call</span><span class="">Call Direct Helpline (+880 1700-MINSAH)</span></a></div></div></div><div id="whatsapp-concierge-modal" role="dialog" aria-modal="true" aria-labelledby="whatsapp-concierge-title" class="fixed inset-0 z-[99999] select-none hidden"><div id="whatsapp-concierge-backdrop" onclick="closeWhatsAppConciergeModal()" class="fixed inset-0 bg-[#062402]/60 backdrop-blur-sm transition-opacity duration-300"></div><div class="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-surface-bright rounded-t-[32px] border-t border-outline/40 shadow-2xl p-space-md pb-safe overflow-y-auto flex flex-col gap-3.5 z-10 transition-transform duration-300 no-scrollbar"><div class="flex justify-center pt-1 pb-0.5"><div class="w-12 h-1.5 rounded-full bg-outline-variant/60"></div></div><div class="flex items-center justify-between pb-2 border-b border-outline/30"><div class="flex items-center gap-2.5"><div class="w-10 h-10 rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[24px]">chat</span></div><div><div class="flex items-center gap-1.5"><h3 id="whatsapp-concierge-title" class="font-headline-lg-mobile text-[18px] text-primary font-bold leading-tight">Minsah WhatsApp Concierge</h3></div><div class="flex items-center gap-1.5 mt-0.5"><span class="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span><span class="font-body-md text-[11px] text-secondary font-semibold">Online now • Avg reply &lt; 2m</span></div></div></div><button onclick="closeWhatsAppConciergeModal()" aria-label="Close WhatsApp Concierge modal" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all cursor-pointer shadow-sm"><span class="material-symbols-outlined text-[18px]">close</span></button></div><div class="rounded-[22px] bg-secondary-container/40 border border-secondary/30 p-3.5 flex items-center gap-3 shadow-sm"><div class="w-12 h-12 rounded-full bg-primary text-secondary-fixed flex items-center justify-center font-bold text-base shadow-sm shrink-0"><span class="material-symbols-outlined text-[24px]">face_3</span></div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><h4 class="font-label-md text-[13px] font-bold text-primary truncate">Farhana Rahman</h4><span class="px-1.5 py-0.5 rounded-full bg-secondary text-surface text-[9px] font-bold shrink-0">Certified</span></div><p class="text-[11px] text-on-surface-variant font-medium mt-0.5">Certified K-Beauty Consultant, Dhaka Central Desk</p><div class="inline-flex items-center gap-1 text-[10px] text-secondary font-semibold mt-1"><span class="material-symbols-outlined text-[12px]">verified</span> Seoul Skincare Advisor • Dhaka Weather Specialist</div></div></div><div class="flex flex-col gap-1.5"><span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-secondary">bolt</span> Quick Consultation Prompts</span><div class="grid grid-cols-1 gap-2"></div><button type="button" onclick="sendConciergePrompt('Recommend routine for acne &amp; humidity')" class="p-2.5 rounded-2xl bg-surface-container hover:bg-secondary-container/50 border border-outline/30 text-left transition-all active:scale-95 flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-secondary">spa</span><span class="text-xs font-semibold text-on-surface">Recommend routine for acne &amp; humidity</span></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_forward</span></button><button type="button" onclick="sendConciergePrompt('Check restock date &amp; batch authenticity')" class="p-2.5 rounded-2xl bg-surface-container hover:bg-secondary-container/50 border border-outline/30 text-left transition-all active:scale-95 flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-secondary">qr_code_2</span><span class="text-xs font-semibold text-on-surface">Check restock date &amp; batch authenticity</span></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_forward</span></button><button type="button" onclick="sendConciergePrompt('Order tracking &amp; Banani express delivery')" class="p-2.5 rounded-2xl bg-surface-container hover:bg-secondary-container/50 border border-outline/30 text-left transition-all active:scale-95 flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-secondary">local_shipping</span><span class="text-xs font-semibold text-on-surface">Order tracking &amp; Banani express delivery</span></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_forward</span></button><div class="flex flex-col gap-2 pt-1"><button type="button" onclick="sendConciergePrompt('Hello Farhana! I would like a personalized K-Beauty consultation.')" class="w-full py-3.5 rounded-full bg-primary hover:bg-primary-container text-surface-bright font-label-md text-[14px] font-bold active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[20px] text-[#25D366]">chat</span><span class="">Chat on WhatsApp (+880 1712-MINSAH)</span></button><div class="flex items-center justify-center gap-1.5 text-center pt-1"><span class="material-symbols-outlined text-[14px] text-on-surface-variant">schedule</span><p class="text-[11px] text-on-surface-variant font-medium">Every day 10:00 AM – 10:00 PM BST • Dhaka Central Hub</p></div></div></div></div></div><script>function openWhatsAppConciergeModal(){const modal=document.getElementById('whatsapp-concierge-modal');if(modal){modal.classList.remove('hidden');document.body.style.overflow='hidden';}}function closeWhatsAppConciergeModal(){const modal=document.getElementById('whatsapp-concierge-modal');if(modal){modal.classList.add('hidden');if(document.getElementById('auth-account-modal')&&!document.getElementById('auth-account-modal').classList.contains('hidden')){document.body.style.overflow='hidden';}else{document.body.style.overflow='';}}}function sendConciergePrompt(promptText){const text=encodeURIComponent('🌸 Minsah Skincare Concierge: '+promptText);window.open('https://api.whatsapp.com/send?phone=8801712345678&text='+text,'_blank');closeWhatsAppConciergeModal();}</script><script>function openConciergeModal(){const modal=document.getElementById('concierge-modal');if(modal){modal.classList.remove('hidden');document.body.style.overflow='hidden';}}function closeConciergeModal(){const modal=document.getElementById('concierge-modal');if(modal){modal.classList.add('hidden');if(document.getElementById('auth-account-modal')&&!document.getElementById('auth-account-modal').classList.contains('hidden')){document.body.style.overflow='hidden';}else{document.body.style.overflow='';}}}function triggerConciergeWhatsApp(query){const text=encodeURIComponent('🌸 Minsah Skincare Concierge: '+query);window.open('https://api.whatsapp.com/send?phone=8801712345678&text='+text,'_blank');closeConciergeModal();}<\/script></script>
+
+
+
+</body></html>

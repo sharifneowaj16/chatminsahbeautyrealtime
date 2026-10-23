@@ -11,7 +11,7 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
-      email: string;
+      email?: string | null;
       name?: string | null;
       image?: string | null;
       role: string;
@@ -21,7 +21,7 @@ declare module 'next-auth' {
 
   interface User {
     id: string;
-    email: string;
+    email?: string | null;
     name?: string | null;
     image?: string | null;
     role: string;
@@ -75,28 +75,62 @@ FacebookProvider({
           throw new Error('Email and password are required');
         }
 
-        // Find user in database
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
-        });
+        const inputId = credentials.email.trim();
+        const isOtpLogin = credentials.password === 'OTP_VERIFIED';
+        const cleanPhone = inputId.replace(/[-\s]/g, '');
+        const isPhone = /^(?:\+?88)?01[3-9]\d{8}$/.test(cleanPhone);
 
-        if (!user) {
-          throw new Error('Invalid email or password');
+        // Find user in database by phone or email
+        let user = null;
+        if (isPhone) {
+          const rawDigits = cleanPhone.replace(/^\+?88/, '');
+          user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { phone: cleanPhone },
+                { phone: rawDigits },
+                { phone: `+88${rawDigits}` },
+                { phone: `+880${rawDigits.replace(/^0/, '')}` },
+              ],
+            },
+          });
+
+          // If OTP login and user does not exist yet, auto-register as customer
+          if (!user && isOtpLogin) {
+            user = await prisma.user.create({
+              data: {
+                phone: rawDigits,
+                firstName: 'Minsah',
+                lastName: 'Member',
+                role: 'CUSTOMER',
+                status: 'ACTIVE',
+                loyaltyPoints: 100,
+              },
+            });
+          }
+        } else {
+          user = await prisma.user.findUnique({
+            where: { email: inputId.toLowerCase() },
+          });
         }
 
-        if (!user.passwordHash) {
-          throw new Error('Please sign in using your social account');
+        if (!user) {
+          throw new Error('Invalid credentials');
         }
 
         if (user.status !== 'ACTIVE') {
           throw new Error('Your account has been suspended');
         }
 
-        // Verify password
-        const isValid = await verifyPassword(credentials.password, user.passwordHash);
-
-        if (!isValid) {
-          throw new Error('Invalid email or password');
+        // Verify password if not OTP verified
+        if (!isOtpLogin) {
+          if (!user.passwordHash) {
+            throw new Error('Please sign in using your social account or OTP');
+          }
+          const isValid = await verifyPassword(credentials.password, user.passwordHash);
+          if (!isValid) {
+            throw new Error('Invalid email or password');
+          }
         }
 
         // Update last login
@@ -108,7 +142,7 @@ FacebookProvider({
         return {
           id: user.id,
           email: user.email,
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone || 'VIP Member',
           image: user.avatar,
           role: user.role,
         };

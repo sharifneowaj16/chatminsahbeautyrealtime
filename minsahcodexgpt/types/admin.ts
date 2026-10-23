@@ -1,4 +1,4 @@
-﻿// Admin Panel TypeScript Interfaces
+// Admin Panel TypeScript Interfaces
 // Next.js 16 + React 19 + TypeScript + Tailwind CSS 4
 
 export interface AdminDashboardStats {
@@ -598,6 +598,17 @@ export interface HomeSection {
   updatedAt?: string;
 }
 
+export interface HeroSlide {
+  id: string;
+  imageUrl: string;
+  mobileImageUrl?: string;
+  title?: string;
+  subtitle?: string;
+  linkHref?: string;
+  order: number;
+  isActive: boolean;
+}
+
 export interface HomeHeroConfig {
   isVisible: boolean;
   eyebrow: string;
@@ -612,6 +623,7 @@ export interface HomeHeroConfig {
   badgeOne?: string;
   badgeTwo?: string;
   backgroundClass?: string;
+  slides?: HeroSlide[];
 }
 
 export interface HomeSectionCategory {

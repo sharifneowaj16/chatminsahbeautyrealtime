@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ChevronRight, Flame, TimerReset } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Product as ContextProduct } from '@/contexts/ProductsContext';
 import type { HomeSection, HomeSectionBrand } from '@/types/admin';
@@ -10,6 +9,14 @@ import ProductCard from '@/app/components/shop/ProductCard';
 import type { Product as ShopProduct, ProductVariant } from '@/types/product';
 import { adminProductToShopProduct } from '@/lib/productAdapter';
 import { productPath } from '@/lib/product-url';
+
+// Modular Micro Components
+import HomeSectionHeader from './home/sections/HomeSectionHeader';
+import FlashSaleBannerStrip from './home/sections/FlashSaleBannerStrip';
+import ProductGridContainer from './home/sections/ProductGridContainer';
+import ProductCarouselTrack from './home/sections/ProductCarouselTrack';
+import SectionLayoutWrapper from './home/sections/SectionLayoutWrapper';
+import type { SectionIconType } from './home/sections/SectionBadgeIcon';
 
 type ProductSectionType = 'flash-sale' | 'new-arrivals' | 'for-you' | 'recommendations' | 'favourites' | 'brands';
 
@@ -134,32 +141,6 @@ function getDefaultHref(type: string) {
   return hrefs[type] ?? '/shop';
 }
 
-function SectionHeader({ title, subtitle, href, cta = 'View all', icon, showViewAll = true }: {
-  title: string;
-  subtitle?: string;
-  href: string;
-  cta?: string;
-  icon?: ReactNode;
-  showViewAll?: boolean;
-}) {
-  return (
-    <div className="mb-6 flex items-center justify-between gap-4">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          {icon}
-          <h2 className="truncate text-xl font-bold tracking-tight text-minsah-dark">{title}</h2>
-        </div>
-        {subtitle && <p className="mt-1 text-xs font-normal text-minsah-secondary">{subtitle}</p>}
-      </div>
-      {showViewAll && (
-        <Link href={href} aria-label={`${cta} ${title}`} className="minsah-tap-target minsah-touch-target min-h-10 inline-flex shrink-0 items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-semibold text-minsah-primary hover:bg-minsah-surface-subtle">
-          {cta} <ChevronRight size={14} />
-        </Link>
-      )}
-    </div>
-  );
-}
-
 function getProductSectionConfigs(sections?: HomeSection[]) {
   const source = sections && sections.length > 0 ? sections : defaultHomeSections;
   return source
@@ -205,7 +186,7 @@ function getProductsForSection({
 }) {
   const manualProducts = filterSelectedProducts(cardProducts, section);
   const type = section.type as ProductSectionType;
-  const limit = sectionLimit(section, type === 'flash-sale' || type === 'new-arrivals' ? 4 : 6);
+  const limit = sectionLimit(section, 5);
 
   if (manualProducts) return manualProducts.slice(0, limit);
 
@@ -236,20 +217,14 @@ function getProductsForSection({
   return [];
 }
 
-function gridClass(section: HomeSection) {
-  if (section.settings.layout === 'grid-3') return 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4';
-  if (section.settings.layout === 'grid-4') return 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4';
-  return 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4';
-}
-
-function ProductGrid({ section, products }: { section: HomeSection; products: ShopProduct[] }) {
+function RenderedProductList({ section, products }: { section: HomeSection; products: ShopProduct[] }) {
   if (products.length === 0) return null;
 
   if (section.settings.layout === 'horizontal-scroll') {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pt-1">
+      <ProductCarouselTrack>
         {products.map((product, index) => (
-          <div key={product.id} className="w-[180px] sm:w-[220px] md:w-[250px] shrink-0">
+          <div key={product.id} className="w-[180px] sm:w-[220px] md:w-[260px] shrink-0">
             <ProductCard
               product={product}
               layout="grid"
@@ -258,12 +233,16 @@ function ProductGrid({ section, products }: { section: HomeSection; products: Sh
             />
           </div>
         ))}
-      </div>
+      </ProductCarouselTrack>
     );
   }
 
+  let columns: 3 | 4 | 5 = 5;
+  if (section.settings.layout === 'grid-3') columns = 3;
+  else if (section.settings.layout === 'grid-4') columns = 4;
+
   return (
-    <div className={gridClass(section)}>
+    <ProductGridContainer columns={columns}>
       {products.map((product, index) => (
         <ProductCard
           key={product.id}
@@ -273,7 +252,7 @@ function ProductGrid({ section, products }: { section: HomeSection; products: Sh
           listName={section.title || section.type}
         />
       ))}
-    </div>
+    </ProductGridContainer>
   );
 }
 
@@ -288,28 +267,30 @@ function BrandsSection({ section, brands }: { section: HomeSection; brands: Home
   if (filteredBrands.length === 0) return null;
 
   return (
-    <section className="px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || DESIGN_TOKEN_VALUES.surface.panel }}>
-      <SectionHeader
+    <SectionLayoutWrapper style={{ backgroundColor: section.settings.backgroundColor || DESIGN_TOKEN_VALUES.surface.panel }}>
+      <HomeSectionHeader
+        type="custom"
         title={section.title}
         subtitle={section.subtitle}
+        badgeLabel="FEATURED BRANDS"
         href={section.settings.viewAllHref || getDefaultHref(section.type)}
         cta={section.settings.ctaText || 'View all'}
         showViewAll={section.settings.showViewAll !== false}
       />
-      <div className="grid grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         {filteredBrands.map((brand) => (
           <Link
             key={brand.id}
             href={`/brands/${brand.slug}`}
-            className="minsah-tap-target flex aspect-square items-center justify-center rounded-lg border border-stone-200/70 bg-white p-3 transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-sm"
+            className="minsah-tap-target flex aspect-square items-center justify-center rounded-2xl border border-stone-200/80 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#1c3a13]/30 hover:shadow-md"
           >
-            <span className="whitespace-pre-line text-center text-xs font-semibold text-minsah-dark">
+            <span className="whitespace-pre-line text-center text-xs sm:text-sm font-bold text-[#1c3a13]">
               {brand.logo || brand.name}
             </span>
           </Link>
         ))}
       </div>
-    </section>
+    </SectionLayoutWrapper>
   );
 }
 
@@ -336,8 +317,8 @@ export default function HomeProductSections({
     }
 
     let sectionProducts = getProductsForSection({ section, cardProducts, createdAtById });
-    let icon: ReactNode = null;
     let cta = section.settings.ctaText || 'View all';
+    const sectionType = section.type as SectionIconType;
 
     if (section.type === 'flash-sale') {
       sectionProducts = sectionProducts.length > 0 && (section.settings.selectedProductIds?.length ?? 0) > 0
@@ -346,38 +327,38 @@ export default function HomeProductSections({
       sectionProducts = sectionProducts
         .filter((product) => product.originalPrice != null && product.originalPrice > product.price)
         .slice(0, sectionLimit(section, 4));
-      icon = <Flame className="text-orange-500" size={20} />;
       cta = section.settings.ctaText || 'Shop Now';
     }
 
     if (sectionProducts.length === 0) return null;
 
     return (
-      <section key={section.id} className="px-4 py-10 lg:px-8 lg:py-14" style={{ backgroundColor: section.settings.backgroundColor || undefined }}>
-        <SectionHeader
+      <SectionLayoutWrapper
+        key={section.id}
+        style={{ backgroundColor: section.settings.backgroundColor || undefined }}
+      >
+        <HomeSectionHeader
+          type={sectionType}
           title={section.title}
           subtitle={section.subtitle}
           href={section.settings.viewAllHref || getDefaultHref(section.type)}
           cta={cta}
-          icon={icon}
           showViewAll={section.settings.showViewAll !== false}
         />
 
         {section.type === 'flash-sale' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <HomeCountdownTimer endsAt={flashSaleEndsAt} />
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-orange-700 border border-stone-200/70">
-              <TimerReset size={13} /> Active limited-time offers only
-            </div>
-          </div>
+          <FlashSaleBannerStrip
+            timer={<HomeCountdownTimer endsAt={flashSaleEndsAt} label="Offer ends in:" />}
+            urgencyText="Active limited-time offers only"
+          />
         )}
 
-        <ProductGrid section={section} products={sectionProducts} />
-      </section>
+        <RenderedProductList section={section} products={sectionProducts} />
+      </SectionLayoutWrapper>
     );
   }).filter(Boolean);
 
   if (renderedSections.length === 0) return null;
 
-  return <div className="bg-minsah-light pb-24">{renderedSections}</div>;
+  return <div className="bg-[#FAF9F6] pb-20 sm:pb-24">{renderedSections}</div>;
 }

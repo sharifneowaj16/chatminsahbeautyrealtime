@@ -93,6 +93,7 @@ interface MobileNavDrawerProps {
   onOpenDelivery?: () => void;
   categories?: MobileDrawerCategory[];
   user?: { name?: string | null; email?: string | null } | null;
+  onOpenAuth?: () => void;
 }
 
 type ActiveTab = 'shop' | 'categories' | 'offers';
@@ -104,6 +105,7 @@ export default function MobileNavDrawer({
   onOpenDelivery,
   categories = fallbackCategories,
   user,
+  onOpenAuth,
 }: MobileNavDrawerProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('shop');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -405,14 +407,31 @@ export default function MobileNavDrawer({
             <Heart size={14} />
             <span>Wishlist</span>
           </Link>
-          <Link
-            href={user ? '/account' : '/login'}
-            onClick={onClose}
-            className="flex items-center gap-1.5 text-xs font-semibold text-white/80 hover:text-white transition"
-          >
-            <User size={14} />
-            <span>{user ? 'Account' : 'Sign In'}</span>
-          </Link>
+          {user ? (
+            <Link
+              href="/account"
+              onClick={onClose}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white/80 hover:text-white transition"
+            >
+              <User size={14} />
+              <span>Account</span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onOpenAuth) onOpenAuth();
+                else if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('minsah:open-auth-modal'));
+                }
+              }}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white/80 hover:text-white transition"
+            >
+              <User size={14} />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
 
       </div>

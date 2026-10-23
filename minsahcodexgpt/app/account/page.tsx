@@ -44,10 +44,10 @@ async function getDashboardData(userId: string) {
 // ✅ FIX: Pass icon names as strings, NOT as React components
 // Client Component-এ function/component directly pass করা যায় না
 const quickActions = [
+  { name: 'Warranty Claims', description: 'Instant doorstep replacements', href: '/account/warranty', icon: 'ShieldCheck', color: 'green' },
   { name: 'Shop New Arrivals', description: 'Check out the latest products', href: '/shop?sort=newest', icon: 'ShoppingBag', color: 'purple' },
+  { name: 'Returns & Refunds', description: 'Track ongoing return requests', href: '/account/returns', icon: 'Truck', color: 'blue' },
   { name: 'Write a Review', description: 'Share your experience', href: '/account/reviews', icon: 'Star', color: 'yellow' },
-  { name: 'Refer a Friend', description: 'Earn 500 points per referral', href: '/account/referrals', icon: 'Users', color: 'blue' },
-  { name: 'Update Profile', description: 'Keep your information current', href: '/account/settings', icon: 'MapPin', color: 'green' },
 ];
 
 const upcomingFeatures = [

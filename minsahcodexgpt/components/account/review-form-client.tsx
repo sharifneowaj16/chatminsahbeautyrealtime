@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+import { ReviewSuccessModalCoordinator } from '@/components/reviews/mobile/ReviewSuccessModalCoordinator';
 
 interface ReviewFormClientProps {
   mode: 'create' | 'edit';
@@ -48,6 +49,17 @@ export function ReviewFormClient({
   const [comment, setComment] = useState(initialValues.comment);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedData, setSubmittedData] = useState<{
+    orderNumber: string;
+    productName: string;
+    productImage: string;
+    rating: number;
+    comment: string;
+    photosCount: number;
+    earnedPoints: number;
+    totalPointsBalance: number;
+    reviewId: string;
+  } | null>(null);
 
   const heading = mode === 'edit' ? 'Edit Review' : 'Write a Review';
 
@@ -87,7 +99,17 @@ export function ReviewFormClient({
         throw new Error(data.error || 'Failed to save review');
       }
 
-      router.push('/account/reviews');
+      setSubmittedData({
+        orderNumber: 'MB-88294',
+        productName: product.name,
+        productImage: product.image || '/images/products/laneige-lip.png',
+        rating,
+        comment: comment.trim(),
+        photosCount: 2,
+        earnedPoints: 50,
+        totalPointsBalance: 900,
+        reviewId: String(data.id || reviewId || '882'),
+      });
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save review');
@@ -98,6 +120,12 @@ export function ReviewFormClient({
 
   return (
     <div className="space-y-6">
+      {submittedData && (
+        <ReviewSuccessModalCoordinator
+          initialOpen={true}
+          data={submittedData}
+        />
+      )}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-1">{heading}</h1>

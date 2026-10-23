@@ -19,12 +19,13 @@ datasource db {
 
 model User {
   id              String     @id @default(cuid())
-  email           String     @unique
+  email           String?    @unique
   emailVerified   DateTime?
   passwordHash    String?
   firstName       String?
   lastName        String?
   phone           String?
+  verifiedPhone   String?    @unique
   dateOfBirth     DateTime?
   gender          String?
   avatar          String?
@@ -131,6 +132,23 @@ model PasswordResetToken {
 
   @@index([email])
   @@index([token])
+}
+
+model OtpRequest {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  purpose    String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  deviceId   String?
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+  @@index([ip, createdAt])
+  @@index([deviceId, createdAt])
 }
 
 // ==========================================

@@ -38,6 +38,14 @@ import {
   SquarePen,
   Send,
   Clock,
+  DollarSign,
+  Gift,
+  Bell,
+  FileSpreadsheet,
+  Award,
+  Share2,
+  Building2,
+  ShieldAlert,
 } from 'lucide-react';
 
 // Simple clsx alternative
@@ -88,6 +96,10 @@ const menuItems: MenuItem[] = [
         href: '/admin/shortlist',
         permission: PERMISSIONS.SHORTLIST_VIEW,
       },
+      {
+        title: 'Suppliers & Procurement',
+        href: '/admin/suppliers',
+      },
     ],
   },
   {
@@ -99,6 +111,7 @@ const menuItems: MenuItem[] = [
       { title: 'All Orders', href: '/admin/orders' },
       { title: 'Create Order', href: '/admin/orders/new', permission: PERMISSIONS.ORDERS_VIEW },
       { title: 'Processing', href: '/admin/orders?status=processing', permission: PERMISSIONS.ORDERS_PROCESS },
+      { title: 'Shipping & Couriers', href: '/admin/shipping' },
       { title: 'Returns', href: '/admin/orders/returns', permission: PERMISSIONS.ORDERS_REFUND },
       {
         title: 'Courier webhooks',
@@ -120,7 +133,20 @@ const menuItems: MenuItem[] = [
     children: [
       { title: 'All Customers', href: '/admin/customers' },
       { title: 'Top Customers', href: '/admin/top-customers' },
+      { title: 'Loyalty & Rewards', href: '/admin/loyalty' },
+      { title: 'Referral Program', href: '/admin/referrals' },
     ],
+  },
+  {
+    title: 'Finance & Treasury',
+    href: '/admin/finance',
+    icon: DollarSign,
+    permission: PERMISSIONS.ANALYTICS_VIEW,
+  },
+  {
+    title: 'Notifications',
+    href: '/admin/notifications',
+    icon: Bell,
   },
   {
     title: 'Analytics',
@@ -129,6 +155,8 @@ const menuItems: MenuItem[] = [
     permission: PERMISSIONS.ANALYTICS_VIEW,
     children: [
       { title: 'Overview', href: '/admin/analytics' },
+      { title: 'Reports & Exports', href: '/admin/reports' },
+      { title: 'Audit Trail Logs', href: '/admin/audit-logs' },
       { title: 'Sales by Region', href: '/admin/sales-by-region' },
       { title: 'Tracking & Pixels', href: '/admin/tracking' },
       { title: 'Tracking Health', href: '/admin/tracking-health', icon: AlertTriangle, superAdminOnly: true },
@@ -144,16 +172,21 @@ const menuItems: MenuItem[] = [
     permission: PERMISSIONS.CONTENT_MANAGE,
     children: [
       { title: 'Overview', href: '/admin/marketing' },
+      { title: 'Email Templates Studio', href: '/admin/marketing/email-templates', icon: Mail },
       { title: 'Meta Operations', href: '/admin/meta', icon: ShieldCheck, permission: PERMISSIONS.META_OPS_VIEW },
       { title: 'Meta Business (legacy)', href: '/admin/meta-business', icon: Megaphone, superAdminOnly: true },
       { title: 'Social Media', href: '/admin/marketing?tab=social', icon: Globe },
       { title: 'WhatsApp Business', href: '/admin/marketing?tab=whatsapp', icon: Smartphone },
-      { title: 'Email Marketing', href: '/admin/marketing?tab=email', icon: Mail },
       { title: 'SMS Marketing', href: '/admin/marketing?tab=sms', icon: Smartphone },
       { title: 'Google Services', href: '/admin/marketing?tab=google', icon: Sparkles },
       { title: 'Coupons', href: '/admin/coupons' },
       { title: 'Promotions', href: '/admin/promotions' },
     ],
+  },
+  {
+    title: 'Gift Operations',
+    href: '/admin/gift-cards',
+    icon: Gift,
   },
   {
     title: 'Inbox',
@@ -168,6 +201,7 @@ const menuItems: MenuItem[] = [
     permission: PERMISSIONS.CONTENT_MANAGE,
     children: [
       { title: 'Home Sections', href: '/admin/home-sections' },
+      { title: 'SEO & Search Meta', href: '/admin/seo', icon: Globe },
       { title: 'Blog Posts', href: '/admin/blog' },
       { title: 'FAQ', href: '/admin/faq' },
       { title: 'Reviews', href: '/admin/reviews' },
@@ -188,6 +222,10 @@ const menuItems: MenuItem[] = [
     href: '/admin/settings',
     icon: Settings,
     permission: PERMISSIONS.SETTINGS_VIEW,
+    children: [
+      { title: 'Store Settings', href: '/admin/settings' },
+      { title: 'Tax & VAT Settings', href: '/admin/tax-settings' },
+    ],
   },
 ];
 

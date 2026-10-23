@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastProvider';
 import { productPath } from '@/lib/product-url';
 import CatalogProductImage from '@/components/catalog/CatalogProductImage';
+import { ReviewsAutoScrollSection } from '@/components/reviews/mobile/ReviewsAutoScrollSection';
 
 function ProductImage({ src, name }: { src: any; name: string }) {
   if (typeof src === 'string' && src.trim()) {
@@ -132,6 +133,10 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
 
   return (
     <div className="space-y-6">
+      <div className="lg:hidden -mx-4 -mt-2">
+        <ReviewsAutoScrollSection />
+      </div>
+
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-1">My Reviews</h1>
         <p className="text-gray-600">Manage your product reviews</p>

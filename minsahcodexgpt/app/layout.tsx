@@ -10,6 +10,15 @@ import { DeliveryLocationProvider } from '@/contexts/DeliveryLocationContext';
 import { getSiteConfig } from '@/lib/site-config';
 import { getSiteUrl } from '@/lib/seo';
 import { ToastProvider } from '@/components/ui/ToastProvider';
+import { CookieConsentModal } from '@/components/privacy/mobile/CookieConsentModal';
+import { ConciergeModalCoordinator } from '@/components/concierge/ConciergeModalCoordinator';
+import { StockAlertCoordinator } from '@/components/stock-alert/mobile/StockAlertCoordinator';
+import WelcomeDiscountModal from '@/components/promotions/welcome/WelcomeDiscountModal';
+import NotificationPreviewModal from '@/components/notifications/preview/NotificationPreviewModal';
+import DeliveryLocationModal from '@/components/delivery/location/DeliveryLocationModal';
+import ProductComparisonDesktopModal from '@/components/compare/ProductComparisonDesktopModal';
+import IOSSearchModalOverlay from '@/components/search/mobile/IOSSearchModalOverlay';
+import MemberAuthModal from '@/components/auth/MemberAuthModal';
 
 const seedSans = localFont({
   src: [
@@ -211,11 +220,22 @@ export default function RootLayout({
             <AuthProvider>
               <CartProvider>
                 <CartDrawerProvider>
-                  <DeliveryLocationProvider>{children}</DeliveryLocationProvider>
+                  <DeliveryLocationProvider>
+                    {children}
+                    <DeliveryLocationModal />
+                  </DeliveryLocationProvider>
                 </CartDrawerProvider>
               </CartProvider>
             </AuthProvider>
           </TrackingProvider>
+          <CookieConsentModal />
+          <ConciergeModalCoordinator />
+          <StockAlertCoordinator />
+          <WelcomeDiscountModal />
+          <NotificationPreviewModal />
+          <ProductComparisonDesktopModal />
+          <IOSSearchModalOverlay />
+          <MemberAuthModal />
         </ToastProvider>
 
         <AllPixels />

@@ -593,7 +593,7 @@ export async function POST(request: NextRequest) {
     const orderAttribution = readOrderAttribution(request, { userId });
     const orderTrackingExclusion = buildOrderTrackingExclusionData({
       request,
-      email: customerForTracking?.email,
+      email: customerForTracking?.email ?? undefined,
       phones: [
         customerForTracking?.phone,
         addressData?.phoneNumber,

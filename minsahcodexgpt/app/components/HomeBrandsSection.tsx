@@ -70,7 +70,7 @@ export default function HomeBrandsSection({
       }}
       aria-label={title}
     >
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-[1440px]">
         {/* Section Header */}
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="min-w-0">

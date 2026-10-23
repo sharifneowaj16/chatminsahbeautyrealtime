@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import HomeCategoriesSection from '@/app/components/HomeCategoriesSection';
 import HomeCombosSection from '@/app/components/HomeCombosSection';
-import HomeHeroBanner from '@/app/components/HomeHeroBanner';
+import HomeHeroContainer from '@/components/home/hero/HomeHeroContainer';
+import FlashDealsSection from '@/components/home/flash-deals/FlashDealsSection';
 import HomeTrustStrip from '@/app/components/HomeTrustStrip';
 import HomeProductsClientFallback from '@/app/components/HomeProductsClientFallback';
 import HomeProductSections from '@/app/components/HomeProductSections';
@@ -380,30 +381,19 @@ export default async function HomePage() {
 
   const renderedSections = visibleSections.map((section) => {
     if (section.type === 'promotion') {
-      // --- TEMPORARILY HIDDEN: Hero Banner + Trust Strip ---
-      // Uncomment the block below to re-enable.
-      return null;
-      // if (!homeConfig.hero.isVisible) return null;
-      //
-      // return (
-      //   <div key={section.id}>
-      //     <HomeHeroBanner
-      //       eyebrow={homeConfig.hero.eyebrow}
-      //       title={homeConfig.hero.title || section.title}
-      //       subtitle={homeConfig.hero.subtitle || section.subtitle}
-      //       primaryCtaText={homeConfig.hero.primaryCtaText}
-      //       primaryCtaHref={homeConfig.hero.primaryCtaHref}
-      //       secondaryCtaText={homeConfig.hero.secondaryCtaText}
-      //       secondaryCtaHref={homeConfig.hero.secondaryCtaHref}
-      //       badgeOne={homeConfig.hero.badgeOne}
-      //       badgeTwo={homeConfig.hero.badgeTwo}
-      //       backgroundClass={homeConfig.hero.backgroundClass}
-      //       featuredImage={homeConfig.hero.imageUrl || heroProduct?.image}
-      //       featuredProductName={homeConfig.hero.featuredProductName || heroProduct?.name}
-      //     />
-      //     <HomeTrustStrip />
-      //   </div>
-      // );
+      if (!homeConfig.hero.isVisible) return null;
+
+      return (
+        <div key={section.id} className="w-full">
+          <HomeHeroContainer
+            slides={homeConfig.hero.slides}
+            defaultImageUrl={homeConfig.hero.imageUrl || heroProduct?.image}
+            title={homeConfig.hero.title || section.title}
+            subtitle={homeConfig.hero.subtitle || section.subtitle}
+            primaryCtaHref={homeConfig.hero.primaryCtaHref}
+          />
+        </div>
+      );
     }
 
     if (section.type === 'categories') {
@@ -434,6 +424,26 @@ export default async function HomePage() {
           section={section}
           brands={homeConfig.brands}
         />
+      );
+    }
+
+    if (section.type === 'flash-sale') {
+      // Handled by the dedicated 5-column FlashDealsSection positioned below New Arrivals
+      return null;
+    }
+
+    if (section.type === 'new-arrivals') {
+      return (
+        <div key={section.id} className="w-full">
+          <Suspense fallback={<HomeSectionSkeleton type="products" />}>
+            <HomeProductSections
+              products={initialProducts}
+              sections={[section]}
+              brands={homeConfig.brands}
+            />
+          </Suspense>
+          <FlashDealsSection config={homeConfig.flashDeals} />
+        </div>
       );
     }
 

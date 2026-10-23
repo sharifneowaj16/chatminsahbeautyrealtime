@@ -59,7 +59,7 @@ export function Dialog({
 
       <div
         className={joinClassNames(
-          'fixed inset-0 w-screen overflow-y-auto overscroll-contain',
+          'fixed inset-0 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain',
           viewportClassName,
         )}
       >

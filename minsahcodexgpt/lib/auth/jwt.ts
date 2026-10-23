@@ -23,7 +23,7 @@ const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_EXPIRY || '7d';
 
 export interface TokenPayload extends JWTPayload {
   userId: string;
-  email: string;
+  email: string | null;
   role: string;
   type: 'access' | 'refresh';
 }
@@ -41,7 +41,7 @@ export interface AdminTokenPayload extends JWTPayload {
  */
 export async function generateAccessToken(payload: {
   userId: string;
-  email: string;
+  email: string | null;
   role: string;
 }): Promise<string> {
   const token = await new SignJWT({
@@ -63,7 +63,7 @@ export async function generateAccessToken(payload: {
  */
 export async function generateRefreshToken(payload: {
   userId: string;
-  email: string;
+  email: string | null;
   role: string;
 }): Promise<string> {
   const token = await new SignJWT({
@@ -215,7 +215,7 @@ export async function verifyAdminRefreshToken(token: string): Promise<AdminToken
  */
 export async function generateTokenPair(payload: {
   userId: string;
-  email: string;
+  email: string | null;
   role: string;
 }): Promise<{ accessToken: string; refreshToken: string }> {
   const [accessToken, refreshToken] = await Promise.all([

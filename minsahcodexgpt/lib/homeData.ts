@@ -152,6 +152,27 @@ export const defaultHomeHeroConfig: HomeHeroConfig = {
   badgeOne: 'Authentic Products',
   badgeTwo: 'Cash on Delivery',
   backgroundClass: 'from-minsah-light via-white to-minsah-accent/70',
+  imageUrl: '/images/banners/minsah-hero-pink-authentic.jpg',
+  slides: [
+    {
+      id: 'slide-pink-authentic',
+      imageUrl: '/images/banners/minsah-hero-pink-authentic.jpg',
+      title: 'Minsah Original | Authentic | Trusted',
+      subtitle: '100% Genuine Korean Skincare & Beauty Products in Bangladesh',
+      linkHref: '/shop',
+      order: 1,
+      isActive: true,
+    },
+    {
+      id: 'slide-hero-curated',
+      imageUrl: '/images/hero-image.jpg',
+      title: 'Dewy Glow & Pure Botanical Radiance',
+      subtitle: 'Direct Import Korean Formulations Dispatched in 24-48 Hours',
+      linkHref: '/shop?section=new-in',
+      order: 2,
+      isActive: true,
+    },
+  ],
 };
 
 // Default Categories

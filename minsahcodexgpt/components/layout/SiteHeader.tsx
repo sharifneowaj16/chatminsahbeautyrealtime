@@ -10,6 +10,7 @@ import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { useDeliveryLocation } from '@/contexts/DeliveryLocationContext';
 import DeliveryFlyout from '@/components/layout/DeliveryFlyout';
 import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
+import MemberAuthModal from '@/components/auth/MemberAuthModal';
 
 export default function SiteHeader() {
   const { items } = useCart();
@@ -19,13 +20,14 @@ export default function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState<number>(0);
   const deliveryBtnRef = useRef<HTMLButtonElement>(null);
 
   // Derive display label from saved location
-  const deliveryDisplayCity = savedLocation?.area || savedLocation?.city || 'Bangladesh';
+  const deliveryDisplayCity = savedLocation?.area || savedLocation?.city || 'Dhaka';
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const accountHref = !loading && user ? '/account' : '/login';
 
   const [navCategories, setNavCategories] = useState<{ id: string; name: string; href: string }[]>([
     { id: 'skincare', name: 'Skincare', href: '/shop?category=Skincare' },
@@ -38,7 +40,7 @@ export default function SiteHeader() {
     { id: 'serum', name: 'Serum', href: '/shop?category=Serum' },
   ]);
 
-  // Dynamically sync sub-navigation with database categories
+  // Sync sub-navigation categories with API
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/categories?activeOnly=true', { signal: controller.signal })
@@ -59,118 +61,157 @@ export default function SiteHeader() {
     return () => controller.abort();
   }, []);
 
+  // Sync wishlist item count & listen for live changes
+  useEffect(() => {
+    const syncWishlist = () => {
+      try {
+        const raw = localStorage.getItem('minsah_wishlist_count');
+        if (raw !== null) {
+          setWishlistCount(Number(raw) || 0);
+        }
+      } catch {}
+    };
+
+    syncWishlist();
+    window.addEventListener('minsah:wishlist-update', syncWishlist);
+    window.addEventListener('storage', syncWishlist);
+
+    return () => {
+      window.removeEventListener('minsah:wishlist-update', syncWishlist);
+      window.removeEventListener('storage', syncWishlist);
+    };
+  }, []);
+
+  // Global keyboard shortcut '/' to focus search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '') &&
+        !(document.activeElement as HTMLElement)?.isContentEditable
+      ) {
+        e.preventDefault();
+        // Check if on mobile: open mobile search overlay
+        if (window.innerWidth < 768) {
+          setMobileSearchOpen(true);
+        } else {
+          const searchInput = document.querySelector<HTMLInputElement>(
+            '.search-area input[type="text"], .search-area input[type="search"], .search-area-tablet input'
+          );
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const closeMenu = () => setMenuOpen(false);
 
   return (
     <>
-      <header className="site-header">
+      <header className="site-header" role="banner">
         <div className="header-container">
           <div className="header-main">
-            {/* Logo */}
-            <Link href="/" className="brand" aria-label="Minsah Beauty home" onClick={closeMenu}>
-              <span className="brand-icon">
+            {/* Left: Brand Logo & Deliver-To */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Brand Logo */}
+              <Link href="/" className="brand" aria-label="Minsah Beauty home" onClick={closeMenu}>
+                <span className="brand-icon">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
+                    <path d="M20 2v4" />
+                    <path d="M22 4h-4" />
+                    <circle cx="4" cy="20" r="2" />
+                  </svg>
+                </span>
+                <span className="brand-copy">
+                  <span className="brand-name">Minsah</span>
+                  <span className="brand-tag">Beauty</span>
+                </span>
+              </Link>
+
+              {/* Deliver To: Location Selector Pill */}
+              <button
+                ref={deliveryBtnRef}
+                className="mobile-deliver-chip"
+                type="button"
+                aria-label={`Deliver to ${deliveryDisplayCity}, change location`}
+                aria-expanded={deliveryOpen}
+                aria-haspopup="dialog"
+                onClick={() => setDeliveryOpen((v) => !v)}
+              >
                 <svg
-                  width="19"
-                  height="19"
+                  className="text-[#D4F6A2] shrink-0"
+                  width="14"
+                  height="14"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   aria-hidden="true"
                 >
-                  <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
-                  <path d="M20 2v4" />
-                  <path d="M22 4h-4" />
-                  <circle cx="4" cy="20" r="2" />
+                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                  <circle cx="12" cy="10" r="3" />
                 </svg>
-              </span>
-              <span className="brand-copy">
-                <span className="brand-name">Minsah</span>
-                <span className="brand-tag">Beauty</span>
-              </span>
-            </Link>
-
-            {/* Delivery Location */}
-            <button
-              ref={deliveryBtnRef}
-              className="header-control delivery"
-              type="button"
-              aria-label={`Deliver to ${deliveryDisplayCity}, change location`}
-              aria-expanded={deliveryOpen}
-              aria-haspopup="dialog"
-              onClick={() => setDeliveryOpen((v) => !v)}
-            >
-              <svg
-                className="accent-icon"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span className="delivery-copy">
-                <span className="delivery-label">Deliver to</span>
-                <span className="delivery-city">
+                <span className="truncate max-w-[95px] text-[12px] font-semibold text-[#EAF7D8]">
                   {deliveryDisplayCity}
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                    style={{
-                      transition: 'transform 0.2s ease',
-                      transform: deliveryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
                 </span>
-              </span>
-            </button>
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-[#D4F6A2]/80 shrink-0"
+                  aria-hidden="true"
+                  style={{
+                    transition: 'transform 0.2s ease',
+                    transform: deliveryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+            </div>
 
-            {/* Search Area (Desktop) */}
+            {/* Centralized Search Area: Desktop (1024px+) */}
             <div className="search-area hidden lg:block">
               <HomeSearch showTrendingChips={false} />
             </div>
 
+            {/* Centralized Search Area: Tablet (768px - 1023px) */}
+            <div className="search-area-tablet hidden md:block lg:hidden flex-1 max-w-[340px] mx-2">
+              <HomeSearch variant="compact" showTrendingChips={false} />
+            </div>
+
             {/* Right Action Controls */}
             <div className="header-actions">
-              {/* Mobile Search Toggle Button */}
-              <button
-                type="button"
-                onClick={() => setMobileSearchOpen((v) => !v)}
-                aria-expanded={mobileSearchOpen}
-                aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
-                className="header-control icon-control mobile-search-btn lg:hidden"
+              {/* Wishlist Link (Desktop & Tablet) */}
+              <Link
+                className="header-control icon-control wishlist relative hidden md:inline-flex"
+                href="/wishlist"
+                aria-label="Open wishlist"
               >
-                {mobileSearchOpen ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </svg>
-                )}
-              </button>
-
-              <Link className="header-control icon-control wishlist hidden lg:inline-flex" href="/wishlist" aria-label="Open wishlist">
                 <svg
                   width="18"
                   height="18"
@@ -184,39 +225,60 @@ export default function SiteHeader() {
                 >
                   <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
                 </svg>
+                {wishlistCount > 0 && (
+                  <span className="wishlist-badge">
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
+                  </span>
+                )}
               </Link>
 
-              <Link
-                className="header-control signin hidden lg:inline-flex"
-                href={accountHref}
-                aria-label={user ? 'Sign in or view account' : 'Sign in to your account'}
-              >
-                <svg
-                  className="accent-icon"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+              {/* Sign In / VIP Club Profile Pill */}
+              {!loading && user ? (
+                <Link
+                  className="header-control vip-profile-pill hidden sm:inline-flex"
+                  href="/account"
+                  aria-label="Minsah VIP Club Profile"
                 >
-                  <circle cx="12" cy="8" r="5" />
-                  <path d="M20 21a8 8 0 0 0-16 0" />
-                </svg>
-                <span>{user ? 'Account' : 'Sign In'}</span>
-              </Link>
+                  <span className="text-amber-300 text-sm" aria-hidden="true">👑</span>
+                  <span className="text-xs font-bold text-[#EAF7D8] truncate max-w-[110px]">
+                    {user.firstName || 'VIP Club'}
+                  </span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="header-control signin hidden sm:inline-flex"
+                  aria-label="Sign in to your account with Phone OTP"
+                >
+                  <svg
+                    className="accent-icon text-[#D4F6A2]"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <span>Sign In</span>
+                </button>
+              )}
 
+              {/* Cart Drawer Trigger Button */}
               <button
-                className="header-control cart"
+                className="header-control cart relative"
                 type="button"
                 onClick={openDrawer}
                 aria-label={`Open cart drawer, ${itemCount} items`}
               >
                 <svg
-                  className="accent-icon"
+                  className="accent-icon text-[#D4F6A2]"
                   width="19"
                   height="19"
                   viewBox="0 0 24 24"
@@ -231,9 +293,14 @@ export default function SiteHeader() {
                   <circle cx="19" cy="21" r="1" />
                   <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                 </svg>
-                {itemCount > 0 && <span className="cart-badge">{itemCount > 99 ? '99+' : itemCount}</span>}
+                {itemCount > 0 && (
+                  <span className="cart-badge">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
               </button>
 
+              {/* Mobile / Tablet Nav Drawer Trigger */}
               <button
                 className="header-control icon-control menu-btn"
                 type="button"
@@ -260,9 +327,41 @@ export default function SiteHeader() {
               </button>
             </div>
           </div>
+
+          {/* Sub-Row: Seamless Full-Width Touch Search Bar (Mobile < 768px) */}
+          <div className="mobile-search-subrow md:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen(true)}
+              className="mobile-search-trigger-btn"
+              aria-label="Search 100% genuine products"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-[#D4F6A2] shrink-0"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <span className="search-placeholder-text">
+                  Search genuine skincare, makeup & more...
+                </span>
+              </div>
+              <span className="mobile-search-kbd">/</span>
+            </button>
+          </div>
         </div>
 
-        {/* Mobile Full-Screen Search View (Arogga / Sephora Native Style) */}
+        {/* Mobile Full-Screen Search View (Native Overlay) */}
         {mobileSearchOpen && (
           <HomeSearch
             isMobileFullScreen={true}
@@ -272,28 +371,36 @@ export default function SiteHeader() {
         )}
       </header>
 
-      {/* Delivery Flyout */}
+      {/* Deliver To: Location Selector Modal / Flyout */}
       <DeliveryFlyout
         open={deliveryOpen}
         onClose={() => setDeliveryOpen(false)}
         anchorRef={deliveryBtnRef}
       />
 
+      {/* Phone-First SMS OTP Modal */}
+      <MemberAuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => setAuthModalOpen(false)}
+      />
+
       {/* Category Rail (Modular Component with auto-hide on down-scroll) */}
       <CategoryRail />
 
-      {/* Mobile Navigation Drawer Sheet (High-End 3-Tab Bottom Sheet) */}
+      {/* Mobile Navigation Drawer Sheet */}
       <MobileNavDrawer
         isOpen={menuOpen}
         onClose={closeMenu}
         deliveryDisplayCity={deliveryDisplayCity}
         onOpenDelivery={() => setDeliveryOpen(true)}
+        onOpenAuth={() => {
+          closeMenu();
+          setAuthModalOpen(true);
+        }}
         categories={navCategories}
         user={user}
       />
     </>
   );
 }
-
-
-

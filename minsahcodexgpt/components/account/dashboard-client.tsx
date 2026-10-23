@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ShoppingBag,
@@ -17,8 +18,11 @@ import {
   Trophy,
   Package,
   Bell,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth, useUserPermissions } from '@/contexts/AuthContext';
+import { BentoLoyaltyRedeemModal } from '@/components/loyalty/BentoLoyaltyRedeemModal';
+import { TierVoucherBreakdownModal } from '@/components/loyalty/TierVoucherBreakdownModal';
 
 // ── Icon map ──────────────────────────────────────────────────────────────────
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -32,6 +36,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   BarChart3,
   Sparkles,
   Package,
+  ShieldCheck,
 };
 
 function DynamicIcon({ name, className }: { name: string; className?: string }) {
@@ -108,6 +113,8 @@ function StatusBadge({ status }: { status: string }) {
 export function DashboardClient({ initialData, quickActions, upcomingFeatures }: DashboardClientProps) {
   const { user } = useAuth();
   const { isVip, isPremium } = useUserPermissions();
+  const [isRedeemOpen, setIsRedeemOpen] = useState(false);
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
 
   if (!user) return null;
 
@@ -135,20 +142,27 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
               Welcome back, {user.firstName}! 👋
             </h1>
             <p className="mt-1 text-sm text-white/90">{memberSubtitle}</p>
-            <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
-              ⭐ {memberLabel}
-            </span>
+            <button
+              type="button"
+              onClick={() => setIsBreakdownOpen(true)}
+              className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 hover:bg-white/30 px-3 py-1 text-xs font-medium cursor-pointer transition-colors"
+            >
+              ⭐ {memberLabel} • View Tier Perks
+            </button>
           </div>
 
-          <div className="shrink-0 rounded-2xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm">
-            <p className="text-xs text-white/90">Loyalty Points</p>
+          <button
+            type="button"
+            onClick={() => setIsBreakdownOpen(true)}
+            aria-label="View VIP Loyalty Points breakdown"
+            className="shrink-0 rounded-2xl bg-white/15 hover:bg-white/25 active:scale-95 px-4 py-3 text-right backdrop-blur-sm border border-white/20 transition-all cursor-pointer text-white"
+          >
+            <p className="text-xs text-white/90 font-medium">Loyalty Points</p>
             <p className="text-2xl font-bold">{user.loyaltyPoints.toLocaleString()}</p>
-            {initialData.loyaltyPointsExpiring > 0 && (
-              <p className="mt-0.5 text-xs text-yellow-200">
-                {initialData.loyaltyPointsExpiring} expiring soon
-              </p>
-            )}
-          </div>
+            <span className="mt-0.5 inline-block text-[10px] text-[#D4F6A2] font-semibold bg-white/10 px-1.5 py-0.5 rounded-full">
+              Tap for Vouchers ✨
+            </span>
+          </button>
         </div>
       </div>
 
@@ -180,12 +194,13 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
             </p>
           </div>
         </div>
-        <Link
-          href="/account/loyalty"
-          className="shrink-0 rounded-xl bg-minsah-action-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-minsah-action-primary-hover"
+        <button
+          type="button"
+          onClick={() => setIsRedeemOpen(true)}
+          className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-full bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white text-xs font-bold tracking-wide transition-all shadow-md active:scale-95 cursor-pointer"
         >
           Redeem
-        </Link>
+        </button>
       </div>
 
       {/* ── Notification nudge ─────────────────────────────────────────────── */}
@@ -238,7 +253,7 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
             <p className="text-sm text-gray-400">এখনো কোনো order নেই</p>
             <Link
               href="/shop"
-              className="rounded-xl bg-minsah-action-primary px-5 py-2 text-sm font-medium text-white transition hover:bg-minsah-action-primary-hover"
+              className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white text-xs font-bold tracking-wide transition-all shadow-md active:scale-95"
             >
               Shop করুন
             </Link>
@@ -333,6 +348,23 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
         </Link>
       </div>
 
+      {/* Stitch Flow 9: Loyalty Modals */}
+      <BentoLoyaltyRedeemModal
+        isOpen={isRedeemOpen}
+        onClose={() => setIsRedeemOpen(false)}
+        onOpenBreakdown={() => {
+          setIsRedeemOpen(false);
+          setIsBreakdownOpen(true);
+        }}
+      />
+      <TierVoucherBreakdownModal
+        isOpen={isBreakdownOpen}
+        onClose={() => setIsBreakdownOpen(false)}
+        onOpenRedeem={() => {
+          setIsBreakdownOpen(false);
+          setIsRedeemOpen(true);
+        }}
+      />
     </div>
   );
 }

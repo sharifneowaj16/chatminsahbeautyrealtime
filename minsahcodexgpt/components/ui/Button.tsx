@@ -45,11 +45,11 @@ const adminVariants: Record<Exclude<ButtonVariant, 'unstyled'>, string> = {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  xs: 'min-h-7 rounded-md px-2 py-1 text-[11px] font-medium tracking-tight',
-  sm: 'min-h-8 rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide',
-  md: 'min-h-11 rounded-full px-5 py-2.5 text-sm font-semibold tracking-wide',
+  xs: 'min-h-7 rounded-full px-3 py-1 text-[11px] font-medium tracking-tight',
+  sm: 'min-h-9 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide',
+  md: 'min-h-10 rounded-full px-5 py-2 text-xs font-bold tracking-wide',
   lg: 'min-h-12 rounded-full px-6 py-3 text-sm font-semibold tracking-wide',
-  icon: 'h-8 min-h-8 w-8 min-w-8 rounded-lg p-0',
+  icon: 'h-9 min-h-9 w-9 min-w-9 rounded-full p-0 flex items-center justify-center',
 };
 
 const adminSizes: Record<ButtonSize, string> = {

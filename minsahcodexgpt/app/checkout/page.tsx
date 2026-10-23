@@ -36,6 +36,7 @@ import {
   trackViewCart,
 } from "@/lib/tracking/ecommerce";
 import type { DeliveryQuoteResponse } from "@/types/delivery-quote";
+import CheckoutMobileView from "@/components/checkout/mobile/CheckoutMobileView";
 
 const SocialLoginModal = dynamic(
   () => import("@/app/(storefront)/products/[id]/components/SocialLoginModal"),
@@ -953,10 +954,72 @@ function CheckoutContent() {
 
   return (
     <div className="min-h-screen bg-[#FAF6F2] pb-28 lg:pb-16 text-[#2D1F18]">
+      {/* ── Stitch MCP Mobile Screen ebe0804216554953a97a0be028d018aa ── */}
+      <CheckoutMobileView
+        address={{
+          fullName: shippingForm.fullName,
+          phoneNumber: shippingForm.phoneNumber,
+          streetAddress: shippingForm.streetAddress,
+          city: shippingForm.city || 'Dhaka',
+          zone: shippingForm.zone,
+          area: shippingForm.area,
+          deliveryTimeEstimate: 'Tomorrow by 6:00 PM',
+          hubName: shippingForm.city === 'Dhaka' ? 'Banani Hub Express Van' : 'Express Courier Hub',
+          coldChainInsulated: true,
+        }}
+        items={items.map((item) => ({
+          id: item.id,
+          brand: (item as any).brand || 'K-Beauty',
+          title: item.name,
+          variant: (item as any).variant,
+          quantity: item.quantity,
+          price: item.price,
+          image: (item as any).image || (item as any).thumbnail || '',
+          badge: 'Authentic Batch Verified',
+        }))}
+        gift={{
+          title: 'Glow Delights Mini Sample',
+          tierInfo: 'Free Luxury Gift Tier',
+          batchNumber: 'Batch #MB409',
+        }}
+        initialPricing={{
+          subtotal: subtotal,
+          shipping: effectiveDeliveryCharge,
+          shippingDiscount: effectiveDeliveryCharge <= 0 ? 350 : 0,
+          voucherCode: promoCode || 'MINSAHGLOW',
+          voucherDiscount: discount || 200,
+          glowPointsDiscount: 40,
+          glowPointsAvailable: 1280,
+          glowPointsRedeemed: 400,
+          total: finalTotal,
+          totalSaved: (discount || 200) + 40 + (effectiveDeliveryCharge <= 0 ? 350 : 0),
+        }}
+        onChangeAddress={() => {
+          const addressSection = document.getElementById('checkout-full-name');
+          if (addressSection) {
+            addressSection.scrollIntoView({ behavior: 'smooth' });
+            addressSection.focus();
+          }
+        }}
+        onPlaceOrder={(method) => {
+          const matched = paymentMethods.find((p) => {
+            if (method === 'bkash') return p.type.toLowerCase().includes('bkash');
+            if (method === 'nagad') return p.type.toLowerCase().includes('nagad');
+            if (method === 'card') return p.type.toLowerCase().includes('card') || p.type.toLowerCase().includes('ssl');
+            return p.type.toLowerCase().includes('cod') || p.type.toLowerCase().includes('cash');
+          });
+          if (matched) {
+            setSelectedPaymentMethod(matched);
+          }
+          void handlePlaceOrder();
+        }}
+        isSubmitting={isPlacingOrder}
+      />
 
-
-      {/* Top Clean Header */}
-      <header className="sticky top-0 z-40 border-b border-[#EFE7DE] bg-white/95 backdrop-blur-md">
+      {/* ── Desktop Layout (Untouched, Protected from Mobile Regressions) ── */}
+      <div className="hidden lg:block">
+        {/* Top Clean Header */}
+        <header className="sticky top-0 z-40 border-b border-[#EFE7DE] bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link
             href="/shop"
@@ -1856,6 +1919,7 @@ function CheckoutContent() {
             {checkoutError}
           </p>
         )}
+      </div>
       </div>
 
       {/* Auth Modal Integration */}

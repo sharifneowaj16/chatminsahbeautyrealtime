@@ -390,10 +390,14 @@ export default function HomeSectionsPage() {
             {sections.find((s) => s.type === 'brands')?.isVisible !== false ? 'Visible on Home' : 'Hidden from Home'}
           </div>
         </Link>
-        <Link href="/admin/home-sections/slides" className="bg-[#161824] p-4 rounded-xl border border-[#232636] hover:border-white transition text-center shadow-sm"
-        >
+        <Link href="/admin/home-sections/slides" className="bg-[#161824] p-4 rounded-xl border border-[#232636] hover:border-white transition text-center shadow-sm">
           <div className="text-sm font-bold mb-2 text-white">SLIDE</div>
           <div className="font-semibold text-[#F7F8F8] text-sm">Slides</div>
+        </Link>
+        <Link href="/admin/home-sections/flash-deals" className="bg-[#161824] p-4 rounded-xl border border-emerald-900/60 hover:border-emerald-500 transition text-center shadow-sm">
+          <div className="text-sm font-bold mb-2 text-emerald-400">⚡ FLASH</div>
+          <div className="font-semibold text-[#F7F8F8] text-sm">Flash Deals</div>
+          <div className="text-[11px] text-emerald-400/80 mt-0.5">5-Col Suite</div>
         </Link>
       </div>
 

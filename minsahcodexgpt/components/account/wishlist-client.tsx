@@ -8,6 +8,8 @@ import { formatPrice } from "@/utils/currency";
 import { useCart, type CartItem } from "@/contexts/CartContext";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import { productPath } from "@/lib/product-url";
+import WishlistMobileView from "@/components/account/mobile/wishlist/WishlistMobileView";
+import type { MobileWishlistItem } from "@/components/account/mobile/wishlist/types";
 import { Heart, ShoppingBag, X, Star, Search, Package } from "lucide-react";
 import { Heart as HeartSolid } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -223,8 +225,38 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
     );
   }
 
+  const mobileWishlistItems: MobileWishlistItem[] = useMemo(() => {
+    return wishlistItems.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      name: item.productName,
+      brand: (item as any).brand || 'Authentic Brand',
+      variant: item.category || 'Authentic Import',
+      price: item.price,
+      originalPrice: item.originalPrice,
+      discountPercent: item.discount,
+      inStock: item.inStock,
+      stockLabel: item.inStock ? 'In Stock • Banani Hub (24h)' : 'Out of Stock',
+      rating: item.rating || 4.9,
+      reviewCount: item.reviewCount || 120,
+      image:
+        item.productImage ||
+        'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
+      category: (item.category?.toLowerCase?.().includes('sun')
+        ? 'suncare'
+        : item.category?.toLowerCase?.().includes('serum')
+          ? 'serum'
+          : item.discount
+            ? 'pricedrop'
+            : 'instock') as any,
+      isFavorite: true,
+    }));
+  }, [wishlistItems]);
+
   return (
-    <div className="min-h-screen bg-minsah-surface">
+    <>
+      <WishlistMobileView initialItems={mobileWishlistItems} />
+      <div className="hidden lg:block min-h-screen bg-minsah-surface">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -520,5 +552,6 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
         )}
       </div>
     </div>
+    </>
   );
 }
