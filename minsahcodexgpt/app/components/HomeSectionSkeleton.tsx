@@ -6,14 +6,16 @@ interface HomeSectionSkeletonProps {
 
 function SkeletonCard({ compact = false }: { compact?: boolean }) {
   return (
-    <div className={`rounded-[28px] border border-stone-200/70 bg-white shadow-xs ${compact ? 'p-2.5' : 'p-3 sm:p-3.5'}`}>
-      <Skeleton className="aspect-square w-full rounded-[22px] bg-stone-100" />
-      <div className="mt-3 space-y-2">
-        <Skeleton className="h-3 w-1/3 rounded-full bg-stone-100" />
-        <Skeleton className="h-3.5 w-full rounded-full bg-stone-200/80" />
-        <Skeleton className="h-3 w-1/2 rounded-full bg-stone-100" />
+    <div className={`flex flex-col justify-between h-full rounded-[28px] border border-stone-200/70 bg-white shadow-xs ${compact ? 'p-2.5' : 'p-3 sm:p-3.5'}`}>
+      <div>
+        <Skeleton className="aspect-square w-full rounded-[22px] bg-stone-100" />
+        <div className="mt-3 space-y-2">
+          <Skeleton className="h-3 w-1/3 rounded-full bg-stone-100" />
+          <Skeleton className="h-3.5 w-full rounded-full bg-stone-200/80" />
+          <Skeleton className="h-3 w-1/2 rounded-full bg-stone-100" />
+        </div>
       </div>
-      <div className="mt-4 flex items-center justify-between pt-1">
+      <div className="mt-auto flex items-center justify-between pt-4">
         <Skeleton className="h-5 w-20 rounded-full bg-stone-200/80" />
         <Skeleton className="h-8 w-16 rounded-full bg-stone-200" />
       </div>
@@ -75,9 +77,16 @@ export default function HomeSectionSkeleton({ type = 'products' }: HomeSectionSk
           </div>
           <Skeleton className="h-9 w-24 rounded-full bg-stone-100" />
         </div>
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-5 md:gap-4 lg:gap-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-5 md:gap-4 lg:gap-4 items-stretch">
           {Array.from({ length: 5 }).map((_, index) => (
-            <SkeletonCard key={index} />
+            <div
+              key={index}
+              className={`${
+                index >= 2 ? (index >= 3 ? 'hidden lg:block' : 'hidden md:block') : 'block'
+              } h-full`}
+            >
+              <SkeletonCard />
+            </div>
           ))}
         </div>
       </div>

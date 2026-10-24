@@ -76,7 +76,7 @@ export const defaultHomeSections: HomeSection[] = [
     order: 5,
     settings: {
       showViewAll: true,
-      itemsToShow: 4,
+      itemsToShow: 5,
       layout: 'grid-2',
       backgroundColor: DESIGN_TOKEN_VALUES.surface.panel,
     },
@@ -90,8 +90,8 @@ export const defaultHomeSections: HomeSection[] = [
     order: 6,
     settings: {
       showViewAll: true,
-      itemsToShow: 3,
-      layout: 'horizontal-scroll',
+      itemsToShow: 5,
+      layout: 'grid-2',
       backgroundColor: DESIGN_TOKEN_VALUES.surface.accent,
     },
   },
@@ -104,8 +104,8 @@ export const defaultHomeSections: HomeSection[] = [
     order: 7,
     settings: {
       showViewAll: true,
-      itemsToShow: 6,
-      layout: 'grid-3',
+      itemsToShow: 5,
+      layout: 'grid-2',
       backgroundColor: DESIGN_TOKEN_VALUES.surface.panel,
     },
   },
@@ -118,8 +118,8 @@ export const defaultHomeSections: HomeSection[] = [
     order: 8,
     settings: {
       showViewAll: true,
-      itemsToShow: 6,
-      layout: 'grid-3',
+      itemsToShow: 5,
+      layout: 'grid-2',
       backgroundColor: DESIGN_TOKEN_VALUES.surface.accent,
     },
   },

@@ -402,7 +402,7 @@ export default function ProductCard({
   return (
     <>
       <article
-        className={`group relative flex flex-col justify-between rounded-[28px] border border-stone-200/80 bg-white p-3 sm:p-3.5 shadow-xs hover:border-[#1c3a13]/25 hover:shadow-lg transition-all duration-300 font-sans ${
+        className={`group relative flex flex-col justify-between h-full rounded-[28px] border border-stone-200/80 bg-white p-3 sm:p-3.5 shadow-xs hover:border-[#1c3a13]/25 hover:shadow-lg transition-all duration-300 font-sans ${
           isDropdownOpen || isRatingPopoverOpen ? 'z-50 shadow-2xl ring-1 ring-stone-200/80' : 'z-0'
         }`}
         aria-label={product.name}
@@ -496,7 +496,7 @@ export default function ProductCard({
             onClick={handleProductSelect}
             className="block mt-0.5"
           >
-            <h3 className="line-clamp-2 text-xs sm:text-[13.5px] font-[550] text-[#1c3a13] leading-snug hover:underline min-h-[2.1rem]">
+            <h3 className="line-clamp-2 text-xs sm:text-[13.5px] font-[550] text-[#1c3a13] leading-snug hover:underline min-h-[2.4rem] sm:min-h-[2.6rem]">
               {product.name}
             </h3>
           </Link>
@@ -526,7 +526,7 @@ export default function ProductCard({
         </div>
 
         {/* Card Bottom Slot: Full Pill Variant Selector OR Stacked Price + Pill ADD Button */}
-        <div className="mt-2.5 sm:mt-3 border-t border-stone-100 pt-2">
+        <div className="mt-auto border-t border-stone-100 pt-2.5">
           {hasVariants ? (
             <div className="relative w-full">
               <SeedHeroVariantDropdown

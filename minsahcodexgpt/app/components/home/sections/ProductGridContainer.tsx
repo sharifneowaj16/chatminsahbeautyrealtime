@@ -13,11 +13,11 @@ export default function ProductGridContainer({
   columns = 5,
   className = '',
 }: ProductGridContainerProps) {
-  let colClass = 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-5 md:gap-4 lg:gap-4';
+  let colClass = 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-5 md:gap-4 lg:gap-4 items-stretch';
   if (columns === 3) {
-    colClass = 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 md:gap-4';
+    colClass = 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 md:gap-4 items-stretch';
   } else if (columns === 4) {
-    colClass = 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4';
+    colClass = 'grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4 md:gap-4 items-stretch';
   }
 
   return <div className={`${colClass} ${className}`}>{children}</div>;

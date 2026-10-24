@@ -186,7 +186,7 @@ function getProductsForSection({
 }) {
   const manualProducts = filterSelectedProducts(cardProducts, section);
   const type = section.type as ProductSectionType;
-  const limit = sectionLimit(section, 5);
+  const limit = 5;
 
   if (manualProducts) return manualProducts.slice(0, limit);
 
@@ -220,37 +220,22 @@ function getProductsForSection({
 function RenderedProductList({ section, products }: { section: HomeSection; products: ShopProduct[] }) {
   if (products.length === 0) return null;
 
-  if (section.settings.layout === 'horizontal-scroll') {
-    return (
-      <ProductCarouselTrack>
-        {products.map((product, index) => (
-          <div key={product.id} className="w-[180px] sm:w-[220px] md:w-[260px] shrink-0">
-            <ProductCard
-              product={product}
-              layout="grid"
-              index={index}
-              listName={section.title || section.type}
-            />
-          </div>
-        ))}
-      </ProductCarouselTrack>
-    );
-  }
-
-  let columns: 3 | 4 | 5 = 5;
-  if (section.settings.layout === 'grid-3') columns = 3;
-  else if (section.settings.layout === 'grid-4') columns = 4;
-
   return (
-    <ProductGridContainer columns={columns}>
+    <ProductGridContainer columns={5}>
       {products.map((product, index) => (
-        <ProductCard
+        <div
           key={product.id}
-          product={product}
-          layout="grid"
-          index={index}
-          listName={section.title || section.type}
-        />
+          className={`h-full ${
+            index >= 2 ? (index >= 3 ? 'hidden lg:block' : 'hidden md:block') : 'block'
+          }`}
+        >
+          <ProductCard
+            product={product}
+            layout="grid"
+            index={index}
+            listName={section.title || section.type}
+          />
+        </div>
       ))}
     </ProductGridContainer>
   );
