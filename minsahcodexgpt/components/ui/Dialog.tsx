@@ -52,22 +52,22 @@ export function Dialog({
       <HeadlessDialogBackdrop
         transition
         className={joinClassNames(
-          'minsah-overlay fixed inset-0 transition-opacity duration-200 ease-out data-closed:opacity-0 motion-reduce:transition-none',
+          'minsah-overlay fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ease-out data-closed:opacity-0 motion-reduce:transition-none',
           backdropClassName,
         )}
       />
 
       <div
         className={joinClassNames(
-          'fixed inset-0 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain',
+          'fixed inset-0 z-10 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain p-4 sm:p-6 md:p-8',
           viewportClassName,
         )}
       >
-        <div className={joinClassNames('flex min-h-full', containerClassName)}>
+        <div className={joinClassNames('flex min-h-full items-center justify-center p-0 text-center sm:p-0', containerClassName)}>
           <HeadlessDialogPanel
             transition
             className={joinClassNames(
-              'outline-none transition duration-200 ease-out motion-reduce:transition-none',
+              'outline-none transition duration-200 ease-out motion-reduce:transition-none overflow-x-hidden no-scrollbar text-left',
               panelClassName,
             )}
           >

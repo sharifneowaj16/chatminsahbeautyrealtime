@@ -12,6 +12,19 @@ import DeliveryFlyout from '@/components/layout/DeliveryFlyout';
 import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
 import MemberAuthModal from '@/components/auth/MemberAuthModal';
 
+const DEFAULT_NAV_CATEGORIES = [
+  { id: 'skincare', name: 'Skincare', href: '/shop?category=Skincare' },
+  { id: 'makeup', name: 'Makeup', href: '/shop?category=Makeup' },
+  { id: 'hair-care', name: 'Hair Care', href: '/shop?category=Hair%20Care' },
+  { id: 'fragrance', name: 'Fragrance', href: '/shop?category=Fragrance' },
+  { id: 'bath-body', name: 'Bath & Body', href: '/shop?category=Bath%20%26%20Body' },
+  { id: 'lip-care', name: 'Lip Care', href: '/shop?category=Lip%20Care' },
+  { id: 'sunscreen', name: 'Sunscreen', href: '/shop?category=Sunscreen' },
+  { id: 'serum', name: 'Serum', href: '/shop?category=Serum' },
+];
+
+let cachedNavCategories: { id: string; name: string; href: string }[] | null = null;
+
 export default function SiteHeader() {
   const { items } = useCart();
   const { openDrawer } = useCartDrawer();
@@ -29,31 +42,26 @@ export default function SiteHeader() {
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
-  const [navCategories, setNavCategories] = useState<{ id: string; name: string; href: string }[]>([
-    { id: 'skincare', name: 'Skincare', href: '/shop?category=Skincare' },
-    { id: 'makeup', name: 'Makeup', href: '/shop?category=Makeup' },
-    { id: 'hair-care', name: 'Hair Care', href: '/shop?category=Hair%20Care' },
-    { id: 'fragrance', name: 'Fragrance', href: '/shop?category=Fragrance' },
-    { id: 'bath-body', name: 'Bath & Body', href: '/shop?category=Bath%20%26%20Body' },
-    { id: 'lip-care', name: 'Lip Care', href: '/shop?category=Lip%20Care' },
-    { id: 'sunscreen', name: 'Sunscreen', href: '/shop?category=Sunscreen' },
-    { id: 'serum', name: 'Serum', href: '/shop?category=Serum' },
-  ]);
+  const [navCategories, setNavCategories] = useState<{ id: string; name: string; href: string }[]>(
+    () => cachedNavCategories || DEFAULT_NAV_CATEGORIES
+  );
 
-  // Sync sub-navigation categories with API
+  // Sync sub-navigation categories with API (cached to eliminate fetch waterfalls on client route changes)
   useEffect(() => {
+    if (cachedNavCategories && cachedNavCategories.length > 0) return;
+
     const controller = new AbortController();
     fetch('/api/categories?activeOnly=true', { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.categories?.length) {
-          setNavCategories(
-            data.categories.map((c: any) => ({
-              id: c.id,
-              name: c.name,
-              href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
-            }))
-          );
+          const mapped = data.categories.map((c: { id: string; name: string; href?: string }) => ({
+            id: c.id,
+            name: c.name,
+            href: c.href || `/shop?category=${encodeURIComponent(c.name)}`,
+          }));
+          cachedNavCategories = mapped;
+          setNavCategories(mapped);
         }
       })
       .catch(() => {});

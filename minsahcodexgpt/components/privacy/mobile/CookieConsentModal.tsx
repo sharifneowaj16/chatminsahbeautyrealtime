@@ -97,7 +97,7 @@ export function CookieConsentModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#062402]/40 backdrop-blur-sm flex items-end justify-center animate-fadeIn">
+    <div className="fixed inset-0 z-50 bg-[#062402]/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden no-scrollbar animate-fadeIn">
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed bottom-24 left-4 right-4 bg-[#062402] text-white rounded-full px-4 py-3 flex items-center justify-between shadow-2xl z-50 border border-[#ccee9b]/40 animate-bounce">
@@ -111,10 +111,8 @@ export function CookieConsentModal({
         </div>
       )}
 
-      {/* Sheet Container */}
-      <div className="w-full max-w-lg bg-white rounded-t-[32px] max-h-[85vh] overflow-y-auto no-scrollbar shadow-2xl p-5 flex flex-col border-t border-[#E2DED8] animate-slideUp">
-        {/* Drag Handle */}
-        <div className="w-12 h-1.5 bg-[#E2DED8] rounded-full mx-auto mb-4 opacity-70 shrink-0" />
+      {/* Centered Modal Container */}
+      <div className="w-full max-w-lg bg-white rounded-[24px] sm:rounded-[32px] max-h-[min(85vh,620px)] overflow-y-auto overflow-x-hidden no-scrollbar shadow-2xl p-5 sm:p-6 flex flex-col border border-[#E2DED8] my-auto shrink-0 animate-in fade-in zoom-in-95 duration-200">
 
         {/* Icon & Title */}
         <div className="flex items-start gap-3.5 mb-3.5">

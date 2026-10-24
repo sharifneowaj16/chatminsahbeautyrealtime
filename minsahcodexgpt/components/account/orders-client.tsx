@@ -316,73 +316,75 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
         ) : (
           <div className="space-y-4">
             {filteredOrders.map((order) => (
-              <div key={order.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div key={order.id} className="bg-white rounded-[24px] border border-[#EFECE6] shadow-[0_4px_24px_rgba(6,36,2,0.03)] overflow-hidden transition-all hover:border-[#D4F6A2]/80">
                 {/* Order Header */}
-                <div className="p-6 border-b border-gray-100">
+                <div className="p-5 sm:p-6 border-b border-[#F2EFEA]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center space-x-3">
-                      {getStatusIcon(order.status)}
+                    <div className="flex items-center space-x-3.5">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EAF7D8] text-[#062402]">
+                        {getStatusIcon(order.status)}
+                      </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{order.orderNumber}</h3>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Calendar className="w-3 h-3 text-gray-400" />
-                          <span className="text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                        <h3 className="font-bold text-base text-[#121915] tracking-tight">{order.orderNumber}</h3>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <div className="flex items-center text-xs text-[#5E6D64]">
+                            <Calendar className="w-3.5 h-3.5 mr-1 text-[#7A827B]" />
+                            <span>{new Date(order.createdAt).toLocaleDateString('en-BD', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${getStatusColor(order.status)}`}>
                             {capitalize(order.status)}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(order.paymentStatus)}`}>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${getPaymentStatusColor(order.paymentStatus)}`}>
                             {capitalize(order.paymentStatus)}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 sm:self-center self-end">
                       <div className="text-right">
-                        <p className="text-sm text-gray-500">Total</p>
-                        <p className="text-lg font-bold text-gray-900">à§³{order.total.toFixed(2)}</p>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#7A827B]">Total</p>
+                        <p className="text-lg font-black text-[#121915]">৳{order.total.toLocaleString()}</p>
                       </div>
                       <Link
                         href={`/account/orders/${order.id}`}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="inline-flex items-center px-4 py-2 bg-[#FAF9F6] border border-[#EFECE6] rounded-xl text-xs font-bold text-[#121915] hover:bg-[#F2EFEA] transition-colors"
                       >
                         View Details
-                        <ChevronRight className="w-4 h-4 ml-1" />
+                        <ChevronRight className="w-3.5 h-3.5 ml-1 text-[#7A827B]" />
                       </Link>
                     </div>
                   </div>
                 </div>
 
                 {awaitingDispatch(order) && (
-                  <div className="px-6 pb-0 -mt-2">
-                    <p className="text-sm text-indigo-800 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
-                      We&rsquo;re preparing your order. After the warehouse sends it to Steadfast, your{' '}
-                      <strong>tracking link</strong> and status updates will show here and on the order page.
+                  <div className="px-6 pt-4">
+                    <p className="text-xs text-[#1C3A13] bg-[#EAF7D8] border border-[#D4F6A2]/60 rounded-xl px-3.5 py-2.5">
+                      We&rsquo;re preparing your order. After the warehouse dispatches it, your{' '}
+                      <strong>tracking link</strong> and live delivery telemetry will update here.
                     </p>
                   </div>
                 )}
 
                 {/* Order Items */}
-                <div className="p-6">
-                  <div className="space-y-3">
+                <div className="p-5 sm:p-6">
+                  <div className="space-y-3.5">
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center space-x-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="w-14 h-14 bg-[#FAF9F6] border border-[#EFECE6] rounded-2xl flex items-center justify-center shrink-0 overflow-hidden">
                           <ProductImage src={item.productImage} name={item.productName} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">{item.productName}</h4>
-                          <p className="text-sm text-gray-500">Qty: {item.quantity} Ã— à§³{item.price.toFixed(2)}</p>
+                          <h4 className="font-bold text-sm text-[#121915] truncate">{item.productName}</h4>
+                          <p className="text-xs text-[#5E6D64] mt-0.5">Qty: {item.quantity} × ৳{item.price.toLocaleString()}</p>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-medium text-gray-900">à§³{item.totalPrice.toFixed(2)}</p>
+                        <div className="text-right shrink-0">
+                          <p className="font-bold text-sm text-[#121915]">৳{item.totalPrice.toLocaleString()}</p>
                           {order.canReview && (
                             <Link
                               href={`/account/reviews/write?productId=${item.productId}&orderId=${order.id}`}
-                              className="inline-flex items-center text-xs text-minsah-action-primary hover:text-minsah-action-primary mt-1"
+                              className="inline-flex items-center text-xs font-semibold text-[#062402] hover:underline mt-1"
                             >
-                              <Star className="w-3 h-3 mr-1" />
+                              <Star className="w-3 h-3 mr-1 text-amber-500 fill-amber-400" />
                               Review
                             </Link>
                           )}
@@ -392,24 +394,24 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                   </div>
 
                   {/* Order Actions */}
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+                  <div className="mt-5 pt-4 border-t border-[#F2EFEA] flex flex-wrap items-center gap-2.5">
                     {(order.steadfastTrackingCode || order.trackingNumber) && (
                       <a
                         href={getTrackingUrl(order)}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="inline-flex items-center px-4 py-2 bg-[#062402] text-[#EAF7D8] hover:bg-[#153410] rounded-xl text-xs font-bold transition-colors shadow-xs"
                       >
-                        <Truck className="w-4 h-4 mr-2" />
+                        <Truck className="w-3.5 h-3.5 mr-2 text-[#D4F6A2]" />
                         Track Delivery
                       </a>
                     )}
                     <Link
                       href={`/account/orders/${order.id}?print=invoice`}
                       target="_blank"
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="inline-flex items-center px-4 py-2 bg-white border border-[#EFECE6] hover:bg-stone-50 text-[#5E6D64] rounded-xl text-xs font-semibold transition-colors"
                     >
-                      <Download className="w-4 h-4 mr-2" />
+                      <Download className="w-3.5 h-3.5 mr-2" />
                       Invoice
                     </Link>
                     <Button
@@ -419,15 +421,15 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                       disabled={reorderingOrderIds.includes(order.id)}
                       className={
                         reorderingOrderIds.includes(order.id)
-                          ? 'bg-gray-200 text-gray-500'
+                          ? 'bg-stone-200 text-stone-500 rounded-xl text-xs font-bold'
                           : reorderedOrderIds.includes(order.id)
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-minsah-action-primary hover:bg-minsah-action-primary-hover'
+                            ? 'bg-[#EAF7D8] text-[#1C3A13] rounded-xl text-xs font-bold'
+                            : 'bg-[#D4F6A2] hover:bg-[#c2eb87] text-[#062402] font-bold rounded-xl text-xs shadow-xs'
                       }
                     >
-                      <ShoppingBag className="w-4 h-4" aria-hidden="true" />
+                      <ShoppingBag className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                       {reorderingOrderIds.includes(order.id)
-                        ? 'Adding to Cart...'
+                        ? 'Adding...'
                         : reorderedOrderIds.includes(order.id)
                           ? 'Added to Cart'
                           : 'Buy Again'}
@@ -435,9 +437,9 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                     {(order.status === 'delivered' || order.status === 'shipped') && (
                       <Link
                         href={`/account/orders/${order.id}/return`}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="inline-flex items-center px-4 py-2 bg-white border border-[#EFECE6] hover:bg-stone-50 text-[#5E6D64] rounded-xl text-xs font-semibold transition-colors"
                       >
-                        <RotateCcw className="w-4 h-4 mr-2" />
+                        <RotateCcw className="w-3.5 h-3.5 mr-2" />
                         {getReturnLabel(order)}
                       </Link>
                     )}

@@ -44,7 +44,7 @@ const sizes: Record<ModalSize, string> = {
   md: 'max-w-lg',
   lg: 'max-w-2xl',
   xl: 'max-w-4xl',
-  full: 'max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)]',
+  full: 'max-w-[min(92vw,960px)]',
 };
 
 export function Modal({
@@ -81,15 +81,16 @@ export function Modal({
       ariaLabel={ariaLabel}
       className={className}
       backdropClassName={joinClassNames(
-        isAdmin && 'bg-black/75 backdrop-blur-[4px]',
+        isAdmin ? 'bg-black/80 backdrop-blur-[4px]' : 'bg-black/60 backdrop-blur-sm',
         backdropClassName,
       )}
-      viewportClassName="p-4 sm:p-6"
-      containerClassName="items-center justify-center"
+      viewportClassName="p-4 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden no-scrollbar"
+      containerClassName="items-center justify-center min-h-full py-4 sm:py-6 md:py-8"
       panelClassName={joinClassNames(
+        'w-full max-h-[min(85vh,620px)] my-auto flex flex-col overflow-hidden overflow-x-hidden no-scrollbar',
         isAdmin
-          ? 'w-full overflow-hidden rounded-2xl border border-[#232636] bg-[#161722] text-[#f7f8f8] shadow-[0_24px_64px_rgba(0,0,0,0.75),inset_0_1px_0_0_rgba(255,255,255,0.08)] data-closed:scale-[0.98] data-closed:opacity-0'
-          : 'w-full overflow-hidden rounded-[var(--radius-panel)] border border-minsah-border-subtle bg-minsah-surface-elevated text-minsah-text-primary shadow-[var(--shadow-elevated)] data-closed:scale-[0.98] data-closed:opacity-0',
+          ? 'rounded-2xl border border-[#232636] bg-[#161722] text-[#f7f8f8] shadow-[0_24px_64px_rgba(0,0,0,0.75),inset_0_1px_0_0_rgba(255,255,255,0.08)] data-closed:scale-[0.98] data-closed:opacity-0'
+          : 'rounded-[var(--radius-panel)] border border-minsah-border-subtle bg-minsah-surface-elevated text-minsah-text-primary shadow-[var(--shadow-elevated)] data-closed:scale-[0.98] data-closed:opacity-0',
         sizes[size],
         panelClassName,
       )}
@@ -150,7 +151,7 @@ export function Modal({
       {children ? (
         <div
           className={joinClassNames(
-            'max-h-[min(70dvh,48rem)] overflow-y-auto overflow-x-hidden no-scrollbar px-5 py-5 sm:px-6',
+            'flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar px-5 py-5 sm:px-6 overscroll-contain',
             isAdmin && 'text-[#f7f8f8]',
             bodyClassName,
           )}

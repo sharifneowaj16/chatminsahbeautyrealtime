@@ -160,7 +160,7 @@ export function MemberAuthModal({
       )}
 
       {/* Modal Surface */}
-      <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-6 md:p-10 overflow-y-auto overflow-x-hidden no-scrollbar">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden no-scrollbar">
         {/* Backdrop */}
         <div
           className="fixed inset-0 bg-[#062402]/65 backdrop-blur-md transition-opacity duration-300"
@@ -168,9 +168,7 @@ export function MemberAuthModal({
         />
 
         {/* Modal Window */}
-        <div className="relative bg-[#FAF9F6] rounded-t-[32px] sm:rounded-[28px] w-full max-w-md p-4 sm:p-6 shadow-2xl border border-[#E2DED8] z-10 flex flex-col gap-3.5 max-h-[88vh] sm:max-h-[min(85vh,640px)] overflow-y-auto overflow-x-hidden my-auto shrink-0 animate-in fade-in slide-in-from-bottom-4 duration-300 no-scrollbar">
-          {/* Mobile Drag Indicator */}
-          <div className="w-12 h-1.5 bg-[#E2DED8] rounded-full mx-auto sm:hidden pt-0.5 shrink-0" />
+        <div className="relative bg-[#FAF9F6] rounded-[24px] sm:rounded-[28px] w-full max-w-md p-4 sm:p-6 shadow-2xl border border-[#E2DED8] z-10 flex flex-col gap-3.5 max-h-[min(85vh,620px)] overflow-y-auto overflow-x-hidden my-auto shrink-0 animate-in fade-in zoom-in-95 duration-200 no-scrollbar">
 
           {/* Top Branding & Close Header */}
           <header className="flex items-center justify-between pb-2 border-b border-[#E2DED8]/60">

@@ -215,337 +215,377 @@ export function AddressesClient({ initialAddresses }: AddressesClientProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Saved Addresses</h1>
-              <p className="text-gray-600">Manage your shipping and billing addresses</p>
-            </div>
-            {!showAddForm && (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => setShowAddForm(true)}
-                className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
-              >
-                <Plus className="w-4 h-4" aria-hidden="true" />
-                Add Address
-              </Button>
-            )}
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-[#EAF7D8] text-[#062402] border border-[#D4F6A2]">
+              <MapPin className="w-3 h-3 text-[#062402]" />
+              Address Book
+            </span>
           </div>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-[#062402]">Saved Addresses</h1>
+          <p className="text-sm text-stone-500 mt-1">Manage verified delivery hubs and billing locations for seamless checkout.</p>
         </div>
+        {!showAddForm && (
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => setShowAddForm(true)}
+            className="inline-flex items-center gap-2 bg-[#062402] hover:bg-[#153410] text-[#D4F6A2] font-semibold text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            Add New Hub
+          </Button>
+        )}
+      </div>
 
-        {/* Add/Edit Address Form */}
-        {showAddForm && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              {editingAddress ? 'Edit Address' : 'Add New Address'}
+      {/* Add/Edit Address Form */}
+      {showAddForm && (
+        <div className="rounded-[24px] border border-[#EFECE6] bg-white p-6 sm:p-8 shadow-[0_4px_24px_rgba(6,36,2,0.03)]">
+          <div className="flex items-center justify-between pb-6 border-b border-stone-100 mb-6">
+            <h2 className="font-serif text-xl font-bold text-[#062402]">
+              {editingAddress ? 'Update Saved Address' : 'Add New Delivery Hub'}
             </h2>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="text-xs font-semibold text-stone-400 hover:text-stone-700"
+            >
+              Close
+            </button>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Address Type */}
-              <div className="flex items-center space-x-6">
-                <Radio
-                  name="type"
-                  value="shipping"
-                  checked={formData.type === 'shipping'}
-                  onChange={handleInputChange}
-                  label="Shipping Address"
-                  containerClassName="w-auto"
-                />
-                <Radio
-                  name="type"
-                  value="billing"
-                  checked={formData.type === 'billing'}
-                  onChange={handleInputChange}
-                  label="Billing Address"
-                  containerClassName="w-auto"
-                />
-              </div>
-
-              {/* Personal Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                  label="First Name"
-                />
-                <Input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                  label="Last Name"
-                />
-              </div>
-
-              {/* Company (Optional) */}
-              <Input
-                type="text"
-                name="company"
-                value={formData.company}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Address Type */}
+            <div className="flex items-center space-x-6 p-4 rounded-xl bg-[#FAF9F6] border border-stone-200/60">
+              <Radio
+                name="type"
+                value="shipping"
+                checked={formData.type === 'shipping'}
                 onChange={handleInputChange}
-                label="Company (Optional)"
+                label="Delivery Address"
+                containerClassName="w-auto"
               />
+              <Radio
+                name="type"
+                value="billing"
+                checked={formData.type === 'billing'}
+                onChange={handleInputChange}
+                label="Billing Address"
+                containerClassName="w-auto"
+              />
+            </div>
 
-              {/* Address Lines */}
+            {/* Personal Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 type="text"
-                name="addressLine1"
-                value={formData.addressLine1}
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleInputChange}
                 required
-                label="Address Line 1"
+                label="First Name"
               />
               <Input
                 type="text"
-                name="addressLine2"
-                value={formData.addressLine2}
+                name="lastName"
+                value={formData.lastName}
                 onChange={handleInputChange}
-                label="Address Line 2 (Optional)"
+                required
+                label="Last Name"
               />
+            </div>
 
-              {/* City, State, Postal Code */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  required
-                  label="City"
-                />
-                <Select
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  required
-                  label="State"
-                  placeholder="Select State"
-                >
-                  {states.map(state => (
-                    <option key={state} value={state}>{state}</option>
-                  ))}
-                </Select>
-                <Input
-                  type="text"
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleInputChange}
-                  required
-                  label="Postal Code"
-                />
-              </div>
+            {/* Company (Optional) */}
+            <Input
+              type="text"
+              name="company"
+              value={formData.company}
+              onChange={handleInputChange}
+              label="Company or Landmark (Optional)"
+            />
 
-              {/* Country and Phone */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                  required
-                  label="Country"
-                >
-                  {countries.map(country => (
-                    <option key={country} value={country}>{country}</option>
-                  ))}
-                </Select>
-                <Input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  label="Phone Number"
-                />
-              </div>
+            {/* Address Lines */}
+            <Input
+              type="text"
+              name="addressLine1"
+              value={formData.addressLine1}
+              onChange={handleInputChange}
+              required
+              label="Street Address / House / Road"
+            />
+            <Input
+              type="text"
+              name="addressLine2"
+              value={formData.addressLine2}
+              onChange={handleInputChange}
+              label="Apartment, Suite, Unit, Building (Optional)"
+            />
 
-              {/* Default Address */}
+            {/* City, State, Postal Code */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+                required
+                label="City / District"
+              />
+              <Select
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                required
+                label="Division / State"
+                placeholder="Select State"
+              >
+                {states.map(state => (
+                  <option key={state} value={state}>{state}</option>
+                ))}
+              </Select>
+              <Input
+                type="text"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleInputChange}
+                required
+                label="Postal Code"
+              />
+            </div>
+
+            {/* Country and Phone */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Select
+                name="country"
+                value={formData.country}
+                onChange={handleInputChange}
+                required
+                label="Country"
+              >
+                {countries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </Select>
+              <Input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                required
+                label="Recipient Contact Phone"
+              />
+            </div>
+
+            {/* Default Address */}
+            <div className="pt-2">
               <Checkbox
                 name="isDefault"
                 id="isDefault"
                 checked={formData.isDefault}
                 onChange={handleInputChange}
-                label={`Set as default ${formData.type} address`}
+                label={`Set as primary ${formData.type} destination`}
               />
+            </div>
 
-              {/* Form Actions */}
-              <div className="flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={saving}
-                  className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
-                >
-                  {saving ? 'Saving...' : editingAddress ? 'Update Address' : 'Add Address'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
+            {/* Form Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleCancel}
+                className="text-xs font-semibold px-5 py-2.5 rounded-xl border border-stone-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={saving}
+                className="bg-[#062402] hover:bg-[#153410] text-[#D4F6A2] text-xs font-bold px-6 py-2.5 rounded-xl transition-all shadow-sm"
+              >
+                {saving ? 'Saving...' : editingAddress ? 'Update Hub Details' : 'Save Address'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
 
-        {/* Addresses List */}
-        <div className="space-y-6">
-          {/* Shipping Addresses */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Home className="w-5 h-5 mr-2" aria-hidden="true" />
-              Shipping Addresses
+      {/* Addresses Lists */}
+      <div className="space-y-8">
+        {/* Shipping Addresses Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-stone-200/80">
+            <Home className="w-4 h-4 text-[#062402]" aria-hidden="true" />
+            <h2 className="font-serif text-lg font-bold text-[#062402]">
+              Delivery Addresses
             </h2>
-            <div className="space-y-4">
-              {addresses.filter(addr => addr.type === 'shipping').map(address => (
-                <div key={address.id} className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-3">
-                        <MapPin className="w-5 h-5 text-gray-400 mr-2" aria-hidden="true" />
-                        <h3 className="font-medium text-gray-900">
-                          {address.firstName} {address.lastName}
-                        </h3>
-                        {address.isDefault && (
-                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-admin-text">
-                            <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
-                            Default
-                          </span>
-                        )}
+            <span className="text-xs text-stone-400 ml-auto">
+              {addresses.filter(addr => addr.type === 'shipping').length} Saved
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {addresses.filter(addr => addr.type === 'shipping').map(address => (
+              <div
+                key={address.id}
+                className={`relative rounded-[22px] bg-white p-6 transition-all ${
+                  address.isDefault
+                    ? 'border-2 border-[#062402] shadow-[0_6px_24px_rgba(6,36,2,0.06)]'
+                    : 'border border-[#EFECE6] shadow-sm hover:border-stone-300'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF9F6] border border-stone-200/80 text-[#062402]">
+                        <MapPin className="w-4 h-4" aria-hidden="true" />
                       </div>
-                      <div className="text-gray-600 space-y-1">
-                        {address.company && <p>{address.company}</p>}
-                        <p>{address.addressLine1}</p>
-                        {address.addressLine2 && <p>{address.addressLine2}</p>}
-                        <p>
-                          {address.city}, {address.state} {address.postalCode}
-                        </p>
-                        <p>{address.country}</p>
-                        <p>{address.phone}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      {!address.isDefault && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleSetDefault(address.id, 'shipping')}
-                          className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
-                          aria-label={`Set ${address.firstName} ${address.lastName}'s shipping address as default`}
-                        >
-                          <Star className="w-5 h-5" aria-hidden="true" />
-                        </Button>
+                      <h3 className="font-serif font-bold text-sm text-[#062402]">
+                        {address.firstName} {address.lastName}
+                      </h3>
+                      {address.isDefault && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF7D8] text-[#062402] border border-[#D4F6A2]">
+                          <StarSolidIcon className="w-2.5 h-2.5 text-[#062402]" aria-hidden="true" />
+                          Primary Hub
+                        </span>
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(address)}
-                        className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
-                        aria-label={`Edit ${address.firstName} ${address.lastName}'s shipping address`}
-                      >
-                        <Edit className="w-5 h-5" aria-hidden="true" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(address.id)}
-                        className="text-gray-600 hover:bg-red-50 hover:text-red-600"
-                        aria-label={`Delete ${address.firstName} ${address.lastName}'s shipping address`}
-                      >
-                        <Trash2 className="w-5 h-5" aria-hidden="true" />
-                      </Button>
+                    </div>
+                    <div className="text-xs text-stone-600 space-y-1 leading-relaxed pl-1">
+                      {address.company && <p className="font-medium text-stone-800">{address.company}</p>}
+                      <p>{address.addressLine1}</p>
+                      {address.addressLine2 && <p>{address.addressLine2}</p>}
+                      <p>
+                        {address.city}, {address.state} {address.postalCode}
+                      </p>
+                      <p className="text-stone-400 font-medium">{address.country}</p>
+                      <p className="font-mono text-[#062402] font-semibold pt-1">{address.phone}</p>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Billing Addresses */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <CreditCard className="w-5 h-5 mr-2" aria-hidden="true" />
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {!address.isDefault && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetDefault(address.id, 'shipping')}
+                        className="p-2 rounded-xl text-stone-400 hover:text-[#062402] hover:bg-[#FAF9F6] transition-colors"
+                        title="Set as Primary Hub"
+                        aria-label={`Set ${address.firstName} ${address.lastName}'s shipping address as default`}
+                      >
+                        <Star className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(address)}
+                      className="p-2 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-[#FAF9F6] transition-colors"
+                      title="Edit Address"
+                      aria-label={`Edit ${address.firstName} ${address.lastName}'s shipping address`}
+                    >
+                      <Edit className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(address.id)}
+                      className="p-2 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      title="Delete Address"
+                      aria-label={`Delete ${address.firstName} ${address.lastName}'s shipping address`}
+                    >
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Billing Addresses Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-stone-200/80">
+            <CreditCard className="w-4 h-4 text-[#062402]" aria-hidden="true" />
+            <h2 className="font-serif text-lg font-bold text-[#062402]">
               Billing Addresses
             </h2>
-            <div className="space-y-4">
-              {addresses.filter(addr => addr.type === 'billing').map(address => (
-                <div key={address.id} className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-3">
-                        <CreditCard className="w-5 h-5 text-gray-400 mr-2" aria-hidden="true" />
-                        <h3 className="font-medium text-gray-900">
-                          {address.firstName} {address.lastName}
-                        </h3>
-                        {address.isDefault && (
-                          <span className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-minsah-surface-accent text-admin-text">
-                            <StarSolidIcon className="w-3 h-3 mr-1" aria-hidden="true" />
-                            Default
-                          </span>
-                        )}
+            <span className="text-xs text-stone-400 ml-auto">
+              {addresses.filter(addr => addr.type === 'billing').length} Saved
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {addresses.filter(addr => addr.type === 'billing').map(address => (
+              <div
+                key={address.id}
+                className={`relative rounded-[22px] bg-white p-6 transition-all ${
+                  address.isDefault
+                    ? 'border-2 border-[#062402] shadow-[0_6px_24px_rgba(6,36,2,0.06)]'
+                    : 'border border-[#EFECE6] shadow-sm hover:border-stone-300'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF9F6] border border-stone-200/80 text-[#062402]">
+                        <CreditCard className="w-4 h-4" aria-hidden="true" />
                       </div>
-                      <div className="text-gray-600 space-y-1">
-                        {address.company && <p>{address.company}</p>}
-                        <p>{address.addressLine1}</p>
-                        {address.addressLine2 && <p>{address.addressLine2}</p>}
-                        <p>
-                          {address.city}, {address.state} {address.postalCode}
-                        </p>
-                        <p>{address.country}</p>
-                        <p>{address.phone}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      {!address.isDefault && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleSetDefault(address.id, 'billing')}
-                          className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
-                          aria-label={`Set ${address.firstName} ${address.lastName}'s billing address as default`}
-                        >
-                          <Star className="w-5 h-5" aria-hidden="true" />
-                        </Button>
+                      <h3 className="font-serif font-bold text-sm text-[#062402]">
+                        {address.firstName} {address.lastName}
+                      </h3>
+                      {address.isDefault && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF7D8] text-[#062402] border border-[#D4F6A2]">
+                          <StarSolidIcon className="w-2.5 h-2.5 text-[#062402]" aria-hidden="true" />
+                          Default Billing
+                        </span>
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(address)}
-                        className="text-gray-600 hover:bg-minsah-surface-subtle hover:text-minsah-action-primary"
-                        aria-label={`Edit ${address.firstName} ${address.lastName}'s billing address`}
-                      >
-                        <Edit className="w-5 h-5" aria-hidden="true" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(address.id)}
-                        className="text-gray-600 hover:bg-red-50 hover:text-red-600"
-                        aria-label={`Delete ${address.firstName} ${address.lastName}'s billing address`}
-                      >
-                        <Trash2 className="w-5 h-5" aria-hidden="true" />
-                      </Button>
+                    </div>
+                    <div className="text-xs text-stone-600 space-y-1 leading-relaxed pl-1">
+                      {address.company && <p className="font-medium text-stone-800">{address.company}</p>}
+                      <p>{address.addressLine1}</p>
+                      {address.addressLine2 && <p>{address.addressLine2}</p>}
+                      <p>
+                        {address.city}, {address.state} {address.postalCode}
+                      </p>
+                      <p className="text-stone-400 font-medium">{address.country}</p>
+                      <p className="font-mono text-[#062402] font-semibold pt-1">{address.phone}</p>
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {!address.isDefault && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetDefault(address.id, 'billing')}
+                        className="p-2 rounded-xl text-stone-400 hover:text-[#062402] hover:bg-[#FAF9F6] transition-colors"
+                        title="Set as Default Billing"
+                        aria-label={`Set ${address.firstName} ${address.lastName}'s billing address as default`}
+                      >
+                        <Star className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(address)}
+                      className="p-2 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-[#FAF9F6] transition-colors"
+                      title="Edit Address"
+                      aria-label={`Edit ${address.firstName} ${address.lastName}'s billing address`}
+                    >
+                      <Edit className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(address.id)}
+                      className="p-2 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      title="Delete Address"
+                      aria-label={`Delete ${address.firstName} ${address.lastName}'s billing address`}
+                    >
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

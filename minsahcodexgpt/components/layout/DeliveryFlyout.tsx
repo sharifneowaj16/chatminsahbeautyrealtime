@@ -351,7 +351,7 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
         aria-hidden="true"
       />
 
-      {/* ── Flyout Card ── */}
+      {/* ── Flyout Card (Desktop: below header button) ── */}
       <div
         role="dialog"
         aria-modal="true"
@@ -362,14 +362,12 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
           transition: 'opacity 250ms cubic-bezier(0.4,0,0.2,1), transform 250ms cubic-bezier(0.4,0,0.2,1)',
         }}
         className={[
-          /* Desktop: anchored dropdown below button */
-          'fixed z-[200] flex flex-col overflow-hidden',
+          'fixed z-[200] flex flex-col overflow-hidden overflow-x-hidden no-scrollbar',
           'bg-[#FAF6F2] rounded-[24px] border border-[#EFE7DE]',
           'shadow-[0_20px_48px_rgba(0,0,0,0.16)]',
-          /* Desktop positioning — below topbar (56px header height) */
           'hidden sm:flex',
           'top-[68px] left-1/2 -translate-x-1/2',
-          'w-[440px] max-h-[88dvh]',
+          'w-[440px] max-h-[min(85vh,620px)]',
         ].join(' ')}
       >
         <FlyoutContent
@@ -390,34 +388,41 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
         />
       </div>
 
-      {/* ── Mobile Full-screen modal ── */}
+      {/* ── Mobile Centered Modal with 4-Sided Space & Centering ── */}
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Delivery address"
+        className="fixed inset-0 z-[200] flex sm:hidden items-center justify-center p-4 overflow-y-auto overflow-x-hidden no-scrollbar"
         style={{
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'opacity 300ms cubic-bezier(0.4,0,0.2,1), transform 300ms cubic-bezier(0.4,0,0.2,1)',
+          pointerEvents: visible ? 'auto' : 'none',
         }}
-        className="fixed inset-0 z-[200] flex flex-col sm:hidden bg-[#FAF6F2] overflow-hidden"
       >
-        <FlyoutContent
-          form={form} setForm={setForm}
-          focusedField={focusedField} setFocusedField={setFocusedField}
-          visibleErrors={visibleErrors} fieldErrors={fieldErrors}
-          touchedFields={touchedFields} markTouched={markTouched}
-          openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}
-          searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-          dropdownRef={dropdownRef}
-          cities={cities} zones={zones} areas={areas}
-          filteredCities={filteredCities} filteredZones={filteredZones} filteredAreas={filteredAreas}
-          locationLoading={locationLoading} locationError={locationError}
-          handleCityChange={handleCityChange} handleZoneChange={handleZoneChange} handleAreaChange={handleAreaChange}
-          fieldBorder={fieldBorder} labelClass={labelClass}
-          handleSave={handleSave} isFormValid={isFormValid} saveSuccess={saveSuccess}
-          onClose={onClose}
-        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delivery address"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'scale(1)' : 'scale(0.95)',
+            transition: 'opacity 250ms cubic-bezier(0.4,0,0.2,1), transform 250ms cubic-bezier(0.4,0,0.2,1)',
+          }}
+          className="w-full max-w-[420px] max-h-[min(85vh,620px)] my-auto flex flex-col bg-[#FAF6F2] rounded-[24px] border border-[#EFE7DE] shadow-[0_20px_48px_rgba(0,0,0,0.2)] overflow-hidden overflow-x-hidden no-scrollbar"
+        >
+          <FlyoutContent
+            form={form} setForm={setForm}
+            focusedField={focusedField} setFocusedField={setFocusedField}
+            visibleErrors={visibleErrors} fieldErrors={fieldErrors}
+            touchedFields={touchedFields} markTouched={markTouched}
+            openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            dropdownRef={dropdownRef}
+            cities={cities} zones={zones} areas={areas}
+            filteredCities={filteredCities} filteredZones={filteredZones} filteredAreas={filteredAreas}
+            locationLoading={locationLoading} locationError={locationError}
+            handleCityChange={handleCityChange} handleZoneChange={handleZoneChange} handleAreaChange={handleAreaChange}
+            fieldBorder={fieldBorder} labelClass={labelClass}
+            handleSave={handleSave} isFormValid={isFormValid} saveSuccess={saveSuccess}
+            onClose={onClose}
+          />
+        </div>
       </div>
     </>
   );

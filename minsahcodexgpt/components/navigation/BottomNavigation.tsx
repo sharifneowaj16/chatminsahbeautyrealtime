@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Heart, Home, Search, ShoppingCart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
@@ -19,8 +20,31 @@ export default function BottomNavigation() {
   const pathname = usePathname();
   const { items: cartItems } = useCart();
   const { user, loading } = useAuth();
+  const [wishlistCount, setWishlistCount] = useState<number>(0);
+
   const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const accountHref = !loading && user ? '/account' : '/login';
+
+  // Synchronize live wishlist count
+  useEffect(() => {
+    const syncWishlist = () => {
+      try {
+        const raw = localStorage.getItem('minsah_wishlist_count');
+        if (raw !== null) {
+          setWishlistCount(Number(raw) || 0);
+        }
+      } catch {}
+    };
+
+    syncWishlist();
+    window.addEventListener('minsah:wishlist-update', syncWishlist);
+    window.addEventListener('storage', syncWishlist);
+
+    return () => {
+      window.removeEventListener('minsah:wishlist-update', syncWishlist);
+      window.removeEventListener('storage', syncWishlist);
+    };
+  }, []);
 
   return (
     <nav
@@ -33,9 +57,19 @@ export default function BottomNavigation() {
           const Icon = iconByKey[item.icon];
           const href = item.key === 'account' ? accountHref : item.href;
           const active = isMobileNavigationItemActive(pathname, item.key, item.href);
-          const countLabel = item.key === 'cart' && totalQuantity > 0
-            ? `, ${totalQuantity} item${totalQuantity > 1 ? 's' : ''}`
-            : '';
+
+          const badgeCount =
+            item.key === 'cart'
+              ? totalQuantity
+              : item.key === 'wishlist'
+              ? wishlistCount
+              : 0;
+
+          const countLabel =
+            badgeCount > 0
+              ? `, ${badgeCount} item${badgeCount > 1 ? 's' : ''}`
+              : '';
+
           const label = item.key === 'account' && !user ? 'Login' : item.label;
 
           return (
@@ -50,9 +84,9 @@ export default function BottomNavigation() {
             >
               <span className={`relative flex h-7 min-w-10 items-center justify-center rounded-full transition ${active ? 'bg-minsah-surface-subtle text-minsah-primary' : ''}`}>
                 <Icon size={20} strokeWidth={active ? 2.25 : 1.75} aria-hidden="true" />
-                {item.key === 'cart' && totalQuantity > 0 ? (
+                {badgeCount > 0 ? (
                   <span className="absolute -right-0.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-minsah-primary px-1 text-[10px] font-bold leading-none text-white shadow-xs">
-                    {totalQuantity > 99 ? '99+' : totalQuantity}
+                    {badgeCount > 99 ? '99+' : badgeCount}
                   </span>
                 ) : null}
               </span>

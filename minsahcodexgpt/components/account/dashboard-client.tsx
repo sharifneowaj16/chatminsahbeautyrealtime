@@ -10,7 +10,6 @@ import {
   Users,
   Truck,
   CheckCircle,
-  AlertTriangle,
   ChevronRight,
   BarChart3,
   Sparkles,
@@ -84,33 +83,24 @@ interface DashboardClientProps {
   upcomingFeatures: UpcomingFeature[];
 }
 
-// ── Color map ─────────────────────────────────────────────────────────────────
-const colorMap: Record<string, { bg: string; text: string; ring: string }> = {
-  purple: { bg: 'bg-minsah-surface-subtle',  text: 'text-minsah-action-primary',  ring: 'ring-minsah-border-subtle'  },
-  yellow: { bg: 'bg-amber-50',   text: 'text-amber-500',   ring: 'ring-amber-100'   },
-  blue:   { bg: 'bg-blue-50',    text: 'text-blue-500',    ring: 'ring-blue-100'    },
-  green:  { bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-100' },
-  pink:   { bg: 'bg-minsah-surface-subtle',    text: 'text-minsah-action-primary',    ring: 'ring-minsah-border-subtle'    },
-};
-
 // ── Status badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    delivered:  'bg-emerald-50 text-emerald-700',
-    shipped:    'bg-blue-50 text-blue-700',
-    processing: 'bg-amber-50 text-amber-700',
-    cancelled:  'bg-red-50 text-red-700',
-    pending:    'bg-gray-100 text-gray-600',
+    delivered: 'bg-[#EAF7D8] text-[#1C3A13] border border-[#D4F6A2]/60',
+    shipped: 'bg-sky-50 text-sky-800 border border-sky-200',
+    processing: 'bg-amber-50 text-amber-800 border border-amber-200',
+    cancelled: 'bg-rose-50 text-rose-800 border border-rose-200',
+    pending: 'bg-stone-100 text-stone-700 border border-stone-200',
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${map[status] ?? 'bg-gray-100 text-gray-600'}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize ${map[status] ?? 'bg-stone-100 text-stone-700 border border-stone-200'}`}>
       {status}
     </span>
   );
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function DashboardClient({ initialData, quickActions, upcomingFeatures }: DashboardClientProps) {
+export function DashboardClient({ initialData, quickActions }: DashboardClientProps) {
   const { user } = useAuth();
   const { isVip, isPremium } = useUserPermissions();
   const [isRedeemOpen, setIsRedeemOpen] = useState(false);
@@ -126,149 +116,187 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
     : 'Your beauty journey continues here';
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+    <div className="max-w-4xl mx-auto space-y-6">
 
-      {/* ── Hero card ──────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#121915] via-[#1c2720] to-[#141d17] p-6 text-white shadow-lg">
-        <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
-        <div className="pointer-events-none absolute -bottom-10 right-12 h-24 w-24 rounded-full bg-white/5" />
+      {/* ── Luxury Member Hero Card ─────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#062402] via-[#153410] to-[#0A2207] p-6 sm:p-7 text-white shadow-xl border border-[#D4F6A2]/20">
+        {/* Ambient Glows */}
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-[#D4F6A2]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-12 right-20 h-40 w-40 rounded-full bg-[#EAF7D8]/10 blur-2xl" />
 
-        <div className="relative flex items-start justify-between gap-4">
-          <div>
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-semibold ring-2 ring-white/30">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1C3A13] to-[#062402] text-2xl font-black text-[#D4F6A2] ring-2 ring-[#D4F6A2]/40 shadow-md">
               {user.firstName?.[0]}{user.lastName?.[0]}
+              {isVip && (
+                <span className="absolute -top-1 -right-1 text-sm filter drop-shadow-sm" aria-hidden="true">
+                  👑
+                </span>
+              )}
             </div>
-            <h1 className="text-xl font-semibold leading-tight">
-              Welcome back, {user.firstName}! 👋
-            </h1>
-            <p className="mt-1 text-sm text-white/90">{memberSubtitle}</p>
-            <button
-              type="button"
-              onClick={() => setIsBreakdownOpen(true)}
-              className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 hover:bg-white/30 px-3 py-1 text-xs font-medium cursor-pointer transition-colors"
-            >
-              ⭐ {memberLabel} • View Tier Perks
-            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                  Welcome back, {user.firstName}!
+                </h1>
+              </div>
+              <p className="mt-0.5 text-xs sm:text-sm text-[#EAF7D8]/80">{memberSubtitle}</p>
+              <button
+                type="button"
+                onClick={() => setIsBreakdownOpen(true)}
+                className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 px-3 py-1 text-xs font-semibold text-[#D4F6A2] border border-[#D4F6A2]/30 cursor-pointer transition-all"
+              >
+                <span>⭐ {memberLabel}</span>
+                <span className="text-white/60">•</span>
+                <span className="text-white underline decoration-[#D4F6A2]/40 underline-offset-2">View Tier Perks</span>
+              </button>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={() => setIsBreakdownOpen(true)}
             aria-label="View VIP Loyalty Points breakdown"
-            className="shrink-0 rounded-2xl bg-white/15 hover:bg-white/25 active:scale-95 px-4 py-3 text-right backdrop-blur-sm border border-white/20 transition-all cursor-pointer text-white"
+            className="shrink-0 group rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] active:scale-95 p-4 text-left sm:text-right backdrop-blur-md border border-white/15 transition-all cursor-pointer"
           >
-            <p className="text-xs text-white/90 font-medium">Loyalty Points</p>
-            <p className="text-2xl font-bold">{user.loyaltyPoints.toLocaleString()}</p>
-            <span className="mt-0.5 inline-block text-[10px] text-[#D4F6A2] font-semibold bg-white/10 px-1.5 py-0.5 rounded-full">
-              Tap for Vouchers ✨
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#D4F6A2]">
+              Beauty Club Balance
+            </p>
+            <p className="text-2xl sm:text-3xl font-black text-white leading-tight mt-0.5">
+              {user.loyaltyPoints.toLocaleString()} <span className="text-xs font-semibold text-[#EAF7D8]/70">pts</span>
+            </p>
+            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-[#062402] font-bold bg-[#D4F6A2] px-2.5 py-0.5 rounded-full shadow-xs group-hover:scale-105 transition-transform">
+              <span>Redeem Vouchers</span>
+              <span>✨</span>
             </span>
           </button>
         </div>
       </div>
 
-      {/* ── Stats row ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* ── Bento Grid Stats Row ────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
         {[
-          { icon: <Package size={18} />, label: 'Orders',    value: initialData.recentOrders.length, iconBg: 'bg-minsah-surface-subtle text-minsah-action-primary'  },
-          { icon: <Heart size={18} />,   label: 'Wishlist',  value: initialData.wishlistItems,       iconBg: 'bg-minsah-surface-accent text-minsah-action-primary'      },
-          { icon: <MapPin size={18} />,  label: 'Addresses', value: initialData.savedAddresses,      iconBg: 'bg-emerald-50 text-emerald-600' },
+          { icon: <Package size={20} />, label: 'Total Orders', value: initialData.recentOrders.length, href: '/account/orders' },
+          { icon: <Heart size={20} />,   label: 'Saved Items',  value: initialData.wishlistItems,       href: '/account/wishlist' },
+          { icon: <MapPin size={20} />,  label: 'Delivery Hubs', value: initialData.savedAddresses,     href: '/account/addresses' },
         ].map((s) => (
-          <div key={s.label} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white py-4 shadow-sm ring-1 ring-gray-100">
-            <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${s.iconBg}`}>{s.icon}</span>
-            <span className="text-xl font-semibold text-gray-800">{s.value}</span>
-            <span className="text-xs text-gray-400">{s.label}</span>
-          </div>
+          <Link
+            key={s.label}
+            href={s.href}
+            className="group flex flex-col items-center sm:items-start rounded-[24px] bg-white border border-[#EFECE6] p-4 sm:p-5 shadow-[0_4px_24px_rgba(6,36,2,0.03)] hover:-translate-y-0.5 hover:shadow-md hover:border-[#D4F6A2]/80 transition-all text-center sm:text-left"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF7D8] text-[#062402] shadow-xs group-hover:scale-110 transition-transform mb-3">
+              {s.icon}
+            </span>
+            <span className="text-2xl font-black text-[#121915] tracking-tight leading-none">
+              {s.value}
+            </span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#7A827B] mt-1.5">
+              {s.label}
+            </span>
+          </Link>
         ))}
       </div>
 
-      {/* ── Points redeem banner ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-minsah-surface-subtle">
-            <Trophy size={20} className="text-minsah-action-primary" />
+      {/* ── Loyalty Points Instant Redeem Banner ────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-[24px] border border-[#EFECE6] bg-white p-5 shadow-[0_4px_24px_rgba(6,36,2,0.03)]">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF7D8] text-[#062402] shadow-xs shrink-0">
+            <Trophy size={22} />
           </div>
           <div>
-            <p className="text-xs text-gray-400">Loyalty Points</p>
-            <p className="text-xl font-semibold leading-tight text-minsah-action-primary">
-              {user.loyaltyPoints.toLocaleString()}
-            </p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#7A827B]">Available Reward Points</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-xl font-black leading-tight text-[#062402]">
+                {user.loyaltyPoints.toLocaleString()} Points
+              </p>
+              <span className="text-xs text-[#5E6D64] hidden sm:inline">• Convert to checkout discount vouchers</span>
+            </div>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setIsRedeemOpen(true)}
-          className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-full bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white text-xs font-bold tracking-wide transition-all shadow-md active:scale-95 cursor-pointer"
+          className="shrink-0 inline-flex items-center justify-center h-10 px-6 rounded-full bg-[#062402] hover:bg-[#153410] active:scale-95 text-[#EAF7D8] text-xs font-bold tracking-wide transition-all shadow-sm cursor-pointer"
         >
-          Redeem
+          Redeem Now
         </button>
       </div>
 
-      {/* ── Notification nudge ─────────────────────────────────────────────── */}
+      {/* ── Notification Nudge ──────────────────────────────────────────────── */}
       {initialData.unreadNotifications > 0 && (
-        <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
-          <Bell size={15} className="shrink-0 text-blue-500" />
-          <p className="text-sm text-blue-800">
-            You have <strong>{initialData.unreadNotifications}</strong> new offers waiting for you.
+        <div className="flex items-center gap-3 rounded-2xl border border-[#D4F6A2]/50 bg-[#EAF7D8]/60 px-4 py-3">
+          <Bell size={16} className="shrink-0 text-[#062402]" />
+          <p className="text-xs sm:text-sm font-semibold text-[#062402]">
+            You have <strong>{initialData.unreadNotifications}</strong> exclusive beauty offers waiting for you.
           </p>
         </div>
       )}
 
-      {/* ── Quick actions ──────────────────────────────────────────────────── */}
+      {/* ── Quick Actions Grid ──────────────────────────────────────────────── */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Quick Actions</p>
-        <div className="grid grid-cols-2 gap-3">
-          {quickActions.map((action) => {
-            const c = colorMap[action.color] ?? colorMap.purple;
-            return (
-              <Link
-                key={action.name}
-                href={action.href}
-                className="group flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 transition-all hover:border-minsah-border-default hover:shadow-sm"
-              >
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-4 transition-transform group-hover:scale-105 ${c.bg} ${c.text} ${c.ring}`}>
-                  <DynamicIcon name={action.icon} className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-800">{action.name}</p>
-                  <p className="truncate text-xs text-gray-400">{action.description}</p>
-                </div>
-              </Link>
-            );
-          })}
+        <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#7A827B]">Quick Actions</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {quickActions.map((action) => (
+            <Link
+              key={action.name}
+              href={action.href}
+              className="group flex items-center gap-3.5 rounded-[22px] border border-[#EFECE6] bg-white p-4 transition-all hover:border-[#D4F6A2] hover:shadow-md"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EAF7D8] text-[#062402] transition-transform group-hover:scale-105 shadow-xs">
+                <DynamicIcon name={action.icon} className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-[#121915] group-hover:text-[#062402] transition-colors">
+                  {action.name}
+                </p>
+                <p className="truncate text-xs text-[#5E6D64] mt-0.5">{action.description}</p>
+              </div>
+              <ChevronRight size={16} className="text-[#B6AEA5] group-hover:text-[#062402] group-hover:translate-x-0.5 transition-all shrink-0" />
+            </Link>
+          ))}
         </div>
       </div>
 
-      {/* ── Recent orders ──────────────────────────────────────────────────── */}
+      {/* ── Recent Orders ───────────────────────────────────────────────────── */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Recent Orders</p>
-          <Link href="/account/orders" className="text-xs font-medium text-minsah-action-primary hover:underline">
-            View all
+          <p className="text-[11px] font-bold uppercase tracking-widest text-[#7A827B]">Recent Orders</p>
+          <Link href="/account/orders" className="text-xs font-bold text-[#062402] hover:underline underline-offset-2">
+            View All Orders →
           </Link>
         </div>
 
         {initialData.recentOrders.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-gray-200 py-10 text-center">
-            <ShoppingBag size={30} className="text-gray-300" />
-            <p className="text-sm text-gray-400">এখনো কোনো order নেই</p>
+          <div className="flex flex-col items-center gap-3 rounded-[24px] border border-dashed border-[#E0DBD3] bg-white py-10 px-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#EAF7D8] text-[#062402] flex items-center justify-center">
+              <ShoppingBag size={22} />
+            </div>
+            <p className="text-sm font-semibold text-[#121915]">No orders placed yet</p>
+            <p className="text-xs text-[#5E6D64] max-w-sm">Discover genuine luxury skincare and cosmetics with nationwide express doorstep delivery.</p>
             <Link
               href="/shop"
-              className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-minsah-action-primary hover:bg-minsah-action-primary-hover text-white text-xs font-bold tracking-wide transition-all shadow-md active:scale-95"
+              className="mt-1 inline-flex items-center justify-center h-10 px-6 rounded-full bg-[#062402] hover:bg-[#153410] text-[#EAF7D8] text-xs font-bold tracking-wide transition-all shadow-xs"
             >
-              Shop করুন
+              Start Shopping
             </Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {initialData.recentOrders.map((order) => (
               <Link
                 key={order.id}
                 href={`/account/orders/${order.id}`}
-                className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3.5 transition-all hover:border-minsah-border-default hover:shadow-sm"
+                className="group flex items-center justify-between rounded-[20px] border border-[#EFECE6] bg-white px-4 py-3.5 transition-all hover:border-[#D4F6A2] hover:shadow-sm"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-800">{order.orderNumber}</p>
-                  <p className="mt-0.5 text-xs text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-[#121915] group-hover:text-[#062402] transition-colors">
+                      {order.orderNumber}
+                    </p>
+                    <StatusBadge status={order.status} />
+                  </div>
+                  <p className="mt-1 text-xs text-[#5E6D64]">
                     {new Date(order.createdAt).toLocaleDateString('en-BD', {
                       day: 'numeric', month: 'short', year: 'numeric',
                     })}
@@ -276,11 +304,10 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <StatusBadge status={order.status} />
-                  <span className="text-sm font-semibold text-gray-800">
+                  <span className="text-sm font-black text-[#121915]">
                     ৳{order.total.toLocaleString()}
                   </span>
-                  <ChevronRight size={14} className="text-gray-300" />
+                  <ChevronRight size={15} className="text-[#B6AEA5] group-hover:text-[#062402] group-hover:translate-x-0.5 transition-all" />
                 </div>
               </Link>
             ))}
@@ -288,63 +315,19 @@ export function DashboardClient({ initialData, quickActions, upcomingFeatures }:
         )}
       </div>
 
-      {/* ── Points expiry alert ────────────────────────────────────────────── */}
-      {initialData.loyaltyPointsExpiring > 0 && (
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-500" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">Points expiring soon!</p>
-            <p className="mt-0.5 text-xs text-amber-700">
-              আপনার {initialData.loyaltyPointsExpiring} points{' '}
-              {new Date(initialData.expiryDate).toLocaleDateString()} এ expire হবে।
-            </p>
-            <Link
-              href="/account/loyalty"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-amber-800 hover:underline"
-            >
-              Points দেখুন <ChevronRight size={12} />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* ── Coming soon ────────────────────────────────────────────────────── */}
-      <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Coming Soon</p>
-        <div className="space-y-2">
-          {upcomingFeatures.map((feature) => (
-            <div key={feature.name} className="rounded-2xl border border-gray-100 bg-white px-4 py-4">
-              <div className="mb-1 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DynamicIcon name={feature.icon} className="h-4 w-4 text-minsah-action-primary" />
-                  <p className="text-sm font-medium text-gray-800">{feature.name}</p>
-                </div>
-                <span className="text-xs font-medium text-minsah-action-primary">{feature.progress}%</span>
-              </div>
-              <p className="mb-2.5 text-xs text-gray-400">{feature.description}</p>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-1.5 rounded-full bg-minsah-action-primary transition-all duration-700"
-                  style={{ width: `${feature.progress}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Beauty tip ─────────────────────────────────────────────────────── */}
-      <div className="rounded-3xl bg-gradient-to-br from-minsah-surface-subtle to-minsah-surface-soft p-6">
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-800">
-          <Sparkles size={18} className="text-minsah-action-primary" />
-          Beauty Tip of the Day
+      {/* ── Daily Skincare Tip ──────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#FAF8F5] to-[#F2EFE8] border border-[#EFECE6] p-6 shadow-xs">
+        <h2 className="mb-2.5 flex items-center gap-2 text-sm font-bold text-[#062402]">
+          <Sparkles size={18} className="text-[#4b6723]" />
+          <span>Beauty Tip of the Day</span>
         </h2>
-        <p className="text-sm leading-relaxed text-gray-600">
+        <p className="text-xs sm:text-sm leading-relaxed text-[#5E6D64]">
           Did you know? Applying serum to slightly damp skin can increase absorption by up to 50%.
-          Pat your face gently after cleansing, then apply your serum while still slightly moist!
+          Pat your face gently after cleansing, then apply your favorite hyaluronic or niacinamide serum while still slightly moist!
         </p>
-        <Link href="/blog" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-minsah-action-primary hover:underline">
-          Read more tips <ArrowRight size={14} />
+        <Link href="/shop" className="mt-3.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#062402] hover:underline underline-offset-2">
+          <span>Explore compatible serums</span>
+          <ArrowRight size={13} />
         </Link>
       </div>
 
