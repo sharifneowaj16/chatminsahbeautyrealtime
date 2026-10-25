@@ -27,6 +27,7 @@ export interface ProductCardProps {
   index?: number;
   listName?: string;
   layout?: 'grid' | 'list';
+  sectionBadge?: string;
 }
 
 export default function ProductCard({
@@ -35,6 +36,7 @@ export default function ProductCard({
   index,
   listName = 'Shop Product Grid',
   layout = 'grid',
+  sectionBadge,
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
@@ -227,6 +229,23 @@ export default function ProductCard({
           }`}
           aria-label={product.name}
         >
+          {/* Section Badge (Starts Flush from Product Card Border) */}
+          {sectionBadge && !isDisabled && (
+            <div
+              className={`absolute left-0 top-3.5 sm:top-4 z-20 inline-flex items-center rounded-r-[5px] rounded-l-none px-2.5 py-0.5 text-[9px] font-bold tracking-wider uppercase border-y border-r bg-white shadow-2xs ${
+                sectionBadge === 'NEW'
+                  ? 'text-emerald-950 border-emerald-600/30'
+                  : sectionBadge === 'FOR YOU'
+                  ? 'text-rose-950 border-rose-600/30'
+                  : sectionBadge === 'RECOMMENDED'
+                  ? 'text-stone-900 border-stone-300'
+                  : 'text-amber-950 border-amber-600/30'
+              }`}
+            >
+              {sectionBadge}
+            </div>
+          )}
+
           {/* Thumbnail Image Canvas with Brand Pill */}
           <div className="relative w-full sm:w-44 aspect-square shrink-0 rounded-[20px] overflow-hidden bg-[#f4f4f6]">
             <Link
@@ -244,9 +263,11 @@ export default function ProductCard({
               />
             </Link>
 
-
+            {/* Discount Ribbon (Top-Right of Image Canvas) */}
             {hasDiscount && !isDisabled && (
-              <div className="absolute left-2.5 top-2.5 z-10 rounded-full bg-[#D4F6A2] px-2 py-0.5 text-[10px] font-bold tracking-tight text-[#1c3a13] shadow-xs">
+              <div
+                className="absolute right-2.5 top-2.5 z-10 rounded-full bg-[#D4F6A2] px-2 py-0.5 text-[10px] font-bold tracking-tight text-[#1c3a13] shadow-xs"
+              >
                 {discountPercent}% OFF
               </div>
             )}
@@ -407,6 +428,23 @@ export default function ProductCard({
         }`}
         aria-label={product.name}
       >
+        {/* Section Badge (Starts Flush from Product Card Border) */}
+        {sectionBadge && !isDisabled && (
+          <div
+            className={`absolute left-0 top-3 sm:top-3.5 z-20 inline-flex items-center rounded-r-[5px] rounded-l-none px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border-y border-r bg-white transition-transform duration-200 group-hover:scale-105 shadow-2xs ${
+              sectionBadge === 'NEW'
+                ? 'text-emerald-950 border-emerald-600/30'
+                : sectionBadge === 'FOR YOU'
+                ? 'text-rose-950 border-rose-600/30'
+                : sectionBadge === 'RECOMMENDED'
+                ? 'text-stone-900 border-stone-300'
+                : 'text-amber-950 border-amber-600/30'
+            }`}
+          >
+            {sectionBadge}
+          </div>
+        )}
+
         {/* Card Top: Image Canvas with Floating Brand Pill & Carousel Dots */}
         <div>
           <div className="relative aspect-square w-full rounded-[22px] overflow-hidden bg-[#f4f4f6] mb-2 sm:mb-2.5">
@@ -425,10 +463,11 @@ export default function ProductCard({
               />
             </Link>
 
-
-            {/* Discount Ribbon (Top-Left) */}
+            {/* Discount Ribbon (Top-Right of Image Canvas) */}
             {hasDiscount && !isDisabled && (
-              <div className="absolute left-2.5 top-2.5 z-10 rounded-full bg-[#D4F6A2] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold tracking-tight text-[#1c3a13] shadow-xs">
+              <div
+                className="absolute right-2.5 top-2.5 z-10 rounded-full bg-[#D4F6A2] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold tracking-tight text-[#1c3a13] shadow-xs"
+              >
                 {discountPercent}% OFF
               </div>
             )}

@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import type { Product as ContextProduct } from '@/contexts/ProductsContext';
 import type { HomeSection, HomeSectionBrand } from '@/types/admin';
 import { defaultBrands, defaultHomeSections } from '@/lib/homeData';
@@ -13,8 +15,6 @@ import { productPath } from '@/lib/product-url';
 // Modular Micro Components
 import HomeSectionHeader from './home/sections/HomeSectionHeader';
 import FlashSaleBannerStrip from './home/sections/FlashSaleBannerStrip';
-import ProductGridContainer from './home/sections/ProductGridContainer';
-import ProductCarouselTrack from './home/sections/ProductCarouselTrack';
 import SectionLayoutWrapper from './home/sections/SectionLayoutWrapper';
 import type { SectionIconType } from './home/sections/SectionBadgeIcon';
 
@@ -186,7 +186,7 @@ function getProductsForSection({
 }) {
   const manualProducts = filterSelectedProducts(cardProducts, section);
   const type = section.type as ProductSectionType;
-  const limit = 5;
+  const limit = Math.max(10, sectionLimit(section, 12));
 
   if (manualProducts) return manualProducts.slice(0, limit);
 
@@ -217,27 +217,115 @@ function getProductsForSection({
   return [];
 }
 
-function RenderedProductList({ section, products }: { section: HomeSection; products: ShopProduct[] }) {
-  if (products.length === 0) return null;
+function getSectionBadge(section: HomeSection): string | undefined {
+  if (section.type === 'new-arrivals') return 'NEW';
+  if (section.type === 'for-you') return 'FOR YOU';
+  if (section.type === 'recommendations') return 'RECOMMENDED';
+  if (section.type === 'favourites') return 'FAVORITE';
+
+  const titleLower = (section.title || '').toLowerCase();
+  if (titleLower.includes('new arrival')) return 'NEW';
+  if (titleLower.includes('for you') || titleLower.includes('picked')) return 'FOR YOU';
+  if (titleLower.includes('recommend')) return 'RECOMMENDED';
+  if (titleLower.includes('favorite') || titleLower.includes('favourite')) return 'FAVORITE';
+
+  return undefined;
+}
+
+function ProductSectionCarousel({
+  section,
+  products,
+  flashSaleEndsAt,
+}: {
+  section: HomeSection;
+  products: ShopProduct[];
+  flashSaleEndsAt?: string | null;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(products.length > 2);
+
+  const checkScroll = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollPrev(scrollLeft > 8);
+    setCanScrollNext(scrollLeft < scrollWidth - clientWidth - 8);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = trackRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [checkScroll, products.length]);
+
+  const handlePrev = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cardWidth = el.firstElementChild ? (el.firstElementChild as HTMLElement).offsetWidth + 16 : 240;
+    el.scrollBy({ left: -(cardWidth * 2), behavior: 'smooth' });
+  };
+
+  const handleNext = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cardWidth = el.firstElementChild ? (el.firstElementChild as HTMLElement).offsetWidth + 16 : 240;
+    el.scrollBy({ left: cardWidth * 2, behavior: 'smooth' });
+  };
+
+  const sectionType = section.type as SectionIconType;
+  const sectionBadge = getSectionBadge(section);
 
   return (
-    <ProductGridContainer columns={5}>
-      {products.map((product, index) => (
-        <div
-          key={product.id}
-          className={`h-full ${
-            index >= 2 ? (index >= 3 ? 'hidden lg:block' : 'hidden md:block') : 'block'
-          }`}
-        >
-          <ProductCard
-            product={product}
-            layout="grid"
-            index={index}
-            listName={section.title || section.type}
-          />
-        </div>
-      ))}
-    </ProductGridContainer>
+    <SectionLayoutWrapper
+      key={section.id}
+      style={{ backgroundColor: section.settings.backgroundColor || undefined }}
+    >
+      <HomeSectionHeader
+        type={sectionType}
+        title={section.title}
+        subtitle={section.subtitle}
+        showArrows={true}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        canScrollPrev={canScrollPrev}
+        canScrollNext={canScrollNext}
+      />
+
+      {section.type === 'flash-sale' && (
+        <FlashSaleBannerStrip
+          timer={<HomeCountdownTimer endsAt={flashSaleEndsAt} label="Offer ends in:" />}
+          urgencyText="Active limited-time offers only"
+        />
+      )}
+
+      {/* Fenty Beauty Inspired Horizontal Carousel Track */}
+      <div
+        ref={trackRef}
+        className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 scroll-smooth scrollbar-none overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {products.map((product, index) => (
+          <div
+            key={product.id}
+            className="w-[185px] sm:w-[220px] md:w-[245px] lg:w-[calc(20%-13px)] shrink-0 h-full"
+          >
+            <ProductCard
+              product={product}
+              layout="grid"
+              index={index}
+              listName={section.title || section.type}
+              sectionBadge={sectionBadge}
+            />
+          </div>
+        ))}
+      </div>
+    </SectionLayoutWrapper>
   );
 }
 
@@ -318,32 +406,16 @@ export default function HomeProductSections({
     if (sectionProducts.length === 0) return null;
 
     return (
-      <SectionLayoutWrapper
+      <ProductSectionCarousel
         key={section.id}
-        style={{ backgroundColor: section.settings.backgroundColor || undefined }}
-      >
-        <HomeSectionHeader
-          type={sectionType}
-          title={section.title}
-          subtitle={section.subtitle}
-          href={section.settings.viewAllHref || getDefaultHref(section.type)}
-          cta={cta}
-          showViewAll={section.settings.showViewAll !== false}
-        />
-
-        {section.type === 'flash-sale' && (
-          <FlashSaleBannerStrip
-            timer={<HomeCountdownTimer endsAt={flashSaleEndsAt} label="Offer ends in:" />}
-            urgencyText="Active limited-time offers only"
-          />
-        )}
-
-        <RenderedProductList section={section} products={sectionProducts} />
-      </SectionLayoutWrapper>
+        section={section}
+        products={sectionProducts}
+        flashSaleEndsAt={flashSaleEndsAt}
+      />
     );
   }).filter(Boolean);
 
   if (renderedSections.length === 0) return null;
 
-  return <div className="bg-[#FAF9F6] pb-20 sm:pb-24">{renderedSections}</div>;
+  return <div className="bg-[#FAF9F6] pb-8 sm:pb-12">{renderedSections}</div>;
 }

@@ -25,7 +25,7 @@ export default function FlashDealsSection({
   if (deals.length === 0) return null;
 
   return (
-    <section className={`w-full px-4 lg:px-8 py-3 sm:py-5 ${className}`}>
+    <section className={`w-full px-4 lg:px-8 py-2 sm:py-3 ${className}`}>
       <FlashDealsCardWrapper>
         {/* Header with Title, Badge & Live Countdown */}
         <FlashDealsHeader
