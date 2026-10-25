@@ -1,24 +1,36 @@
-import { Banknote, RotateCcw, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
+import React from 'react';
+import {
+  TruckLineIcon,
+  VerifiedBadgeLineIcon,
+  BankCard2LineIcon,
+  CustomerService2LineIcon,
+  CashLineIcon,
+} from '@/components/ui/icons/RemixIcons';
 
 const trustItems = [
-  { label: 'Fast Delivery', icon: Truck },
-  { label: 'Authentic Products', icon: BadgeCheck },
-  { label: 'Secure Payment', icon: ShieldCheck },
-  { label: 'Easy Return', icon: RotateCcw },
-  { label: 'Cash on Delivery', icon: Banknote },
+  { label: 'Fast Delivery', icon: TruckLineIcon },
+  { label: '100% Authentic', icon: VerifiedBadgeLineIcon },
+  { label: 'Cash on Delivery', icon: CashLineIcon },
+  { label: 'Secure Payment', icon: BankCard2LineIcon },
+  { label: '24/7 Concierge', icon: CustomerService2LineIcon },
 ];
 
 export default function HomeTrustStrip() {
   return (
-    <section className="bg-white px-4 py-4 lg:px-6">
-      <div className="mx-auto max-w-7xl overflow-x-auto rounded-2xl border border-minsah-accent bg-minsah-light/70 p-3 scrollbar-hide">
-        <div className="flex min-w-max items-center gap-3 sm:grid sm:min-w-0 sm:grid-cols-5">
+    <section className="bg-white px-4 py-3 sm:py-4 lg:px-6">
+      <div className="mx-auto max-w-7xl overflow-x-auto rounded-2xl border border-stone-200/60 bg-gradient-to-r from-stone-50 via-white to-stone-50 p-2 sm:p-2.5 scrollbar-hide shadow-xs">
+        <div className="flex min-w-max items-center gap-2 sm:grid sm:min-w-0 sm:grid-cols-5">
           {trustItems.map(({ label, icon: Icon }) => (
-            <div key={label} className="minsah-tap-target flex min-w-[150px] items-center gap-2 rounded-xl bg-white px-3 py-3 shadow-sm hover:-translate-y-0.5 hover:shadow-md sm:min-w-0">
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-minsah-accent text-minsah-primary">
-                <Icon size={18} />
+            <div
+              key={label}
+              className="flex min-w-[130px] items-center gap-2 rounded-xl bg-white px-3 py-2 border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-minsah-accent/60 transition-all hover:-translate-y-0.5 sm:min-w-0"
+            >
+              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-minsah-accent/20 text-minsah-primary">
+                <Icon size={17} />
               </span>
-              <span className="text-xs font-bold leading-4 text-minsah-dark sm:text-sm">{label}</span>
+              <span className="text-[11px] font-bold tracking-tight text-minsah-dark sm:text-xs">
+                {label}
+              </span>
             </div>
           ))}
         </div>

@@ -3,17 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Heart, Home, Search, ShoppingCart, User } from 'lucide-react';
+import { Home } from 'lucide-react';
+import {
+  HeartLineIcon,
+  Search2LineIcon,
+  ShoppingBag4LineIcon,
+  UserLineIcon,
+} from '@/components/ui/icons/RemixIcons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { isMobileNavigationItemActive, mobileNavigationItems } from './navigation-config';
 
 const iconByKey = {
   home: Home,
-  search: Search,
-  heart: Heart,
-  cart: ShoppingCart,
-  user: User,
+  search: Search2LineIcon,
+  heart: HeartLineIcon,
+  cart: ShoppingBag4LineIcon,
+  user: UserLineIcon,
 } as const;
 
 export default function BottomNavigation() {

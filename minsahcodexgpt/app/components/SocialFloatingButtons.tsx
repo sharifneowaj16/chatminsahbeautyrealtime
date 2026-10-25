@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MessageCircle, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
+import { WhatsappLineIcon } from '@/components/ui/icons/RemixIcons';
 import { usePathname } from 'next/navigation';
 import { getSiteConfig } from '@/lib/site-config';
 import { WhatsAppConciergeModal } from '@/components/concierge/WhatsAppConciergeModal';
@@ -45,7 +46,7 @@ export default function SocialFloatingButtons() {
           aria-label={`Open WhatsApp Concierge Chat with ${identity.name}`}
           className="minsah-control flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] active:scale-95 transition-transform cursor-pointer relative"
         >
-          <MessageCircle size={22} aria-hidden="true" />
+          <WhatsappLineIcon size={24} aria-hidden="true" />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#D4F6A2] rounded-full border-2 border-white animate-pulse" />
         </button>
       </div>

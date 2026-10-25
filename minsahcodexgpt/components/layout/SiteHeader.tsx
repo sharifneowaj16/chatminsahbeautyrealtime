@@ -11,6 +11,13 @@ import { useDeliveryLocation } from '@/contexts/DeliveryLocationContext';
 import DeliveryFlyout from '@/components/layout/DeliveryFlyout';
 import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
 import MemberAuthModal from '@/components/auth/MemberAuthModal';
+import {
+  MapPinUserLineIcon,
+  HeartLineIcon,
+  UserLineIcon,
+  VipCrown2LineIcon,
+  ShoppingBag4LineIcon,
+} from '@/components/ui/icons/RemixIcons';
 
 const DEFAULT_NAV_CATEGORIES = [
   { id: 'skincare', name: 'Skincare', href: '/shop?category=Skincare' },
@@ -163,21 +170,7 @@ export default function SiteHeader() {
                 aria-haspopup="dialog"
                 onClick={() => setDeliveryOpen((v) => !v)}
               >
-                <svg
-                  className="text-[#D4F6A2] shrink-0"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
+                <MapPinUserLineIcon size={14} className="text-[#D4F6A2] shrink-0" />
                 <span className="truncate max-w-[95px] text-[12px] font-semibold text-[#EAF7D8]">
                   {deliveryDisplayCity}
                 </span>
@@ -220,19 +213,7 @@ export default function SiteHeader() {
                 href="/wishlist"
                 aria-label="Open wishlist"
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
-                </svg>
+                <HeartLineIcon size={19} className="text-[#EAF7D8]" />
                 {wishlistCount > 0 && (
                   <span className="wishlist-badge">
                     {wishlistCount > 99 ? '99+' : wishlistCount}
@@ -243,11 +224,11 @@ export default function SiteHeader() {
               {/* Sign In / VIP Club Profile Pill */}
               {!loading && user ? (
                 <Link
-                  className="header-control vip-profile-pill hidden sm:inline-flex"
+                  className="header-control vip-profile-pill hidden sm:inline-flex items-center gap-1.5"
                   href="/account"
                   aria-label="Minsah VIP Club Profile"
                 >
-                  <span className="text-amber-300 text-sm" aria-hidden="true">👑</span>
+                  <VipCrown2LineIcon size={16} className="text-amber-300 shrink-0" />
                   <span className="text-xs font-bold text-[#EAF7D8] truncate max-w-[110px]">
                     {user.firstName || 'VIP Club'}
                   </span>
@@ -256,25 +237,11 @@ export default function SiteHeader() {
                 <button
                   type="button"
                   onClick={() => setAuthModalOpen(true)}
-                  className="header-control signin hidden sm:inline-flex"
+                  className="header-control signin hidden sm:inline-flex items-center gap-1.5"
                   aria-label="Sign in to your account with Phone OTP"
                 >
-                  <svg
-                    className="accent-icon text-[#D4F6A2]"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                  <span>Sign In</span>
+                  <UserLineIcon size={17} className="accent-icon text-[#D4F6A2]" />
+                  <span className="hidden lg:inline text-xs font-semibold">Sign In</span>
                 </button>
               )}
 
@@ -285,22 +252,7 @@ export default function SiteHeader() {
                 onClick={openDrawer}
                 aria-label={`Open cart drawer, ${itemCount} items`}
               >
-                <svg
-                  className="accent-icon text-[#D4F6A2]"
-                  width="19"
-                  height="19"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="8" cy="21" r="1" />
-                  <circle cx="19" cy="21" r="1" />
-                  <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
-                </svg>
+                <ShoppingBag4LineIcon size={19} className="accent-icon text-[#D4F6A2]" />
                 {itemCount > 0 && (
                   <span className="cart-badge">
                     {itemCount > 99 ? '99+' : itemCount}

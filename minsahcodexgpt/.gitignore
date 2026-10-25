@@ -37,3 +37,15 @@ meta-webhook-search.txt
 phase31-*.txt
 next-env.d.ts
 scratch/
+
+# Backup & temporary files
+*.backup
+*.backup*
+*.bak
+.git-local-backup/
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
