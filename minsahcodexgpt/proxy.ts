@@ -7,6 +7,9 @@ import {
   canLoadNonEssentialTracking,
   getServerTrackingConsentFromCookie,
   TRACKING_CONSENT_COOKIE,
+  TRACKING_CONSENT_VERSION_COOKIE,
+  TRACKING_CONSENT_VERSION,
+  NON_ESSENTIAL_TRACKING_COOKIES,
 } from '@/lib/tracking/tracking-consent';
 import {
   cleanTikTokAttributionValue,
@@ -79,10 +82,14 @@ function createVisitorId() {
   return `mbv_${Date.now()}_${crypto.randomUUID()}`;
 }
 
+function hasExplicitCurrentConsent(request: NextRequest) {
+  const consent = getServerTrackingConsentFromCookie(request.cookies.get(TRACKING_CONSENT_COOKIE)?.value);
+  const version = request.cookies.get(TRACKING_CONSENT_VERSION_COOKIE)?.value;
+  return consent === 'granted' && version === TRACKING_CONSENT_VERSION && canLoadNonEssentialTracking(consent, version);
+}
 
 function canApplyTikTokAttributionCookies(request: NextRequest) {
-  const consent = getServerTrackingConsentFromCookie(request.cookies.get(TRACKING_CONSENT_COOKIE)?.value);
-  return canLoadNonEssentialTracking(consent);
+  return hasExplicitCurrentConsent(request);
 }
 
 function shouldApplyTrackingCookies(request: NextRequest) {
@@ -103,11 +110,23 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
     sameSite: 'lax' as const,
     secure,
   };
+  const allowed = hasExplicitCurrentConsent(request);
+
+  // Fail closed: remove legacy non-essential identifiers unless the current
+  // consent version is explicitly granted. These cookies are not required for
+  // browsing, cart, authentication, or checkout.
+  if (!allowed) {
+    for (const name of NON_ESSENTIAL_TRACKING_COOKIES) {
+      response.cookies.set(name, '', { ...cookieOptions, maxAge: 0 });
+    }
+    return response;
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const fbclid = searchParams.get('fbclid')?.trim();
   const attribution = ATTRIBUTION_PARAMS.reduce<Record<string, string>>((acc, key) => {
     const value = searchParams.get(key)?.trim();
-    if (value) acc[key] = value;
+    if (value) acc[key] = value.slice(0, 300);
     return acc;
   }, {});
 
@@ -119,7 +138,7 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
   }
 
   if (fbclid && !request.cookies.get('_fbc')?.value) {
-    response.cookies.set('_fbc', `fb.1.${Date.now()}.${fbclid}`, {
+    response.cookies.set('_fbc', `fb.1.${Date.now()}.${fbclid.slice(0, 500)}`, {
       ...cookieOptions,
       maxAge: TRACKING_COOKIE_MAX_AGE.fbc,
     });
@@ -160,10 +179,7 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
       encodeURIComponent(
         sanitizeTrackingPath(`${request.nextUrl.pathname}${request.nextUrl.search}`) ?? request.nextUrl.pathname
       ),
-      {
-        ...cookieOptions,
-        maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
-      }
+      { ...cookieOptions, maxAge: TRACKING_COOKIE_MAX_AGE.visitor }
     );
   }
 
@@ -171,10 +187,7 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
     response.cookies.set(
       'mb_first_landing_url',
       encodeURIComponent(sanitizeTrackingUrl(request.nextUrl.href) ?? request.nextUrl.origin),
-      {
-        ...cookieOptions,
-        maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
-      }
+      { ...cookieOptions, maxAge: TRACKING_COOKIE_MAX_AGE.visitor }
     );
   }
 
@@ -265,40 +278,28 @@ export async function proxy(request: NextRequest) {
   // Handle API routes
   if (pathname.startsWith('/api')) {
     const response = NextResponse.next();
-    // Do NOT set a fixed Content-Type here.
-    // - Response Content-Type is set by each route handler (e.g. NextResponse.json()).
-    // - Upload routes receive multipart/form-data requests; forcing application/json
-    //   onto the NextResponse.next() object overwrites the forwarded request Content-Type
-    //   header in Next.js App Router proxy, causing request.formData() to throw.
     return handleCors(request, createSecureResponse(response));
   }
 
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
-    // Allow access to login page
     if (pathname === '/admin/login') {
       return createSecureResponse(NextResponse.next());
     }
 
-    // Check for admin access token
     const accessToken = request.cookies.get('admin_access_token');
     const refreshToken = request.cookies.get('admin_refresh_token');
 
-    // No tokens at all - redirect to login
     if (!accessToken && !refreshToken) {
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return createSecureResponse(NextResponse.redirect(loginUrl));
     }
 
-    // Has refresh token but no access token - let the client handle refresh
-    // The AdminAuthContext will automatically try to refresh
     if (!accessToken && refreshToken) {
       return createSecureResponse(NextResponse.next());
     }
 
-    // Access token exists - verify the JWT before rendering admin pages.
-    // If it is expired but a refresh token exists, let the client refresh flow run.
     if (accessToken) {
       const payload = await verifyAdminAccessToken(accessToken.value);
       if (payload) {
@@ -317,12 +318,10 @@ export async function proxy(request: NextRequest) {
 
   // Protect user account routes
   if (pathname.startsWith('/account')) {
-    // Allow login and register pages
     if (pathname === '/login' || pathname === '/register') {
       return createSecureResponse(NextResponse.next());
     }
 
-    // Check for NextAuth session
     const sessionToken = request.cookies.get('next-auth.session-token') ||
                          request.cookies.get('__Secure-next-auth.session-token');
 
@@ -344,7 +343,6 @@ export const config = {
     '/admin/:path*',
     '/account/:path*',
     '/api/:path*',
-    // Exclude static files and images
     '/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.svg$|.*\\.ico$).*)',
   ],
 };

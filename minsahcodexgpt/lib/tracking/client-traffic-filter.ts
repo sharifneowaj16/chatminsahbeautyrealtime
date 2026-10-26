@@ -1,50 +1,44 @@
 'use client';
-
 import {
   canLoadNonEssentialTracking,
+  CURRENT_TRACKING_CONSENT_VERSION,
   getClientTrackingConsent,
   getClientTrackingConsentVersion,
   isConsentDenied,
 } from '@/lib/tracking/tracking-consent';
 
 const BOT_UA_PATTERN = /bot|crawler|spider|crawling|preview|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|headlesschrome|pingdom|uptime|monitoring|lighthouse|pagespeed/i;
-
 function readCookie(name: string): string | undefined {
   if (typeof document === 'undefined') return undefined;
-
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   if (!match) return undefined;
-
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return match[1];
-  }
+  try { return decodeURIComponent(match[1]); } catch { return match[1]; }
 }
-
 export function isLikelyAutomatedClient(userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '') {
   if (!userAgent) return true;
   return BOT_UA_PATTERN.test(userAgent);
 }
-
 export function hasInternalTrafficMarker() {
   if (typeof document === 'undefined') return false;
   return readCookie('minsah_staff') === '1' || readCookie('mb_internal_traffic') === '1';
 }
-
+function hasCurrentExplicitGrant() {
+  return getClientTrackingConsent() === 'granted' &&
+    getClientTrackingConsentVersion() === CURRENT_TRACKING_CONSENT_VERSION &&
+    canLoadNonEssentialTracking(getClientTrackingConsent(), getClientTrackingConsentVersion());
+}
 export function canRunClientTracking() {
   if (typeof window === 'undefined') return false;
-  if (!canLoadNonEssentialTracking(getClientTrackingConsent(), getClientTrackingConsentVersion())) return false;
+  if (!hasCurrentExplicitGrant()) return false;
   if (hasInternalTrafficMarker()) return false;
   if (isLikelyAutomatedClient()) return false;
   return true;
 }
-
 export function getClientTrackingBlockReason() {
   if (typeof window === 'undefined') return 'SERVER_SIDE';
   const consent = getClientTrackingConsent();
-  if (!canLoadNonEssentialTracking(consent, getClientTrackingConsentVersion())) {
-    return isConsentDenied(consent) ? 'CONSENT_DENIED' : 'CONSENT_NOT_GRANTED';
+  if (!hasCurrentExplicitGrant()) {
+    return isConsentDenied(consent) ? 'CONSENT_DENIED' : 'CONSENT_NOT_GRANTED_OR_STALE';
   }
   if (hasInternalTrafficMarker()) return 'INTERNAL_TRAFFIC';
   if (isLikelyAutomatedClient()) return 'BOT_OR_AUTOMATED_TRAFFIC';

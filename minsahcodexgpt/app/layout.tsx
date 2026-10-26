@@ -10,7 +10,7 @@ import { DeliveryLocationProvider } from '@/contexts/DeliveryLocationContext';
 import { getSiteConfig } from '@/lib/site-config';
 import { getSiteUrl } from '@/lib/seo';
 import { ToastProvider } from '@/components/ui/ToastProvider';
-import { CookieConsentModal } from '@/components/privacy/mobile/CookieConsentModal';
+
 import { ConciergeModalCoordinator } from '@/components/concierge/ConciergeModalCoordinator';
 import { StockAlertCoordinator } from '@/components/stock-alert/mobile/StockAlertCoordinator';
 import WelcomeDiscountModal from '@/components/promotions/welcome/WelcomeDiscountModal';
@@ -228,7 +228,6 @@ export default function RootLayout({
               </CartProvider>
             </AuthProvider>
           </TrackingProvider>
-          <CookieConsentModal />
           <ConciergeModalCoordinator />
           <StockAlertCoordinator />
           <WelcomeDiscountModal />

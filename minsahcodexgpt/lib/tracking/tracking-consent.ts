@@ -1,8 +1,10 @@
 export const TRACKING_CONSENT_COOKIE = 'mb_tracking_consent';
 export const TRACKING_CONSENT_VERSION_COOKIE = 'mb_tracking_consent_version';
 export const CURRENT_TRACKING_CONSENT_VERSION = '2026-07-17';
+export const TRACKING_CONSENT_VERSION = CURRENT_TRACKING_CONSENT_VERSION;
 export const TRACKING_CONSENT_EVENT = 'mb:tracking-consent-changed';
 export const TRACKING_CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
+export const TRACKING_CONSENT_MAX_AGE = TRACKING_CONSENT_MAX_AGE_SECONDS;
 
 export const NON_ESSENTIAL_TRACKING_COOKIES = [
   'mb_vid',
