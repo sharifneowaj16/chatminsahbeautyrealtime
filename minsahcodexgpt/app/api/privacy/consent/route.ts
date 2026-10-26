@@ -36,9 +36,13 @@ export async function POST(request: NextRequest) {
     });
 
     const response = NextResponse.json({ ok: true, state, recordId: record.id, version: TRACKING_CONSENT_VERSION });
+    const isHttps = request.headers.get('x-forwarded-proto') === 'https'
+      || request.nextUrl.protocol === 'https:'
+      || (process.env.NODE_ENV === 'production' && !request.headers.get('host')?.includes('localhost'));
+
     const cookieOptions = {
       httpOnly: false,
-      secure: request.nextUrl.protocol === 'https:',
+      secure: isHttps,
       sameSite: 'lax' as const,
       path: '/',
       maxAge: TRACKING_CONSENT_MAX_AGE,

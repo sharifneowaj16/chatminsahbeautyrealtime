@@ -104,11 +104,14 @@ function shouldApplyTrackingCookies(request: NextRequest) {
 function applyTrackingCookies(request: NextRequest, response: NextResponse): NextResponse {
   if (!shouldApplyTrackingCookies(request)) return response;
 
-  const secure = request.nextUrl.protocol === 'https:';
+  const isHttps = request.headers.get('x-forwarded-proto') === 'https'
+    || request.nextUrl.protocol === 'https:'
+    || (process.env.NODE_ENV === 'production' && !request.headers.get('host')?.includes('localhost'));
+
   const cookieOptions = {
     path: '/',
     sameSite: 'lax' as const,
-    secure,
+    secure: isHttps,
   };
   const allowed = hasExplicitCurrentConsent(request);
 
