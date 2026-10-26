@@ -197,7 +197,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${seedSans.variable} font-sans`}>
+    <html lang="en" className={`${seedSans.variable} font-sans overflow-x-hidden`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -214,7 +214,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
       </head>
-      <body className="antialiased">
+      <body className="antialiased overflow-x-hidden min-h-screen">
         <ToastProvider>
           <TrackingProvider>
             <AuthProvider>
