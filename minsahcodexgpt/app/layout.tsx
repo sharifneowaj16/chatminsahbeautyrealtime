@@ -13,7 +13,6 @@ import { ToastProvider } from '@/components/ui/ToastProvider';
 
 import { ConciergeModalCoordinator } from '@/components/concierge/ConciergeModalCoordinator';
 import { StockAlertCoordinator } from '@/components/stock-alert/mobile/StockAlertCoordinator';
-import WelcomeDiscountModal from '@/components/promotions/welcome/WelcomeDiscountModal';
 import NotificationPreviewModal from '@/components/notifications/preview/NotificationPreviewModal';
 import DeliveryLocationModal from '@/components/delivery/location/DeliveryLocationModal';
 import ProductComparisonDesktopModal from '@/components/compare/ProductComparisonDesktopModal';
@@ -230,7 +229,6 @@ export default function RootLayout({
           </TrackingProvider>
           <ConciergeModalCoordinator />
           <StockAlertCoordinator />
-          <WelcomeDiscountModal />
           <NotificationPreviewModal />
           <ProductComparisonDesktopModal />
           <IOSSearchModalOverlay />
