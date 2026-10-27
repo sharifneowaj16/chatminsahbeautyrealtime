@@ -84,8 +84,7 @@ function createVisitorId() {
 
 function hasExplicitCurrentConsent(request: NextRequest) {
   const consent = getServerTrackingConsentFromCookie(request.cookies.get(TRACKING_CONSENT_COOKIE)?.value);
-  const version = request.cookies.get(TRACKING_CONSENT_VERSION_COOKIE)?.value;
-  return consent === 'granted' && version === TRACKING_CONSENT_VERSION && canLoadNonEssentialTracking(consent, version);
+  return consent !== 'denied';
 }
 
 function canApplyTikTokAttributionCookies(request: NextRequest) {
@@ -113,16 +112,26 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
     sameSite: 'lax' as const,
     secure: isHttps,
   };
-  const allowed = hasExplicitCurrentConsent(request);
+  const rawConsent = request.cookies.get(TRACKING_CONSENT_COOKIE)?.value;
+  const consent = getServerTrackingConsentFromCookie(rawConsent);
 
-  // Fail closed: remove legacy non-essential identifiers unless the current
-  // consent version is explicitly granted. These cookies are not required for
-  // browsing, cart, authentication, or checkout.
-  if (!allowed) {
+  // If user explicitly denied, fail closed and purge non-essential cookies
+  if (consent === 'denied') {
     for (const name of NON_ESSENTIAL_TRACKING_COOKIES) {
       response.cookies.set(name, '', { ...cookieOptions, maxAge: 0 });
     }
     return response;
+  }
+
+  // Auto-grant first-party consent cookies (1-year persistence) unless explicitly denied
+  if (consent !== 'granted' || request.cookies.get(TRACKING_CONSENT_VERSION_COOKIE)?.value !== TRACKING_CONSENT_VERSION) {
+    const consentCookieOptions = {
+      ...cookieOptions,
+      httpOnly: false,
+      maxAge: 31536000,
+    };
+    response.cookies.set(TRACKING_CONSENT_COOKIE, 'granted', consentCookieOptions);
+    response.cookies.set(TRACKING_CONSENT_VERSION_COOKIE, TRACKING_CONSENT_VERSION, consentCookieOptions);
   }
 
   const searchParams = request.nextUrl.searchParams;

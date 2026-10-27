@@ -152,14 +152,20 @@ export function getClientTrackingConsent(): TrackingConsentState {
     return cookieConsent;
   }
   const storageVal = getSafeLocalStorageItem(TRACKING_CONSENT_STORAGE_KEY);
-  return normalizeTrackingConsent(storageVal);
+  const storageConsent = normalizeTrackingConsent(storageVal);
+  if (storageConsent !== 'unknown') {
+    return storageConsent;
+  }
+  // Auto-granted by default unless explicitly denied
+  return 'granted';
 }
 
 export function getClientTrackingConsentVersion() {
   const cookieVersion = readCookie(TRACKING_CONSENT_VERSION_COOKIE)?.trim();
   if (cookieVersion) return cookieVersion;
   const storageVersion = getSafeLocalStorageItem(TRACKING_CONSENT_VERSION_STORAGE_KEY)?.trim();
-  return storageVersion || null;
+  if (storageVersion) return storageVersion;
+  return CURRENT_TRACKING_CONSENT_VERSION;
 }
 
 export function canLoadNonEssentialTracking(
