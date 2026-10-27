@@ -14,7 +14,7 @@ export default function FlashDealsCardWrapper({
 }: FlashDealsCardWrapperProps) {
   return (
     <div
-      className={`relative w-full max-w-[1440px] mx-auto rounded-[28px] sm:rounded-[32px] bg-[#0A2612] border border-emerald-800/40 shadow-xl overflow-hidden p-4 sm:p-6 lg:p-7 text-white select-none ${className}`}
+      className={`relative w-full max-w-[1440px] mx-auto rounded-[28px] sm:rounded-[32px] bg-[#0A2612] border border-emerald-800/40 shadow-xl overflow-hidden p-4 sm:p-6 lg:p-7 text-white ${className}`}
     >
       {/* Top Ambient Halo Glow */}
       <FlashDealsHaloEffect />

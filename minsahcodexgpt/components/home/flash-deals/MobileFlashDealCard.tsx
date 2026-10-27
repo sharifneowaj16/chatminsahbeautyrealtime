@@ -42,7 +42,6 @@ export default function MobileFlashDealCard({
   };
 
   const handleClaimOffer = async (e: React.MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     if (isAdding) return;
 

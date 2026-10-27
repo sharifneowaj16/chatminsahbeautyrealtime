@@ -118,6 +118,7 @@ export default function SeedHeroVariantDropdown({
   const [cardWidth, setCardWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const mobileModalRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [dynamicTargets, setDynamicTargets] = useState<NodeTarget[] | null>(null);
 
@@ -319,7 +320,10 @@ export default function SeedHeroVariantDropdown({
     onOpenChange?.(false);
   };
 
-  const toggleDropdown = () => {
+  const toggleDropdown = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
     if (!isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -346,10 +350,12 @@ export default function SeedHeroVariantDropdown({
     if (!isOpen) return;
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node;
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node) &&
-        (!modalRef.current || !modalRef.current.contains(e.target as Node))
+        !containerRef.current.contains(target) &&
+        (!modalRef.current || !modalRef.current.contains(target)) &&
+        (!mobileModalRef.current || !mobileModalRef.current.contains(target))
       ) {
         closeDropdown();
       }
@@ -362,12 +368,10 @@ export default function SeedHeroVariantDropdown({
     }
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, lockedImage]);
@@ -403,6 +407,9 @@ export default function SeedHeroVariantDropdown({
 
   // Live hover preview handler
   const handleItemMouseEnter = (v: ProductVariantItem, idx: number) => {
+    if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
     setHoveredVariantId(v.id);
     const targetImg = resolveVariantImage(v, idx);
     if (onHoverImage) {
@@ -450,7 +457,7 @@ export default function SeedHeroVariantDropdown({
         onMouseLeave={handleMouseLeaveList}
         className={`${
           compact ? 'max-h-48 sm:max-h-56' : 'max-h-64 sm:max-h-72'
-        } overflow-y-auto flex flex-col gap-[1px] bg-stone-200/60 dark:bg-white/10 p-[1px] scroll-smooth ios-scrollbar`}
+        } overflow-y-auto flex flex-col gap-[1px] bg-stone-200/60 dark:bg-white/10 p-[1px] touch-pan-y overscroll-contain ios-scrollbar`}
       >
         {variants.map((v, idx) => {
           const isSelected = v.id === selectedVariantId;
@@ -471,7 +478,7 @@ export default function SeedHeroVariantDropdown({
               onFocus={() => handleItemMouseEnter(v, idx)}
               className={`w-full ${
                 compact ? 'px-2 py-2 sm:px-2.5 sm:py-2.5' : 'px-3 py-2.5 sm:px-3.5 sm:py-3'
-              } flex items-center gap-2 sm:gap-2.5 text-left transition-all duration-150 cursor-pointer ${
+              } flex items-center gap-2 sm:gap-2.5 text-left transition-all duration-150 cursor-pointer touch-manipulation ${
                 isSelected
                   ? 'bg-[#E5EAE1] dark:bg-emerald-950/40 text-[#1c3a13] dark:text-emerald-200 font-medium'
                   : isOOS
@@ -582,7 +589,7 @@ export default function SeedHeroVariantDropdown({
       {/* Collapsed Trigger Button */}
       <button
         type="button"
-        onClick={toggleDropdown}
+        onClick={(e) => toggleDropdown(e)}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={`Select variant. Currently: ${displayShade}${displaySize ? ` ${displaySize}` : ''}`}
@@ -590,7 +597,7 @@ export default function SeedHeroVariantDropdown({
           compact
             ? 'h-7.5 sm:h-8 px-2.5 sm:px-3 rounded-full'
             : 'h-12 sm:h-[50px] px-3 sm:px-3.5 rounded-2xl'
-        } flex items-center justify-between gap-1.5 sm:gap-2.5 border bg-white dark:bg-zinc-800/90 text-left transition-all shadow-2xs cursor-pointer select-none ${
+        } flex items-center justify-between gap-1.5 sm:gap-2.5 border bg-white dark:bg-zinc-800/90 text-left transition-all shadow-2xs cursor-pointer touch-manipulation relative z-10 ${
           isOpen
             ? 'border-[#1c3a13] ring-2 ring-[#1c3a13]/20 dark:border-emerald-400 dark:ring-emerald-400/30'
             : 'border-[#1c3a13]/20 dark:border-white/12 hover:border-[#1c3a13] dark:hover:border-white/30'
@@ -600,7 +607,7 @@ export default function SeedHeroVariantDropdown({
         <div
           className={`relative ${
             compact ? 'h-5 w-5 sm:h-6 sm:w-6 rounded-full' : 'h-7 w-7 sm:h-8 sm:w-8 rounded-lg'
-          } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800 aspect-square`}
+          } overflow-hidden shrink-0 border border-stone-200/80 dark:border-white/10 bg-stone-100 dark:bg-zinc-800 aspect-square pointer-events-none`}
         >
           <Image
             src={safeImageUrl(displayImage || defaultImage)}
@@ -612,7 +619,7 @@ export default function SeedHeroVariantDropdown({
         </div>
 
         {/* Middle Content: [ Rose - same space - 30g - same space - ৳450 ] */}
-        <div className="flex items-center justify-between gap-1.5 sm:gap-2 min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 min-w-0 flex-1 pointer-events-none">
           <span
             className={`${
               compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-[13.5px]'
@@ -641,13 +648,13 @@ export default function SeedHeroVariantDropdown({
         {/* Right: Animated Chevron */}
         <ChevronDown
           size={compact ? 12 : 15}
-          className={`shrink-0 text-stone-500 transition-transform duration-200 ${
+          className={`shrink-0 text-stone-500 transition-transform duration-200 pointer-events-none ${
             isOpen ? 'rotate-180 text-[#1c3a13] dark:text-emerald-400' : ''
           }`}
         />
       </button>
 
-      {/* 1. GRID VIEW: Side flyout (docked left or right of product card with connecting side arrow) */}
+      {/* 1. GRID VIEW (DESKTOP sm+): Side flyout (docked left or right of product card with connecting side arrow) */}
       {isOpen && compact && layout === 'grid' && (
         <div
           ref={modalRef}
@@ -657,7 +664,7 @@ export default function SeedHeroVariantDropdown({
             width: cardWidth ? `${Math.min(cardWidth, 280)}px` : undefined,
             maxWidth: 'calc(100vw - 28px)',
           }}
-          className={`absolute ${
+          className={`hidden sm:block absolute ${
             placementSide === 'right'
               ? 'left-[calc(100%+32px)]'
               : 'right-[calc(100%+32px)]'
@@ -688,7 +695,7 @@ export default function SeedHeroVariantDropdown({
       {mounted && isOpen && compact && typeof document !== 'undefined' && (
         createPortal(
           <div
-            className="fixed inset-0 z-40 bg-black/35 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in cursor-pointer"
+            className="fixed inset-0 z-40 bg-black/35 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in cursor-pointer touch-manipulation"
             onClick={(e) => {
               e.stopPropagation();
               closeDropdown();
@@ -699,19 +706,21 @@ export default function SeedHeroVariantDropdown({
         )
       )}
 
-      {/* 2. LIST VIEW: Centered Modal Dialog in the middle of screen (Portal to document.body) */}
-      {mounted && isOpen && compact && layout === 'list' && typeof document !== 'undefined' && (
+      {/* 2. CENTERED MODAL DIALOG (Portal to document.body): Used for List View always, and Grid View on Mobile (<640px) */}
+      {mounted && isOpen && compact && (layout === 'list' || layout === 'grid') && typeof document !== 'undefined' && (
         createPortal(
           <div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none animate-in fade-in duration-150"
+            className={`fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none animate-in fade-in duration-150 ${
+              layout === 'grid' ? 'sm:hidden' : ''
+            }`}
             role="dialog"
             aria-modal="true"
             aria-label="Available variants"
           >
             {/* Centered Modal Card in the middle of screen */}
             <div
-              ref={modalRef}
-              className="relative z-10 w-full max-w-[320px] rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border border-stone-200 dark:border-white/15 overflow-hidden animate-in zoom-in-95 duration-150 pointer-events-auto"
+              ref={mobileModalRef}
+              className="relative z-10 w-full max-w-[320px] max-h-[min(85vh,520px)] rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border border-stone-200 dark:border-white/15 overflow-hidden animate-in zoom-in-95 duration-150 pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {dropdownListContent}

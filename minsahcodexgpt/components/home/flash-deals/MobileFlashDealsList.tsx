@@ -49,7 +49,7 @@ export default function MobileFlashDealsList({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 flex flex-col gap-2.5 max-h-[340px] overflow-y-auto no-scrollbar scroll-smooth pr-0.5"
+        className="flex-1 flex flex-col gap-2.5 max-h-[340px] overflow-y-auto no-scrollbar overscroll-contain touch-pan-y pr-0.5"
       >
         {activeDeals.map((deal) => (
           <MobileFlashDealCard

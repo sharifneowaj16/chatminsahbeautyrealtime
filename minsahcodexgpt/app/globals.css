@@ -2047,6 +2047,8 @@ input[type="submit"] {
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: auto;
+  user-select: auto;
 }
 
 

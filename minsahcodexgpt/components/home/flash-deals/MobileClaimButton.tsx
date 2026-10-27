@@ -23,7 +23,7 @@ export default function MobileClaimButton({
 }: MobileClaimButtonProps) {
   const content = (
     <div
-      className={`px-3 py-1.5 rounded-full text-white text-[11px] font-bold text-center shadow-xs transition-all duration-200 select-none cursor-pointer flex items-center justify-center gap-1 ${
+      className={`px-3 py-1.5 rounded-full text-white text-[11px] font-bold text-center shadow-xs transition-all duration-200 pointer-events-none flex items-center justify-center gap-1 ${
         isSuccess
           ? 'bg-emerald-600 text-white'
           : 'bg-stone-900 hover:bg-black active:scale-95'
@@ -44,7 +44,7 @@ export default function MobileClaimButton({
 
   if (href && !onClick) {
     return (
-      <Link href={href} className="shrink-0 focus:outline-none">
+      <Link href={href} className="shrink-0 focus:outline-none touch-manipulation">
         {content}
       </Link>
     );
@@ -55,7 +55,7 @@ export default function MobileClaimButton({
       type="button"
       onClick={onClick}
       disabled={disabled || isLoading}
-      className="shrink-0 focus:outline-none cursor-pointer"
+      className="shrink-0 focus:outline-none cursor-pointer touch-manipulation relative z-10"
     >
       {content}
     </button>
