@@ -47,27 +47,27 @@ export function Dialog({
       onClose={dismissible ? onClose : noop}
       role={role}
       aria-label={ariaLabel}
-      className={joinClassNames('relative z-[150]', className)}
+      className={joinClassNames('relative z-[150]', !open && 'pointer-events-none', className)}
     >
       <HeadlessDialogBackdrop
         transition
         className={joinClassNames(
-          'minsah-overlay fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ease-out data-closed:opacity-0 motion-reduce:transition-none',
+          'minsah-overlay fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ease-out data-closed:opacity-0 data-closed:pointer-events-none motion-reduce:transition-none',
           backdropClassName,
         )}
       />
 
       <div
         className={joinClassNames(
-          'fixed inset-0 z-10 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain p-4 sm:p-6 md:p-8',
+          'fixed inset-0 z-10 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain p-4 sm:p-6 md:p-8 pointer-events-none',
           viewportClassName,
         )}
       >
-        <div className={joinClassNames('flex min-h-full items-center justify-center p-0 text-center sm:p-0', containerClassName)}>
+        <div className={joinClassNames('flex min-h-full items-center justify-center p-0 text-center sm:p-0 pointer-events-none', containerClassName)}>
           <HeadlessDialogPanel
             transition
             className={joinClassNames(
-              'outline-none transition duration-200 ease-out motion-reduce:transition-none overflow-x-hidden no-scrollbar text-left',
+              'outline-none transition duration-200 ease-out motion-reduce:transition-none overflow-x-hidden no-scrollbar text-left pointer-events-auto data-closed:pointer-events-none',
               panelClassName,
             )}
           >
