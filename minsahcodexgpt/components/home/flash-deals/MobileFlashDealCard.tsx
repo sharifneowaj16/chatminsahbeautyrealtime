@@ -150,7 +150,7 @@ export default function MobileFlashDealCard({
             selectedVariantId={selectedVariantId}
             defaultImage={deal.imageUrl}
             compact
-            layout="grid"
+            layout="list"
             onVariantChange={handleVariantChange}
             onImageChange={handleImageChange}
             onSelectVariant={handleSelectVariantAddToCart}
