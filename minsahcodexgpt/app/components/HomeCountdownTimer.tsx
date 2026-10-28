@@ -75,7 +75,7 @@ export default function HomeCountdownTimer({
   }
 
   return (
-    <div className={`flex flex-wrap items-center gap-2.5 sm:gap-3 ${className}`}>
+    <div suppressHydrationWarning className={`flex flex-wrap items-center gap-2.5 sm:gap-3 ${className}`}>
       {label && (
         <span className="text-xs sm:text-sm font-bold text-[#1c3a13] tracking-tight">
           {label}

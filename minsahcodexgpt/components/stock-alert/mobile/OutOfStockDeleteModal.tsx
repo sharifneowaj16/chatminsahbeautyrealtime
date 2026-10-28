@@ -69,7 +69,7 @@ export function OutOfStockDeleteModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-[#062402]/60 backdrop-blur-md transition-opacity duration-300 animate-in fade-in">
+    <div className="fixed inset-0 z-[150] flex items-end lg:items-center justify-center bg-[#062402]/60 backdrop-blur-md transition-opacity duration-300 animate-in fade-in">
       <div
         className="w-full max-w-lg max-h-[92vh] bg-[#faf9f6] rounded-t-[32px] lg:rounded-[28px] shadow-2xl flex flex-col overflow-hidden border-t border-[#E2DED8]/60 animate-in slide-in-from-bottom-8 duration-300 relative"
       >

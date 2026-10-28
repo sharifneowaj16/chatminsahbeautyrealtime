@@ -58,7 +58,7 @@ export function ReviewRewardSheetModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-[#062402]/50 backdrop-blur-md flex items-end justify-center animate-fadeIn"
+      className="fixed inset-0 z-[150] bg-[#062402]/50 backdrop-blur-md flex items-end justify-center animate-fadeIn"
       onClick={onClose}
     >
       <div

@@ -255,9 +255,8 @@ nextjs-portal,
 }
 
 html {
-  overflow-x: clip;
-  max-width: 100vw;
-  width: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -271,12 +270,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px !important;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-  min-height: 100%;
   min-height: 100dvh;
   overflow-x: clip;
-  max-width: 100vw;
   width: 100%;
   -webkit-tap-highlight-color: transparent;
 }
@@ -309,13 +304,6 @@ body {
 [class*="font-price"] {
   font-family: 'Inter', 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   font-feature-settings: 'tnum' on, 'cv05' on !important;
-}
-
-html {
-  min-height: 100%;
-  -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
-  text-size-adjust: 100%;
 }
 
 * {
@@ -455,9 +443,9 @@ img {
   }
 }
 
+/* Fix .minsah-fade-up so it doesn't trap position:fixed descendants after animation */
 .minsah-fade-up {
-  animation: minsah-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: opacity, transform;
+  animation: minsah-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .minsah-float-soft {
@@ -2009,38 +1997,24 @@ img {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   iOS Safari Touch-Event & Hydration Fix Suite
-   Root cause: WebKit bug where headlessui-portal-root and fixed
-   overlays intercept pointer events even when empty/invisible.
-   Also: body height:100% causes touch hit-test layer disconnect
-   after scroll on iOS Safari.
+   iOS Safari Touch-Event & Portal Safety Suite
    ═══════════════════════════════════════════════════════════════ */
-
-/* 1. Headless UI portal root: force non-interactive when empty,
-   and ensure it never blocks underlying content touch events */
-#headlessui-portal-root:empty {
-  display: none !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-}
 
 #headlessui-portal-root {
   pointer-events: none;
 }
 
-#headlessui-portal-root > * {
-  pointer-events: auto;
-}
-
-/* 2. Ensure ALL portal-rendered content is always touch-interactive */
 [data-headlessui-portal] {
+  pointer-events: none;
+}
+
+[data-headlessui-portal] [role="dialog"],
+[data-headlessui-portal] [role="alertdialog"],
+[data-headlessui-portal] .minsah-overlay {
   pointer-events: auto;
 }
 
-/* 3. iOS Safari synthetic tap & touch responsiveness */
+/* iOS Safari synthetic tap & touch responsiveness */
 button,
 [role="button"],
 a,
@@ -2053,28 +2027,7 @@ input[type="submit"] {
   user-select: auto;
 }
 
-/* 4. iOS Safari: Fixed-position overlays and modals must
-   explicitly declare touch-action to prevent WebKit from
-   swallowing touch events after scroll */
-.fixed,
-[style*="position: fixed"],
-[style*="position:fixed"] {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-}
-
-/* 5. iOS Safari: Ensure div-based click handlers are tappable.
-   WebKit requires cursor:pointer on non-native-interactive elements
-   for synthetic tap events to fire. */
-div[onclick],
-div[role="button"],
-span[onclick],
-span[role="button"] {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* 6. Toast/notification viewport: ensure it never blocks page interaction */
+/* Toast/notification viewport: ensure it never blocks page interaction */
 .minsah-toast-viewport {
   pointer-events: none !important;
 }

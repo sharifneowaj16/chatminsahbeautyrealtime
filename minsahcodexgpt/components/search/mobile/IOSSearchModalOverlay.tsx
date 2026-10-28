@@ -129,7 +129,7 @@ export function IOSSearchModalOverlay({
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-start">
+    <div className="fixed inset-0 z-[200] flex flex-col justify-start">
       {/* Keyboard navigation listener */}
       <SearchKeyboardNavHandler isOpen={isModalOpen} onClose={handleClose} />
 
@@ -151,7 +151,6 @@ export function IOSSearchModalOverlay({
       <div
         className="fixed inset-0 top-16 bg-[#062402]/40 backdrop-blur-xs transition-opacity duration-300 cursor-pointer touch-manipulation"
         onClick={handleClose}
-        onTouchEnd={handleClose}
         role="presentation"
       />
 

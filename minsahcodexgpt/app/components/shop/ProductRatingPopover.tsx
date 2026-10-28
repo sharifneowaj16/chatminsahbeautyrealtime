@@ -146,6 +146,7 @@ export default function ProductRatingPopover({
   const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -218,7 +219,12 @@ export default function ProductRatingPopover({
     if (!isOpen) return;
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!modalRef.current || !modalRef.current.contains(target))
+      ) {
         setIsOpen(false);
         onOpenChange?.(false);
       }
@@ -390,6 +396,7 @@ export default function ProductRatingPopover({
 
             {/* Centered Modal Card in the middle of phone screen */}
             <div
+              ref={modalRef}
               className="relative z-10 w-full max-w-[320px] rounded-2xl bg-white p-5 shadow-2xl border border-stone-200 text-stone-900 text-left animate-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >

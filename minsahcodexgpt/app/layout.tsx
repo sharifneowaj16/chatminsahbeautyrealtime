@@ -196,7 +196,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${seedSans.variable} font-sans overflow-x-clip`}>
+    <html lang="en" suppressHydrationWarning className={`${seedSans.variable} font-sans`}>
       <head>
         {/* iOS Safari: prevent auto-formatting of phone numbers/dates that causes React hydration mismatch #418 */}
         <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />

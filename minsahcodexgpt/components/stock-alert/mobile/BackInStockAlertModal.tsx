@@ -66,7 +66,7 @@ export function BackInStockAlertModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-[#062402]/65 backdrop-blur-md transition-opacity duration-300 animate-in fade-in">
+    <div className="fixed inset-0 z-[150] flex items-end lg:items-center justify-center bg-[#062402]/65 backdrop-blur-md transition-opacity duration-300 animate-in fade-in">
       <div
         className="w-full max-w-lg max-h-[92vh] bg-[#FAF9F6] text-[#181C1A] rounded-t-[36px] lg:rounded-[28px] border-t border-[#E2DED8] shadow-[0_-20px_50px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300"
       >

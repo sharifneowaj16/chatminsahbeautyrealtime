@@ -31,6 +31,33 @@ export interface Campaign {
   status: 'active' | 'paused' | 'completed';
 }
 
+function safeGetStorage(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetStorage(key: string, value: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore QuotaExceededError / SecurityError on iOS Safari
+  }
+}
+
+function safeRemoveStorage(key: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore
+  }
+}
+
 export class CampaignTracker {
   // Debounce timer for touchpoints sync (called on every page load)
   private static touchpointSyncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -60,10 +87,10 @@ export class CampaignTracker {
   static setFirstTouch(utm: UTMParameters): void {
     if (typeof window === 'undefined') return;
 
-    const existing = localStorage.getItem('first_touch_attribution');
+    const existing = safeGetStorage('first_touch_attribution');
     if (!existing && Object.keys(utm).some(k => utm[k as keyof UTMParameters])) {
       const touch = { ...utm, timestamp: Date.now() };
-      localStorage.setItem('first_touch_attribution', JSON.stringify(touch));
+      safeSetStorage('first_touch_attribution', JSON.stringify(touch));
       // Sync immediately — first-touch is critical and written only once
       this.syncToDB({ firstTouch: touch });
     }
@@ -77,7 +104,7 @@ export class CampaignTracker {
 
     if (Object.keys(utm).some(k => utm[k as keyof UTMParameters])) {
       const touch = { ...utm, timestamp: Date.now() };
-      localStorage.setItem('last_touch_attribution', JSON.stringify(touch));
+      safeSetStorage('last_touch_attribution', JSON.stringify(touch));
       // Sync immediately — last-touch is important for conversion attribution
       this.syncToDB({ lastTouch: touch });
     }
@@ -89,7 +116,7 @@ export class CampaignTracker {
   static getFirstTouch(): (UTMParameters & { timestamp: number }) | null {
     if (typeof window === 'undefined') return null;
 
-    const data = localStorage.getItem('first_touch_attribution');
+    const data = safeGetStorage('first_touch_attribution');
     return data ? JSON.parse(data) : null;
   }
 
@@ -99,7 +126,7 @@ export class CampaignTracker {
   static getLastTouch(): (UTMParameters & { timestamp: number }) | null {
     if (typeof window === 'undefined') return null;
 
-    const data = localStorage.getItem('last_touch_attribution');
+    const data = safeGetStorage('last_touch_attribution');
     return data ? JSON.parse(data) : null;
   }
 
@@ -116,7 +143,7 @@ export class CampaignTracker {
 
     // Keep only last 10 touchpoints
     const limited = touchpoints.slice(-10);
-    localStorage.setItem('touchpoints', JSON.stringify(limited));
+    safeSetStorage('touchpoints', JSON.stringify(limited));
 
     // Debounced sync — touchpoints can be added frequently on page loads
     if (this.touchpointSyncTimer) clearTimeout(this.touchpointSyncTimer);
@@ -131,7 +158,7 @@ export class CampaignTracker {
   static getTouchpoints(): Array<UTMParameters & { timestamp: number }> {
     if (typeof window === 'undefined') return [];
 
-    const data = localStorage.getItem('touchpoints');
+    const data = safeGetStorage('touchpoints');
     return data ? JSON.parse(data) : [];
   }
 
@@ -279,19 +306,19 @@ export class CampaignTracker {
       const { firstTouch, lastTouch, touchpoints } = await res.json();
 
       // Only restore if localStorage doesn't already have a value (preserve local data)
-      if (firstTouch && !localStorage.getItem('first_touch_attribution')) {
-        localStorage.setItem('first_touch_attribution', JSON.stringify(firstTouch));
+      if (firstTouch && !safeGetStorage('first_touch_attribution')) {
+        safeSetStorage('first_touch_attribution', JSON.stringify(firstTouch));
       }
       if (lastTouch) {
         // Always restore last-touch from DB (DB may be fresher from another device)
-        const local = localStorage.getItem('last_touch_attribution');
+        const local = safeGetStorage('last_touch_attribution');
         const localTs = local ? JSON.parse(local).timestamp : 0;
         if (lastTouch.timestamp > localTs) {
-          localStorage.setItem('last_touch_attribution', JSON.stringify(lastTouch));
+          safeSetStorage('last_touch_attribution', JSON.stringify(lastTouch));
         }
       }
       if (Array.isArray(touchpoints) && touchpoints.length > 0) {
-        const local = localStorage.getItem('touchpoints');
+        const local = safeGetStorage('touchpoints');
         const localTps: Array<{ timestamp: number }> = local ? JSON.parse(local) : [];
         // Merge: keep all unique touchpoints, sorted by time, max 10
         const merged = [...localTps, ...touchpoints]
@@ -300,7 +327,7 @@ export class CampaignTracker {
           )
           .sort((a, b) => a.timestamp - b.timestamp)
           .slice(-10);
-        localStorage.setItem('touchpoints', JSON.stringify(merged));
+        safeSetStorage('touchpoints', JSON.stringify(merged));
       }
     } catch {
       // Silently fall back to localStorage
@@ -313,9 +340,9 @@ export class CampaignTracker {
   static clearAttribution(): void {
     if (typeof window === 'undefined') return;
     if (this.touchpointSyncTimer) clearTimeout(this.touchpointSyncTimer);
-    localStorage.removeItem('first_touch_attribution');
-    localStorage.removeItem('last_touch_attribution');
-    localStorage.removeItem('touchpoints');
+    safeRemoveStorage('first_touch_attribution');
+    safeRemoveStorage('last_touch_attribution');
+    safeRemoveStorage('touchpoints');
   }
 }
 

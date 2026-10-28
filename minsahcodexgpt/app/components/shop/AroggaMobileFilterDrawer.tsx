@@ -128,7 +128,7 @@ export default function AroggaMobileFilterDrawer({
 
       {/* Slide-Up Bottom Drawer */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden">
+        <div className="fixed inset-0 z-[150] flex items-end justify-center md:hidden">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in"
