@@ -156,7 +156,11 @@ export default function DesktopFlashDealCard({
       {/* Action Slot: SeedHeroVariantDropdown with Node Connector Modal OR Direct Claim Button */}
       <div className="mt-2.5">
         {hasVariants && deal.variants ? (
-          <div className="relative w-full" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative w-full cursor-pointer touch-manipulation"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
             <SeedHeroVariantDropdown
               variants={deal.variants}
               selectedVariantId={selectedVariantId}

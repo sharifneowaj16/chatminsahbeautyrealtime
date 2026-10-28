@@ -149,12 +149,17 @@ export function IOSSearchModalOverlay({
 
       {/* Backdrop */}
       <div
-        className="fixed inset-0 top-16 bg-[#062402]/40 backdrop-blur-xs transition-opacity duration-300"
+        className="fixed inset-0 top-16 bg-[#062402]/40 backdrop-blur-xs transition-opacity duration-300 cursor-pointer touch-manipulation"
         onClick={handleClose}
+        onTouchEnd={handleClose}
+        role="presentation"
       />
 
       {/* Dropdown Container */}
-      <div className="relative z-10 max-h-[85vh] overflow-y-auto no-scrollbar">
+      <div
+        className="relative z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
+        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'manipulation' }}
+      >
         {/* Spotlight Trend Tags (shows when query is short) */}
         {!query.trim() && (
           <SearchSpotlightDropdown

@@ -312,7 +312,7 @@ body {
 }
 
 html {
-  height: 100%;
+  min-height: 100%;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -2008,12 +2008,39 @@ img {
   scrollbar-width: none !important;
 }
 
-/* Headless UI portal root safety */
+/* ═══════════════════════════════════════════════════════════════
+   iOS Safari Touch-Event & Hydration Fix Suite
+   Root cause: WebKit bug where headlessui-portal-root and fixed
+   overlays intercept pointer events even when empty/invisible.
+   Also: body height:100% causes touch hit-test layer disconnect
+   after scroll on iOS Safari.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Headless UI portal root: force non-interactive when empty,
+   and ensure it never blocks underlying content touch events */
 #headlessui-portal-root:empty {
   display: none !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
-/* iOS Safari synthetic tap & touch responsiveness */
+#headlessui-portal-root {
+  pointer-events: none;
+}
+
+#headlessui-portal-root > * {
+  pointer-events: auto;
+}
+
+/* 2. Ensure ALL portal-rendered content is always touch-interactive */
+[data-headlessui-portal] {
+  pointer-events: auto;
+}
+
+/* 3. iOS Safari synthetic tap & touch responsiveness */
 button,
 [role="button"],
 a,
@@ -2024,6 +2051,35 @@ input[type="submit"] {
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: auto;
   user-select: auto;
+}
+
+/* 4. iOS Safari: Fixed-position overlays and modals must
+   explicitly declare touch-action to prevent WebKit from
+   swallowing touch events after scroll */
+.fixed,
+[style*="position: fixed"],
+[style*="position:fixed"] {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* 5. iOS Safari: Ensure div-based click handlers are tappable.
+   WebKit requires cursor:pointer on non-native-interactive elements
+   for synthetic tap events to fire. */
+div[onclick],
+div[role="button"],
+span[onclick],
+span[role="button"] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 6. Toast/notification viewport: ensure it never blocks page interaction */
+.minsah-toast-viewport {
+  pointer-events: none !important;
+}
+.minsah-toast-viewport > * {
+  pointer-events: auto;
 }
 
 

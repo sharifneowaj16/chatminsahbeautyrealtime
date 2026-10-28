@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { MemberSignInCard } from "./MemberSignInCard";
 import { CreateAccountCard, CreateAccountFormData } from "./CreateAccountCard";
@@ -32,15 +32,18 @@ export function MemberAuthModal({
 
   const isModalOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen;
 
-  // Body scroll locking when modal is open
+  const savedOverflowRef = useRef<string>('');
+
+  // Body scroll locking when modal is open — safe for iOS
   useEffect(() => {
     if (isModalOpen) {
+      savedOverflowRef.current = document.body.style.overflow;
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = savedOverflowRef.current || "";
     }
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = savedOverflowRef.current || "";
     };
   }, [isModalOpen]);
 
@@ -160,11 +163,16 @@ export function MemberAuthModal({
       )}
 
       {/* Modal Surface */}
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden no-scrollbar">
+      <div
+        className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden no-scrollbar"
+        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'manipulation' }}
+      >
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-[#062402]/65 backdrop-blur-md transition-opacity duration-300"
+          className="fixed inset-0 bg-[#062402]/65 backdrop-blur-md transition-opacity duration-300 cursor-pointer"
           onClick={handleClose}
+          onTouchEnd={handleClose}
+          role="presentation"
         />
 
         {/* Modal Window */}

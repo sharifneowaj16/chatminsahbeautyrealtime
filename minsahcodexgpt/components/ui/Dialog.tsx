@@ -62,6 +62,7 @@ export function Dialog({
           'fixed inset-0 z-10 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain p-4 sm:p-6 md:p-8',
           viewportClassName,
         )}
+        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'manipulation' }}
       >
         <div className={joinClassNames('flex min-h-full items-center justify-center p-0 text-center sm:p-0', containerClassName)}>
           <HeadlessDialogPanel

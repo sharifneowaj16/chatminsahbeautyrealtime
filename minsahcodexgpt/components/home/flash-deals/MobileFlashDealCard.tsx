@@ -133,7 +133,11 @@ export default function MobileFlashDealCard({
 
       {/* Action Row: SeedHeroVariantDropdown with Node Connector Modal OR Direct Claim Button */}
       {hasVariants && deal.variants ? (
-        <div className="w-full pt-1" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="w-full pt-1 cursor-pointer touch-manipulation"
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between text-xs mb-1 px-1">
             <span className="font-extrabold text-stone-900 dark:text-white">
               ৳{(currentPrice || deal.salePrice).toLocaleString()}
