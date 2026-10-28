@@ -39,9 +39,13 @@ function useIdleTrackingReady(enabled: boolean) {
       return;
     }
     const idleWindow = window as IdleTrackingWindow;
-    if (idleWindow.requestIdleCallback) {
+    if (typeof idleWindow.requestIdleCallback === 'function') {
       const handle = idleWindow.requestIdleCallback(() => setReady(true), { timeout: 2500 });
-      return () => idleWindow.cancelIdleCallback?.(handle);
+      return () => {
+        if (typeof idleWindow.cancelIdleCallback === 'function') {
+          idleWindow.cancelIdleCallback(handle);
+        }
+      };
     }
     const timer = window.setTimeout(() => setReady(true), 1500);
     return () => window.clearTimeout(timer);

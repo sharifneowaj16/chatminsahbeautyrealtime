@@ -107,7 +107,7 @@ export default function FacebookPixel({
             }
             var mbVid = mbReadCookie('mb_vid');
             if (!mbVid) {
-              mbVid = window.crypto && window.crypto.randomUUID
+              mbVid = typeof window.crypto?.randomUUID === 'function'
                 ? window.crypto.randomUUID()
                 : 'vid_' + Date.now() + '_' + Math.random().toString(36).slice(2);
             }

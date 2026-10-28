@@ -155,7 +155,6 @@
   --color-status-danger-text: #f87171;
 }
 
-nextjs-portal,
 [data-nextjs-dev-tools-button] {
   display: none !important;
 }
