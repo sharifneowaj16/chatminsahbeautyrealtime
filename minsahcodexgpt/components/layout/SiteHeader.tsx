@@ -264,7 +264,10 @@ export default function SiteHeader() {
               <button
                 className="header-control icon-control menu-btn"
                 type="button"
-                onClick={() => setMenuOpen((v) => !v)}
+                onClick={() => {
+                  console.log('[iOS DEBUG] Hamburger clicked');
+                  setMenuOpen((v) => !v);
+                }}
                 aria-expanded={menuOpen}
                 aria-controls="minsah-mobile-site-menu"
                 aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
