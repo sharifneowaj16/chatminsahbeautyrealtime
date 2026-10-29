@@ -1,5 +1,6 @@
+let instance: EncodingFixer | null = null;
+
 export class EncodingFixer {
-  private static instance: EncodingFixer;
   private emojiMap: Map<string, string>;
   private patternCache: Map<string, string>;
 
@@ -10,10 +11,10 @@ export class EncodingFixer {
   }
 
   static getInstance(): EncodingFixer {
-    if (!EncodingFixer.instance) {
-      EncodingFixer.instance = new EncodingFixer();
+    if (!instance) {
+      instance = new EncodingFixer();
     }
-    return EncodingFixer.instance;
+    return instance;
   }
 
   private initializeEmojiMap() {

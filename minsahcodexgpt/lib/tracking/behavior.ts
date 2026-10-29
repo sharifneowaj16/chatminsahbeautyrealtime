@@ -32,10 +32,9 @@ type TrackingEventType =
 
 const STORAGE_KEY = 'minsah_behavior';
 const SYNC_DEBOUNCE_MS = 5_000;
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
 export class BehaviorTracker {
-  private static syncTimer: ReturnType<typeof setTimeout> | null = null;
-
   static getBehavior(): CustomerBehaviorData | null {
     if (typeof window === 'undefined') return null;
 
@@ -139,9 +138,9 @@ export class BehaviorTracker {
   }
 
   private static debouncedSync(behavior: CustomerBehaviorData): void {
-    if (this.syncTimer) clearTimeout(this.syncTimer);
+    if (syncTimer) clearTimeout(syncTimer);
 
-    this.syncTimer = setTimeout(async () => {
+    syncTimer = setTimeout(async () => {
       try {
         await fetch('/api/behavior', {
           method: 'PUT',

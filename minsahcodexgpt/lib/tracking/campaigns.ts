@@ -58,10 +58,10 @@ function safeRemoveStorage(key: string): void {
   }
 }
 
+let touchpointSyncTimer: ReturnType<typeof setTimeout> | null = null;
+const SYNC_DELAY_MS = 4000;
+
 export class CampaignTracker {
-  // Debounce timer for touchpoints sync (called on every page load)
-  private static touchpointSyncTimer: ReturnType<typeof setTimeout> | null = null;
-  private static SYNC_DELAY_MS = 4000;
 
   /**
    * Extract UTM parameters from URL
@@ -146,10 +146,10 @@ export class CampaignTracker {
     safeSetStorage('touchpoints', JSON.stringify(limited));
 
     // Debounced sync — touchpoints can be added frequently on page loads
-    if (this.touchpointSyncTimer) clearTimeout(this.touchpointSyncTimer);
-    this.touchpointSyncTimer = setTimeout(() => {
+    if (touchpointSyncTimer) clearTimeout(touchpointSyncTimer);
+    touchpointSyncTimer = setTimeout(() => {
       this.syncToDB({ touchpoints: limited });
-    }, this.SYNC_DELAY_MS);
+    }, SYNC_DELAY_MS);
   }
 
   /**
@@ -339,7 +339,7 @@ export class CampaignTracker {
    */
   static clearAttribution(): void {
     if (typeof window === 'undefined') return;
-    if (this.touchpointSyncTimer) clearTimeout(this.touchpointSyncTimer);
+    if (touchpointSyncTimer) clearTimeout(touchpointSyncTimer);
     safeRemoveStorage('first_touch_attribution');
     safeRemoveStorage('last_touch_attribution');
     safeRemoveStorage('touchpoints');

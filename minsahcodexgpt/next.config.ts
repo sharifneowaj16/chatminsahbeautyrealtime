@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   devIndicators: false,
+  transpilePackages: [
+    "@headlessui/react",
+    "lucide-react",
+  ],
 
   // ✅ compress: true — gzip/brotli compression চালু (bandwidth কমাবে)
   compress: true,

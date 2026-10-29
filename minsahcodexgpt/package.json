@@ -2,6 +2,14 @@
   "name": "minsah-beauty",
   "version": "2.0.0",
   "private": true,
+  "browserslist": [
+    "chrome >= 90",
+    "edge >= 90",
+    "firefox >= 90",
+    "safari >= 14",
+    "ios_saf >= 14",
+    "android >= 90"
+  ],
   "type": "module",
   "engines": {
     "node": ">=22.16.0",
