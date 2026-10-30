@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { SlidersHorizontal, X, Search, ChevronRight } from 'lucide-react';
+import { SlidersHorizontal, Search, ChevronRight } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import type { FacetOption } from './AroggaFilterSidebar';
 
 export interface AroggaMobileFilterDrawerProps {
@@ -83,18 +84,6 @@ export default function AroggaMobileFilterDrawer({
     setCustomMax(priceMax);
   }, [priceMin, priceMax]);
 
-  // Lock body scroll when drawer is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
   const filteredBrands = useMemo(() => {
     const q = brandSearch.trim().toLowerCase();
     if (!q) return brands;
@@ -126,50 +115,36 @@ export default function AroggaMobileFilterDrawer({
         </button>
       </div>
 
-      {/* Slide-Up Bottom Drawer */}
-      {isOpen && (
-        <div className="fixed inset-0 z-[150] flex items-end justify-center md:hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in"
-            onClick={() => setIsOpen(false)}
-            aria-hidden="true"
-          />
-
-          {/* Drawer Content */}
-          <div
-            className="relative z-10 flex flex-col w-full max-h-[88vh] rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Filter products"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4 shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="text-base font-bold text-[#1c3a13]">Filter</span>
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={onClearAll}
-                    className="text-xs font-semibold text-rose-600 hover:text-rose-800"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
+      {/* Unified Master Modal Shell */}
+      <Modal
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Filter Products"
+        description={`${totalCount} ${totalCount === 1 ? 'product' : 'products'} matching`}
+        closeLabel="Close filters"
+        footer={
+          <div className="flex gap-2.5 w-full">
+            {hasActiveFilters ? (
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
-                aria-label="Close filters"
-                className="rounded-full p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                onClick={onClearAll}
+                className="flex h-11 shrink-0 items-center justify-center rounded-full border border-[#E2DED8] bg-[#F4F3EF] px-5 font-bold text-[#ba1a1a]"
               >
-                <X size={20} />
+                Clear All
               </button>
-            </div>
-
-            {/* Scrollable Filter Body */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 text-sm">
-              {/* 1. Availability */}
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="flex h-11 flex-1 items-center justify-center rounded-full bg-[#062402] px-5 font-bold text-white shadow-sm hover:bg-[#1c3a13]"
+            >
+              Show {totalCount} {totalCount === 1 ? 'Product' : 'Products'}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-5 text-sm">
+          {/* 1. Availability */}
               <div className="border-b border-stone-100 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-stone-900">Availability</span>
@@ -453,21 +428,8 @@ export default function AroggaMobileFilterDrawer({
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Sticky Bottom Apply Action */}
-            <div className="border-t border-stone-200 bg-white p-4 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="w-full h-12 rounded-full bg-[#1c3a13] text-white font-bold text-sm shadow-md active:scale-[0.99] transition-transform"
-              >
-                Show {totalCount} {totalCount === 1 ? 'Product' : 'Products'}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

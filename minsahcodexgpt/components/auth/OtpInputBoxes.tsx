@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from 'react';
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 
 interface OtpInputBoxesProps {
   phone: string;
@@ -21,7 +22,7 @@ export function OtpInputBoxes({
   attemptsLeft = 3,
   isLoading = false,
 }: OtpInputBoxesProps) {
-  const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState(59);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -31,56 +32,44 @@ export function OtpInputBoxes({
 
   useEffect(() => {
     if (countdown <= 0) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
+    const timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [countdown]);
 
   const handleChange = (index: number, val: string) => {
-    const clean = val.replace(/\D/g, "");
+    const clean = val.replace(/\D/g, '');
     if (!clean) {
       const next = [...digits];
-      next[index] = "";
+      next[index] = '';
       setDigits(next);
       return;
     }
 
     const next = [...digits];
-    // In case of paste
     if (clean.length > 1) {
-      const pasted = clean.slice(0, 6).split("");
-      pasted.forEach((char, i) => {
+      clean.slice(0, 6).split('').forEach((char, i) => {
         next[i] = char;
       });
       setDigits(next);
-      if (next.every((d) => d !== "")) {
-        onVerify(next.join(""));
-      }
+      if (next.every((d) => d !== '')) onVerify(next.join(''));
       return;
     }
 
     next[index] = clean;
     setDigits(next);
-
-    if (index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    if (next.every((d) => d !== "")) {
-      onVerify(next.join(""));
-    }
+    if (index < 5) inputRefs.current[index + 1]?.focus();
+    if (next.every((d) => d !== '')) onVerify(next.join(''));
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !digits[index] && index > 0) {
+    if (e.key === 'Backspace' && !digits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
   const handleResendClick = () => {
     if (countdown > 0) return;
-    setDigits(["", "", "", "", "", ""]);
+    setDigits(['', '', '', '', '', '']);
     setCountdown(59);
     onResend();
     inputRefs.current[0]?.focus();
@@ -88,32 +77,19 @@ export function OtpInputBoxes({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF7D8] text-[#1c3a13] font-bold text-[11px] border border-[#4b6723]/20 shadow-xs mb-1">
-          <span className="material-symbols-outlined text-[14px] text-[#4b6723]">
-            sms
-          </span>
-          OTP Verification
-        </div>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#062402] tracking-tight">
-          Enter 6-Digit Code
-        </h2>
-        <p className="text-xs text-[#43483f] max-w-xs mx-auto leading-relaxed">
-          Sent to <strong className="text-[#062402]">+880 {phone}</strong>
-          <button
-            type="button"
-            onClick={onChangePhone}
-            className="text-[#4b6723] hover:underline font-bold ml-1.5"
-          >
-            Change
-          </button>
-        </p>
-      </div>
+      <p className="text-center text-xs text-[#5A615D]">
+        Code sent to <strong className="text-[#062402]">+880 {phone}</strong>
+        <button
+          type="button"
+          onClick={onChangePhone}
+          className="ml-2 font-bold text-[#4b6723] hover:underline"
+        >
+          Change
+        </button>
+      </p>
 
-      {/* 6 Digit Inputs */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-center gap-2 sm:gap-2.5">
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-6 gap-2">
           {digits.map((digit, index) => (
             <input
               key={index}
@@ -126,69 +102,61 @@ export function OtpInputBoxes({
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-2xl bg-[#F8FAF7] border transition-all ${
+              aria-label={`OTP digit ${index + 1}`}
+              className={`h-12 w-full rounded-xl border text-center font-bold transition ${
                 error
-                  ? "border-[#ba1a1a] text-[#ba1a1a] focus:ring-2 focus:ring-[#ba1a1a]/20 bg-[#ffdad6]/20"
+                  ? 'border-[#ba1a1a] bg-[#ffdad6]/20 text-[#ba1a1a]'
                   : digit
-                  ? "border-[#4b6723] text-[#062402] bg-white ring-1 ring-[#4b6723]"
-                  : "border-[#E2DED8] text-[#1a1c1a] focus:border-[#4b6723] focus:ring-2 focus:ring-[#4b6723]/20"
+                    ? 'border-[#4b6723] bg-white text-[#062402] ring-1 ring-[#4b6723]'
+                    : 'border-[#E2DED8] bg-white text-[#181C1A] focus:border-[#4b6723]'
               }`}
             />
           ))}
         </div>
 
-        {/* Screen 46: Invalid OTP Error State */}
-        {error && (
-          <div className="p-2.5 rounded-xl bg-[#ffdad6]/40 border border-[#ba1a1a]/30 flex items-center justify-between text-xs text-[#ba1a1a] animate-in shake duration-300">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="material-symbols-outlined text-[16px] shrink-0">error</span>
+        {error ? (
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-[#ba1a1a]/30 bg-[#ffdad6]/40 p-2.5 text-xs text-[#ba1a1a]">
+            <span className="flex items-center gap-1.5 min-w-0 truncate">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               <span className="truncate">{error}</span>
-            </div>
-            <span className="font-bold text-[10px] shrink-0">
-              {attemptsLeft} attempts left
             </span>
+            <span className="shrink-0 font-bold">{attemptsLeft} left</span>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Action CTA */}
       <button
         type="button"
-        disabled={digits.some((d) => d === "") || isLoading}
-        onClick={() => onVerify(digits.join(""))}
-        className="w-full py-3.5 px-4 rounded-full bg-[#062402] hover:bg-[#1c3a13] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        disabled={digits.some((d) => d === '') || isLoading}
+        onClick={() => onVerify(digits.join(''))}
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#062402] px-4 font-bold text-white shadow-sm transition hover:bg-[#1c3a13] disabled:opacity-50"
       >
         {isLoading ? (
           <>
-            <span className="material-symbols-outlined text-[16px] animate-spin text-[#ccee9b]">
-              refresh
-            </span>
+            <Loader2 className="h-4 w-4 animate-spin text-[#D4F6A2]" />
             <span>Verifying Code...</span>
           </>
         ) : (
           <>
+            <CheckCircle2 className="h-4 w-4 text-[#D4F6A2]" />
             <span>Verify &amp; Sign In</span>
-            <span className="material-symbols-outlined text-[16px] text-[#ccee9b]">
-              check_circle
-            </span>
           </>
         )}
       </button>
 
-      {/* Resend Section */}
-      <div className="text-center pt-1">
+      <div className="text-center">
         {countdown > 0 ? (
-          <span className="text-xs text-[#43483f]">
+          <span className="text-xs text-[#5A615D]">
             Resend code in <strong className="text-[#062402]">{countdown}s</strong>
           </span>
         ) : (
           <button
             type="button"
             onClick={handleResendClick}
-            className="text-xs font-bold text-[#4b6723] hover:underline flex items-center justify-center gap-1 mx-auto active:scale-95"
+            className="mx-auto inline-flex items-center gap-1.5 text-xs font-bold text-[#4b6723] hover:underline"
           >
-            <span className="material-symbols-outlined text-[15px]">refresh</span>
-            Resend Code via SMS &amp; WhatsApp
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Resend Code via SMS &amp; WhatsApp</span>
           </button>
         )}
       </div>

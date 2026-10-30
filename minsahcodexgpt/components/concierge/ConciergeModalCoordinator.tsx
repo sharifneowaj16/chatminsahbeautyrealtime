@@ -10,16 +10,20 @@ export function ConciergeModalCoordinator() {
   const [caseId, setCaseId] = useState('DH-9482');
 
   useEffect(() => {
-    const handleOpen = (e: CustomEvent<{ topic?: ConciergeTopicKey; caseId?: string }>) => {
-      if (e.detail?.topic) setInitialTopic(e.detail.topic);
-      if (e.detail?.caseId) setCaseId(e.detail.caseId);
+    const handleOpen = (e: Event) => {
+      const custom = e as CustomEvent<{ topic?: ConciergeTopicKey; caseId?: string }>;
+      if (custom.detail?.topic) setInitialTopic(custom.detail.topic);
+      if (custom.detail?.caseId) setCaseId(custom.detail.caseId);
       setIsOpen(true);
     };
 
-    window.addEventListener('minsah:open-concierge' as any, handleOpen);
-    return () => {
-      window.removeEventListener('minsah:open-concierge' as any, handleOpen);
-    };
+    const events = [
+      'minsah:open-concierge',
+      'minsah:open-concierge-modal',
+      'minsah:open-concierge-mobile',
+    ];
+    events.forEach((evt) => window.addEventListener(evt, handleOpen));
+    return () => events.forEach((evt) => window.removeEventListener(evt, handleOpen));
   }, []);
 
   return (

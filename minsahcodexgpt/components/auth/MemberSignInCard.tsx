@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
+import React from 'react';
+import { ArrowRight, Loader2, Lock, ShieldCheck, Zap } from 'lucide-react';
 
 interface MemberSignInCardProps {
   phone: string;
@@ -19,101 +20,70 @@ export function MemberSignInCard({
 }: MemberSignInCardProps) {
   return (
     <div className="space-y-4">
-      {/* Brand Header inside card */}
-      <div className="text-center space-y-1">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF7D8] text-[#1c3a13] font-bold text-[11px] border border-[#4b6723]/20 shadow-xs mb-1">
-          <span className="material-symbols-outlined text-[14px] text-[#4b6723]">
-            verified_user
-          </span>
-          Minsah VIP Member Access
-        </div>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#062402] tracking-tight">
-          Welcome to Minsah Beauty
-        </h2>
-        <p className="text-xs text-[#43483f] max-w-xs mx-auto leading-relaxed">
-          Sign in with your mobile number to view orders, redeem Glow Points, and unlock member
-          discounts.
-        </p>
-      </div>
-
-      {/* Form */}
-      <form onSubmit={onSubmit} className="space-y-3.5 pt-1">
-        <div className="space-y-1">
-          <label className="block text-xs font-bold text-[#062402]">Mobile Number</label>
+      <form onSubmit={onSubmit} className="space-y-3.5">
+        <div className="space-y-1.5">
+          <label className="block font-bold text-[#062402]">Mobile Number</label>
           <div className="relative flex items-center">
-            <div className="absolute left-3.5 flex items-center gap-1.5 pointer-events-none pr-1 border-r border-[#E2DED8] pr-2.5">
-              <span className="text-base">🇧🇩</span>
+            <div className="pointer-events-none absolute left-3.5 flex items-center gap-1.5 border-r border-[#E2DED8] pr-2.5">
+              <span>🇧🇩</span>
               <span className="text-xs font-bold text-[#062402]">+880</span>
             </div>
             <input
               type="tel"
               required
-              autoFocus
               value={phone}
-              onChange={(e) => onChangePhone(e.target.value.replace(/\D/g, ""))}
-              placeholder="1712-345678"
+              onChange={(e) => onChangePhone(e.target.value.replace(/\D/g, ''))}
+              placeholder="1712345678"
               maxLength={11}
-              className="w-full pl-24 pr-4 py-3 rounded-2xl bg-[#F8FAF7] text-sm text-[#1a1c1a] font-semibold border border-[#E2DED8] focus:border-[#4b6723] focus:ring-2 focus:ring-[#4b6723]/20 focus:outline-none transition-all shadow-inner"
+              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white pl-24 pr-4 font-semibold text-[#181C1A] focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15"
             />
           </div>
-          <span className="text-[10px] text-[#43483f] flex items-center gap-1 pt-0.5">
-            <span className="material-symbols-outlined text-[12px] text-[#4b6723]">
-              lock
-            </span>
-            Instant 6-digit OTP code sent via SMS &amp; WhatsApp
-          </span>
+          <p className="flex items-center gap-1.5 text-xs text-[#5A615D]">
+            <Lock className="h-3.5 w-3.5 text-[#4b6723] shrink-0" />
+            <span>Instant 6-digit OTP code sent via SMS &amp; WhatsApp</span>
+          </p>
         </div>
 
         <button
           type="submit"
           disabled={phone.length < 9 || isLoading}
-          className="w-full py-3.5 px-4 rounded-full bg-[#062402] hover:bg-[#1c3a13] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#062402] px-4 font-bold text-white shadow-sm transition hover:bg-[#1c3a13] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? (
             <>
-              <span className="material-symbols-outlined text-[16px] animate-spin text-[#ccee9b]">
-                refresh
-              </span>
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4F6A2]" />
               <span>Sending Verification Code...</span>
             </>
           ) : (
             <>
               <span>Send Verification Code</span>
-              <span className="material-symbols-outlined text-[16px] text-[#ccee9b]">
-                arrow_forward
-              </span>
+              <ArrowRight className="h-4 w-4 text-[#D4F6A2]" />
             </>
           )}
         </button>
       </form>
 
-      {/* Switch to Sign Up */}
-      {onSwitchToSignUp && (
-        <p className="text-center text-xs text-[#43483f] pt-1">
-          Don't have an account?{" "}
+      {onSwitchToSignUp ? (
+        <p className="text-center text-xs text-[#5A615D]">
+          Don&apos;t have an account?{' '}
           <button
             type="button"
             onClick={onSwitchToSignUp}
-            className="text-[#1c3a13] font-bold hover:underline cursor-pointer ml-1"
+            className="ml-1 font-bold text-[#1c3a13] hover:underline"
           >
             Sign Up Now
           </button>
         </p>
-      )}
+      ) : null}
 
-      {/* Trust Guarantee Badges */}
-      <div className="pt-2 border-t border-[#E2DED8]/60 grid grid-cols-2 gap-2 text-[11px] text-[#43483f]">
-        <div className="flex items-center gap-1.5 p-2 rounded-xl bg-[#F8FAF7] border border-[#E2DED8]/40">
-          <span className="material-symbols-outlined text-[16px] text-[#4b6723]">
-            workspace_premium
-          </span>
-          <span className="font-semibold text-[#062402]">100% Authentic Beauty</span>
+      <div className="grid grid-cols-2 gap-2 border-t border-[#E2DED8] pt-3">
+        <div className="flex items-center gap-2 rounded-xl border border-[#E2DED8] bg-white p-2.5">
+          <ShieldCheck className="h-4 w-4 text-[#4b6723] shrink-0" />
+          <span className="text-xs font-semibold text-[#062402]">100% Authentic</span>
         </div>
-        <div className="flex items-center gap-1.5 p-2 rounded-xl bg-[#F8FAF7] border border-[#E2DED8]/40">
-          <span className="material-symbols-outlined text-[16px] text-[#4b6723]">
-            bolt
-          </span>
-          <span className="font-semibold text-[#062402]">1-Tap Fast Checkout</span>
+        <div className="flex items-center gap-2 rounded-xl border border-[#E2DED8] bg-white p-2.5">
+          <Zap className="h-4 w-4 text-[#4b6723] shrink-0" />
+          <span className="text-xs font-semibold text-[#062402]">1-Tap Checkout</span>
         </div>
       </div>
     </div>

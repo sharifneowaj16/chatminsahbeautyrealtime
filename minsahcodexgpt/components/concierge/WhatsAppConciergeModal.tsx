@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessageCircle, Phone, ExternalLink } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import { ConciergeSpecialistCard } from './ConciergeSpecialistCard';
 import { ConciergeContextProtocolBanner } from './ConciergeContextProtocolBanner';
 import { ConciergeTopicSelector, CONCIERGE_TOPICS } from './ConciergeTopicSelector';
 import { WhatsAppPreviewBubble } from './WhatsAppPreviewBubble';
-import { ConciergeActionButtons } from './ConciergeActionButtons';
 import { ConciergeTrustFooter } from './ConciergeTrustFooter';
 import { WhatsAppConciergeModalProps, ConciergeTopicKey } from './types';
 
@@ -15,109 +15,72 @@ export function WhatsAppConciergeModal({
   onClose,
   caseId = 'DH-9482',
   userPhone = '+880 1712–345678',
-  userName = 'Tasneem',
   initialTopic = 'unlock',
 }: WhatsAppConciergeModalProps) {
   const [selectedTopicKey, setSelectedTopicKey] = useState<ConciergeTopicKey>(initialTopic);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setSelectedTopicKey(initialTopic);
+  }, [initialTopic]);
 
   const currentTopic =
     CONCIERGE_TOPICS.find((t) => t.key === selectedTopicKey) || CONCIERGE_TOPICS[0];
 
   const handleLaunchWhatsApp = () => {
     const text = encodeURIComponent(
-      `Assalamu Alaikum Minsah Concierge, Case #${caseId} for ${userPhone}. ${currentTopic.suggestedDraft}`
+      `Assalamu Alaikum Minsah Concierge, Case #${caseId} for ${userPhone}. ${currentTopic.suggestedDraft}`,
     );
-    window.open(`https://wa.me/8801700646724?text=${text}`, '_blank');
+    window.open(`https://wa.me/8801700646724?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-[#062402]/60 backdrop-blur-md transition-opacity duration-300 animate-in fade-in">
-      {/* 1. Mobile Sheet View (lg:hidden - Screen 19) */}
-      <div className="lg:hidden w-full max-h-[92vh] bg-[#faf9f6] rounded-t-[32px] shadow-2xl flex flex-col pt-2 pb-safe border-t border-[#E2DED8]/60 overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
-        {/* Drag handle & close anchor */}
-        <div className="w-full flex items-center justify-between px-4 pt-1 pb-1">
-          <div className="w-10" />
-          <div className="w-12 h-1.5 rounded-full bg-[#B5C4BB]/60" />
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      badge={
+        <>
+          <span className="h-2 w-2 rounded-full bg-[#4b6723] animate-pulse" />
+          <span>Dhaka Specialist Online • Avg reply &lt; 2 mins</span>
+        </>
+      }
+      title="Direct Concierge Desk"
+      description="Gulshan-2 Skincare & Delivery Support (9 AM – 11 PM)"
+      closeLabel="Close concierge modal"
+      footer={
+        <div className="flex flex-col gap-2 w-full">
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close concierge sheet"
-            className="w-9 h-9 rounded-full bg-[#efeeeb] hover:bg-[#E8F0E5] text-[#5A615D] flex items-center justify-center transition-transform active:scale-90"
+            onClick={handleLaunchWhatsApp}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#062402] px-5 font-bold text-white shadow-sm transition hover:bg-[#1c3a13] active:scale-[0.98]"
           >
-            <X className="w-4 h-4" />
+            <MessageCircle className="h-4 w-4 text-[#25D366]" />
+            <span>Open in WhatsApp (Start Chat)</span>
+            <ExternalLink className="h-4 w-4 text-[#D4F6A2]" />
           </button>
-        </div>
-
-        {/* Content body */}
-        <div className="px-4 flex flex-col gap-3.5 pb-6 overflow-y-auto overscroll-contain">
-          <ConciergeSpecialistCard />
-          <ConciergeContextProtocolBanner caseId={caseId} userPhone={userPhone} />
-          <ConciergeTopicSelector
-            selectedKey={selectedTopicKey}
-            onSelect={setSelectedTopicKey}
-          />
-          <WhatsAppPreviewBubble
-            topic={currentTopic}
-            onSendDraft={handleLaunchWhatsApp}
-          />
-          <ConciergeActionButtons
-            onOpenWhatsApp={handleLaunchWhatsApp}
-            onBack={onClose}
-          />
-          <ConciergeTrustFooter />
-        </div>
-      </div>
-
-      {/* 2. Desktop Centered Modal (hidden lg:flex - Screen 20) */}
-      <div className="hidden lg:flex relative w-full max-w-[610px] bg-white rounded-[28px] shadow-2xl flex-col overflow-hidden max-h-[92vh] border border-[#E2DED8]/70 animate-in zoom-in-95 duration-200">
-        {/* Top subtle brand gradient bar */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-[#062402] via-[#4b6723] to-[#c7edb5]" />
-
-        {/* Modal Header Bar */}
-        <div className="px-6 pt-5 pb-2 flex items-start justify-between">
-          <div className="flex flex-col gap-1">
-            <div className="inline-flex items-center gap-1.5 bg-[#EAF7D8] px-2.5 py-0.5 rounded-full w-fit">
-              <span className="w-2 h-2 rounded-full bg-[#4b6723] animate-pulse" />
-              <span className="text-[11px] text-[#1c3a13] font-semibold tracking-wide">
-                Dhaka Specialist Online • Avg reply &lt; 2 mins
-              </span>
-            </div>
-            <h2 className="text-[20px] text-[#062402] font-bold tracking-tight mt-1">
-              Direct Concierge Desk
-            </h2>
+          <div className="grid grid-cols-2 gap-2">
+            <a
+              href="tel:+8801700646724"
+              className="flex h-11 items-center justify-center gap-1.5 rounded-full border border-[#E2DED8] bg-[#F4F3EF] font-semibold text-[#181C1A] transition hover:bg-[#EAF7D8]"
+            >
+              <Phone className="h-4 w-4 text-[#4b6723]" />
+              <span>Call Desk</span>
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-11 items-center justify-center rounded-full border border-[#E2DED8] bg-[#F4F3EF] font-semibold text-[#5A615D] transition hover:text-[#181C1A]"
+            >
+              Close
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close modal"
-            className="w-9 h-9 rounded-full bg-[#efeeeb] hover:bg-[#E8F0E5] text-[#5A615D] hover:text-[#062402] transition-colors flex items-center justify-center"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
-
-        {/* Desktop Body Container */}
-        <div className="px-6 pb-6 flex flex-col gap-3.5 overflow-y-auto">
-          <ConciergeSpecialistCard />
-          <ConciergeContextProtocolBanner caseId={caseId} userPhone={userPhone} />
-          <ConciergeTopicSelector
-            selectedKey={selectedTopicKey}
-            onSelect={setSelectedTopicKey}
-          />
-          <WhatsAppPreviewBubble
-            topic={currentTopic}
-            onSendDraft={handleLaunchWhatsApp}
-          />
-          <ConciergeActionButtons
-            onOpenWhatsApp={handleLaunchWhatsApp}
-            onBack={onClose}
-          />
-          <ConciergeTrustFooter />
-        </div>
-      </div>
-    </div>
+      }
+    >
+      <ConciergeSpecialistCard />
+      <ConciergeContextProtocolBanner caseId={caseId} userPhone={userPhone} />
+      <ConciergeTopicSelector selectedKey={selectedTopicKey} onSelect={setSelectedTopicKey} />
+      <WhatsAppPreviewBubble topic={currentTopic} onSendDraft={handleLaunchWhatsApp} />
+      <ConciergeTrustFooter />
+    </Modal>
   );
 }

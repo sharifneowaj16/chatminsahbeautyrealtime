@@ -113,7 +113,7 @@ export function Drawer({
           ? 'flex flex-col h-full max-h-full overflow-hidden bg-[#F2F2EC] text-[#181C1A] shadow-[0_20px_48px_rgba(0,0,0,0.16)] duration-[250ms] border border-black/[0.08] sm:max-w-[460px] w-full rounded-[24px]'
           : isAdmin
             ? 'flex flex-col overflow-hidden border-[#232636] bg-[#090a0f] text-[#f7f8f8] shadow-[0_24px_64px_rgba(0,0,0,0.75)] duration-[250ms]'
-            : 'flex flex-col overflow-hidden border-minsah-border-subtle bg-minsah-surface-elevated text-minsah-text-primary shadow-[var(--shadow-elevated)] duration-[250ms]',
+            : 'minsah-modal flex flex-col overflow-hidden border-[#E2DED8] bg-[#FAF9F6] text-[#181C1A] shadow-[0_24px_64px_rgba(6,36,2,0.24)] duration-[250ms]',
         side === 'left' && !isSeed && (isAdmin ? 'border-r border-[#232636]' : 'border-r'),
         side === 'right' && !isSeed && (isAdmin ? 'border-l border-[#232636]' : 'border-l'),
         side === 'bottom' && !isSeed && (isAdmin ? 'border-t border-[#232636]' : 'border-t'),

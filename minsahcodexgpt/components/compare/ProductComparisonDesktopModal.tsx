@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Layers } from 'lucide-react';
+import { Layers, ShieldCheck } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import CompareProductHeaderCard from './CompareProductHeaderCard';
 import SpecsGlanceSection from './SpecsGlanceSection';
 import SpecsActivesSection from './SpecsActivesSection';
@@ -77,98 +78,63 @@ export default function ProductComparisonDesktopModal() {
   const [productA] = useState<ComparisonProduct>(defaultA);
   const [productB] = useState<ComparisonProduct>(defaultB);
 
-  const handleOpen = useCallback(() => {
-    setIsOpen(true);
-  }, []);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-  }, []);
+  const handleOpen = useCallback(() => setIsOpen(true), []);
+  const handleClose = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
     window.addEventListener('minsah:open-product-comparison', handleOpen);
-    return () => {
-      window.removeEventListener('minsah:open-product-comparison', handleOpen);
-    };
+    return () => window.removeEventListener('minsah:open-product-comparison', handleOpen);
   }, [handleOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="hidden lg:flex fixed inset-0 z-50 items-center justify-center p-6 select-none"
-    >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-[#062402]/60 backdrop-blur-md transition-opacity duration-300"
-        onClick={handleClose}
-      />
-
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#FAF9F6] rounded-[28px] border border-[#E2DED8] shadow-2xl p-6 overflow-y-auto flex flex-col gap-5 z-10">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#E2DED8]">
-          <div>
-            <h2 className="text-xl font-bold text-[#062402] tracking-tight">
-              Compare Formulations &amp; Actives
-            </h2>
-            <p className="text-xs text-[#5A615D]">
-              Direct formulation verification matrix &amp; Dhaka climate performance
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="w-9 h-9 rounded-full bg-[#efeeeb] flex items-center justify-center text-[#5A615D] hover:text-[#062402] active:scale-95 transition-all shadow-xs cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* 2-Column Product Headers */}
-        <div className="grid grid-cols-2 gap-4">
-          <CompareProductHeaderCard
-            product={productA}
-            onAddToCart={() => alert(`Added ${productA.name} to bag!`)}
-          />
-          <CompareProductHeaderCard
-            product={productB}
-            onAddToCart={() => alert(`Added ${productB.name} to bag!`)}
-          />
-        </div>
-
-        <AuthenticityTrustBanner />
-
-        {/* Matrix Specs */}
-        <div className="space-y-4">
-          <SpecsGlanceSection productA={productA} productB={productB} />
-          <SpecsActivesSection productA={productA} productB={productB} />
-          <SpecsClimateSection productA={productA} productB={productB} />
-          <SpecsPackagingSection productA={productA} productB={productB} />
-        </div>
-
-        {/* Bottom Bundle CTA */}
-        <div className="p-4 rounded-2xl bg-[#EAF7D8]/60 border border-[#4b6723]/30 flex items-center justify-between">
-          <div>
-            <span className="text-xs uppercase font-bold text-[#4b6723]">
-              Routine Recommendation
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      badge={
+        <>
+          <ShieldCheck className="h-3.5 w-3.5 text-[#4b6723]" />
+          <span>Formulation Matrix</span>
+        </>
+      }
+      title="Compare Formulations & Actives"
+      description="Direct ingredient verification & Dhaka climate performance"
+      closeLabel="Close comparison modal"
+      footer={
+        <div className="flex items-center justify-between gap-3 w-full">
+          <div className="min-w-0">
+            <span className="block text-xs font-bold uppercase text-[#4b6723]">
+              Routine Pair Bundle
             </span>
-            <div className="text-base font-bold text-[#062402]">
-              Toner (Preps) + Serum (Glows) Bundle · ৳3,790 (Save ৳200)
-            </div>
+            <span className="block truncate font-bold text-[#062402] font-price">
+              ৳3,790 (Save ৳200)
+            </span>
           </div>
           <button
             type="button"
             onClick={() => alert('Bundle added to bag!')}
-            className="px-6 py-2.5 rounded-full bg-[#062402] text-white text-xs font-bold flex items-center gap-2 cursor-pointer hover:bg-[#1c3a13] active:scale-95 transition-all shadow-sm"
+            className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[#062402] px-5 font-bold text-white shadow-sm transition hover:bg-[#1c3a13] active:scale-[0.98]"
           >
-            <Layers className="w-4 h-4" />
+            <Layers className="h-4 w-4 text-[#D4F6A2]" />
             <span>Add Pair Bundle</span>
           </button>
         </div>
+      }
+    >
+      <div className="grid grid-cols-2 gap-2.5">
+        <CompareProductHeaderCard
+          product={productA}
+          onAddToCart={() => alert(`Added ${productA.name} to bag!`)}
+        />
+        <CompareProductHeaderCard
+          product={productB}
+          onAddToCart={() => alert(`Added ${productB.name} to bag!`)}
+        />
       </div>
-    </div>
+      <AuthenticityTrustBanner />
+      <SpecsGlanceSection productA={productA} productB={productB} />
+      <SpecsActivesSection productA={productA} productB={productB} />
+      <SpecsClimateSection productA={productA} productB={productB} />
+      <SpecsPackagingSection productA={productA} productB={productB} />
+    </Modal>
   );
 }

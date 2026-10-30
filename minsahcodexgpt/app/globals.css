@@ -2034,4 +2034,90 @@ input[type="submit"] {
   pointer-events: auto;
 }
 
+/* ========================================================================= */
+/* Unified Storefront Modal Design System (Same Size, Style, Font & Scale)   */
+/* ========================================================================= */
+.minsah-modal {
+  --color-action-primary: #062402;
+  --color-action-primary-hover: #1c3a13;
+  --color-action-secondary: #4b6723;
+  --color-action-secondary-hover: #28531c;
+  --color-surface-accent: #EAF7D8;
+  --color-surface-soft: #F2F6F0;
+  --color-surface-subtle: #F4F3EF;
+  --color-border-default: #E2DED8;
+  --color-border-subtle: #E2DED8;
+  --color-border-strong: #B5C4BB;
+  --color-border-focus: #1c3a13;
+  --color-text-primary: #181C1A;
+  --color-text-muted: #5A615D;
+  --color-text-link: #1c3a13;
+  font-family: var(--font-seed-sans), 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #181C1A;
+}
+
+.minsah-modal-body h1,
+.minsah-modal-body h2,
+.minsah-modal-body h3,
+.minsah-modal-body h4 {
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+  font-weight: 700 !important;
+}
+
+.minsah-modal-body p,
+.minsah-modal-body li,
+.minsah-modal-body label,
+.minsah-modal-body button,
+.minsah-modal-body a,
+.minsah-modal-footer button,
+.minsah-modal-footer a {
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.minsah-modal [class*="text-[8px]"],
+.minsah-modal [class*="text-[9px]"],
+.minsah-modal [class*="text-[9.5px]"],
+.minsah-modal [class*="text-[10px]"],
+.minsah-modal [class*="text-[10.5px]"],
+.minsah-modal [class*="text-[11px]"],
+.minsah-modal .text-xs {
+  font-size: 0.75rem !important;
+  line-height: 1.35 !important;
+}
+
+.minsah-modal [class*="text-[13px]"],
+.minsah-modal [class*="text-[13.5px]"],
+.minsah-modal [class*="text-[14px]"],
+.minsah-modal [class*="text-[15px]"],
+.minsah-modal [class*="text-[16px]"],
+.minsah-modal [class*="text-[17px]"],
+.minsah-modal [class*="text-[18px]"],
+.minsah-modal [class*="text-[20px]"],
+.minsah-modal .text-base,
+.minsah-modal .text-lg,
+.minsah-modal .text-xl,
+.minsah-modal .text-2xl {
+  font-size: 0.875rem !important;
+  line-height: 1.45 !important;
+}
+
+.minsah-modal .minsah-modal-title {
+  font-size: 1.125rem !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+  color: #062402 !important;
+}
+
+@media screen and (max-width: 768px) {
+  .minsah-modal input:not([type="checkbox"]):not([type="radio"]),
+  .minsah-modal select,
+  .minsah-modal textarea {
+    font-size: 16px !important;
+  }
+}
+
 

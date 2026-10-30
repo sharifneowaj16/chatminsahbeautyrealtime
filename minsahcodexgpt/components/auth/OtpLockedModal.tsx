@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { ShieldAlert, MessageCircle } from 'lucide-react';
 
 interface OtpLockedModalProps {
   onClose: () => void;
@@ -8,81 +9,48 @@ interface OtpLockedModalProps {
 }
 
 export function OtpLockedModal({ onClose, onOpenConcierge }: OtpLockedModalProps) {
-  const [minutes, setMinutes] = useState(14);
-  const [seconds, setSeconds] = useState(59);
+  const [secondsLeft, setSecondsLeft] = useState(300);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds((prevSec) => {
-        if (prevSec > 0) return prevSec - 1;
-        setMinutes((prevMin) => (prevMin > 0 ? prevMin - 1 : 0));
-        return 59;
-      });
-    }, 1000);
+    if (secondsLeft <= 0) return;
+    const timer = setInterval(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [secondsLeft]);
 
-  const handleConciergeClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (onOpenConcierge) {
-      onOpenConcierge();
-    } else {
-      window.dispatchEvent(new CustomEvent("minsah:open-concierge-mobile"));
-    }
-  };
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = String(secondsLeft % 60).padStart(2, '0');
 
   return (
     <div className="space-y-4 text-center py-2">
-      {/* Red Lock Icon */}
-      <div className="w-16 h-16 rounded-full bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center mx-auto shadow-sm ring-8 ring-[#ffdad6]/40">
-        <span className="material-symbols-outlined text-[32px]">lock_clock</span>
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-[#ba1a1a]">
+        <ShieldAlert className="h-6 w-6" />
       </div>
 
-      {/* Headlines */}
       <div className="space-y-1">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ffdad6] text-[#93000a] font-bold text-[11px] border border-[#ba1a1a]/20 mb-1">
-          <span className="material-symbols-outlined text-[14px]">gpp_bad</span>
-          Security Protection Active
-        </div>
-        <h3 className="text-xl sm:text-2xl font-extrabold text-[#062402] tracking-tight">
-          Account Temporarily Locked
-        </h3>
-        <p className="text-xs text-[#43483f] max-w-xs mx-auto leading-relaxed">
-          Too many failed OTP verification attempts. Your account is temporarily frozen to prevent
-          unauthorized access.
+        <h3 className="font-bold text-[#181C1A]">Too Many Incorrect Attempts</h3>
+        <p className="text-xs text-[#5A615D]">
+          For your account security, OTP verification is paused for{' '}
+          <strong className="text-[#062402]">{mins}:{secs}</strong>.
         </p>
       </div>
 
-      {/* Countdown Card */}
-      <div className="p-3.5 rounded-2xl bg-[#F8FAF7] border border-[#E2DED8] flex items-center justify-between max-w-xs mx-auto">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#ba1a1a] text-[20px]">
-            hourglass_top
-          </span>
-          <span className="text-xs font-bold text-[#181C1A]">Unlocks in:</span>
-        </div>
-        <span className="font-mono text-base font-extrabold text-[#ba1a1a]">
-          {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-        </span>
-      </div>
-
-      {/* Concierge Unlock Option */}
-      <div className="space-y-2 pt-2">
-        <button
-          type="button"
-          onClick={handleConciergeClick}
-          className="w-full py-3 px-4 rounded-full bg-[#25D366] hover:bg-[#20b858] text-white text-xs font-bold shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-        >
-          <span className="material-symbols-outlined text-[18px]">chat</span>
-          Instant Unlock via WhatsApp Concierge
-        </button>
-
+      <div className="space-y-2 pt-1">
+        {onOpenConcierge ? (
+          <button
+            type="button"
+            onClick={onOpenConcierge}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#062402] px-4 font-bold text-white transition hover:bg-[#1c3a13]"
+          >
+            <MessageCircle className="h-4 w-4 text-[#25D366]" />
+            <span>Unlock Instantly via WhatsApp Concierge</span>
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onClose}
-          className="w-full py-2.5 px-4 rounded-full bg-[#efeeeb] hover:bg-[#e9e8e5] text-[#1a1c1a] text-xs font-semibold transition-colors active:scale-[0.98]"
+          className="flex h-10 w-full items-center justify-center rounded-full border border-[#E2DED8] bg-[#F4F3EF] font-semibold text-[#5A615D]"
         >
-          Close &amp; Try Later
+          Close
         </button>
       </div>
     </div>

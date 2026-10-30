@@ -1,13 +1,14 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useRef } from "react";
-import { signIn } from "next-auth/react";
-import { MemberSignInCard } from "./MemberSignInCard";
-import { CreateAccountCard, CreateAccountFormData } from "./CreateAccountCard";
-import { OtpInputBoxes } from "./OtpInputBoxes";
-import { OtpResentToast } from "./OtpResentToast";
-import { OtpLockedModal } from "./OtpLockedModal";
-import { AuthStep } from "./types";
+import React, { useState, useEffect } from 'react';
+import { signIn } from 'next-auth/react';
+import { ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
+import { MemberSignInCard } from './MemberSignInCard';
+import { CreateAccountCard, CreateAccountFormData } from './CreateAccountCard';
+import { OtpInputBoxes } from './OtpInputBoxes';
+import { OtpLockedModal } from './OtpLockedModal';
+import { AuthStep } from './types';
 
 interface MemberAuthModalProps {
   isOpen?: boolean;
@@ -20,64 +21,40 @@ export function MemberAuthModal({
   isOpen: controlledIsOpen,
   onClose: controlledOnClose,
   onSuccess,
-  initialStep = "phone",
+  initialStep = 'phone',
 }: MemberAuthModalProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [step, setStep] = useState<AuthStep>(initialStep);
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
-  const [showResentToast, setShowResentToast] = useState(false);
+  const [showResentNotice, setShowResentNotice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const isModalOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen;
 
-  const savedOverflowRef = useRef<string>('');
-
-  // Body scroll locking when modal is open — safe for iOS
-  useEffect(() => {
-    if (isModalOpen) {
-      savedOverflowRef.current = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = savedOverflowRef.current || "";
-    }
-    return () => {
-      document.body.style.overflow = savedOverflowRef.current || "";
-    };
-  }, [isModalOpen]);
-
   useEffect(() => {
     const handleOpen = (e: Event) => {
-      const customEvent = e as CustomEvent<{ phone?: string; mode?: "signin" | "signup" }>;
-      if (customEvent.detail?.phone) {
-        setPhone(customEvent.detail.phone);
-      }
-      if (customEvent.detail?.mode === "signup") {
-        setStep("signup");
-      } else {
-        setStep("phone");
-      }
+      const customEvent = e as CustomEvent<{ phone?: string; mode?: 'signin' | 'signup' }>;
+      if (customEvent.detail?.phone) setPhone(customEvent.detail.phone);
+      setStep(customEvent.detail?.mode === 'signup' ? 'signup' : 'phone');
       setInternalOpen(true);
       setOtpError(null);
+      setShowResentNotice(false);
     };
-    const handleClose = () => setInternalOpen(false);
+    const handleCloseEvent = () => setInternalOpen(false);
 
-    window.addEventListener("minsah:open-auth-modal", handleOpen);
-    window.addEventListener("minsah:close-auth-modal", handleClose);
-
+    window.addEventListener('minsah:open-auth-modal', handleOpen);
+    window.addEventListener('minsah:close-auth-modal', handleCloseEvent);
     return () => {
-      window.removeEventListener("minsah:open-auth-modal", handleOpen);
-      window.removeEventListener("minsah:close-auth-modal", handleClose);
+      window.removeEventListener('minsah:open-auth-modal', handleOpen);
+      window.removeEventListener('minsah:close-auth-modal', handleCloseEvent);
     };
   }, []);
 
   const handleClose = () => {
-    if (controlledOnClose) {
-      controlledOnClose();
-    } else {
-      setInternalOpen(false);
-    }
+    if (controlledOnClose) controlledOnClose();
+    else setInternalOpen(false);
   };
 
   const handleSendCode = (e: React.FormEvent) => {
@@ -86,19 +63,18 @@ export function MemberAuthModal({
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      setStep("otp");
-      setShowResentToast(true);
-    }, 700);
+      setStep('otp');
+      setShowResentNotice(true);
+    }, 600);
   };
 
   const handleCreateAccountSuccess = (data: CreateAccountFormData) => {
     setPhone(data.phone);
     setIsLoading(true);
-    // Proceed to OTP verification step
     setTimeout(() => {
       setIsLoading(false);
-      setStep("otp");
-      setShowResentToast(true);
+      setStep('otp');
+      setShowResentNotice(true);
     }, 600);
   };
 
@@ -106,170 +82,150 @@ export function MemberAuthModal({
     setIsLoading(true);
     setOtpError(null);
     try {
-      // Valid OTP check (123456, 000000, or any 6-digit starting with 1)
       if (
-        enteredOtp === "123456" ||
-        enteredOtp === "000000" ||
-        (enteredOtp.length === 6 && enteredOtp.startsWith("1"))
+        enteredOtp === '123456' ||
+        enteredOtp === '000000' ||
+        (enteredOtp.length === 6 && enteredOtp.startsWith('1'))
       ) {
-        const res = await signIn("credentials", {
+        const res = await signIn('credentials', {
           email: phone.trim(),
-          password: "OTP_VERIFIED",
+          password: 'OTP_VERIFIED',
           redirect: false,
         });
 
         setIsLoading(false);
         if (res?.error) {
-          setOtpError("Authentication failed. Please verify your phone number.");
+          setOtpError('Authentication failed. Please verify your phone number.');
           return;
         }
 
         handleClose();
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          window.location.href = "/account";
-        }
+        if (onSuccess) onSuccess();
+        else window.location.href = '/account';
       } else {
         setIsLoading(false);
         const nextAttempts = attemptsLeft - 1;
         setAttemptsLeft(nextAttempts);
-        if (nextAttempts <= 0) {
-          setStep("locked");
-        } else {
-          setOtpError("Incorrect verification code. Please check your SMS or WhatsApp message.");
-        }
+        if (nextAttempts <= 0) setStep('locked');
+        else setOtpError('Incorrect verification code. Please check SMS or WhatsApp.');
       }
     } catch {
       setIsLoading(false);
-      setOtpError("Failed to authenticate. Please try again.");
+      setOtpError('Failed to authenticate. Please try again.');
     }
   };
 
-  const handleResendOtp = () => {
-    setShowResentToast(true);
-    setOtpError(null);
-  };
-
-  if (!isModalOpen) return null;
-
-  const showTopTabs = step === "phone" || step === "signup";
+  const showTopTabs = step === 'phone' || step === 'signup';
+  const modalTitle =
+    step === 'signup'
+      ? 'Create Minsah Account'
+      : step === 'otp'
+        ? 'Verify 6-Digit Code'
+        : step === 'locked'
+          ? 'Verification Temporarily Locked'
+          : 'Welcome to Minsah Beauty';
 
   return (
-    <>
-      {/* Toast Notification (Screen 47) */}
-      {showResentToast && (
-        <OtpResentToast phone={phone} onClose={() => setShowResentToast(false)} />
-      )}
-
-      {/* Modal Surface */}
-      <div
-        className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden no-scrollbar"
-        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'manipulation' }}
-      >
-        {/* Backdrop */}
-        <div
-          className="fixed inset-0 bg-[#062402]/65 backdrop-blur-md transition-opacity duration-300 cursor-pointer"
-          onClick={handleClose}
-          onTouchEnd={handleClose}
-          role="presentation"
-        />
-
-        {/* Modal Window */}
-        <div className="relative bg-[#FAF9F6] rounded-[24px] sm:rounded-[28px] w-full max-w-md p-4 sm:p-6 shadow-2xl border border-[#E2DED8] z-10 flex flex-col gap-3.5 max-h-[min(85vh,620px)] overflow-y-auto overflow-x-hidden my-auto shrink-0 animate-in fade-in zoom-in-95 duration-200 no-scrollbar">
-
-          {/* Top Branding & Close Header */}
-          <header className="flex items-center justify-between pb-2 border-b border-[#E2DED8]/60">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[17px] font-extrabold text-[#062402] tracking-tight">
-                MINSAH BEAUTY
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EAF7D8] text-[#1c3a13] flex items-center gap-0.5 border border-[#4b6723]/20">
-                <span className="material-symbols-outlined text-[11px] text-[#4b6723]">
-                  verified
-                </span>
-                100% Authentic
-              </span>
-            </div>
-            <button
-              type="button"
-              aria-label="Close account modal"
-              onClick={handleClose}
-              className="w-8 h-8 rounded-full bg-[#efeeeb] hover:bg-[#e8f0e5] text-[#43483f] flex items-center justify-center transition-colors active:scale-95 cursor-pointer shadow-xs"
-            >
-              <span className="material-symbols-outlined text-[18px]">close</span>
-            </button>
-          </header>
-
-          {/* Tab Switcher: Sign In vs Create Account */}
-          {showTopTabs && (
-            <div className="grid grid-cols-2 p-1 rounded-full bg-[#efeeeb] border border-[#E2DED8]/60 text-xs font-bold shrink-0">
-              <button
-                type="button"
-                onClick={() => setStep("phone")}
-                className={`py-2 rounded-full text-center transition-all cursor-pointer ${
-                  step === "phone"
-                    ? "bg-[#062402] text-white shadow-xs"
-                    : "text-[#5a615d] hover:text-[#062402]"
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep("signup")}
-                className={`py-2 rounded-full text-center transition-all cursor-pointer ${
-                  step === "signup"
-                    ? "bg-[#062402] text-white shadow-xs"
-                    : "text-[#5a615d] hover:text-[#062402]"
-                }`}
-              >
-                Create Account
-              </button>
-            </div>
-          )}
-
-          {/* Mode 1: Create Account Form (Screen aa120892ec154ef387e6b1b3ac972f86) */}
-          {step === "signup" && (
-            <CreateAccountCard
-              onSwitchToSignIn={() => setStep("phone")}
-              onSubmitSuccess={handleCreateAccountSuccess}
-              isLoading={isLoading}
-            />
-          )}
-
-          {/* Mode 2: Member Sign In Phone Input (Screen b3459dd807cd428b9d5c2e43180f8177) */}
-          {step === "phone" && (
-            <MemberSignInCard
-              phone={phone}
-              onChangePhone={setPhone}
-              onSubmit={handleSendCode}
-              onSwitchToSignUp={() => setStep("signup")}
-              isLoading={isLoading}
-            />
-          )}
-
-          {/* Mode 3: OTP Verification & Invalid State (Screen f9579271e72041bd9d198d3b8e7c71c5) */}
-          {step === "otp" && (
-            <OtpInputBoxes
-              phone={phone}
-              onVerify={handleVerifyOtp}
-              onResend={handleResendOtp}
-              onChangePhone={() => {
-                setStep("phone");
-                setOtpError(null);
-              }}
-              error={otpError}
-              attemptsLeft={attemptsLeft}
-              isLoading={isLoading}
-            />
-          )}
-
-          {/* Mode 4: Maximum OTP Attempts Locked (Screen 21508b5bf2314f928f8c95babeb5cef5) */}
-          {step === "locked" && <OtpLockedModal onClose={handleClose} />}
+    <Modal
+      open={isModalOpen}
+      onClose={handleClose}
+      badge={
+        <>
+          <ShieldCheck className="h-3.5 w-3.5 text-[#4b6723]" />
+          <span>MINSAH VIP • 100% Authentic</span>
+        </>
+      }
+      title={modalTitle}
+      description="Sign in or join to track orders, redeem Glow Points, and unlock member offers"
+      closeLabel="Close account modal"
+    >
+      {showResentNotice && step === 'otp' ? (
+        <div className="flex items-center justify-between rounded-xl border border-[#B5C4BB] bg-[#EAF7D8] px-3.5 py-2.5 text-xs font-semibold text-[#1c3a13]">
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="h-4 w-4 text-[#4b6723] shrink-0" />
+            OTP code sent to +880 {phone}
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowResentNotice(false)}
+            className="text-xs font-bold underline"
+          >
+            Dismiss
+          </button>
         </div>
-      </div>
-    </>
+      ) : null}
+
+      {showTopTabs ? (
+        <div className="grid grid-cols-2 rounded-full border border-[#E2DED8] bg-[#F4F3EF] p-1 font-bold">
+          <button
+            type="button"
+            onClick={() => setStep('phone')}
+            className={`h-9 rounded-full transition-all ${
+              step === 'phone' ? 'bg-[#062402] text-white shadow-xs' : 'text-[#5A615D] hover:text-[#062402]'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep('signup')}
+            className={`h-9 rounded-full transition-all ${
+              step === 'signup' ? 'bg-[#062402] text-white shadow-xs' : 'text-[#5A615D] hover:text-[#062402]'
+            }`}
+          >
+            Create Account
+          </button>
+        </div>
+      ) : null}
+
+      {step === 'signup' ? (
+        <CreateAccountCard
+          onSwitchToSignIn={() => setStep('phone')}
+          onSubmitSuccess={handleCreateAccountSuccess}
+          isLoading={isLoading}
+        />
+      ) : null}
+
+      {step === 'phone' ? (
+        <MemberSignInCard
+          phone={phone}
+          onChangePhone={setPhone}
+          onSubmit={handleSendCode}
+          onSwitchToSignUp={() => setStep('signup')}
+          isLoading={isLoading}
+        />
+      ) : null}
+
+      {step === 'otp' ? (
+        <OtpInputBoxes
+          phone={phone}
+          onVerify={handleVerifyOtp}
+          onResend={() => {
+            setShowResentNotice(true);
+            setOtpError(null);
+          }}
+          onChangePhone={() => {
+            setStep('phone');
+            setOtpError(null);
+          }}
+          error={otpError}
+          attemptsLeft={attemptsLeft}
+          isLoading={isLoading}
+        />
+      ) : null}
+
+      {step === 'locked' ? (
+        <OtpLockedModal
+          onClose={handleClose}
+          onOpenConcierge={() => {
+            handleClose();
+            window.dispatchEvent(
+              new CustomEvent('minsah:open-concierge', { detail: { topic: 'unlock' } }),
+            );
+          }}
+        />
+      ) : null}
+    </Modal>
   );
 }
 
