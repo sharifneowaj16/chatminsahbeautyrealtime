@@ -50,6 +50,7 @@ Packaging: full project package after the active layer release gate, not after e
 - Preserve legacy paths until feature-flagged cutover and rollback proof exist.
 - Never store raw tokens, webhook secrets, unsafe payloads or unclassified PII.
 - Do not create per-item ZIPs. Package only after the full layer gate.
+- Strictly maintain iOS 14+ WebKit compatibility: never use ES2022 class static property initializers (`static { ... }` or `static x = ...`), preserve `browserslist` target `ios_saf >= 14`, enforce deterministic SSR hydration with `mounted` state guards for all countdown timers/dates to prevent `#418` mismatches, and never place unhandled full-screen overlays with high z-index blocking touches.
 
 When checkpoint state changes, update machine state and run:
 
