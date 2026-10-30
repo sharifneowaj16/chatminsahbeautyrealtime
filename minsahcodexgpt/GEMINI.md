@@ -32,14 +32,18 @@ Trust `.ai/project-state.json` and `.ai/phase31-execution-manifest.json` over hi
 - **Full Width Add to Cart & Variant Selector**: মোবাইল ভিউতে Add to Cart বাটন এবং ভ্যারিয়েন্ট সিলেক্টর সবসময় **Full Width (`w-full`)** হতে হবে।
 - **Logic Shift Tracking**: প্রজেক্টের কোনো পূর্ববর্তী লজিক বা ভ্যালিডেশন পরিবর্তন বা মিস হলে তা ফাইনাল রিপোর্টে বিস্তারিতভাবে ব্যবহারকারীকে জানাতে হবে।
 
-## Strict Popup Modal Spacing & Centering Rule (STRICT)
+## Unified Storefront Modal Design Architecture (Responsive & Standardized)
 - **Exclusion (STILL LOCKED)**: প্রোডাক্ট কার্ডের ভ্যারিয়েন্ট সিলেক্টর মোডাল (`Variant Selector Button & Node Connector Popup Modal`) সম্পূর্ণ লকড এবং অপরিবর্তিত থাকবে।
-- **All Other Popup Modals (Mandatory 4-Sided Space & Centering)**:
-  1. **Top Space**: মোডাল কখনো সাইট হেডার বা স্ক্রিনের টপ এজে লেগে থাকবে না; উপরে সুস্পষ্ট ব্যালেন্সড ফাঁকা জায়গা (যেমন `p-4 sm:p-6 md:p-8`) থাকবে।
-  2. **Bottom Space**: স্ক্রিনের নিচের বর্ডারে ঠেকে যাবে না; নিচেও সমপরিমাণ মার্জিন থাকবে।
-  3. **Left & Right Space**: দুই পাশে পর্যাপ্ত ফাঁকা জায়গা বজায় রেখে স্ক্রিনের ঠিক মাঝখানে সেন্টারে ভাসবে।
-  4. **Compact Dimensions**: স্ক্রিন জুড়ে ফুল-হাইট না হয়ে একটি সুন্দর কম্প্যাক্ট প্রিমিয়াম কার্ডের মতো দেখাবে (যেমন `max-h-[min(85vh, 620px)]` ও `w-full max-w-[...]`).
-  5. **No Left-Right Scroll**: কোনো মোডালেই কখনো লেফট-রাইট / অনুভূমিক স্ক্রলবার থাকবে না (`overflow-x-hidden no-scrollbar`).
+- **Mobile View (Bottom Sheet)**:
+  1. মোবাইলে মোডাল নিচ থেকে উঠে আসা প্রিমিয়াম বটম শিট (`max-h-[88dvh] rounded-t-[24px]`) হিসেবে রেন্ডার হবে এবং শীর্ষে গ্র্যাব হ্যান্ডেল বার থাকবে।
+  2. একহাতে সহজে ব্যবহারের জন্য ফুল-হাইট না হয়ে স্ক্রিনের নিচের এজে সুন্দরভাবে বসবে।
+- **Tablet / Desktop View (Centered Dialog)**:
+  1. ট্যাবলেট ও ডেস্কটপে স্ক্রিনের ঠিক মাঝখানে সেন্টারে ভাসবে (`sm:max-w-[520px] sm:max-h-[85dvh] sm:rounded-[24px]`)।
+  2. চারপাশে ব্যালেন্সড প্যাডিং (`p-4 sm:p-6 md:p-8`) থাকবে।
+- **Universal Rules for All Modals**:
+  1. **No Left-Right Scroll**: কোনো মোডালেই কখনো অনুভূমিক স্ক্রলবার থাকবে না (`overflow-x-hidden no-scrollbar`).
+  2. **Font & Sizing Hierarchy**: Title `18px`, Body `14px`, Badge/Caption `12px`, এবং মোবাইলে ইনপুট ফিল্ড সবসময় `16px` (সাফারি অটো-জুম প্রিভেনশন)।
+  3. **Z-Index Layering**: সব মোডাল `z-[180]` স্ট্যাকে থাকবে (হেডারের `z-100`-এর উপরে এবং টোস্টের `z-[200]`-এর নিচে)।
 
 ## Mandatory iPhone & iOS WebKit Compatibility Rules (STRICT)
 ভবিষ্যতে যেকোনো নতুন ফিচার, কম্পোনেন্ট বা কোড আপডেট করার সময় আইফোনের জন্য এই নিয়মগুলো কঠোরভাবে মেনে চলতে হবে:
