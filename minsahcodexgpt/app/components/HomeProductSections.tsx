@@ -52,7 +52,7 @@ function getCardPrice(product: ContextProduct) {
   return { price, originalPrice };
 }
 
-function isActiveFlashSale(product: ContextProduct, now = Date.now()) {
+function isActiveFlashSale(product: ContextProduct, now?: number) {
   if (!product.flashSaleEligible || !product.offerStartDate || !product.offerEndDate) return false;
 
   const startsAt = new Date(product.offerStartDate).getTime();
@@ -60,12 +60,13 @@ function isActiveFlashSale(product: ContextProduct, now = Date.now()) {
 
   if (!Number.isFinite(startsAt) || !Number.isFinite(endsAt)) return false;
 
-  return startsAt <= now && endsAt >= now;
+  const currentTime = typeof now === 'number' ? now : Date.now();
+  return startsAt <= currentTime && endsAt >= currentTime;
 }
 
-function getNearestOfferEnd(products: ContextProduct[]) {
+function getNearestOfferEnd(products: ContextProduct[], now?: number) {
   const activeEndTimes = products
-    .filter((product) => isActiveFlashSale(product))
+    .filter((product) => isActiveFlashSale(product, now))
     .map((product) => product.offerEndDate)
     .filter((value): value is string => Boolean(value))
     .map((value) => new Date(value).getTime())
@@ -371,17 +372,20 @@ export default function HomeProductSections({
   products,
   sections,
   brands = defaultBrands,
+  nowIso,
 }: {
   products: ContextProduct[];
   sections?: HomeSection[];
   brands?: HomeSectionBrand[];
+  nowIso?: string;
 }) {
+  const now = nowIso ? new Date(nowIso).getTime() : undefined;
   const activeProducts = products.filter((product) => product.status === 'active');
   const cardProducts = activeProducts.map(mapProduct);
   const createdAtById = new Map(activeProducts.map((product) => [product.id, product.createdAt]));
-  const activeFlashSaleSourceProducts = activeProducts.filter((product) => isActiveFlashSale(product));
+  const activeFlashSaleSourceProducts = activeProducts.filter((product) => isActiveFlashSale(product, now));
   const activeFlashSaleIds = new Set(activeFlashSaleSourceProducts.map((product) => product.id));
-  const flashSaleEndsAt = getNearestOfferEnd(activeFlashSaleSourceProducts);
+  const flashSaleEndsAt = getNearestOfferEnd(activeFlashSaleSourceProducts, now);
   const sectionConfigs = getProductSectionConfigs(sections);
 
   const renderedSections = sectionConfigs.map((section) => {

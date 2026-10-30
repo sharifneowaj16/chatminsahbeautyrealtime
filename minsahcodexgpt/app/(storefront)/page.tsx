@@ -372,6 +372,7 @@ export default async function HomePage() {
 
   const homeConfig = await getHomePageConfig();
   const initialProducts = await getInitialProducts(homeConfig);
+  const nowIso = new Date().toISOString();
 
   const heroProduct = initialProducts.find((product) => product.image) || initialProducts[0];
   const hasVisibleProductSections = getVisibleProductSections(homeConfig.sections).length > 0;
@@ -440,6 +441,7 @@ export default async function HomePage() {
               products={initialProducts}
               sections={[section]}
               brands={homeConfig.brands}
+              nowIso={nowIso}
             />
           </Suspense>
           <FlashDealsSection config={homeConfig.flashDeals} />
@@ -454,6 +456,7 @@ export default async function HomePage() {
             products={initialProducts}
             sections={[section]}
             brands={homeConfig.brands}
+            nowIso={nowIso}
           />
         </Suspense>
       );

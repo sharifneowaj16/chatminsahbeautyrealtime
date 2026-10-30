@@ -198,50 +198,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${seedSans.variable} font-sans`}>
       <head>
-        {/* iOS Diagnostic Banner: catches runtime JS errors, syntax errors, and hydration failures directly on iPhone */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                function showDiag(msg, bg) {
-                  var box = document.getElementById('__ios_diag');
-                  if (!box) {
-                    box = document.createElement('div');
-                    box.id = '__ios_diag';
-                    box.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;padding:12px;font-size:12px;font-family:monospace;color:#fff;word-break:break-all;max-height:55vh;overflow:auto;background:' + (bg || '#b91c1c');
-                    var btn = document.createElement('button');
-                    btn.textContent = 'Test Native Tap';
-                    btn.style.cssText = 'display:block;margin-bottom:8px;padding:6px 12px;background:#fff;color:#000;border-radius:6px;font-weight:bold;';
-                    btn.onclick = function() { alert('Native JS tap works! Hydrated: ' + !!window.__REACT_HYDRATED__); };
-                    box.appendChild(btn);
-                    (document.body || document.documentElement).appendChild(box);
-                  }
-                  var row = document.createElement('div');
-                  row.style.marginBottom = '6px';
-                  row.textContent = msg;
-                  box.appendChild(row);
-                }
-                window.addEventListener('error', function(e) {
-                  if (e.target && e.target !== window) {
-                    var src = e.target.src || e.target.href || '';
-                    if (String(src).indexOf('_next') !== -1) showDiag('CHUNK LOAD ERROR: ' + src);
-                    return;
-                  }
-                  showDiag('JS ERROR: ' + e.message + ' @ ' + (e.filename || '') + ':' + (e.lineno || ''));
-                }, true);
-                window.addEventListener('unhandledrejection', function(e) {
-                  var r = e.reason;
-                  showDiag('PROMISE ERROR: ' + (r && (r.stack || r.message) ? (r.stack || r.message) : String(r)));
-                });
-                setTimeout(function() {
-                  if (!window.__REACT_HYDRATED__) {
-                    showDiag('NOT HYDRATED AFTER 5s | UA: ' + navigator.userAgent, '#b45309');
-                  }
-                }, 5000);
-              })();
-            `,
-          }}
-        />
         {/* iOS Safari: prevent auto-formatting of phone numbers/dates that causes React hydration mismatch #418 */}
         <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

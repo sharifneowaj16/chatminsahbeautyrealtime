@@ -9,7 +9,7 @@ function toSlug(str: string): string {
 export function adminProductToShopProduct(p: AdminProduct): ShopProduct {
   const slug = p.urlSlug || toSlug(p.name);
   const createdAt = p.createdAt ? new Date(p.createdAt) : new Date();
-  const isNew = p.isNew ?? Date.now() - createdAt.getTime() < 30 * 24 * 60 * 60 * 1000;
+  const isNew = Boolean(p.isNew);
   const metrics = p as AdminProduct & {
     viewCount?: number;
     views?: number;

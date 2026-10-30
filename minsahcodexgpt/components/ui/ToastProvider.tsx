@@ -73,10 +73,6 @@ export function ToastProvider({
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
 
-  useEffect(() => {
-    (window as unknown as { __REACT_HYDRATED__?: boolean }).__REACT_HYDRATED__ = true;
-  }, []);
-
   const dismissToast = useCallback((id: string) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);

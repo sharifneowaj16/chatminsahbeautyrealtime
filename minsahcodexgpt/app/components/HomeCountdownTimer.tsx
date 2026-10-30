@@ -50,11 +50,18 @@ export default function HomeCountdownTimer({
   className = '',
 }: HomeCountdownTimerProps) {
   const targetTime = useMemo(() => getTargetTime(endsAt), [endsAt]);
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetTime));
+  const [mounted, setMounted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<CountdownParts>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    expired: false,
+  });
 
   useEffect(() => {
+    setMounted(true);
     setTimeLeft(getTimeLeft(targetTime));
-
     if (!targetTime) return undefined;
 
     const timer = window.setInterval(() => {
@@ -63,6 +70,10 @@ export default function HomeCountdownTimer({
 
     return () => window.clearInterval(timer);
   }, [targetTime]);
+
+  if (!mounted) {
+    return <div className={`min-h-[28px] ${className}`} aria-hidden="true" />;
+  }
 
   if (timeLeft.expired) {
     return (
@@ -75,7 +86,7 @@ export default function HomeCountdownTimer({
   }
 
   return (
-    <div suppressHydrationWarning className={`flex flex-wrap items-center gap-2.5 sm:gap-3 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-2.5 sm:gap-3 ${className}`}>
       {label && (
         <span className="text-xs sm:text-sm font-bold text-[#1c3a13] tracking-tight">
           {label}
