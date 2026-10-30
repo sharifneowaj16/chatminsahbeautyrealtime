@@ -19,14 +19,14 @@ Trust `.ai/project-state.json` and `.ai/phase31-execution-manifest.json` over hi
   3. **Mobile Bottom Bar** (`BottomNavigation.tsx`) — সম্পূর্ণ আনলকড
   4. **Floating Chat Button** (`SocialFloatingButtons.tsx`) — সম্পূর্ণ আনলকড
   5. **Home Layout & Global Shell** (`AppShell.tsx`) — সম্পূর্ণ আনলকড
+  6. **Cart Drawer** (`CartDrawer.tsx`) — সম্পূর্ণ আনলকড (Universal Offer Engine ও dynamic কুপন ইন্টিগ্রেশনের জন্য)
+  7. **Product Page Internal Core** (`app/(storefront)/products/[id]/`) — সম্পূর্ণ আনলকড (OfferSlot ও ইংলিশ ইউনিফিকেশনের জন্য)
+  8. **Universal Offer Engine & Promotion Center** — সম্পূর্ণ আনলকড (অ্যাডমিন-নিয়ন্ত্রিত জিরো-হার্ডকোডিং আর্কিটেকচারের জন্য)
 - **STILL LOCKED (কোনো প্রকার হাত দেওয়া, এডিট বা পরিবর্তন সম্পূর্ণ নিষিদ্ধ)**:
   1. **Category Rails Nav Bar**
-  2. **Cart Drawer** (`CartDrawer.tsx`)
-  3. **Product Card (Home Page): Variant Selector Button & Node Connector Popup Modal**
-  4. **Shop / Search Page: Product Card Variant Selector Button & Node Connector Popup Modal**
-  5. **Product Page Internal Core** (`app/(storefront)/products/[id]/` — ইমেজ গ্যালারি, ভ্যারিয়েন্ট সিলেক্টর, প্রাইসিং, অ্যাড-টু-কার্ট, ডিটেইলস ও স্পেসিফিকেশন সম্পূর্ণ লকড; শুধুমাত্র শেয়ার্ড সাইট হেডার, ফুটার ও মোবাইল বটম বার আনলকড)
-  6. **Offer Engine & Calculation Logic** (টোটাল লকড — স্টিচের কোনো ডামি অফার যুক্ত করা যাবে না; মিনসাহ বিউটির নিজস্ব অফার ইঞ্জিন অপরিবর্তিত থাকবে)
-- লক করা এই কম্পোনেন্টগুলো সম্পূর্ণ অপরিবর্তিত এবং সুরক্ষিত থাকবে।
+  2. **Product Card (Home Page): Variant Selector Button & Node Connector Popup Modal**
+  3. **Shop / Search Page: Product Card Variant Selector Button & Node Connector Popup Modal**
+- লক করা এই ৩টি কম্পোনেন্ট ছাড়া বাকি সব কম্পোনেন্ট এখন আপগ্রেডের জন্য উন্মুক্ত।
 
 ## Mandatory Mobile UI & Logic Rules
 - **Full Width Add to Cart & Variant Selector**: মোবাইল ভিউতে Add to Cart বাটন এবং ভ্যারিয়েন্ট সিলেক্টর সবসময় **Full Width (`w-full`)** হতে হবে।
