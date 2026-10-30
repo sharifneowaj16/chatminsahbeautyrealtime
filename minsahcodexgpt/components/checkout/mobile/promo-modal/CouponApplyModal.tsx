@@ -16,75 +16,6 @@ import { PromoTermsModal } from './PromoTermsModal';
 import { CouponItem, AppliedCoupon, CouponApplyModalProps } from './types';
 import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
-const INITIAL_COUPONS: CouponItem[] = [
-  {
-    id: 'vip15',
-    code: 'VIP15',
-    title: 'VIP Member 15% OFF',
-    description: 'Flat 15% discount on all orders for Minsah VIP members.',
-    discountType: 'percentage',
-    discountValue: 15,
-    badgeText: 'VIP Special',
-    badgeVariant: 'primary',
-    expiryText: 'Active',
-    minSpend: 1500,
-    terms: [
-      'Minimum order value must be ৳1,500.',
-      'Valid on all authentic cosmetics & skincare.',
-      'Cannot be combined with other vouchers.',
-    ],
-  },
-  {
-    id: 'minsah150',
-    code: 'MINSAH150',
-    title: 'Flat ৳150 Cash Discount',
-    description: 'Direct ৳150 discount on orders over ৳1,200.',
-    discountType: 'flat',
-    discountValue: 150,
-    badgeText: 'Instant Cashback',
-    badgeVariant: 'secondary',
-    expiryText: 'Active',
-    minSpend: 1200,
-    terms: [
-      'Minimum order value must be ৳1,200.',
-      'Applicable on both bKash and Cash on Delivery.',
-    ],
-  },
-  {
-    id: 'freeship',
-    code: 'FREESHIP',
-    title: 'Free Express Delivery',
-    description: 'Zero delivery charges on orders over ৳1,000 (Pathao & Steadfast courier).',
-    discountType: 'shipping',
-    discountValue: 120,
-    badgeText: 'Free Express Delivery',
-    badgeVariant: 'shipping',
-    expiryText: 'Active',
-    minSpend: 1000,
-    terms: [
-      'Minimum order value must be ৳1,000.',
-      'Valid for delivery across Bangladesh.',
-      'Regular delivery fee is completely waived.',
-    ],
-  },
-  {
-    id: 'welcome10',
-    code: 'WELCOME10',
-    title: '10% Off First Order',
-    description: 'Instant 10% discount on first purchase for new customers.',
-    discountType: 'percentage',
-    discountValue: 10,
-    badgeText: 'Welcome Bonus',
-    badgeVariant: 'tertiary',
-    expiryText: 'Active',
-    minSpend: 800,
-    terms: [
-      'Applicable on the first order for new customers.',
-      'Maximum discount up to ৳300.',
-    ],
-  },
-];
-
 export function CouponApplyModal({
   isOpen,
   onClose,
@@ -106,8 +37,9 @@ export function CouponApplyModal({
   const { config } = useOfferEngine();
 
   const activeCoupons: CouponItem[] = useMemo(() => {
+    if (config?.couponsEnabled === false) return [];
     if (Array.isArray(config?.coupons) && config.coupons.length > 0) {
-      const mapped: CouponItem[] = config.coupons
+      return config.coupons
         .filter((c) => c && c.isActive !== false)
         .map((c) => ({
           id: c.code.toLowerCase(),
@@ -130,10 +62,9 @@ export function CouponApplyModal({
             c.allowOnBundles ? 'Valid on all catalog items including bundles.' : 'Valid on non-bundle products only.',
           ],
         }));
-      if (mapped.length > 0) return mapped;
     }
-    return INITIAL_COUPONS;
-  }, [config?.coupons]);
+    return [];
+  }, [config?.coupons, config?.couponsEnabled]);
 
   const applied = externalAppliedCoupon !== undefined ? externalAppliedCoupon : internalApplied;
 
@@ -164,9 +95,7 @@ export function CouponApplyModal({
   };
 
   const handleManualCode = (code: string) => {
-    const found =
-      activeCoupons.find((c) => c.code.toUpperCase() === code.toUpperCase()) ||
-      INITIAL_COUPONS.find((c) => c.code.toUpperCase() === code.toUpperCase());
+    const found = activeCoupons.find((c) => c.code.toUpperCase() === code.toUpperCase());
     if (found) {
       handleApplyCoupon(found);
       return;

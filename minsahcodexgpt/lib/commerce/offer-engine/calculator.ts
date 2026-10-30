@@ -1,4 +1,4 @@
-import { DELIVERY_CONFIG, PROMO_CATALOG, ENABLE_PROMO_COUPONS } from './config';
+import { DELIVERY_CONFIG } from './config';
 import type {
   CartOfferCalculationParams,
   CartOfferCalculationResult,
@@ -23,6 +23,7 @@ export function calculateCartOffers(
     promoCode,
     destinationCity,
     availableCoupons,
+    couponsEnabled = true,
   } = params;
 
   // 1. Differentiate bundle items vs regular items
@@ -49,27 +50,39 @@ export function calculateCartOffers(
     }
   }
 
-  // 2. Resolve Promo Coupon
+  // 2. Resolve Promo Coupon (Strictly from live Admin Offer Engine coupons)
   let promoDiscount = 0;
   let appliedPromoRule: PromoRule | null = null;
   let promoError: string | null = null;
 
   if (promoCode && promoCode.trim()) {
-    if (!ENABLE_PROMO_COUPONS) {
-      promoError = 'Promo vouchers are not active at this time';
+    if (couponsEnabled === false) {
+      promoError = 'Promo vouchers are currently disabled';
     } else {
       const normalizedCode = promoCode.trim().toUpperCase();
 
-      // Look up in availableCoupons first (dynamic from Admin/API), then fall back to PROMO_CATALOG
+      // Look up strictly in live availableCoupons from Admin Offer Engine
       let rule: PromoRule | null = null;
       if (Array.isArray(availableCoupons) && availableCoupons.length > 0) {
         rule = availableCoupons.find((c) => c && c.code && c.code.trim().toUpperCase() === normalizedCode) ?? null;
       }
-      if (!rule) {
-        rule = PROMO_CATALOG[normalizedCode] ?? null;
+
+      const now = Date.now();
+      let isDateValid = true;
+      if (rule?.startDate) {
+        const start = new Date(rule.startDate).getTime();
+        if (!isNaN(start) && now < start) {
+          isDateValid = false;
+        }
+      }
+      if (isDateValid && rule?.endDate) {
+        const end = new Date(rule.endDate).getTime();
+        if (!isNaN(end) && now > end) {
+          isDateValid = false;
+        }
       }
 
-      if (!rule || rule.isActive === false) {
+      if (!rule || rule.isActive === false || !isDateValid) {
         promoError = 'Invalid or expired promo code';
       } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
         promoError = `Minimum subtotal of ৳${rule.minSubtotal} required for ${rule.code}`;
@@ -88,7 +101,7 @@ export function calculateCartOffers(
             const rate = rawRate > 1 ? rawRate / 100 : rawRate;
             promoDiscount = Math.round(applicableBase * rate);
           } else {
-            promoDiscount = Math.min(rule.value, applicableBase);
+            promoDiscount = Math.min(Number(rule.value) || 0, applicableBase);
           }
 
           if (rule.maxDiscount && promoDiscount > rule.maxDiscount) {

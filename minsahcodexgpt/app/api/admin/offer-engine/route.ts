@@ -7,7 +7,6 @@ import { requireAdminPermission } from '@/app/api/admin/_utils';
 import { toPrismaInputJson } from '@/lib/prisma-json';
 import {
   DELIVERY_CONFIG,
-  PROMO_CATALOG,
   DEFAULT_BUNDLE_CONFIG,
 } from '@/lib/commerce/offer-engine';
 import type { OfferPlacement } from '@/lib/commerce/offer-engine/types';
@@ -23,6 +22,7 @@ export const dynamic = 'force-dynamic';
 export const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
 
 export interface AdminOfferPayload {
+  couponsEnabled?: boolean;
   freeDelivery: {
     nationwideThreshold: number;
     dhakaThreshold: number;
@@ -38,6 +38,8 @@ export interface AdminOfferPayload {
     maxDiscount?: number;
     allowOnBundles: boolean;
     isActive: boolean;
+    startDate?: string | null;
+    endDate?: string | null;
     placements?: OfferPlacement[];
     badgeText?: string;
     bannerText?: string;
@@ -78,28 +80,15 @@ export interface AdminOfferPayload {
 }
 
 export function getDefaultAdminOfferConfig(): AdminOfferPayload {
-  const initialCoupons = Object.values(PROMO_CATALOG).map((rule) => ({
-    code: rule.code,
-    type: rule.type,
-    value: rule.value,
-    description: rule.description,
-    minSubtotal: rule.minSubtotal || 0,
-    maxDiscount: rule.maxDiscount || 0,
-    allowOnBundles: Boolean(rule.allowOnBundles),
-    isActive: true,
-    placements: rule.placements || ['cart_drawer', 'checkout_page'],
-    badgeText: rule.badgeText || '',
-    bannerText: rule.bannerText || '',
-  }));
-
   return {
+    couponsEnabled: true,
     freeDelivery: {
       nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
       dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
       outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
       outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
     },
-    coupons: initialCoupons,
+    coupons: [],
     bundles: {
       enabled: DEFAULT_BUNDLE_CONFIG.enabled,
       twoStepDiscountPercent: DEFAULT_BUNDLE_CONFIG.twoStepDiscountPercent,
@@ -160,6 +149,7 @@ export async function GET(request: NextRequest) {
       : {}) as Partial<AdminOfferPayload>;
 
     const merged: AdminOfferPayload = {
+      couponsEnabled: savedOffer.couponsEnabled !== false,
       freeDelivery: {
         ...defaults.freeDelivery,
         ...(savedOffer.freeDelivery || {}),
@@ -226,9 +216,11 @@ export async function PUT(request: NextRequest) {
     }
 
     // 1. Save Universal Offer Config
+    const couponsEnabled = payload.couponsEnabled !== false;
     const offerData = {
+      couponsEnabled,
       freeDelivery: payload.freeDelivery,
-      coupons: payload.coupons,
+      coupons: Array.isArray(payload.coupons) ? payload.coupons : [],
       bundles: payload.bundles,
       antiConflict: payload.antiConflict,
     };
@@ -263,7 +255,7 @@ export async function PUT(request: NextRequest) {
               value: c.value,
               minPurchase: c.minSubtotal || 0,
               maxDiscount: c.maxDiscount || 0,
-              isActive: c.isActive !== false,
+              isActive: couponsEnabled && (c.isActive !== false),
             },
             update: {
               description: c.description || null,
@@ -271,7 +263,7 @@ export async function PUT(request: NextRequest) {
               value: c.value,
               minPurchase: c.minSubtotal || 0,
               maxDiscount: c.maxDiscount || 0,
-              isActive: c.isActive !== false,
+              isActive: couponsEnabled && (c.isActive !== false),
             },
           });
         } catch (couponErr) {
@@ -293,6 +285,18 @@ export async function PUT(request: NextRequest) {
           });
         } catch (deactivateErr) {
           console.warn('Could not deactivate removed database coupons:', deactivateErr);
+        }
+      } else {
+        // When Admin deletes all coupons, deactivate all active coupons in database
+        try {
+          await prisma.coupon.updateMany({
+            where: { isActive: true },
+            data: {
+              isActive: false,
+            },
+          });
+        } catch (deactivateErr) {
+          console.warn('Could not deactivate all database coupons:', deactivateErr);
         }
       }
     }

@@ -1,5 +1,4 @@
 import type { Prisma, PrismaClient } from '@/generated/prisma/client';
-import { PROMO_CATALOG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
 import { getBangladeshPhoneVariations } from '@/lib/phone';
 
 const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
@@ -84,12 +83,24 @@ export async function validateCouponForOrder(params: {
     };
   }
 
-  if (!ENABLE_PROMO_COUPONS) {
-    throw new CouponValidationError(
-      'Promo vouchers are not active at this time',
-      'COUPON_DISABLED',
-      400
-    );
+  // 1. Check SiteConfig master switch for couponsEnabled
+  try {
+    const siteConfig = await params.prisma.siteConfig.findUnique({
+      where: { key: UNIVERSAL_OFFER_CONFIG_KEY },
+    });
+    if (siteConfig?.value && typeof siteConfig.value === 'object') {
+      const configVal = siteConfig.value as any;
+      if (configVal.couponsEnabled === false) {
+        throw new CouponValidationError(
+          'Promo vouchers are currently disabled',
+          'COUPON_DISABLED',
+          400
+        );
+      }
+    }
+  } catch (err) {
+    if (err instanceof CouponValidationError) throw err;
+    // Continue
   }
 
   let coupon = (await params.prisma.coupon.findUnique({
@@ -103,13 +114,11 @@ export async function validateCouponForOrder(params: {
 
   // Fallback to Universal Offer Engine (siteConfig)
   if (!coupon) {
-    let siteConfigChecked = false;
     try {
       const siteConfig = await params.prisma.siteConfig.findUnique({
         where: { key: UNIVERSAL_OFFER_CONFIG_KEY },
       });
       if (siteConfig?.value && typeof siteConfig.value === 'object') {
-        siteConfigChecked = true;
         const configCoupons = (siteConfig.value as {
           coupons?: Array<{
             code: string;
@@ -118,6 +127,8 @@ export async function validateCouponForOrder(params: {
             minSubtotal?: number;
             maxDiscount?: number;
             isActive?: boolean;
+            startDate?: string | null;
+            endDate?: string | null;
           }>;
         }).coupons;
 
@@ -139,8 +150,8 @@ export async function validateCouponForOrder(params: {
               usageLimit: null,
               usageCount: 0,
               perUserLimit: null,
-              startDate: null,
-              endDate: null,
+              startDate: matched.startDate ? new Date(matched.startDate) : null,
+              endDate: matched.endDate ? new Date(matched.endDate) : null,
               isActive: true,
             };
           }
@@ -149,32 +160,6 @@ export async function validateCouponForOrder(params: {
     } catch (err) {
       if (err instanceof CouponValidationError) throw err;
       // Continue
-    }
-
-    // Only if siteConfig was NOT found at all do we check static PROMO_CATALOG
-    if (!coupon && !siteConfigChecked && PROMO_CATALOG[couponCode]) {
-      const promo = PROMO_CATALOG[couponCode];
-      if (promo.isActive !== false) {
-        coupon = {
-          id: '',
-          code: couponCode,
-          type:
-            promo.code === 'FREESHIP'
-              ? 'FREE_SHIPPING'
-              : promo.type === 'percentage'
-              ? 'PERCENTAGE'
-              : 'FIXED',
-          value: promo.value,
-          minPurchase: promo.minSubtotal ?? 0,
-          maxDiscount: promo.maxDiscount ?? 0,
-          usageLimit: null,
-          usageCount: 0,
-          perUserLimit: null,
-          startDate: null,
-          endDate: null,
-          isActive: true,
-        };
-      }
     }
   }
 

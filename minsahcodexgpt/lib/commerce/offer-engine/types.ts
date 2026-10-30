@@ -23,6 +23,8 @@ export interface PromoRule {
    */
   allowOnBundles?: boolean;
   isActive?: boolean;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
   placements?: OfferPlacement[];
   badgeText?: string;
   bannerText?: string;
@@ -45,6 +47,7 @@ export interface BundleConfig {
 }
 
 export interface UniversalOfferConfig {
+  couponsEnabled?: boolean;
   freeDelivery: {
     nationwideThreshold: number;
     dhakaThreshold: number;
@@ -80,6 +83,7 @@ export interface CartOfferCalculationParams {
   promoCode?: string | null;
   destinationCity?: string | null;
   isNewCustomer?: boolean;
+  couponsEnabled?: boolean;
   freeDeliveryConfig?: {
     nationwideThreshold?: number;
     dhakaThreshold?: number;

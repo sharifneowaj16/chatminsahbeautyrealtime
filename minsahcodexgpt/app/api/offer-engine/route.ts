@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { DELIVERY_CONFIG, PROMO_CATALOG, DEFAULT_BUNDLE_CONFIG } from '@/lib/commerce/offer-engine';
+import { DELIVERY_CONFIG, DEFAULT_BUNDLE_CONFIG } from '@/lib/commerce/offer-engine';
 import { UNIVERSAL_OFFER_CONFIG_KEY } from '@/app/api/admin/offer-engine/route';
 import { getDeliveryMessageConfig } from '@/lib/delivery-message/config';
 
@@ -13,7 +13,6 @@ export async function GET() {
       where: { key: UNIVERSAL_OFFER_CONFIG_KEY },
     });
 
-    const defaultCoupons = Object.values(PROMO_CATALOG);
     const defaultDelivery = {
       nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
       dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
@@ -32,13 +31,14 @@ export async function GET() {
       const config = record.value as any;
       return NextResponse.json({
         success: true,
+        couponsEnabled: config.couponsEnabled !== false,
         freeDelivery: {
           ...defaultDelivery,
           ...(config.freeDelivery || {}),
         },
         coupons: Array.isArray(config.coupons)
           ? config.coupons.filter((c: any) => c && c.isActive !== false)
-          : defaultCoupons,
+          : [],
         bundles: {
           ...DEFAULT_BUNDLE_CONFIG,
           ...(config.bundles || {}),
@@ -54,8 +54,9 @@ export async function GET() {
     // Default fallback
     return NextResponse.json({
       success: true,
+      couponsEnabled: true,
       freeDelivery: defaultDelivery,
-      coupons: defaultCoupons,
+      coupons: [],
       bundles: DEFAULT_BUNDLE_CONFIG,
       antiConflict: {
         strictAntiStacking: true,
@@ -67,13 +68,14 @@ export async function GET() {
     console.error('Error fetching public offer engine rules:', error);
     return NextResponse.json({
       success: true,
+      couponsEnabled: true,
       freeDelivery: {
         nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
         dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
         outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
         outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
       },
-      coupons: Object.values(PROMO_CATALOG),
+      coupons: [],
       bundles: DEFAULT_BUNDLE_CONFIG,
       antiConflict: {
         strictAntiStacking: true,

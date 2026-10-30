@@ -324,6 +324,40 @@ export default function UniversalOfferEngineAdminPage() {
       {/* ── TAB 1: COUPONS & PLACEMENTS ── */}
       {activeTab === 'coupons' && (
         <div className="space-y-6">
+          {/* Global Master Switch */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[#161824] border border-[#232636] shadow-xs">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-3.5 h-3.5 rounded-full ${
+                  config.couponsEnabled !== false ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-red-400'
+                }`}
+              />
+              <div>
+                <h3 className="text-sm font-bold text-[#F7F8F8]">Enable Promo Coupons</h3>
+                <p className="text-xs text-[#8A8F98]">
+                  Master switch to enable or disable all coupon inputs, discounts, and promotional banners across the storefront.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setConfig({
+                  ...config,
+                  couponsEnabled: config.couponsEnabled === false ? true : false,
+                });
+                markDirty();
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                config.couponsEnabled !== false
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
+                  : 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
+              }`}
+            >
+              {config.couponsEnabled !== false ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-[#F7F8F8]">Store Coupons & Placement Slots</h2>

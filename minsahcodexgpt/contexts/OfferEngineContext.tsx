@@ -19,13 +19,13 @@ import type {
 import {
   DELIVERY_CONFIG,
   DEFAULT_BUNDLE_CONFIG,
-  PROMO_CATALOG,
 } from '@/lib/commerce/offer-engine/config';
 import { calculateCartOffers } from '@/lib/commerce/offer-engine/calculator';
 
 interface OfferEngineContextValue {
   config: UniversalOfferConfig | null;
   isLoading: boolean;
+  couponsEnabled: boolean;
   coupons: PromoRule[];
   bundles: BundleConfig;
   freeDelivery: UniversalOfferConfig['freeDelivery'];
@@ -37,12 +37,11 @@ interface OfferEngineContextValue {
   ) => CartOfferCalculationResult;
 }
 
-const defaultCoupons = Object.values(PROMO_CATALOG);
-
 const initialContextValue: OfferEngineContextValue = {
   config: null,
   isLoading: false,
-  coupons: defaultCoupons,
+  couponsEnabled: true,
+  coupons: [],
   bundles: DEFAULT_BUNDLE_CONFIG,
   freeDelivery: {
     nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
@@ -56,7 +55,8 @@ const initialContextValue: OfferEngineContextValue = {
   calculateOffers: (params) =>
     calculateCartOffers({
       ...params,
-      availableCoupons: defaultCoupons,
+      couponsEnabled: true,
+      availableCoupons: [],
       freeDeliveryConfig: {
         nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
         dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
@@ -80,13 +80,14 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
       const data = await res.json();
       if (data && data.success) {
         setConfig({
+          couponsEnabled: data.couponsEnabled !== false,
           freeDelivery: data.freeDelivery || {
             nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
             dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
             outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
             outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
           },
-          coupons: Array.isArray(data.coupons) ? data.coupons : defaultCoupons,
+          coupons: Array.isArray(data.coupons) ? data.coupons : [],
           bundles: data.bundles || DEFAULT_BUNDLE_CONFIG,
           antiConflict: data.antiConflict || { strictAntiStacking: true },
           topBar: data.topBar,
@@ -103,12 +104,15 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
     void fetchOffers();
   }, [fetchOffers]);
 
+  const couponsEnabled = config?.couponsEnabled !== false;
+
   const coupons = useMemo(() => {
+    if (config?.couponsEnabled === false) return [];
     if (config?.coupons && Array.isArray(config.coupons)) {
       return config.coupons.filter((c) => c && c.isActive !== false);
     }
-    return defaultCoupons;
-  }, [config?.coupons]);
+    return [];
+  }, [config?.coupons, config?.couponsEnabled]);
 
   const bundles = useMemo(() => {
     return config?.bundles || DEFAULT_BUNDLE_CONFIG;
@@ -153,6 +157,7 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
     ): CartOfferCalculationResult => {
       return calculateCartOffers({
         ...params,
+        couponsEnabled,
         availableCoupons: coupons,
         freeDeliveryConfig: {
           nationwideThreshold: freeDelivery.nationwideThreshold,
@@ -160,13 +165,14 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
         },
       });
     },
-    [coupons, freeDelivery]
+    [coupons, couponsEnabled, freeDelivery]
   );
 
   const value = useMemo<OfferEngineContextValue>(
     () => ({
       config,
       isLoading,
+      couponsEnabled,
       coupons,
       bundles,
       freeDelivery,
@@ -178,6 +184,7 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
     [
       config,
       isLoading,
+      couponsEnabled,
       coupons,
       bundles,
       freeDelivery,

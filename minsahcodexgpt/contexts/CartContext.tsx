@@ -4,7 +4,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { trackAddToCart } from '@/lib/tracking/ecommerce';
-import { calculateCartOffers, DELIVERY_CONFIG, ENABLE_PROMO_COUPONS, type PromoRule } from '@/lib/commerce/offer-engine';
+import { calculateCartOffers, DELIVERY_CONFIG, type PromoRule } from '@/lib/commerce/offer-engine';
+import { useOfferEngine } from './OfferEngineContext';
 import { extractVariantAttributes, generateCartItemId } from '@/utils/cartItemHelper';
 
 export interface ProductVariantItem {
@@ -245,6 +246,12 @@ function mergeCartItem(existing: CartItem, incoming: CartItem): CartItem {
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user, refreshToken } = useAuth();
   const { pushToast } = useToast();
+  const {
+    config: offerConfig,
+    coupons: activeCoupons,
+    isLoading: isOfferLoading,
+    freeDelivery: offerFreeDelivery,
+  } = useOfferEngine();
 
   const [items, setItems]             = useState<CartItem[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
@@ -258,34 +265,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(PAYMENT_METHODS[0]);
 
-  const [freeDeliveryConfig, setFreeDeliveryConfig] = useState<{
-    nationwideThreshold: number;
-    dhakaThreshold: number;
-  }>({
-    nationwideThreshold: DELIVERY_CONFIG.NATIONWIDE_THRESHOLD, // fallback only
-    dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,      // fallback only
-  });
+  const couponsEnabled = offerConfig?.couponsEnabled !== false;
 
-  const fetchOfferEngineConfig = useCallback(async () => {
-    try {
-      const response = await fetch('/api/offer-engine');
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.success && data?.freeDelivery) {
-          setFreeDeliveryConfig({
-            nationwideThreshold: data.freeDelivery.nationwideThreshold,
-            dhakaThreshold: data.freeDelivery.dhakaThreshold,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching offer engine config, keeping fallback threshold:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchOfferEngineConfig();
-  }, [fetchOfferEngineConfig]);
+  const freeDeliveryConfig = useMemo(() => ({
+    nationwideThreshold: offerFreeDelivery?.nationwideThreshold ?? DELIVERY_CONFIG.NATIONWIDE_THRESHOLD,
+    dhakaThreshold: offerFreeDelivery?.dhakaThreshold ?? DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
+  }), [offerFreeDelivery]);
 
   const subtotal     = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const shippingCost = 0;
@@ -299,19 +284,60 @@ export function CartProvider({ children }: { children: ReactNode }) {
       promoCode,
       destinationCity: selectedAddress?.city || null,
       freeDeliveryConfig,
+      availableCoupons: couponsEnabled ? activeCoupons : [],
+      couponsEnabled,
     });
-  }, [items, subtotal, promoCode, selectedAddress?.city, freeDeliveryConfig]);
+  }, [items, subtotal, promoCode, selectedAddress?.city, freeDeliveryConfig, couponsEnabled, activeCoupons]);
 
   const isFreeDeliveryUnlocked = offerEvaluation.isFreeDeliveryUnlocked;
 
   // Keep discount synchronized with offer evaluation when promoCode is active
   useEffect(() => {
-    if (ENABLE_PROMO_COUPONS && promoCode && offerEvaluation.appliedPromoRule) {
+    if (couponsEnabled && promoCode && offerEvaluation.appliedPromoRule) {
       setDiscount(offerEvaluation.promoDiscount);
-    } else if ((!promoCode || !ENABLE_PROMO_COUPONS || !offerEvaluation.appliedPromoRule) && discount !== 0) {
+    } else if ((!promoCode || !couponsEnabled || !offerEvaluation.appliedPromoRule) && discount !== 0) {
       setDiscount(0);
     }
-  }, [promoCode, offerEvaluation.appliedPromoRule, offerEvaluation.promoDiscount, discount]);
+  }, [promoCode, couponsEnabled, offerEvaluation.appliedPromoRule, offerEvaluation.promoDiscount, discount]);
+
+  // Step 4: Race-safe auto-invalidation when applied promo code is disabled or removed
+  useEffect(() => {
+    // Only run after initial Offer Engine fetch finishes loading
+    if (isOfferLoading) return;
+    if (!promoCode) return;
+
+    if (!couponsEnabled) {
+      setPromoCode('');
+      setDiscount(0);
+      try {
+        localStorage.removeItem('minsah_promo_code');
+        sessionStorage.removeItem('minsah_promo_code');
+      } catch {}
+      pushToast({
+        title: 'Promo vouchers are currently disabled',
+        tone: 'info',
+      });
+      return;
+    }
+
+    const normalizedCode = promoCode.trim().toUpperCase();
+    const isStillValid = activeCoupons.some(
+      (c) => c && c.code && c.code.trim().toUpperCase() === normalizedCode && c.isActive !== false
+    );
+
+    if (!isStillValid) {
+      setPromoCode('');
+      setDiscount(0);
+      try {
+        localStorage.removeItem('minsah_promo_code');
+        sessionStorage.removeItem('minsah_promo_code');
+      } catch {}
+      pushToast({
+        title: `Promo code "${normalizedCode}" is no longer available`,
+        tone: 'info',
+      });
+    }
+  }, [isOfferLoading, promoCode, couponsEnabled, activeCoupons, pushToast]);
 
   // ── DB helpers ─────────────────────────────────────────────────
 
@@ -946,8 +972,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ── Promo code ──────────────────────────────────────────────────
 
   const applyPromoCode = useCallback((codeOverride?: string, rulesOverride?: PromoRule[]) => {
-    if (!ENABLE_PROMO_COUPONS) {
-      pushToast({ title: 'Promo vouchers are not active at this time', tone: 'danger' });
+    if (!couponsEnabled) {
+      pushToast({ title: 'Promo vouchers are currently disabled', tone: 'danger' });
       return;
     }
     const code = (codeOverride || promoCode).trim().toUpperCase();
@@ -955,27 +981,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
       pushToast({ title: 'Please enter a coupon code', tone: 'danger' });
       return;
     }
+    const couponsToUse = rulesOverride ?? (couponsEnabled ? activeCoupons : []);
     const result = calculateCartOffers({
       items,
       subtotal,
       promoCode: code,
       destinationCity: selectedAddress?.city || null,
       freeDeliveryConfig,
-      availableCoupons: rulesOverride,
+      availableCoupons: couponsToUse,
+      couponsEnabled: true,
     });
 
     if (result.appliedPromoRule && !result.promoError) {
       setDiscount(result.promoDiscount);
       setPromoCode(code);
+      try {
+        localStorage.setItem('minsah_promo_code', code);
+      } catch {}
       pushToast({ title: `Coupon "${code}" applied successfully!`, tone: 'success' });
     } else {
       pushToast({ title: result.promoError || 'Invalid or expired promo code', tone: 'danger' });
     }
-  }, [items, promoCode, pushToast, selectedAddress?.city, subtotal, freeDeliveryConfig]);
+  }, [couponsEnabled, promoCode, activeCoupons, items, subtotal, selectedAddress?.city, freeDeliveryConfig, pushToast]);
 
   const removePromoCode = useCallback(() => {
     setDiscount(0);
     setPromoCode('');
+    try {
+      localStorage.removeItem('minsah_promo_code');
+      sessionStorage.removeItem('minsah_promo_code');
+    } catch {}
     pushToast({ title: 'Coupon removed', tone: 'info' });
   }, [pushToast]);
 

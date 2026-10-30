@@ -16,7 +16,6 @@ import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import CartItemRow from "@/features/cart/CartItemRow";
 import { formatPrice } from "@/utils/currency";
 import { FreeDeliveryIncentiveBanner } from "@/components/cart/FreeDeliveryIncentiveBanner";
-import { ENABLE_PROMO_COUPONS } from "@/lib/commerce/offer-engine";
 import { OfferSlot } from "@/components/offer/OfferSlot";
 import { useOfferEngine } from "@/contexts/OfferEngineContext";
 
@@ -52,7 +51,10 @@ export default function CartDrawer({
   const [couponLoading, setCouponLoading] = useState(false);
   const [isPromoExpanded, setIsPromoExpanded] = useState(false);
   const { config: offerConfig } = useOfferEngine();
-  const availableCoupons = (offerConfig?.coupons || []).filter((c) => c.isActive !== false);
+  const couponsEnabled = offerConfig?.couponsEnabled !== false;
+  const availableCoupons = couponsEnabled
+    ? (offerConfig?.coupons || []).filter((c) => c && c.isActive !== false)
+    : [];
 
   const hasItems = items.length > 0;
 
@@ -84,20 +86,11 @@ export default function CartDrawer({
     }
   };
 
-
-
   const handleCheckout = () => {
     if (!hasItems) return;
     closeDrawer();
     router.push("/checkout");
   };
-
-  // Auto-remove promo code if promo coupons disabled globally
-  useEffect(() => {
-    if (!ENABLE_PROMO_COUPONS && promoCode) {
-      removePromoCode();
-    }
-  }, [promoCode, removePromoCode]);
 
 
 
@@ -180,7 +173,7 @@ export default function CartDrawer({
 
 
           {/* ── Seed-style "Apply Promo Code" Editorial Link ── */}
-          {ENABLE_PROMO_COUPONS && (
+          {((couponsEnabled && availableCoupons.length > 0) || (discount > 0 && promoCode)) && (
             <div className="px-6 mt-4 pt-3 border-t border-black/[0.06]">
               {discount > 0 && promoCode ? (
                 <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs">
@@ -198,7 +191,7 @@ export default function CartDrawer({
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              ) : (
+              ) : couponsEnabled && availableCoupons.length > 0 ? (
                 <div className="space-y-2">
                   <button
                     type="button"
@@ -234,7 +227,7 @@ export default function CartDrawer({
                         </button>
                       </div>
 
-                      {/* Quick Suggestions from Admin Offer Engine */}
+                      {/* Quick Suggestions from Live Admin Offer Engine */}
                       {availableCoupons.length > 0 && (
                         <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5 no-scrollbar">
                           <span className="text-[10px] font-[400] uppercase text-gray-400 flex items-center gap-1 shrink-0">
@@ -255,7 +248,7 @@ export default function CartDrawer({
                     </div>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
