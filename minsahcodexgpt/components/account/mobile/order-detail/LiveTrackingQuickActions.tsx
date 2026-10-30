@@ -53,15 +53,15 @@ export default function LiveTrackingQuickActions({
             </div>
             <div className="text-left">
               <span className="text-xs font-bold text-[#181C1A] block">
-                ডেলিভারি রিশিডিউল করুন (Reschedule Date/Time)
+                Reschedule Delivery (Date/Time)
               </span>
               <span className="text-[10px] text-[#43483f]">
-                পরবর্তী ৭ দিনের পছন্দের তারিখ ও টাইম স্লট বেছে নিন
+                Choose your preferred date and time slot within the next 7 days
               </span>
             </div>
           </div>
           <span className="text-xs font-bold text-[#1c3a13] bg-white px-2.5 py-1 rounded-full border border-[#B5C4BB]">
-            পরিবর্তন →
+            Change →
           </span>
         </button>
       )}

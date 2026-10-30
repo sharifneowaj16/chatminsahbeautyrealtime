@@ -102,7 +102,7 @@ export default function DailyProfitIntelligenceCard() {
     return (
       <div className="mb-6 rounded-2xl border border-[#232636] bg-[#10121b] p-6 flex items-center justify-center">
         <RefreshCw className="h-5 w-5 animate-spin text-indigo-400 mr-2" />
-        <span className="text-xs text-slate-400">রিয়েল নিট প্রফিট হিসাব লোড হচ্ছে...</span>
+        <span className="text-xs text-slate-400">Loading Real Net Profit Engine...</span>
       </div>
     );
   }
@@ -121,14 +121,14 @@ export default function DailyProfitIntelligenceCard() {
               <TrendingUp className="h-4 w-4" />
             </div>
             <h2 className="text-base font-bold text-white tracking-tight">
-              দৈনিক সত্যিকারের লাভ ও আর্থিক চিত্র (Real Net Profit Engine)
+              Real Net Profit Engine
             </h2>
             <span className="rounded-full bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-300">
               LIVE ACCRUAL
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            বিক্রয়মূল্য থেকে প্রকৃত কেনা দাম (Actual Buy Price/COGS) এবং কুরিয়ার ক্ষতি বাদ দিয়ে চূড়ান্ত নিট প্রফিট।
+            Calculated after subtracting actual buy price (COGS) and delivery deficit from gross sales.
           </p>
         </div>
 
@@ -179,34 +179,34 @@ export default function DailyProfitIntelligenceCard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
         {/* Gross Revenue */}
         <div className="rounded-xl border border-[#202538] bg-[#0c0e17] p-3.5">
-          <span className="text-[11px] font-mono uppercase text-slate-400">মোট ডেলিভারি বিক্রি</span>
+          <span className="text-[11px] font-mono uppercase text-slate-400">Gross Delivered Sales</span>
           <div className="text-xl font-bold font-mono text-white mt-1">
             {formatPrice(prof?.grossRevenue ?? 0)}
           </div>
           <div className="text-[10px] font-mono text-slate-400 mt-1">
-            অর্ডার সংখ্যা: <strong className="text-slate-200">{data?.orderMetrics.deliveredOrders ?? 0}টি</strong>
+            Delivered Orders: <strong className="text-slate-200">{data?.orderMetrics.deliveredOrders ?? 0}</strong>
           </div>
         </div>
 
         {/* COGS */}
         <div className="rounded-xl border border-[#202538] bg-[#0c0e17] p-3.5">
-          <span className="text-[11px] font-mono uppercase text-slate-400">প্রকৃত ক্রয়মূল্য (COGS)</span>
+          <span className="text-[11px] font-mono uppercase text-slate-400">Cost of Goods (COGS)</span>
           <div className="text-xl font-bold font-mono text-amber-300 mt-1">
             {formatPrice(prof?.totalCogs ?? 0)}
           </div>
           <div className="text-[10px] font-mono text-slate-400 mt-1">
-            গ্রস লাভ: <strong className="text-amber-200">{formatPrice(prof?.grossProfit ?? 0)}</strong>
+            Gross Profit: <strong className="text-amber-200">{formatPrice(prof?.grossProfit ?? 0)}</strong>
           </div>
         </div>
 
         {/* Delivery Deficit & Discounts */}
         <div className="rounded-xl border border-[#202538] bg-[#0c0e17] p-3.5">
-          <span className="text-[11px] font-mono uppercase text-slate-400">ডেলিভারি ক্ষতি ও ছাড়</span>
+          <span className="text-[11px] font-mono uppercase text-slate-400">Delivery Deficit & Discounts</span>
           <div className="text-xl font-bold font-mono text-rose-300 mt-1">
             {formatPrice((prof?.deliveryDeficit ?? 0) + (prof?.totalDiscounts ?? 0))}
           </div>
           <div className="text-[10px] font-mono text-slate-400 mt-1">
-            কুরিয়ার ঘাটতি: {formatPrice(prof?.deliveryDeficit ?? 0)}
+            Courier Deficit: {formatPrice(prof?.deliveryDeficit ?? 0)}
           </div>
         </div>
 
@@ -219,7 +219,7 @@ export default function DailyProfitIntelligenceCard() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase font-bold text-slate-300">খাঁটি নিট লাভ</span>
+            <span className="text-[11px] font-mono uppercase font-bold text-slate-300">Real Net Profit</span>
             <span
               className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border ${
                 isProfitable
@@ -238,7 +238,7 @@ export default function DailyProfitIntelligenceCard() {
             {formatPrice(prof?.netProfit ?? 0)}
           </div>
           <div className="text-[10px] font-mono text-slate-400 mt-1">
-            {isProfitable ? '✓ লাভজনক ব্যবসা চলছে' : '⚠️ লস হচ্ছে — অপ্টিমাইজ করুন'}
+            {isProfitable ? '✓ Profitable Operation' : '⚠️ Net Loss Detected'}
           </div>
         </div>
       </div>
@@ -246,21 +246,21 @@ export default function DailyProfitIntelligenceCard() {
       {/* Cash Flow Strip */}
       <div className="mt-4 pt-3 border-t border-[#1b2234] grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
         <div className="bg-[#080d18] rounded-lg p-2.5 border border-[#1a2338]">
-          <span className="text-[10px] text-slate-400 block">ক্যাশ অন ডেলিভারি (COD)</span>
+          <span className="text-[10px] text-slate-400 block">Cash on Delivery (COD)</span>
           <span className="text-white font-bold">{formatPrice(cash?.codCashCollected ?? 0)}</span>
         </div>
         <div className="bg-[#080d18] rounded-lg p-2.5 border border-[#1a2338]">
-          <span className="text-[10px] text-slate-400 block">অনলাইন পরিশোধ</span>
+          <span className="text-[10px] text-slate-400 block">Online Payments</span>
           <span className="text-white font-bold">{formatPrice(cash?.onlinePaymentsCollected ?? 0)}</span>
         </div>
         <div className="bg-[#080d18] rounded-lg p-2.5 border border-[#1a2338]">
-          <span className="text-[10px] text-slate-400 block">কুরিয়ারে আটকে থাকা টাকা</span>
+          <span className="text-[10px] text-slate-400 block">Pending Courier Receivables</span>
           <span className="text-indigo-300 font-bold">{formatPrice(cash?.pendingCourierReceivables ?? 0)}</span>
         </div>
         <div className="bg-[#080d18] rounded-lg p-2.5 border border-[#1a2338]">
-          <span className="text-[10px] text-slate-400 block">রানার ক্যাশ ব্যালেন্স</span>
+          <span className="text-[10px] text-slate-400 block">Runner Cash Balance</span>
           <span className={(cash?.runnerDiscrepancy ?? 0) === 0 ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-            {(cash?.runnerDiscrepancy ?? 0) === 0 ? '✓ কোনো গরমিল নেই' : `গরমিল: ${formatPrice(cash?.runnerDiscrepancy ?? 0)}`}
+            {(cash?.runnerDiscrepancy ?? 0) === 0 ? '✓ Balanced' : `Discrepancy: ${formatPrice(cash?.runnerDiscrepancy ?? 0)}`}
           </span>
         </div>
       </div>

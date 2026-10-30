@@ -114,7 +114,7 @@ export default function SeedIngredientsDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 overflow-hidden ${className}`}>
+    <div className={`fixed inset-0 z-[180] overflow-hidden overflow-x-hidden no-scrollbar ${className}`}>
       
       {/* Backdrop */}
       <div

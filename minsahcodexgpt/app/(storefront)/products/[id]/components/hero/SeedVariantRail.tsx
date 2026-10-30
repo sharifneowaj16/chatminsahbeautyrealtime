@@ -205,7 +205,6 @@ export default function SeedVariantRail({
           <div className="grid grid-cols-2 gap-2.5">
             {detectedSizes.map((size) => {
               const isSelected = selectedSize === size;
-              const isBigPack = size.includes('80') || size.toLowerCase().includes('big') || size.toLowerCase().includes('large') || size.toLowerCase().includes('salon');
               const matchingForSize = variants.filter((v) => getVariantSize(v) === size);
               const sizePrice = matchingForSize[0]?.price ?? basePrice;
 
@@ -230,11 +229,6 @@ export default function SeedVariantRail({
                     <p className="font-inter font-bold text-xs text-[#1c3a13] dark:text-emerald-300">
                       ৳{Math.round(sizePrice)}
                     </p>
-                    {isBigPack && (
-                      <span className="inline-block mt-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-800 dark:text-emerald-300">
-                        Save 20%
-                      </span>
-                    )}
                   </div>
                 </button>
               );

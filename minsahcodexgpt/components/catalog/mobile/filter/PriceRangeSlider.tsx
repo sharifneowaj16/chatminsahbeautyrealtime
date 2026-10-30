@@ -44,10 +44,10 @@ export function PriceRangeSlider({
     <div className="flex flex-col gap-3 bg-[#f4f3f1]/70 p-3.5 rounded-[24px] border border-[#E2DED8]/40 shadow-xs">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-[#062402] uppercase tracking-wider">
-          মূল্যের পরিসীমা (Price Range)
+          Price Range
         </span>
         <span className="px-2.5 py-1 rounded-full bg-[#EAF7D8] text-[#1c3a13] text-[11px] font-bold shadow-sm">
-          ৳{minPrice.toLocaleString('bn-BD')} — ৳{maxPrice.toLocaleString('bn-BD')}
+          ৳{minPrice.toLocaleString('en-US')} — ৳{maxPrice.toLocaleString('en-US')}
         </span>
       </div>
 
@@ -105,9 +105,9 @@ export function PriceRangeSlider({
 
         {/* Min / Max Labels */}
         <div className="flex justify-between items-center text-[10px] text-[#43483f]/70 mt-2 font-medium">
-          <span>Min ৳৫০০</span>
-          <span className="font-bold text-[#062402]">৳২,৫০০ গড়</span>
-          <span>Max ৳৫,০০০</span>
+          <span>Min ৳500</span>
+          <span className="font-bold text-[#062402]">৳2,500 Avg</span>
+          <span>Max ৳5,000</span>
         </div>
       </div>
 

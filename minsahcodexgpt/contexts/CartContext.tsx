@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/ToastProvider';
 import { trackAddToCart } from '@/lib/tracking/ecommerce';
-import { calculateCartOffers, DELIVERY_CONFIG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
+import { calculateCartOffers, DELIVERY_CONFIG, ENABLE_PROMO_COUPONS, type PromoRule } from '@/lib/commerce/offer-engine';
 import { extractVariantAttributes, generateCartItemId } from '@/utils/cartItemHelper';
 
 export interface ProductVariantItem {
@@ -95,7 +95,7 @@ interface CartContextType {
   tax: number;
   promoCode: string;
   setPromoCode: (code: string) => void;
-  applyPromoCode: (codeOverride?: string) => void;
+  applyPromoCode: (codeOverride?: string, rulesOverride?: PromoRule[]) => void;
   removePromoCode: () => void;
   discount: number;
   addresses: Address[];
@@ -945,7 +945,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // ── Promo code ──────────────────────────────────────────────────
 
-  const applyPromoCode = useCallback((codeOverride?: string) => {
+  const applyPromoCode = useCallback((codeOverride?: string, rulesOverride?: PromoRule[]) => {
     if (!ENABLE_PROMO_COUPONS) {
       pushToast({ title: 'Promo vouchers are not active at this time', tone: 'danger' });
       return;
@@ -961,6 +961,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       promoCode: code,
       destinationCity: selectedAddress?.city || null,
       freeDeliveryConfig,
+      availableCoupons: rulesOverride,
     });
 
     if (result.appliedPromoRule && !result.promoError) {

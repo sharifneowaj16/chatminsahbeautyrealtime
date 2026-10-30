@@ -55,7 +55,7 @@ export const INITIAL_SHORTLIST_ORDERS: ShortlistOrder[] = [
         supplierName: 'Paltan Heritage Trading',
         supplierPhone: '+880 1711-892401',
         verifiedBy: null,
-        customerNote: 'কাস্টমার কনফার্ম করেছে, কালকে ডেলিভারি ড্রপ দিতে হবে',
+        customerNote: 'Customer confirmed, deliver by tomorrow',
       },
       {
         id: 'item_serum_01',

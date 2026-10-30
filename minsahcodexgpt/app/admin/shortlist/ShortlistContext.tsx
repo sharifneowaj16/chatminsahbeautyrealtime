@@ -147,9 +147,7 @@ export function ShortlistProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
 
         if (data.success) {
-          // ✅ Single source of truth — server থেকে fresh data নেওয়া হচ্ছে।
-          // আগে optimistic setOrders() + fetchOrders() দুটোই ছিল,
-          // optimistic update টা fetchOrders() এ overwrite হয়ে যেত — redundant ছিল।
+          // Single source of truth — fetching fresh data from server
           await fetchOrders();
         } else {
           setError(data.error || 'Failed to update');

@@ -108,15 +108,18 @@ export function SeedReviewWriteModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-[#0E160C]/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-[180] bg-[#0E160C]/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto overflow-x-hidden no-scrollbar"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[560px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden my-8 transform transition-all"
+        className="relative w-full max-h-[88dvh] sm:max-h-[85dvh] sm:max-w-[520px] bg-white rounded-t-[24px] sm:rounded-[24px] shadow-2xl border border-gray-100 overflow-hidden overflow-y-auto no-scrollbar my-0 sm:my-8 transform transition-all flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Grab handle for mobile bottom sheet */}
+        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2.5 sm:hidden shrink-0" />
+
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-[#F8F9F7]">
+        <div className="px-6 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between bg-[#F8F9F7]">
           <div>
             <span className="text-[11px] font-bold text-[#2F6D20] tracking-wider uppercase">
               Verified Member Review
@@ -149,7 +152,7 @@ export function SeedReviewWriteModal({
           </div>
         ) : (
           /* Submission Form */
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto no-scrollbar">
             
             {/* 1. Star Rating Selector */}
             <div className="text-center space-y-2 pb-2">
@@ -202,7 +205,7 @@ export function SeedReviewWriteModal({
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="e.g. Sarah K."
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none"
+                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-base sm:text-xs text-gray-900 focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none"
                 />
               </div>
 
@@ -215,7 +218,7 @@ export function SeedReviewWriteModal({
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none"
+                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-base sm:text-xs text-gray-900 focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none"
                 />
               </div>
             </div>
@@ -230,7 +233,7 @@ export function SeedReviewWriteModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Transformed my skin barrier in 2 weeks!"
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none"
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-base sm:text-xs text-gray-900 focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none"
               />
             </div>
 
@@ -245,7 +248,7 @@ export function SeedReviewWriteModal({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="How did this product feel? When did you first notice changes in hydration, glow, or redness? Would you repurchase?"
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none resize-none"
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-base sm:text-xs text-gray-900 focus:ring-2 focus:ring-[#1C3A13] focus:border-transparent outline-none resize-none"
               />
             </div>
 
@@ -260,7 +263,7 @@ export function SeedReviewWriteModal({
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
                   placeholder="https://images.unsplash.com/... or image link"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[#1C3A13]"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-base sm:text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#1C3A13]"
                 />
                 <button
                   type="button"
@@ -298,7 +301,7 @@ export function SeedReviewWriteModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 bg-[#1C3A13] hover:bg-[#12280C] text-[#FCFCF7] font-bold text-sm uppercase tracking-wider rounded-[2px] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3.5 bg-[#1C3A13] hover:bg-[#12280C] text-[#FCFCF7] font-bold text-sm uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>

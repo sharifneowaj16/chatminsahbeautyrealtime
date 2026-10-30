@@ -5,53 +5,53 @@ import { DateSlotOption } from './types';
 
 export const NEXT_7_DAYS: DateSlotOption[] = [
   {
-    dateStr: 'বৃহস্পতিবার, ১৪ নভে',
+    dateStr: 'Thursday, Nov 14',
     dayLabel: 'Thu',
     dayNumber: 14,
     status: 'past',
-    statusLabel: 'অতীত',
+    statusLabel: 'Past',
   },
   {
-    dateStr: 'আজ, ১৫ নভে (Today)',
+    dateStr: 'Today, Nov 15',
     dayLabel: 'Fri',
     dayNumber: 15,
     status: 'current',
-    statusLabel: 'বর্তমান',
+    statusLabel: 'Today',
   },
   {
-    dateStr: 'শনিবার, ১৬ নভে (Tomorrow)',
+    dateStr: 'Saturday, Nov 16 (Tomorrow)',
     dayLabel: 'Sat',
     dayNumber: 16,
     status: 'fast',
-    statusLabel: 'আগামীকাল',
+    statusLabel: 'Tomorrow',
   },
   {
-    dateStr: 'রবিবার, ১৭ নভে',
+    dateStr: 'Sunday, Nov 17',
     dayLabel: 'Sun',
     dayNumber: 17,
     status: 'available',
-    statusLabel: 'উপলব্ধ',
+    statusLabel: 'Available',
   },
   {
-    dateStr: 'সোমবার, ১৮ নভে',
+    dateStr: 'Monday, Nov 18',
     dayLabel: 'Mon',
     dayNumber: 18,
     status: 'available',
-    statusLabel: 'উপলব্ধ',
+    statusLabel: 'Available',
   },
   {
-    dateStr: 'মঙ্গলবার, ১৯ নভে',
+    dateStr: 'Tuesday, Nov 19',
     dayLabel: 'Tue',
     dayNumber: 19,
     status: 'available',
-    statusLabel: 'উপলব্ধ',
+    statusLabel: 'Available',
   },
   {
-    dateStr: 'বুধবার, ২০ নভে',
+    dateStr: 'Wednesday, Nov 20',
     dayLabel: 'Wed',
     dayNumber: 20,
     status: 'full',
-    statusLabel: 'পূর্ণ (Full)',
+    statusLabel: 'Full',
   },
 ];
 
@@ -67,12 +67,12 @@ export function DatePickerGrid({
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <label className="text-xs uppercase tracking-wider font-bold text-[#181C1A] flex items-center gap-1.5">
-          <CalendarDays className="w-4 h-4 text-[#1c3a13]" />
-          <span>নতুন তারিখ বেছে নিন (Select New Date)</span>
+        <label className="text-xs uppercase tracking-wider font-bold text-[#2D1F18] flex items-center gap-1.5">
+          <CalendarDays className="w-4 h-4 text-emerald-800" />
+          <span>Select New Date</span>
         </label>
-        <span className="text-[11px] text-[#5A615D] font-medium">
-          পরবর্তী ৭ দিন উপলব্ধ
+        <span className="text-[11px] text-[#7A6E65] font-medium">
+          Next 7 days available
         </span>
       </div>
 
@@ -87,11 +87,11 @@ export function DatePickerGrid({
                 key={slot.dateStr}
                 type="button"
                 disabled
-                className="opacity-40 cursor-not-allowed bg-[#f4f3f1] border border-[#E2DED8] rounded-2xl p-2.5 flex flex-col items-center justify-center text-center"
+                className="opacity-40 cursor-not-allowed bg-[#FAF6F2] border border-[#EADFD5] rounded-2xl p-2.5 flex flex-col items-center justify-center text-center"
               >
                 <span className="text-[11px] text-gray-400 font-medium">{slot.dayLabel}</span>
                 <span className="text-base font-bold text-gray-400 mt-0.5">{slot.dayNumber}</span>
-                <span className="text-[9px] text-[#ba1a1a] mt-1 font-semibold">{slot.statusLabel}</span>
+                <span className="text-[9px] text-rose-700 mt-1 font-semibold">{slot.statusLabel}</span>
               </button>
             );
           }
@@ -121,11 +121,11 @@ export function DatePickerGrid({
               key={slot.dateStr}
               type="button"
               onClick={() => onSelectDate(slot.dateStr)}
-              className="bg-white border border-[#E2DED8] hover:border-[#1c3a13] rounded-2xl p-2.5 flex flex-col items-center justify-center text-center transition shadow-xs active:scale-95"
+              className="bg-white border border-[#EADFD5] hover:border-[#1c3a13] rounded-2xl p-2.5 flex flex-col items-center justify-center text-center transition shadow-xs active:scale-95"
             >
-              <span className="text-[11px] text-[#5A615D] font-medium">{slot.dayLabel}</span>
-              <span className="text-base font-bold text-[#181C1A] mt-0.5">{slot.dayNumber}</span>
-              <span className="text-[9px] text-[#28531c] font-bold mt-1">{slot.statusLabel}</span>
+              <span className="text-[11px] text-[#7A6E65] font-medium">{slot.dayLabel}</span>
+              <span className="text-base font-bold text-[#2D1F18] mt-0.5">{slot.dayNumber}</span>
+              <span className="text-[9px] text-emerald-800 font-bold mt-1">{slot.statusLabel}</span>
             </button>
           );
         })}

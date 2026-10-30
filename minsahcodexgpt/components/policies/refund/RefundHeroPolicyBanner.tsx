@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
+import React from 'react';
+import { ShieldCheck } from 'lucide-react';
 
 export function RefundHeroPolicyBanner() {
   return (
@@ -11,26 +12,26 @@ export function RefundHeroPolicyBanner() {
           100% Authentic Guarantee
         </span>
         <span className="text-[#D4F6A2] font-bold text-xs flex items-center gap-1">
-          <span className="material-symbols-outlined text-[15px]">verified</span> K-Beauty BD
+          <ShieldCheck size={14} /> K-Beauty Origin
         </span>
       </div>
-      <h2 className="text-xl font-bold text-white mb-1">সহজ ও নির্ভরযোগ্য রিটার্ন পলিসি</h2>
+      <h2 className="text-xl font-bold text-white mb-1">Simple &amp; Reliable Return Policy</h2>
       <p className="text-xs text-white/80 mb-4">
-        100% Hassle-Free Returns for Premium Korean Skincare in Bangladesh.
+        100% Hassle-Free Returns for Authentic Korean Skincare in Bangladesh.
       </p>
 
       {/* Bento Metric Badges */}
       <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/20">
         <div className="bg-[#062402]/40 rounded-xl p-2 text-center backdrop-blur-xs">
-          <span className="block text-[#D4F6A2] font-bold text-xs">৭ দিনের সুযোগ</span>
-          <span className="text-[10px] text-white/70">7-Day Window</span>
+          <span className="block text-[#D4F6A2] font-bold text-xs">7 Days Window</span>
+          <span className="text-[10px] text-white/70">Return Window</span>
         </div>
         <div className="bg-[#062402]/40 rounded-xl p-2 text-center backdrop-blur-xs">
-          <span className="block text-[#D4F6A2] font-bold text-xs">ফ্রি পিকআপ</span>
+          <span className="block text-[#D4F6A2] font-bold text-xs">Free Pickup</span>
           <span className="text-[10px] text-white/70">Zero Fee Dhaka</span>
         </div>
         <div className="bg-[#062402]/40 rounded-xl p-2 text-center backdrop-blur-xs">
-          <span className="block text-[#D4F6A2] font-bold text-xs">দ্রুত রিফান্ড</span>
+          <span className="block text-[#D4F6A2] font-bold text-xs">Fast Refund</span>
           <span className="text-[10px] text-white/70">Instant bKash</span>
         </div>
       </div>

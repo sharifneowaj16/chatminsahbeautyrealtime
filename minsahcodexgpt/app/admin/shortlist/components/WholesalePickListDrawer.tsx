@@ -187,14 +187,14 @@ export default function WholesalePickListDrawer({
       });
       const json = await res.json();
       if (json.success) {
-        setRunnerReconcileMsg(`✓ রানারের হিসাব সফলভাবে ক্লোজ হয়েছে (${json.data.status})`);
+        setRunnerReconcileMsg(`✓ Runner account reconciled successfully (${json.data.status})`);
         fetchRunnerDue();
       } else {
-        setRunnerReconcileMsg(`❌ এরর: ${json.error}`);
+        setRunnerReconcileMsg(`❌ Error: ${json.error}`);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      setRunnerReconcileMsg(`❌ এরর: ${msg}`);
+      setRunnerReconcileMsg(`❌ Error: ${msg}`);
     } finally {
       setReconciling(false);
     }
@@ -217,11 +217,11 @@ export default function WholesalePickListDrawer({
         setRunnerReconcileMsg(`✓ ${json.message}`);
         fetchRunnerDue();
       } else {
-        setRunnerReconcileMsg(`❌ এরর: ${json.error}`);
+        setRunnerReconcileMsg(`❌ Error: ${json.error}`);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      setRunnerReconcileMsg(`❌ এরর: ${msg}`);
+      setRunnerReconcileMsg(`❌ Error: ${msg}`);
     } finally {
       setDayEndSettling(false);
     }

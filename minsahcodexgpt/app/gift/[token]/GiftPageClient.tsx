@@ -1,49 +1,48 @@
 'use client';
 
+// app/gift/[token]/GiftPageClient.tsx
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import {
-  ArrowLeft,
-  Check,
   Gift,
   Heart,
-  MapPin,
-  Phone,
   ShoppingBag,
+  ArrowLeft,
+  MapPin,
+  Check,
   User,
+  Phone,
   Zap,
 } from 'lucide-react';
-
-import CatalogProductImage from '@/components/catalog/CatalogProductImage';
-import { Alert } from '@/components/ui/Alert';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
+import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
 import { SuccessState } from '@/components/ui/SuccessState';
-import { Textarea } from '@/components/ui/Textarea';
+import { Alert } from '@/components/ui/Alert';
+import CatalogProductImage from '@/components/catalog/CatalogProductImage';
 
 interface DeliveryAddress {
   name: string;
   phone: string;
   street: string;
   city: string;
-  note?: string;
 }
 
 interface GiftData {
   gift: {
+    id: string;
     token: string;
     giftType: 'SEND_GIFT' | 'GET_GIFT';
     senderName: string;
     recipientName: string;
-    message: string | null;
-    status: string;
+    message?: string | null;
     expiresAt: string;
+    status: string;
     requesterAddress?: DeliveryAddress | null;
-    requesterPhone?: string | null;
   };
   product: {
     id: string;
@@ -57,7 +56,7 @@ interface GiftData {
 }
 
 const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8801700000000';
-const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'রংপুর', 'ময়মনসিংহ'];
+const DISTRICTS = ['Dhaka', 'Chattogram', 'Sylhet', 'Rajshahi', 'Khulna', 'Barishal', 'Rangpur', 'Mymensingh'];
 
 export default function GiftPageClient({ data }: { data: GiftData }) {
   const { gift, product } = data;
@@ -72,7 +71,7 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
     name: '',
     phone: '',
     street: '',
-    city: 'ঢাকা',
+    city: 'Dhaka',
     note: '',
   });
   const [guestPayer, setGuestPayer] = useState({ name: '', phone: '' });
@@ -87,17 +86,17 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
     setError(null);
 
     if (isSendGift && (!form.name.trim() || !form.phone.trim() || !form.street.trim())) {
-      setError('নাম, ফোন নম্বর ও সম্পূর্ণ ঠিকানা দিন।');
+      setError('Please provide your name, phone number, and complete address.');
       return;
     }
 
     if (!isSendGift && !prefilledAddress) {
-      setError('ডেলিভারির ঠিকানা পাওয়া যায়নি। অনুগ্রহ করে নতুন গিফট লিংক নিন।');
+      setError('Delivery address not found. Please request a new gift link.');
       return;
     }
 
     if (!isSendGift && !session?.user && !guestPayer.name.trim()) {
-      setError('আপনার নাম দিন।');
+      setError('Please provide your name.');
       return;
     }
 
@@ -124,7 +123,7 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
       const responseData = await response.json();
 
       if (!response.ok) {
-        setError(responseData.error || 'অর্ডার তৈরি করা যায়নি। আবার চেষ্টা করুন।');
+        setError(responseData.error || 'Could not create order. Please try again.');
         return;
       }
 
@@ -136,14 +135,14 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
       const payerLabel = session?.user?.name ?? guestPayer.name;
       const message = encodeURIComponent(
         isSendGift
-          ? `🎁 GIFT ORDER (Send Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nপ্রাপক: ${deliveryAddress.name}\nফোন: ${deliveryAddress.phone}\nঠিকানা: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nউপহার: ${gift.senderName} এর পক্ষ থেকে\nOrder: #${responseData.orderNumber}\nGift Token: ${gift.token}`
-          : `🎁 GIFT ORDER (Get Gift)\n\nপণ্য: ${product.name}\nমূল্য: ৳${product.price.toLocaleString()}\n\nPayer: ${payerLabel}\nDelivery to: ${deliveryAddress.name}\nফোন: ${deliveryAddress.phone}\nঠিকানা: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nOrder: #${responseData.orderNumber}\nGift Token: ${gift.token}`,
+          ? `🎁 GIFT ORDER (Send Gift)\n\nProduct: ${product.name}\nPrice: ৳${product.price.toLocaleString('en-US')}\n\nRecipient: ${deliveryAddress.name}\nPhone: ${deliveryAddress.phone}\nAddress: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nGift from: ${gift.senderName}\nOrder: #${responseData.orderNumber}\nGift Token: ${gift.token}`
+          : `🎁 GIFT ORDER (Get Gift)\n\nProduct: ${product.name}\nPrice: ৳${product.price.toLocaleString('en-US')}\n\nPayer: ${payerLabel}\nDelivery to: ${deliveryAddress.name}\nPhone: ${deliveryAddress.phone}\nAddress: ${deliveryAddress.street}, ${deliveryAddress.city}\n\nOrder: #${responseData.orderNumber}\nGift Token: ${gift.token}`,
       );
 
       window.open(`https://wa.me/${WHATSAPP}?text=${message}`, '_blank', 'noopener,noreferrer');
       setDone(true);
     } catch {
-      setError('নেটওয়ার্কে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      setError('A network issue occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -151,16 +150,16 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
 
   if (done) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-minsah-surface-page px-5" lang="bn-BD">
+      <main className="flex min-h-screen items-center justify-center bg-minsah-surface-page px-5" lang="en">
         <SuccessState
-          title="অর্ডার নিশ্চিত হয়েছে"
+          title="Order Confirmed"
           description={
             <>
-              <p>আমরা শিগগিরই WhatsApp-এ যোগাযোগ করব।</p>
+              <p>We will connect with you on WhatsApp shortly.</p>
               <p className="mt-1">
                 {isSendGift
-                  ? `${gift.senderName} জানতে পারবেন যে আপনি উপহারটি গ্রহণ করেছেন।`
-                  : `${gift.senderName}-কে এই সুন্দর উপহারের জন্য ধন্যবাদ।`}
+                  ? `${gift.senderName} will be notified that you accepted the gift.`
+                  : `Thank you for sending this wonderful gift to ${gift.senderName}.`}
               </p>
             </>
           }
@@ -170,7 +169,7 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
               href="/shop"
               className="minsah-touch-target inline-flex items-center rounded-xl font-bold text-minsah-text-link hover:underline"
             >
-              আরও পণ্য দেখুন
+              Browse More Products
             </Link>
           }
           className="w-full max-w-md"
@@ -181,9 +180,9 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
 
   if (step === 'reveal') {
     return (
-      <main className="min-h-screen bg-minsah-surface-page" lang="bn-BD">
+      <main className="min-h-screen bg-minsah-surface-page" lang="en">
         <header className="flex items-center justify-between bg-minsah-surface-inverse px-4 py-2 text-minsah-text-inverse">
-          <Link href="/" className="minsah-icon-control inline-flex items-center justify-center rounded-full" aria-label="হোমে ফিরুন">
+          <Link href="/" className="minsah-icon-control inline-flex items-center justify-center rounded-full" aria-label="Return to home">
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Link>
           <span className="text-sm font-black uppercase tracking-[0.18em]">Minsah Beauty</span>
@@ -201,12 +200,12 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
           </div>
 
           <p className="text-sm font-semibold text-minsah-text-muted">
-            {isSendGift ? 'আপনার জন্য বিশেষ উপহার' : 'আপনার কাছে একটি উপহারের অনুরোধ এসেছে'}
+            {isSendGift ? 'A Special Gift for You' : 'You Received a Gift Request'}
           </p>
           <h1 className="mt-1 text-center text-2xl font-black text-minsah-text-primary">{gift.recipientName}</h1>
           <p className="mb-6 mt-1 text-center text-sm leading-6 text-minsah-text-muted">
             <strong className="text-minsah-text-primary">{gift.senderName}</strong>{' '}
-            {isSendGift ? 'আপনাকে এই উপহারটি দিতে চান।' : 'আপনার কাছে এই পণ্যটি চেয়েছেন।'}
+            {isSendGift ? 'wants to send you this gift.' : 'requested this gift from you.'}
           </p>
 
           {gift.message ? (
@@ -218,7 +217,7 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
           {!isSendGift && prefilledAddress ? (
             <section className="mb-6 w-full rounded-2xl bg-minsah-surface-soft p-4">
               <h2 className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-minsah-text-primary">
-                <MapPin className="h-4 w-4" aria-hidden="true" /> পাঠানোর ঠিকানা
+                <MapPin className="h-4 w-4" aria-hidden="true" /> Delivery Address
               </h2>
               <p className="text-sm font-bold text-minsah-text-primary">{prefilledAddress.name}</p>
               <p className="text-xs text-minsah-text-muted">{prefilledAddress.phone}</p>
@@ -243,26 +242,26 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
               {product.brand ? <Badge tone="neutral">{product.brand}</Badge> : null}
               <h2 className="mt-2 text-base font-black text-minsah-text-primary">{product.name}</h2>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-lg font-black text-minsah-text-primary">৳{product.price.toLocaleString('bn-BD')}</span>
+                <span className="text-lg font-black text-minsah-text-primary">৳{product.price.toLocaleString('en-US')}</span>
                 {product.compareAtPrice ? (
-                  <span className="text-sm text-minsah-text-subtle line-through">৳{product.compareAtPrice.toLocaleString('bn-BD')}</span>
+                  <span className="text-sm text-minsah-text-subtle line-through">৳{product.compareAtPrice.toLocaleString('en-US')}</span>
                 ) : null}
               </div>
               <p className="mt-1 text-xs text-minsah-text-muted">
                 {isSendGift
-                  ? `${gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবেন।`
-                  : `আপনি মূল্য পরিশোধ করবেন, পণ্যটি ${gift.senderName}-এর কাছে পৌঁছাবে।`}
+                  ? `${gift.senderName} will take care of the full payment.`
+                  : `You will pay for this item; it will be delivered directly to ${gift.senderName}.`}
               </p>
             </div>
           </article>
 
           <Button type="button" fullWidth size="lg" onClick={() => setStep('checkout')}>
             {isSendGift ? <Gift className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}
-            {isSendGift ? 'উপহারটি গ্রহণ করুন' : 'উপহারটি দিতে চাই'}
+            {isSendGift ? 'Accept This Gift' : 'Send This Gift'}
           </Button>
 
           <p className="mt-3 text-center text-xs text-minsah-text-subtle">
-            লিংকটি {new Date(gift.expiresAt).toLocaleDateString('bn-BD')} পর্যন্ত কার্যকর।
+            This gift link is valid until {new Date(gift.expiresAt).toLocaleDateString('en-US')}.
           </p>
         </div>
       </main>
@@ -270,20 +269,20 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
   }
 
   return (
-    <main className="min-h-screen bg-minsah-surface-page pb-32" lang="bn-BD">
+    <main className="min-h-screen bg-minsah-surface-page pb-32" lang="en">
       <header className="flex items-center gap-3 bg-minsah-surface-inverse px-4 py-2 text-minsah-text-inverse">
         <Button
           type="button"
           variant="ghost"
           size="icon"
           onClick={() => setStep('reveal')}
-          aria-label="আগের ধাপে ফিরুন"
+          aria-label="Return to previous step"
           className="text-minsah-text-inverse hover:bg-minsah-surface-panel/10 hover:text-minsah-text-inverse"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-sm font-black">
-          {isSendGift ? 'ডেলিভারির তথ্য দিন' : 'মূল্য পরিশোধ করে উপহার দিন'}
+          {isSendGift ? 'Delivery Details' : 'Complete Payment & Send Gift'}
         </h1>
       </header>
 
@@ -294,32 +293,32 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
           </span>
           <div className="min-w-0">
             <p className="text-xs text-minsah-text-muted">
-              {isSendGift ? `${gift.senderName}-এর পক্ষ থেকে উপহার` : `${gift.senderName}-এর অনুরোধ`}
+              {isSendGift ? `Gift from ${gift.senderName}` : `Requested by ${gift.senderName}`}
             </p>
             <p className="text-sm font-black leading-snug text-minsah-text-primary">{product.name}</p>
-            <p className="text-sm font-black text-minsah-action-primary">৳{product.price.toLocaleString('bn-BD')}</p>
+            <p className="text-sm font-black text-minsah-action-primary">৳{product.price.toLocaleString('en-US')}</p>
           </div>
         </section>
 
         {isSendGift ? (
           <section className="minsah-panel space-y-4 p-4">
             <h2 className="flex items-center gap-2 text-sm font-black text-minsah-text-primary">
-              <MapPin className="h-4 w-4" /> আপনার ঠিকানা
+              <MapPin className="h-4 w-4" /> Your Address
             </h2>
             <Input
               id="gift-recipient-name"
-              label="আপনার নাম"
+              label="Your Name"
               required
               value={form.name}
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-              placeholder="পুরো নাম"
+              placeholder="Full name"
               leading={<User className="h-5 w-5" />}
             />
             <Input
               id="gift-recipient-phone"
               type="tel"
               inputMode="tel"
-              label="ফোন নম্বর"
+              label="Phone Number"
               required
               value={form.phone}
               onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
@@ -328,16 +327,16 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
             />
             <Input
               id="gift-recipient-street"
-              label="বাড়ি ও রাস্তার ঠিকানা"
+              label="House & Street Address"
               required
               value={form.street}
               onChange={(event) => setForm((current) => ({ ...current, street: event.target.value }))}
-              placeholder="বাড়ি, রাস্তা ও এলাকার নাম"
+              placeholder="House, road, and area details"
               leading={<MapPin className="h-5 w-5" />}
             />
             <Select
               id="gift-recipient-city"
-              label="জেলা"
+              label="District"
               value={form.city}
               onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
             >
@@ -345,10 +344,10 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
             </Select>
             <Textarea
               id="gift-recipient-note"
-              label="বিশেষ নির্দেশনা"
+              label="Special Instructions"
               value={form.note}
               onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
-              placeholder="যেমন: সন্ধ্যার পরে পৌঁছে দিন"
+              placeholder="e.g., Deliver after 6 PM"
               rows={3}
             />
           </section>
@@ -357,7 +356,7 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
             {prefilledAddress ? (
               <section className="minsah-panel p-4">
                 <h2 className="mb-3 flex items-center gap-2 text-sm font-black text-minsah-text-primary">
-                  <MapPin className="h-4 w-4" /> ডেলিভারির ঠিকানা
+                  <MapPin className="h-4 w-4" /> Delivery Address
                 </h2>
                 <div className="rounded-xl bg-minsah-surface-soft p-3">
                   <p className="text-sm font-black text-minsah-text-primary">{prefilledAddress.name}</p>
@@ -365,7 +364,7 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
                   <p className="text-xs text-minsah-text-muted">{prefilledAddress.street}, {prefilledAddress.city}</p>
                 </div>
                 <p className="mt-2 flex items-center gap-2 text-xs text-minsah-status-success-text">
-                  <Check className="h-4 w-4" /> {gift.senderName} ঠিকানাটি আগে দিয়েছেন।
+                  <Check className="h-4 w-4" /> {gift.senderName} has provided this delivery address.
                 </p>
               </section>
             ) : null}
@@ -373,22 +372,22 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
             {!session?.user ? (
               <section className="minsah-panel space-y-4 p-4">
                 <h2 className="flex items-center gap-2 text-sm font-black text-minsah-text-primary">
-                  <User className="h-4 w-4" /> আপনার পরিচয়
+                  <User className="h-4 w-4" /> Your Information
                 </h2>
                 <Input
                   id="gift-payer-name"
-                  label="আপনার নাম"
+                  label="Your Name"
                   required
                   value={guestPayer.name}
                   onChange={(event) => setGuestPayer((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="পুরো নাম"
+                  placeholder="Full name"
                   leading={<User className="h-5 w-5" />}
                 />
                 <Input
                   id="gift-payer-phone"
                   type="tel"
                   inputMode="tel"
-                  label="ফোন নম্বর"
+                  label="Phone Number"
                   value={guestPayer.phone}
                   onChange={(event) => setGuestPayer((current) => ({ ...current, phone: event.target.value }))}
                   placeholder="01XXXXXXXXX"
@@ -397,7 +396,7 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
               </section>
             ) : (
               <Alert tone="success" icon={<Check className="h-5 w-5" />}>
-                আপনি <strong>{session.user.name}</strong> হিসেবে মূল্য পরিশোধ করবেন।
+                You are paying as <strong>{session.user.name}</strong>.
               </Alert>
             )}
           </>
@@ -415,15 +414,15 @@ export default function GiftPageClient({ data }: { data: GiftData }) {
           <Button type="button" fullWidth size="lg" onClick={handleOrder} disabled={loading} aria-busy={loading || undefined}>
             {loading ? <Spinner size="sm" decorative /> : <Zap className="h-5 w-5" />}
             {loading
-              ? 'অর্ডার তৈরি হচ্ছে…'
+              ? 'Creating order…'
               : isSendGift
-                ? 'উপহারের অর্ডার নিশ্চিত করুন'
-                : `উপহার দিন — ৳${product.price.toLocaleString('bn-BD')}`}
+                ? 'Confirm Gift Order'
+                : `Send Gift — ৳${product.price.toLocaleString('en-US')}`}
           </Button>
           <p className="mt-1.5 text-center text-xs text-minsah-text-subtle">
             {isSendGift
-              ? `${gift.senderName} সম্পূর্ণ মূল্য পরিশোধ করবেন।`
-              : `আপনি মূল্য পরিশোধ করবেন; পণ্যটি ${gift.senderName}-এর কাছে যাবে।`}
+              ? `${gift.senderName} will take care of the full payment.`
+              : `You will pay for this item; it will be delivered directly to ${gift.senderName}.`}
           </p>
         </div>
       </div>

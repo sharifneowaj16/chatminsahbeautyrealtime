@@ -15,8 +15,8 @@ interface CheckoutRewardsCardProps {
 }
 
 export default function CheckoutRewardsCard({
-  voucherCode = 'MINSAHGLOW',
-  voucherDiscount = 200,
+  voucherCode,
+  voucherDiscount = 0,
   onRemoveVoucher,
   onOpenVouchers,
   glowPointsActive,
@@ -61,7 +61,7 @@ export default function CheckoutRewardsCard({
                 </svg>
               </div>
               <span className="text-[11px] text-[#5A615D] truncate">
-                ৳{voucherDiscount} seasonal beauty welcome perk applied
+                ৳{voucherDiscount} voucher discount applied
               </span>
             </div>
           </div>
@@ -102,14 +102,14 @@ export default function CheckoutRewardsCard({
             </div>
             <div className="flex flex-col">
               <span className="text-[13px] font-bold text-[#062402]">
-                কুপন ও প্রোমো কোড প্রয়োগ করুন
+                Apply Coupons &amp; Promo Codes
               </span>
               <span className="text-[11px] text-[#5A615D]">
-                ৪টি সক্রিয় কোড ও অফার উপলব্ধ আছে
+                Active vouchers and special offers available
               </span>
             </div>
           </div>
-          <span className="text-xs font-bold text-[#4b6723]">দেখান →</span>
+          <span className="text-xs font-bold text-[#4b6723]">View →</span>
         </button>
       )}
 

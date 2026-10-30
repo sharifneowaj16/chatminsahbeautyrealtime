@@ -18,10 +18,10 @@ export default function CheckoutError({
       reset={reset}
       title={copy.title}
       description={copy.description}
-      retryLabel={UI_COPY.commonBn.retry}
+      retryLabel={UI_COPY.common.retry}
       backHref="/cart"
       backLabel={copy.backLabel}
-      lang="bn-BD"
+      lang="en"
       landmark="main"
     />
   );

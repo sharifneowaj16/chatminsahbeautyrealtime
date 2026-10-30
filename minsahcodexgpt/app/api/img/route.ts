@@ -1,11 +1,10 @@
 // app/api/img/route.ts
 //
-// MinIO image proxy — cache headers যোগ করে serve করে।
+// MinIO image proxy — serves images with cache headers.
 // Usage: <Image src="/api/img?url=https://minio.minsahbeauty.cloud/..." />
 //
-// কিন্তু আরও ভালো উপায়: Next.js <Image> component সরাসরি MinIO URL
-// দিলে /_next/image দিয়ে automatically optimize হয়। এই route শুধু
-// সেই ক্ষেত্রে দরকার যেখানে <img> tag ব্যবহার করতেই হচ্ছে।
+// Recommended: Next.js <Image> component directly with MinIO URL
+// automatically optimizes via /_next/image. This route is for raw <img> fallback.
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -14,7 +13,7 @@ export const runtime = 'nodejs';
 // 1 year — immutable product images
 const CACHE_TTL = 60 * 60 * 24 * 365;
 
-// Allowed hostnames — security: যে কোনো URL proxy করলে SSRF vulnerability
+// Allowed hostnames — security: prevent SSRF
 const ALLOWED_HOSTS = new Set([
   'minio.minsahbeauty.cloud',
   'storage.minsahbeauty.cloud',
@@ -37,14 +36,14 @@ export async function GET(request: NextRequest) {
     return new NextResponse('Invalid URL', { status: 400 });
   }
 
-  // Security: শুধু allowed hosts থেকে proxy করব
+  // Security: only proxy allowed hosts
   if (!ALLOWED_HOSTS.has(parsed.hostname)) {
     return new NextResponse('Forbidden host', { status: 403 });
   }
 
   try {
     const upstream = await fetch(imageUrl, {
-      // Next.js server-এ 1 minute cache — upstream থেকে বারবার fetch না করতে
+      // 1 minute cache in Next.js server to avoid duplicate upstream fetches
       next: { revalidate: 60 },
     });
 
@@ -58,9 +57,9 @@ export async function GET(request: NextRequest) {
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': contentType,
-        // এই header browser এবং Traefik দুটোই দেখবে
+        // Browser and Traefik cache header
         'Cache-Control': `public, max-age=${CACHE_TTL}, immutable`,
-        // CDN/Traefik-এর জন্য
+        // CDN / Traefik
         'Surrogate-Control': `max-age=${CACHE_TTL}`,
         // ETag — conditional request support
         'ETag': upstream.headers.get('etag') || `"${Date.now()}"`,

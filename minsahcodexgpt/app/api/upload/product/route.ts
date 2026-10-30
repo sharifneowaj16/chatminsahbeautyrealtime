@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // uploadProductImage এর ভেতরে sharp দিয়ে:
+    // uploadProductImage internally uses sharp:
     // 1. Max 1200×1200 resize
     // 2. WebP convert (quality 82)
-    // 3. Cache-Control: public, max-age=31536000, immutable header যোগ
+    // 3. Cache-Control: public, max-age=31536000, immutable header addition
     const result = await uploadProductImage(buffer, productId, file.name, file.type);
 
     return NextResponse.json({

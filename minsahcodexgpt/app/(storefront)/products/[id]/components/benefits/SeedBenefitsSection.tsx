@@ -6,12 +6,12 @@ import SeedTimelineList, { TimelineStage } from "./SeedTimelineList";
 import SeedMediaMatrix, { BenefitFaqItem } from "./SeedMediaMatrix";
 import SeedUsageBox from "./SeedUsageBox";
 import { HowToApplyData } from "../hero/SeedHowToApplyDrawer";
+import { cleanProductName } from "../hero/cleanProductName";
 
 export interface SeedBenefitsSectionProps {
   product: {
     id?: string;
     name: string;
-    bengaliName?: string;
     description?: string;
     keyBenefits?: string[];
     usageInstructions?: string[];
@@ -105,6 +105,8 @@ export function SeedBenefitsSection({
     return undefined;
   }, [product?.usageInstructions]);
 
+  const sanitizedProductName = cleanProductName(product?.name) || "this formulation";
+
   return (
     <section
       aria-label="Benefits that build over time"
@@ -114,7 +116,7 @@ export function SeedBenefitsSection({
         
         {/* Phase 1: Header Fold */}
         <SeedBenefitsHeader
-          productName={product?.name || "this formulation"}
+          productName={sanitizedProductName}
           resultsIntro={resultsIntro || "Results you can feel in as little as 7 days.*"}
         />
 
@@ -130,7 +132,7 @@ export function SeedBenefitsSection({
 
             {/* Phase 4: Usage & Ritual Box (Calls How to Apply Drawer) */}
             <SeedUsageBox
-              productName={product?.name || "this product"}
+              productName={sanitizedProductName}
               dosageText={resolvedDosageText}
               usageData={usageData}
             />
@@ -142,7 +144,7 @@ export function SeedBenefitsSection({
               videoUrl={videoUrl}
               posterUrl={posterUrl}
               faqs={resolvedFaqs}
-              productName={product?.name || "this product"}
+              productName={sanitizedProductName}
             />
           </div>
 

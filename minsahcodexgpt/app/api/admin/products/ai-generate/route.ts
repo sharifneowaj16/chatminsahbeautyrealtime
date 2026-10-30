@@ -15,7 +15,7 @@ RESEARCH STEPS — always do ALL of these before writing:
 
 1. Search: "{product} daraz bangladesh" — find real pricing, top sellers, review counts
 2. Search: "{product} shajgoj" OR "{product} bangladesh beauty blog" — find local reviews, ingredients, skin concerns
-3. Search: "{product} বাংলাদেশ" OR "{product} বাংলা" — find how BD buyers search in Bengali
+3. Search: "{product} Bangladesh" — find how BD buyers search
 4. Search: "{product} price bangladesh 2024 2025" — find current market price range in BDT
 5. Search: "{product} ingredients benefits skincare" — find real ingredient lists
 
@@ -46,7 +46,7 @@ DESCRIPTION (most important):
 BENGALI CONTENT:
 - Bengali Product Name: exactly how BD buyers say it on Facebook/Google (colloquial, NOT textbook)
 - Bengali Meta Description: written as a Facebook post caption, conversational, includes emoji if natural
-- Mix Banglish naturally if that's how BD buyers talk (e.g., "skin এর জন্য best", "একদম natural")
+- Keep marketing copy conversational and locally relevant
 
 SEO STRATEGY:
 - Focus keyword: single most-searched phrase on Google BD for this product (verify from research)
@@ -55,8 +55,8 @@ SEO STRATEGY:
 - Meta description: include focus keyword in first 20 words, mention "Bangladesh" or "BD", soft CTA
 
 FACEBOOK AD COPY:
-- Headline: Bengali/Banglish, emotional hook, max 40 chars (e.g., "ত্বক উজ্জ্বল হবেই! 🌟")
-- Primary text: 3-4 lines Bengali, format: Pain point → "কিন্তু এখন" → Solution → Product name → CTA
+- Headline: Emotional hook, max 40 chars (e.g., "Glow Naturally! 🌟")
+- Primary text: 3-4 lines, format: Pain point → Solution → Product name → CTA
 - Target audience: specific age/gender/interest targeting for Bangladesh Facebook ads
 
 ═══════════════════════════════════════════════════════
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
     }
 
-    // Whitelist — শুধু valid Anthropic models allow করবো
+    // Whitelist — only valid Anthropic models allowed
     const ALLOWED_MODELS = [
       'claude-haiku-4-5-20251001',
       'claude-sonnet-4-20250514',

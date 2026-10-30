@@ -1,9 +1,19 @@
 export type PromoDiscountType = 'percentage' | 'flat';
 
+export type OfferPlacement =
+  | 'top_bar'
+  | 'home_banner'
+  | 'shop_banner'
+  | 'product_page'
+  | 'offers_page'
+  | 'cart_drawer'
+  | 'checkout_page'
+  | 'account_dashboard';
+
 export interface PromoRule {
   code: string;
   type: PromoDiscountType;
-  value: number; // 0.1 for 10%, or 50 for ৳50
+  value: number; // percentage (e.g. 10 for 10% or 0.1) or flat amount in BDT
   description: string;
   minSubtotal?: number;
   maxDiscount?: number;
@@ -12,6 +22,10 @@ export interface PromoRule {
    * Defaults to false to prevent double-discounting bundles.
    */
   allowOnBundles?: boolean;
+  isActive?: boolean;
+  placements?: OfferPlacement[];
+  badgeText?: string;
+  bannerText?: string;
 }
 
 export interface DeliveryTierConfig {
@@ -19,6 +33,36 @@ export interface DeliveryTierConfig {
   DHAKA_METRO_THRESHOLD: number;
   OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD: number;
   OUTSIDE_DHAKA_SUBSIDIZED_FEE: number;
+}
+
+export interface BundleConfig {
+  enabled: boolean;
+  twoStepDiscountPercent: number;
+  threeStepDiscountPercent: number;
+  fourStepDiscountPercent: number;
+  estimatedCostRatio: number;
+  inheritFreeDelivery?: boolean;
+}
+
+export interface UniversalOfferConfig {
+  freeDelivery: {
+    nationwideThreshold: number;
+    dhakaThreshold: number;
+    outsideDhakaSubsidizedThreshold?: number;
+    outsideDhakaSubsidizedFee?: number;
+  };
+  coupons: PromoRule[];
+  bundles: BundleConfig;
+  antiConflict: {
+    strictAntiStacking: boolean;
+    maxCartDiscountCap?: number;
+  };
+  topBar?: {
+    enabled: boolean;
+    message1: { text: string; backgroundColor: string; textColor: string; active: boolean };
+    message2: { text: string; backgroundColor: string; textColor: string; active: boolean };
+    message3: { text: string; backgroundColor: string; textColor: string; active: boolean };
+  };
 }
 
 export interface CartOfferCalculationItem {
@@ -40,6 +84,7 @@ export interface CartOfferCalculationParams {
     nationwideThreshold?: number;
     dhakaThreshold?: number;
   } | null;
+  availableCoupons?: PromoRule[] | null;
 }
 
 export interface CartOfferCalculationResult {

@@ -12,7 +12,7 @@ import Redis from 'ioredis';
 const globalForRedis = globalThis as unknown as { redis?: Redis | null };
 
 function createRedisClient(): Redis | null {
-  // ✅ Build time এ Redis skip করুন
+  // Skip Redis during build phase
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     console.log('⚠️  Skipping Redis connection during build phase');
     return null;
@@ -28,23 +28,14 @@ function createRedisClient(): Redis | null {
   try {
     return new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
-      // ✅ FIX: কখনো permanently হাল ছাড়বে না (আগে times > 3 হলে null
-      // রিটার্ন করতো, যেটা connection-কে স্থায়ীভাবে মেরে দিতো)।
-      // capped exponential backoff — সবসময় retry চালিয়ে যাবে।
+      // Capped exponential backoff: keep retrying without permanent failure
       retryStrategy: (times) => Math.min(times * 200, 5_000),
       lazyConnect: true,
-      // ✅ Connection timeout
+      // Connection timeout
       connectTimeout: 10_000,
-      // ✅ FIX: TCP keepalive চালু — idle connection নেটওয়ার্কে silently
-      // drop হয়ে গেলে সেটা তাড়াতাড়ি ধরা পড়বে এবং reconnect হবে,
-      // আগে keepalive বন্ধ থাকায় drop হওয়া connection অনেকক্ষণ
-      // "looks alive but isn't" অবস্থায় থাকতো।
+      // TCP keepalive enabled to detect dropped idle connections early
       keepAlive: 10_000,
-      // ✅ FIX: brief reconnect window-এ command queue হবে এবং reconnect
-      // হওয়ার পর সেটা flush হবে — আগে enableOfflineQueue: false থাকায়
-      // এই কয়েক সেকেন্ডের window-এ আসা যেকোনো command (যেমন health
-      // check) সাথে সাথে "Stream isn't writeable" error ছুঁড়ে দিতো,
-      // যেটাই Uptime Kuma-তে repeated short downtime হিসেবে দেখাচ্ছিল।
+      // Enable offline queue so commands during brief reconnect windows are queued
       enableOfflineQueue: true,
     });
   } catch (error) {
@@ -134,7 +125,7 @@ export async function cacheGetOrSet<T>(
   fetchFn: () => Promise<T>,
   ttlSeconds: number = DEFAULT_TTL
 ): Promise<T> {
-  // ✅ Redis না থাকলে সরাসরি fetch করুন
+  // If Redis is unavailable, fetch directly
   if (!redis) {
     console.warn('Redis not available, fetching directly:', key);
     return await fetchFn();

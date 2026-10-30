@@ -27,17 +27,17 @@ export function BackInStockContactInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-semibold text-[#181C1A]">
-          যোগাযোগের নম্বর / ইমেইল (Pre-filled):
+        <span className="font-semibold text-[#2D1F18]">
+          Contact Number / Email:
         </span>
-        <span className="text-[#28531c] flex items-center gap-1 font-semibold text-[11px]">
+        <span className="text-emerald-800 flex items-center gap-1 font-semibold text-[11px]">
           <CheckCircle className="w-3.5 h-3.5" />
-          <span>{userName} (Logged In)</span>
+          <span>{userName} (Verified)</span>
         </span>
       </div>
 
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#1c3a13]">
+        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-800">
           <Smartphone className="w-4 h-4" />
         </div>
         <input
@@ -45,22 +45,22 @@ export function BackInStockContactInput({
           value={contact}
           onChange={handleChange}
           readOnly={!isEditing}
-          className={`w-full pl-10 pr-20 py-2.5 rounded-2xl bg-white border border-[#E2DED8] text-[#181C1A] text-xs font-semibold focus:outline-none focus:border-[#1c3a13] transition-all shadow-xs ${
+          className={`w-full pl-10 pr-20 py-2.5 rounded-2xl bg-white border border-[#EADFD5] text-[#2D1F18] text-xs font-semibold focus:outline-none focus:border-emerald-800 transition-all shadow-xs ${
             !isEditing ? 'cursor-default' : ''
           }`}
         />
         <button
           type="button"
           onClick={() => setIsEditing((prev) => !prev)}
-          className="absolute inset-y-1.5 right-1.5 px-3 rounded-xl bg-[#F2F6F0] hover:bg-[#e9e8e5] text-xs text-[#1c3a13] font-semibold border border-[#E2DED8] transition-colors"
+          className="absolute inset-y-1.5 right-1.5 px-3 rounded-xl bg-[#FAF6F2] hover:bg-[#EFE6DE] text-xs text-[#2D1F18] font-semibold border border-[#EADFD5] transition-colors cursor-pointer"
         >
-          {isEditing ? 'ঠিক আছে' : 'পরিবর্তন'}
+          {isEditing ? 'Save' : 'Change'}
         </button>
       </div>
 
-      <p className="text-[11px] text-[#5A615D] flex items-center gap-1">
-        <Lock className="w-3 h-3 text-[#28531c] shrink-0" />
-        <span>আপনার তথ্য সম্পূর্ণ নিরাপদ। স্প্যাম বা অপ্রয়োজনীয় বার্তা পাঠানো হবে না।</span>
+      <p className="text-[11px] text-[#7A6E65] flex items-center gap-1">
+        <Lock className="w-3 h-3 text-emerald-700 shrink-0" />
+        <span>Your contact info is safe. No spam or promotional bombardment.</span>
       </p>
     </div>
   );

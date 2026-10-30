@@ -352,7 +352,7 @@ export default function SeedHeroGallery({
           role="dialog"
           aria-modal="true"
           aria-label="High-resolution Image Gallery Lightbox"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl animate-in fade-in-0 duration-200"
+          className="fixed inset-0 z-[190] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-in fade-in-0 duration-200"
           onClick={closeLightbox}
         >
           {/* Top Bar Controls */}

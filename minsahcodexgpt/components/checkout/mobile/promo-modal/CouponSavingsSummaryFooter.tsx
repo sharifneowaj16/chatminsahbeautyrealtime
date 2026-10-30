@@ -20,22 +20,22 @@ export function CouponSavingsSummaryFooter({
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <span className="text-[11px] font-semibold text-[#5A615D] uppercase tracking-wider">
-            সর্বমোট সাশ্রয় হয়েছে
+            Total Savings
           </span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-[20px] font-bold text-[#062402] tracking-tight">
-              ৳{savingsAmount.toLocaleString('bn-BD')}
+              ৳{savingsAmount.toLocaleString('en-US')}
             </span>
             {hasAppliedCoupon && (
-              <span className="text-xs text-[#4b6723] font-bold">(কুপন যুক্ত)</span>
+              <span className="text-xs text-[#4b6723] font-bold">(Coupon Applied)</span>
             )}
           </div>
         </div>
 
         <div className="text-right">
-          <span className="text-[11px] text-[#5A615D]">পরিশোধযোগ্য বিল</span>
+          <span className="text-[11px] text-[#5A615D]">Payable Total</span>
           <div className="text-[16px] font-bold text-[#062402]">
-            ৳{payableAmount.toLocaleString('bn-BD')}
+            ৳{payableAmount.toLocaleString('en-US')}
           </div>
         </div>
       </div>
@@ -46,7 +46,7 @@ export function CouponSavingsSummaryFooter({
         className="w-full py-3.5 rounded-full bg-[#062402] hover:bg-[#28531c] text-white font-bold text-sm active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 border border-[#4b6723]/30"
       >
         <ShoppingBag className="w-4 h-4 text-[#ccee9b]" />
-        <span>এগিয়ে যান (Continue to Checkout)</span>
+        <span>Continue to Checkout</span>
         <ArrowRight className="w-4 h-4" />
       </button>
     </div>

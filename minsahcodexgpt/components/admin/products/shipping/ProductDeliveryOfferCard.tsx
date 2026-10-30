@@ -64,8 +64,8 @@ export function ProductDeliveryOfferCard({
                 className="w-full px-3 py-2 border border-[#232636] rounded-lg text-xs bg-[#161824] text-[#F7F8F8] focus:ring-1 focus:ring-emerald-500"
               >
                 <option value="DEFAULT">Courier Standard (No product discount)</option>
-                <option value="FREE">Full Free Delivery (সারা দেশে ১০০% ফ্রি ডেলিভারি)</option>
-                <option value="FIXED">Custom City Delivery (ঢাকার ভেতরে ও বাইরে নির্ধারিত চার্জ)</option>
+                <option value="FREE">Full Free Delivery (Nationwide Free Delivery)</option>
+                <option value="FIXED">Custom City Delivery (Fixed Rate by Region)</option>
               </Select>
             </div>
 

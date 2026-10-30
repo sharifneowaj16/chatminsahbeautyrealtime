@@ -28,12 +28,12 @@ export function ActiveAppliedCouponBanner({
                 {coupon.code}
               </span>
               <span className="px-2 py-0.5 rounded-full bg-[#062402] text-white text-[10px] font-bold uppercase tracking-wider">
-                সক্রিয় কোড
+                Active Code
               </span>
             </div>
             <p className="text-xs font-bold text-[#4b6723] mt-0.5 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5" />
-              ৳{coupon.savingsAmount.toLocaleString('bn-BD')} সাশ্রয় হয়েছে ({coupon.discountText})
+              Saved ৳{coupon.savingsAmount.toLocaleString('en-US')} ({coupon.discountText})
             </p>
           </div>
         </div>
@@ -44,13 +44,13 @@ export function ActiveAppliedCouponBanner({
           className="text-[11px] font-bold text-[#ba1a1a] hover:text-[#93000a] hover:underline px-2 py-1 rounded-full active:scale-95 transition-all flex items-center gap-0.5"
         >
           <X className="w-3 h-3" />
-          <span>মুছে ফেলুন</span>
+          <span>Remove</span>
         </button>
       </div>
 
       <div className="pt-2 border-t border-[#4b6723]/20 flex items-center justify-between text-[11px] text-[#5A615D] font-medium">
         <span>{coupon.campaignTitle}</span>
-        <span className="text-[#4b6723] font-semibold">শর্ত প্রযোজ্য</span>
+        <span className="text-[#4b6723] font-semibold">T&amp;C Apply</span>
       </div>
     </div>
   );

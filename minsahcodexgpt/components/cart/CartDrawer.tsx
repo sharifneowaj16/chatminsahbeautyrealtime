@@ -17,6 +17,8 @@ import CartItemRow from "@/features/cart/CartItemRow";
 import { formatPrice } from "@/utils/currency";
 import { FreeDeliveryIncentiveBanner } from "@/components/cart/FreeDeliveryIncentiveBanner";
 import { ENABLE_PROMO_COUPONS } from "@/lib/commerce/offer-engine";
+import { OfferSlot } from "@/components/offer/OfferSlot";
+import { useOfferEngine } from "@/contexts/OfferEngineContext";
 
 
 
@@ -49,6 +51,8 @@ export default function CartDrawer({
   const [couponInput, setCouponInput] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [isPromoExpanded, setIsPromoExpanded] = useState(false);
+  const { config: offerConfig } = useOfferEngine();
+  const availableCoupons = (offerConfig?.coupons || []).filter((c) => c.isActive !== false);
 
   const hasItems = items.length > 0;
 
@@ -72,7 +76,7 @@ export default function CartDrawer({
     if (!code.trim()) return;
     setCouponLoading(true);
     try {
-      applyPromoCode(code);
+      applyPromoCode(code, availableCoupons);
       setCouponInput("");
       setIsPromoExpanded(false);
     } finally {
@@ -154,6 +158,9 @@ export default function CartDrawer({
             />
           </div>
 
+          {/* ── Universal Offer Engine Placement: Cart Drawer ── */}
+          <OfferSlot placement="cart_drawer" className="px-6 mb-3" />
+
           {/* ── Cart Items List ── */}
           <div className="px-6 divide-y divide-black/[0.06]">
             {items.map((item) => (
@@ -227,22 +234,24 @@ export default function CartDrawer({
                         </button>
                       </div>
 
-                      {/* Quick Suggestions */}
-                      <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5 no-scrollbar">
-                        <span className="text-[10px] font-[400] uppercase text-gray-400 flex items-center gap-1 shrink-0">
-                          <Gift className="h-3 w-3 text-[#1B361B]" /> Offers:
-                        </span>
-                        {["WELCOME10", "SAVE10", "SAVE20", "MINSAH10"].map((code) => (
-                          <button
-                            key={code}
-                            type="button"
-                            onClick={() => handleApplyCoupon(code)}
-                            className="rounded-full border border-dashed border-[#1B361B]/30 bg-[#F2F2EC] px-2 py-0.5 font-semibold text-[#1B361B] hover:bg-[#1B361B] hover:text-white transition-colors cursor-pointer shrink-0"
-                          >
-                            {code}
-                          </button>
-                        ))}
-                      </div>
+                      {/* Quick Suggestions from Admin Offer Engine */}
+                      {availableCoupons.length > 0 && (
+                        <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] text-gray-500 pt-0.5 no-scrollbar">
+                          <span className="text-[10px] font-[400] uppercase text-gray-400 flex items-center gap-1 shrink-0">
+                            <Gift className="h-3 w-3 text-[#1B361B]" /> Offers:
+                          </span>
+                          {availableCoupons.slice(0, 4).map((coupon) => (
+                            <button
+                              key={coupon.code}
+                              type="button"
+                              onClick={() => handleApplyCoupon(coupon.code)}
+                              className="rounded-full border border-dashed border-[#1B361B]/30 bg-[#F2F2EC] px-2 py-0.5 font-semibold text-[#1B361B] hover:bg-[#1B361B] hover:text-white transition-colors cursor-pointer shrink-0"
+                            >
+                              {coupon.code}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

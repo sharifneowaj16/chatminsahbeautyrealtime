@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   X,
   ShieldCheck,
@@ -14,72 +14,73 @@ import { CouponTicketCard } from './CouponTicketCard';
 import { CouponSavingsSummaryFooter } from './CouponSavingsSummaryFooter';
 import { PromoTermsModal } from './PromoTermsModal';
 import { CouponItem, AppliedCoupon, CouponApplyModalProps } from './types';
+import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
 const INITIAL_COUPONS: CouponItem[] = [
   {
     id: 'vip15',
     code: 'VIP15',
-    title: 'ভিআইপি মেম্বার ১৫% ছাড়',
-    description: 'মিনসাহ ভিআইপি মেম্বারদের জন্য সকল অর্ডারে ফ্ল্যাট ১৫% ডিসকাউন্ট।',
+    title: 'VIP Member 15% OFF',
+    description: 'Flat 15% discount on all orders for Minsah VIP members.',
     discountType: 'percentage',
     discountValue: 15,
-    badgeText: 'VIP বিশেষ ছাড়',
+    badgeText: 'VIP Special',
     badgeVariant: 'primary',
     expiryText: 'Active',
     minSpend: 1500,
     terms: [
-      'ন্যূনতম অর্ডার মূল্য ৳১,৫০০ হতে হবে।',
-      'সকল অরিজিনাল কসমেটিক্স ও স্কিনকেয়ারে কার্যকর।',
-      'অন্যান্য ভাউচারের সাথে একত্র করা যাবে না।',
+      'Minimum order value must be ৳1,500.',
+      'Valid on all authentic cosmetics & skincare.',
+      'Cannot be combined with other vouchers.',
     ],
   },
   {
     id: 'minsah150',
     code: 'MINSAH150',
-    title: 'ফ্ল্যাট ১৫০ টাকা ক্যাশ ছাড়',
-    description: '৳১,২০০ বা তার বেশি অর্ডারে সরাসরি ১৫০ টাকা ডিসকাউন্ট।',
+    title: 'Flat ৳150 Cash Discount',
+    description: 'Direct ৳150 discount on orders over ৳1,200.',
     discountType: 'flat',
     discountValue: 150,
-    badgeText: 'ইনস্ট্যান্ট ক্যাশব্যাক',
+    badgeText: 'Instant Cashback',
     badgeVariant: 'secondary',
     expiryText: 'Active',
     minSpend: 1200,
     terms: [
-      'ন্যূনতম অর্ডার মূল্য ৳১,২০০ হতে হবে।',
-      'বিকাশ ও ক্যাশ অন ডেলিভারি উভয় ক্ষেত্রে প্রযোজ্য।',
+      'Minimum order value must be ৳1,200.',
+      'Applicable on both bKash and Cash on Delivery.',
     ],
   },
   {
     id: 'freeship',
     code: 'FREESHIP',
-    title: 'ফ্রি এক্সপ্রেস ডেলিভারি',
-    description: 'ন্যূনতম ৳১,০০০ অর্ডারে ডেলিভারি চার্জ সম্পূর্ণ ফ্রি (পাঠাও ও স্টেডফাস্ট কুরিয়ার)।',
+    title: 'Free Express Delivery',
+    description: 'Zero delivery charges on orders over ৳1,000 (Pathao & Steadfast courier).',
     discountType: 'shipping',
     discountValue: 120,
-    badgeText: 'ফ্রি এক্সপ্রেস ডেলিভারি',
+    badgeText: 'Free Express Delivery',
     badgeVariant: 'shipping',
     expiryText: 'Active',
     minSpend: 1000,
     terms: [
-      'ন্যূনতম অর্ডার মূল্য ৳১,০০০ হতে হবে।',
-      'সারা বাংলাদেশে পাঠাও ও স্টেডফাস্ট ডেলিভারির জন্য প্রযোজ্য।',
-      'রেগুলার ডেলিভারি ফি সম্পূর্ণ মওকুফ হবে।',
+      'Minimum order value must be ৳1,000.',
+      'Valid for delivery across Bangladesh.',
+      'Regular delivery fee is completely waived.',
     ],
   },
   {
     id: 'welcome10',
     code: 'WELCOME10',
-    title: 'প্রথম অর্ডারে ১০% ছাড়',
-    description: 'নতুন গ্রাহকদের প্রথম কেনাকাটায় ইনস্ট্যান্ট ১০% ছাড়।',
+    title: '10% Off First Order',
+    description: 'Instant 10% discount on first purchase for new customers.',
     discountType: 'percentage',
     discountValue: 10,
-    badgeText: 'ওয়েলকাম বোনাস',
+    badgeText: 'Welcome Bonus',
     badgeVariant: 'tertiary',
     expiryText: 'Active',
     minSpend: 800,
     terms: [
-      'নতুন কাস্টমারদের প্রথম অর্ডারে প্রযোজ্য।',
-      'সর্বোচ্চ ছাড় ৳৩০০ পর্যন্ত।',
+      'Applicable on the first order for new customers.',
+      'Maximum discount up to ৳300.',
     ],
   },
 ];
@@ -93,14 +94,50 @@ export function CouponApplyModal({
   onRemoveCoupon,
   onContinue,
 }: CouponApplyModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [internalApplied, setInternalApplied] = useState<AppliedCoupon | null>(null);
-
   const [activeTermsCoupon, setActiveTermsCoupon] = useState<CouponItem | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { config } = useOfferEngine();
+
+  const activeCoupons: CouponItem[] = useMemo(() => {
+    if (Array.isArray(config?.coupons) && config.coupons.length > 0) {
+      const mapped: CouponItem[] = config.coupons
+        .filter((c) => c && c.isActive !== false)
+        .map((c) => ({
+          id: c.code.toLowerCase(),
+          code: c.code,
+          title: c.bannerText || `${c.value}${c.type === 'percentage' ? '%' : '৳'} OFF`,
+          description:
+            c.description ||
+            (c.type === 'percentage'
+              ? `${c.value}% discount on eligible items`
+              : `Flat ৳${c.value} discount on eligible items`),
+          discountType: (c.type === 'flat' ? 'flat' : 'percentage') as CouponItem['discountType'],
+          discountValue: c.value,
+          badgeText: c.badgeText || (c.type === 'percentage' ? `${c.value}% OFF` : `৳${c.value} OFF`),
+          badgeVariant: 'primary' as const,
+          expiryText: 'Active',
+          minSpend: c.minSubtotal || 0,
+          terms: [
+            c.minSubtotal ? `Minimum order spend ৳${c.minSubtotal}.` : 'No minimum order required.',
+            c.maxDiscount ? `Maximum savings capped at ৳${c.maxDiscount}.` : 'Full voucher savings apply.',
+            c.allowOnBundles ? 'Valid on all catalog items including bundles.' : 'Valid on non-bundle products only.',
+          ],
+        }));
+      if (mapped.length > 0) return mapped;
+    }
+    return INITIAL_COUPONS;
+  }, [config?.coupons]);
+
   const applied = externalAppliedCoupon !== undefined ? externalAppliedCoupon : internalApplied;
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
   const handleApplyCoupon = (coupon: CouponItem) => {
     let savings = 0;
@@ -116,7 +153,7 @@ export function CouponApplyModal({
       code: coupon.code,
       discountText: coupon.title,
       savingsAmount: savings,
-      campaignTitle: `${coupon.badgeText} সুবিধা চালু হয়েছে`,
+      campaignTitle: `${coupon.badgeText} applied`,
     };
 
     setInternalApplied(appliedData);
@@ -127,13 +164,15 @@ export function CouponApplyModal({
   };
 
   const handleManualCode = (code: string) => {
-    const found = INITIAL_COUPONS.find((c) => c.code.toUpperCase() === code.toUpperCase());
+    const found =
+      activeCoupons.find((c) => c.code.toUpperCase() === code.toUpperCase()) ||
+      INITIAL_COUPONS.find((c) => c.code.toUpperCase() === code.toUpperCase());
     if (found) {
       handleApplyCoupon(found);
       return;
     }
 
-    setErrorMessage(`দুঃখিত, '${code}' ভাউচার কোডটি সঠিক নয় বা এর মেয়াদ উত্তীর্ণ হয়েছে।`);
+    setErrorMessage(`Sorry, voucher code '${code}' is invalid or expired.`);
   };
 
   const handleRemove = () => {
@@ -147,14 +186,14 @@ export function CouponApplyModal({
   const payable = Math.max(0, subtotal - totalSavings);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#062402]/65 backdrop-blur-[4px] transition-opacity animate-in fade-in">
+    <div className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[4px] p-0 sm:p-4 transition-opacity animate-in fade-in">
       <section
         aria-labelledby="coupon-modal-title"
-        className="relative z-20 w-full max-w-lg max-h-[90vh] bg-[#faf9f6] rounded-t-[32px] border-t border-[#E2DED8]/60 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300"
+        className="relative z-20 w-full max-w-full sm:max-w-[520px] max-h-[88dvh] sm:max-h-[85dvh] bg-[#faf9f6] rounded-t-[24px] sm:rounded-[24px] border border-[#E2DED8]/60 shadow-2xl flex flex-col overflow-hidden overflow-x-hidden no-scrollbar animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
       >
-        {/* Top Drag Handle */}
+        {/* Top Drag Handle (Mobile only) */}
         <div className="pt-3 pb-1 px-4 flex flex-col items-center relative">
-          <div className="w-12 h-1.5 rounded-full bg-[#B5C4BB]/70 mb-2" />
+          <div className="w-12 h-1.5 rounded-full bg-[#B5C4BB]/70 mb-2 sm:hidden" />
 
           {/* Modal Header */}
           <div className="w-full flex items-start justify-between mt-1">
@@ -167,12 +206,12 @@ export function CouponApplyModal({
               </div>
               <h2
                 id="coupon-modal-title"
-                className="text-[20px] text-[#062402] font-bold tracking-tight"
+                className="text-[18px] sm:text-[20px] text-[#062402] font-bold tracking-tight"
               >
-                কুপন ও প্রোমো কোড
+                Coupons &amp; Promo Codes
               </h2>
               <p className="text-xs text-[#5A615D] font-medium mt-0.5">
-                ঢাকা সহ সারাদেশে অথেনটিক কোরিয়ান স্কিনকেয়ারে অতিরিক্ত ছাড় পান
+                Enjoy exclusive discounts on authentic Korean skincare nationwide
               </p>
             </div>
 
@@ -200,7 +239,7 @@ export function CouponApplyModal({
                 onClick={() => setErrorMessage(null)}
                 className="text-[#ba1a1a] font-bold text-[11px] underline ml-2 shrink-0"
               >
-                বন্ধ
+                Dismiss
               </button>
             </div>
           </div>
@@ -223,16 +262,16 @@ export function CouponApplyModal({
           <div className="flex items-center justify-between px-1 pt-1">
             <h3 className="text-[16px] text-[#062402] font-bold flex items-center gap-1.5">
               <Tag className="w-4 h-4 text-[#4b6723]" />
-              উপলব্ধ কুপন ও অফার সমূহ
+              Available Coupons &amp; Offers
             </h3>
             <span className="text-[11px] font-semibold text-[#4b6723]">
-              {INITIAL_COUPONS.length}টি সক্রিয় অফার
+              {activeCoupons.length} Active Offers
             </span>
           </div>
 
           {/* Available Coupons List */}
           <div className="flex flex-col gap-3">
-            {INITIAL_COUPONS.map((coupon) => (
+            {activeCoupons.map((coupon) => (
               <CouponTicketCard
                 key={coupon.id}
                 coupon={coupon}
@@ -249,7 +288,7 @@ export function CouponApplyModal({
               <ShieldCheck className="w-4 h-4" />
             </div>
             <p className="text-[11px] text-[#5A615D] leading-relaxed">
-              মিনসাহ বিউটি কর্তৃক আমদানিকৃত প্রতিটি প্রোডাক্ট দক্ষিণ কোরিয়া থেকে সরাসরি সংগৃহীত এবং শতভাগ খাঁটি ও বিএসটিআই অনুমোদিত।
+              Every product imported by Minsah Beauty is directly sourced from South Korea, 100% authentic and BSTI approved.
             </p>
           </div>
         </div>

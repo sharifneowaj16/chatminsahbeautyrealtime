@@ -27,9 +27,8 @@ async function sendTelegram(message: string) {
 }
 
 // ── Guest user resolver ────────────────────────────────────────────────────────
-// Order schema এ userId NOT NULL — guest order এর জন্য
-// sender/recipient userId use করি, নাহলে gift.senderId/recipientId,
-// নাহলে একটা system guest user upsert করি
+// In the Order schema, userId is NOT NULL — for guest orders:
+// use sender/recipient userId if available, or upsert a system guest user
 async function resolveUserId(
   sessionUserId: string | null,
   gift: { senderId: string | null; recipientId: string | null }
@@ -37,11 +36,11 @@ async function resolveUserId(
   // 1. Logged-in user
   if (sessionUserId) return sessionUserId;
 
-  // 2. Gift এ sender বা recipient linked থাকলে তাকে use করো
+  // 2. Gift linked sender or recipient
   if (gift.senderId)    return gift.senderId;
   if (gift.recipientId) return gift.recipientId;
 
-  // 3. Guest — system guest user upsert করো
+  // 3. Upsert system guest user
   const guestUser = await prisma.user.upsert({
     where:  { email: 'guest-gift@minsahbeauty.cloud' },
     update: {},
@@ -86,13 +85,13 @@ export async function POST(
     });
 
     if (!gift) {
-      return NextResponse.json({ error: 'Gift link পাওয়া যায়নি' }, { status: 404 });
+      return NextResponse.json({ error: 'Gift link not found' }, { status: 404 });
     }
     if (gift.status === 'ORDERED') {
-      return NextResponse.json({ error: 'এই gift ইতিমধ্যে order হয়ে গেছে' }, { status: 409 });
+      return NextResponse.json({ error: 'This gift has already been ordered' }, { status: 409 });
     }
     if (gift.status === 'EXPIRED' || new Date() > gift.expiresAt) {
-      return NextResponse.json({ error: 'Gift link এর মেয়াদ শেষ' }, { status: 410 });
+      return NextResponse.json({ error: 'Gift link expired' }, { status: 410 });
     }
 
     const isSendGift = gift.giftType === 'SEND_GIFT';
@@ -110,14 +109,14 @@ export async function POST(
       const { name, phone, street, city, note } = body;
       if (!name?.trim() || !phone?.trim() || !street?.trim()) {
         return NextResponse.json(
-          { error: 'নাম, ফোন ও ঠিকানা দিন' },
+          { error: 'Name, phone, and address are required' },
           { status: 400 }
         );
       }
       deliveryName   = name.trim();
       deliveryPhone  = phone.trim();
       deliveryStreet = street.trim();
-      deliveryCity   = city || 'ঢাকা';
+      deliveryCity   = city || 'Dhaka';
       deliveryNote   = note?.trim();
     } else {
       // GET_GIFT — address pre-saved by requester
@@ -127,14 +126,14 @@ export async function POST(
 
       if (!addr?.name || !addr?.phone || !addr?.street) {
         return NextResponse.json(
-          { error: 'Delivery address পাওয়া যায়নি' },
+          { error: 'Delivery address not found' },
           { status: 400 }
         );
       }
       deliveryName   = addr.name;
       deliveryPhone  = addr.phone;
       deliveryStreet = addr.street;
-      deliveryCity   = addr.city || 'ঢাকা';
+      deliveryCity   = addr.city || 'Dhaka';
     }
 
     // ── 3. Payer identity ─────────────────────────────────────────────────────
@@ -147,7 +146,7 @@ export async function POST(
 
     // ── 4. Stock check ────────────────────────────────────────────────────────
     if (product.trackInventory && !product.allowBackorder && product.quantity < 1) {
-      return NextResponse.json({ error: 'পণ্যটি স্টকে নেই' }, { status: 409 });
+      return NextResponse.json({ error: 'Product is out of stock' }, { status: 409 });
     }
 
     // ── 5. Resolve userId — never empty ───────────────────────────────────────
@@ -250,8 +249,8 @@ export async function POST(
       await tx.adminNotification.create({
         data: {
           type:    'GIFT_ORDER',
-          title:   '🎁 নতুন Gift Order',
-          message: `${payerName} — ${product.name} — ৳${unitPrice.toLocaleString()} | Delivery: ${deliveryName}, ${deliveryCity}`,
+          title:   '🎁 New Gift Order',
+          message: `${payerName} — ${product.name} — ৳${unitPrice.toLocaleString('en-US')} | Delivery: ${deliveryName}, ${deliveryCity}`,
           orderId: order.id,
           isRead:  false,
         },
@@ -262,15 +261,15 @@ export async function POST(
 
     // ── 7. Telegram (fire & forget) ───────────────────────────────────────────
     const tgMsg = [
-      `🎁 <b>নতুন Gift Order!</b>`,
+      `🎁 <b>New Gift Order!</b>`,
       ``,
-      `📦 পণ্য: ${escapeTelegramHtml(product.name)}`,
-      `💰 মূল্য: ৳${parseFloat(product.price.toString()).toLocaleString()}`,
+      `📦 Product: ${escapeTelegramHtml(product.name)}`,
+      `💰 Price: ৳${parseFloat(product.price.toString()).toLocaleString('en-US')}`,
       ``,
       `👤 Payer: ${escapeTelegramHtml(payerName)}`,
       `📍 Delivery: ${escapeTelegramHtml(deliveryName)}`,
       `📞 Phone: ${escapeTelegramHtml(deliveryPhone)}`,
-      `🏠 ঠিকানা: ${escapeTelegramHtml(deliveryStreet)}, ${escapeTelegramHtml(deliveryCity)}`,
+      `🏠 Address: ${escapeTelegramHtml(deliveryStreet)}, ${escapeTelegramHtml(deliveryCity)}`,
       ``,
       `🎀 Type: ${isSendGift ? 'Send Gift' : 'Get Gift'}`,
       `🔑 Token: <code>${escapeTelegramHtml(token)}</code>`,
@@ -289,7 +288,7 @@ export async function POST(
   } catch (error) {
     console.error('[Gift Order] Error:', error);
     return NextResponse.json(
-      { error: 'Order create করতে পারিনি। আবার try করুন।' },
+      { error: 'Could not create order. Please try again.' },
       { status: 500 }
     );
   }

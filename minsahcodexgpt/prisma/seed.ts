@@ -804,19 +804,19 @@ async function main() {
         enabled: true,
         height: '40px',
         message1: {
-          text: '✨ এই প্রোডাক্টে সারা বাংলাদেশে ফ্রি ডেলিভারি।',
+          text: '✨ Free delivery nationwide on this product.',
           backgroundColor: '#d3fa99',
           textColor: '#1c3a13',
           active: true,
         },
         message2: {
-          text: '🎁 New customer delivery offer: ঢাকার ভিতরে ফ্রি, ঢাকার বাইরে ৳60 (৳500+ order), ৳1100+ হলে সারা বাংলাদেশে ফ্রি।',
+          text: '🎁 New customer delivery offer: Free inside Dhaka, ৳60 outside Dhaka on ৳500+ orders, Free nationwide on ৳1,100+.',
           backgroundColor: '#d3fa99',
           textColor: '#1c3a13',
           active: true,
         },
         message3: {
-          text: '👑 Welcome Back! আপনার জন্য প্রতিটি অর্ডারে ডেলিভারি চার্জে ৫০% বিশেষ ছাড়।',
+          text: '👑 Welcome Back! 50% off delivery charges on every order.',
           backgroundColor: '#d3fa99',
           textColor: '#1c3a13',
           active: true,

@@ -21,27 +21,27 @@ export async function POST(request: NextRequest) {
       recipientName,
       message,
       // GET_GIFT fields
-      requesterName,   // যে চাইছে (আমি)
-      requesterPhone,  // আমার phone
-      requesterAddress, // আমার address — { name, phone, address, city }
-      payerName,       // যে pay করবে (বন্ধু)
+      requesterName,   // Requester
+      requesterPhone,  // Requester phone
+      requesterAddress, // Requester address — { name, phone, address, city }
+      payerName,       // Payer
     } = body;
 
     if (!productId) {
-      return NextResponse.json({ error: 'productId প্রয়োজন' }, { status: 400 });
+      return NextResponse.json({ error: 'productId is required' }, { status: 400 });
     }
 
     // Validate based on type
     if (giftType === 'SEND_GIFT' && (!senderName?.trim() || !recipientName?.trim())) {
       return NextResponse.json(
-        { error: 'senderName এবং recipientName প্রয়োজন' },
+        { error: 'senderName and recipientName are required' },
         { status: 400 }
       );
     }
 
     if (giftType === 'GET_GIFT' && (!requesterName?.trim() || !payerName?.trim())) {
       return NextResponse.json(
-        { error: 'requesterName এবং payerName প্রয়োজন' },
+        { error: 'requesterName and payerName are required' },
         { status: 400 }
       );
     }
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!product || !product.isActive) {
-      return NextResponse.json({ error: 'পণ্য পাওয়া যায়নি' }, { status: 404 });
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
     const token = randomBytes(6).toString('hex');
@@ -86,15 +86,15 @@ export async function POST(request: NextRequest) {
 
     if (giftType === 'SEND_GIFT') {
       waMessage =
-        `🎁 ${recipientName}, তোমার জন্য একটা গিফট!\n\n` +
-        `${senderName} তোমাকে "${product.name}" গিফট করতে চায়।\n\n` +
-        `এই link-এ click করো:\n${giftUrl}\n\n💝 Minsah Beauty`;
+        `🎁 ${recipientName}, you received a special gift!\n\n` +
+        `${senderName} wants to send you "${product.name}".\n\n` +
+        `Click this link to claim:\n${giftUrl}\n\n💝 Minsah Beauty`;
     } else {
       // GET_GIFT — requester is asking payer to buy for them
       waMessage =
-        `🎁 ${payerName}, একটা অনুরোধ আছে!\n\n` +
-        `${requesterName} তোমার কাছে "${product.name}" চাইছে গিফট হিসেবে।\n\n` +
-        `এই link-এ click করলে সহজেই পাঠাতে পারবে:\n${giftUrl}\n\n` +
+        `🎁 ${payerName}, you received a gift request!\n\n` +
+        `${requesterName} requested "${product.name}" as a gift.\n\n` +
+        `Click this link to send this gift:\n${giftUrl}\n\n` +
         `💝 Minsah Beauty`;
     }
 
@@ -111,6 +111,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[Gift Create]', error);
-    return NextResponse.json({ error: 'Gift link তৈরি হয়নি' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create gift link' }, { status: 500 });
   }
 }

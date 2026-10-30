@@ -32,7 +32,7 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
   const totalRevenue = item.sellPrice * item.quantity;
 
   const formatCurrency = (amount: number) => {
-    return `৳${Math.round(amount).toLocaleString('bn-BD')}`;
+    return `৳${Math.round(amount).toLocaleString('en-US')}`;
   };
 
   const getPriorityColor = (priority: string) => {
@@ -127,7 +127,7 @@ export default function ProductRow({ item, onCheckboxChange }: ProductRowProps) 
       {item.purchased && item.purchasedAt && (
         <div className="pl-9 mt-2 pt-2 border-t border-emerald-800/40">
           <p className="text-xs text-white">
-            ✅ Purchased on {new Date(item.purchasedAt).toLocaleDateString('bn-BD')}
+            ✅ Purchased on {new Date(item.purchasedAt).toLocaleDateString('en-US')}
           </p>
         </div>
       )}

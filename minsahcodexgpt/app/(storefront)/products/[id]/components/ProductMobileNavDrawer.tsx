@@ -21,6 +21,7 @@ import {
 import { ShopDrawerProduct } from './ProductShopDrawer';
 import { CategoryItem } from './ProductCategoriesDrawer';
 import { safeImageUrl } from '@/lib/safe-image';
+import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
 interface ProductMobileNavDrawerProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export default function ProductMobileNavDrawer({
 }: ProductMobileNavDrawerProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('shop');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const { coupons, freeDelivery } = useOfferEngine();
 
   // Lock body scroll when open
   useEffect(() => {
@@ -60,12 +62,15 @@ export default function ProductMobileNavDrawer({
 
   if (!isOpen) return null;
 
+  const nationwideThreshold = freeDelivery?.nationwideThreshold ?? 2500;
+  const activeCoupons = coupons.filter((c) => c.isActive !== false);
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Mobile Navigation Drawer"
-      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start"
+      className="fixed inset-0 z-[180] flex flex-col justify-end sm:justify-start overflow-x-hidden no-scrollbar"
     >
       {/* Frosted Backdrop */}
       <div
@@ -75,10 +80,13 @@ export default function ProductMobileNavDrawer({
       />
 
       {/* Slide-in Sheet Container */}
-      <div className="relative z-10 w-full max-h-[85vh] flex flex-col rounded-t-[32px] border-t border-white/20 bg-[#122416]/98 backdrop-blur-2xl text-white shadow-2xl animate-in slide-in-from-bottom duration-300">
+      <div className="relative z-10 w-full max-h-[88dvh] flex flex-col rounded-t-[24px] border-t border-white/20 bg-[#122416]/98 backdrop-blur-2xl text-white shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-x-hidden no-scrollbar">
         
+        {/* Grab handle for bottom sheet */}
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1" />
+
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
           <Link
             href="/"
             onClick={onClose}
@@ -256,7 +264,7 @@ export default function ProductMobileNavDrawer({
                     <Zap size={13} className="fill-amber-400" /> Flash Sale
                   </span>
                   <span className="bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-full text-[10px]">
-                    Up to 30% OFF
+                    Live Deals
                   </span>
                 </div>
                 <p className="text-white mt-1 text-[11px]">
@@ -264,27 +272,35 @@ export default function ProductMobileNavDrawer({
                 </p>
               </Link>
 
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-1 font-mono text-xs font-bold text-emerald-300">
-                    <Tag size={12} /> WELCOME10
-                  </div>
-                  <p className="text-[10.5px] text-white/70">10% off on your first order</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => copyVoucher('WELCOME10')}
-                  className="flex items-center gap-1 text-[11px] font-semibold bg-white/10 px-2.5 py-1 rounded-full text-white"
+              {/* Dynamic Vouchers */}
+              {activeCoupons.map((coupon) => (
+                <div
+                  key={coupon.code}
+                  className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2"
                 >
-                  {copiedCode === 'WELCOME10' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                  <span>{copiedCode === 'WELCOME10' ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1 font-mono text-xs font-bold text-emerald-300">
+                      <Tag size={12} /> {coupon.code}
+                    </div>
+                    <p className="text-[10.5px] text-white/70 truncate">
+                      {coupon.description || (coupon.type === 'percentage' ? `${coupon.value}% off` : `৳${coupon.value} off`)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyVoucher(coupon.code)}
+                    className="flex items-center gap-1 text-[11px] font-semibold bg-white/10 px-2.5 py-1 rounded-full text-white"
+                  >
+                    {copiedCode === coupon.code ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                    <span>{copiedCode === coupon.code ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+              ))}
 
               <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2.5">
                 <Truck size={18} className="text-emerald-400 flex-shrink-0" />
                 <p className="text-[11px] text-white/90">
-                  Free nationwide shipping on orders over ৳999
+                  Free nationwide shipping on orders over ৳{nationwideThreshold.toLocaleString('en-IN')}
                 </p>
               </div>
             </div>

@@ -3,11 +3,11 @@
 import { HelpCircle, ChevronDown } from 'lucide-react';
 
 export const RESCHEDULE_REASONS = [
-  { value: 'Not home', label: 'বাসায় উপস্থিত নেই (Not at home / Office)' },
-  { value: 'Want different date', label: 'অন্য তারিখে গ্রহণ করতে চাই (Prefer different date/time)' },
-  { value: 'Wrong address', label: 'ঠিকানা পরিবর্তন প্রয়োজন (Address modification)' },
-  { value: 'Cash preparation', label: 'ক্যাশ অন ডেলিভারি টাকা প্রস্তুত করতে হবে (COD preparation)' },
-  { value: 'Other', label: 'অন্যান্য কারণ (Other reason)' },
+  { value: 'Not home', label: 'Not at home or office' },
+  { value: 'Want different date', label: 'Prefer different delivery date or time' },
+  { value: 'Wrong address', label: 'Need delivery address update' },
+  { value: 'Cash preparation', label: 'Need more time for Cash on Delivery payment' },
+  { value: 'Other', label: 'Other reason' },
 ];
 
 interface RescheduleReasonDropdownProps {
@@ -23,10 +23,10 @@ export function RescheduleReasonDropdown({
     <div className="space-y-1.5">
       <label
         htmlFor="reschedule-reason-select"
-        className="text-xs uppercase tracking-wider font-bold text-[#181C1A] flex items-center gap-1.5"
+        className="text-xs uppercase tracking-wider font-bold text-[#2D1F18] flex items-center gap-1.5"
       >
-        <HelpCircle className="w-4 h-4 text-[#1c3a13]" />
-        <span>রিশিডিউল করার কারণ (Reason for Rescheduling)</span>
+        <HelpCircle className="w-4 h-4 text-emerald-800" />
+        <span>Reason for Rescheduling</span>
       </label>
 
       <div className="relative">
@@ -34,7 +34,7 @@ export function RescheduleReasonDropdown({
           id="reschedule-reason-select"
           value={selectedReason}
           onChange={(e) => onSelectReason(e.target.value)}
-          className="w-full bg-white border border-[#E2DED8] focus:border-[#1c3a13] text-[#181C1A] text-xs rounded-2xl p-3.5 pr-10 appearance-none focus:outline-none focus:ring-1 focus:ring-[#1c3a13] transition cursor-pointer shadow-xs"
+          className="w-full bg-white border border-[#EADFD5] focus:border-emerald-700 text-[#2D1F18] text-xs rounded-2xl p-3.5 pr-10 appearance-none focus:outline-none focus:ring-1 focus:ring-emerald-700 transition cursor-pointer shadow-xs"
         >
           {RESCHEDULE_REASONS.map((r) => (
             <option key={r.value} value={r.value}>
@@ -43,7 +43,7 @@ export function RescheduleReasonDropdown({
           ))}
         </select>
 
-        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#5A615D] flex items-center">
+        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#7A6E65] flex items-center">
           <ChevronDown className="w-4 h-4" />
         </div>
       </div>

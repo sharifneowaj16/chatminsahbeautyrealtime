@@ -45,10 +45,10 @@ export default function CheckoutMobileView({
   // State machine for checkout
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('bkash');
   const [voucherCode, setVoucherCode] = useState<string | undefined>(
-    initialPricing.voucherCode || 'MINSAHGLOW'
+    initialPricing.voucherCode
   );
   const [voucherDiscount, setVoucherDiscount] = useState<number>(
-    initialPricing.voucherDiscount || 200
+    initialPricing.voucherDiscount || 0
   );
   const [glowPointsActive, setGlowPointsActive] = useState<boolean>(true);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState<boolean>(false);

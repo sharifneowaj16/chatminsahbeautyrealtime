@@ -113,20 +113,20 @@ function PaymentCompleteContent() {
       <div className="w-full max-w-md">
         {status === 'loading' ? (
           <LoadingState
-            label="পেমেন্ট নিশ্চিত করা হচ্ছে…"
-            description="যাচাইকৃত পেমেন্টটি অর্ডারের সঙ্গে যুক্ত হওয়া পর্যন্ত এই পেজটি খোলা রাখুন।"
+            label="Confirming payment…"
+            description="Please keep this page open while we link your verified payment to the order."
           />
         ) : (
           <SuccessState
-            title="পেমেন্ট যাচাই হয়েছে"
-            description="আপনার পেমেন্ট যাচাই হয়েছে। অর্ডার নিশ্চিতকরণ পেজে নেওয়া হচ্ছে।"
+            title="Payment verified"
+            description="Your payment has been verified. Redirecting to order confirmation."
             action={
               <Link
                 href={confirmationHref}
                 className="minsah-control inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-minsah-border-default bg-minsah-surface-panel px-5 py-3 text-base font-bold text-minsah-text-primary hover:border-minsah-border-strong hover:bg-minsah-surface-subtle"
               >
                 <Home className="h-5 w-5" aria-hidden="true" />
-                অর্ডার নিশ্চিতকরণ দেখুন
+                View Order Confirmation
               </Link>
             }
           />
@@ -141,7 +141,7 @@ export default function PaymentCompletePage() {
     <Suspense
       fallback={
         <main className="flex min-h-screen items-center justify-center bg-minsah-surface-page px-4">
-          <LoadingState label="পেমেন্টের তথ্য লোড হচ্ছে…" />
+          <LoadingState label="Loading payment details…" />
         </main>
       }
     >

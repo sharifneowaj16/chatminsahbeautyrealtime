@@ -9,6 +9,7 @@ import { useSelectedVariant } from '@/components/offer/useSelectedVariant';
 import DesktopPriceBlock from '../desktop/DesktopPriceBlock';
 import MobilePriceBlock from '../mobile/MobilePriceBlock';
 import { cleanProductName } from './cleanProductName';
+import { OfferSlot } from '@/components/offer/OfferSlot';
 
 export interface SeedHeroBuyBoxProps {
   productId: string;
@@ -97,6 +98,9 @@ export default function SeedHeroBuyBox({
           {shortDescription}
         </p>
       )}
+
+      {/* 3.5 PRODUCT OFFER BANNER */}
+      <OfferSlot placement="product_page" className="mb-4" />
 
       {/* 4. DESKTOP COLUMN (hidden lg:block) */}
       <div className="hidden lg:block mb-4">

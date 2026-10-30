@@ -58,7 +58,7 @@ const PUBLIC_BUCKET_PREFIXES = [
 ];
 
 // ─── Cache TTL (1 year — immutable product images) ──────────────────────────
-// Browser + CDN দুটোই এই header দেখে cache করবে
+// Both browser and CDN cache using this header
 const IMAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
 // ─── Bucket init ─────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ export async function initializeBucket(): Promise<void> {
 }
 
 // ─── Image processing ────────────────────────────────────────────────────────
-// sharp dynamically import করা হচ্ছে — server-only, bundle split নষ্ট না করে
+// sharp is dynamically imported server-only to avoid bundling into client
 interface ProcessedImage {
   buffer: Buffer;
   contentType: string;
@@ -110,10 +110,10 @@ interface ProcessedImage {
 }
 
 /**
- * Product image process করে WebP-তে convert করে + resize করে।
- * - Max 1200×1200 (product gallery)
- * - WebP quality 82 — বেশিরভাগ ক্ষেত্রে 80-90% size কমে
- * - যদি sharp না থাকে, original return করে (graceful fallback)
+ * Process product image, convert to WebP and resize.
+ * - Max 1200x1200 (product gallery)
+ * - WebP quality 82 (optimizes size significantly)
+ * - Graceful fallback to original buffer if sharp is unavailable
  */
 export async function processProductImage(
   inputBuffer: Buffer,
@@ -124,10 +124,10 @@ export async function processProductImage(
 
     const webpBuffer = await sharp(inputBuffer)
       .resize(1200, 1200, {
-        fit: 'inside',          // aspect ratio রাখে, crop করে না
-        withoutEnlargement: true, // ছোট image কে বড় করে না
+        fit: 'inside',          // preserve aspect ratio without cropping
+        withoutEnlargement: true, // do not enlarge smaller images
       })
-      .webp({ quality: 82, effort: 4 }) // effort 4 = good compression, fast enough
+      .webp({ quality: 82, effort: 4 }) // effort 4 = balanced compression and speed
       .toBuffer();
 
     logger.info(`Image processed: ${inputBuffer.length} → ${webpBuffer.length} bytes (WebP)`);
@@ -138,7 +138,7 @@ export async function processProductImage(
       extension: 'webp',
     };
   } catch (err) {
-    // sharp fail হলে original দিয়ে চালিয়ে যাই
+    // If sharp fails, fall back gracefully to original buffer
     logger.warn('sharp processing failed, using original:', err as Record<string, unknown>);
     return {
       buffer: inputBuffer,
@@ -166,7 +166,7 @@ export async function processThumbImage(inputBuffer: Buffer): Promise<ProcessedI
 
 // ─── Core upload ──────────────────────────────────────────────────────────────
 /**
- * Raw upload (non-image files বা bypass করতে চাইলে)
+ * Raw upload (for non-image files or direct bypass)
  */
 export async function uploadFile(
   file: Buffer,
@@ -179,8 +179,7 @@ export async function uploadFile(
 
   await minio.putObject(BUCKET_NAME, key, file, file.length, {
     'Content-Type': contentType,
-    // Cache headers — MinIO এগুলো object metadata হিসেবে store করে
-    // এবং GET response-এ serve করে
+    // Cache headers — MinIO stores these as object metadata and serves in GET response
     'Cache-Control': IMAGE_CACHE_CONTROL,
     'x-amz-meta-cache-control': IMAGE_CACHE_CONTROL,
   });
@@ -199,7 +198,7 @@ export async function uploadProductImage(
 ): Promise<{ key: string; url: string }> {
   const { buffer, contentType: newContentType, extension } = await processProductImage(file, contentType);
 
-  // Extension replace করি — .png → .webp ইত্যাদি
+  // Replace extension (e.g. .png -> .webp)
   const baseName = fileName.replace(/\.[^.]+$/, '');
   const newFileName = `${baseName}.${extension}`;
   const sanitizedName = newFileName.replace(/[^a-zA-Z0-9._-]/g, '-');
@@ -360,7 +359,7 @@ export async function getPresignedDownloadUrl(key: string, expirySeconds = 3600)
 // ─── Public URL ───────────────────────────────────────────────────────────────
 export function getPublicUrl(key: string): string {
   if (PUBLIC_URL) {
-    // trailing slash safe — double slash এড়ানোর জন্য
+    // Strip trailing slash to avoid double slash
     const base = PUBLIC_URL.replace(/\/$/, '');
     return `${base}/${BUCKET_NAME}/${key}`;
   }
@@ -397,7 +396,7 @@ export function validateImageUpload(
   const maxSize = maxSizeMB * 1024 * 1024;
   if (file.size > maxSize) return { valid: false, error: `Image must be ${maxSizeMB}MB or smaller` };
 
-  // avif ও accept করি এখন
+  // Accept standard modern formats including AVIF
   const allowed = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif', 'image/gif']);
   if (!allowed.has(file.type)) return { valid: false, error: 'Only JPEG, PNG, WebP, AVIF, GIF allowed' };
 

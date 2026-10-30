@@ -1,96 +1,99 @@
-"use client";
+'use client';
 
-import React from "react";
+import React from 'react';
+import { Clock, Building2, Map, Zap, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export function DeliveryZonesBentoList() {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-[#062402] leading-tight">
-            ডেলিভারি জোন ও সময়সূচি
+          <h3 className="text-lg font-bold text-[#2D1F18] leading-tight">
+            Delivery Zones & Timelines
           </h3>
-          <p className="text-[11px] text-[#5A615D]">Delivery Zones &amp; Standard Rates</p>
+          <p className="text-[11px] text-[#7A6E65]">Coverage, Express Windows & Standard Rates</p>
         </div>
-        <span className="text-xs text-[#4b6723] font-bold flex items-center gap-0.5">
-          <span className="material-symbols-outlined text-sm">schedule</span> লাইভ টাইম
+        <span className="text-xs text-emerald-800 font-bold flex items-center gap-1">
+          <Clock size={13} /> Live Dispatch
         </span>
       </div>
 
       <div className="grid grid-cols-1 gap-3">
         {/* Card 1: Inside Dhaka */}
-        <div className="bg-white rounded-2xl p-4 border border-[#E2DED8] shadow-xs relative overflow-hidden">
+        <div className="bg-white rounded-2xl p-4 border border-[#EADFD5] shadow-xs relative overflow-hidden">
           <div className="flex justify-between items-start mb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#4b6723] text-2xl">
-                location_city
-              </span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
+                <Building2 size={18} />
+              </div>
               <div>
-                <h4 className="text-sm font-bold text-[#062402]">ঢাকা মেট্রোপলিটন (Inside Dhaka)</h4>
-                <p className="text-[11px] text-[#5A615D]">Home Delivery to all Dhaka zones</p>
+                <h4 className="text-sm font-bold text-[#2D1F18]">Dhaka Metro Area (Fast Zone)</h4>
+                <p className="text-[11px] text-[#7A6E65]">Home delivery across all Dhaka, Savar & Narayanganj zones</p>
               </div>
             </div>
-            <span className="bg-[#D4F6A2] text-[#062402] font-bold text-xs px-2.5 py-1 rounded-full">
-              ৳৭০ / ফ্রি*
+            <span className="bg-emerald-100 text-emerald-900 font-bold text-xs px-2.5 py-1 rounded-full">
+              ৳70 / Free*
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-            <div className="bg-[#F8FAF7] p-2 rounded-xl border border-[#E2DED8]/40">
-              <div className="flex items-center gap-1 text-[#5A615D] text-[10px] font-medium">
-                <span className="material-symbols-outlined text-[13px] text-[#4b6723]">timelapse</span>{" "}
-                সময়সীমা (Duration)
+            <div className="bg-[#FAF6F2] p-2.5 rounded-xl border border-[#EADFD5]/60">
+              <div className="flex items-center gap-1 text-[#7A6E65] text-[10px] font-medium">
+                <Clock size={12} className="text-emerald-700" />
+                <span>Estimated Window</span>
               </div>
-              <div className="text-[#062402] font-bold mt-0.5 text-[11px]">২৪ - ৪৮ ঘণ্টা (১-২ দিন)</div>
+              <div className="text-[#2D1F18] font-bold mt-0.5 text-[11px]">24 - 48 Hours (1-2 Days)</div>
             </div>
-            <div className="bg-[#F8FAF7] p-2 rounded-xl border border-[#E2DED8]/40">
-              <div className="flex items-center gap-1 text-[#5A615D] text-[10px] font-medium">
-                <span className="material-symbols-outlined text-[13px] text-[#4b6723]">bolt</span>{" "}
-                এক্সপ্রেস ডেলিভারি
+            <div className="bg-[#FAF6F2] p-2.5 rounded-xl border border-[#EADFD5]/60">
+              <div className="flex items-center gap-1 text-[#7A6E65] text-[10px] font-medium">
+                <Zap size={12} className="text-emerald-700" />
+                <span>Same-Day Dispatch</span>
               </div>
-              <div className="text-[#062402] font-bold mt-0.5 text-[11px]">৳১২০ (একই দিনে ডেলিভারি)</div>
+              <div className="text-[#2D1F18] font-bold mt-0.5 text-[11px]">Order before 3:00 PM</div>
             </div>
           </div>
-          <div className="mt-2.5 flex items-center gap-1 text-[11px] text-[#5A615D] bg-[#F2F6F0]/70 px-2.5 py-1.5 rounded-xl">
-            <span className="material-symbols-outlined text-xs text-[#4b6723]">check_circle</span>
-            <span>বনানী, গুলশান, ধানমন্ডি, উত্তরায় সেইম-ডে ও ক্যাশ অন ডেলিভারি (COD) উপলব্ধ।</span>
+          <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-[#7A6E65] bg-[#FAF6F2] px-2.5 py-1.5 rounded-xl border border-[#EADFD5]/40">
+            <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+            <span>Banani, Gulshan, Dhanmondi, Uttara and all metro points qualify for Cash on Delivery.</span>
           </div>
         </div>
 
         {/* Card 2: Outside Dhaka */}
-        <div className="bg-white rounded-2xl p-4 border border-[#E2DED8] shadow-xs relative overflow-hidden">
+        <div className="bg-white rounded-2xl p-4 border border-[#EADFD5] shadow-xs relative overflow-hidden">
           <div className="flex justify-between items-start mb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#4b6723] text-2xl">map</span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800">
+                <Map size={18} />
+              </div>
               <div>
-                <h4 className="text-sm font-bold text-[#062402]">ঢাকার বাইরে সারা বাংলাদেশ (All 64 Districts)</h4>
-                <p className="text-[11px] text-[#5A615D]">Doorstep transit via Steadfast &amp; Paperfly</p>
+                <h4 className="text-sm font-bold text-[#2D1F18]">Outside Dhaka (All 64 Districts)</h4>
+                <p className="text-[11px] text-[#7A6E65]">Doorstep delivery across all districts, thanas and upazilas</p>
               </div>
             </div>
-            <span className="bg-[#F2F6F0] text-[#062402] font-bold text-xs px-2.5 py-1 rounded-full border border-[#E2DED8]">
-              ৳১৩০ / ফ্রি*
+            <span className="bg-[#FAF6F2] text-[#2D1F18] font-bold text-xs px-2.5 py-1 rounded-full border border-[#EADFD5]">
+              ৳130 / Free*
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-            <div className="bg-[#F8FAF7] p-2 rounded-xl border border-[#E2DED8]/40">
-              <div className="flex items-center gap-1 text-[#5A615D] text-[10px] font-medium">
-                <span className="material-symbols-outlined text-[13px] text-[#4b6723]">timelapse</span>{" "}
-                সময়সীমা (Duration)
+            <div className="bg-[#FAF6F2] p-2.5 rounded-xl border border-[#EADFD5]/60">
+              <div className="flex items-center gap-1 text-[#7A6E65] text-[10px] font-medium">
+                <Clock size={12} className="text-blue-700" />
+                <span>Estimated Window</span>
               </div>
-              <div className="text-[#062402] font-bold mt-0.5 text-[11px]">৪৮ - ৭২ ঘণ্টা (২-৩ দিন)</div>
+              <div className="text-[#2D1F18] font-bold mt-0.5 text-[11px]">48 - 72 Hours (2-3 Days)</div>
             </div>
-            <div className="bg-[#F8FAF7] p-2 rounded-xl border border-[#E2DED8]/40">
-              <div className="flex items-center gap-1 text-[#5A615D] text-[10px] font-medium">
-                <span className="material-symbols-outlined text-[13px] text-[#4b6723]">shield</span>{" "}
-                ট্রানজিট সিকিউরিটি
+            <div className="bg-[#FAF6F2] p-2.5 rounded-xl border border-[#EADFD5]/60">
+              <div className="flex items-center gap-1 text-[#7A6E65] text-[10px] font-medium">
+                <ShieldCheck size={12} className="text-blue-700" />
+                <span>Transit Security</span>
               </div>
-              <div className="text-[#062402] font-bold mt-0.5 text-[11px]">সম্পূর্ণ বীমাকৃত পার্সেল</div>
+              <div className="text-[#2D1F18] font-bold mt-0.5 text-[11px]">100% Insured Parcel</div>
             </div>
           </div>
-          <div className="mt-2.5 flex items-center gap-1 text-[11px] text-[#5A615D] bg-[#F2F6F0]/70 px-2.5 py-1.5 rounded-xl">
-            <span className="material-symbols-outlined text-xs text-[#4b6723]">check_circle</span>
-            <span>চট্টগ্রাম, সিলেট, রাজশাহী, খুলনা সহ যেকোনো উপজেলা ও থানা সদরে হোম ডেলিভারি।</span>
+          <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-[#7A6E65] bg-[#FAF6F2] px-2.5 py-1.5 rounded-xl border border-[#EADFD5]/40">
+            <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+            <span>Chattogram, Sylhet, Rajshahi, Khulna and all regional towns covered with live tracking.</span>
           </div>
         </div>
       </div>

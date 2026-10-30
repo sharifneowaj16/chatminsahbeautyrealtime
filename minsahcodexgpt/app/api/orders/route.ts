@@ -806,7 +806,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Pathao delivery এখন এখানে create হবে না - Telegram থেকে Confirm করার পর হবে।
+    // Pathao delivery is not created here - it triggers after Telegram admin confirmation.
     // Online payment orders notify admin only after verified payment finalizes stock.
     if (!isOnlinePaymentOrder) {
       const resolvedAddress = order.addressId

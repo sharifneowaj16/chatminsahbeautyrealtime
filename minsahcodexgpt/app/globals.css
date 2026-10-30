@@ -370,7 +370,7 @@ img {
   overflow: hidden;
 }
 
-/* app/globals.css-এ এই block যোগ করো */
+/* Slide-up keyframe animations */
 
 @keyframes slide-up {
   from {

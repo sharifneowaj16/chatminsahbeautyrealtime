@@ -5,11 +5,15 @@ import prisma from '@/lib/prisma';
 import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
 import { requireAdminPermission } from '@/app/api/admin/_utils';
 import { toPrismaInputJson } from '@/lib/prisma-json';
-import { DELIVERY_CONFIG, PROMO_CATALOG } from '@/lib/commerce/offer-engine';
+import {
+  DELIVERY_CONFIG,
+  PROMO_CATALOG,
+  DEFAULT_BUNDLE_CONFIG,
+} from '@/lib/commerce/offer-engine';
+import type { OfferPlacement } from '@/lib/commerce/offer-engine/types';
 import {
   DELIVERY_MESSAGE_CONFIG_KEY,
   getDeliveryMessageConfig,
-  normalizeDeliveryMessageConfig,
 } from '@/lib/delivery-message/config';
 import { DEFAULT_DELIVERY_MESSAGE_CONFIG } from '@/lib/delivery-message/types';
 
@@ -34,6 +38,9 @@ export interface AdminOfferPayload {
     maxDiscount?: number;
     allowOnBundles: boolean;
     isActive: boolean;
+    placements?: OfferPlacement[];
+    badgeText?: string;
+    bannerText?: string;
   }>;
   bundles: {
     enabled: boolean;
@@ -74,12 +81,15 @@ export function getDefaultAdminOfferConfig(): AdminOfferPayload {
   const initialCoupons = Object.values(PROMO_CATALOG).map((rule) => ({
     code: rule.code,
     type: rule.type,
-    value: rule.type === 'percentage' ? Math.round(rule.value * 100) : rule.value,
+    value: rule.value,
     description: rule.description,
     minSubtotal: rule.minSubtotal || 0,
     maxDiscount: rule.maxDiscount || 0,
     allowOnBundles: Boolean(rule.allowOnBundles),
     isActive: true,
+    placements: rule.placements || ['cart_drawer', 'checkout_page'],
+    badgeText: rule.badgeText || '',
+    bannerText: rule.bannerText || '',
   }));
 
   return {
@@ -91,12 +101,12 @@ export function getDefaultAdminOfferConfig(): AdminOfferPayload {
     },
     coupons: initialCoupons,
     bundles: {
-      enabled: true,
-      twoStepDiscountPercent: 15,
-      threeStepDiscountPercent: 25,
-      fourStepDiscountPercent: 30,
-      estimatedCostRatio: 60,
-      inheritFreeDelivery: true,
+      enabled: DEFAULT_BUNDLE_CONFIG.enabled,
+      twoStepDiscountPercent: DEFAULT_BUNDLE_CONFIG.twoStepDiscountPercent,
+      threeStepDiscountPercent: DEFAULT_BUNDLE_CONFIG.threeStepDiscountPercent,
+      fourStepDiscountPercent: DEFAULT_BUNDLE_CONFIG.fourStepDiscountPercent,
+      estimatedCostRatio: DEFAULT_BUNDLE_CONFIG.estimatedCostRatio,
+      inheritFreeDelivery: DEFAULT_BUNDLE_CONFIG.inheritFreeDelivery ?? true,
     },
     topBar: {
       enabled: DEFAULT_DELIVERY_MESSAGE_CONFIG.enabled ?? true,
@@ -154,7 +164,7 @@ export async function GET(request: NextRequest) {
         ...defaults.freeDelivery,
         ...(savedOffer.freeDelivery || {}),
       },
-      coupons: Array.isArray(savedOffer.coupons) && savedOffer.coupons.length > 0
+      coupons: Array.isArray(savedOffer.coupons)
         ? savedOffer.coupons
         : defaults.coupons,
       bundles: {
@@ -234,11 +244,14 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    // 2. Synchronize active coupons to relational prisma.coupon table for consistency
+    // 2. Synchronize active coupons to relational prisma.coupon table
     if (Array.isArray(payload.coupons)) {
+      const submittedCodes: string[] = [];
+
       for (const c of payload.coupons) {
         if (!c || !c.code) continue;
         const codeUpper = c.code.trim().toUpperCase();
+        submittedCodes.push(codeUpper);
         const typeEnum = c.type === 'percentage' ? 'PERCENTAGE' : 'FIXED';
         try {
           await prisma.coupon.upsert({
@@ -265,6 +278,23 @@ export async function PUT(request: NextRequest) {
           console.warn(`Could not sync coupon ${codeUpper} to database table:`, couponErr);
         }
       }
+
+      // Deactivate any database coupons that were removed by Admin
+      if (submittedCodes.length > 0) {
+        try {
+          await prisma.coupon.updateMany({
+            where: {
+              code: { notIn: submittedCodes },
+              isActive: true,
+            },
+            data: {
+              isActive: false,
+            },
+          });
+        } catch (deactivateErr) {
+          console.warn('Could not deactivate removed database coupons:', deactivateErr);
+        }
+      }
     }
 
     // 3. Synchronize Top Bar Delivery Config
@@ -288,7 +318,7 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // 3. Revalidate affected paths
+    // 4. Revalidate affected paths
     try {
       revalidatePath('/');
       revalidatePath('/shop');

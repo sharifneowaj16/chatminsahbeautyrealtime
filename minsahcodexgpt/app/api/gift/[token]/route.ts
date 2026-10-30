@@ -28,7 +28,7 @@ export async function GET(
     });
 
     if (!gift) {
-      return NextResponse.json({ error: 'Gift link পাওয়া যায়নি' }, { status: 404 });
+      return NextResponse.json({ error: 'Gift link not found' }, { status: 404 });
     }
 
     if (gift.expiresAt < new Date()) {
@@ -36,7 +36,7 @@ export async function GET(
         where: { token },
         data: { status: 'EXPIRED' },
       });
-      return NextResponse.json({ error: 'Gift link মেয়াদ শেষ' }, { status: 410 });
+      return NextResponse.json({ error: 'Gift link expired' }, { status: 410 });
     }
 
     if (gift.status === 'PENDING') {

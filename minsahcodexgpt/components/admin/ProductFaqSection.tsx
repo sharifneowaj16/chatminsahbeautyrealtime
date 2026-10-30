@@ -23,14 +23,14 @@ interface ProductFaqSectionProps {
 }
 
 const SUGGESTED_FAQS = [
-  'এই পণ্যটি কোন ধরনের ত্বকের জন্য উপযুক্ত?',
-  'পণ্যটি কীভাবে ব্যবহার করতে হয়?',
-  'পণ্যটি কি অথেনটিক?',
-  'ডেলিভারি কতদিনে পাবো?',
-  'Cash on Delivery আছে?',
-  'পণ্যটি কি রিটার্ন করা যাবে?',
-  'এই পণ্যটি কি sensitive skin এর জন্য safe?',
-  'পণ্যটির shelf life কতদিন?',
+  'Which skin type is this product suitable for?',
+  'How should this product be used in a skincare routine?',
+  'Is this product 100% authentic?',
+  'How long does delivery take in Dhaka and nationwide?',
+  'Is Cash on Delivery available for this item?',
+  'Can this product be returned if unopened?',
+  'Is this formulation safe for sensitive skin?',
+  'What is the shelf life and expiry period of this item?',
 ];
 
 export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionProps) {
@@ -189,7 +189,7 @@ export default function ProductFaqSection({ faqs, onChange }: ProductFaqSectionP
               <p className="text-xs font-semibold text-white mb-3">
                 Select a question to add it automatically:
               </p>
-              <div className="flex flex-wrap gap-2" lang="bn-BD">
+              <div className="flex flex-wrap gap-2">
                 {SUGGESTED_FAQS.map((q) => {
                   const alreadyAdded = faqs.some((f) => f.question === q);
                   return (

@@ -6,20 +6,20 @@ import { TimeSlotOption } from './types';
 export const TIME_SLOTS: TimeSlotOption[] = [
   {
     id: 'morning',
-    labelBangla: 'সকাল (Morning)',
+    labelBangla: 'Morning',
     labelEnglish: 'Morning',
     timeRange: '10:00 AM – 01:00 PM',
   },
   {
     id: 'afternoon',
-    labelBangla: 'দুপুর (Afternoon)',
+    labelBangla: 'Afternoon',
     labelEnglish: 'Afternoon',
     timeRange: '01:00 PM – 05:00 PM',
     isPopular: true,
   },
   {
     id: 'evening',
-    labelBangla: 'সন্ধ্যা (Evening)',
+    labelBangla: 'Evening',
     labelEnglish: 'Evening',
     timeRange: '05:00 PM – 09:00 PM',
   },
@@ -39,7 +39,7 @@ export function TimeSlotSelector({
       case 'morning':
         return <Sun className="w-5 h-5 text-amber-500" />;
       case 'afternoon':
-        return <Sunset className="w-5 h-5 text-[#1c3a13]" />;
+        return <Sunset className="w-5 h-5 text-emerald-700" />;
       default:
         return <Moon className="w-5 h-5 text-indigo-500" />;
     }
@@ -47,9 +47,9 @@ export function TimeSlotSelector({
 
   return (
     <div className="space-y-2">
-      <label className="text-xs uppercase tracking-wider font-bold text-[#181C1A] flex items-center gap-1.5">
-        <Clock className="w-4 h-4 text-[#1c3a13]" />
-        <span>পছন্দের ডেলিভারি শিফট (Preferred Time Slot)</span>
+      <label className="text-xs uppercase tracking-wider font-bold text-[#2D1F18] flex items-center gap-1.5">
+        <Clock className="w-4 h-4 text-emerald-800" />
+        <span>Preferred Time Slot</span>
       </label>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -60,10 +60,10 @@ export function TimeSlotSelector({
               key={slot.id}
               type="button"
               onClick={() => onSelectSlot(slot)}
-              className={`p-3.5 rounded-2xl flex items-center justify-between transition text-left shadow-xs ${
+              className={`p-3.5 rounded-2xl flex items-center justify-between transition text-left shadow-xs cursor-pointer ${
                 isSelected
-                  ? 'bg-[#F2F6F0] border-2 border-[#1c3a13]'
-                  : 'bg-white border border-[#E2DED8] hover:border-[#1c3a13]'
+                  ? 'bg-[#FAF6F2] border-2 border-emerald-800'
+                  : 'bg-white border border-[#EADFD5] hover:border-emerald-800'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -71,19 +71,19 @@ export function TimeSlotSelector({
                 <div>
                   <div
                     className={`text-xs font-bold flex items-center gap-1.5 ${
-                      isSelected ? 'text-[#1c3a13]' : 'text-[#181C1A]'
+                      isSelected ? 'text-emerald-900' : 'text-[#2D1F18]'
                     }`}
                   >
-                    <span>{slot.labelBangla}</span>
+                    <span>{slot.labelEnglish}</span>
                     {slot.isPopular && (
-                      <span className="text-[9px] bg-[#ccee9b] text-[#1c3a13] px-1.5 py-0.2 rounded font-extrabold border border-[#B5C4BB]">
+                      <span className="text-[9px] bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded font-extrabold border border-emerald-200">
                         Popular
                       </span>
                     )}
                   </div>
                   <div
                     className={`text-[11px] ${
-                      isSelected ? 'text-[#1c3a13] font-semibold' : 'text-[#5A615D]'
+                      isSelected ? 'text-emerald-800 font-semibold' : 'text-[#7A6E65]'
                     }`}
                   >
                     {slot.timeRange}
@@ -95,8 +95,8 @@ export function TimeSlotSelector({
               <div
                 className={`w-4 h-4 rounded-full flex items-center justify-center border-2 ${
                   isSelected
-                    ? 'bg-[#1c3a13] border-[#1c3a13]'
-                    : 'border-[#B5C4BB]'
+                    ? 'bg-emerald-800 border-emerald-800'
+                    : 'border-[#EADFD5]'
                 }`}
               >
                 {isSelected && (

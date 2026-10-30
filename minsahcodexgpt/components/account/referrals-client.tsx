@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 
-// ✅ Icon map — string থেকে component
+// Icon map — string to component
 const ICON_MAP: Record<string, React.ElementType> = {
   Copy,
   Mail,

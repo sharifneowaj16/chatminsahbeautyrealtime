@@ -16,8 +16,8 @@ export function DeliveryRescheduleModal({
   onClose,
   orderNumber = '#KR-88294',
   currentSchedule = {
-    date: 'আজ, ১৫ নভেম্বর (Friday)',
-    timeSlot: '1pm - 5pm',
+    date: 'Today, Nov 15 (Friday)',
+    timeSlot: '1:00 PM – 5:00 PM',
   },
   address,
   onSuccess,
@@ -44,11 +44,11 @@ export function DeliveryRescheduleModal({
       onClose={onClose}
       badge={
         <>
-          <CalendarClock className="h-3.5 w-3.5 text-[#4b6723]" />
+          <CalendarClock className="h-3.5 w-3.5 text-emerald-800" />
           <span>Steadfast &amp; Pathao Express</span>
         </>
       }
-      title="ডেলিভারি রিশিডিউল করুন"
+      title="Reschedule Delivery"
       description={`Reschedule Delivery Date & Time Slot • Order ${orderNumber}`}
       closeLabel="Close reschedule modal"
       footer={
@@ -56,15 +56,15 @@ export function DeliveryRescheduleModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-full items-center justify-center rounded-full bg-[#062402] px-5 font-bold text-white transition hover:bg-[#1c3a13]"
+            className="flex h-11 w-full items-center justify-center rounded-full bg-[#1c3a13] px-5 font-bold text-white transition hover:bg-[#28531c] cursor-pointer"
           >
-            অর্ডার ট্র্যাকিং এ ফিরে যান (Done)
+            Back to Tracking (Done)
           </button>
         ) : (
           <div className="flex flex-col gap-2 w-full">
-            <div className="flex items-center justify-between text-xs text-[#5A615D]">
-              <span>নতুন শিডিউল:</span>
-              <span className="font-bold text-[#062402]">
+            <div className="flex items-center justify-between text-xs text-[#7A6E65]">
+              <span>New Schedule:</span>
+              <span className="font-bold text-[#2D1F18]">
                 {selectedDate} • {selectedSlot.timeRange}
               </span>
             </div>
@@ -72,17 +72,17 @@ export function DeliveryRescheduleModal({
               type="button"
               disabled={isSubmitting}
               onClick={handleConfirm}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#062402] px-5 font-bold text-white shadow-sm transition hover:bg-[#1c3a13] disabled:opacity-50"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1c3a13] px-5 font-bold text-[#D4F6A2] shadow-sm transition hover:bg-[#28531c] disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin text-[#D4F6A2]" />
-                  <span>প্রসেসিং হচ্ছে...</span>
+                  <span>Processing...</span>
                 </>
               ) : (
                 <>
                   <CalendarCheck className="h-4 w-4 text-[#D4F6A2]" />
-                  <span>নিশ্চিত করুন (Confirm Reschedule)</span>
+                  <span>Confirm Reschedule</span>
                 </>
               )}
             </button>
@@ -92,13 +92,13 @@ export function DeliveryRescheduleModal({
     >
       {isSuccess ? (
         <div className="space-y-4 py-4 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EAF7D8] text-[#1c3a13]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-900">
             <CheckCircle2 className="h-7 w-7" />
           </div>
           <div>
-            <h3 className="font-bold text-[#062402]">ডেলিভারি সময় সফলভাবে আপডেট হয়েছে!</h3>
-            <p className="mt-1 text-xs text-[#5A615D]">
-              কুরিয়ার রাইডারকে নতুন শিডিউল পাঠানো হয়েছে ({selectedDate} • {selectedSlot.timeRange})।
+            <h3 className="font-bold text-[#2D1F18]">Delivery Schedule Updated Successfully!</h3>
+            <p className="mt-1 text-xs text-[#7A6E65]">
+              Courier rider dispatched with new schedule ({selectedDate} • {selectedSlot.timeRange}).
             </p>
           </div>
         </div>

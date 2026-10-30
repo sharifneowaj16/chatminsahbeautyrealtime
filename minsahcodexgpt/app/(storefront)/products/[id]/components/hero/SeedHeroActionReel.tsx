@@ -321,7 +321,7 @@ export default function SeedHeroActionReel({
           role="dialog"
           aria-modal="true"
           aria-label="Story Video Reel Player"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in-0 duration-200"
+          className="fixed inset-0 z-[190] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in-0 duration-200"
           onClick={closeStory}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}

@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { CartDrawerProvider } from '@/contexts/CartDrawerContext';
 import { DeliveryLocationProvider } from '@/contexts/DeliveryLocationContext';
+import { OfferEngineProvider } from '@/contexts/OfferEngineContext';
 import { getSiteConfig } from '@/lib/site-config';
 import { getSiteUrl } from '@/lib/seo';
 import { ToastProvider } from '@/components/ui/ToastProvider';
@@ -105,8 +106,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    locale: 'bn_BD',
-    alternateLocale: ['en_US'],
+    locale: 'en_US',
     url: BASE_URL,
     siteName: 'Minsah Beauty',
     title: SITE_TITLE,
@@ -187,7 +187,7 @@ const websiteSchema = {
     },
     'query-input': 'required name=search_term_string',
   },
-  inLanguage: ['bn-BD', 'en-US'],
+  inLanguage: ['en-US'],
 };
 
 export default function RootLayout({
@@ -221,14 +221,16 @@ export default function RootLayout({
         <ToastProvider>
           <TrackingProvider>
             <AuthProvider>
-              <CartProvider>
-                <CartDrawerProvider>
-                  <DeliveryLocationProvider>
-                    {children}
-                    <DeliveryLocationModal />
-                  </DeliveryLocationProvider>
-                </CartDrawerProvider>
-              </CartProvider>
+              <OfferEngineProvider>
+                <CartProvider>
+                  <CartDrawerProvider>
+                    <DeliveryLocationProvider>
+                      {children}
+                      <DeliveryLocationModal />
+                    </DeliveryLocationProvider>
+                  </CartDrawerProvider>
+                </CartProvider>
+              </OfferEngineProvider>
             </AuthProvider>
           </TrackingProvider>
           <ConciergeModalCoordinator />

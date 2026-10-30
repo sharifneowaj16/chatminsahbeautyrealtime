@@ -48,7 +48,7 @@ export default function OrderLabelSamplePage() {
             Order QR Scanner Label (Marklife P15 & Thermal)
           </h1>
           <p className="text-xs text-[#5A615D]">
-            Marklife P15 সহ যেকোনো পোর্টেবল ও থার্মাল লেবেল প্রিন্টারের জন্য অপ্টিমাইজড 2D QR কোড লেবেল।
+            Optimized 2D QR code labels for Marklife P15 and portable thermal printers.
           </p>
         </div>
 
@@ -56,7 +56,7 @@ export default function OrderLabelSamplePage() {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2DED8] shadow-sm flex flex-col items-center justify-center gap-4">
           <div className="flex items-center justify-between w-full">
             <span className="text-[11px] font-bold text-[#5A615D] uppercase tracking-wider">
-              লাইভ প্রিভিউ (মোবাইল ক্যামেরা দিয়ে স্ক্যান টেস্ট করুন)
+              Live Preview (Scan with mobile camera to test)
             </span>
             <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#EAF7D8] text-[#1C3A13] border border-[#D4F6A2]">
               {size === "marklife-p15" ? "Marklife P15 (15mm Slim)" : size === "compact" ? "40×25mm" : "50×30mm"}
@@ -76,7 +76,7 @@ export default function OrderLabelSamplePage() {
           {/* Target URL Badge */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#EAF7D8] text-[#1C3A13] text-xs font-medium border border-[#D4F6A2] max-w-full truncate">
             <Smartphone className="w-3.5 h-3.5 text-[#4B6723] shrink-0" />
-            <span>স্ক্যান লিংক:</span>
+            <span>Scan URL:</span>
             <code className="font-bold font-mono text-[11px] underline truncate">
               {fullUrl}
             </code>
@@ -85,12 +85,12 @@ export default function OrderLabelSamplePage() {
 
         {/* Controls Grid */}
         <div className="bg-white rounded-2xl p-5 border border-[#E2DED8] shadow-xs flex flex-col gap-4">
-          <h2 className="text-sm font-bold text-[#062402]">লেবেল কাস্টমাইজেশন ও প্রিন্টার সাইজ</h2>
+          <h2 className="text-sm font-bold text-[#062402]">Label Customization & Printer Size</h2>
 
           {/* Printer / Size Selection */}
           <div>
             <label className="block text-xs font-semibold text-[#5A615D] mb-1.5">
-              প্রিন্টার মডেল ও সাইজ (Printer Size)
+              Printer Model & Size
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -107,7 +107,7 @@ export default function OrderLabelSamplePage() {
                   {size === "marklife-p15" && <CheckCircle2 className="w-3 h-3 text-[#C7EDB5]" />}
                 </span>
                 <span className={`text-[10px] mt-0.5 ${size === "marklife-p15" ? "text-gray-300" : "text-[#5A615D]"}`}>
-                  15mm স্লিম টেপ (15×40mm)
+                  15mm Slim Tape (15×40mm)
                 </span>
               </button>
 
@@ -125,7 +125,7 @@ export default function OrderLabelSamplePage() {
                   {size === "compact" && <CheckCircle2 className="w-3 h-3 text-[#C7EDB5]" />}
                 </span>
                 <span className={`text-[10px] mt-0.5 ${size === "compact" ? "text-gray-300" : "text-[#5A615D]"}`}>
-                  ছোট বক্স ও কসমেটিক্স
+                  Small Boxes & Cosmetics
                 </span>
               </button>
 
@@ -143,7 +143,7 @@ export default function OrderLabelSamplePage() {
                   {size === "standard" && <CheckCircle2 className="w-3 h-3 text-[#C7EDB5]" />}
                 </span>
                 <span className={`text-[10px] mt-0.5 ${size === "standard" ? "text-gray-300" : "text-[#5A615D]"}`}>
-                  পার্সেল ও কুরিয়ার
+                  Parcels & Couriers
                 </span>
               </button>
             </div>
@@ -177,7 +177,7 @@ export default function OrderLabelSamplePage() {
             {/* Theme Selector */}
             <div>
               <label className="block text-xs font-semibold text-[#5A615D] mb-1">
-                লেবেল থিম (Sticker Finish)
+                Label Theme (Sticker Finish)
               </label>
               <div className="grid grid-cols-3 gap-1.5">
                 <button
@@ -189,7 +189,7 @@ export default function OrderLabelSamplePage() {
                       : "bg-[#FAF9F6] text-[#5A615D] border-[#E2DED8]"
                   }`}
                 >
-                  থার্মাল সাদা
+                  Thermal White
                 </button>
                 <button
                   type="button"
@@ -200,7 +200,7 @@ export default function OrderLabelSamplePage() {
                       : "bg-[#FAF9F6] text-[#5A615D] border-[#E2DED8]"
                   }`}
                 >
-                  সিলভার
+                  Silver Metallic
                 </button>
                 <button
                   type="button"
@@ -211,7 +211,7 @@ export default function OrderLabelSamplePage() {
                       : "bg-[#FAF9F6] text-[#5A615D] border-[#E2DED8]"
                   }`}
                 >
-                  মিনিমাল
+                  Minimal
                 </button>
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function OrderLabelSamplePage() {
               className="flex-1 py-3 px-4 bg-[#062402] hover:bg-[#1C3A13] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-md"
             >
               <Printer className="w-4 h-4 text-[#C7EDB5]" />
-              <span>প্রিন্ট করুন (Print Label)</span>
+              <span>Print Label</span>
             </button>
             <a
               href={fullUrl}
@@ -233,7 +233,7 @@ export default function OrderLabelSamplePage() {
               rel="noreferrer"
               className="py-3 px-4 bg-[#F2F6F0] hover:bg-[#EAF7D8] text-[#1C3A13] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-[#E2DED8]"
             >
-              <span>টেস্ট লিঙ্ক ওপেন করুন</span>
+              <span>Open Test Link</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -243,10 +243,10 @@ export default function OrderLabelSamplePage() {
         <div className="bg-[#FAF9F6] rounded-2xl p-4 border border-[#E2DED8] text-xs text-[#5A615D] space-y-2">
           <div className="font-bold text-[#062402] flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#4B6723]" />
-            <span>Marklife P15 প্রিন্টারের জন্য গাইড:</span>
+            <span>Marklife P15 Printer Guide:</span>
           </div>
           <p className="text-[11px] leading-relaxed">
-            <strong>হ্যাঁ, Marklife P15-এ ১০০% পারফেক্টভাবে প্রিন্ট হবে!</strong> Marklife P15 হলো ১২-১৫ মিমি স্লিম টেপ প্রিন্টার। এর জন্য আমরা বিশেষ <strong>15mm স্লিম লেআউট</strong> যোগ করেছি—যেখানে বাম পাশে শার্প ১২ মিমি QR কোড এবং ডান পাশে ব্র্যান্ড নাম ও অর্ডার নম্বর পাশাপাশি সেট থাকে।
+            <strong>Optimized for Marklife P15 printers.</strong> Marklife P15 supports 12-15mm slim tape rolls. The specialized <strong>15mm Slim Layout</strong> pairs a 12mm sharp QR code on the left with order details and branding on the right.
           </p>
         </div>
       </div>

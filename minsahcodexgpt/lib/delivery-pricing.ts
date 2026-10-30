@@ -149,10 +149,10 @@ export function getDeliveryOfferBadgeText(product: DeliveryOfferProductInput): s
   if (explicitText) return explicitText;
 
   const offerType = normalizeOfferType(product.deliveryOfferType);
-  if (offerType === 'FREE') return 'এই পণ্যে ফ্রি ডেলিভারি';
+  if (offerType === 'FREE') return 'Free delivery on this product';
   if (offerType === 'FIXED') {
     const amount = normalizeMoney(product.deliveryOfferAmount);
-    return `বিশেষ ডেলিভারি অফার: ৳${amount}`;
+    return `Special delivery offer: ৳${amount}`;
   }
 
   return null;

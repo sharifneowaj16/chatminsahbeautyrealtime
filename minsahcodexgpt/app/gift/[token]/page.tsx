@@ -22,10 +22,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     ...noindexMetadata,
-    title: `${data.gift.senderName} তোমাকে গিফট করতে চায়`,
-    description: `${data.product.name} — Minsah Beauty থেকে বিশেষ উপহার`,
+    title: `${data.gift.senderName} sent you a gift`,
+    description: `${data.product.name} — A special gift from Minsah Beauty`,
     openGraph: {
-      title: `🎁 ${data.gift.senderName} তোমার জন্য গিফট পাঠিয়েছে!`,
+      title: `🎁 ${data.gift.senderName} sent you a gift!`,
       description: `${data.product.name}`,
       images: data.product.image ? [{ url: data.product.image }] : [],
     },

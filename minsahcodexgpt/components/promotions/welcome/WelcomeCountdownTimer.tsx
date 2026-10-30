@@ -4,18 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { Timer } from 'lucide-react';
 
 export default function WelcomeCountdownTimer() {
+  const [mounted, setMounted] = useState(false);
   const [totalSeconds, setTotalSeconds] = useState(23 * 3600 + 59 * 60 + 42);
 
   useEffect(() => {
+    setMounted(true);
     const timer = setInterval(() => {
       setTotalSeconds((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const hours = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60;
+  const hours = mounted ? Math.floor(totalSeconds / 3600) : 23;
+  const mins = mounted ? Math.floor((totalSeconds % 3600) / 60) : 59;
+  const secs = mounted ? totalSeconds % 60 : 42;
 
   const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -24,7 +26,7 @@ export default function WelcomeCountdownTimer() {
       <div className="flex items-center gap-1.5">
         <Timer className="w-4 h-4 text-[#845f06] animate-pulse" />
         <span className="text-[11px] text-[#1c3a13] font-semibold">
-          অফার শেষ হতে বাকি:
+          Offer expires in:
         </span>
       </div>
       {/* Digital Timer Boxes */}

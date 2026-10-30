@@ -675,7 +675,7 @@ class TrackingManager {
 
   /**
    * Send tracking data to server for storage and analysis
-   * Note: শুধু sessionId ও deviceId পাঠাও — পুরো session history না
+   * Note: Only send sessionId and deviceId — do not send full session history
    */
   private async sendToServer(event: TrackingEvent, data?: TrackingEventData): Promise<void> {
     try {

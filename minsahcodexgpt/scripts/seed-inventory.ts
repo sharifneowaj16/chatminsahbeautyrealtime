@@ -528,25 +528,25 @@ async function main() {
     {
       productId: cleanserProduct.id,
       priority: 3, // Urgent
-      note: "স্টক খুবই কম (৬ পিস বাকি)। দ্রুত ৫০ পিস রিঅর্ডার করতে হবে।",
+      note: "Stock is critically low (6 pcs left). Need to reorder 50 pcs soon.",
       adminId,
     },
     {
       productId: lipstickProduct.id,
       priority: 3, // Urgent
-      note: "আউট অফ স্টক! কাস্টমার ডিমান্ড বেশি, পল্টন সাপ্লায়ার থেকে ২০ পিস আনতে হবে।",
+      note: "Out of stock! High customer demand, need 20 pcs from supplier.",
       adminId,
     },
     {
       productId: vitcCreamProduct.id,
       priority: 2, // High
-      note: "উইকেন্ডে বিশেষ অফার রয়েছে, স্টক শেষ হওয়ার আগেই অর্ডার দেওয়া প্রয়োজন।",
+      note: "Weekend promo running, reorder needed before stock depletion.",
       adminId,
     },
     {
       productId: serumProduct.id,
       priority: 1, // Normal
-      note: "সাপ্লায়ার এই সপ্তাহে ৫% ভলিউম ডিসকাউন্ট অফার করেছে।",
+      note: "Supplier offered 5% volume discount this week.",
       adminId,
     },
   ];
@@ -604,8 +604,8 @@ async function main() {
             purchasedAt: isPurchased ? daysAgo(1) : null,
             priority: order.status === "CONFIRMED" ? "URGENT" : order.status === "PENDING" ? "HIGH" : "NORMAL",
             notes: isPurchased
-              ? "সাপ্লায়ার ডেলিভারি সম্পন্ন করেছে এবং গোডাউনে রিসিভ হয়েছে।"
-              : "কাস্টমার কনফার্ম করেছে, আজই লোকাল ভেন্ডর থেকে স্টক আনতে হবে।",
+              ? "Supplier delivery completed and received at warehouse."
+              : "Customer confirmed order, procure from local vendor today.",
             adminId,
           },
           create: {
@@ -619,8 +619,8 @@ async function main() {
             purchasedAt: isPurchased ? daysAgo(1) : null,
             priority: order.status === "CONFIRMED" ? "URGENT" : order.status === "PENDING" ? "HIGH" : "NORMAL",
             notes: isPurchased
-              ? "সাপ্লায়ার ডেলিভারি সম্পন্ন করেছে এবং গোডাউনে রিসিভ হয়েছে।"
-              : "কাস্টমার কনফার্ম করেছে, আজই লোকাল ভেন্ডর থেকে স্টক আনতে হবে।",
+              ? "Supplier delivery completed and received at warehouse."
+              : "Customer confirmed order, procure from local vendor today.",
             adminId,
           },
         });

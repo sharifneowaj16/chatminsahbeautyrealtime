@@ -44,7 +44,7 @@ function StatCard({ icon, label, value, subtext, indicator }: StatCardProps) {
 
 export default function StatsSection({ stats }: { stats: Stats }) {
   const formatCurrency = (amount: number) => {
-    return `৳${amount.toLocaleString('bn-BD')}`;
+    return `৳${amount.toLocaleString('en-US')}`;
   };
 
   return (

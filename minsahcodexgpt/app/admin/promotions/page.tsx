@@ -2,31 +2,35 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/ToastProvider';
-import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import {
   Tag,
   Truck,
-  Gift,
   ShieldAlert,
   Save,
   Plus,
   Trash2,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
-  Percent,
-  DollarSign,
   Sparkles,
-  Info,
-  HelpCircle,
-  Eye,
-  Settings,
-  RefreshCw,
+  Layers,
+  MapPin,
 } from 'lucide-react';
 import { formatPrice } from '@/utils/currency';
 import type { AdminOfferPayload } from '@/app/api/admin/offer-engine/route';
+import type { OfferPlacement } from '@/lib/commerce/offer-engine/types';
 
 type ActiveTab = 'coupons' | 'topbar' | 'bundles' | 'anticonflict';
+
+const ALL_PLACEMENTS: { key: OfferPlacement; label: string; description: string }[] = [
+  { key: 'top_bar', label: 'Top Bar', description: 'Top announcement strip' },
+  { key: 'home_banner', label: 'Home Page', description: 'Home hero/featured slot' },
+  { key: 'shop_banner', label: 'Shop Grid', description: 'Catalog & category banner' },
+  { key: 'product_page', label: 'Product Detail', description: 'Buy box offer slot' },
+  { key: 'offers_page', label: 'Offers Page', description: 'Dedicated campaign hub' },
+  { key: 'cart_drawer', label: 'Cart Drawer', description: 'Side cart drawer list' },
+  { key: 'checkout_page', label: 'Checkout Page', description: 'Order breakdown slot' },
+  { key: 'account_dashboard', label: 'Account', description: 'Customer account perks' },
+];
 
 export default function UniversalOfferEngineAdminPage() {
   const { pushToast } = useToast();
@@ -40,7 +44,7 @@ export default function UniversalOfferEngineAdminPage() {
   // Form State
   const [config, setConfig] = useState<AdminOfferPayload | null>(null);
 
-  // New Coupon Modal/Inline State
+  // New Coupon Form State
   const [showAddCoupon, setShowAddCoupon] = useState(false);
   const [newCoupon, setNewCoupon] = useState({
     code: '',
@@ -51,6 +55,9 @@ export default function UniversalOfferEngineAdminPage() {
     maxDiscount: 0,
     allowOnBundles: false,
     isActive: true,
+    placements: ['cart_drawer', 'checkout_page'] as OfferPlacement[],
+    badgeText: '',
+    bannerText: '',
   });
 
   // Fetch initial config
@@ -133,6 +140,28 @@ export default function UniversalOfferEngineAdminPage() {
     pushToast({ title: `Coupon "${code}" removed`, tone: 'info' });
   };
 
+  const handleTogglePlacement = (couponIndex: number, placement: OfferPlacement) => {
+    if (!config) return;
+    const updated = [...config.coupons];
+    const currentPlacements = updated[couponIndex].placements || ['cart_drawer', 'checkout_page'];
+    const exists = currentPlacements.includes(placement);
+    updated[couponIndex].placements = exists
+      ? currentPlacements.filter((p) => p !== placement)
+      : [...currentPlacements, placement];
+    setConfig({ ...config, coupons: updated });
+    markDirty();
+  };
+
+  const handleToggleNewCouponPlacement = (placement: OfferPlacement) => {
+    const exists = newCoupon.placements.includes(placement);
+    setNewCoupon({
+      ...newCoupon,
+      placements: exists
+        ? newCoupon.placements.filter((p) => p !== placement)
+        : [...newCoupon.placements, placement],
+    });
+  };
+
   const handleAddCouponSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!config) return;
@@ -154,6 +183,12 @@ export default function UniversalOfferEngineAdminPage() {
       value: Number(newCoupon.value) || 0,
       minSubtotal: Number(newCoupon.minSubtotal) || 0,
       maxDiscount: Number(newCoupon.maxDiscount) || 0,
+      placements:
+        newCoupon.placements.length > 0
+          ? newCoupon.placements
+          : (['cart_drawer', 'checkout_page'] as OfferPlacement[]),
+      badgeText: newCoupon.badgeText.trim() || undefined,
+      bannerText: newCoupon.bannerText.trim() || undefined,
     };
 
     setConfig({
@@ -171,6 +206,9 @@ export default function UniversalOfferEngineAdminPage() {
       maxDiscount: 0,
       allowOnBundles: false,
       isActive: true,
+      placements: ['cart_drawer', 'checkout_page'],
+      badgeText: '',
+      bannerText: '',
     });
     markDirty();
     pushToast({ title: `Coupon "${trimmedCode}" created successfully!`, tone: 'success' });
@@ -187,35 +225,40 @@ export default function UniversalOfferEngineAdminPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      
       {/* ── Top Header & Global Actions ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#232636] pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-orange-100 text-white">
+            <span className="p-2 rounded-xl bg-orange-500/10 text-orange-400">
               <Sparkles className="w-5 h-5" />
             </span>
             <h1 className="text-2xl font-bold text-[#F7F8F8] tracking-tight">
               Universal Offer & Promotion Center
             </h1>
           </div>
-          <p className="text-sm text-[#8A8F98] mt-1">
-            WordPress/WooCommerce-style all-in-one offer manager: live synchronization across Top Bar, Cart, Bundles & Checkout.
+          <p className="text-xs text-[#8A8F98] mt-1">
+            Single source of truth for coupons, delivery thresholds, profit-sharing bundles, and named UI slots.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {hasChanges && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/70 text-amber-300 border border-amber-800/40 animate-pulse">
-              <AlertCircle className="w-3.5 h-3.5" />
-              Unsaved Changes
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={fetchConfig}
+            disabled={loading || saving}
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#161824] border border-[#232636] text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/20 transition-all shadow-xs"
+          >
+            Refresh
+          </button>
           <button
             type="button"
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/90 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+              hasChanges
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 cursor-pointer'
+                : 'bg-[#232636] text-[#62666d] cursor-not-allowed'
+            }`}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save All Changes
@@ -223,79 +266,75 @@ export default function UniversalOfferEngineAdminPage() {
         </div>
       </div>
 
-      {/* ── WordPress-Style Navigation Tabs ── */}
-      <div className="flex overflow-x-auto gap-2 border-b border-[#232636] pb-px">
+      {/* ── Navigation Tabs ── */}
+      <div className="flex flex-wrap gap-2 border-b border-[#232636] pb-2">
         <button
           type="button"
           onClick={() => setActiveTab('coupons')}
-          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'coupons'
-              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
-              : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
+              ? 'bg-[#232636] text-white shadow-xs'
+              : 'text-[#8A8F98] hover:text-[#F7F8F8]'
           }`}
         >
           <Tag className="w-4 h-4" />
-          <span>Coupons & Vouchers</span>
-          <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-[#10121b] border border-[#232636] text-[#8A8F98] font-bold">
-            {config.coupons.length}
-          </span>
+          Coupons & Placement Slots ({config.coupons.length})
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('topbar')}
-          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'topbar'
-              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
-              : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
+              ? 'bg-[#232636] text-white shadow-xs'
+              : 'text-[#8A8F98] hover:text-[#F7F8F8]'
           }`}
         >
           <Truck className="w-4 h-4" />
-          <span>Top Bar Delivery Perks</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          Top Bar Delivery Perks
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('bundles')}
-          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'bundles'
-              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
-              : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
+              ? 'bg-[#232636] text-white shadow-xs'
+              : 'text-[#8A8F98] hover:text-[#F7F8F8]'
           }`}
         >
-          <Gift className="w-4 h-4" />
-          <span>Bundles & Combos Engine</span>
+          <Layers className="w-4 h-4" />
+          Real Benefit Bundles
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('anticonflict')}
-          className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'anticonflict'
-              ? 'border-white text-white bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]/10'
-              : 'border-transparent text-[#8A8F98] hover:text-[#F7F8F8] hover:border-white/[0.15]'
+              ? 'bg-[#232636] text-white shadow-xs'
+              : 'text-[#8A8F98] hover:text-[#F7F8F8]'
           }`}
         >
-          <ShieldAlert className="w-4 h-4 text-emerald-600" />
-          <span>Anti-Conflict & Free Shipping Rules</span>
+          <ShieldAlert className="w-4 h-4" />
+          Free Shipping & Anti-Stacking
         </button>
       </div>
 
-      {/* ── TAB 1: COUPONS & VOUCHERS ── */}
+      {/* ── TAB 1: COUPONS & PLACEMENTS ── */}
       {activeTab === 'coupons' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-[#F7F8F8]">Promo Coupons</h2>
+              <h2 className="text-lg font-bold text-[#F7F8F8]">Store Coupons & Placement Slots</h2>
               <p className="text-xs text-[#8A8F98]">
-                Manage discounts applicable at Cart Drawer and Checkout.
+                Assign coupons to specific named storefront slots (Cart Drawer, Checkout, Product Detail, etc.).
               </p>
             </div>
             <button
               type="button"
-              onClick={() => setShowAddCoupon(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs transition-all"
+              onClick={() => setShowAddCoupon(!showAddCoupon)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#161824] border border-[#232636] text-[#F7F8F8] hover:bg-[#232636] transition-all"
             >
               <Plus className="w-4 h-4" />
               Add New Coupon
@@ -304,10 +343,10 @@ export default function UniversalOfferEngineAdminPage() {
 
           {/* New Coupon Modal / Form Drawer */}
           {showAddCoupon && (
-            <div className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/40 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-emerald-200/60 pb-3">
-                <h3 className="font-bold text-sm text-emerald-950 flex items-center gap-1.5">
-                  <Plus className="w-4 h-4 text-emerald-700" /> Create New Coupon Voucher
+            <div className="p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
+                <h3 className="font-bold text-sm text-[#F7F8F8] flex items-center gap-1.5">
+                  <Plus className="w-4 h-4 text-emerald-400" /> Create New Coupon Voucher
                 </h3>
                 <button
                   type="button"
@@ -318,88 +357,139 @@ export default function UniversalOfferEngineAdminPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleAddCouponSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#8A8F98] mb-1">Coupon Code *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. SUMMER15"
-                    value={newCoupon.code}
-                    onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm font-mono font-bold uppercase focus:ring-1 focus:ring-white/20 outline-none"
-                  />
+              <form onSubmit={handleAddCouponSubmit} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#8A8F98] mb-1">Coupon Code *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. SUMMER15"
+                      value={newCoupon.code}
+                      onChange={(e) =>
+                        setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })
+                      }
+                      className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm font-mono font-bold uppercase focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#8A8F98] mb-1">Discount Type</label>
+                    <select
+                      value={newCoupon.type}
+                      onChange={(e) => setNewCoupon({ ...newCoupon, type: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                    >
+                      <option value="percentage">% Percentage Discount</option>
+                      <option value="flat">৳ Fixed Flat Amount</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#8A8F98] mb-1">
+                      Value {newCoupon.type === 'percentage' ? '(%)' : '(৳)'} *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={newCoupon.type === 'percentage' ? '100' : '10000'}
+                      required
+                      value={newCoupon.value}
+                      onChange={(e) => setNewCoupon({ ...newCoupon, value: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm font-bold focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#8A8F98] mb-1">Min Subtotal (৳)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0 = No minimum"
+                      value={newCoupon.minSubtotal || ''}
+                      onChange={(e) =>
+                        setNewCoupon({ ...newCoupon, minSubtotal: Number(e.target.value) })
+                      }
+                      className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-[#8A8F98] mb-1">
+                      Customer Description
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 15% off on summer essentials"
+                      value={newCoupon.description}
+                      onChange={(e) => setNewCoupon({ ...newCoupon, description: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#8A8F98] mb-1">Badge Text (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 15% OFF"
+                      value={newCoupon.badgeText}
+                      onChange={(e) => setNewCoupon({ ...newCoupon, badgeText: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-5">
+                    <input
+                      type="checkbox"
+                      id="new-allowOnBundles"
+                      checked={newCoupon.allowOnBundles}
+                      onChange={(e) =>
+                        setNewCoupon({ ...newCoupon, allowOnBundles: e.target.checked })
+                      }
+                      className="rounded border-[#232636] text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <label htmlFor="new-allowOnBundles" className="text-xs font-semibold text-[#8A8F98]">
+                      Allow Stacking on Bundles
+                    </label>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#8A8F98] mb-1">Discount Type</label>
-                  <select
-                    value={newCoupon.type}
-                    onChange={(e) => setNewCoupon({ ...newCoupon, type: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
-                  >
-                    <option value="percentage">% Percentage Discount</option>
-                    <option value="flat">৳ Fixed Flat Amount</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#8A8F98] mb-1">
-                    Value {newCoupon.type === 'percentage' ? '(%)' : '(৳)'} *
+                {/* Placement Slots Selection */}
+                <div className="p-3.5 rounded-xl border border-[#232636] bg-[#10121b]">
+                  <label className="block text-xs font-bold text-[#F7F8F8] mb-2">
+                    Storefront Placement Slots (Check all slots where this offer should display)
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={newCoupon.type === 'percentage' ? '100' : '10000'}
-                    required
-                    value={newCoupon.value}
-                    onChange={(e) => setNewCoupon({ ...newCoupon, value: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm font-bold focus:ring-1 focus:ring-white/20 outline-none"
-                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {ALL_PLACEMENTS.map((slot) => {
+                      const isChecked = newCoupon.placements.includes(slot.key);
+                      return (
+                        <label
+                          key={slot.key}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                            isChecked
+                              ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-semibold'
+                              : 'border-[#232636] bg-[#161824] text-[#8A8F98] hover:border-white/10'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleNewCouponPlacement(slot.key)}
+                            className="rounded border-[#232636] text-emerald-500"
+                          />
+                          <span>{slot.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#8A8F98] mb-1">Min Subtotal (৳)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0 = No minimum"
-                    value={newCoupon.minSubtotal || ''}
-                    onChange={(e) => setNewCoupon({ ...newCoupon, minSubtotal: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-[#8A8F98] mb-1">Customer Description</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 15% off on summer essentials"
-                    value={newCoupon.description}
-                    onChange={(e) => setNewCoupon({ ...newCoupon, description: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-sm focus:ring-1 focus:ring-white/20 outline-none"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 pt-6">
-                  <input
-                    type="checkbox"
-                    id="new-allowOnBundles"
-                    checked={newCoupon.allowOnBundles}
-                    onChange={(e) => setNewCoupon({ ...newCoupon, allowOnBundles: e.target.checked })}
-                    className="rounded border-[#232636] text-white focus:ring-white/20"
-                  />
-                  <label htmlFor="new-allowOnBundles" className="text-xs font-semibold text-[#8A8F98]">
-                    Allow Stacking on Bundles
-                  </label>
-                </div>
-
-                <div className="flex items-end justify-end">
+                <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="w-full py-2 px-4 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
+                    className="py-2 px-6 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer"
                   >
-                    Save & Activate
+                    Save & Activate Coupon
                   </button>
                 </div>
               </form>
@@ -408,78 +498,106 @@ export default function UniversalOfferEngineAdminPage() {
 
           {/* Coupon Table */}
           <div className="overflow-hidden rounded-2xl border border-[#232636] bg-[#161824] shadow-xs">
-            <table className="min-w-full divide-y divide-[#232636] text-left text-xs">
-              <thead className="bg-[#10121b] text-[#8A8F98] font-bold uppercase tracking-wider text-[11px] border-b border-[#232636]">
-                <tr>
-                  <th className="px-4 py-3">Code</th>
-                  <th className="px-4 py-3">Type & Value</th>
-                  <th className="px-4 py-3">Description</th>
-                  <th className="px-4 py-3">Anti-Stacking Rule</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#232636]">
-                {config.coupons.map((coupon, idx) => (
-                  <tr key={coupon.code} className="hover:bg-[#1b1e2c]/70 transition-colors">
-                    <td className="px-4 py-3.5 font-mono font-bold text-[#F7F8F8] text-sm">
-                      <span className="px-2 py-1 rounded-md bg-[#10121b] border border-[#232636] text-[#F7F8F8]">
-                        {coupon.code}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 font-semibold text-[#F7F8F8]">
-                      {coupon.type === 'percentage' ? (
-                        <span className="text-emerald-700 font-bold">{coupon.value}% Off</span>
-                      ) : (
-                        <span className="text-blue-700 font-bold">৳{coupon.value} Flat Off</span>
-                      )}
-                      {coupon.minSubtotal ? (
-                        <span className="block text-[11px] text-[#8A8F98] font-normal">
-                          Min: {formatPrice(coupon.minSubtotal)}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3.5 text-[#8A8F98] max-w-xs truncate">
-                      {coupon.description || '—'}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {coupon.allowOnBundles ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                          Stacks with Bundles
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          Regular Items Only (Safe)
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleCoupon(idx)}
-                        className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                          coupon.isActive
-                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                            : 'bg-[#10121b] text-[#8A8F98] hover:bg-white/[0.12]'
-                        }`}
-                      >
-                        {coupon.isActive ? 'Active' : 'Disabled'}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCoupon(idx)}
-                        className="p-1.5 text-[#62666d] hover:text-red-600 rounded-lg hover:bg-rose-500/10 transition-colors"
-                        title="Delete coupon"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-[#232636] text-left text-xs">
+                <thead className="bg-[#10121b] text-[#8A8F98] font-bold uppercase tracking-wider text-[11px] border-b border-[#232636]">
+                  <tr>
+                    <th className="px-4 py-3">Code</th>
+                    <th className="px-4 py-3">Type & Value</th>
+                    <th className="px-4 py-3">Description</th>
+                    <th className="px-4 py-3">Placement Slots (Click to Toggle)</th>
+                    <th className="px-4 py-3">Stacking</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#232636]">
+                  {config.coupons.map((coupon, idx) => {
+                    const placements = coupon.placements || ['cart_drawer', 'checkout_page'];
+                    return (
+                      <tr key={coupon.code} className="hover:bg-[#1b1e2c]/70 transition-colors">
+                        <td className="px-4 py-3.5 font-mono font-bold text-[#F7F8F8] text-sm">
+                          <span className="px-2 py-1 rounded-md bg-[#10121b] border border-[#232636] text-[#F7F8F8]">
+                            {coupon.code}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 font-semibold text-[#F7F8F8]">
+                          {coupon.type === 'percentage' ? (
+                            <span className="text-emerald-400 font-bold">{coupon.value}% Off</span>
+                          ) : (
+                            <span className="text-blue-400 font-bold">৳{coupon.value} Flat Off</span>
+                          )}
+                          {coupon.minSubtotal ? (
+                            <span className="block text-[11px] text-[#8A8F98] font-normal">
+                              Min: {formatPrice(coupon.minSubtotal)}
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-3.5 text-[#8A8F98] max-w-xs truncate">
+                          {coupon.description || '—'}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {ALL_PLACEMENTS.map((slot) => {
+                              const active = placements.includes(slot.key);
+                              return (
+                                <button
+                                  key={slot.key}
+                                  type="button"
+                                  onClick={() => handleTogglePlacement(idx, slot.key)}
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all ${
+                                    active
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                                      : 'bg-[#10121b] text-[#62666d] border border-[#232636] hover:text-[#8A8F98]'
+                                  }`}
+                                  title={`Click to ${active ? 'remove from' : 'add to'} ${slot.label}`}
+                                >
+                                  {slot.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {coupon.allowOnBundles ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                              Stacks on Bundles
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                              Non-bundle Only
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCoupon(idx)}
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                              coupon.isActive
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30'
+                                : 'bg-[#10121b] text-[#8A8F98] border border-[#232636] hover:bg-white/[0.08]'
+                            }`}
+                          >
+                            {coupon.isActive ? 'Active' : 'Disabled'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCoupon(idx)}
+                            className="p-1.5 text-[#62666d] hover:text-red-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="Delete coupon"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -503,14 +621,14 @@ export default function UniversalOfferEngineAdminPage() {
                   setConfig({ ...config, topBar: { ...config.topBar, enabled: e.target.checked } });
                   markDirty();
                 }}
-                className="w-4 h-4 rounded border-[#232636] text-white focus:ring-white/20"
+                className="w-4 h-4 rounded border-[#232636] text-emerald-500 focus:ring-emerald-500"
               />
             </div>
           </div>
 
-          {/* Tier 1: Product Free Delivery */}
+          {/* Tier 1 */}
           <div className="p-5 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b pb-2">
+            <div className="flex items-center justify-between border-b border-[#232636] pb-2">
               <span className="font-bold text-sm text-[#F7F8F8] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 Priority 1: Product Specific Free Delivery
@@ -530,13 +648,13 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
+                  className="rounded border-[#232636] text-emerald-500"
                 />
               </label>
             </div>
 
-            {/* Live Interactive Preview */}
             <div
-              className="p-3 rounded-xl text-center text-xs sm:text-sm font-semibold transition-all border"
+              className="p-3 rounded-xl text-center text-xs sm:text-sm font-semibold transition-all border border-[#232636]"
               style={{
                 backgroundColor: config.topBar.message1.backgroundColor,
                 color: config.topBar.message1.textColor,
@@ -561,13 +679,12 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
-                  className="w-full px-3 py-2 rounded-lg border text-xs focus:ring-1 focus:ring-white/20 outline-none"
+                  className="w-full px-3 py-1.5 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-xs outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Colors (Bg / Text)</label>
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Background</label>
                   <input
                     type="color"
                     value={config.topBar.message1.backgroundColor}
@@ -581,8 +698,11 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="h-8 w-10 p-0 border rounded cursor-pointer"
+                    className="w-full h-8 rounded border border-[#232636] bg-[#10121b] cursor-pointer"
                   />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Text Color</label>
                   <input
                     type="color"
                     value={config.topBar.message1.textColor}
@@ -596,19 +716,19 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="h-8 w-10 p-0 border rounded cursor-pointer"
+                    className="w-full h-8 rounded border border-[#232636] bg-[#10121b] cursor-pointer"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Tier 2: New Customer Delivery Offer */}
+          {/* Tier 2 */}
           <div className="p-5 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b pb-2">
+            <div className="flex items-center justify-between border-b border-[#232636] pb-2">
               <span className="font-bold text-sm text-[#F7F8F8] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-500" />
-                Priority 3: New Customer Delivery Tier
+                Priority 2: Fast Zone Delivery Window
               </span>
               <label className="flex items-center gap-1.5 text-xs font-semibold text-[#8A8F98]">
                 <span>Active:</span>
@@ -625,12 +745,13 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
+                  className="rounded border-[#232636] text-emerald-500"
                 />
               </label>
             </div>
 
             <div
-              className="p-3 rounded-xl text-center text-xs sm:text-sm font-semibold transition-all border"
+              className="p-3 rounded-xl text-center text-xs sm:text-sm font-semibold transition-all border border-[#232636]"
               style={{
                 backgroundColor: config.topBar.message2.backgroundColor,
                 color: config.topBar.message2.textColor,
@@ -655,13 +776,12 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
-                  className="w-full px-3 py-2 rounded-lg border text-xs focus:ring-1 focus:ring-white/20 outline-none"
+                  className="w-full px-3 py-1.5 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-xs outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Colors (Bg / Text)</label>
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Background</label>
                   <input
                     type="color"
                     value={config.topBar.message2.backgroundColor}
@@ -675,8 +795,11 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="h-8 w-10 p-0 border rounded cursor-pointer"
+                    className="w-full h-8 rounded border border-[#232636] bg-[#10121b] cursor-pointer"
                   />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Text Color</label>
                   <input
                     type="color"
                     value={config.topBar.message2.textColor}
@@ -690,19 +813,19 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="h-8 w-10 p-0 border rounded cursor-pointer"
+                    className="w-full h-8 rounded border border-[#232636] bg-[#10121b] cursor-pointer"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Tier 3: Returning Customer Retention */}
+          {/* Tier 3 */}
           <div className="p-5 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b pb-2">
+            <div className="flex items-center justify-between border-b border-[#232636] pb-2">
               <span className="font-bold text-sm text-[#F7F8F8] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-purple-500" />
-                Priority 2: Returning Customer Loyalty Perk
+                Priority 3: General Free Delivery Announcement
               </span>
               <label className="flex items-center gap-1.5 text-xs font-semibold text-[#8A8F98]">
                 <span>Active:</span>
@@ -719,12 +842,13 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
+                  className="rounded border-[#232636] text-emerald-500"
                 />
               </label>
             </div>
 
             <div
-              className="p-3 rounded-xl text-center text-xs sm:text-sm font-semibold transition-all border"
+              className="p-3 rounded-xl text-center text-xs sm:text-sm font-semibold transition-all border border-[#232636]"
               style={{
                 backgroundColor: config.topBar.message3.backgroundColor,
                 color: config.topBar.message3.textColor,
@@ -749,13 +873,12 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
-                  className="w-full px-3 py-2 rounded-lg border text-xs focus:ring-1 focus:ring-white/20 outline-none"
+                  className="w-full px-3 py-1.5 rounded-lg border border-[#232636] bg-[#10121b] text-[#F7F8F8] text-xs outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Colors (Bg / Text)</label>
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Background</label>
                   <input
                     type="color"
                     value={config.topBar.message3.backgroundColor}
@@ -769,8 +892,11 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="h-8 w-10 p-0 border rounded cursor-pointer"
+                    className="w-full h-8 rounded border border-[#232636] bg-[#10121b] cursor-pointer"
                   />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A8F98] mb-1">Text Color</label>
                   <input
                     type="color"
                     value={config.topBar.message3.textColor}
@@ -784,7 +910,7 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="h-8 w-10 p-0 border rounded cursor-pointer"
+                    className="w-full h-8 rounded border border-[#232636] bg-[#10121b] cursor-pointer"
                   />
                 </div>
               </div>
@@ -793,7 +919,7 @@ export default function UniversalOfferEngineAdminPage() {
         </div>
       )}
 
-      {/* ── TAB 3: BUNDLES & COMBOS ENGINE ── */}
+      {/* ── TAB 3: BUNDLES ── */}
       {activeTab === 'bundles' && (
         <div className="space-y-6">
           <div>
@@ -804,10 +930,12 @@ export default function UniversalOfferEngineAdminPage() {
           </div>
 
           <div className="p-6 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-6">
-            <div className="flex items-center justify-between border-b pb-4">
+            <div className="flex items-center justify-between border-b border-[#232636] pb-4">
               <div>
                 <h3 className="font-bold text-sm text-[#F7F8F8]">Enable Bundles Feature</h3>
-                <p className="text-xs text-[#8A8F98]">Show SeedHeroBundleCard & SeedBundleDrawer on product pages</p>
+                <p className="text-xs text-[#8A8F98]">
+                  Show SeedHeroBundleCard & SeedBundleDrawer on product detail pages
+                </p>
               </div>
               <input
                 type="checkbox"
@@ -819,11 +947,10 @@ export default function UniversalOfferEngineAdminPage() {
                   });
                   markDirty();
                 }}
-                className="w-5 h-5 rounded border-[#232636] text-white focus:ring-white/20"
+                className="w-5 h-5 rounded border-[#232636] text-emerald-500 focus:ring-emerald-500"
               />
             </div>
 
-            {/* Tier sliders */}
             <div className="grid sm:grid-cols-3 gap-6">
               <div className="p-4 rounded-xl bg-[#10121b] border border-[#232636]">
                 <label className="block text-xs font-bold text-[#8A8F98] mb-1">
@@ -838,16 +965,20 @@ export default function UniversalOfferEngineAdminPage() {
                     onChange={(e) => {
                       setConfig({
                         ...config,
-                        bundles: { ...config.bundles, twoStepDiscountPercent: Number(e.target.value) },
+                        bundles: {
+                          ...config.bundles,
+                          twoStepDiscountPercent: Number(e.target.value),
+                        },
                       });
                       markDirty();
                     }}
-                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
+                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none"
                   />
-                  <span className="text-xs font-semibold text-[#8A8F98]">% of Real Profit</span>
+                  <span className="text-xs font-semibold text-[#8A8F98]">% of Profit</span>
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
-                  Customer gets {config.bundles.twoStepDiscountPercent}% of net profit; store retains {100 - config.bundles.twoStepDiscountPercent}%.
+                  Customer gets {config.bundles.twoStepDiscountPercent}% of net profit; store retains{' '}
+                  {100 - config.bundles.twoStepDiscountPercent}%.
                 </p>
               </div>
 
@@ -864,16 +995,20 @@ export default function UniversalOfferEngineAdminPage() {
                     onChange={(e) => {
                       setConfig({
                         ...config,
-                        bundles: { ...config.bundles, threeStepDiscountPercent: Number(e.target.value) },
+                        bundles: {
+                          ...config.bundles,
+                          threeStepDiscountPercent: Number(e.target.value),
+                        },
                       });
                       markDirty();
                     }}
-                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
+                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none"
                   />
-                  <span className="text-xs font-semibold text-[#8A8F98]">% of Real Profit</span>
+                  <span className="text-xs font-semibold text-[#8A8F98]">% of Profit</span>
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
-                  Customer gets {config.bundles.threeStepDiscountPercent}% of net profit; store retains {100 - config.bundles.threeStepDiscountPercent}%.
+                  Customer gets {config.bundles.threeStepDiscountPercent}% of net profit; store retains{' '}
+                  {100 - config.bundles.threeStepDiscountPercent}%.
                 </p>
               </div>
 
@@ -890,26 +1025,29 @@ export default function UniversalOfferEngineAdminPage() {
                     onChange={(e) => {
                       setConfig({
                         ...config,
-                        bundles: { ...config.bundles, fourStepDiscountPercent: Number(e.target.value) },
+                        bundles: {
+                          ...config.bundles,
+                          fourStepDiscountPercent: Number(e.target.value),
+                        },
                       });
                       markDirty();
                     }}
-                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none focus:border-white"
+                    className="w-20 px-3 py-2 rounded-lg border border-[#232636] bg-[#161824] text-[#F7F8F8] font-bold text-sm outline-none"
                   />
-                  <span className="text-xs font-semibold text-[#8A8F98]">% of Real Profit</span>
+                  <span className="text-xs font-semibold text-[#8A8F98]">% of Profit</span>
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
-                  VIP tier: customer gets {config.bundles.fourStepDiscountPercent}%; store retains {100 - config.bundles.fourStepDiscountPercent}%.
+                  VIP tier: customer gets {config.bundles.fourStepDiscountPercent}%; store retains{' '}
+                  {100 - config.bundles.fourStepDiscountPercent}%.
                 </p>
               </div>
             </div>
 
-            {/* Fallback Cost Ratio */}
             <div className="p-4 rounded-xl bg-[#10121b] border border-[#232636] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h4 className="text-xs font-bold text-[#F7F8F8]">Fallback Purchase Cost Benchmark (%)</h4>
                 <p className="text-[11px] text-[#8A8F98]">
-                  When admin does not provide product costPrice, this percentage of selling price is assumed as cost (protects zero-loss margin).
+                  When a product does not have costPrice set, this percentage of selling price is assumed as cost (protects zero-loss margin).
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -925,7 +1063,7 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
-                  className="w-20 px-3 py-1.5 rounded-lg border font-bold text-xs bg-[#161824]"
+                  className="w-20 px-3 py-1.5 rounded-lg border border-[#232636] font-bold text-xs bg-[#161824] text-[#F7F8F8]"
                 />
                 <span className="text-xs font-bold text-[#8A8F98]">%</span>
               </div>
@@ -934,26 +1072,26 @@ export default function UniversalOfferEngineAdminPage() {
         </div>
       )}
 
-      {/* ── TAB 4: ANTI-CONFLICT & FREE SHIPPING RULES ── */}
+      {/* ── TAB 4: FREE SHIPPING & ANTI-STACKING ── */}
       {activeTab === 'anticonflict' && (
         <div className="space-y-6">
           <div>
             <h2 className="text-lg font-bold text-[#F7F8F8]">Universal Free Shipping & Anti-Conflict Gate</h2>
             <p className="text-xs text-[#8A8F98]">
-              Control the canonical thresholds applied across Top Bar, Cart Drawer progress bar, and checkout.
+              Control the delivery thresholds applied across Top Bar, Cart Drawer progress bar, and checkout.
             </p>
           </div>
 
           <div className="p-6 rounded-2xl border border-[#232636] bg-[#161824] shadow-xs space-y-6">
             <div className="grid sm:grid-cols-2 gap-6">
-              
               {/* Nationwide Free Delivery Threshold */}
-              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+              <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-emerald-950">
+                  <label className="text-xs font-bold text-[#F7F8F8] flex items-center gap-1.5">
+                    <Truck className="w-4 h-4 text-emerald-400" />
                     Nationwide Free Delivery Threshold (৳)
                   </label>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-900">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
                     Active Standard
                   </span>
                 </div>
@@ -974,7 +1112,7 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="w-full px-3 py-2 rounded-lg border font-bold text-sm bg-[#161824] focus:ring-1 focus:ring-emerald-600 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] font-bold text-sm bg-[#10121b] text-[#F7F8F8] focus:ring-1 focus:ring-emerald-500 outline-none"
                   />
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
@@ -983,12 +1121,13 @@ export default function UniversalOfferEngineAdminPage() {
               </div>
 
               {/* Dhaka Metro Free Delivery Threshold */}
-              <div className="p-4 rounded-xl border border-[#5e6ad2]/20 bg-[#5e6ad2]/10/50">
+              <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/5">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-blue-950">
+                  <label className="text-xs font-bold text-[#F7F8F8] flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-blue-400" />
                     Dhaka Metro Free Delivery Threshold (৳)
                   </label>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-200 text-blue-900">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300">
                     City Tier
                   </span>
                 </div>
@@ -1009,25 +1148,95 @@ export default function UniversalOfferEngineAdminPage() {
                       });
                       markDirty();
                     }}
-                    className="w-full px-3 py-2 rounded-lg border font-bold text-sm bg-[#161824] focus:ring-1 focus:ring-blue-600 outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] font-bold text-sm bg-[#10121b] text-[#F7F8F8] focus:ring-1 focus:ring-blue-500 outline-none"
                   />
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
                   Orders inside Dhaka metro area qualify for free delivery when reaching this threshold.
                 </p>
               </div>
+
+              {/* Outside Dhaka Subsidized Threshold */}
+              <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-[#F7F8F8]">
+                    Outside Dhaka Subsidized Threshold (৳)
+                  </label>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300">
+                    Tiered Subsidy
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#8A8F98]">৳</span>
+                  <input
+                    type="number"
+                    min="100"
+                    step="50"
+                    value={config.freeDelivery.outsideDhakaSubsidizedThreshold ?? 500}
+                    onChange={(e) => {
+                      setConfig({
+                        ...config,
+                        freeDelivery: {
+                          ...config.freeDelivery,
+                          outsideDhakaSubsidizedThreshold: Number(e.target.value),
+                        },
+                      });
+                      markDirty();
+                    }}
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] font-bold text-sm bg-[#10121b] text-[#F7F8F8] outline-none"
+                  />
+                </div>
+                <p className="text-[11px] text-[#8A8F98] mt-2">
+                  Outside Dhaka orders above this subtotal qualify for subsidized delivery charge.
+                </p>
+              </div>
+
+              {/* Outside Dhaka Subsidized Fee */}
+              <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-[#F7F8F8]">
+                    Outside Dhaka Subsidized Charge (৳)
+                  </label>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300">
+                    Subsidized Rate
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#8A8F98]">৳</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={config.freeDelivery.outsideDhakaSubsidizedFee ?? 60}
+                    onChange={(e) => {
+                      setConfig({
+                        ...config,
+                        freeDelivery: {
+                          ...config.freeDelivery,
+                          outsideDhakaSubsidizedFee: Number(e.target.value),
+                        },
+                      });
+                      markDirty();
+                    }}
+                    className="w-full px-3 py-2 rounded-lg border border-[#232636] font-bold text-sm bg-[#10121b] text-[#F7F8F8] outline-none"
+                  />
+                </div>
+                <p className="text-[11px] text-[#8A8F98] mt-2">
+                  Reduced shipping charge charged to outside Dhaka customers once subsidized threshold is met.
+                </p>
+              </div>
             </div>
 
             {/* Anti-Stacking Master Gate */}
-            <div className="p-5 rounded-xl border border-amber-500/20 bg-amber-500/10/50 space-y-3">
+            <div className="p-5 rounded-xl border border-amber-500/20 bg-amber-500/10 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
                   <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-bold text-amber-950">
+                    <h4 className="text-sm font-bold text-[#F7F8F8]">
                       Strict Anti-Stacking Guard (Recommended)
                     </h4>
-                    <p className="text-xs text-amber-900/80 mt-1 leading-relaxed">
+                    <p className="text-xs text-[#8A8F98] mt-1 leading-relaxed">
                       When enabled, promotional coupon codes apply <strong>strictly to regular products</strong>. If a customer adds a promotional bundle (which already has a 15%–30% profit discount), coupon discounts will not be double-dipped on the bundle portion, completely protecting your business margin.
                     </p>
                   </div>
@@ -1045,7 +1254,7 @@ export default function UniversalOfferEngineAdminPage() {
                     });
                     markDirty();
                   }}
-                  className="w-5 h-5 rounded border-amber-300 text-white focus:ring-white/20 mt-1"
+                  className="w-5 h-5 rounded border-[#232636] text-emerald-500 focus:ring-emerald-500 mt-1"
                 />
               </div>
             </div>
@@ -1055,7 +1264,7 @@ export default function UniversalOfferEngineAdminPage() {
 
       {/* ── Sticky Bottom Save Bar ── */}
       {hasChanges && (
-        <div className="sticky bottom-6 p-4 rounded-2xl bg-[#141210] text-white shadow-xl flex items-center justify-between gap-4 z-40 animate-in slide-in-from-bottom-3 duration-200">
+        <div className="sticky bottom-6 p-4 rounded-2xl bg-[#141210] border border-[#232636] text-white shadow-xl flex items-center justify-between gap-4 z-40 animate-in slide-in-from-bottom-3 duration-200">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
             <span className="text-xs font-semibold">You have unsaved changes in Universal Offer Engine.</span>
@@ -1064,7 +1273,7 @@ export default function UniversalOfferEngineAdminPage() {
             <button
               type="button"
               onClick={fetchConfig}
-              className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 transition-all"
+              className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 transition-all cursor-pointer"
             >
               Discard
             </button>
@@ -1072,7 +1281,7 @@ export default function UniversalOfferEngineAdminPage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-[#5e6ad2] hover:bg-[#6d78d5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-all shadow-sm active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Save Changes
@@ -1080,7 +1289,6 @@ export default function UniversalOfferEngineAdminPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -272,7 +272,7 @@ function NagadPaymentContent() {
       <div className="px-4 py-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-6 text-center">
           <div className="w-24 h-24 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-3xl font-bold">নগদ</span>
+            <span className="text-white text-3xl font-bold tracking-tight">Nagad</span>
           </div>
           <h2 className="text-2xl font-bold text-minsah-dark mb-2">
             Pay with Nagad

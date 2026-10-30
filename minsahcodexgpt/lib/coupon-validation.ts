@@ -1,4 +1,8 @@
 import type { Prisma, PrismaClient } from '@/generated/prisma/client';
+import { PROMO_CATALOG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
+import { getBangladeshPhoneVariations } from '@/lib/phone';
+
+const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
 
 type MoneyLike = number | string | null | undefined | { toString(): string };
 
@@ -59,11 +63,6 @@ function capDiscount(value: number, maxDiscountableAmount: number): number {
   return roundMoney(Math.min(Math.max(0, value), Math.max(0, maxDiscountableAmount)));
 }
 
-import { PROMO_CATALOG, ENABLE_PROMO_COUPONS } from '@/lib/commerce/offer-engine';
-import { getBangladeshPhoneVariations } from '@/lib/phone';
-
-const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
-
 export async function validateCouponForOrder(params: {
   prisma: PrismaClient;
   userId: string;
@@ -97,27 +96,39 @@ export async function validateCouponForOrder(params: {
     where: { code: couponCode },
   })) as CouponRecord | null;
 
-  // Fallback to Universal Offer Engine (siteConfig) or PROMO_CATALOG
+  // If found in database and explicitly deactivated, reject immediately
+  if (coupon && !coupon.isActive) {
+    throw new CouponValidationError('Coupon is invalid or inactive', 'COUPON_NOT_FOUND');
+  }
+
+  // Fallback to Universal Offer Engine (siteConfig)
   if (!coupon) {
+    let siteConfigChecked = false;
     try {
       const siteConfig = await params.prisma.siteConfig.findUnique({
         where: { key: UNIVERSAL_OFFER_CONFIG_KEY },
       });
       if (siteConfig?.value && typeof siteConfig.value === 'object') {
-        const configCoupons = (siteConfig.value as { coupons?: Array<{
-          code: string;
-          type: 'percentage' | 'flat';
-          value: number;
-          minSubtotal?: number;
-          maxDiscount?: number;
-          isActive?: boolean;
-        }> }).coupons;
+        siteConfigChecked = true;
+        const configCoupons = (siteConfig.value as {
+          coupons?: Array<{
+            code: string;
+            type: 'percentage' | 'flat';
+            value: number;
+            minSubtotal?: number;
+            maxDiscount?: number;
+            isActive?: boolean;
+          }>;
+        }).coupons;
 
         if (Array.isArray(configCoupons)) {
           const matched = configCoupons.find(
             (c) => c && c.code && c.code.trim().toUpperCase() === couponCode
           );
-          if (matched && matched.isActive !== false) {
+          if (matched) {
+            if (matched.isActive === false) {
+              throw new CouponValidationError('Coupon is invalid or inactive', 'COUPON_NOT_FOUND');
+            }
             coupon = {
               id: '',
               code: couponCode,
@@ -135,26 +146,35 @@ export async function validateCouponForOrder(params: {
           }
         }
       }
-    } catch {
-      // Continue to PROMO_CATALOG fallback
+    } catch (err) {
+      if (err instanceof CouponValidationError) throw err;
+      // Continue
     }
 
-    if (!coupon && PROMO_CATALOG[couponCode]) {
+    // Only if siteConfig was NOT found at all do we check static PROMO_CATALOG
+    if (!coupon && !siteConfigChecked && PROMO_CATALOG[couponCode]) {
       const promo = PROMO_CATALOG[couponCode];
-      coupon = {
-        id: '',
-        code: couponCode,
-        type: promo.code === 'FREESHIP' ? 'FREE_SHIPPING' : (promo.type === 'percentage' ? 'PERCENTAGE' : 'FIXED'),
-        value: promo.type === 'percentage' ? Math.round(promo.value * 100) : promo.value,
-        minPurchase: promo.minSubtotal ?? 0,
-        maxDiscount: promo.maxDiscount ?? 0,
-        usageLimit: null,
-        usageCount: 0,
-        perUserLimit: null,
-        startDate: null,
-        endDate: null,
-        isActive: true,
-      };
+      if (promo.isActive !== false) {
+        coupon = {
+          id: '',
+          code: couponCode,
+          type:
+            promo.code === 'FREESHIP'
+              ? 'FREE_SHIPPING'
+              : promo.type === 'percentage'
+              ? 'PERCENTAGE'
+              : 'FIXED',
+          value: promo.value,
+          minPurchase: promo.minSubtotal ?? 0,
+          maxDiscount: promo.maxDiscount ?? 0,
+          usageLimit: null,
+          usageCount: 0,
+          perUserLimit: null,
+          startDate: null,
+          endDate: null,
+          isActive: true,
+        };
+      }
     }
   }
 
@@ -178,8 +198,8 @@ export async function validateCouponForOrder(params: {
   const minPurchase = toMoney(coupon.minPurchase);
   if (minPurchase > 0 && params.subtotal < minPurchase) {
     throw new CouponValidationError(
-      `Minimum order amount for this coupon is ${minPurchase}`,
-      'COUPON_MIN_PURCHASE_NOT_MET',
+      `Minimum order amount for this coupon is ৳${minPurchase}`,
+      'COUPON_MIN_PURCHASE_NOT_MET'
     );
   }
 
@@ -190,7 +210,7 @@ export async function validateCouponForOrder(params: {
     ].filter((p): p is string => Boolean(p && typeof p === 'string' && p.trim()));
 
     const phoneCandidates = Array.from(
-      new Set(rawPhones.flatMap((p) => getBangladeshPhoneVariations(p))),
+      new Set(rawPhones.flatMap((p) => getBangladeshPhoneVariations(p)))
     );
 
     const userConditions: Prisma.OrderWhereInput[] = [{ userId: params.userId }];
@@ -216,7 +236,11 @@ export async function validateCouponForOrder(params: {
     });
 
     if (userUsageCount >= coupon.perUserLimit) {
-      throw new CouponValidationError('Coupon usage limit reached for this account or phone number', 'COUPON_USER_LIMIT_REACHED', 409);
+      throw new CouponValidationError(
+        'Coupon usage limit reached for this account or phone number',
+        'COUPON_USER_LIMIT_REACHED',
+        409
+      );
     }
   }
 
@@ -226,7 +250,8 @@ export async function validateCouponForOrder(params: {
   let rawDiscount = 0;
 
   if (couponType === 'PERCENTAGE') {
-    rawDiscount = params.subtotal * (value / 100);
+    const rate = value > 1 ? value / 100 : value;
+    rawDiscount = params.subtotal * rate;
     if (maxDiscount > 0) rawDiscount = Math.min(rawDiscount, maxDiscount);
   } else if (couponType === 'FIXED') {
     rawDiscount = value;
@@ -239,9 +264,10 @@ export async function validateCouponForOrder(params: {
   // Cap promo discount so an order subtotal can never be reduced to 0 by a coupon alone.
   // Leaving at least 1 taka ensures positive payable balance.
   const maxDiscountableAmount = Math.max(0, params.subtotal - 1);
-  const discountAmount = couponType === 'FREE_SHIPPING'
-    ? capDiscount(rawDiscount, params.shippingCost)
-    : capDiscount(rawDiscount, maxDiscountableAmount);
+  const discountAmount =
+    couponType === 'FREE_SHIPPING'
+      ? capDiscount(rawDiscount, params.shippingCost)
+      : capDiscount(rawDiscount, maxDiscountableAmount);
 
   return {
     couponId: coupon.id || null,

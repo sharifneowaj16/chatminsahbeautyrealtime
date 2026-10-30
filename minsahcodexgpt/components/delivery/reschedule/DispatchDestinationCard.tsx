@@ -18,24 +18,24 @@ export function DispatchDestinationCard({
   onChangeAddress,
 }: DispatchDestinationCardProps) {
   return (
-    <div className="bg-white border border-[#E2DED8] rounded-2xl p-4 flex items-start justify-between gap-3 shadow-xs">
+    <div className="bg-white border border-[#EADFD5] rounded-2xl p-4 flex items-start justify-between gap-3 shadow-xs">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#F2F6F0] border border-[#B5C4BB] flex items-center justify-center text-[#1c3a13] mt-0.5 shrink-0">
-          <MapPin className="w-5 h-5 text-[#1c3a13]" />
+        <div className="w-9 h-9 rounded-xl bg-[#FAF6F2] border border-[#EADFD5] flex items-center justify-center text-emerald-800 mt-0.5 shrink-0">
+          <MapPin className="w-5 h-5 text-emerald-700" />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#181C1A]">
-              ডেলিভারি ঠিকানা (Dispatch Destination)
+            <span className="text-xs font-bold text-[#2D1F18]">
+              Dispatch Destination
             </span>
-            <span className="text-[10px] bg-[#ccee9b] text-[#1c3a13] px-1.5 py-0.2 rounded font-bold border border-[#B5C4BB]">
+            <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded font-bold border border-emerald-200">
               {address.label}
             </span>
           </div>
-          <p className="text-xs text-[#181C1A] font-medium mt-1 leading-snug">
+          <p className="text-xs text-[#2D1F18] font-medium mt-1 leading-snug">
             {address.addressLine}
           </p>
-          <p className="text-[11px] text-[#5A615D] mt-0.5">
+          <p className="text-[11px] text-[#7A6E65] mt-0.5">
             {address.areaCity} • 📞 {address.phone}
           </p>
         </div>
@@ -45,7 +45,7 @@ export function DispatchDestinationCard({
         <button
           type="button"
           onClick={onChangeAddress}
-          className="text-xs font-bold text-[#1c3a13] hover:text-[#28531c] flex items-center gap-0.5 transition underline-offset-4 hover:underline py-1 px-2 rounded-lg hover:bg-[#F2F6F0] shrink-0"
+          className="text-xs font-bold text-emerald-800 hover:text-emerald-900 flex items-center gap-0.5 transition underline-offset-4 hover:underline py-1 px-2 rounded-lg hover:bg-[#FAF6F2] shrink-0 cursor-pointer"
         >
           <span>Change</span>
           <ChevronRight className="w-3.5 h-3.5" />

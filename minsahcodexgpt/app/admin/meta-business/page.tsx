@@ -61,7 +61,7 @@ export default function MetaBusinessPage() {
     if (leadsResult.status === 'fulfilled') setLeads(leadsResult.value.data ?? []);
     const failures = [settings, accountResult, campaignsResult, adSetsResult, audiencesResult, insightsResult, leadsResult]
       .filter((item) => item.status === 'rejected').length;
-    if (failures) setMessage(`${failures}টি Meta resource load হয়নি। Readiness/configuration যাচাই করুন।`);
+    if (failures) setMessage(`${failures} Meta resources failed to load. Check readiness/configuration.`);
     setBusy(null);
   }, []);
 
@@ -77,18 +77,18 @@ export default function MetaBusinessPage() {
   const createCampaign = () => runAction('campaign', () => adminFetchJson('/api/admin/meta/campaigns', {
     method: 'POST',
     json: { name: campaignName, objective: 'OUTCOME_SALES', status: 'PAUSED', dailyBudgetBdt: Number(dailyBudget) },
-  }), 'Campaign Meta-তে PAUSED অবস্থায় তৈরি হয়েছে।');
+  }), 'Campaign created on Meta in PAUSED status.');
 
   const createAudience = () => runAction('audience', () => adminFetchJson('/api/admin/meta/audiences', {
     method: 'POST', json: { name: audienceName, description: 'Minsah Beauty consented customer audience' },
-  }), 'Custom Audience তৈরি হয়েছে।');
+  }), 'Custom Audience created.');
 
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#F7F8F8]">Meta Business Manager</h1>
-          <p className="mt-1 text-sm text-[#8A8F98]">Marketing API, audiences, catalog, leads, offline events এবং ROAS reporting।</p>
+          <p className="mt-1 text-sm text-[#8A8F98]">Marketing API, audiences, catalog, leads, offline events, and ROAS reporting.</p>
         </div>
         <Button variant="secondary" onClick={() => void load()} disabled={busy === 'load'}>
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -137,7 +137,7 @@ export default function MetaBusinessPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="rounded-2xl border border-[#232636] bg-[#161824] p-5">
           <h2 className="font-semibold text-[#F7F8F8]">Create Sales Campaign</h2>
-          <p className="mt-1 text-sm text-[#8A8F98]">Safety default: নতুন campaign PAUSED থাকে।</p>
+          <p className="mt-1 text-sm text-[#8A8F98]">Safety default: New campaigns start in PAUSED status.</p>
           <div className="mt-4 space-y-3">
             <Input label="Campaign name" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} />
             <Input label="Daily budget (BDT)" type="number" min="0" value={dailyBudget} onChange={(event) => setDailyBudget(event.target.value)} />
@@ -151,7 +151,7 @@ export default function MetaBusinessPage() {
             <Input label="Custom audience name" value={audienceName} onChange={(event) => setAudienceName(event.target.value)} />
             <div className="flex flex-wrap gap-2">
               <Button onClick={createAudience} disabled={!audienceName.trim() || busy === 'audience'}>Create Customer Audience</Button>
-              <Button variant="secondary" onClick={() => runAction('retarget', () => adminFetchJson('/api/admin/meta/audiences/retargeting', { method: 'POST', json: { name: 'Minsah AddToCart 30D', eventName: 'AddToCart', retentionDays: 30 } }), 'AddToCart retargeting audience তৈরি হয়েছে।')} disabled={busy === 'retarget'}>Create AddToCart 30D</Button>
+              <Button variant="secondary" onClick={() => runAction('retarget', () => adminFetchJson('/api/admin/meta/audiences/retargeting', { method: 'POST', json: { name: 'Minsah AddToCart 30D', eventName: 'AddToCart', retentionDays: 30 } }), 'AddToCart retargeting audience created.')} disabled={busy === 'retarget'}>Create AddToCart 30D</Button>
             </div>
           </div>
         </section>

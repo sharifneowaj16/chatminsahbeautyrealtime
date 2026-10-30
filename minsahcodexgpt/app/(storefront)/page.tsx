@@ -15,6 +15,7 @@ import type { Product } from '@/contexts/ProductsContext';
 import type { HomeSection } from '@/types/admin';
 import { resolveProductTrustBadges } from '@/lib/shopTrust';
 import { absoluteUrl } from '@/lib/seo';
+import { OfferSlot } from '@/components/offer/OfferSlot';
 
 
 const HOME_TITLE = 'Korean Skincare, Makeup & Beauty Products BD | Minsah Beauty';
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    locale: 'bn_BD',
+    locale: 'en_US',
     url: absoluteUrl('/'),
     siteName: 'Minsah Beauty',
     title: HOME_TITLE,
@@ -367,7 +368,7 @@ export default async function HomePage() {
     description: HOME_DESCRIPTION,
     isPartOf: { '@id': absoluteUrl('/#website') },
     about: { '@id': absoluteUrl('/#organization') },
-    inLanguage: ['bn-BD', 'en-US'],
+    inLanguage: ['en-US'],
   };
 
   const homeConfig = await getHomePageConfig();
@@ -472,6 +473,7 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homePageSchema) }}
       />
       <div className="bg-minsah-light">
+        <OfferSlot placement="home_banner" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3" />
         {renderedSections}
         {hasVisibleProductSections && initialProducts.length === 0 && <HomeProductsClientFallback />}
       </div>

@@ -76,7 +76,7 @@ export interface VoiceSearchState {
   isListening: boolean;
   isSupported: boolean;
   error: string | null;
-  language: 'en-US' | 'bn-BD';
+  language: 'en-US';
 }
 
 export interface AdvancedSearchProps {

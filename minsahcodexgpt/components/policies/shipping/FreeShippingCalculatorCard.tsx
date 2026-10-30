@@ -1,6 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
+import React, { useState, useEffect } from 'react';
+import { PiggyBank, Zap, CheckCircle2 } from 'lucide-react';
+import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
 interface FreeShippingCalculatorCardProps {
   currentCartBdt?: number;
@@ -8,62 +10,75 @@ interface FreeShippingCalculatorCardProps {
 }
 
 export function FreeShippingCalculatorCard({
-  currentCartBdt = 2250,
-  targetBdt = 2999,
+  currentCartBdt = 0,
+  targetBdt,
 }: FreeShippingCalculatorCardProps) {
-  const diff = Math.max(targetBdt - currentCartBdt, 0);
-  const percentage = Math.min(Math.round((currentCartBdt / targetBdt) * 100), 100);
+  const { freeDelivery } = useOfferEngine();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const threshold = targetBdt ?? freeDelivery?.nationwideThreshold ?? 1100;
+  const diff = Math.max(threshold - currentCartBdt, 0);
+  const percentage = threshold > 0 ? Math.min(Math.round((currentCartBdt / threshold) * 100), 100) : 100;
 
   return (
-    <section className="bg-[#F8FAF7] rounded-2xl p-4 border border-[#E2DED8]/60 shadow-xs relative overflow-hidden">
+    <section className="bg-[#FAF6F2] rounded-2xl p-4 border border-[#EADFD5] shadow-xs relative overflow-hidden">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#D4F6A2]/50 flex items-center justify-center text-[#062402]">
-            <span className="material-symbols-outlined text-base">savings</span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800">
+            <PiggyBank size={16} />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-[#062402] leading-tight">
-              ফ্রি ডেলিভারি ক্যালকুলেটর
+            <h3 className="text-xs font-bold text-[#2D1F18] leading-tight">
+              Free Delivery Calculator
             </h3>
-            <p className="text-[10px] text-[#5A615D]">Free Shipping Privilege Tracker</p>
+            <p className="text-[10px] text-[#7A6E65]">Nationwide Delivery Privilege Tracker</p>
           </div>
         </div>
-        <span className="text-xs font-bold text-[#4b6723] bg-[#ccee9b]/40 px-2.5 py-0.5 rounded-full">
-          {percentage}% কমপ্লিট
+        <span className="text-xs font-bold text-emerald-800 bg-emerald-100/60 px-2.5 py-0.5 rounded-full">
+          {percentage}% Complete
         </span>
       </div>
 
       {/* Progress Bar Container */}
       <div className="space-y-1.5 mt-2">
-        <div className="w-full bg-[#F2F6F0] h-2.5 rounded-full overflow-hidden p-0.5 flex items-center border border-[#E2DED8]/50">
+        <div className="w-full bg-[#EFE6DE] h-2.5 rounded-full overflow-hidden p-0.5 flex items-center border border-[#E2DED8]/60">
           <div
-            className="bg-[#4b6723] h-full rounded-full transition-all duration-500 shadow-xs"
+            className="bg-emerald-600 h-full rounded-full transition-all duration-500 shadow-xs"
             style={{ width: `${percentage}%` }}
           />
         </div>
-        <div className="flex justify-between items-center text-[11px] font-medium text-[#5A615D]">
+        <div className="flex justify-between items-center text-[11px] font-medium text-[#7A6E65]">
           <span>
-            বর্তমান কার্ট: <strong className="text-[#062402] font-bold">৳{currentCartBdt.toLocaleString()}</strong>
+            Current cart: <strong className="text-[#2D1F18] font-bold">৳{currentCartBdt.toLocaleString()}</strong>
           </span>
           <span>
-            ফ্রি ডেলিভারি টার্গেট: <strong className="text-[#062402] font-bold">৳{targetBdt.toLocaleString()}</strong>
+            Free delivery threshold: <strong className="text-[#2D1F18] font-bold">৳{threshold.toLocaleString()}</strong>
           </span>
         </div>
       </div>
 
       {/* Callout Banner */}
-      <div className="mt-3 bg-[#F2F6F0] px-3 py-2 rounded-xl flex items-center gap-2 border border-[#E2DED8]/40">
-        <span className="material-symbols-outlined text-[#4b6723] text-lg">electric_bolt</span>
-        <p className="text-[11px] text-[#062402] leading-tight">
-          {diff > 0 ? (
-            <>
-              মাত্র <strong className="text-[#4b6723] font-bold">৳{diff.toLocaleString()}</strong> টাকার পণ্য যোগ করলেই{" "}
-              <strong className="text-[#062402] font-bold">৬৪ জেলায় সম্পূর্ণ ফ্রি হোম ডেলিভারি!</strong>
-            </>
-          ) : (
-            <strong className="text-[#4b6723] font-bold">অভিনন্দন! আপনি ফ্রি ডেলিভারি পেয়েছেন।</strong>
-          )}
-        </p>
+      <div className="mt-3 bg-white px-3 py-2 rounded-xl flex items-center gap-2 border border-[#EADFD5]">
+        {diff > 0 ? (
+          <>
+            <Zap size={15} className="shrink-0 text-emerald-600" />
+            <p className="text-[11px] text-[#2D1F18] leading-tight">
+              Add products worth <strong className="text-emerald-700 font-bold">৳{diff.toLocaleString()}</strong> more to unlock{' '}
+              <strong className="text-[#2D1F18] font-bold">100% Free Nationwide Delivery!</strong>
+            </p>
+          </>
+        ) : (
+          <>
+            <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
+            <p className="text-[11px] text-emerald-800 font-bold leading-tight">
+              Congratulations! Free nationwide delivery unlocked.
+            </p>
+          </>
+        )}
       </div>
     </section>
   );

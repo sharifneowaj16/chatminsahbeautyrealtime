@@ -28,7 +28,7 @@ const DEFAULT_CELEBRATION_DATA: ReviewCelebrationData = {
   productName: 'Laneige Lip Sleeping Mask Berry',
   productImage: '/images/products/laneige-lip.png',
   rating: 5,
-  comment: 'আসল কোরিয়ান প্রোডাক্ট! হলোগ্রাম স্ক্যান করে অথেনটিসিটি চেক করেছি। ঠোঁটের ড্রাইনেস এক রাতেই কমে গেছে।',
+  comment: 'Authentic Korean product! Scanned hologram to verify authenticity. Lip dryness was gone overnight.',
   photosCount: 2,
   earnedPoints: 50,
   totalPointsBalance: 900,
@@ -50,7 +50,7 @@ export function ReviewRewardSheetModal({
   const handleCopyLink = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href);
-      alert('রিভিউ লিঙ্ক ক্লিপবোর্ডে কপি হয়েছে!');
+      alert('Review link copied to clipboard!');
     }
   };
 
@@ -64,8 +64,8 @@ export function ReviewRewardSheetModal({
           <span>Minsah Glow Club</span>
         </>
       }
-      title={`+${data.earnedPoints} Glow Points অর্জিত হয়েছে!`}
-      description={`Order #${data.orderNumber} • নতুন ব্যালেন্স: ${data.totalPointsBalance} Pts`}
+      title={`+${data.earnedPoints} Glow Points Earned!`}
+      description={`Order #${data.orderNumber} • New Balance: ${data.totalPointsBalance} Pts`}
       footer={
         <div className="flex flex-col gap-2 w-full">
           <Link
@@ -73,7 +73,7 @@ export function ReviewRewardSheetModal({
             onClick={onClose}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#062402] px-5 font-bold text-white transition hover:bg-[#1c3a13]"
           >
-            <span>অন্যান্য অর্ডার রিভিউ করুন (+৫০ Pts)</span>
+            <span>Review Other Orders (+50 Pts)</span>
             <ArrowRight className="h-4 w-4 text-[#D4F6A2]" />
           </Link>
           <div className="grid grid-cols-2 gap-2">
@@ -83,7 +83,7 @@ export function ReviewRewardSheetModal({
               className="flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#E2DED8] bg-[#F4F3EF] font-bold text-[#062402]"
             >
               <Home className="h-4 w-4" />
-              <span>হোম পেজ</span>
+              <span>Home Page</span>
             </Link>
             <Link
               href="/account/orders"
@@ -91,7 +91,7 @@ export function ReviewRewardSheetModal({
               className="flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#B5C4BB] bg-[#EAF7D8] font-bold text-[#1c3a13]"
             >
               <Clock className="h-4 w-4" />
-              <span>অর্ডার হিস্ট্রি</span>
+              <span>Order History</span>
             </Link>
           </div>
         </div>
@@ -124,11 +124,11 @@ export function ReviewRewardSheetModal({
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full border border-[#E2DED8] bg-[#FAF9F6] px-2.5 py-0.5 text-xs font-semibold text-[#062402]">
             <Camera className="h-3.5 w-3.5 text-[#4b6723]" />
-            {data.photosCount}টি ছবি সংযুক্ত
+            {data.photosCount} photos attached
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF7D8] px-2.5 py-0.5 text-xs font-semibold text-[#1c3a13]">
             <ShieldCheck className="h-3.5 w-3.5" />
-            ১০০% আসল প্রোডাক্ট
+            100% Authentic Product
           </span>
         </div>
       </div>
@@ -139,8 +139,8 @@ export function ReviewRewardSheetModal({
             <Share2 className="h-4 w-4" />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-[#062402]">কমিউনিটিতে শেয়ার করুন</p>
-            <p className="text-xs font-semibold text-[#4b6723]">আরও +১০ Glow Points!</p>
+            <p className="font-bold text-[#062402]">Share with Community</p>
+            <p className="text-xs font-semibold text-[#4b6723]">Earn +10 Glow Points!</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -158,7 +158,7 @@ export function ReviewRewardSheetModal({
             className="inline-flex h-9 items-center gap-1 rounded-full border border-[#E2DED8] bg-[#FAF9F6] px-3 text-xs font-bold text-[#062402]"
           >
             <Copy className="h-3.5 w-3.5" />
-            <span>কপি</span>
+            <span>Copy</span>
           </button>
         </div>
       </div>

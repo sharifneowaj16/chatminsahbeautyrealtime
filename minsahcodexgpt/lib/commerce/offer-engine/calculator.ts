@@ -17,7 +17,13 @@ import type {
 export function calculateCartOffers(
   params: CartOfferCalculationParams
 ): CartOfferCalculationResult {
-  const { items = [], subtotal = 0, promoCode, destinationCity } = params;
+  const {
+    items = [],
+    subtotal = 0,
+    promoCode,
+    destinationCity,
+    availableCoupons,
+  } = params;
 
   // 1. Differentiate bundle items vs regular items
   let bundleSubtotal = 0;
@@ -53,9 +59,17 @@ export function calculateCartOffers(
       promoError = 'Promo vouchers are not active at this time';
     } else {
       const normalizedCode = promoCode.trim().toUpperCase();
-      const rule = PROMO_CATALOG[normalizedCode];
 
+      // Look up in availableCoupons first (dynamic from Admin/API), then fall back to PROMO_CATALOG
+      let rule: PromoRule | null = null;
+      if (Array.isArray(availableCoupons) && availableCoupons.length > 0) {
+        rule = availableCoupons.find((c) => c && c.code && c.code.trim().toUpperCase() === normalizedCode) ?? null;
+      }
       if (!rule) {
+        rule = PROMO_CATALOG[normalizedCode] ?? null;
+      }
+
+      if (!rule || rule.isActive === false) {
         promoError = 'Invalid or expired promo code';
       } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
         promoError = `Minimum subtotal of ৳${rule.minSubtotal} required for ${rule.code}`;
@@ -70,7 +84,9 @@ export function calculateCartOffers(
           appliedPromoRule = rule;
 
           if (rule.type === 'percentage') {
-            promoDiscount = Math.round(applicableBase * rule.value);
+            const rawRate = Number(rule.value) || 0;
+            const rate = rawRate > 1 ? rawRate / 100 : rawRate;
+            promoDiscount = Math.round(applicableBase * rate);
           } else {
             promoDiscount = Math.min(rule.value, applicableBase);
           }

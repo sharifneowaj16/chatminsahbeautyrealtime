@@ -14,6 +14,7 @@ import { buildCatalogSearchPath } from '@/lib/catalog-navigation';
 import { getShopItemListJsonLd, getShopRobotsMetadata, getShopSeoState } from '@/lib/shopSeo';
 import ShopGrid from '@/app/components/shop/ShopGrid';
 import ProductGridSkeleton from '@/app/components/shop/ProductGridSkeleton';
+import { OfferSlot } from '@/components/offer/OfferSlot';
 
 
 
@@ -113,6 +114,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
       />
 
       <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-8 pt-2 sm:pt-2.5 pb-6">
+        <OfferSlot placement="shop_banner" className="mb-4" />
         <Suspense
           fallback={
             <div className="space-y-4">

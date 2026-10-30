@@ -30,17 +30,17 @@ export default function WelcomeBadgeHeader({ onClose }: WelcomeBadgeHeaderProps)
         </span>
       </div>
 
-      {/* Headline: Bilingual English & Bengali */}
+      {/* Headline: Premium Clean English */}
       <div className="text-center mb-2.5 sm:mb-3">
         <h2 className="text-[20px] sm:text-[24px] font-bold leading-snug tracking-tight text-[#1c3a13]">
-          স্বাগতম! প্রথম অর্ডারে{' '}
+          Welcome! Get{' '}
           <span className="text-[#845f06] font-extrabold underline decoration-[#D4AF37]/50 underline-offset-4">
-            ১৫% ছাড়
+            15% OFF
           </span>{' '}
-          পান
+          Your First Order
         </h2>
         <p className="text-[11px] sm:text-[12px] text-[#5A615D] mt-0.5 sm:mt-1 tracking-normal">
-          Welcome! Enjoy <span className="text-[#1c3a13] font-semibold">15% OFF</span> your first authentic order
+          Enjoy <span className="text-[#1c3a13] font-semibold">15% OFF</span> your first authentic skincare order
         </p>
       </div>
     </div>

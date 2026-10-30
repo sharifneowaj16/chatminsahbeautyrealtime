@@ -23,6 +23,7 @@ import { estimateDeliveryCharge, parseWeightToKg } from '@/lib/buy-now';
 import type { ProductVariantItem } from './SeedVariantRail';
 import { cleanProductName } from './cleanProductName';
 import { FreeDeliveryIncentiveBanner } from '@/components/cart/FreeDeliveryIncentiveBanner';
+import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
 export interface BundleProductCandidate {
   id: string;
@@ -68,6 +69,7 @@ export default function SeedBundleDrawer({
 }: SeedBundleDrawerProps) {
   const { addBundleItems, freeDeliveryConfig } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
+  const { bundles: bundleConfig } = useOfferEngine();
 
   // Selected Products in Custom Bundle (Main product is always anchor)
   const [selectedProducts, setSelectedProducts] = useState<BundleProductCandidate[]>([
@@ -103,51 +105,9 @@ export default function SeedBundleDrawer({
     };
   }, [isOpen, onClose]);
 
-  // Fallback catalog candidates if empty
+  // Catalog candidates (only real catalog candidates, no dummy Unsplash products)
   const allCandidates: BundleProductCandidate[] = useMemo(() => {
-    if (catalogCandidates.length > 0) return catalogCandidates;
-    return [
-      {
-        id: 'cand-1',
-        name: 'Deep Moisture Barrier Cream',
-        price: 1200,
-        costPrice: 700,
-        image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=400&q=80',
-        stock: 24,
-        hasFreeDelivery: true,
-        category: 'Moisturizer',
-      },
-      {
-        id: 'cand-2',
-        name: 'UV Shield SPF 50+ Sunscreen',
-        price: 1100,
-        costPrice: 650,
-        image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=400&q=80',
-        stock: 35,
-        hasFreeDelivery: false,
-        category: 'Sun Care',
-      },
-      {
-        id: 'cand-3',
-        name: 'Centella Calming Relief Toner',
-        price: 950,
-        costPrice: 500,
-        image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=400&q=80',
-        stock: 18,
-        hasFreeDelivery: true,
-        category: 'Toner',
-      },
-      {
-        id: 'cand-4',
-        name: 'Peptide Eye Lift Contour Serum',
-        price: 1350,
-        costPrice: 750,
-        image: 'https://images.unsplash.com/photo-1608248597359-54316d7a5b39?auto=format&fit=crop&w=400&q=80',
-        stock: 12,
-        hasFreeDelivery: false,
-        category: 'Eye Care',
-      },
-    ];
+    return catalogCandidates;
   }, [catalogCandidates]);
 
   // Filter candidates based on search and exclude already selected items
@@ -191,12 +151,13 @@ export default function SeedBundleDrawer({
     let totalStoreAbsorbedDelivery = 0;
     let hasAnyFreeDelivery = false;
 
+    const costRatio = bundleConfig?.estimatedCostRatio ?? 0.75;
+
     selectedProducts.forEach((p) => {
       totalSellingPrice += p.price;
-      // If admin didn't set costPrice, estimate conservative 75% purchase cost to guarantee zero loss
       const estimatedCost = (p.costPrice != null && Number(p.costPrice) > 0)
         ? Number(p.costPrice)
-        : p.price * 0.75;
+        : p.price * costRatio;
       totalCostPrice += estimatedCost;
       if (p.hasFreeDelivery || p.deliveryOfferType === 'FREE') {
         hasAnyFreeDelivery = true;
@@ -223,14 +184,18 @@ export default function SeedBundleDrawer({
 
     const realBenefit = Math.max(0, totalSellingPrice - totalCostPrice - totalStoreAbsorbedDelivery);
 
-    // Tiered percentage of Real Benefit
+    // Tiered percentage of Real Benefit from Admin Offer Engine
+    const tier2Rate = (bundleConfig?.twoStepDiscountPercent ?? 15) / 100;
+    const tier3Rate = (bundleConfig?.threeStepDiscountPercent ?? 25) / 100;
+    const tier4Rate = (bundleConfig?.fourStepDiscountPercent ?? 30) / 100;
+
     let discountPercentageOfBenefit = 0;
     if (itemCount === 2) {
-      discountPercentageOfBenefit = 0.15; // 15% of profit
+      discountPercentageOfBenefit = tier2Rate;
     } else if (itemCount === 3) {
-      discountPercentageOfBenefit = 0.25; // 25% of profit
+      discountPercentageOfBenefit = tier3Rate;
     } else if (itemCount >= 4) {
-      discountPercentageOfBenefit = 0.30; // 30% of profit
+      discountPercentageOfBenefit = tier4Rate;
     }
 
     const customerSavings = Math.round(realBenefit * discountPercentageOfBenefit);
@@ -240,6 +205,10 @@ export default function SeedBundleDrawer({
     const isFreeDelivery =
       finalPayable >= freeDeliveryConfig.nationwideThreshold || hasAnyFreeDelivery;
 
+    const tier2Percent = bundleConfig?.twoStepDiscountPercent ?? 15;
+    const tier3Percent = bundleConfig?.threeStepDiscountPercent ?? 25;
+    const tier4Percent = bundleConfig?.fourStepDiscountPercent ?? 30;
+
     return {
       itemCount,
       totalSellingPrice,
@@ -247,11 +216,11 @@ export default function SeedBundleDrawer({
       totalStoreAbsorbedDelivery,
       discountRateText:
         itemCount === 2
-          ? '15% of Profit Saved'
+          ? `${tier2Percent}% of Profit Saved`
           : itemCount === 3
-          ? '25% of Profit Saved'
+          ? `${tier3Percent}% of Profit Saved`
           : itemCount >= 4
-          ? '30% of Profit Saved'
+          ? `${tier4Percent}% of Profit Saved`
           : 'Regular Single Item',
       customerSavings,
       finalPayable,
@@ -261,7 +230,7 @@ export default function SeedBundleDrawer({
         ? 0
         : Math.max(0, freeDeliveryConfig.nationwideThreshold - finalPayable),
     };
-  }, [selectedProducts, freeDeliveryConfig.nationwideThreshold]);
+  }, [selectedProducts, freeDeliveryConfig.nationwideThreshold, bundleConfig]);
 
   // Handle Add to Cart
   const handleAddBundleToCart = async () => {
@@ -321,10 +290,14 @@ export default function SeedBundleDrawer({
     openCartDrawer();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || (bundleConfig && bundleConfig.enabled === false)) return null;
+
+  const tier2Percent = bundleConfig?.twoStepDiscountPercent ?? 15;
+  const tier3Percent = bundleConfig?.threeStepDiscountPercent ?? 25;
+  const tier4Percent = bundleConfig?.fourStepDiscountPercent ?? 30;
 
   return (
-    <div className={`fixed inset-0 z-50 overflow-hidden ${className}`}>
+    <div className={`fixed inset-0 z-[180] overflow-hidden overflow-x-hidden no-scrollbar ${className}`}>
       
       {/* Backdrop */}
       <div
@@ -374,7 +347,7 @@ export default function SeedBundleDrawer({
               Build Your Custom Routine Bundle
             </h2>
             <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">
-              Add 2 items for 15% profit savings, 3 items for 25%, or 4+ items for 30% discount!
+              Add 2 items for {tier2Percent}% profit savings, 3 items for {tier3Percent}%, or 4+ items for {tier4Percent}% discount!
             </p>
           </div>
 
@@ -471,7 +444,7 @@ export default function SeedBundleDrawer({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search product name or category (e.g. Cream, Sunscreen)..."
-                  className="w-full h-10 pl-9 pr-4 rounded-xl border border-black/15 dark:border-white/15 bg-white dark:bg-zinc-800 text-xs text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[#122A16] dark:focus:ring-emerald-400"
+                  className="w-full h-10 pl-9 pr-4 rounded-xl border border-black/15 dark:border-white/15 bg-white dark:bg-zinc-800 text-base sm:text-xs text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[#122A16] dark:focus:ring-emerald-400"
                 />
                 {searchQuery && (
                   <button

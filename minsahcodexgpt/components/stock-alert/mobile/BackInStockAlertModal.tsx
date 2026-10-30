@@ -17,7 +17,7 @@ const DEFAULT_PRODUCT: StockProductSummary = {
   regularPrice: 2100,
   discountPercent: 18,
   image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=300&q=80',
-  expectedDate: '১৫ নভেম্বর (Fresh Authentic Batch)',
+  expectedDate: 'Nov 15 (Fresh Authentic Batch)',
   batchInfo: 'Air Cargo In-Transit',
 };
 
@@ -54,11 +54,11 @@ export function BackInStockAlertModal({
       onClose={onClose}
       badge={
         <>
-          <BellRing className="h-3.5 w-3.5 text-[#4b6723]" />
+          <BellRing className="h-3.5 w-3.5 text-emerald-800" />
           <span>VIP Priority Restock Alert</span>
         </>
       }
-      title="স্টক এলার্ট নোটিফিকেশন"
+      title="Restock Alert Notification"
       description="Back in Stock Priority Notification"
       footer={
         <div className="flex flex-col gap-2 w-full">
@@ -66,75 +66,75 @@ export function BackInStockAlertModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#062402] px-5 font-bold text-white shadow-sm transition hover:bg-[#1c3a13] active:scale-[0.98] disabled:opacity-60"
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1c3a13] px-5 font-bold text-white shadow-sm transition hover:bg-[#28531c] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin text-[#D4F6A2]" />
-                <span>সংরক্ষণ করা হচ্ছে...</span>
+                <span>Saving alert...</span>
               </>
             ) : isSuccess ? (
               <>
                 <CheckCircle2 className="h-4 w-4 text-[#D4F6A2]" />
-                <span>সফলভাবে সক্রিয় হয়েছে!</span>
+                <span>Alert Activated Successfully!</span>
               </>
             ) : (
               <>
                 <BellRing className="h-4 w-4 text-[#D4F6A2]" />
-                <span>স্টকে আসলে জানান (Notify Me)</span>
+                <span>Notify Me When in Stock</span>
               </>
             )}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-full items-center justify-center rounded-full border border-[#E2DED8] bg-[#F4F3EF] font-semibold text-[#5A615D] hover:text-[#181C1A]"
+            className="flex h-10 w-full items-center justify-center rounded-full border border-[#EADFD5] bg-[#FAF6F2] font-semibold text-[#7A6E65] hover:text-[#2D1F18] cursor-pointer"
           >
-            একই ক্যাটাগরির প্রোডাক্ট দেখুন (Close)
+            Close
           </button>
         </div>
       }
     >
-      <div className="rounded-2xl border border-[#E2DED8] bg-white p-3.5 flex items-center gap-3.5 shadow-xs">
-        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-[#E2DED8] bg-stone-100">
+      <div className="rounded-2xl border border-[#EADFD5] bg-white p-3.5 flex items-center gap-3.5 shadow-xs">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-[#EADFD5] bg-stone-100">
           <img src={product.image} alt={product.title} className="h-full w-full object-cover" />
           <div className="absolute inset-0 flex items-center justify-center bg-[#062402]/35">
-            <span className="rounded-full bg-[#ba1a1a] px-2 py-0.5 text-xs font-bold text-white">
-              স্টক আউট
+            <span className="rounded-full bg-rose-700 px-2 py-0.5 text-xs font-bold text-white">
+              Out of Stock
             </span>
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1 text-xs font-semibold text-[#28531c]">
-            <ShieldCheck className="h-3.5 w-3.5 text-[#4b6723]" />
+          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-800">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />
             <span>100% Authentic Import</span>
           </div>
-          <h4 className="truncate font-bold text-[#181C1A]">{product.title}</h4>
-          <p className="truncate text-xs text-[#5A615D]">{product.subtitle}</p>
+          <h4 className="truncate font-bold text-[#2D1F18]">{product.title}</h4>
+          <p className="truncate text-xs text-[#7A6E65]">{product.subtitle}</p>
           <div className="mt-1 flex items-baseline gap-2 font-price">
-            <span className="font-bold text-[#062402]">৳{product.price.toLocaleString('bn-BD')}</span>
+            <span className="font-bold text-[#2D1F18]">৳{product.price.toLocaleString('en-US')}</span>
             {product.regularPrice > product.price ? (
-              <span className="text-xs text-[#5A615D] line-through">
-                ৳{product.regularPrice.toLocaleString('bn-BD')}
+              <span className="text-xs text-[#7A6E65] line-through">
+                ৳{product.regularPrice.toLocaleString('en-US')}
               </span>
             ) : null}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-2xl border border-[#B5C4BB] bg-[#F2F6F0] px-3.5 py-2.5">
+      <div className="flex items-center justify-between rounded-2xl border border-[#EADFD5] bg-[#FAF6F2] px-3.5 py-2.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#062402] text-[#D4F6A2]">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1c3a13] text-[#D4F6A2]">
             <Plane className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-xs text-[#5A615D]">সম্ভাব্য স্টক পৌঁছানোর তারিখ:</p>
-            <p className="font-bold text-[#1c3a13]">
+            <p className="text-xs text-[#7A6E65]">Estimated Arrival Window:</p>
+            <p className="font-bold text-emerald-900">
               {product.expectedDate || 'Fresh Authentic Batch'}
             </p>
           </div>
         </div>
-        <span className="rounded-full border border-[#B5C4BB] bg-white px-2.5 py-0.5 text-xs font-semibold text-[#28531c]">
+        <span className="rounded-full border border-[#EADFD5] bg-white px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
           {product.batchInfo || 'In-Transit'}
         </span>
       </div>

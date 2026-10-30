@@ -10,6 +10,7 @@ import { createBundleCartItem, generateBundleGroupId } from '@/utils/cartItemHel
 import { estimateDeliveryCharge, extractVariantWeightKg, parseWeightToKg } from '@/lib/buy-now';
 import { cleanProductName } from './cleanProductName';
 import { FreeDeliveryIncentiveBanner } from '@/components/cart/FreeDeliveryIncentiveBanner';
+import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
 export interface SeedHeroBundleCardProps {
   /** Anchor / Main Product */
@@ -35,6 +36,7 @@ export default function SeedHeroBundleCard({
 }: SeedHeroBundleCardProps) {
   const { addBundleItems, freeDeliveryConfig } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
+  const { bundles: bundleConfig } = useOfferEngine();
 
   // Bundle Drawer Open State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -131,13 +133,14 @@ export default function SeedHeroBundleCard({
     }
 
     const totalSellingPrice = effectiveMainPrice + effectivePairedPrice;
-    // Fallback purchase cost: 75% of selling price to guarantee zero loss
+    // Fallback purchase cost: from admin bundle config or 75% to guarantee zero loss
+    const costRatio = bundleConfig?.estimatedCostRatio ?? 0.75;
     const mainCost = (mainProduct.costPrice != null && Number(mainProduct.costPrice) > 0)
       ? Number(mainProduct.costPrice)
-      : effectiveMainPrice * 0.75;
+      : effectiveMainPrice * costRatio;
     const pairedCost = (activePairedProduct.costPrice != null && Number(activePairedProduct.costPrice) > 0)
       ? Number(activePairedProduct.costPrice)
-      : effectivePairedPrice * 0.75;
+      : effectivePairedPrice * costRatio;
 
     // Weight and courier delivery calculation (outside Dhaka standard)
     const mainWeight = extractVariantWeightKg(activeMainVariant?.attributes) ?? parseWeightToKg(mainProduct.shippingWeight) ?? parseWeightToKg(mainProduct.weight) ?? 0.25;
@@ -178,11 +181,10 @@ export default function SeedHeroBundleCard({
       totalSellingPrice - (mainCost + pairedCost) - totalStoreAbsorbedDelivery
     );
 
-    // Realistic bundle discount rule:
-    // Minimum 5% off total selling price or 15% of net profit margin, whichever is higher,
-    // strictly capped so store never sells at a loss (max 80% of available margin).
+    // Dynamic bundle discount rule from Admin Offer Engine:
+    const twoStepDiscountRate = (bundleConfig?.twoStepDiscountPercent ?? 15) / 100;
     const targetSavings = Math.max(
-      Math.round(availableMargin * 0.15),
+      Math.round(availableMargin * twoStepDiscountRate),
       Math.round(totalSellingPrice * 0.05)
     );
     const maxSafeDiscount = Math.round(availableMargin * 0.8);
@@ -222,10 +224,11 @@ export default function SeedHeroBundleCard({
     activeMainVariant?.attributes,
     activePairedVariant?.attributes,
     freeDeliveryConfig.nationwideThreshold,
+    bundleConfig,
   ]);
 
-  // If disabled by admin, return null
-  if (!enabled) return null;
+  // If disabled by prop or admin offer engine, return null
+  if (!enabled || (bundleConfig && bundleConfig.enabled === false)) return null;
 
   // Direct 1-Click Add 2-Step Bundle to Bag
   const handleAddBaseBundle = async () => {

@@ -214,7 +214,7 @@ export default function LiveTrackingMobileView({
         onClose={() => setIsRescheduleOpen(false)}
         orderNumber={orderData.orderNumber}
         currentSchedule={{
-          date: 'আজ, ১৫ নভেম্বর (Friday)',
+          date: 'Today, 15 November (Friday)',
           timeSlot: '1pm - 5pm',
         }}
       />

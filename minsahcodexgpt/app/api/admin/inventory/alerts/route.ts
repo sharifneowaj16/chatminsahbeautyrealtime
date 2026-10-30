@@ -128,28 +128,28 @@ export async function GET(request: NextRequest) {
           ...itemData,
           severity: 'OUT_OF_STOCK',
           urgencyScore: 100,
-          statusLabel: 'স্টক আউট (০ পিস)',
+          statusLabel: 'Out of Stock (0 pcs)',
         });
       } else if (daysRemaining <= 3 && availableQty > 0) {
         criticalItems.push({
           ...itemData,
           severity: 'URGENT_RUNOUT',
           urgencyScore: 90,
-          statusLabel: `জরুরি! আর মাত্র ${daysRemaining} দিনের স্টক (${p.quantity} পিস)`,
+          statusLabel: `Urgent! Only ${daysRemaining} days of stock left (${p.quantity} pcs)`,
         });
       } else if (p.quantity <= threshold) {
         criticalItems.push({
           ...itemData,
           severity: 'CRITICAL',
           urgencyScore: 80,
-          statusLabel: `মারাত্মক কম (${p.quantity}/${threshold})`,
+          statusLabel: `Critically Low (${p.quantity}/${threshold})`,
         });
       } else if (p.quantity <= threshold * 2 || daysRemaining <= 7) {
         warningItems.push({
           ...itemData,
           severity: 'WARNING',
           urgencyScore: 40,
-          statusLabel: `সতর্কবার্তা (${p.quantity} পিস, ${daysRemaining < 999 ? `${daysRemaining} দিন` : 'স্বাভাবিক'})`,
+          statusLabel: `Warning (${p.quantity} pcs, ${daysRemaining < 999 ? `${daysRemaining} days` : 'Normal'})`,
         });
       }
     }

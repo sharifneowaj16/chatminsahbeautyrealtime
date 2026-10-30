@@ -100,8 +100,8 @@ export async function GET(request: NextRequest) {
           daysInactive: Math.max(thresholdDays, daysSinceCreation),
           recommendedAction:
             tiedUpCapital > 10000
-              ? '⚡ ৩০% ফ্ল্যাশ সেল দিয়ে ক্যাশ রিলিজ করুন'
-              : '🎁 বাই ১ গেট ১ বা গিফট অফারে যুক্ত করুন',
+              ? '⚡ Release cash with 30% Flash Sale'
+              : '🎁 Add to BOGO or Free Gift offer',
         };
       })
       .sort((a, b) => b.tiedUpCapital - a.tiedUpCapital);

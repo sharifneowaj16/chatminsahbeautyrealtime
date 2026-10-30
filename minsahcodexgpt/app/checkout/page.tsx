@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { formatPrice } from "@/utils/currency";
 import { Button } from "@/components/ui/Button";
+import { OfferSlot } from "@/components/offer/OfferSlot";
 import dynamic from "next/dynamic";
 import {
   trackAddPaymentInfo,
@@ -812,7 +813,7 @@ function CheckoutContent() {
             : (deliveryQuote?.deliveryOfferType ?? "DEFAULT"),
           deliveryOfferProductId: deliveryQuote?.deliveryOfferProductId ?? null,
           deliveryOfferBadgeText: isFreeDeliveryUnlocked
-            ? "ফ্রি ডেলিভারি অফার"
+            ? "Free Delivery Offer"
             : (deliveryQuote?.deliveryOfferBadgeText ?? null),
           shippingMethod: "pathao",
           customerNote: "",
@@ -1202,7 +1203,7 @@ function CheckoutContent() {
                               type="text"
                               autoFocus
                               style={{ outline: "none", boxShadow: "none" }}
-                              placeholder="Search city / জেলা..."
+                              placeholder="Search city / district..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                               className="w-full rounded-xl border border-[#E2D9CF] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
@@ -1314,7 +1315,7 @@ function CheckoutContent() {
                               type="text"
                               autoFocus
                               style={{ outline: "none", boxShadow: "none" }}
-                              placeholder="Search zone / থানা..."
+                              placeholder="Search zone / thana..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                               className="w-full rounded-xl border border-[#E2D9CF] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
@@ -1426,7 +1427,7 @@ function CheckoutContent() {
                               type="text"
                               autoFocus
                               style={{ outline: "none", boxShadow: "none" }}
-                              placeholder="Search area / এলাকা..."
+                              placeholder="Search area..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                               className="w-full rounded-xl border border-[#E2D9CF] bg-[#FDFBF9] py-1.5 pl-8 pr-3 text-xs text-[#2D1F18] outline-none focus:border-[#984B29]"
@@ -1735,6 +1736,9 @@ function CheckoutContent() {
                 ))}
               </div>
 
+              {/* Universal Offer Engine Placement: Checkout Page */}
+              <OfferSlot placement="checkout_page" className="my-3" />
+
               {/* Price Breakdown */}
               <div className="mt-4 space-y-2.5 border-t border-[#F4EFEA] pt-4 text-xs">
                 <div className="flex justify-between text-[#7A6E65]">
@@ -1745,7 +1749,7 @@ function CheckoutContent() {
                 {discount > 0 && (
                   <div className="flex justify-between text-emerald-700">
                     <span className="flex items-center gap-1.5 font-medium">
-                      <Sparkles size={13} className="text-emerald-600" /> কুপন ডিসকাউন্ট {promoCode ? `(${promoCode})` : ""}
+                      <Sparkles size={13} className="text-emerald-600" /> Coupon Discount {promoCode ? `(${promoCode})` : ""}
                     </span>
                     <span className="font-bold font-price">-{formatPrice(discount)}</span>
                   </div>
@@ -1860,8 +1864,10 @@ function CheckoutContent() {
 
       {/* Auth Modal Integration */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in">
+        <div className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-opacity animate-in fade-in">
+          <div className="w-full max-w-full sm:max-w-sm rounded-t-[24px] sm:rounded-[24px] bg-white p-6 shadow-2xl animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 overflow-x-hidden no-scrollbar">
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1.5 rounded-full bg-[#B5C4BB]/70 mx-auto mb-4 sm:hidden" />
             <SocialLoginModal
               purpose="checkout"
               onSuccess={handleLoginSuccess}

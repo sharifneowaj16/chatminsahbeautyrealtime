@@ -22,14 +22,11 @@ export function BackInStockChannelToggle({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold text-[#181C1A] flex items-center gap-1.5">
-          <span>নোটিফিকেশনের মাধ্যম বেছে নিন</span>
-          <span className="text-[11px] text-[#5A615D] font-normal">
-            (Channels)
-          </span>
+        <label className="text-xs font-bold text-[#2D1F18] flex items-center gap-1.5">
+          <span>Choose Notification Channels</span>
         </label>
-        <span className="text-[10px] text-[#1c3a13] font-bold bg-[#EAF7D8] px-2 py-0.5 rounded-full">
-          ইনস্ট্যান্ট পিং
+        <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
+          Instant Ping
         </span>
       </div>
 
@@ -37,19 +34,19 @@ export function BackInStockChannelToggle({
         {/* WhatsApp */}
         <div
           className={`p-3 rounded-2xl bg-white border flex items-center justify-between shadow-xs transition-colors ${
-            channels.whatsapp ? 'border-[#1c3a13]' : 'border-[#E2DED8]'
+            channels.whatsapp ? 'border-emerald-800' : 'border-[#EADFD5]'
           }`}
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#EAF7D8] flex items-center justify-center text-[#1c3a13]">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-800">
               <MessageCircle className="w-4 h-4 text-[#25D366] fill-current" />
             </div>
             <div>
-              <div className="text-xs font-bold text-[#181C1A] flex items-center gap-1">
-                <span>হোয়াটসঅ্যাপ (WhatsApp)</span>
+              <div className="text-xs font-bold text-[#2D1F18] flex items-center gap-1">
+                <span>WhatsApp</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
-              <p className="text-[10px] text-[#5A615D]">সরাসরি কনসিয়ার্জ মেসেজ</p>
+              <p className="text-[10px] text-[#7A6E65]">Direct VIP concierge message</p>
             </div>
           </div>
 
@@ -58,7 +55,7 @@ export function BackInStockChannelToggle({
             role="switch"
             aria-checked={channels.whatsapp}
             onClick={() => toggle('whatsapp')}
-            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors ${
+            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors cursor-pointer ${
               channels.whatsapp ? 'bg-[#1c3a13]' : 'bg-[#e3e2e0]'
             }`}
           >
@@ -73,7 +70,7 @@ export function BackInStockChannelToggle({
         {/* SMS */}
         <div
           className={`p-3 rounded-2xl bg-white border flex items-center justify-between shadow-xs transition-colors ${
-            channels.sms ? 'border-[#1c3a13]' : 'border-[#E2DED8]'
+            channels.sms ? 'border-emerald-800' : 'border-[#EADFD5]'
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -81,8 +78,8 @@ export function BackInStockChannelToggle({
               <MessageSquare className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-[#181C1A]">এসএমএস (SMS)</div>
-              <p className="text-[10px] text-[#5A615D]">Dhaka SMS গেটওয়ে</p>
+              <div className="text-xs font-bold text-[#2D1F18]">SMS Text</div>
+              <p className="text-[10px] text-[#7A6E65]">Direct mobile SMS alert</p>
             </div>
           </div>
 
@@ -91,7 +88,7 @@ export function BackInStockChannelToggle({
             role="switch"
             aria-checked={channels.sms}
             onClick={() => toggle('sms')}
-            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors ${
+            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors cursor-pointer ${
               channels.sms ? 'bg-[#1c3a13]' : 'bg-[#e3e2e0]'
             }`}
           >
@@ -106,7 +103,7 @@ export function BackInStockChannelToggle({
         {/* Email */}
         <div
           className={`p-3 rounded-2xl bg-white border flex items-center justify-between shadow-xs transition-colors ${
-            channels.email ? 'border-[#1c3a13]' : 'border-[#E2DED8]'
+            channels.email ? 'border-emerald-800' : 'border-[#EADFD5]'
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -114,8 +111,8 @@ export function BackInStockChannelToggle({
               <Mail className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-[#181C1A]">ইমেইল (Email)</div>
-              <p className="text-[10px] text-[#5A615D]">ইনভয়েস ও বিস্তারিত কুপন</p>
+              <div className="text-xs font-bold text-[#2D1F18]">Email</div>
+              <p className="text-[10px] text-[#7A6E65]">Restock invoice &amp; voucher code</p>
             </div>
           </div>
 
@@ -124,7 +121,7 @@ export function BackInStockChannelToggle({
             role="switch"
             aria-checked={channels.email}
             onClick={() => toggle('email')}
-            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors ${
+            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors cursor-pointer ${
               channels.email ? 'bg-[#1c3a13]' : 'bg-[#e3e2e0]'
             }`}
           >
@@ -139,7 +136,7 @@ export function BackInStockChannelToggle({
         {/* Push */}
         <div
           className={`p-3 rounded-2xl bg-white border flex items-center justify-between shadow-xs transition-colors ${
-            channels.push ? 'border-[#1c3a13]' : 'border-[#E2DED8]'
+            channels.push ? 'border-emerald-800' : 'border-[#EADFD5]'
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -147,8 +144,8 @@ export function BackInStockChannelToggle({
               <Bell className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-[#181C1A]">ইন-অ্যাপ পুশ (Push)</div>
-              <p className="text-[10px] text-[#5A615D]">অ্যাপ ব্যানার নোটিফিকেশন</p>
+              <div className="text-xs font-bold text-[#2D1F18]">In-App Push</div>
+              <p className="text-[10px] text-[#7A6E65]">Mobile banner notification</p>
             </div>
           </div>
 
@@ -157,7 +154,7 @@ export function BackInStockChannelToggle({
             role="switch"
             aria-checked={channels.push}
             onClick={() => toggle('push')}
-            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors ${
+            className={`w-10 h-5.5 rounded-full flex items-center p-0.5 transition-colors cursor-pointer ${
               channels.push ? 'bg-[#1c3a13]' : 'bg-[#e3e2e0]'
             }`}
           >

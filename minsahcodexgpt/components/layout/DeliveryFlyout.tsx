@@ -263,12 +263,12 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
   const fieldErrors = useMemo(() => {
     const e: Partial<Record<FieldKey, string>> = {};
     if (!form.fullName.trim()) e.fullName = 'Please enter your full name.';
-    if (!isValidBdPhone(form.phoneNumber)) e.phoneNumber = 'Valid BD number (01XXXXXXXXX) দিন।';
-    if (!form.pathao_city_id) e.city = 'City select করুন।';
-    if (!form.pathao_zone_id) e.zone = 'Zone select করুন।';
-    if (!form.pathao_area_id) e.area = 'Area select করুন।';
-    else if (selectedArea && !selectedArea.homeDeliveryAvailable) e.area = 'এই এলাকায় home delivery নেই।';
-    if (!form.streetAddress.trim()) e.streetAddress = 'Street address দিন।';
+    if (!isValidBdPhone(form.phoneNumber)) e.phoneNumber = 'Enter a valid BD number (01XXXXXXXXX).';
+    if (!form.pathao_city_id) e.city = 'Please select a city.';
+    if (!form.pathao_zone_id) e.zone = 'Please select a zone.';
+    if (!form.pathao_area_id) e.area = 'Please select an area.';
+    else if (selectedArea && !selectedArea.homeDeliveryAvailable) e.area = 'Home delivery is unavailable in this area.';
+    if (!form.streetAddress.trim()) e.streetAddress = 'Please enter street address.';
     return e;
   }, [form, selectedArea]);
 
@@ -314,7 +314,7 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
   if (!mounted) return null;
 
   /* ═══════════════════════════════════════════════════════════════════════
-     SHARED FIELD STYLES (Checkout page-এর exact same design tokens)
+     SHARED FIELD STYLES (Matching checkout design tokens)
   ═══════════════════════════════════════════════════════════════════════ */
   const fieldBorder = (field: FieldKey, isOpen?: boolean) =>
     visibleErrors[field]
@@ -485,7 +485,7 @@ function FlyoutContent({
           </div>
           <div>
             <h2 className="text-[17px] font-[500] text-[#2D1F18] tracking-tight">Delivery Address</h2>
-            <p className="text-xs text-[#7A6E65] mt-0.5">আপনার ডেলিভারি ঠিকানা দিন</p>
+            <p className="text-xs text-[#7A6E65] mt-0.5">Enter your delivery address</p>
           </div>
         </div>
         <button

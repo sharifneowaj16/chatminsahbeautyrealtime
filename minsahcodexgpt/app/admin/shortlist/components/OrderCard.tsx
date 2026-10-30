@@ -51,12 +51,12 @@ export default function OrderCard({ order }: { order: Order }) {
   };
 
   const formatCurrency = (amount: number) => {
-    return `৳${Math.round(amount).toLocaleString('bn-BD')}`;
+    return `৳${Math.round(amount).toLocaleString('en-US')}`;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: '2-digit' });
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: '2-digit' });
   };
 
   const borderAccent = order.isCompleted

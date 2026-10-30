@@ -90,7 +90,7 @@ const menuItems: MenuItem[] = [
       { title: 'Categories', href: '/admin/categories', permission: PERMISSIONS.CONTENT_MANAGE },
       { title: 'Inventory', href: '/admin/inventory' },
       { title: 'Inventory Shortlist', href: '/admin/inventory?tab=shortlist' },
-      // ✨ নতুন যুক্ত - Purchase Shortlist
+      // Purchase Shortlist
       { 
         title: '📋 Purchase Shortlist', 
         href: '/admin/shortlist',

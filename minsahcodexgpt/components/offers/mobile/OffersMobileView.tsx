@@ -17,9 +17,9 @@ const INITIAL_VOUCHERS: VoucherCode[] = [
   {
     id: 'v1',
     code: 'FREESHIP',
-    title: 'ফ্রি এক্সপ্রেস ডেলিভারি',
+    title: 'Free Express Delivery',
     discount: 'Free Delivery',
-    description: '৳১,০০০ বা তার বেশি অর্ডারে সারা বাংলাদেশে ফ্রি ডেলিভারি',
+    description: 'Free nationwide delivery on orders over ৳1,000',
     category: 'first-order',
     categoryLabel: 'Free Shipping',
   },

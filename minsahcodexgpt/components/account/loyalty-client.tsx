@@ -16,7 +16,7 @@ import { Modal } from '@/components/ui/Modal';
 import { LOYALTY_CONFIG } from '@/types/user';
 import type { LoyaltyTransaction } from '@/types/user';
 
-// ✅ Icon map — string থেকে component
+// Icon map — string to component
 const ICON_MAP: Record<string, React.ElementType> = {
   Star, Gift, Ticket, Clock, RefreshCw, Heart, Crown, Trophy,
 };

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React from "react";
+import React from 'react';
 
 export function TermsHeroBanner() {
   return (
@@ -11,19 +11,14 @@ export function TermsHeroBanner() {
       <div className="relative z-10">
         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs text-[#D4F6A2] border border-white/10 mb-3">
           <span className="w-2 h-2 rounded-full bg-[#D4F6A2] animate-pulse" />
-          <span>সর্বশেষ আপডেট / Last Updated: October 2024</span>
+          <span>Last Updated: October 2024</span>
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 leading-tight">
-          আইনগত ব্যবহার বিধিমালা ও গ্রাহক চুক্তি
+          Legal Terms of Use &amp; Customer Agreement
         </h2>
         <p className="text-sm text-white/80 leading-relaxed max-w-xl font-normal">
-          Minsah Beauty-তে আপনাকে স্বাগতম। আসল কোরিয়ান স্কিনকেয়ার এবং খাঁটি প্রসাধনী ক্রয়ের পূর্বে
-          অনুগ্রহ করে আমাদের শর্তাবলী মনোযোগ দিয়ে পড়ে নিন।
-          <span className="text-xs text-white/60 block mt-1">
-            Please read our terms governing authenticity, doorstep delivery, payments, and consumer
-            rights under Bangladesh Law.
-          </span>
+          Welcome to Minsah Beauty. Please read these terms governing product authenticity, doorstep delivery, safe payments, and consumer rights under Bangladesh Law before purchasing.
         </p>
 
         {/* Compliance Mini Pills */}

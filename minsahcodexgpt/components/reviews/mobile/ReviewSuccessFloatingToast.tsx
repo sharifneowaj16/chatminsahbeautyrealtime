@@ -46,17 +46,17 @@ export function ReviewSuccessFloatingToast({
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-[#4b6723] uppercase font-bold tracking-wider">
-                সফলভাবে প্রাপ্ত হয়েছে!
+                Successfully Received!
               </span>
               <span className="text-[10px] text-[#43483f] font-mono font-semibold">
                 Order #{orderNumber}
               </span>
             </div>
             <h3 className="text-sm font-bold text-[#062402] leading-tight mt-0.5">
-              রিভিউ সফলভাবে জমা দেওয়া হয়েছে!
+              Review Submitted Successfully!
             </h3>
             <p className="text-xs text-[#43483f] mt-0.5 leading-snug">
-              আপনার মূল্যবান মতামত ভেরিফাই করা হচ্ছে এবং ৩০ মিনিটের মধ্যে লাইভ হবে।
+              Your verified feedback is under review and will go live within 30 minutes.
             </p>
           </div>
 

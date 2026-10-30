@@ -6,7 +6,7 @@ export const SITE_IDENTITY = {
   tagline: 'Authentic beauty, delivered',
   description:
     'Authentic skincare, makeup and everyday beauty essentials with nationwide delivery across Bangladesh.',
-  locale: 'bn-BD',
+  locale: 'en-US',
   currency: 'BDT',
   timezone: 'Asia/Dhaka',
 } as const;

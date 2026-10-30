@@ -103,7 +103,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { product } = data;
 
   const title       = product.metaTitle       || product.pageH1 || product.name;
-  const description = product.metaDescription || product.seoIntro || product.shortDescription || product.bengaliDescription || '';
+  const description = product.metaDescription || product.seoIntro || product.shortDescription || '';
   const canonicalPath = productPath(product);
   const canonical   = safeCanonicalUrl(product.canonicalUrl, canonicalPath);
   const ogTitle     = product.ogTitle         || product.metaTitle || product.pageH1 || product.name;
@@ -114,16 +114,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const keywordParts = [
     product.focusKeyword,
     ...asStringArray(product.secondaryKeywords),
-    product.bengaliFocusKeyword,
-    ...asStringArray(product.bengaliSecondaryKeywords),
     ...asStringArray(product.searchTags),
     ...asStringArray(product.synonyms),
-    ...asStringArray(product.banglaSearchTerms),
     ...asStringArray(product.reviewKeywords),
     ...asStringArray(product.entities),
     ...asStringArray(product.buyingIntentKeywords),
     ...asStringArray(product.metaKeywords),
-    product.bengaliName,
     product.category ? `${product.category} bangladesh` : null,
     product.brand ? `${product.brand} bangladesh` : null,
   ];
@@ -147,7 +143,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     openGraph: {
       type:        'website',
-      locale:      'bn_BD',
+      locale:      'en_US',
       url:         canonical,
       siteName:    'Minsah Beauty',
       title:       ogTitle,

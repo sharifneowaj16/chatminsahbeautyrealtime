@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
+import React from 'react';
+import { Truck, Award, ShieldCheck, PackageCheck } from 'lucide-react';
 
 export function ShippingHeroCard() {
   return (
@@ -12,16 +13,16 @@ export function ShippingHeroCard() {
         {/* Top Category Pill */}
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-[#D4F6A2] border border-[#D4F6A2]/20">
-            <span className="material-symbols-outlined text-sm">local_shipping</span>
+            <Truck size={14} />
             <span className="text-[11px] font-bold">Steadfast &amp; Pathao Express Delivery</span>
           </div>
-          <span className="material-symbols-outlined text-[#D4F6A2] text-2xl">local_shipping</span>
+          <Truck size={22} className="text-[#D4F6A2]" />
         </div>
 
         {/* Hero Headlines */}
         <div>
           <h2 className="text-xl font-bold text-white leading-tight">
-            দ্রুত ও নিরাপদ ডেলিভারি প্রতিশ্রুতি
+            Fast &amp; Secure Delivery Promise
           </h2>
           <p className="text-[11px] font-bold text-[#D4F6A2] tracking-wide uppercase mt-0.5">
             Pathao &amp; Steadfast Express Logistics
@@ -35,23 +36,17 @@ export function ShippingHeroCard() {
         {/* Trust Badges Row */}
         <div className="pt-2 border-t border-white/15 grid grid-cols-3 gap-1.5 text-center">
           <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center">
-            <span className="material-symbols-outlined text-[#D4F6A2] text-base mb-0.5">
-              workspace_premium
-            </span>
+            <Award className="text-[#D4F6A2] mb-0.5" size={18} />
             <span className="text-[10px] font-bold text-white leading-tight">100% Authentic</span>
             <span className="text-[9px] text-[#FAF9F6]/70">Global Origin</span>
           </div>
           <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center">
-            <span className="material-symbols-outlined text-[#D4F6A2] text-base mb-0.5">
-              shield_check
-            </span>
+            <ShieldCheck className="text-[#D4F6A2] mb-0.5" size={18} />
             <span className="text-[10px] font-bold text-white leading-tight">Authentic Shield</span>
             <span className="text-[9px] text-[#FAF9F6]/70">Tamper Evident</span>
           </div>
           <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center">
-            <span className="material-symbols-outlined text-[#D4F6A2] text-base mb-0.5">
-              inventory
-            </span>
+            <PackageCheck className="text-[#D4F6A2] mb-0.5" size={18} />
             <span className="text-[10px] font-bold text-white leading-tight">Doorstep Check</span>
             <span className="text-[9px] text-[#FAF9F6]/70">Open Before Pay</span>
           </div>

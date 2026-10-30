@@ -31,22 +31,22 @@ export function ProductBilingualMetaCard({
       <div className="flex items-center space-x-2 pb-1 border-b border-[#232636]">
         <Globe className="w-4 h-4 text-emerald-400" />
         <h3 className="text-xs font-semibold text-[#F7F8F8]">
-          Bilingual & Bengali Search Optimization (বাংলা এসইও)
+          Secondary Search & Localization Optimization
         </h3>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-            Bangla Product Name (বাংলা নাম)
+            Secondary Product Name
           </label>
           <Input
             type="text"
-            lang="bn-BD"
+            lang="en"
             value={bengaliName}
             onChange={(e) => onChangeName(e.target.value)}
             className="w-full px-3 py-2 bg-[#161824] border border-[#232636] rounded-lg text-xs text-[#F7F8F8] placeholder:text-white/30 focus:ring-1 focus:ring-white/20 font-bengali"
-            placeholder="যেমন: কসরক্স অ্যাডভান্সড স্নেইল ৯৬ মিউসিন এসেন্স"
+            placeholder="e.g. COSRX Advanced Snail 96 Mucin Essence"
           />
         </div>
 
@@ -67,29 +67,29 @@ export function ProductBilingualMetaCard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-            Bangla Focus Keyword (বাংলা কিওয়ার্ড)
+            Secondary Focus Keyword
           </label>
           <Input
             type="text"
-            lang="bn-BD"
+            lang="en"
             value={bengaliFocusKeyword}
             onChange={(e) => onChangeBengaliKeyword(e.target.value)}
             className="w-full px-3 py-2 bg-[#161824] border border-[#232636] rounded-lg text-xs text-[#F7F8F8] placeholder:text-white/30 focus:ring-1 focus:ring-white/20 font-bengali"
-            placeholder="স্নেইল মিউসিন এসেন্স দাম বাংলাদেশ"
+            placeholder="e.g. snail mucin essence price bd"
           />
         </div>
 
         <div>
           <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-            Bangla Meta Description (বাংলা মেটা ডেসক্রিপশন)
+            Secondary Meta Description
           </label>
           <Textarea
             rows={2}
-            lang="bn-BD"
+            lang="en"
             value={bengaliMetaDescription}
             onChange={(e) => onChangeDescription(e.target.value)}
             className="w-full px-3 py-2 bg-[#161824] border border-[#232636] rounded-lg text-xs text-[#F7F8F8] placeholder:text-white/30 focus:ring-1 focus:ring-white/20 font-bengali leading-relaxed"
-            placeholder="আসল কোরিয়ান কসরক্স স্নেইল এসেন্স কিনুন মিনসাহ বিউটি থেকে ক্যাশ অন ডেলিভারিতে..."
+            placeholder="e.g. Authentic Korean COSRX Snail Essence with fast delivery..."
           />
         </div>
       </div>

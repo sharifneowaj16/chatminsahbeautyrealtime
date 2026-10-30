@@ -90,20 +90,20 @@ export default function LowStockAlertBanner({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm font-bold text-white tracking-tight">
-                স্টক আউট সতর্কতা — {totalUrgent}টি প্রোডাক্ট ঝুঁকিপূর্ণ অবস্থায়
+                Stock Out Alert — {totalUrgent} products at risk
               </h3>
               <span className="rounded-full bg-rose-500/20 border border-rose-500/30 px-2 py-0.2 text-[10px] font-mono font-bold text-rose-300">
                 CRITICAL
               </span>
               {urgentRunoutCount > 0 && (
                 <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.2 text-[10px] font-mono font-bold text-amber-300">
-                  ⚡ {urgentRunoutCount}টি রান-আউট হবে ≤৩ দিনে
+                  ⚡ {urgentRunoutCount} will run out in ≤3 days
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-300 mt-1">
-              <strong className="text-rose-400">{outOfStockCount}টি</strong> সম্পূর্ণ স্টক-আউট (০ পিস) এবং{' '}
-              <strong className="text-amber-400">{lowStockCount}টি</strong> রিঅর্ডার লেভেলের নিচে রয়েছে। অবিলম্বে শর্টলিস্ট করুন।
+              <strong className="text-rose-400">{outOfStockCount}</strong> completely out of stock (0 pcs) and{' '}
+              <strong className="text-amber-400">{lowStockCount}</strong> below reorder threshold. Shortlist immediately.
             </p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function LowStockAlertBanner({
             onClick={onFilterLowStock}
             className="h-8 rounded-lg border border-[#2e261a] bg-[#1a1610] hover:bg-[#282014] text-xs font-medium text-amber-200 hover:text-white px-3 transition-colors cursor-pointer"
           >
-            ঝুঁকিপূর্ণ প্রোডাক্টগুলো দেখুন
+            View At-Risk Products
           </button>
 
           <Button
@@ -126,12 +126,12 @@ export default function LowStockAlertBanner({
             {shortlistDone ? (
               <span className="flex items-center gap-1 text-slate-950 font-bold">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                শর্টলিস্ট সম্পন্ন! ✓
+                Shortlisted! ✓
               </span>
             ) : (
               <span className="flex items-center gap-1">
                 <Zap className="h-3.5 w-3.5 fill-current" />
-                {shortlisting ? 'শর্টলিস্ট হচ্ছে...' : '১-ক্লিকে শর্টলিস্টে যোগ করুন'}
+                {shortlisting ? 'Shortlisting...' : '1-Click Add to Shortlist'}
               </span>
             )}
           </Button>

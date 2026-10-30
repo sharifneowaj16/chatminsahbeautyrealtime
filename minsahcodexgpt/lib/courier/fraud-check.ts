@@ -85,14 +85,14 @@ export async function evaluateCustomerFraudRisk(phone: string): Promise<Customer
 
   // 3. Compute Risk Score (0 = safest, 100 = highest risk)
   let riskScore = 15; // default low baseline for new customers
-  let riskReason = 'নতুন বা স্বাভাবিক বিশ্বস্ত কাস্টমার';
+  let riskReason = 'New or standard trusted customer';
 
   if (totalOrders >= 2 && successRate < 50) {
     riskScore = 85;
-    riskReason = `পূর্ববর্তী অর্ডারের সাকসেস রেট মাত্র ${successRate}% (অর্ডার ড্রপের উচ্চ ঝুঁকি)`;
+    riskReason = `Previous order success rate is only ${successRate}% (high risk of order cancellation)`;
   } else if (totalOrders >= 2 && successRate < 75) {
     riskScore = 55;
-    riskReason = `পূর্ববর্তী অর্ডারের সাকসেস রেট ${successRate}% (মাঝারি ঝুঁকি)`;
+    riskReason = `Previous order success rate is ${successRate}% (medium risk)`;
   } else if (steadfastData && steadfastData.total_parcels > 3) {
     const courierDelivered = Number(steadfastData.delivered_parcels) || 0;
     const courierTotal = Number(steadfastData.total_parcels) || 1;
@@ -100,10 +100,10 @@ export async function evaluateCustomerFraudRisk(phone: string): Promise<Customer
 
     if (courierRate < 50) {
       riskScore = Math.max(riskScore, 85);
-      riskReason = `কুরিয়ারে পূর্ববর্তী ডেলিভারি সাকসেস মাত্র ${courierRate}% (ভুয়া অর্ডারের উচ্চ ঝুঁকি)`;
+      riskReason = `Courier historical delivery success is only ${courierRate}% (high risk)`;
     } else if (courierRate < 70) {
       riskScore = Math.max(riskScore, 50);
-      riskReason = `কুরিয়ারে ডেলিভারি সাকসেস রেট ${courierRate}%`;
+      riskReason = `Courier delivery success rate is ${courierRate}%`;
     }
   }
 

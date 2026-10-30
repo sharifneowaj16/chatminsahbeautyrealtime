@@ -131,12 +131,12 @@ function buildBasicMessage(order: BasicOrderNotification) {
 
 function buildDetailedMessage(order: DetailedOrderNotification) {
   const now = new Date();
-  const dateStr = now.toLocaleDateString("bn-BD", {
+  const dateStr = now.toLocaleDateString("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  const timeStr = now.toLocaleTimeString("bn-BD", {
+  const timeStr = now.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,

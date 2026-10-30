@@ -2,17 +2,17 @@
 /**
  * scripts/recompressImages.ts
  *
- * Existing MinIO-তে যে PNG/JPEG images আছে সেগুলো WebP-তে convert করে
- * re-upload করে + Cache-Control header যোগ করে।
+ * Converts existing MinIO PNG/JPEG images to WebP
+ * and re-uploads them with Cache-Control headers.
  *
  * Usage:
  *   npx tsx scripts/recompressImages.ts
  *   npx tsx scripts/recompressImages.ts --folder products --dry-run
  *
  * Options:
- *   --folder <name>   শুধু এই folder process করবে (default: products)
- *   --dry-run         কিছু upload করবে না, শুধু report করবে
- *   --limit <n>       max N images process করবে
+ *   --folder <name>   Only process this folder (default: products)
+ *   --dry-run         Dry run mode - report only without uploading
+ *   --limit <n>       Process max N images
  */
 
 import 'dotenv/config';
@@ -58,7 +58,7 @@ function listObjects(prefix: string): Promise<Array<{ name: string; size: number
   });
 }
 
-// minio v8+ — getObject এখন Promise<stream> return করে, callback নেই
+// minio v8+ — getObject returns Promise<stream>, no callback
 async function getObject(key: string): Promise<Buffer> {
   const stream = await client.getObject(BUCKET, key);
   const chunks: Buffer[] = [];
@@ -208,7 +208,7 @@ async function main() {
   }
 
   if (dryRun) {
-    console.log('\n⚠️  DRY RUN — কিছু upload হয়নি। --dry-run flag সরিয়ে আবার run করুন।');
+    console.log('\n⚠️  DRY RUN — Nothing uploaded. Remove --dry-run flag to apply.');
   }
 }
 

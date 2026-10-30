@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Tag, Zap, Gift, Truck, Check, Copy } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
 interface ProductOffersDrawerProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export default function ProductOffersDrawer({
   onClose,
 }: ProductOffersDrawerProps) {
   const { freeDeliveryConfig } = useCart();
+  const { coupons, freeDelivery } = useOfferEngine();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,12 +38,16 @@ export default function ProductOffersDrawer({
 
   if (!isOpen) return null;
 
+  const nationwideThreshold = freeDelivery?.nationwideThreshold ?? freeDeliveryConfig.nationwideThreshold ?? 2500;
+  const dhakaThreshold = freeDelivery?.dhakaThreshold ?? freeDeliveryConfig.dhakaThreshold ?? 1500;
+  const activeCoupons = coupons.filter((c) => c.isActive !== false);
+
   return (
     <div
       ref={containerRef}
       role="dialog"
       aria-label="Offers and promotions menu"
-      className="absolute top-[calc(100%+8px)] left-0 z-50 w-[330px] sm:w-[360px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200 before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-['']"
+      className="absolute top-[calc(100%+8px)] left-0 z-[180] w-[330px] sm:w-[360px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200 before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-['']"
       onMouseLeave={onClose}
     >
       <div className="overflow-hidden rounded-3xl border border-white/20 bg-[#122416]/95 backdrop-blur-2xl shadow-2xl shadow-black/60 text-white ring-1 ring-black/10">
@@ -77,7 +83,7 @@ export default function ProductOffersDrawer({
                 Flash Sale
               </span>
               <span className="text-[10px] font-bold bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-full">
-                Up to 30% OFF
+                Live Deals
               </span>
             </div>
             <p className="text-xs font-semibold text-white mt-1 group-hover:text-amber-200 transition-colors">
@@ -85,37 +91,42 @@ export default function ProductOffersDrawer({
             </p>
           </Link>
 
-          {/* Voucher 1: WELCOME10 */}
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Tag size={12} className="text-emerald-400" />
-                <span className="font-mono text-xs font-bold text-emerald-300">
-                  WELCOME10
-                </span>
-              </div>
-              <p className="text-[11px] text-white/70 mt-0.5">
-                10% off on your first order
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => copyVoucher('WELCOME10')}
-              className="flex items-center gap-1 text-[11px] font-semibold bg-white/10 hover:bg-white/20 active:scale-95 px-2.5 py-1 rounded-full text-white transition-all flex-shrink-0"
+          {/* Dynamic Vouchers from Admin Offer Engine */}
+          {activeCoupons.map((coupon) => (
+            <div
+              key={coupon.code}
+              className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3"
             >
-              {copiedCode === 'WELCOME10' ? (
-                <>
-                  <Check size={12} className="text-emerald-400" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={12} className="text-white/70" />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <Tag size={12} className="text-emerald-400" />
+                  <span className="font-mono text-xs font-bold text-emerald-300">
+                    {coupon.code}
+                  </span>
+                </div>
+                <p className="text-[11px] text-white/70 mt-0.5 truncate">
+                  {coupon.description || (coupon.type === 'percentage' ? `${coupon.value}% off` : `৳${coupon.value} off`)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => copyVoucher(coupon.code)}
+                className="flex items-center gap-1 text-[11px] font-semibold bg-white/10 hover:bg-white/20 active:scale-95 px-2.5 py-1 rounded-full text-white transition-all flex-shrink-0"
+              >
+                {copiedCode === coupon.code ? (
+                  <>
+                    <Check size={12} className="text-emerald-400" />
+                    <span>Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} className="text-white/70" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ))}
 
           {/* Delivery Perk Card */}
           <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
@@ -125,7 +136,7 @@ export default function ProductOffersDrawer({
             <div>
               <p className="text-xs font-semibold text-white">Free Nationwide Shipping</p>
               <p className="text-[11px] text-white/60 font-inter">
-                On all orders over ৳{freeDeliveryConfig.nationwideThreshold.toLocaleString('en-IN')} (Dhaka ৳{freeDeliveryConfig.dhakaThreshold.toLocaleString('en-IN')}+)
+                On all orders over ৳{nationwideThreshold.toLocaleString('en-IN')} (Dhaka ৳{dhakaThreshold.toLocaleString('en-IN')}+)
               </p>
             </div>
           </div>

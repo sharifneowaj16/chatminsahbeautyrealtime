@@ -42,7 +42,7 @@ export function PromoInputBar({ onApply, disabled }: PromoInputBarProps) {
         className="text-[11px] font-bold text-[#5A615D] uppercase tracking-wider flex items-center gap-1.5"
       >
         <Tag className="w-3.5 h-3.5 text-[#4b6723]" />
-        প্রোমো ভাউচার যোগ করুন
+        Add Promo Voucher
       </label>
 
       <div className="flex items-center gap-2">
@@ -65,9 +65,9 @@ export function PromoInputBar({ onApply, disabled }: PromoInputBarProps) {
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="প্রোমো কোড লিখুন (e.g., FREESHIP)"
+            placeholder="Enter promo code (e.g., FREESHIP)"
             disabled={disabled}
-            className="w-full pl-10 pr-20 py-3 rounded-full bg-[#faf9f6] text-[#062402] placeholder:text-[#5A615D]/60 text-xs font-semibold uppercase tracking-wider border border-[#E2DED8]/60 focus:outline-none focus:border-[#4b6723] focus:ring-2 focus:ring-[#4b6723]/20 shadow-inner transition-all"
+            className="w-full pl-10 pr-20 py-3 rounded-full bg-[#faf9f6] text-[#062402] placeholder:text-[#5A615D]/60 text-base sm:text-xs font-semibold uppercase tracking-wider border border-[#E2DED8]/60 focus:outline-none focus:border-[#4b6723] focus:ring-2 focus:ring-[#4b6723]/20 shadow-inner transition-all"
           />
           <button
             type="button"
@@ -75,7 +75,7 @@ export function PromoInputBar({ onApply, disabled }: PromoInputBarProps) {
             className="absolute right-2 px-2.5 py-1 rounded-full bg-[#EAF7D8] text-[#1c3a13] hover:bg-[#ccee9b] text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-all"
           >
             <Clipboard className="w-3 h-3" />
-            <span>পেস্ট</span>
+            <span>Paste</span>
           </button>
         </div>
 
@@ -84,7 +84,7 @@ export function PromoInputBar({ onApply, disabled }: PromoInputBarProps) {
           disabled={disabled || !code.trim()}
           className="px-5 py-3 rounded-full bg-[#062402] text-[#faf9f6] hover:bg-[#28531c] disabled:opacity-50 text-xs font-bold active:scale-95 shadow-md hover:shadow-lg transition-all shrink-0 flex items-center gap-1.5 border border-[#acd19b]/30"
         >
-          <span>প্রয়োগ করুন</span>
+          <span>Apply</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

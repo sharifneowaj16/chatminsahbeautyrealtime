@@ -42,12 +42,12 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // products/ folder → sharp দিয়ে WebP convert + resize + cache header
-    // অন্য folder → raw upload (avatars, banners etc. এর নিজস্ব route আছে)
+    // products/ folder → convert to WebP + resize + cache header using sharp
+    // other folders → raw upload (avatars, banners, etc.)
     let result: { key: string; url: string };
 
     if (folder.startsWith('products/')) {
-      // folder থেকে productId বের করি: "products/new" → "new", "products/abc123" → "abc123"
+      // Extract productId from folder: "products/new" → "new", "products/abc123" → "abc123"
       const productId = folder.replace('products/', '') || 'general';
       result = await uploadProductImage(buffer, productId, file.name, file.type);
     } else {

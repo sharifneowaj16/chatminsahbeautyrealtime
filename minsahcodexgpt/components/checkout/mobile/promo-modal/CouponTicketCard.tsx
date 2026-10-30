@@ -94,10 +94,10 @@ export function CouponTicketCard({
           {isApplied ? (
             <span className="flex items-center gap-1">
               <Check className="w-3 h-3" />
-              প্রযুক্ত
+              Applied
             </span>
           ) : (
-            'প্রয়োগ'
+            'Apply'
           )}
         </button>
       </div>
@@ -117,7 +117,7 @@ export function CouponTicketCard({
           className="text-[11px] text-[#4b6723] font-semibold hover:underline flex items-center gap-1"
         >
           <Info className="w-3 h-3" />
-          <span>শর্তাবলী দেখুন</span>
+          <span>View Terms</span>
         </button>
       </div>
     </div>

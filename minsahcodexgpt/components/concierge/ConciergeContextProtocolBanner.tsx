@@ -26,7 +26,7 @@ export function ConciergeContextProtocolBanner({
       </div>
 
       <p className="text-[12px] leading-relaxed text-[#5A615D]">
-        আপনার ফোন নম্বর <strong className="text-[#062402] font-semibold">{userPhone}</strong> এই চ্যাটের সাথে লিঙ্ক করা হয়েছে, যাতে আমাদের গুলশান-২ ডেস্ক সরাসরি ১-ট্যাপে আপনার একাউন্ট ও অর্ডার তথ্য লোড করতে পারে।
+        Your verified phone number <strong className="text-[#062402] font-semibold">{userPhone}</strong> is linked to this session, allowing our Gulshan-2 concierge desk to immediately access your account and order details.
       </p>
     </div>
   );

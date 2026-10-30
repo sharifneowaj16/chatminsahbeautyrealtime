@@ -66,7 +66,7 @@ export function resolveDeliveryPromise(input: ResolveDeliveryPromiseInput = {}):
   const isBeforeCutoff = hour < config.cutoffHour;
 
   const normalizedArea = (input.area || '').trim().toLowerCase();
-  const isExplicitOutside = normalizedArea.includes('outside') || normalizedArea.includes('ঢাকার বাইরে');
+  const isExplicitOutside = normalizedArea.includes('outside');
 
   const matchesFastZone = Boolean(
     normalizedArea &&
@@ -84,27 +84,27 @@ export function resolveDeliveryPromise(input: ResolveDeliveryPromiseInput = {}):
   const sameDayDispatch = isFastZone && isBeforeCutoff;
 
   const fastZoneBeforeNote: DeliveryPromiseBilingualText = {
-    bn: 'বিকেল ৩টার আগে অর্ডার করলে ১ দিনে ডেলিভারি (আজই ডিসপ্যাচ)',
+    bn: 'Order before 3 PM: 1-day delivery (Dispatched today)',
     en: 'Order before 3 PM: 1-day delivery (Dispatched today)',
   };
 
   const fastZoneAfterNote: DeliveryPromiseBilingualText = {
-    bn: 'বিকেল ৩টার পরে অর্ডার করলে ২ দিনে ডেলিভারি (আগামীকাল ডিসপ্যাচ)',
+    bn: 'Order after 3 PM: 2-day delivery (Dispatched tomorrow)',
     en: 'Order after 3 PM: 2-day delivery (Dispatched tomorrow)',
   };
 
   const outsideDhakaNote: DeliveryPromiseBilingualText = {
-    bn: 'ঢাকার বাইরে ২ দিনে (৪৮ ঘণ্টায়) নিশ্চিত ডেলিভারি',
+    bn: 'Outside Dhaka: 2-day (48 hrs) delivery',
     en: 'Outside Dhaka: 2-day (48 hrs) delivery',
   };
 
   const fridayNote: DeliveryPromiseBilingualText = {
-    bn: 'শুক্রবারও ডেলিভারি চালু',
+    bn: 'Friday delivery available',
     en: 'Friday delivery available',
   };
 
   const disclaimer: DeliveryPromiseBilingualText = {
-    bn: 'কুরিয়ার বা প্রতিকূল আবহাওয়ার কারণে সময় কিছুটা পরিবর্তিত হতে পারে',
+    bn: 'Delivery time may vary slightly due to courier routing or adverse weather',
     en: 'Delivery time may vary slightly due to courier routing or adverse weather',
   };
 

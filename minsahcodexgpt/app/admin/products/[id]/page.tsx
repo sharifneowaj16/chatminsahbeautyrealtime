@@ -43,7 +43,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const productId = resolvedParams.id ? decodeURIComponent(resolvedParams.id) : 'SKU-892';
 
   const [titleEn, setTitleEn] = useState('COSRX Centella Asiatica Calming Water Toner 200ml');
-  const [titleBn, setTitleBn] = useState('কসরেক্স সেন্টেল্লা এশিয়াটিকা কামিং ওয়াটার টোনার ২০০ মি.লি.');
+  const [titleBn, setTitleBn] = useState('');
   const [brand, setBrand] = useState('COSRX - Korean Skincare');
   const [category, setCategory] = useState('Skincare > Toners & Mists');
   const [description, setDescription] = useState('Formulated with 82% Jeju Mineral Water and Centella Asiatica leaf water, this ultra-lightweight calming toner soothes sensitive, irritated skin, relieves redness, and hydrates deep into pores without stickiness.');
@@ -235,7 +235,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               <div>
-                <label className="text-[#908fa0] block mb-1">Bengali Title (বাংলা শিরোনাম)</label>
+                <label className="text-[#908fa0] block mb-1">Secondary / Local Title</label>
                 <input
                   type="text"
                   value={titleBn}
