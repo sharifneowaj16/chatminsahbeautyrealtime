@@ -18,104 +18,8 @@ interface OrderHistoryMobileViewProps {
   initialOrders?: MobileOrderRecord[];
 }
 
-const DEFAULT_STITCH_ORDERS: MobileOrderRecord[] = [
-  {
-    id: 'mb-88294',
-    orderNumber: '#MB-88294',
-    status: 'transit',
-    statusLabel: 'Out for Delivery (Banani Hub)',
-    statusBadgeVariant: 'secondary',
-    timestampLabel: 'Steadfast & Pathao Express • Dispatched Today',
-    totalAmount: 4450,
-    paymentMethod: 'bKash Paid',
-    products: [
-      {
-        id: 'p1',
-        name: 'Laneige Lip Sleeping Mask (Berry)',
-        details: '20g • Vitamin C Berry Fruit Complex™',
-        quantity: 1,
-        price: 1750,
-        image:
-          'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-      },
-      {
-        id: 'p2',
-        name: 'Arisol Soothing Sun Relief SPF50+',
-        details: '50ml • Centella Asiatica & Green Tea',
-        quantity: 2,
-        price: 2700,
-        image:
-          'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
-      },
-    ],
-    transitProgress: {
-      riderName: 'Shakil M.',
-      hubName: 'Banani Hub',
-      etaMinutes: 45,
-      progressPercentage: 82,
-      destinationAddress: 'House 14, Banani',
-    },
-  },
-  {
-    id: 'mb-77102',
-    orderNumber: '#MB-77102',
-    status: 'delivered',
-    statusLabel: 'Delivered & Inspected',
-    statusBadgeVariant: 'surface',
-    timestampLabel: 'Delivered on Oct 12, 2024 • Banani Hub',
-    totalAmount: 3200,
-    paymentMethod: 'COD Verified',
-    batchSeal: {
-      code: '#KR-AN-9941',
-      notes: 'Tamper-evident hologram intact',
-    },
-    products: [
-      {
-        id: 'p3',
-        name: 'Anua Heartleaf 77% Soothing Toner',
-        details: '250ml • Sub-acidic pH Calming Formula',
-        quantity: 1,
-        price: 1650,
-        image:
-          'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
-      },
-      {
-        id: 'p4',
-        name: 'Elixir Vital Glass Skin Hydrating Serum',
-        details: '30ml • Quad-Hyaluronic Acid Complex',
-        quantity: 1,
-        price: 1550,
-        image:
-          'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80',
-      },
-    ],
-  },
-  {
-    id: 'mb-65910',
-    orderNumber: '#MB-65910',
-    status: 'delivered',
-    statusLabel: 'Delivered',
-    statusBadgeVariant: 'surface',
-    timestampLabel: 'Delivered on Sep 28, 2024 • Dhaka Express',
-    totalAmount: 1720,
-    paymentMethod: 'Card Paid',
-    canReview: true,
-    products: [
-      {
-        id: 'p5',
-        name: 'Laneige Lip Sleeping Mask Berry (20g)',
-        details: 'Batch #LN-4801 • Authentic Amorepacific',
-        quantity: 1,
-        price: 1720,
-        image:
-          'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-      },
-    ],
-  },
-];
-
 export default function OrderHistoryMobileView({
-  initialOrders = DEFAULT_STITCH_ORDERS,
+  initialOrders = [],
 }: OrderHistoryMobileViewProps) {
   const { addItem } = useCart();
   const { registerAddIntent, openForSuccessfulAdd } = useCartDrawer();
@@ -127,7 +31,7 @@ export default function OrderHistoryMobileView({
   const [selectedOrderForCert, setSelectedOrderForCert] = useState<string | null>(null);
 
   const orders = useMemo(() => {
-    return initialOrders && initialOrders.length > 0 ? initialOrders : DEFAULT_STITCH_ORDERS;
+    return initialOrders || [];
   }, [initialOrders]);
 
   const counts = useMemo(() => {

@@ -24,10 +24,10 @@ export interface ShipmentItemLine {
 export interface ShipmentCourierInfo {
   name: string;
   partner: string;
-  rating: string;
-  deliveriesCount: number;
-  phone: string;
-  distanceLabel: string;
+  rating?: string;
+  deliveriesCount?: number;
+  phone?: string;
+  distanceLabel?: string;
 }
 
 export interface LiveTrackingOrderData {
@@ -39,7 +39,7 @@ export interface LiveTrackingOrderData {
   trackingAwb: string;
   deliveryDestination: string;
   milestones: TrackingMilestone[];
-  courier: ShipmentCourierInfo;
+  courier?: ShipmentCourierInfo | null;
   items: ShipmentItemLine[];
   payment: {
     subtotal: number;

@@ -6,40 +6,20 @@ import { Modal } from '@/components/ui/Modal';
 import { OutOfStockProductCard } from './OutOfStockProductCard';
 import { IncheonFlightRestockPill } from './IncheonFlightRestockPill';
 import { AlternativeSwapCard } from './AlternativeSwapCard';
-import { OutOfStockDeleteModalProps, StockProductSummary, AlternativeProduct } from './types';
-
-const DEFAULT_PRODUCT: StockProductSummary = {
-  id: 'laneige-lip-mask-berry',
-  brand: 'Laneige Korea',
-  title: 'Laneige Lip Sleeping Mask (Berry 20g)',
-  subtitle: 'Berry Fruit Complex & Vitamin C',
-  price: 1720,
-  regularPrice: 2100,
-  discountPercent: 18,
-  image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=300&q=80',
-  expectedDate: 'within 3 days',
-  batchInfo: 'Air Cargo Batch',
-};
-
-const DEFAULT_ALTERNATIVE: AlternativeProduct = {
-  id: 'arisol-soothing-sun',
-  title: 'Arisol Soothing Sun Relief (50ml)',
-  subtitle: 'Centella & Rice Extract SPF50+',
-  price: 1650,
-  image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-  tag: 'Ready to Ship',
-};
+import { OutOfStockDeleteModalProps } from './types';
 
 export function OutOfStockDeleteModal({
   isOpen,
   onClose,
-  product = DEFAULT_PRODUCT,
-  alternative = DEFAULT_ALTERNATIVE,
+  product,
+  alternative,
   onDelete,
   onSaveToWishlist,
   onSwap,
 }: OutOfStockDeleteModalProps) {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  if (!isOpen || !product) return null;
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -113,13 +93,17 @@ export function OutOfStockDeleteModal({
         arrivalText={`Fresh Batch Restock: ${product.expectedDate || 'within 3 days'}`}
         batchTag={product.batchInfo || 'Air Cargo'}
       />
-      <AlternativeSwapCard
-        alternative={alternative}
-        onSwap={(alt) => {
-          onSwap?.(alt);
-          showToast('Alternative item added to your bag');
-        }}
-      />
+      {alternative ? (
+        <AlternativeSwapCard
+          alternative={alternative}
+          onSwap={(alt) => {
+            onSwap?.(alt);
+            showToast('Alternative item added to your bag');
+          }}
+        />
+      ) : null}
     </Modal>
   );
 }
+
+export default OutOfStockDeleteModal;

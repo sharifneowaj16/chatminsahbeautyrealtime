@@ -179,11 +179,11 @@ function getFriendlyCheckoutError(data: unknown) {
   }
 
   if (rawMessage.toLowerCase().includes("phone")) {
-    return "Phone number ta 11 digit-er valid BD number din.";
+    return "Please enter a valid 11-digit Bangladesh mobile number (01XXXXXXXXX).";
   }
 
   if (rawMessage.toLowerCase().includes("street")) {
-    return "Street address ta din.";
+    return "Please enter your street address.";
   }
 
   return rawMessage || "Something went wrong. Please try again.";

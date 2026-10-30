@@ -1,58 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import { IOSSmoothSearchBar } from "./IOSSmoothSearchBar";
 import { SearchSpotlightDropdown } from "./SearchSpotlightDropdown";
 import { SearchKeyboardNavHandler } from "./SearchKeyboardNavHandler";
 import { SearchResultItem } from "./types";
 
-const MOCK_SEARCH_RESULTS: SearchResultItem[] = [
-  {
-    id: "item-1",
-    name: "Anua Heartleaf 77% Soothing Toner",
-    brand: "Anua Korea",
-    priceBdt: 2100,
-    originalPriceBdt: 2400,
-    rating: 5.0,
-    imageUrl:
-      "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=200&q=80",
-    category: "Toners",
-  },
-  {
-    id: "item-2",
-    name: "Laneige Lip Sleeping Mask Berry",
-    brand: "Laneige",
-    priceBdt: 1720,
-    originalPriceBdt: 2100,
-    rating: 4.9,
-    imageUrl:
-      "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=200&q=80",
-    category: "Lip Care",
-  },
-  {
-    id: "item-3",
-    name: "COSRX Advanced Snail 96 Mucin Power Essence",
-    brand: "COSRX",
-    priceBdt: 1890,
-    originalPriceBdt: 2200,
-    rating: 5.0,
-    imageUrl:
-      "https://images.unsplash.com/photo-1608248597359-2c6b4d326efc?auto=format&fit=crop&w=200&q=80",
-    category: "Essence & Serums",
-  },
-  {
-    id: "item-4",
-    name: "Beauty of Joseon Dynasty Cream",
-    brand: "Beauty of Joseon",
-    priceBdt: 1990,
-    originalPriceBdt: 2350,
-    rating: 4.8,
-    imageUrl:
-      "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=200&q=80",
-    category: "Moisturizers",
-  },
-];
+const RECENT_SEARCHES_KEY = "minsah_recent_searches";
 
 interface IOSSearchModalOverlayProps {
   isOpen?: boolean;
@@ -63,16 +22,52 @@ export function IOSSearchModalOverlay({
   isOpen: controlledIsOpen,
   onClose: controlledOnClose,
 }: IOSSearchModalOverlayProps) {
+  const router = useRouter();
+  const { addItem } = useCart();
+  const { openDrawer: openCartDrawer } = useCartDrawer();
+
   const [internalOpen, setInternalOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [recentSearches, setRecentSearches] = useState([
-    "Anua Toner",
-    "Laneige Berry",
-    "SPF 50",
-  ]);
+  const [results, setResults] = useState<SearchResultItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const lastRequestedQueryRef = useRef("");
 
   const isModalOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen;
 
+  // Load recent searches from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed.slice(0, 6));
+        }
+      }
+    } catch {}
+  }, []);
+
+  const saveRecentSearch = (term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    setRecentSearches((prev) => {
+      const updated = [trimmed, ...prev.filter((t) => t.toLowerCase() !== trimmed.toLowerCase())].slice(0, 6);
+      try {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch {}
+  };
+
+  // Listen to open/close custom events
   useEffect(() => {
     const handleOpen = () => setInternalOpen(true);
     const handleClose = () => setInternalOpen(false);
@@ -93,40 +88,97 @@ export function IOSSearchModalOverlay({
       setInternalOpen(false);
     }
     setQuery("");
+    setResults([]);
+    setIsLoading(false);
   };
+
+  // Live Debounced Product Search from Existing Catalog API
+  useEffect(() => {
+    const normalizedQuery = query.trim();
+    if (normalizedQuery.length < 2) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    const controller = new AbortController();
+    lastRequestedQueryRef.current = normalizedQuery;
+
+    const timer = setTimeout(() => {
+      fetch(`/api/search/suggestions?q=${encodeURIComponent(normalizedQuery)}&limit=8`, {
+        signal: controller.signal,
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (lastRequestedQueryRef.current !== normalizedQuery) return;
+          if (data?.suggestions && Array.isArray(data.suggestions)) {
+            const mappedResults: SearchResultItem[] = data.suggestions
+              .filter((item: any) => item.type === "product")
+              .map((item: any) => ({
+                id: item.productId || item.id,
+                name: item.productName || item.text,
+                brand: item.brand || "",
+                priceBdt: Number(item.price) || 0,
+                originalPriceBdt: item.originalPrice ? Number(item.originalPrice) : undefined,
+                rating: 5.0,
+                imageUrl: item.image || "/images/categories/Serum.png",
+                slug: item.slug,
+                category: item.category || "",
+              }));
+            setResults(mappedResults);
+          } else {
+            setResults([]);
+          }
+        })
+        .catch(() => {
+          if (lastRequestedQueryRef.current === normalizedQuery) {
+            setResults([]);
+          }
+        })
+        .finally(() => {
+          if (lastRequestedQueryRef.current === normalizedQuery) {
+            setIsLoading(false);
+          }
+        });
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
 
   const handleSelectTag = (selected: string) => {
     setQuery(selected);
-    if (!recentSearches.includes(selected)) {
-      setRecentSearches([selected, ...recentSearches.slice(0, 4)]);
+    saveRecentSearch(selected);
+  };
+
+  const handleProductClick = (item: SearchResultItem) => {
+    saveRecentSearch(item.name);
+    handleClose();
+    if (item.slug) {
+      router.push(`/products/${item.slug}`);
+    } else {
+      router.push(`/products/${item.id}`);
     }
   };
 
-  const handleAddToCart = (item: SearchResultItem) => {
-    window.dispatchEvent(
-      new CustomEvent("cart:add-item", {
-        detail: {
-          id: item.id,
-          name: item.name,
-          price: item.priceBdt,
-          image: item.imageUrl,
-          quantity: 1,
-        },
-      })
-    );
-    alert(`Added ${item.name} to bag!`);
+  const handleAddToCart = (e: React.MouseEvent, item: SearchResultItem) => {
+    e.stopPropagation();
+    addItem({
+      id: item.id,
+      productId: item.id,
+      name: item.name,
+      price: item.priceBdt,
+      quantity: 1,
+      image: item.imageUrl,
+    });
+    openCartDrawer();
+    handleClose();
   };
 
   if (!isModalOpen) return null;
-
-  const filteredResults = query.trim()
-    ? MOCK_SEARCH_RESULTS.filter(
-        (item) =>
-          item.name.toLowerCase().includes(query.toLowerCase()) ||
-          item.brand.toLowerCase().includes(query.toLowerCase()) ||
-          item.category.toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col justify-start">
@@ -141,8 +193,10 @@ export function IOSSearchModalOverlay({
         onCancel={handleClose}
         onSubmit={(e) => {
           e?.preventDefault();
-          if (query.trim() && !recentSearches.includes(query.trim())) {
-            setRecentSearches([query.trim(), ...recentSearches.slice(0, 4)]);
+          if (query.trim()) {
+            saveRecentSearch(query.trim());
+            handleClose();
+            router.push(`/shop?q=${encodeURIComponent(query.trim())}`);
           }
         }}
       />
@@ -157,14 +211,14 @@ export function IOSSearchModalOverlay({
       {/* Dropdown Container */}
       <div
         className="relative z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
-        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'manipulation' }}
+        style={{ WebkitOverflowScrolling: "touch", touchAction: "manipulation" }}
       >
         {/* Spotlight Trend Tags (shows when query is short) */}
         {!query.trim() && (
           <SearchSpotlightDropdown
             onSelectTag={handleSelectTag}
             recentSearches={recentSearches}
-            onClearRecent={() => setRecentSearches([])}
+            onClearRecent={clearRecentSearches}
           />
         )}
 
@@ -173,31 +227,37 @@ export function IOSSearchModalOverlay({
           <div className="bg-[#FFFFFF]/98 backdrop-blur-2xl border-b border-[#E2DED8]/60 p-4 shadow-xl space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#062402]">
-                Search Results ({filteredResults.length})
+                {isLoading ? "Searching live catalog..." : `Search Results (${results.length})`}
               </span>
               <span className="text-[10px] text-[#4b6723] font-semibold bg-[#EAF7D8] px-2 py-0.5 rounded-full border border-[#4b6723]/20">
                 100% Authentic Korean Stock
               </span>
             </div>
 
-            {filteredResults.length === 0 ? (
+            {isLoading ? (
+              <div className="py-10 flex flex-col items-center justify-center gap-2 text-stone-500">
+                <Loader2 className="w-6 h-6 animate-spin text-[#4b6723]" />
+                <span className="text-xs font-medium">Finding matching products...</span>
+              </div>
+            ) : results.length === 0 ? (
               <div className="py-8 text-center space-y-2">
                 <span className="material-symbols-outlined text-4xl text-[#43483f]">
                   manage_search
                 </span>
                 <p className="text-xs font-semibold text-[#181C1A]">
-                  No exact matches found for &quot;{query}&quot;
+                  No matching products found for &quot;{query}&quot;
                 </p>
                 <p className="text-[11px] text-[#43483f]">
-                  Try searching for &quot;Anua&quot;, &quot;Laneige&quot;, or &quot;Sunscreen&quot;
+                  Try searching by product name, category, or brand
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredResults.map((item) => (
+                {results.map((item) => (
                   <div
                     key={item.id}
-                    className="p-2.5 rounded-2xl bg-[#F8FAF7] border border-[#E2DED8]/60 flex items-center justify-between gap-3 shadow-xs hover:bg-white transition-colors"
+                    onClick={() => handleProductClick(item)}
+                    className="p-2.5 rounded-2xl bg-[#F8FAF7] border border-[#E2DED8]/60 flex items-center justify-between gap-3 shadow-xs hover:bg-white active:scale-[0.99] transition-all cursor-pointer"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="relative w-12 h-12 rounded-xl bg-white overflow-hidden shrink-0 border border-[#E2DED8]/40">
@@ -210,9 +270,11 @@ export function IOSSearchModalOverlay({
                         />
                       </div>
                       <div className="min-w-0">
-                        <span className="text-[10px] font-bold text-[#4b6723] uppercase">
-                          {item.brand}
-                        </span>
+                        {item.brand && (
+                          <span className="text-[10px] font-bold text-[#4b6723] uppercase">
+                            {item.brand}
+                          </span>
+                        )}
                         <h4 className="text-xs font-bold text-[#062402] truncate">
                           {item.name}
                         </h4>
@@ -225,17 +287,13 @@ export function IOSSearchModalOverlay({
                               ৳{item.originalPriceBdt.toLocaleString()}
                             </span>
                           )}
-                          <span className="text-[10px] text-[#4b6723] font-semibold flex items-center gap-0.5 ml-1">
-                            <span className="material-symbols-outlined text-[12px]">star</span>
-                            {item.rating}
-                          </span>
                         </div>
                       </div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => handleAddToCart(item)}
+                      onClick={(e) => handleAddToCart(e, item)}
                       className="w-8 h-8 rounded-full bg-[#062402] text-white flex items-center justify-center shrink-0 active:scale-90 hover:bg-[#1c3a13] transition-all shadow-xs"
                       aria-label="Add to bag"
                     >
@@ -251,4 +309,5 @@ export function IOSSearchModalOverlay({
     </div>
   );
 }
+
 export default IOSSearchModalOverlay;

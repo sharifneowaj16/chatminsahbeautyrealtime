@@ -19,15 +19,17 @@ export default function AccountProfileHeaderCard({
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="relative shrink-0">
             <div className="w-16 h-16 rounded-full overflow-hidden bg-[#c7edb5] flex items-center justify-center shadow-inner border-2 border-white">
-              <img
-                src={profile.avatarUrl}
-                alt={profile.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src =
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
-                }}
-              />
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-xl font-bold text-[#062402]">
+                  {profile.name?.slice(0, 1).toUpperCase() || 'U'}
+                </span>
+              )}
             </div>
             {profile.isKycVerified && (
               <div className="absolute -bottom-1 -right-1 bg-[#D4F6A2] text-[#1c3a13] rounded-full p-0.5 shadow-xs flex items-center justify-center">

@@ -15,107 +15,19 @@ interface WishlistMobileViewProps {
   initialItems?: MobileWishlistItem[];
 }
 
-const DEFAULT_STITCH_WISHLIST: MobileWishlistItem[] = [
-  {
-    id: 'item-laneige',
-    productId: 'laneige-lip-sleeping-mask',
-    name: 'Lip Sleeping Mask Berry',
-    brand: 'LANEIGE',
-    variant: 'Berry Complex & Vitamin C • 20g',
-    price: 1720,
-    originalPrice: 2025,
-    discountPercent: 15,
-    inStock: true,
-    stockLabel: 'In Stock • Banani Hub (24h)',
-    rating: 4.9,
-    reviewCount: 340,
-    image:
-      'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-    category: 'pricedrop',
-    isFavorite: true,
-  },
-  {
-    id: 'item-arisol',
-    productId: 'arisol-sun-relief',
-    name: 'Soothing Sun Relief SPF50+',
-    brand: 'ARISOL LAB',
-    variant: 'Centella & Green Tea • 50ml',
-    price: 1365,
-    originalPrice: 1950,
-    discountPercent: 30,
-    inStock: true,
-    stockLabel: 'High Demand • Only 3 Left',
-    rating: 4.8,
-    reviewCount: 192,
-    image:
-      'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
-    category: 'suncare',
-    isFavorite: true,
-  },
-  {
-    id: 'item-anua',
-    productId: 'anua-heartleaf-toner',
-    name: 'Heartleaf 77% Soothing Toner',
-    brand: 'ANUA KOREA',
-    variant: 'Heartleaf Calming Extract • 250ml',
-    price: 2100,
-    originalPrice: null,
-    inStock: true,
-    stockLabel: 'Restocked Fresh • Banani Hub',
-    rating: 4.9,
-    reviewCount: 512,
-    image:
-      'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
-    category: 'instock',
-    isFavorite: true,
-  },
-  {
-    id: 'item-elixir',
-    productId: 'elixir-vital-serum',
-    name: 'Glass Skin Hydrating Serum',
-    brand: 'ELIXIR VITAL',
-    variant: 'Quad-Hyaluronic & Panthenol • 30ml',
-    price: 1890,
-    originalPrice: 2150,
-    discountPercent: 12,
-    inStock: true,
-    stockLabel: 'Ready for Express Dispatch',
-    rating: 5.0,
-    reviewCount: 88,
-    image:
-      'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80',
-    category: 'serum',
-    isFavorite: true,
-  },
-  {
-    id: 'item-joseon',
-    productId: 'beauty-of-joseon-cream',
-    name: 'Dynasty Cream Royal Formulation',
-    brand: 'BEAUTY OF JOSEON',
-    variant: 'Ginseng & Niacinamide • 50ml',
-    price: 1850,
-    originalPrice: 2100,
-    discountPercent: 12,
-    inStock: true,
-    stockLabel: 'In Stock • Dhaka Express',
-    rating: 4.7,
-    reviewCount: 215,
-    image:
-      'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-    category: 'pricedrop',
-    isFavorite: true,
-  },
-];
-
 export default function WishlistMobileView({
-  initialItems = DEFAULT_STITCH_WISHLIST,
+  initialItems = [],
 }: WishlistMobileViewProps) {
   const { addItem } = useCart();
   const { registerAddIntent, openForSuccessfulAdd } = useCartDrawer();
 
-  const [items, setItems] = useState<MobileWishlistItem[]>(() => {
-    return initialItems && initialItems.length > 0 ? initialItems : DEFAULT_STITCH_WISHLIST;
-  });
+  const [items, setItems] = useState<MobileWishlistItem[]>(initialItems);
+
+  React.useEffect(() => {
+    if (initialItems) {
+      setItems(initialItems);
+    }
+  }, [initialItems]);
 
   const [filter, setFilter] = useState<WishlistFilterType>('all');
   const [sort, setSort] = useState<WishlistSortType>('recent');

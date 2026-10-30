@@ -1,43 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BellRing, Plane, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { useAuth } from '@/contexts/AuthContext';
 import { BackInStockChannelToggle } from './BackInStockChannelToggle';
 import { BackInStockContactInput } from './BackInStockContactInput';
 import { BackInStockSuccessCard } from './BackInStockSuccessCard';
-import { BackInStockAlertModalProps, StockProductSummary, NotificationChannels } from './types';
-
-const DEFAULT_PRODUCT: StockProductSummary = {
-  id: 'laneige-lip-mask-berry',
-  brand: 'Laneige Korea',
-  title: 'Laneige Lip Sleeping Mask Berry',
-  subtitle: 'Net Weight: 20g • Vitamin C + Berry Fruit Complex',
-  price: 1720,
-  regularPrice: 2100,
-  discountPercent: 18,
-  image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=300&q=80',
-  expectedDate: 'Nov 15 (Fresh Authentic Batch)',
-  batchInfo: 'Air Cargo In-Transit',
-};
+import { BackInStockAlertModalProps, NotificationChannels } from './types';
 
 export function BackInStockAlertModal({
   isOpen,
   onClose,
-  product = DEFAULT_PRODUCT,
-  userPhone = '+880 1712-894102',
-  userName = 'Tasneem Ahmed',
+  product,
+  userPhone,
+  userName,
   onConfirmAlert,
 }: BackInStockAlertModalProps) {
+  const { user } = useAuth();
+  const effectivePhone = userPhone || user?.phone || '';
+  const effectiveName =
+    userName ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
+    (user?.email ? user.email.split('@')[0] : 'Guest');
+
   const [channels, setChannels] = useState<NotificationChannels>({
     whatsapp: true,
     sms: true,
     email: false,
     push: true,
   });
-  const [contact, setContact] = useState(userPhone);
+  const [contact, setContact] = useState(effectivePhone);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (effectivePhone) {
+      setContact(effectivePhone);
+    }
+  }, [effectivePhone]);
+
+  if (!isOpen || !product) return null;
 
   const handleSubmit = () => {
     setIsSubmitting(true);
@@ -142,7 +145,7 @@ export function BackInStockAlertModal({
       <BackInStockChannelToggle channels={channels} onChange={setChannels} />
       <BackInStockContactInput
         initialContact={contact}
-        userName={userName}
+        userName={effectiveName}
         onChangeContact={setContact}
       />
 
@@ -155,3 +158,5 @@ export function BackInStockAlertModal({
     </Modal>
   );
 }
+
+export default BackInStockAlertModal;

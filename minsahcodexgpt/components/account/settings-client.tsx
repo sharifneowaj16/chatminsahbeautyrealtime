@@ -96,18 +96,16 @@ export function SettingsClient() {
       name:
         [profileData.firstName || user?.firstName, profileData.lastName || user?.lastName]
           .filter(Boolean)
-          .join(' ') || 'Tasneem Ahmed',
-      email: user?.email || 'tasneem.ahmed@example.com',
-      phone: profileData.phone || user?.phone || '+880 1712-345678',
-      avatarUrl:
-        user?.avatar ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-      isKycVerified: true,
-      vipTier: 'Glow VIP',
+          .join(' ') || (user?.email ? user.email.split('@')[0] : 'Member'),
+      email: user?.email || '',
+      phone: profileData.phone || user?.phone || '',
+      avatarUrl: user?.avatar || '',
+      isKycVerified: Boolean(user?.emailVerified || user?.phoneVerified),
+      vipTier: user?.role === 'vip' ? 'VIP Member' : 'Member',
       stats: {
-        glowPoints: user?.loyaltyPoints || 850,
-        ordersCount: 5,
-        walletBalance: 400,
+        glowPoints: user?.loyaltyPoints ?? 0,
+        ordersCount: 0,
+        walletBalance: 0,
       },
     }),
     [profileData, user]

@@ -5,7 +5,6 @@ import type {
   AccountUserProfile,
   AccountSettingsSecurity,
   AccountDefaultAddress,
-  AccountPaymentItem,
   AccountNotificationSettings,
   AccountRegionalProfile,
 } from './types';
@@ -13,63 +12,17 @@ import AccountSettingsHeader from './AccountSettingsHeader';
 import AccountProfileHeaderCard from './AccountProfileHeaderCard';
 import AccountSecurityCard from './AccountSecurityCard';
 import AccountDeliveryPreferencesCard from './AccountDeliveryPreferencesCard';
-import AccountPaymentMethodsCard from './AccountPaymentMethodsCard';
 import AccountNotificationChannelsCard from './AccountNotificationChannelsCard';
 import AccountRegionalSkinProfileCard from './AccountRegionalSkinProfileCard';
 import AccountPrivacyDangerCard from './AccountPrivacyDangerCard';
 
 interface AccountSettingsMobileViewProps {
   initialProfile?: Partial<AccountUserProfile>;
+  initialAddress?: AccountDefaultAddress | null;
   onLogout?: () => void;
   onEditProfile?: () => void;
   onChangePassword?: () => void;
 }
-
-const DEFAULT_PROFILE: AccountUserProfile = {
-  name: 'Tasneem Ahmed',
-  vipTier: 'Glow VIP',
-  email: 'tasneem.ahmed@example.com',
-  phone: '+880 1712-345678',
-  isKycVerified: true,
-  avatarUrl:
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-  stats: {
-    glowPoints: 850,
-    ordersCount: 5,
-    walletBalance: 400,
-  },
-};
-
-const DEFAULT_SECURITY: AccountSettingsSecurity = {
-  twoFactorEnabled: true,
-  passwordLastUpdated: '30 days ago',
-  activeDevice: {
-    model: 'iPhone 15 Pro',
-    location: 'Banani, Dhaka',
-  },
-};
-
-const DEFAULT_ADDRESS: AccountDefaultAddress = {
-  label: 'Default Address',
-  speedTier: 'Banani Express • Same Day',
-  fullAddress: 'House 14, Road 7, Block E, Banani, Dhaka - 1213',
-  deliveryInstruction: 'Leave at reception / Ring bell',
-};
-
-const DEFAULT_PAYMENTS: AccountPaymentItem[] = [
-  {
-    id: 'p1',
-    type: 'bkash',
-    title: 'bKash Wallet',
-    detail: 'Connected: 01712***678',
-  },
-  {
-    id: 'p2',
-    type: 'card',
-    title: 'Visa Platinum',
-    detail: 'Ending in 4028',
-  },
-];
 
 const DEFAULT_NOTIFICATIONS: AccountNotificationSettings = {
   courierTracking: true,
@@ -80,26 +33,39 @@ const DEFAULT_NOTIFICATIONS: AccountNotificationSettings = {
 const DEFAULT_REGIONAL: AccountRegionalProfile = {
   currency: 'BDT (৳)',
   language: 'English (US)',
-  skinDiagnostic: 'Combination • Barrier Repair',
+  skinDiagnostic: 'Profile Synced',
 };
 
 export default function AccountSettingsMobileView({
   initialProfile,
+  initialAddress,
   onLogout,
   onEditProfile,
   onChangePassword,
 }: AccountSettingsMobileViewProps) {
   const profile: AccountUserProfile = {
-    ...DEFAULT_PROFILE,
-    ...initialProfile,
+    name: initialProfile?.name || 'Member',
+    vipTier: initialProfile?.vipTier || 'Member',
+    email: initialProfile?.email || '',
+    phone: initialProfile?.phone || '',
+    isKycVerified: Boolean(initialProfile?.isKycVerified),
+    avatarUrl: initialProfile?.avatarUrl || '',
     stats: {
-      ...DEFAULT_PROFILE.stats,
-      ...(initialProfile?.stats || {}),
+      glowPoints: initialProfile?.stats?.glowPoints ?? 0,
+      ordersCount: initialProfile?.stats?.ordersCount ?? 0,
+      walletBalance: initialProfile?.stats?.walletBalance ?? 0,
     },
   };
 
-  const [security, setSecurity] = useState<AccountSettingsSecurity>(DEFAULT_SECURITY);
-  const [instantCheckout, setInstantCheckout] = useState(true);
+  const [security, setSecurity] = useState<AccountSettingsSecurity>({
+    twoFactorEnabled: false,
+    passwordLastUpdated: 'Recently',
+    activeDevice: {
+      model: 'Current Device',
+      location: 'Active Session',
+    },
+  });
+
   const [notifications, setNotifications] = useState<AccountNotificationSettings>(DEFAULT_NOTIFICATIONS);
 
   const handleToggle2FA = () => {
@@ -120,7 +86,7 @@ export default function AccountSettingsMobileView({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(profile, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `minsah-account-data-${profile.email}.json`);
+    downloadAnchor.setAttribute('download', `minsah-account-data-${profile.email || 'export'}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -146,15 +112,8 @@ export default function AccountSettingsMobileView({
           onChangePassword={onChangePassword}
         />
 
-        {/* Delivery Preferences */}
-        <AccountDeliveryPreferencesCard address={DEFAULT_ADDRESS} />
-
-        {/* Payment Methods */}
-        <AccountPaymentMethodsCard
-          methods={DEFAULT_PAYMENTS}
-          instantCheckoutEnabled={instantCheckout}
-          onToggleInstantCheckout={() => setInstantCheckout((prev) => !prev)}
-        />
+        {/* Delivery Preferences (Real user address or clean empty state) */}
+        <AccountDeliveryPreferencesCard address={initialAddress || null} />
 
         {/* Notification Channels */}
         <AccountNotificationChannelsCard
@@ -165,7 +124,7 @@ export default function AccountSettingsMobileView({
         {/* Regional & Skin Profile */}
         <AccountRegionalSkinProfileCard regional={DEFAULT_REGIONAL} />
 
-        {/* Privacy & Account Destruction */}
+        {/* Privacy & Account Logout */}
         <AccountPrivacyDangerCard
           onDownloadData={handleDownloadData}
           onLogout={onLogout}

@@ -20,106 +20,8 @@ interface LiveTrackingMobileViewProps {
   onDownloadInvoice?: () => void;
 }
 
-const DEFAULT_LIVE_ORDER: LiveTrackingOrderData = {
-  orderNumber: 'Order #MB-88294',
-  eta: 'Tomorrow, by 6:00 PM',
-  etaSubtext: '1 shipment arriving in < 24 hours via Steadfast & Pathao Express',
-  courierPartner: 'Pathao & Steadfast Express',
-  hub: 'Banani Central Hub',
-  trackingAwb: 'BD-EXP-99201481',
-  deliveryDestination: 'House 14, Road 7, Block E, Banani Model Town, Dhaka',
-  milestones: [
-    {
-      id: 'm1',
-      title: 'Order Placed & Quality Verified',
-      time: 'Oct 24, 09:30 AM',
-      description: 'Genuine product inspection & batch hologram sealed at Banani Central Hub.',
-      status: 'completed',
-      iconType: 'check',
-    },
-    {
-      id: 'm2',
-      title: 'Dispatched to Courier Hub',
-      time: 'Oct 25, 02:15 PM',
-      description: 'Transferred to Pathao / Steadfast sorting facility for express dispatch.',
-      status: 'completed',
-      iconType: 'plane',
-    },
-    {
-      id: 'm3',
-      title: 'Arrived at Destination Hub',
-      time: 'Oct 26, 08:45 AM',
-      description: 'Local district hub received shipment and sorted for delivery route.',
-      status: 'completed',
-      iconType: 'shield',
-    },
-    {
-      id: 'm4',
-      title: 'Out for Delivery (Banani Hub)',
-      time: 'Active',
-      description: 'Package with courier rider. Rider assigned: Tariqul I.',
-      status: 'active',
-      iconType: 'bike',
-      activeDetails: {
-        riderName: 'Tariqul I.',
-        riderPhone: '+880 1712-345678',
-      },
-    },
-    {
-      id: 'm5',
-      title: 'Delivered & Inspected',
-      time: 'Expected Oct 27',
-      description: 'Doorstep delivery with sealed hologram batch card inspection.',
-      status: 'upcoming',
-      iconType: 'home',
-    },
-  ],
-  courier: {
-    name: 'Tariqul Islam',
-    partner: 'Pathao / Steadfast Express',
-    rating: '4.9 ★',
-    deliveriesCount: 1240,
-    phone: '+8801712345678',
-    distanceLabel: '1.8 km away',
-  },
-  items: [
-    {
-      id: 'i1',
-      title: 'Laneige Lip Sleeping Mask',
-      variant: 'Berry (20g) • Authentic Batch #MB84',
-      price: 1720,
-      quantity: 1,
-      image:
-        'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-      hologramSealed: true,
-    },
-    {
-      id: 'i2',
-      title: 'Arisol Soothing Sun Relief',
-      variant: 'SPF50+ PA++++ (50ml) • Centella Infused',
-      price: 2730,
-      quantity: 2,
-      image:
-        'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
-      hologramSealed: true,
-    },
-  ],
-  payment: {
-    subtotal: 4450,
-    freight: 'FREE (Free Delivery Offer)',
-    total: 4450,
-    method: 'bKash Verified',
-  },
-  previousOrder: {
-    orderNumber: 'Order #MB-77102',
-    deliveredDate: 'Oct 12, 2024',
-    total: 3200,
-    itemSummary: '2 items: Anua Heartleaf 77% Toner + COSRX Snail',
-  },
-};
-
 export default function LiveTrackingMobileView({
-  orderData = DEFAULT_LIVE_ORDER,
+  orderData,
   onDownloadInvoice,
 }: LiveTrackingMobileViewProps) {
   const { addItem } = useCart();
@@ -128,6 +30,8 @@ export default function LiveTrackingMobileView({
   const [isHologramOpen, setIsHologramOpen] = useState(false);
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+
+  if (!orderData) return null;
 
   const handleReorder = async () => {
     try {

@@ -201,132 +201,47 @@ export function OrderDetailClient({ order, printMode = false }: OrderDetailClien
     if (!order) return null;
     return {
       orderNumber: `Order ${order.orderNumber?.startsWith('#') ? order.orderNumber : `#${order.orderNumber || ''}`}`,
-      eta: order.status === 'delivered' ? 'Delivered' : 'Tomorrow, by 6:00 PM',
-      etaSubtext: '1 shipment arriving in < 24 hours via Steadfast & Pathao Express',
-      courierPartner: courierName || 'Pathao & Steadfast Express',
-      hub: 'Banani Central Hub',
-      trackingAwb: trackingDetails?.trackingId || order.trackingNumber || 'EXP-DAC-99201481',
+      eta: order.status === 'delivered' ? 'Delivered' : order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleDateString() : 'In Transit',
+      etaSubtext: courierName ? `Shipment handled via ${courierName}` : 'Express delivery in transit',
+      courierPartner: courierName || 'Courier Partner',
+      hub: order.shippingAddress?.city || 'Dhaka Hub',
+      trackingAwb: trackingDetails?.trackingId || order.pathaoTrackingCode || order.steadfastTrackingCode || order.trackingNumber || '',
       deliveryDestination:
         [order.shippingAddress?.street1, order.shippingAddress?.city].filter(Boolean).join(', ') ||
-        'House 14, Road 7, Banani, Dhaka',
+        'Address on file',
       milestones:
         timeline && timeline.length > 0
           ? timeline.map((ev: any, i: number) => ({
               id: `step-${i}`,
-              title: ev.status,
+              title: ev.status || 'Status update',
               time: ev.timestamp ? new Date(ev.timestamp).toLocaleDateString() : '',
               description: ev.message || ev.description || '',
               status: (i === 0 ? 'completed' : 'upcoming') as 'completed' | 'active' | 'upcoming',
               iconType: (i === 0 ? 'check' : i === 1 ? 'plane' : i === 2 ? 'shield' : 'bike') as any,
-              activeDetails:
-                i === 0
-                  ? undefined
-                  : { riderName: 'Tariqul I.', riderPhone: '+880 1712-345678' },
             }))
-          : [
-              {
-                id: 'm1',
-                title: 'Order Placed & Quality Verified',
-                time: 'Oct 24, 09:30 AM',
-                description:
-                  'Genuine product inspection & batch hologram sealed at Banani Warehouse.',
-                status: 'completed',
-                iconType: 'check',
-              },
-              {
-                id: 'm2',
-                title: 'Dispatched to Express Courier',
-                time: 'Oct 25, 02:15 PM',
-                description: 'Package transferred to Steadfast / Pathao courier sorting hub.',
-                status: 'completed',
-                iconType: 'plane',
-              },
-              {
-                id: 'm3',
-                title: 'Arrived at Delivery Hub',
-                time: 'Oct 26, 08:45 AM',
-                description:
-                  'District distribution facility sorting package for final delivery.',
-                status: 'completed',
-                iconType: 'shield',
-              },
-              {
-                id: 'm4',
-                title: 'Out for Delivery (Banani Hub)',
-                time: 'Active',
-                description: 'Package loaded for delivery. Rider assigned: Tariqul I.',
-                status: 'active',
-                iconType: 'bike',
-                activeDetails: {
-                  riderName: 'Tariqul I.',
-                  riderPhone: '+880 1712-345678',
-                },
-              },
-              {
-                id: 'm5',
-                title: 'Delivered & Inspected',
-                time: 'Expected Oct 27',
-                description: 'Doorstep delivery with sealed hologram batch card inspection.',
-                status: 'upcoming',
-                iconType: 'home',
-              },
-            ],
-      courier: {
-        name: 'Tariqul Islam',
-        partner: courierName || 'Pathao / Steadfast Express',
-        rating: '4.9 ★',
-        deliveriesCount: 1240,
-        phone: '+8801712345678',
-        distanceLabel: '1.8 km away',
-      },
-      items:
-        order.items && order.items.length > 0
-          ? order.items.map((it: any) => ({
-              id: it.id,
-              title: it.name,
-              variant: it.variantName || 'Authentic Batch #MB84',
-              price: Number(it.price),
-              quantity: Number(it.quantity),
-              image:
-                typeof it.image === 'string' && it.image.trim()
-                  ? it.image
-                  : 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-              hologramSealed: true,
-            }))
-          : [
-              {
-                id: 'i1',
-                title: 'Laneige Lip Sleeping Mask',
-                variant: 'Berry (20g) • Authentic Batch #MB84',
-                price: 1720,
-                quantity: 1,
-                image:
-                  'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
-                hologramSealed: true,
-              },
-              {
-                id: 'i2',
-                title: 'Arisol Soothing Sun Relief',
-                variant: 'SPF50+ PA++++ (50ml) • Centella Infused',
-                price: 2730,
-                quantity: 2,
-                image:
-                  'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
-                hologramSealed: true,
-              },
-            ],
+          : [],
+      courier: courierName
+        ? {
+            name: courierName,
+            partner: courierName,
+          }
+        : null,
+      items: (order.items || []).map((it: any) => ({
+        id: it.id,
+        title: it.name || it.product?.name || 'Product',
+        variant: it.variantName || it.variant?.name || '',
+        price: Number(it.price || 0),
+        quantity: Number(it.quantity || 1),
+        image: it.image || it.product?.image || '/images/categories/Serum.png',
+        hologramSealed: true,
+      })),
       payment: {
-        subtotal: Number(order.subtotal || order.total || 4450),
-        freight: 'FREE (Free Delivery Offer)',
-        total: Number(order.total || 4450),
-        method: `${order.paymentStatus || 'bKash'} Verified`,
+        subtotal: Number(order.subtotal || order.total || 0),
+        freight: order.shipping > 0 ? `৳${order.shipping}` : 'FREE',
+        total: Number(order.total || 0),
+        method: `${order.paymentMethod || order.paymentStatus || 'Online'} Verified`,
       },
-      previousOrder: {
-        orderNumber: 'Order #MB-77102',
-        deliveredDate: 'Oct 12, 2024',
-        total: 3200,
-        itemSummary: '2 items: Anua Heartleaf 77% Toner + COSRX Snail',
-      },
+      previousOrder: undefined,
     };
   }, [order, courierName, trackingDetails, timeline]);
 
