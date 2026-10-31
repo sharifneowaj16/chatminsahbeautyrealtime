@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RecentlyViewedMobileHeader } from './RecentlyViewedMobileHeader';
 import { RecentlyViewedPrivacyBar } from './RecentlyViewedPrivacyBar';
 import { RecentlyViewedFilterCarousel } from './RecentlyViewedFilterCarousel';
@@ -12,84 +12,25 @@ import { RecentlyViewedItem, RecentlyViewedCategoryFilter } from './types';
 import { History, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 
-const INITIAL_ITEMS: RecentlyViewedItem[] = [
-  {
-    id: 'rv-1',
-    name: 'Glass Skin Hydrating Serum (30ml)',
-    brand: 'ELIXIR VITAL',
-    price: 1890,
-    originalPrice: 2650,
-    discountBadge: '28% OFF',
-    viewedAgo: 'Viewed 12m ago',
-    timelineGroup: 'today',
-    category: 'serum',
-    image: '/images/products/elixir-serum.png',
-    rating: 4.9,
-    reviewCount: 340,
-    formulaNote: 'Quad-Hyaluronic • 5% Niacinamide • Dewy Barrier Plump',
-    stockStatus: 'In Stock • Banani Hub Express Delivery',
-    hasHologram: true,
-  },
-  {
-    id: 'rv-2',
-    name: 'Heartleaf 77% Soothing Toner (250ml)',
-    brand: 'ANUA • K-BEAUTY',
-    price: 2100,
-    originalPrice: 2700,
-    discountBadge: '22% OFF',
-    viewedAgo: 'Viewed 45m ago',
-    timelineGroup: 'today',
-    category: 'toner',
-    image: '/images/products/anua-toner.png',
-    rating: 4.8,
-    reviewCount: 215,
-    formulaNote: '77% Heartleaf Extract • Calming Prep • Redness Relief',
-    stockStatus: 'In Stock • Official Batch Verified',
-    hasHologram: true,
-  },
-  {
-    id: 'rv-3',
-    name: 'Soothing Sun Relief SPF50+ PA++++ (50ml)',
-    brand: 'ARISOL LABS',
-    price: 1365,
-    originalPrice: 1950,
-    priceDropBadge: 'Price Dropped ৳150',
-    discountBadge: '30% OFF Flash',
-    viewedAgo: 'Viewed Yesterday',
-    timelineGroup: 'yesterday',
-    category: 'sunscreen',
-    image: '/images/products/sun-relief.png',
-    rating: 4.8,
-    reviewCount: 189,
-    formulaNote: 'Centella Asiatica • Green Tea • Zero White-Cast Formula',
-    stockStatus: 'Only 3 left in stock in Dhaka',
-    isLowStock: true,
-    hasHologram: true,
-  },
-  {
-    id: 'rv-4',
-    name: 'Lip Sleeping Mask Berry (20g)',
-    brand: 'LANEIGE',
-    price: 1720,
-    originalPrice: 2100,
-    discountBadge: '18% OFF',
-    viewedAgo: 'Viewed Yesterday',
-    timelineGroup: 'yesterday',
-    category: 'lip',
-    image: '/images/products/laneige-lip.png',
-    rating: 4.9,
-    reviewCount: 512,
-    formulaNote: 'Berry Fruit Complex • Vitamin C • Overnight Hydration',
-    stockStatus: 'Authentic Korean Import • Batch: EXP2026',
-    hasHologram: true,
-  },
-];
-
 export function RecentlyViewedMobileView() {
-  const [items, setItems] = useState<RecentlyViewedItem[]>(INITIAL_ITEMS);
+  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<RecentlyViewedCategoryFilter>('all');
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('minsah_recently_viewed') || localStorage.getItem('recently_viewed');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setItems(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse recently viewed items from localStorage', e);
+    }
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -98,6 +39,12 @@ export function RecentlyViewedMobileView() {
 
   const handleClearConfirm = () => {
     setItems([]);
+    try {
+      localStorage.removeItem('minsah_recently_viewed');
+      localStorage.removeItem('recently_viewed');
+    } catch (e) {
+      console.warn('Failed to clear recently viewed items from localStorage', e);
+    }
     setIsClearModalOpen(false);
     showToast('Browsing history cleared');
   };

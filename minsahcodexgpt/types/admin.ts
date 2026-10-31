@@ -378,186 +378,22 @@ export interface MarketingCampaign {
 
 // Mock data generators
 export function generateMockAdminStats(): AdminDashboardStats {
-  const now = new Date();
-  const chartData = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date(now);
-    date.setDate(date.getDate() - (29 - i));
-    return {
-      date: date.toISOString().split('T')[0],
-      revenue: Math.floor(Math.random() * 5000) + 2000,
-      orders: Math.floor(Math.random() * 50) + 20,
-    };
-  });
-
   return {
-    revenue: {
-      total: 145680,
-      change: 12.5,
-      chartData,
-    },
-    orders: {
-      total: 2341,
-      pending: 23,
-      completed: 2289,
-      change: 8.3,
-      recentOrders: [
-        {
-          id: 'ORD-001',
-          customer: 'Sarah Johnson',
-          amount: 89.99,
-          status: 'confirmed',
-          date: new Date().toISOString(),
-        },
-        {
-          id: 'ORD-002',
-          customer: 'Emily Chen',
-          amount: 124.50,
-          status: 'processing',
-          date: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: 'ORD-003',
-          customer: 'Maria Garcia',
-          amount: 67.25,
-          status: 'shipped',
-          date: new Date(Date.now() - 7200000).toISOString(),
-        },
-      ],
-    },
-    customers: {
-      total: 12450,
-      new: 234,
-      active: 8456,
-      vip: 156,
-      change: 15.2,
-    },
-    products: {
-      total: 456,
-      inStock: 389,
-      lowStock: 23,
-      outOfStock: 44,
-      topProducts: [
-        {
-          id: 'P-001',
-          name: 'Luxury Face Serum',
-          sales: 234,
-          revenue: 23400,
-          trend: 'up',
-        },
-        {
-          id: 'P-002',
-          name: 'Hydrating Face Cream',
-          sales: 189,
-          revenue: 11340,
-          trend: 'stable',
-        },
-        {
-          id: 'P-003',
-          name: 'Anti-Aging Eye Cream',
-          sales: 156,
-          revenue: 23400,
-          trend: 'up',
-        },
-      ],
-    },
-    traffic: {
-      visitors: 45678,
-      pageViews: 123456,
-      bounceRate: 32.5,
-      avgSession: 4.2,
-      sources: [
-        { source: 'Organic Search', visitors: 15678, percentage: 34.3 },
-        { source: 'Direct', visitors: 12345, percentage: 27.0 },
-        { source: 'Social Media', visitors: 8901, percentage: 19.5 },
-        { source: 'Referral', visitors: 5432, percentage: 11.9 },
-        { source: 'Paid Ads', visitors: 3322, percentage: 7.3 },
-      ],
-    },
-    lowStockAlerts: [
-      {
-        id: 'P-101',
-        name: 'Rose Face Oil',
-        currentStock: 5,
-        minStock: 20,
-        salesRate: 15,
-      },
-      {
-        id: 'P-102',
-        name: 'Vitamin C Serum',
-        currentStock: 8,
-        minStock: 25,
-        salesRate: 20,
-      },
-      {
-        id: 'P-103',
-        name: 'Collagen Mask',
-        currentStock: 12,
-        minStock: 30,
-        salesRate: 18,
-      },
-    ],
+    revenue: { total: 0, change: 0, chartData: [] },
+    orders: { total: 0, pending: 0, completed: 0, change: 0, recentOrders: [] },
+    customers: { total: 0, new: 0, active: 0, vip: 0, change: 0 },
+    products: { total: 0, inStock: 0, lowStock: 0, outOfStock: 0, topProducts: [] },
+    traffic: { visitors: 0, pageViews: 0, bounceRate: 0, avgSession: 0, sources: [] },
+    lowStockAlerts: [],
   };
 }
 
 export function generateMockProducts(): AdminProduct[] {
-  // Products loaded from database
   return [];
 }
 
 export function generateMockCustomers(): AdminCustomer[] {
-  return Array.from({ length: 50 }, (_, i) => ({
-    id: `C-${String(i + 1).padStart(4, '0')}`,
-    name: [
-      'Sarah Johnson',
-      'Emily Chen',
-      'Maria Garcia',
-      'Jessica Smith',
-      'Ashley Wilson',
-    ][i % 5],
-    email: `customer${i + 1}@example.com`,
-    phone: `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-    avatar: `https://example.com/avatar-${i}.jpg`,
-    addresses: [
-      {
-        id: `ADDR-${i}-1`,
-        type: 'shipping' as const,
-        name: ['Home', 'Office'][i % 2],
-        street: `${123 + i} Main St`,
-        city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][i % 5],
-        state: ['NY', 'CA', 'IL', 'TX', 'AZ'][i % 5],
-        zip: String(10000 + i),
-        country: 'US',
-        isDefault: i === 0,
-      },
-    ],
-    preferences: {
-      language: 'en',
-      currency: 'USD',
-      marketing: Math.random() > 0.5,
-      sms: Math.random() > 0.7,
-      email: Math.random() > 0.3,
-    },
-    stats: {
-      totalOrders: Math.floor(Math.random() * 20) + 1,
-      totalSpent: Math.floor(Math.random() * 2000) + 100,
-      avgOrderValue: Math.floor(Math.random() * 200) + 50,
-      firstOrderDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-      lastOrderDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      itemsPurchased: Math.floor(Math.random() * 50) + 5,
-    },
-    rfm: {
-      recency: Math.floor(Math.random() * 100),
-      frequency: Math.floor(Math.random() * 50),
-      monetary: Math.floor(Math.random() * 1000) + 100,
-      score: ['vip', 'loyal', 'at-risk', 'lost', 'new'][i % 5] as any,
-      segment: ['High Value', 'Regular', 'Occasional', 'One-time'][i % 4],
-    },
-    tags: i < 10 ? ['VIP'] : [],
-    notes: `Customer notes for ${i + 1}`,
-    isVip: i < 10,
-    createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-  }));
+  return [];
 }
 
 // ======================

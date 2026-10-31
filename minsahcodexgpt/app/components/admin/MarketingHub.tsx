@@ -70,12 +70,9 @@ export default function MarketingHub() {
   const loadMarketingData = async () => {
     setLoading(true);
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockData = generateMockMarketingData();
-      setSocialAccounts(mockData.socialAccounts);
-      setPosts(mockData.posts);
-      setCampaigns(mockData.campaigns);
+      setSocialAccounts([]);
+      setPosts([]);
+      setCampaigns([]);
     } catch (error) {
       console.error('Error loading marketing data:', error);
     } finally {
@@ -83,421 +80,11 @@ export default function MarketingHub() {
     }
   };
 
-  const generateMockMarketingData = () => {
-    // Mock social media accounts
-    const socialAccounts: SocialMediaAccount[] = [
-      {
-        id: 'fb-001',
-        platform: 'facebook',
-        accountName: 'Minsah Beauty',
-        accountId: '123456789',
-        pageId: '987654321',
-        accessToken: 'mock-facebook-token',
-        isConnected: true,
-        lastSync: new Date().toISOString(),
-        metrics: {
-          followers: 45230,
-          posts: 342,
-          engagement: 4.2,
-          reach: 156789,
-        },
-        settings: {
-          autoPublish: true,
-          defaultHashtags: ['#beauty', '#skincare', '#selfcare', '#minsahbeauty'],
-          postingSchedule: [
-            { day: 'Monday', time: '09:00' },
-            { day: 'Wednesday', time: '14:00' },
-            { day: 'Friday', time: '18:00' },
-          ],
-        },
-        createdAt: '2023-01-15T00:00:00Z',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'ig-001',
-        platform: 'instagram',
-        accountName: '@minsahbeauty',
-        accountId: '234567890',
-        accessToken: '',
-        isConnected: true,
-        lastSync: new Date().toISOString(),
-        metrics: {
-          followers: 78945,
-          posts: 567,
-          engagement: 6.8,
-          reach: 234567,
-        },
-        settings: {
-          autoPublish: true,
-          defaultHashtags: ['#beautytips', '#glowup', '#skincare', '#naturalbeauty'],
-          postingSchedule: [
-            { day: 'Tuesday', time: '12:00' },
-            { day: 'Thursday', time: '16:00' },
-            { day: 'Saturday', time: '10:00' },
-          ],
-        },
-        createdAt: '2023-01-20T00:00:00Z',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'tt-001',
-        platform: 'tiktok',
-        accountName: '@minsahbeauty',
-        accountId: '345678901',
-        accessToken: '',
-        isConnected: true,
-        lastSync: new Date().toISOString(),
-        metrics: {
-          followers: 123456,
-          posts: 89,
-          engagement: 8.9,
-          reach: 567890,
-        },
-        settings: {
-          autoPublish: false,
-          defaultHashtags: ['#beautytok', '#skincare', '#glowup', '#tiktokmademebuyit'],
-          postingSchedule: [
-            { day: 'Daily', time: '19:00' },
-          ],
-        },
-        createdAt: '2023-02-01T00:00:00Z',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'yt-001',
-        platform: 'youtube',
-        accountName: 'Minsah Beauty',
-        accountId: '456789012',
-        accessToken: '',
-        isConnected: true,
-        lastSync: new Date().toISOString(),
-        metrics: {
-          followers: 34567,
-          posts: 45,
-          engagement: 3.4,
-          reach: 123456,
-        },
-        settings: {
-          autoPublish: true,
-          defaultHashtags: ['#beautytutorial', '#skincare', '#review'],
-          postingSchedule: [
-            { day: 'Sunday', time: '10:00' },
-            { day: 'Wednesday', time: '18:00' },
-          ],
-        },
-        createdAt: '2023-01-25T00:00:00Z',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'tw-001',
-        platform: 'twitter',
-        accountName: '@minsahbeauty',
-        accountId: '567890123',
-        accessToken: '',
-        isConnected: false,
-        metrics: {
-          followers: 12345,
-          posts: 234,
-          engagement: 2.1,
-          reach: 45678,
-        },
-        settings: {
-          autoPublish: true,
-          defaultHashtags: ['#beauty', '#skincare', '#tips'],
-          postingSchedule: [
-            { day: 'Daily', time: '08:00, 14:00, 20:00' },
-          ],
-        },
-        createdAt: '2023-02-10T00:00:00Z',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'li-001',
-        platform: 'linkedin',
-        accountName: 'Minsah Beauty',
-        accountId: '678901234',
-        accessToken: '',
-        isConnected: true,
-        lastSync: new Date().toISOString(),
-        metrics: {
-          followers: 5678,
-          posts: 89,
-          engagement: 1.8,
-          reach: 23456,
-        },
-        settings: {
-          autoPublish: true,
-          defaultHashtags: ['#beautyindustry', '#skincare', '#business'],
-          postingSchedule: [
-            { day: 'Monday', time: '10:00' },
-            { day: 'Thursday', time: '15:00' },
-          ],
-        },
-        createdAt: '2023-02-15T00:00:00Z',
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-
-    // Mock social media posts
-    const posts: SocialMediaPost[] = [
-      {
-        id: 'post-001',
-        platform: 'instagram',
-        type: 'post',
-        content: {
-          text: '✨ Transform your skincare routine with our new Vitamin C Serum! Brighten, hydrate, and protect your skin naturally. #skincare #vitaminc #glowing',
-          media: [
-            {
-              type: 'image',
-              url: 'https://example.com/vitamin-c-serum.jpg',
-              thumbnail: 'https://example.com/vitamin-c-serum-thumb.jpg',
-            },
-          ],
-          hashtags: ['#skincare', '#vitaminc', '#glowing'],
-          mentions: ['@beautyinfluencer'],
-        },
-        status: 'published',
-        publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        metrics: {
-          likes: 1234,
-          comments: 89,
-          shares: 45,
-          views: 8901,
-          engagement: 5.2,
-          reach: 23456,
-        },
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'post-002',
-        platform: 'tiktok',
-        type: 'video',
-        content: {
-          text: 'Watch this amazing before & after transformation using our Rose Face Oil! 🌹 #skincaretok #beautytok #beforeandafter',
-          media: [
-            {
-              type: 'video',
-              url: 'https://example.com/rose-oil-tiktok.mp4',
-              thumbnail: 'https://example.com/rose-oil-tiktok-thumb.jpg',
-            },
-          ],
-          hashtags: ['#skincaretok', '#beautytok', '#beforeandafter'],
-          mentions: [],
-        },
-        status: 'published',
-        publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        metrics: {
-          likes: 5678,
-          comments: 234,
-          shares: 123,
-          views: 123456,
-          engagement: 12.3,
-          reach: 234567,
-        },
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'post-003',
-        platform: 'facebook',
-        type: 'post',
-        content: {
-          text: '💖 Special offer this week! Get 20% off on all our face masks. Perfect for a relaxing spa day at home. Link in bio! #special #offer #selfcare',
-          media: [
-            {
-              type: 'image',
-              url: 'https://example.com/face-masks-promo.jpg',
-              thumbnail: 'https://example.com/face-masks-promo-thumb.jpg',
-            },
-          ],
-          hashtags: ['#special', '#offer', '#selfcare'],
-          mentions: [],
-        },
-        status: 'scheduled',
-        scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'post-004',
-        platform: 'youtube',
-        type: 'video',
-        content: {
-          text: 'Complete skincare routine for glowing skin ft. Minsah Beauty products! Watch until the end for a special surprise. #tutorial #skincare',
-          media: [
-            {
-              type: 'video',
-              url: 'https://example.com/skincare-routine-yt.mp4',
-              thumbnail: 'https://example.com/skincare-routine-yt-thumb.jpg',
-            },
-          ],
-          hashtags: ['#tutorial', '#skincare'],
-          mentions: [],
-        },
-        status: 'published',
-        publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        metrics: {
-          likes: 3456,
-          comments: 123,
-          shares: 67,
-          views: 45678,
-          engagement: 4.1,
-          reach: 67890,
-        },
-        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'post-005',
-        platform: 'instagram',
-        type: 'reel',
-        content: {
-          text: 'Morning skincare routine you need to try! ✨ Layer these products for maximum glow. #morningroutine #skincare #beautytips',
-          media: [
-            {
-              type: 'video',
-              url: 'https://example.com/morning-routine-reel.mp4',
-              thumbnail: 'https://example.com/morning-routine-reel-thumb.jpg',
-            },
-          ],
-          hashtags: ['#morningroutine', '#skincare', '#beautytips'],
-          mentions: [],
-        },
-        status: 'draft',
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
-
-    // Mock marketing campaigns
-    const campaigns: MarketingCampaign[] = [
-      {
-        id: 'camp-001',
-        name: 'Summer Glow Campaign',
-        type: 'social',
-        status: 'active',
-        budget: 5000,
-        spent: 2300,
-        duration: {
-          start: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-          end: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        targetAudience: {
-          segments: ['beauty-enthusiasts', 'skincare-routine'],
-          criteria: {
-            age: [18, 45],
-            gender: ['female', 'other'],
-            interests: ['skincare', 'beauty', 'wellness'],
-            locations: ['US', 'CA', 'UK'],
-          },
-        },
-        content: {
-          subject: 'Get Your Summer Glow! ☀️',
-          body: 'Discover our summer skincare collection with 25% off!',
-          media: [
-            {
-              type: 'image',
-              url: 'https://example.com/summer-campaign.jpg',
-            },
-          ],
-          cta: {
-            text: 'Shop Now',
-            url: 'https://minsahbeauty.com/summer',
-          },
-        },
-        metrics: {
-          sent: 50000,
-          delivered: 48500,
-          opened: 12345,
-          clicked: 2345,
-          converted: 234,
-          cost: 2300,
-          roas: 3.4,
-        },
-        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'camp-002',
-        name: 'Email Newsletter - Q3',
-        type: 'email',
-        status: 'active',
-        budget: 2000,
-        spent: 800,
-        duration: {
-          start: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          end: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        targetAudience: {
-          segments: ['newsletter-subscribers'],
-          criteria: {
-            age: [20, 55],
-            interests: ['beauty', 'selfcare'],
-            purchaseHistory: true,
-          },
-        },
-        content: {
-          subject: 'Your Monthly Beauty Update ✨',
-          body: 'New products, tips, and exclusive offers inside!',
-          cta: {
-            text: 'Read More',
-            url: 'https://minsahbeauty.com/newsletter',
-          },
-        },
-        metrics: {
-          sent: 25000,
-          delivered: 24200,
-          opened: 6789,
-          clicked: 890,
-          converted: 67,
-          cost: 800,
-          roas: 5.2,
-        },
-        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'camp-003',
-        name: 'Holiday Gift Guide',
-        type: 'social',
-        status: 'draft',
-        budget: 8000,
-        spent: 0,
-        duration: {
-          start: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          end: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        targetAudience: {
-          segments: ['holiday-shoppers', 'gift-buyers'],
-          criteria: {
-            age: [25, 60],
-            interests: ['beauty', 'gifts', 'luxury'],
-            locations: ['US', 'CA', 'UK', 'EU'],
-          },
-        },
-        content: {
-          subject: 'Perfect Beauty Gifts for Everyone! 🎁',
-          body: 'Our curated holiday gift guide is here!',
-          media: [
-            {
-              type: 'image',
-              url: 'https://example.com/holiday-gifts.jpg',
-            },
-          ],
-          cta: {
-            text: 'Explore Gifts',
-            url: 'https://minsahbeauty.com/holiday',
-          },
-        },
-        metrics: {},
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
-
-    return { socialAccounts, posts, campaigns };
-  };
+  const generateMockMarketingData = () => ({
+    socialAccounts: [] as SocialMediaAccount[],
+    posts: [] as SocialMediaPost[],
+    campaigns: [] as MarketingCampaign[],
+  });
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -762,8 +349,15 @@ export default function MarketingHub() {
           {/* Social Media Accounts */}
           <div className="bg-[#161824] border border-[#232636] rounded-lg p-6">
             <h3 className="text-lg font-semibold text-[#f7f8f8] mb-4">Connected Social Media Accounts</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {socialAccounts.map((account) => (
+            {socialAccounts.length === 0 ? (
+              <div className="text-center py-8 text-[#8a8f98]">
+                <Globe className="h-10 w-10 mx-auto mb-2 text-[#62666d]" />
+                <p className="font-medium text-[#f7f8f8]">Integration Not Connected</p>
+                <p className="text-xs text-[#8a8f98] mt-1">Connect your social accounts to view live metrics</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {socialAccounts.map((account) => (
                 <div key={account.id} className="border border-[#232636] rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -796,6 +390,7 @@ export default function MarketingHub() {
                 </div>
               ))}
             </div>
+            )}
           </div>
 
           {/* Recent Posts */}
@@ -807,7 +402,10 @@ export default function MarketingHub() {
               </Button>
             </div>
             <div className="space-y-4">
-              {posts.slice(0, 5).map((post) => (
+              {posts.length === 0 ? (
+                <p className="text-sm text-[#8a8f98] text-center py-6">No campaign posts published yet</p>
+              ) : (
+                posts.slice(0, 5).map((post) => (
                 <div key={post.id} className="flex items-center gap-4 p-4 bg-[#10121b] rounded-lg">
                   <div className="w-12 h-12 bg-white/[0.12] rounded-lg flex items-center justify-center">
                     {post.type === 'video' ? (
@@ -836,7 +434,7 @@ export default function MarketingHub() {
                     )}
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
         </div>
@@ -893,7 +491,14 @@ export default function MarketingHub() {
 
           {/* Posts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {posts.map((post) => (
+            {posts.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-[#8a8f98]">
+                <Globe className="h-10 w-10 mx-auto mb-2 text-[#62666d]" />
+                <p className="font-medium text-[#f7f8f8]">No social posts found</p>
+                <p className="text-xs text-[#8a8f98] mt-1">Create a new post or connect social channels to sync content</p>
+              </div>
+            ) : (
+              posts.map((post) => (
               <div key={post.id} className="bg-[#161824] border border-[#232636] rounded-lg p-4 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -950,7 +555,7 @@ export default function MarketingHub() {
                   </div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       )}
@@ -980,9 +585,12 @@ export default function MarketingHub() {
                 <BarChart className="h-5 w-5 text-[#62666d]" />
               </div>
               <p className="text-2xl font-bold text-[#f7f8f8]">
-                {campaigns.length > 0
-                  ? (campaigns.reduce((sum, c) => sum + (c.metrics.roas || 0), 0) / campaigns.filter(c => c.metrics.roas).length).toFixed(1)
-                  : '0'}x
+                {(() => {
+                  const withRoas = campaigns.filter(c => c.metrics?.roas);
+                  return withRoas.length > 0
+                    ? (withRoas.reduce((sum, c) => sum + (c.metrics.roas || 0), 0) / withRoas.length).toFixed(1)
+                    : '0';
+                })()}x
               </p>
             </div>
             <div className="bg-[#161824] border border-[#232636] rounded-lg p-4">
@@ -1013,7 +621,14 @@ export default function MarketingHub() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#232636]">
-                  {campaigns.map((campaign) => (
+                  {campaigns.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-sm text-[#8a8f98]">
+                        No campaign data available yet
+                      </td>
+                    </tr>
+                  ) : (
+                    campaigns.map((campaign) => (
                     <tr key={campaign.id} className="hover:bg-[#10121b]">
                       <td className="px-4 py-3">
                         <div>
@@ -1052,7 +667,7 @@ export default function MarketingHub() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </table>
             </div>
@@ -1070,13 +685,7 @@ export default function MarketingHub() {
               <h3 className="text-lg font-medium text-[#f7f8f8] mb-2">Content Calendar</h3>
               <p className="text-[#8a8f98] mb-4">Schedule and manage your social media content</p>
               <div className="bg-[#10121b] rounded-lg p-4 max-w-2xl mx-auto">
-                <p className="text-sm text-[#d0d6e0] mb-2">📅 Upcoming Scheduled Posts:</p>
-                <ul className="text-left text-sm space-y-1">
-                  <li>• Facebook promo post - Tomorrow at 9:00 AM</li>
-                  <li>• Instagram story - Friday at 2:00 PM</li>
-                  <li>• TikTok video - Saturday at 10:00 AM</li>
-                  <li>• YouTube tutorial - Sunday at 6:00 PM</li>
-                </ul>
+                <p className="text-sm text-[#8a8f98]">No upcoming scheduled posts</p>
               </div>
             </div>
           </div>

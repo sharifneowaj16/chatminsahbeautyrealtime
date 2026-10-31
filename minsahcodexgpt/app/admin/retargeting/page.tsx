@@ -34,122 +34,27 @@ export default function RetargetingAudiencesPage() {
   const [filterPlatform, setFilterPlatform] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Mock retargeting audiences - Replace with real API data
-  const audiences = [
-    {
-      id: '1',
-      name: 'Cart Abandoners - Last 7 Days',
-      description: 'Users who added items to cart but didn\'t purchase',
-      platform: 'facebook',
-      size: 3456,
-      status: 'active',
-      criteria: {
-        events: ['AddToCart'],
-        excludeEvents: ['Purchase'],
-        timeWindow: 7,
-      },
-      performance: {
-        impressions: 45678,
-        clicks: 1234,
-        conversions: 89,
-        cost: 456.78,
-        revenue: 2345.67,
-        roas: 5.13,
-      },
-      createdAt: '2024-01-15',
-      lastUpdated: '2024-01-20',
-    },
-    {
-      id: '2',
-      name: 'Product Viewers - No Cart',
-      description: 'Viewed products but didn\'t add to cart in last 14 days',
-      platform: 'google',
-      size: 5678,
-      status: 'active',
-      criteria: {
-        events: ['ViewContent'],
-        excludeEvents: ['AddToCart'],
-        timeWindow: 14,
-      },
-      performance: {
-        impressions: 67890,
-        clicks: 2345,
-        conversions: 123,
-        cost: 678.90,
-        revenue: 3456.78,
-        roas: 5.09,
-      },
-      createdAt: '2024-01-10',
-      lastUpdated: '2024-01-20',
-    },
-    {
-      id: '3',
-      name: 'Past Purchasers - 30 Days',
-      description: 'Customers who purchased in last 30 days',
-      platform: 'all',
-      size: 1234,
-      status: 'active',
-      criteria: {
-        events: ['Purchase'],
-        timeWindow: 30,
-      },
-      performance: {
-        impressions: 23456,
-        clicks: 890,
-        conversions: 67,
-        cost: 345.67,
-        revenue: 2234.56,
-        roas: 6.47,
-      },
-      createdAt: '2024-01-05',
-      lastUpdated: '2024-01-20',
-    },
-    {
-      id: '4',
-      name: 'High Intent Shoppers',
-      description: '3+ sessions, 10+ page views in last 30 days',
-      platform: 'tiktok',
-      size: 2345,
-      status: 'active',
-      criteria: {
-        minSessions: 3,
-        minPageViews: 10,
-        timeWindow: 30,
-      },
-      performance: {
-        impressions: 34567,
-        clicks: 1234,
-        conversions: 78,
-        cost: 567.89,
-        revenue: 1876.54,
-        roas: 3.30,
-      },
-      createdAt: '2024-01-12',
-      lastUpdated: '2024-01-20',
-    },
-    {
-      id: '5',
-      name: 'Win-Back Customers',
-      description: 'Last purchase over 90 days ago',
-      platform: 'facebook',
-      size: 987,
-      status: 'paused',
-      criteria: {
-        events: ['Purchase'],
-        daysSinceEvent: 90,
-      },
-      performance: {
-        impressions: 12345,
-        clicks: 456,
-        conversions: 23,
-        cost: 234.56,
-        revenue: 1234.56,
-        roas: 5.26,
-      },
-      createdAt: '2024-01-01',
-      lastUpdated: '2024-01-18',
-    },
-  ];
+  interface AudienceItem {
+    id: string;
+    name: string;
+    description: string;
+    platform: string;
+    size: number;
+    status: string;
+    criteria: Record<string, any>;
+    performance: {
+      impressions: number;
+      clicks: number;
+      conversions: number;
+      cost: number;
+      revenue: number;
+      roas: number;
+    };
+    createdAt: string;
+    lastUpdated: string;
+  }
+
+  const [audiences, setAudiences] = useState<AudienceItem[]>([]);
 
   if (!hasPermission(PERMISSIONS.ANALYTICS_VIEW)) {
     return (
@@ -201,10 +106,10 @@ export default function RetargetingAudiencesPage() {
     }
   };
 
-  const totalAudienceSize = audiences.reduce((sum, aud) => sum + aud.size, 0);
+  const totalAudienceSize = audiences.reduce((sum, aud) => sum + (aud.size || 0), 0);
   const activeAudiences = audiences.filter(aud => aud.status === 'active').length;
-  const totalImpressions = audiences.reduce((sum, aud) => sum + aud.performance.impressions, 0);
-  const avgROAS = audiences.reduce((sum, aud) => sum + aud.performance.roas, 0) / audiences.length;
+  const totalImpressions = audiences.reduce((sum, aud) => sum + (aud.performance?.impressions || 0), 0);
+  const avgROAS = audiences.length > 0 ? audiences.reduce((sum, aud) => sum + (aud.performance?.roas || 0), 0) / audiences.length : 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -249,7 +154,7 @@ export default function RetargetingAudiencesPage() {
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Total Impressions</p>
               <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{totalImpressions.toLocaleString()}</p>
-              <p className="text-xs text-green-600 mt-1">+23.4% this month</p>
+              <p className="text-xs text-[#8A8F98] mt-1">all active campaigns</p>
             </div>
             <Eye className="w-10 h-10 text-green-500" />
           </div>
@@ -260,7 +165,7 @@ export default function RetargetingAudiencesPage() {
             <div>
               <p className="text-sm font-medium text-[#8A8F98]">Avg ROAS</p>
               <p className="text-2xl font-bold text-[#F7F8F8] mt-2">{avgROAS.toFixed(2)}x</p>
-              <p className="text-xs text-green-600 mt-1">+12.5% vs last period</p>
+              <p className="text-xs text-[#8A8F98] mt-1">return on ad spend</p>
             </div>
             <TrendingUp className="w-10 h-10 text-orange-500" />
           </div>

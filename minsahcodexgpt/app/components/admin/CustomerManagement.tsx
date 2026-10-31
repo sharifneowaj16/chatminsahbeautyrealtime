@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useState, useEffect } from 'react';
 import type { AdminCustomer } from '@/types/admin';
-import { generateMockCustomers } from '@/types/admin';
 import {
   Search,
   Plus,
@@ -67,12 +66,65 @@ export default function CustomerManagement() {
   const loadCustomers = async () => {
     setLoading(true);
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockCustomers = generateMockCustomers();
-      setCustomers(mockCustomers);
+      const res = await fetch('/api/admin/customers?limit=100');
+      if (res.ok) {
+        const data = await res.json();
+        const mappedCustomers: AdminCustomer[] = (data.customers || []).map((c: any) => ({
+          id: c.id,
+          name: c.name || 'Customer',
+          email: c.email || '',
+          phone: c.phone || '',
+          avatar: c.avatar,
+          addresses: c.address
+            ? [
+                {
+                  id: `addr-${c.id}`,
+                  type: 'shipping' as const,
+                  name: 'Default Address',
+                  street: c.address.street1 || '',
+                  city: c.address.city || '',
+                  state: c.address.state || '',
+                  zip: c.address.postalCode || '',
+                  country: c.address.country || 'BD',
+                  isDefault: true,
+                },
+              ]
+            : [],
+          preferences: {
+            language: 'en',
+            currency: 'BDT',
+            marketing: Boolean(c.marketing?.emailConsent),
+            sms: Boolean(c.marketing?.smsConsent),
+            email: Boolean(c.marketing?.emailConsent),
+          },
+          stats: {
+            totalOrders: c.totalOrders || 0,
+            totalSpent: c.totalSpent || 0,
+            avgOrderValue: c.averageOrderValue || 0,
+            firstOrderDate: c.joinDate || new Date().toISOString(),
+            lastOrderDate: c.lastLogin || c.joinDate || new Date().toISOString(),
+            itemsPurchased: c.totalOrders || 0,
+          },
+          rfm: {
+            recency: 50,
+            frequency: c.totalOrders || 0,
+            monetary: c.totalSpent || 0,
+            score: (c.totalSpent > 10000 ? 'vip' : c.totalOrders > 3 ? 'loyal' : 'new') as any,
+            segment: c.totalSpent > 10000 ? 'High Value' : 'Regular',
+          },
+          tags: c.role === 'ADMIN' ? ['Admin'] : (c.totalSpent > 10000 ? ['VIP'] : []),
+          notes: '',
+          isVip: c.totalSpent > 10000 || (c.loyaltyPoints && c.loyaltyPoints > 1000),
+          createdAt: c.joinDate || new Date().toISOString(),
+          updatedAt: c.lastLogin || c.joinDate || new Date().toISOString(),
+        }));
+        setCustomers(mappedCustomers);
+      } else {
+        setCustomers([]);
+      }
     } catch (error) {
       console.error('Error loading customers:', error);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }

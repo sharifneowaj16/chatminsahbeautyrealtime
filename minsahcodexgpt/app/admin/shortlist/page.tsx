@@ -36,11 +36,8 @@ import { ShortlistBulkSourcingBar } from '@/components/admin/shortlist/desktop/t
 import { ShortlistPaginationBar } from '@/components/admin/shortlist/desktop/table/ShortlistPaginationBar';
 
 export default function ShortlistPage() {
-  // ── 1. Data State ──────────────────────────────────────────
-  const [skus, setSkus] = useState<WholesaleSkuRow[]>(INITIAL_WHOLESALE_SKUS);
-  const [selectedSkuIds, setSelectedSkuIds] = useState<Set<string>>(
-    new Set(['sku_lip_01', 'sku_serum_01'])
-  );
+  const [skus, setSkus] = useState<WholesaleSkuRow[]>([]);
+  const [selectedSkuIds, setSelectedSkuIds] = useState<Set<string>>(new Set());
   const [activeZone, setActiveZone] = useState<WholesaleZone>('ALL');
   const [activeTab, setActiveTab] = useState<WholesaleStatusTab>('SKU_MATRIX');
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,7 +94,7 @@ export default function ShortlistPage() {
           if (json.data?.meta) {
             setServerPaginationMeta(json.data.meta);
           }
-          if (Array.isArray(json.data?.orders) && json.data.orders.length > 0) {
+          if (Array.isArray(json.data?.orders)) {
             const serverOrderItems: WholesaleSkuRow[] = [];
             for (const order of json.data.orders) {
               for (const item of order.items || []) {
@@ -145,10 +142,8 @@ export default function ShortlistPage() {
                 });
               }
             }
-            if (serverOrderItems.length > 0) {
-              setSkus(serverOrderItems);
-              setSelectedSkuIds(new Set(serverOrderItems.slice(0, 2).map((s) => s.id)));
-            }
+            setSkus(serverOrderItems);
+            setSelectedSkuIds(new Set(serverOrderItems.slice(0, 2).map((s) => s.id)));
           }
         }
       }

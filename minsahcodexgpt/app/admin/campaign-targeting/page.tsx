@@ -31,9 +31,8 @@ export default function CampaignTargetingPage() {
   const [campaignName, setCampaignName] = useState('');
   const [budget, setBudget] = useState('');
 
-  // Mock campaign data - Replace with real API data
   type CampaignStatus = 'active' | 'paused' | 'draft' | 'ended';
-  const campaigns: Array<{
+  interface CampaignTargetingItem {
     id: string;
     name: string;
     targetLocations: { divisions: string[]; districts: string[]; thanas: string[] };
@@ -44,71 +43,8 @@ export default function CampaignTargetingPage() {
     endDate: Date;
     status: CampaignStatus;
     performance: { impressions: number; clicks: number; conversions: number; revenue: number };
-  }> = [
-    {
-      id: '1',
-      name: 'Dhaka Metro Beauty Campaign',
-      targetLocations: {
-        divisions: ['Dhaka'],
-        districts: ['Dhaka', 'Gazipur'],
-        thanas: ['Dhanmondi', 'Gulshan', 'Mirpur', 'Uttara'],
-      },
-      estimatedReach: 45678,
-      budget: 50000,
-      spent: 23456,
-      startDate: new Date('2024-01-01'),
-      endDate: new Date('2024-01-31'),
-      status: 'active',
-      performance: {
-        impressions: 123456,
-        clicks: 5678,
-        conversions: 234,
-        revenue: 345678,
-      },
-    },
-    {
-      id: '2',
-      name: 'Chittagong Coastal Campaign',
-      targetLocations: {
-        divisions: ['Chittagong'],
-        districts: ['Chittagong', "Cox's Bazar"],
-        thanas: ['Agrabad', 'Panchlaish', "Cox's Bazar Sadar"],
-      },
-      estimatedReach: 23456,
-      budget: 30000,
-      spent: 15678,
-      startDate: new Date('2024-01-05'),
-      endDate: new Date('2024-02-05'),
-      status: 'active',
-      performance: {
-        impressions: 67890,
-        clicks: 3456,
-        conversions: 156,
-        revenue: 234567,
-      },
-    },
-    {
-      id: '3',
-      name: 'All Bangladesh New Year Sale',
-      targetLocations: {
-        divisions: getAllDivisions(),
-        districts: [],
-        thanas: [],
-      },
-      estimatedReach: 150000,
-      budget: 100000,
-      spent: 0,
-      startDate: new Date('2024-02-01'),
-      endDate: new Date('2024-02-15'),
-      status: 'draft',
-      performance: {
-        impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        revenue: 0,
-      },
-    },
-  ];
+  }
+  const [campaigns, setCampaigns] = useState<CampaignTargetingItem[]>([]);
 
   if (!hasPermission(PERMISSIONS.CONTENT_MANAGE)) {
     return (
@@ -198,7 +134,7 @@ export default function CampaignTargetingPage() {
               <p className="text-sm font-medium text-[#8A8F98]">Spent</p>
               <p className="text-2xl font-bold text-[#F7F8F8] mt-2">৳{totalSpent.toLocaleString()}</p>
               <p className="text-xs text-orange-600 mt-1">
-                {((totalSpent / totalBudget) * 100).toFixed(1)}% of budget
+                {totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(1) : '0.0'}% of budget
               </p>
             </div>
             <Calendar className="w-10 h-10 text-orange-500" />
@@ -239,93 +175,103 @@ export default function CampaignTargetingPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#232636]">
-              {campaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-[#1b1e2c]">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-[#F7F8F8]">{campaign.name}</p>
-                      <div className="flex items-center text-xs text-[#8A8F98] mt-1">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        {campaign.startDate.toLocaleDateString()} - {campaign.endDate.toLocaleDateString()}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs space-y-1">
-                      {campaign.targetLocations.divisions.length > 0 && (
-                        <div className="flex items-center text-[#8A8F98]">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {campaign.targetLocations.divisions.length === getAllDivisions().length
-                            ? 'All Bangladesh'
-                            : `${campaign.targetLocations.divisions.length} division(s)`}
-                        </div>
-                      )}
-                      {campaign.targetLocations.districts.length > 0 && (
-                        <p className="text-[#8A8F98]">{campaign.targetLocations.districts.length} district(s)</p>
-                      )}
-                      {campaign.targetLocations.thanas.length > 0 && (
-                        <p className="text-[#8A8F98]">{campaign.targetLocations.thanas.length} thana(s)</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <Users className="w-4 h-4 text-[#62666d] mr-1" />
-                      <span className="text-sm text-[#F7F8F8]">{campaign.estimatedReach.toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm">
-                      <p className="font-medium text-[#F7F8F8]">৳{campaign.budget.toLocaleString()}</p>
-                      <p className="text-xs text-[#8A8F98]">Spent: ৳{campaign.spent.toLocaleString()}</p>
-                      <progress
-                        className="mt-1 h-2 w-full accent-[#5e6ad2]"
-                        max={Math.max(campaign.budget, 1)}
-                        value={campaign.spent}
-                        aria-label={`${campaign.name} budget spent`}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs space-y-1">
-                      <p className="text-[#8A8F98]">{campaign.performance.impressions.toLocaleString()} impressions</p>
-                      <p className="text-[#8A8F98]">{campaign.performance.clicks.toLocaleString()} clicks</p>
-                      <p className="text-green-600 font-medium">{campaign.performance.conversions} conversions</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      campaign.status === 'active' ? 'bg-emerald-500/10 text-emerald-300' :
-                      campaign.status === 'paused' ? 'bg-amber-500/10 text-amber-300' :
-                      'bg-[#10121b] text-[#f7f8f8]'
-                    }`}>
-                      {campaign.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <Button className="text-white hover:text-white-hover">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      {campaign.status === 'active' ? (
-                        <Button className="text-yellow-600 hover:text-yellow-900">
-                          <Pause className="w-4 h-4" />
-                        </Button>
-                      ) : (
-                        <Button className="text-green-600 hover:text-green-900">
-                          <Play className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button className="text-[#5e6ad2] hover:text-blue-900">
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                      <Button className="text-red-600 hover:text-red-900">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+              {campaigns.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-[#8A8F98]">
+                    <Target className="w-12 h-12 text-[#62666d] mx-auto mb-3" />
+                    <p className="font-medium text-[#F7F8F8]">No campaign data available yet</p>
+                    <p className="text-xs text-[#8A8F98] mt-1">Create your first location-based campaign to get started</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                campaigns.map((campaign) => (
+                  <tr key={campaign.id} className="hover:bg-[#1b1e2c]">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm font-medium text-[#F7F8F8]">{campaign.name}</p>
+                        <div className="flex items-center text-xs text-[#8A8F98] mt-1">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {campaign.startDate.toLocaleDateString()} - {campaign.endDate.toLocaleDateString()}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs space-y-1">
+                        {campaign.targetLocations.divisions.length > 0 && (
+                          <div className="flex items-center text-[#8A8F98]">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {campaign.targetLocations.divisions.length === getAllDivisions().length
+                              ? 'All Bangladesh'
+                              : `${campaign.targetLocations.divisions.length} division(s)`}
+                          </div>
+                        )}
+                        {campaign.targetLocations.districts.length > 0 && (
+                          <p className="text-[#8A8F98]">{campaign.targetLocations.districts.length} district(s)</p>
+                        )}
+                        {campaign.targetLocations.thanas.length > 0 && (
+                          <p className="text-[#8A8F98]">{campaign.targetLocations.thanas.length} thana(s)</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 text-[#62666d] mr-1" />
+                        <span className="text-sm text-[#F7F8F8]">{campaign.estimatedReach.toLocaleString()}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <p className="font-medium text-[#F7F8F8]">৳{campaign.budget.toLocaleString()}</p>
+                        <p className="text-xs text-[#8A8F98]">Spent: ৳{campaign.spent.toLocaleString()}</p>
+                        <progress
+                          className="mt-1 h-2 w-full accent-[#5e6ad2]"
+                          max={Math.max(campaign.budget, 1)}
+                          value={campaign.spent}
+                          aria-label={`${campaign.name} budget spent`}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs space-y-1">
+                        <p className="text-[#8A8F98]">{campaign.performance.impressions.toLocaleString()} impressions</p>
+                        <p className="text-[#8A8F98]">{campaign.performance.clicks.toLocaleString()} clicks</p>
+                        <p className="text-green-600 font-medium">{campaign.performance.conversions} conversions</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        campaign.status === 'active' ? 'bg-emerald-500/10 text-emerald-300' :
+                        campaign.status === 'paused' ? 'bg-amber-500/10 text-amber-300' :
+                        'bg-[#10121b] text-[#f7f8f8]'
+                      }`}>
+                        {campaign.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-2">
+                        <Button className="text-white hover:text-white-hover">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        {campaign.status === 'active' ? (
+                          <Button className="text-yellow-600 hover:text-yellow-900">
+                            <Pause className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <Button className="text-green-600 hover:text-green-900">
+                            <Play className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button className="text-[#5e6ad2] hover:text-blue-900">
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                        <Button className="text-red-600 hover:text-red-900">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

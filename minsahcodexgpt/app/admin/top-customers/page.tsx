@@ -4,7 +4,7 @@
 
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
   Crown,
@@ -25,6 +25,33 @@ import {
 import { formatPrice, convertUSDtoBDT } from '@/utils/currency';
 import { getAllDivisions } from '@/data/bangladesh-locations';
 
+interface TopCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: {
+    division: string;
+    district: string;
+    thana: string;
+    area: string;
+  };
+  totalOrders: number;
+  totalSpent: number;
+  avgOrderValue: number;
+  firstOrderDate: Date;
+  lastOrderDate: Date;
+  loyaltyPoints: number;
+  tier: 'diamond' | 'platinum' | 'gold' | 'silver' | 'bronze';
+  yearlyGiftEligible: boolean;
+  yearlyGiftAwarded?: {
+    year: number;
+    giftName: string;
+    giftValue: number;
+    awardedDate: Date;
+  };
+}
+
 export default function TopCustomersPage() {
   const { hasPermission } = useAdminAuth();
   const [filterDivision, setFilterDivision] = useState('all');
@@ -32,176 +59,54 @@ export default function TopCustomersPage() {
   const [filterYear, setFilterYear] = useState('2024');
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock top customers data - Replace with real API data
-  const topCustomers = [
-    {
-      id: '1',
-      name: 'Fatima Rahman',
-      email: 'fatima.rahman@example.com',
-      phone: '+880 1712-345678',
-      location: {
-        division: 'Dhaka',
-        district: 'Dhaka',
-        thana: 'Dhanmondi',
-        area: 'Dhanmondi 8',
-      },
-      totalOrders: 45,
-      totalSpent: 45678,
-      avgOrderValue: 1015.07,
-      firstOrderDate: new Date('2023-01-15'),
-      lastOrderDate: new Date('2024-01-18'),
-      loyaltyPoints: 4567,
-      tier: 'diamond' as const,
-      yearlyGiftEligible: true,
-      yearlyGiftAwarded: {
-        year: 2023,
-        giftName: 'Premium Beauty Kit',
-        giftValue: 5000,
-        awardedDate: new Date('2023-12-25'),
-      },
-    },
-    {
-      id: '2',
-      name: 'Ayesha Siddique',
-      email: 'ayesha.siddique@example.com',
-      phone: '+880 1812-345679',
-      location: {
-        division: 'Dhaka',
-        district: 'Dhaka',
-        thana: 'Gulshan',
-        area: 'Gulshan 2',
-      },
-      totalOrders: 38,
-      totalSpent: 38901,
-      avgOrderValue: 1023.71,
-      firstOrderDate: new Date('2023-02-20'),
-      lastOrderDate: new Date('2024-01-19'),
-      loyaltyPoints: 3890,
-      tier: 'platinum' as const,
-      yearlyGiftEligible: true,
-    },
-    {
-      id: '3',
-      name: 'Nusrat Jahan',
-      email: 'nusrat.jahan@example.com',
-      phone: '+880 1912-345680',
-      location: {
-        division: 'Chittagong',
-        district: 'Chittagong',
-        thana: 'Agrabad',
-        area: 'Agrabad Commercial Area',
-      },
-      totalOrders: 32,
-      totalSpent: 32145,
-      avgOrderValue: 1004.53,
-      firstOrderDate: new Date('2023-03-10'),
-      lastOrderDate: new Date('2024-01-17'),
-      loyaltyPoints: 3214,
-      tier: 'platinum' as const,
-      yearlyGiftEligible: true,
-    },
-    {
-      id: '4',
-      name: 'Sabrina Akhter',
-      email: 'sabrina.akhter@example.com',
-      phone: '+880 1612-345681',
-      location: {
-        division: 'Dhaka',
-        district: 'Dhaka',
-        thana: 'Uttara',
-        area: 'Uttara Sector 7',
-      },
-      totalOrders: 28,
-      totalSpent: 28456,
-      avgOrderValue: 1016.29,
-      firstOrderDate: new Date('2023-04-05'),
-      lastOrderDate: new Date('2024-01-16'),
-      loyaltyPoints: 2845,
-      tier: 'gold' as const,
-      yearlyGiftEligible: true,
-    },
-    {
-      id: '5',
-      name: 'Tahmina Begum',
-      email: 'tahmina.begum@example.com',
-      phone: '+880 1712-345682',
-      location: {
-        division: 'Sylhet',
-        district: 'Sylhet',
-        thana: 'Sylhet Sadar',
-        area: 'Zindabazar',
-      },
-      totalOrders: 25,
-      totalSpent: 25678,
-      avgOrderValue: 1027.12,
-      firstOrderDate: new Date('2023-05-12'),
-      lastOrderDate: new Date('2024-01-15'),
-      loyaltyPoints: 2567,
-      tier: 'gold' as const,
-      yearlyGiftEligible: true,
-    },
-    {
-      id: '6',
-      name: 'Razia Sultana',
-      email: 'razia.sultana@example.com',
-      phone: '+880 1812-345683',
-      location: {
-        division: 'Rajshahi',
-        district: 'Rajshahi',
-        thana: 'Boalia',
-        area: 'Shaheb Bazar',
-      },
-      totalOrders: 22,
-      totalSpent: 22345,
-      avgOrderValue: 1015.68,
-      firstOrderDate: new Date('2023-06-18'),
-      lastOrderDate: new Date('2024-01-14'),
-      loyaltyPoints: 2234,
-      tier: 'silver' as const,
-      yearlyGiftEligible: false,
-    },
-    {
-      id: '7',
-      name: 'Nasrin Akter',
-      email: 'nasrin.akter@example.com',
-      phone: '+880 1912-345684',
-      location: {
-        division: 'Khulna',
-        district: 'Khulna',
-        thana: 'Khulna Sadar',
-        area: 'Khulna City',
-      },
-      totalOrders: 20,
-      totalSpent: 20123,
-      avgOrderValue: 1006.15,
-      firstOrderDate: new Date('2023-07-22'),
-      lastOrderDate: new Date('2024-01-13'),
-      loyaltyPoints: 2012,
-      tier: 'silver' as const,
-      yearlyGiftEligible: false,
-    },
-    {
-      id: '8',
-      name: 'Shahnaz Parvin',
-      email: 'shahnaz.parvin@example.com',
-      phone: '+880 1612-345685',
-      location: {
-        division: 'Dhaka',
-        district: 'Gazipur',
-        thana: 'Gazipur Sadar',
-        area: 'Tongi',
-      },
-      totalOrders: 18,
-      totalSpent: 18456,
-      avgOrderValue: 1025.33,
-      firstOrderDate: new Date('2023-08-15'),
-      lastOrderDate: new Date('2024-01-12'),
-      loyaltyPoints: 1845,
-      tier: 'silver' as const,
-      yearlyGiftEligible: false,
-    },
-  ];
+  useEffect(() => {
+    async function loadTopCustomers() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/admin/customers?sortBy=totalSpent&sortOrder=desc&limit=50');
+        if (!res.ok) {
+          setTopCustomers([]);
+          return;
+        }
+        const data = await res.json();
+        const rawList = Array.isArray(data.customers) ? data.customers : [];
+        const mapped: TopCustomer[] = rawList.map((c: any) => {
+          const spent = Number(c.totalSpent) || 0;
+          const tier = spent >= 40000 ? 'diamond' : spent >= 30000 ? 'platinum' : spent >= 20000 ? 'gold' : spent >= 10000 ? 'silver' : 'bronze';
+          return {
+            id: c.id,
+            name: c.name || c.email || 'Customer',
+            email: c.email || '',
+            phone: c.phone || 'N/A',
+            location: {
+              division: c.address?.state || c.address?.city || 'Dhaka',
+              district: c.address?.city || 'Dhaka',
+              thana: c.address?.city || 'General',
+              area: c.address?.address1 || c.address?.city || 'N/A',
+            },
+            totalOrders: Number(c.totalOrders) || 0,
+            totalSpent: spent,
+            avgOrderValue: Number(c.averageOrderValue) || 0,
+            firstOrderDate: c.joinDate ? new Date(c.joinDate) : new Date(),
+            lastOrderDate: c.lastLogin ? new Date(c.lastLogin) : new Date(),
+            loyaltyPoints: Number(c.loyaltyPoints) || 0,
+            tier: tier as any,
+            yearlyGiftEligible: spent >= 25000,
+          };
+        });
+        setTopCustomers(mapped);
+      } catch (err) {
+        console.error('Failed to load top customers:', err);
+        setTopCustomers([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTopCustomers();
+  }, []);
 
   if (!hasPermission(PERMISSIONS.CUSTOMERS_VIEW)) {
     return (
@@ -231,7 +136,7 @@ export default function TopCustomersPage() {
   const eligibleForGift = filteredCustomers.filter(c => c.yearlyGiftEligible).length;
   const totalSpent = filteredCustomers.reduce((sum, c) => sum + c.totalSpent, 0);
   const totalOrders = filteredCustomers.reduce((sum, c) => sum + c.totalOrders, 0);
-  const avgSpent = totalSpent / filteredCustomers.length;
+  const avgSpent = filteredCustomers.length > 0 ? totalSpent / filteredCustomers.length : 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -480,8 +385,10 @@ export default function TopCustomersPage() {
       {filteredCustomers.length === 0 && (
         <div className="text-center py-12">
           <Crown className="w-16 h-16 text-[#d0d6e0] mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No customers found</h3>
-          <p className="text-[#8A8F98]">Try adjusting your filters</p>
+          <h3 className="text-lg font-semibold text-[#F7F8F8] mb-2">No top customers found</h3>
+          <p className="text-[#8A8F98]">
+            {loading ? 'Loading customer records...' : 'No customer purchase records match your filter criteria'}
+          </p>
         </div>
       )}
     </div>

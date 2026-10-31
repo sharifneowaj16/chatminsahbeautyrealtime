@@ -13,7 +13,6 @@ import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useState, useEffect } from 'react';
 import type { AdminProduct, AdminCategory } from '@/types/admin';
-import { generateMockProducts } from '@/types/admin';
 import { formatPrice } from '@/utils/currency';
 import {
   Search,
@@ -67,12 +66,66 @@ export default function ProductManagement() {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockProducts = generateMockProducts();
-      setProducts(mockProducts);
+      const res = await fetch('/api/products?limit=100');
+      if (res.ok) {
+        const data = await res.json();
+        const mappedProducts: AdminProduct[] = (data.products || []).map((p: any) => ({
+          id: p.id,
+          name: p.name || 'Unnamed Product',
+          description: p.description || '',
+          sku: p.sku || 'SKU-0000',
+          barcode: p.barcode,
+          price: p.price || 0,
+          comparePrice: p.originalPrice || p.compareAtPrice || undefined,
+          cost: p.costPrice || 0,
+          weight: p.weight || 0,
+          dimensions: p.dimensions || { length: 0, width: 0, height: 0 },
+          category: {
+            id: p.categoryId || (typeof p.category === 'object' ? p.category?.id : '') || 'cat-1',
+            name: (typeof p.category === 'object' ? p.category?.name : p.category) || 'General',
+          },
+          brand: (typeof p.brand === 'object' ? p.brand?.name : p.brand) || '',
+          tags: Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' && p.tags ? p.tags.split(',') : []),
+          variants: p.variants || [],
+          images: (p.images || []).map((img: any, idx: number) => ({
+            id: img.id || `img-${idx}`,
+            url: typeof img === 'string' ? img : (img.url || ''),
+            alt: img.alt || p.name || '',
+            position: idx,
+            isMain: idx === 0,
+          })),
+          seo: {
+            title: p.metaTitle || p.name || '',
+            description: p.metaDescription || '',
+            keywords: p.metaKeywords ? (typeof p.metaKeywords === 'string' ? p.metaKeywords.split(',') : p.metaKeywords) : [],
+            slug: p.slug || p.id,
+          },
+          inventory: {
+            quantity: p.stock ?? p.quantity ?? 0,
+            lowStockThreshold: p.lowStockThreshold || 5,
+            trackQuantity: true,
+            allowBackorder: Boolean(p.preOrderOption),
+          },
+          shipping: {
+            requiresShipping: true,
+            weightUnit: 'kg',
+            originCountry: 'BD',
+          },
+          status: p.isActive === false ? 'draft' : (p.status || 'active'),
+          createdAt: p.createdAt || new Date().toISOString(),
+          updatedAt: p.updatedAt || new Date().toISOString(),
+          sales: p.salesCount || p.orderCount || 0,
+          views: p.viewCount || 0,
+          rating: p.rating || p.averageRating || 0,
+          reviews: p.reviews || p.reviewCount || 0,
+        }));
+        setProducts(mappedProducts);
+      } else {
+        setProducts([]);
+      }
     } catch (error) {
       console.error('Error loading products:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

@@ -2,59 +2,21 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search, Headphones, Plus } from 'lucide-react';
+import { ArrowLeft, Search, Headphones, Plus, ShieldCheck } from 'lucide-react';
 import WarrantyActiveClaimCard from './WarrantyActiveClaimCard';
 import WarrantyPastClaimCard from './WarrantyPastClaimCard';
 import WarrantyProtectionGuaranteeBanner from './WarrantyProtectionGuaranteeBanner';
 import WarrantyConciergeCard from './WarrantyConciergeCard';
 import { WarrantyActiveClaim, WarrantyClaimHistoryItem } from './types';
 
-const defaultActiveClaim: WarrantyActiveClaim = {
-  claimNumber: '#CLM-90421',
-  orderNumber: 'MB-88294-KR',
-  orderDate: 'Oct 24',
-  productName: 'Laneige Lip Sleeping Mask (Berry 20g)',
-  productImage: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300&auto=format&fit=crop&q=80',
-  price: 1720,
-  defectSummary: 'Broken seal & dried formulation upon unboxing',
-  currentStep: 3,
-  totalSteps: 4,
-  assignedRiderName: 'Hasan M.',
-  assignedHub: 'Banani Delivery Hub',
-  scheduledTimeWindow: 'today, 4:00 PM – 6:30 PM',
-};
-
-const defaultPastClaims: WarrantyClaimHistoryItem[] = [
-  {
-    id: 'clm-1',
-    claimNumber: '#CLM-87114',
-    orderNumber: 'MB-82410-KR',
-    resolvedDate: 'Sep 14, 2024',
-    productName: 'Arisol Soothing Sun Relief SPF50+ (50ml)',
-    productImage: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&auto=format&fit=crop&q=80',
-    price: 1365,
-    issue: 'Pump dispenser nozzle fracture',
-    resolutionText: 'Free Replacement Delivered (Same-day swap)',
-    resolutionType: 'replacement',
-    hasSlipDownload: true,
-  },
-  {
-    id: 'clm-2',
-    claimNumber: '#CLM-74890',
-    orderNumber: 'MB-78019-KR',
-    resolvedDate: 'Jul 02, 2024',
-    productName: 'Elixir Vital Glass Skin Hydrating Serum (30ml)',
-    productImage: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=300&auto=format&fit=crop&q=80',
-    price: 1890,
-    issue: 'Leaking dropper neck during transit',
-    resolutionText: '100% Refund credited to bKash 01712-***102',
-    resolutionType: 'refund',
-    hasSlipDownload: true,
-  },
-];
-
 export default function WarrantyHistoryView() {
   const [filter, setFilter] = useState<'all' | 'active' | 'resolved'>('all');
+  const [activeClaim] = useState<WarrantyActiveClaim | null>(null);
+  const [pastClaims] = useState<WarrantyClaimHistoryItem[]>([]);
+
+  const totalCount = (activeClaim ? 1 : 0) + pastClaims.length;
+  const activeCount = activeClaim ? 1 : 0;
+  const resolvedCount = pastClaims.length;
 
   return (
     <div className="w-full flex flex-col bg-[#faf9f6] min-h-screen pb-24">
@@ -138,7 +100,7 @@ export default function WarrantyHistoryView() {
                   : 'bg-[#E2DED8]/70 text-[#43483f]'
               }`}
             >
-              3
+              {totalCount}
             </span>
           </button>
           <button
@@ -158,7 +120,7 @@ export default function WarrantyHistoryView() {
                   : 'bg-[#E2DED8]/70 text-[#43483f]'
               }`}
             >
-              1
+              {activeCount}
             </span>
           </button>
           <button
@@ -178,7 +140,7 @@ export default function WarrantyHistoryView() {
                   : 'bg-[#E2DED8]/70 text-[#43483f]'
               }`}
             >
-              2
+              {resolvedCount}
             </span>
           </button>
         </div>
@@ -186,13 +148,25 @@ export default function WarrantyHistoryView() {
 
       {/* Main Claims Content */}
       <div className="px-4 space-y-4 pt-2">
+        {!activeClaim && pastClaims.length === 0 && (
+          <div className="rounded-2xl p-8 bg-[#F8FAF7] border border-[#E2DED8]/60 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-[#E8F0E5] text-[#1c3a13] flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <p className="text-base font-bold text-[#062402]">No warranty claims found</p>
+            <p className="text-xs text-[#43483f] max-w-xs mx-auto">
+              You do not have any active or past warranty claims at this time.
+            </p>
+          </div>
+        )}
+
         {/* Active Claim Spotlight */}
-        {(filter === 'all' || filter === 'active') && (
-          <WarrantyActiveClaimCard claim={defaultActiveClaim} />
+        {activeClaim && (filter === 'all' || filter === 'active') && (
+          <WarrantyActiveClaimCard claim={activeClaim} />
         )}
 
         {/* Resolved Claims */}
-        {(filter === 'all' || filter === 'resolved') && (
+        {pastClaims.length > 0 && (filter === 'all' || filter === 'resolved') && (
           <div className="space-y-3">
             <div className="flex items-center justify-between pt-2">
               <div className="flex flex-col">
@@ -204,11 +178,11 @@ export default function WarrantyHistoryView() {
                 </span>
               </div>
               <span className="text-xs text-[#4b6723] font-bold">
-                2 Cases Solved
+                {pastClaims.length} Cases Solved
               </span>
             </div>
 
-            {defaultPastClaims.map((item) => (
+            {pastClaims.map((item) => (
               <WarrantyPastClaimCard key={item.id} claim={item} />
             ))}
           </div>

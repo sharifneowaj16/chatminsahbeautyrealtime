@@ -9,28 +9,43 @@ import QuickDhakaZonePills from './QuickDhakaZonePills';
 import { SavedAddressItem, DeliveryZoneItem } from './types';
 import { useDeliveryLocation } from '@/contexts/DeliveryLocationContext';
 
-const defaultSavedAddresses: SavedAddressItem[] = [
-  {
-    id: 'addr-1',
-    label: 'Home',
-    area: 'Banani',
-    address: 'House 14, Road 7, Block E, Banani, Dhaka',
-    isDefault: true,
-  },
-  {
-    id: 'addr-2',
-    label: 'Office',
-    area: 'Gulshan-2',
-    address: 'Plot 68, Avenue 4, Gulshan-2, Dhaka',
-  },
-];
-
 export default function DeliveryLocationModal() {
   const { savedLocation, saveLocation } = useDeliveryLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAddressId, setSelectedAddressId] = useState('addr-1');
-  const [selectedLocationName, setSelectedLocationName] = useState('Banani');
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddressItem[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [selectedLocationName, setSelectedLocationName] = useState(
+    savedLocation?.area || savedLocation?.city || 'Dhaka'
+  );
+
+  useEffect(() => {
+    async function loadAddresses() {
+      try {
+        const res = await fetch('/api/addresses');
+        if (res.ok) {
+          const data = await res.json();
+          const list = Array.isArray(data.addresses) ? data.addresses : [];
+          const mapped: SavedAddressItem[] = list.map((a: any) => ({
+            id: a.id,
+            label: a.type || 'Saved Address',
+            area: a.city || a.state || 'Dhaka',
+            address: [a.street1, a.street2, a.city, a.state].filter(Boolean).join(', '),
+            isDefault: !!a.isDefault,
+          }));
+          setSavedAddresses(mapped);
+          const defaultAddr = mapped.find(a => a.isDefault) || mapped[0];
+          if (defaultAddr) {
+            setSelectedAddressId(defaultAddr.id);
+            setSelectedLocationName(defaultAddr.area);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load user addresses', err);
+      }
+    }
+    loadAddresses();
+  }, []);
 
   useEffect(() => {
     if (savedLocation?.area) {
@@ -110,12 +125,16 @@ export default function DeliveryLocationModal() {
         onChange={setSearchQuery}
         onClear={() => setSearchQuery('')}
       />
-      <SavedAddressOptionList
-        addresses={defaultSavedAddresses}
-        selectedAddressId={selectedAddressId}
-        onSelect={handleSelectAddress}
-        onAddNew={() => alert('Add New Address flow')}
-      />
+      {savedAddresses.length > 0 && (
+        <SavedAddressOptionList
+          addresses={savedAddresses}
+          selectedAddressId={selectedAddressId}
+          onSelect={handleSelectAddress}
+          onAddNew={() => {
+            window.location.href = '/account/addresses';
+          }}
+        />
+      )}
       <QuickDhakaZonePills
         selectedZoneName={selectedLocationName}
         onSelectZone={handleSelectZone}

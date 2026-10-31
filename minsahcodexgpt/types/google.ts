@@ -1,4 +1,4 @@
-﻿import { GOOGLE_PRODUCT_COLORS } from '@/lib/design-token-exceptions';
+import { GOOGLE_PRODUCT_COLORS } from '@/lib/design-token-exceptions';
 
 // TypeScript interfaces for Google Services Integration System
 
@@ -753,116 +753,50 @@ export const generateMockGoogleServices = (): GoogleService[] => [
     id: 'search-console',
     name: 'Google Search Console',
     icon: '🔍',
-    connected: true,
-    lastSync: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    status: 'active',
-    metrics: {
-      clicks: 1234,
-      impressions: 45678,
-      ctr: 2.7,
-      position: 12.5
-    },
-    propertyId: 'https://minsah-beauty.com/'
+    connected: false,
+    status: 'inactive'
   },
   {
     id: 'merchant-center',
     name: 'Google Merchant Center',
     icon: '🛍️',
-    connected: true,
-    lastSync: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-    status: 'warning',
-    metrics: {
-      totalProducts: 156,
-      approvedProducts: 153,
-      pendingProducts: 3,
-      disapprovedProducts: 2,
-      activeListings: 1
-    },
-    accountId: '123456789',
-    setupCompleted: true
+    connected: false,
+    status: 'inactive'
   },
   {
     id: 'google-ads',
     name: 'Google Shopping Ads',
     icon: '💰',
-    connected: true,
-    lastSync: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-    status: 'active',
-    metrics: {
-      activeCampaigns: 3,
-      dailyBudget: 500,
-      totalSpend: 123450,
-      totalConversions: 89,
-      avgROAS: 485
-    },
-    accountId: '123-456-7890',
-    setupCompleted: true
+    connected: false,
+    status: 'inactive'
   },
   {
     id: 'analytics',
     name: 'Google Analytics 4',
     icon: '📊',
-    connected: true,
-    lastSync: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-    status: 'active',
-    metrics: {
-      propertyId: 'GA4-12345678',
-      realTimeUsers: 23,
-      totalUsers: 12456,
-      totalSessions: 15678,
-      conversionRate: 2.3,
-      totalRevenue: 45200
-    },
-    propertyId: 'GA4-12345678'
+    connected: false,
+    status: 'inactive'
   },
   {
     id: 'business-profile',
     name: 'Google Business Profile',
     icon: '🏪',
-    connected: true,
-    lastSync: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-    status: 'active',
-    metrics: {
-      rating: 4.8,
-      totalReviews: 127,
-      profileViews: 3456,
-      websiteClicks: 456,
-      phoneCalls: 89,
-      postsThisMonth: 12
-    },
-    accountId: 'minsah-beauty',
-    setupCompleted: true
+    connected: false,
+    status: 'inactive'
   },
   {
     id: 'tag-manager',
     name: 'Google Tag Manager',
     icon: '🏷️',
-    connected: true,
-    lastSync: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-    status: 'active',
-    metrics: {
-      containerId: 'GTM-XXXXXX',
-      publishedTags: 8,
-      unpublishedChanges: 0,
-      lastPublish: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
-    },
-    containerId: 'GTM-XXXXXX'
+    connected: false,
+    status: 'inactive'
   },
   {
     id: 'remarketing',
     name: 'Google Remarketing',
     icon: '🔔',
-    connected: true,
-    lastSync: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
-    status: 'active',
-    metrics: {
-      totalAudiences: 5,
-      totalUsers: 12450,
-      activeCampaigns: 2,
-      totalConversions: 45,
-      totalCost: 8750
-    },
-    setupCompleted: true
+    connected: false,
+    status: 'inactive'
   },
   {
     id: 'display-ads',

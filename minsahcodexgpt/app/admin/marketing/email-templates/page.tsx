@@ -39,8 +39,8 @@ const TEMPLATES: EmailTemplate[] = [
     subject: 'Your Minsah Beauty Order #{{order.id}} is Confirmed! ✨',
     previewText: 'Thank you for shopping with Minsah Beauty. Your order details are inside.',
     active: true,
-    openRate: '68.4%',
-    clickRate: '24.2%',
+    openRate: '-',
+    clickRate: '-',
     lastEdited: 'Oct 20, 2024',
     bodySnippet: 'Dear {{customer.name}}, we are thrilled to confirm your order of 100% authentic Korean beauty skincare. Our Dhaka warehouse is preparing your parcel with love.'
   },
@@ -51,8 +51,8 @@ const TEMPLATES: EmailTemplate[] = [
     subject: 'Your Parcel is on the Way! Track #{{order.id}} 🚚',
     previewText: 'Steadfast Courier has picked up your order and is out for delivery.',
     active: true,
-    openRate: '72.1%',
-    clickRate: '41.8%',
+    openRate: '-',
+    clickRate: '-',
     lastEdited: 'Oct 18, 2024',
     bodySnippet: 'Exciting news! Your beauty essentials have been handed over to our courier partner. Consignment number: {{tracking.number}}. Tap below to track real-time delivery.'
   },
@@ -63,8 +63,8 @@ const TEMPLATES: EmailTemplate[] = [
     subject: 'Did you leave something behind? Here is 10% off 💕',
     previewText: 'Your glow items are waiting for you in your cart.',
     active: true,
-    openRate: '44.8%',
-    clickRate: '18.4%',
+    openRate: '-',
+    clickRate: '-',
     lastEdited: 'Oct 15, 2024',
     bodySnippet: 'We noticed you left some glowing skincare favorites in your bag. Complete your checkout today and enjoy an extra 10% off with coupon: GLOWBACK10.'
   },
@@ -75,8 +75,8 @@ const TEMPLATES: EmailTemplate[] = [
     subject: 'Welcome to Minsah Beauty family, gorgeous! 🌸',
     previewText: 'Unlock ৳150 off your first genuine K-beauty order.',
     active: true,
-    openRate: '58.2%',
-    clickRate: '22.0%',
+    openRate: '-',
+    clickRate: '-',
     lastEdited: 'Oct 12, 2024',
     bodySnippet: 'Welcome to Bangladesh’s premier destination for genuine, verified Korean & international cosmetics. We guarantee 100% authenticity on every formula.'
   }

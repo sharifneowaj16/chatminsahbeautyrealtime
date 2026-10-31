@@ -30,16 +30,14 @@ interface LoyaltyMember {
   lastActivity: string;
 }
 
-const INITIAL_MEMBERS: LoyaltyMember[] = [
-  { id: 'MEM-01', name: 'Fatima Rahman', phone: '01712-345678', tier: 'Gold', points: 3450, lifetimeSpent: 34500, lastActivity: 'Earned +170 pts on #ORD-2847' },
-  { id: 'MEM-02', name: 'Nusrat Jahan', phone: '01611-987654', tier: 'Silver', points: 2150, lifetimeSpent: 21500, lastActivity: 'Redeemed -500 pts for ৳50 off' },
-  { id: 'MEM-03', name: 'Tamanna Chowdhury', phone: '01819-234567', tier: 'Gold', points: 4850, lifetimeSpent: 48500, lastActivity: 'Earned +240 pts on #ORD-2848' },
-  { id: 'MEM-04', name: 'Sumiya Khan', phone: '01912-112233', tier: 'Bronze', points: 850, lifetimeSpent: 8500, lastActivity: 'Earned +85 pts on #ORD-2850' },
-  { id: 'MEM-05', name: 'Sadia Akhter', phone: '01715-778899', tier: 'Silver', points: 1950, lifetimeSpent: 19500, lastActivity: 'Earned +195 pts on #ORD-2842' },
-];
-
 export default function LoyaltyPage() {
-  const [members, setMembers] = useState<LoyaltyMember[]>(INITIAL_MEMBERS);
+  const [members, setMembers] = useState<LoyaltyMember[]>([]);
+  const [stats, setStats] = useState<{
+    totalPointsInCirculation: number;
+    goldCount: number;
+    silverCount: number;
+    bronzeCount: number;
+  } | null>(null);
   const [pointsPer100, setPointsPer100] = useState(10);
   const [minRedemption, setMinRedemption] = useState(500);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +45,7 @@ export default function LoyaltyPage() {
   const [selectedMember, setSelectedMember] = useState<LoyaltyMember | null>(null);
   const [adjustAmount, setAdjustAmount] = useState(100);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -60,8 +58,11 @@ export default function LoyaltyPage() {
       const res = await fetch('/api/admin/loyalty');
       if (res.ok) {
         const data = await res.json();
-        if (data.members && data.members.length > 0) {
+        if (Array.isArray(data.members)) {
           setMembers(data.members);
+        }
+        if (data.stats) {
+          setStats(data.stats);
         }
         if (data.config) {
           if (data.config.pointsPer100) setPointsPer100(data.config.pointsPer100);
@@ -69,7 +70,7 @@ export default function LoyaltyPage() {
         }
       }
     } catch (err) {
-      console.warn('Failed to fetch loyalty data from DB, using fallback', err);
+      console.warn('Failed to fetch loyalty data from DB', err);
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +79,27 @@ export default function LoyaltyPage() {
   React.useEffect(() => {
     loadLoyaltyData();
   }, []);
+
+  const handleSaveRules = async () => {
+    try {
+      const res = await fetch('/api/admin/loyalty', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'SAVE_RULES',
+          pointsPer100,
+          minRedemption,
+        }),
+      });
+      if (res.ok) {
+        showToast('Loyalty program rules saved to production!');
+      } else {
+        showToast('Failed to save program rules.');
+      }
+    } catch {
+      showToast('Error saving program rules.');
+    }
+  };
 
   const handleAdjustPoints = async (type: 'add' | 'deduct') => {
     if (!selectedMember) return;
@@ -120,6 +142,14 @@ export default function LoyaltyPage() {
       m.tier.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalPointsInCirculation = stats?.totalPointsInCirculation ?? members.reduce((sum, m) => sum + m.points, 0);
+  const redeemableValue = Math.floor(totalPointsInCirculation / (pointsPer100 || 10));
+  const enrolledMembersCount = members.length;
+  const activeEarnerCount = members.filter(m => m.points > 0).length;
+  const conversionRate = enrolledMembersCount > 0
+    ? ((activeEarnerCount / enrolledMembersCount) * 100).toFixed(1) + '%'
+    : '0.0%';
+
   return (
     <div className="min-h-screen bg-[#051424] text-[#d4e4fa] p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Toast Notification */}
@@ -148,7 +178,7 @@ export default function LoyaltyPage() {
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
-            onClick={() => showToast('Loyalty program rules saved to production!')}
+            onClick={handleSaveRules}
             className="px-4 py-2 bg-[#c0c1ff] hover:bg-[#a5a7ff] text-[#07006c] rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95"
           >
             <Save className="w-4 h-4" />
@@ -164,8 +194,8 @@ export default function LoyaltyPage() {
             <span>Points in Circulation</span>
             <Sparkles className="w-4 h-4 text-[#4edea3]" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-[#ffffff] font-mono">1,450,000</div>
-          <div className="text-[11px] text-[#4edea3] mt-1 font-medium">Earned by 3,420 members</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#ffffff] font-mono">{totalPointsInCirculation.toLocaleString()}</div>
+          <div className="text-[11px] text-[#4edea3] mt-1 font-medium">Earned by {enrolledMembersCount.toLocaleString()} members</div>
         </div>
 
         <div className="bg-[#122131] border border-[#273647] rounded-xl p-4 sm:p-5">
@@ -173,8 +203,8 @@ export default function LoyaltyPage() {
             <span>Redeemable Value</span>
             <DollarSign className="w-4 h-4 text-[#c0c1ff]" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-[#c0c1ff] font-mono">৳ 1,45,000</div>
-          <div className="text-[11px] text-[#908fa0] mt-1">10 Pts = ৳ 1 discount value</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#c0c1ff] font-mono">৳ {redeemableValue.toLocaleString()}</div>
+          <div className="text-[11px] text-[#908fa0] mt-1">{pointsPer100} Pts = ৳ 1 discount value</div>
         </div>
 
         <div className="bg-[#122131] border border-[#273647] rounded-xl p-4 sm:p-5">
@@ -182,8 +212,8 @@ export default function LoyaltyPage() {
             <span>Enrolled VIP Members</span>
             <Crown className="w-4 h-4 text-[#ffb690]" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-[#ffb690] font-mono">3,420</div>
-          <div className="text-[11px] text-[#908fa0] mt-1">48% repeat purchase rate</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#ffb690] font-mono">{enrolledMembersCount.toLocaleString()}</div>
+          <div className="text-[11px] text-[#908fa0] mt-1">{activeEarnerCount} active points earners</div>
         </div>
 
         <div className="bg-[#122131] border border-[#273647] rounded-xl p-4 sm:p-5">
@@ -191,8 +221,8 @@ export default function LoyaltyPage() {
             <span>Redemption Conversion</span>
             <TrendingUp className="w-4 h-4 text-[#ffb4ab]" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-[#ffffff] font-mono">38.4%</div>
-          <div className="text-[11px] text-[#4edea3] mt-1 font-medium">Strong incentive engagement</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#ffffff] font-mono">{conversionRate}</div>
+          <div className="text-[11px] text-[#4edea3] mt-1 font-medium">Active points engagement</div>
         </div>
       </div>
 
@@ -307,54 +337,62 @@ export default function LoyaltyPage() {
           </div>
 
           <div className="space-y-3">
-            {filteredMembers.map((m) => (
-              <div
-                key={m.id}
-                className="p-3.5 rounded-xl bg-[#051424] border border-[#273647] space-y-2 hover:border-[#4edea3]/40 transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-xs text-[#ffffff]">{m.name}</h4>
-                    <div className="text-[10px] text-[#908fa0] font-mono">{m.phone}</div>
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                      m.tier === 'Gold'
-                        ? 'bg-[#eab308]/20 text-[#eab308]'
-                        : m.tier === 'Silver'
-                        ? 'bg-[#c0c1ff]/20 text-[#c0c1ff]'
-                        : 'bg-[#cd7f32]/20 text-[#cd7f32]'
-                    }`}
-                  >
-                    {m.tier}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center text-xs">
-                  <div>
-                    <div className="text-[10px] text-[#908fa0]">Current Balance</div>
-                    <div className="font-mono font-bold text-[#4edea3]">{m.points} Points</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] text-[#908fa0]">Lifetime Spend</div>
-                    <div className="font-mono text-xs text-[#ffffff]">৳ {m.lifetimeSpent.toLocaleString()}</div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-[#273647] flex justify-between items-center text-[10px]">
-                  <span className="text-[#908fa0] truncate">{m.lastActivity}</span>
-                  <button
-                    onClick={() => {
-                      setSelectedMember(m);
-                      setAdjustModalOpen(true);
-                    }}
-                    className="text-[#c0c1ff] hover:underline font-bold shrink-0 ml-2"
-                  >
-                    Adjust
-                  </button>
-                </div>
+            {filteredMembers.length === 0 ? (
+              <div className="p-8 text-center bg-[#051424] border border-[#273647] rounded-xl">
+                <Users className="w-8 h-8 text-[#908fa0]/40 mx-auto mb-2" />
+                <h4 className="text-xs font-bold text-[#ffffff] mb-1">No loyalty members yet</h4>
+                <p className="text-[11px] text-[#908fa0]">Members will appear here once customers earn loyalty points.</p>
               </div>
-            ))}
+            ) : (
+              filteredMembers.map((m) => (
+                <div
+                  key={m.id}
+                  className="p-3.5 rounded-xl bg-[#051424] border border-[#273647] space-y-2 hover:border-[#4edea3]/40 transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-xs text-[#ffffff]">{m.name}</h4>
+                      <div className="text-[10px] text-[#908fa0] font-mono">{m.phone}</div>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        m.tier === 'Gold'
+                          ? 'bg-[#eab308]/20 text-[#eab308]'
+                          : m.tier === 'Silver'
+                          ? 'bg-[#c0c1ff]/20 text-[#c0c1ff]'
+                          : 'bg-[#cd7f32]/20 text-[#cd7f32]'
+                      }`}
+                    >
+                      {m.tier}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs">
+                    <div>
+                      <div className="text-[10px] text-[#908fa0]">Current Balance</div>
+                      <div className="font-mono font-bold text-[#4edea3]">{m.points} Points</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-[#908fa0]">Lifetime Spend</div>
+                      <div className="font-mono text-xs text-[#ffffff]">৳ {m.lifetimeSpent.toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-[#273647] flex justify-between items-center text-[10px]">
+                    <span className="text-[#908fa0] truncate">{m.lastActivity}</span>
+                    <button
+                      onClick={() => {
+                        setSelectedMember(m);
+                        setAdjustModalOpen(true);
+                      }}
+                      className="text-[#c0c1ff] hover:underline font-bold shrink-0 ml-2"
+                    >
+                      Adjust
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

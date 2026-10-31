@@ -55,12 +55,88 @@ export default function OrderManagement() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockOrders = generateMockOrders();
-      setOrders(mockOrders);
+      const res = await fetch('/api/admin/orders?limit=100');
+      if (res.ok) {
+        const data = await res.json();
+        const mappedOrders: AdminOrder[] = (data.orders || []).map((raw: any) => ({
+          id: raw.dbId || raw.id,
+          orderNumber: raw.id?.startsWith('ORD-') ? raw.id : (raw.orderNumber || raw.id),
+          customer: {
+            id: raw.customer?.id || raw.userId || 'cust-1',
+            name: raw.customer?.name || 'Customer',
+            email: raw.customer?.email || '',
+            phone: raw.customer?.phone || '',
+          },
+          status: raw.status || 'pending',
+          paymentStatus: raw.paymentStatus || 'pending',
+          shippingAddress: {
+            name: raw.recipientName || raw.shippingAddress?.name || raw.customer?.name || 'Customer',
+            street: raw.shipping?.address || raw.shippingAddress?.street || '',
+            city: raw.shipping?.city || raw.shippingAddress?.city || '',
+            state: raw.shipping?.state || raw.shippingAddress?.state || '',
+            zip: raw.shipping?.postalCode || raw.shippingAddress?.zip || '',
+            country: raw.shipping?.country || raw.shippingAddress?.country || 'BD',
+            phone: raw.recipientPhone || raw.shippingAddress?.phone || raw.customer?.phone,
+          },
+          billingAddress: {
+            name: raw.customer?.name || 'Customer',
+            street: raw.shipping?.address || '',
+            city: raw.shipping?.city || '',
+            state: raw.shipping?.state || '',
+            zip: raw.shipping?.postalCode || '',
+            country: raw.shipping?.country || 'BD',
+          },
+          items: (raw.items || []).map((item: any, idx: number) => ({
+            id: item.id || `item-${idx}`,
+            productId: item.productId || item.id || '',
+            name: item.name || 'Product',
+            sku: item.sku || 'SKU',
+            variant: item.variant || '',
+            quantity: item.quantity || 1,
+            price: item.price || 0,
+            total: item.total || (item.price || 0) * (item.quantity || 1),
+          })),
+          pricing: {
+            subtotal: raw.pricing?.subtotal ?? raw.total ?? 0,
+            tax: raw.pricing?.tax ?? 0,
+            shipping: raw.pricing?.shipping ?? raw.shippingCost ?? 0,
+            discount: raw.pricing?.discount ?? raw.deliveryDiscountAmount ?? 0,
+            total: raw.pricing?.total ?? raw.total ?? 0,
+            currency: raw.pricing?.currency || 'BDT',
+          },
+          shipping: {
+            method: raw.shippingMethod || raw.shipping?.method || 'Standard',
+            tracking: raw.tracking || raw.steadfastTrackingCode || raw.pathaoTrackingCode,
+            carrier: raw.shipping?.carrier || (raw.steadfastTrackingCode ? 'Steadfast' : raw.pathaoTrackingCode ? 'Pathao' : undefined),
+            cost: raw.shippingCost || 0,
+            estimatedDelivery: raw.shipping?.estimatedDelivery,
+          },
+          payment: {
+            method: raw.paymentMethod || 'cash_on_delivery',
+            transactionId: raw.payment?.transactionId,
+            gateway: raw.payment?.gateway || raw.paymentMethod || 'COD',
+            paidAt: raw.payment?.paidAt,
+          },
+          notes: raw.notes,
+          internalNotes: raw.internalNotes,
+          timeline: raw.timeline || [
+            {
+              timestamp: raw.createdAt || new Date().toISOString(),
+              status: 'Order Placed',
+              note: 'Order registered in system',
+              actor: 'Customer',
+            },
+          ],
+          createdAt: raw.createdAt || new Date().toISOString(),
+          updatedAt: raw.updatedAt || new Date().toISOString(),
+        }));
+        setOrders(mappedOrders);
+      } else {
+        setOrders([]);
+      }
     } catch (error) {
       console.error('Error loading orders:', error);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -114,148 +190,6 @@ export default function OrderManagement() {
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     setFilteredOrders(filtered);
-  };
-
-  const generateMockOrders = (): AdminOrder[] => {
-    const statuses: AdminOrder['status'][] = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
-    const paymentStatuses: AdminOrder['paymentStatus'][] = ['pending', 'paid', 'failed', 'refunded'];
-
-    return Array.from({ length: 50 }, (_, i) => {
-      const orderNumber = `ORD-${String(i + 1).padStart(5, '0')}`;
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const paymentStatus = paymentStatuses[Math.floor(Math.random() * paymentStatuses.length)];
-
-      return {
-        id: `order-${i + 1}`,
-        orderNumber,
-        customer: {
-          id: `customer-${Math.floor(Math.random() * 20) + 1}`,
-          name: [
-            'Sarah Johnson',
-            'Emily Chen',
-            'Maria Garcia',
-            'Jessica Smith',
-            'Ashley Wilson',
-            'Amanda Brown',
-            'Jennifer Davis',
-            'Lisa Anderson'
-          ][Math.floor(Math.random() * 8)],
-          email: `customer${i + 1}@example.com`,
-          phone: `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        },
-        status,
-        paymentStatus,
-        shippingAddress: {
-          name: 'Home',
-          street: `${123 + i} Main St`,
-          city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][i % 5],
-          state: ['NY', 'CA', 'IL', 'TX', 'AZ'][i % 5],
-          zip: String(10000 + i),
-          country: 'US',
-          phone: `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        },
-        billingAddress: {
-          name: 'Home',
-          street: `${123 + i} Main St`,
-          city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][i % 5],
-          state: ['NY', 'CA', 'IL', 'TX', 'AZ'][i % 5],
-          zip: String(10000 + i),
-          country: 'US',
-        },
-        items: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, (_, j) => ({
-          id: `item-${i}-${j}`,
-          productId: `P-${String(j + 1).padStart(3, '0')}`,
-          name: [
-            'Luxury Face Serum',
-            'Hydrating Face Cream',
-            'Anti-Aging Eye Cream',
-            'Rose Face Oil',
-            'Vitamin C Serum'
-          ][j % 5],
-          sku: `SKU-${String(j + 1).padStart(4, '0')}`,
-          variant: `Size ${['30ml', '50ml', '100ml'][j % 3]}`,
-          quantity: Math.floor(Math.random() * 2) + 1,
-          price: Math.floor(Math.random() * 100) + 20,
-          total: (Math.floor(Math.random() * 100) + 20) * (Math.floor(Math.random() * 2) + 1),
-        })),
-        pricing: {
-          subtotal: Math.floor(Math.random() * 200) + 50,
-          tax: Math.floor(Math.random() * 30) + 10,
-          shipping: Math.floor(Math.random() * 15) + 5,
-          discount: Math.floor(Math.random() * 20),
-          total: Math.floor(Math.random() * 250) + 80,
-          currency: 'USD',
-        },
-        shipping: {
-          method: ['Standard Shipping', 'Express Shipping', 'Overnight'][Math.floor(Math.random() * 3)],
-          tracking: status === 'shipped' || status === 'delivered' ? `TRK-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}` : undefined,
-          carrier: ['UPS', 'FedEx', 'USPS'][Math.floor(Math.random() * 3)],
-          cost: Math.floor(Math.random() * 15) + 5,
-          estimatedDelivery: status === 'shipped' ? new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
-        },
-        payment: {
-          method: ['Credit Card', 'PayPal', 'Apple Pay', 'Google Pay'][Math.floor(Math.random() * 4)],
-          transactionId: paymentStatus === 'paid' ? `TXN-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}` : undefined,
-          gateway: ['Stripe', 'PayPal', 'Square'][Math.floor(Math.random() * 3)],
-          paidAt: paymentStatus === 'paid' ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() : undefined,
-        },
-        notes: Math.random() > 0.7 ? 'Customer requested gift wrapping' : undefined,
-        internalNotes: Math.random() > 0.8 ? 'VIP customer - expedite processing' : undefined,
-        timeline: generateOrderTimeline(status),
-        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      };
-    });
-  };
-
-  const generateOrderTimeline = (status: AdminOrder['status']) => {
-    const now = new Date();
-    const timeline = [
-      {
-        timestamp: new Date(now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'Order placed',
-        note: 'Customer submitted order',
-        actor: 'Customer',
-      },
-    ];
-
-    if (status !== 'pending') {
-      timeline.push({
-        timestamp: new Date(now.getTime() - Math.random() * 25 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'Order confirmed',
-        note: 'Payment confirmed and order processed',
-        actor: 'System',
-      });
-    }
-
-    if (status === 'processing' || status === 'shipped' || status === 'delivered') {
-      timeline.push({
-        timestamp: new Date(now.getTime() - Math.random() * 20 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'Processing',
-        note: 'Order is being prepared for shipment',
-        actor: 'Warehouse',
-      });
-    }
-
-    if (status === 'shipped' || status === 'delivered') {
-      timeline.push({
-        timestamp: new Date(now.getTime() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'Shipped',
-        note: 'Order has been shipped',
-        actor: 'Carrier',
-      });
-    }
-
-    if (status === 'delivered') {
-      timeline.push({
-        timestamp: new Date(now.getTime() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'Delivered',
-        note: 'Order delivered successfully',
-        actor: 'Carrier',
-      });
-    }
-
-    return timeline;
   };
 
   const getStatusColor = (status: string) => {

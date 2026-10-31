@@ -28,7 +28,12 @@ export default function WarrantyProductSelector({
       </div>
 
       <div className="grid grid-cols-1 gap-2">
-        {products.map((item) => {
+        {products.length === 0 ? (
+          <div className="rounded-xl p-4 bg-[#F8FAF7] border border-[#E2DED8]/60 text-center text-xs text-[#43483f]">
+            No warranty eligible products found
+          </div>
+        ) : (
+          products.map((item) => {
           const isSelected = item.id === selectedProductId;
           return (
             <label
@@ -83,7 +88,7 @@ export default function WarrantyProductSelector({
               </div>
             </label>
           );
-        })}
+        }))}
       </div>
     </div>
   );
