@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
+        slug: true,
         sku: true,
         price: true,
         quantity: true,
@@ -57,42 +58,44 @@ export async function GET(request: NextRequest) {
           select: { url: true },
         },
         variants: {
-      select: {
-        id: true,
-        name: true,
-        sku: true,
-        price: true,
-        quantity: true,
-        attributes: true,
-        image: true,
-      },
-    },
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            price: true,
+            quantity: true,
+            attributes: true,
+            image: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     // Shape response
     const result = products.map((p) => {
-  const basePrice = parseFloat(p.price.toString());
-  return {
-    id: p.id,
-    name: p.name,
-    sku: p.sku,
-    price: basePrice,
-    stock: p.quantity,
-    isActive: p.isActive,
-    image: p.images[0]?.url ?? null,
-    variants: p.variants.map((v) => ({
-      id: v.id,
-      name: v.name,
-      sku: v.sku,
-      price: v.price ? parseFloat(v.price.toString()) : basePrice,
-      stock: v.quantity,
-      attributes: (v.attributes as Record<string, string>) ?? {},
-      image: v.image ?? undefined,
-    })),
-  };
-});
+      const basePrice = parseFloat(p.price.toString());
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        sku: p.sku,
+        price: basePrice,
+        stock: p.quantity,
+        isActive: p.isActive,
+        image: p.images[0]?.url ?? null,
+        images: p.images.map((img) => ({ url: img.url })),
+        variants: p.variants.map((v) => ({
+          id: v.id,
+          name: v.name,
+          sku: v.sku,
+          price: v.price ? parseFloat(v.price.toString()) : basePrice,
+          stock: v.quantity,
+          attributes: (v.attributes as Record<string, string>) ?? {},
+          image: v.image ?? undefined,
+        })),
+      };
+    });
 
     return NextResponse.json({ products: result });
   } catch (error) {

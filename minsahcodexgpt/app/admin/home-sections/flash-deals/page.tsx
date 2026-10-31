@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import prisma from '@/lib/prisma';
-import { normalizeFlashDealsConfig } from '@/lib/homepageConfig';
+import { normalizeFlashDealsConfig, hydrateFlashDealsWithLiveProducts } from '@/lib/homepageConfig';
 import FlashDealsAdminManager from '@/components/admin/flash-deals/FlashDealsAdminManager';
 
 export const metadata = {
@@ -16,7 +16,8 @@ export default async function AdminFlashDealsPage() {
     where: { key: 'flashDeals' },
   });
 
-  const initialConfig = normalizeFlashDealsConfig(configRecord?.value);
+  const rawConfig = normalizeFlashDealsConfig(configRecord?.value);
+  const initialConfig = await hydrateFlashDealsWithLiveProducts(rawConfig, { forAdmin: true });
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">

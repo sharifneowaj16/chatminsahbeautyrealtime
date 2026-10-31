@@ -35,13 +35,18 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
     const origPrice = Number(product.price) || 2000;
     const discountAmount = Math.max(100, Math.round(origPrice * 0.15));
     const salePrice = Math.max(1, origPrice - discountAmount);
+    const resolvedImage =
+      (Array.isArray(product.images) && product.images[0]?.url)
+        ? product.images[0].url
+        : ((product as { image?: string | null }).image || '/images/hero-image.jpg');
 
     const newDeal: FlashDealItem = {
       id: `flash-deal-${product.id}-${Date.now()}`,
       productId: product.id,
+      slug: product.slug || '',
       title: product.name,
       subtitle: 'Exclusive Flash Drop • Authentic Korean Skincare',
-      imageUrl: product.images?.[0]?.url || '/images/hero-image.jpg',
+      imageUrl: resolvedImage,
       originalPrice: origPrice,
       salePrice: salePrice,
       discountBadge: `৳${discountAmount} OFF`,
@@ -51,7 +56,7 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
       claimedPercentage: 85,
       order: nextOrder,
       isActive: true,
-      variants: Array.isArray(product.variants) && product.variants.length > 0 ? product.variants : undefined,
+      ...(Array.isArray(product.variants) && product.variants.length > 0 ? { variants: product.variants } : {}),
     };
 
     setConfig((prev) => ({

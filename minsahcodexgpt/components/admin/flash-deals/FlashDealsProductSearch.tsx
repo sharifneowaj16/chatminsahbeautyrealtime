@@ -9,6 +9,7 @@ import type { ProductVariantItem } from '@/app/(storefront)/products/[id]/compon
 export interface SearchedProduct {
   id: string;
   name: string;
+  slug?: string;
   sku?: string;
   price: number;
   quantity?: number;

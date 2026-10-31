@@ -206,24 +206,31 @@ export function normalizeFlashDealsConfig(raw: unknown): FlashDealsConfig {
 
   const items: FlashDealItem[] = rawItems.map((item, index) => {
     const it = (item && typeof item === 'object') ? (item as Record<string, unknown>) : {};
-    return {
+    const deal: FlashDealItem = {
       id: String(it.id || `flash-deal-${index}`),
       productId: String(it.productId || ''),
-      slug: it.slug ? String(it.slug) : undefined,
       title: String(it.title || 'Flash Deal Item'),
-      subtitle: it.subtitle ? String(it.subtitle) : undefined,
       imageUrl: String(it.imageUrl || '/images/hero-image.jpg'),
       originalPrice: Number(it.originalPrice) || 0,
       salePrice: Number(it.salePrice) || 0,
-      discountBadge: it.discountBadge ? String(it.discountBadge) : undefined,
-      rating: it.rating ? Number(it.rating) : undefined,
-      ratingCount: it.ratingCount ? Number(it.ratingCount) : undefined,
-      stockUrgencyText: it.stockUrgencyText ? String(it.stockUrgencyText) : undefined,
-      claimedPercentage: it.claimedPercentage != null ? Number(it.claimedPercentage) : undefined,
       order: Number(it.order) || index + 1,
       isActive: it.isActive !== false,
-      variants: Array.isArray(it.variants) ? it.variants : undefined,
     };
+
+    if (it.slug) deal.slug = String(it.slug);
+    if (it.subtitle) deal.subtitle = String(it.subtitle);
+    if (it.discountBadge) deal.discountBadge = String(it.discountBadge);
+    if (it.rating != null && Number.isFinite(Number(it.rating))) deal.rating = Number(it.rating);
+    if (it.ratingCount != null && Number.isFinite(Number(it.ratingCount))) deal.ratingCount = Number(it.ratingCount);
+    if (it.stockUrgencyText) deal.stockUrgencyText = String(it.stockUrgencyText);
+    if (it.claimedPercentage != null && Number.isFinite(Number(it.claimedPercentage))) {
+      deal.claimedPercentage = Number(it.claimedPercentage);
+    }
+    if (Array.isArray(it.variants) && it.variants.length > 0) {
+      deal.variants = it.variants;
+    }
+
+    return deal;
   });
 
   return {
@@ -237,6 +244,131 @@ export function normalizeFlashDealsConfig(raw: unknown): FlashDealsConfig {
   };
 }
 
+export async function hydrateFlashDealsWithLiveProducts(
+  config: FlashDealsConfig,
+  options?: { forAdmin?: boolean }
+): Promise<FlashDealsConfig> {
+  if (!config.items || config.items.length === 0) {
+    return config;
+  }
+
+  const productIds = Array.from(
+    new Set(
+      config.items
+        .map((item) => item.productId)
+        .filter((id): id is string => Boolean(id && typeof id === 'string' && id.trim() && id !== 'custom-deal'))
+    )
+  );
+
+  if (productIds.length === 0) {
+    return config;
+  }
+
+  try {
+    const liveProducts = await prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+        deletedAt: null,
+        ...(options?.forAdmin ? {} : { isActive: true }),
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        price: true,
+        quantity: true,
+        isActive: true,
+        images: {
+          where: { isDefault: true },
+          take: 1,
+          select: { url: true },
+        },
+        variants: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            sku: true,
+            name: true,
+            price: true,
+            quantity: true,
+            attributes: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    const liveProductMap = new Map(liveProducts.map((p) => [p.id, p]));
+    const hydratedItems: FlashDealItem[] = [];
+
+    for (const item of config.items) {
+      if (!options?.forAdmin && !item.isActive) {
+        continue;
+      }
+
+      const live = item.productId ? liveProductMap.get(item.productId) : null;
+      if (!live) {
+        // If product is deleted or missing from DB
+        if (options?.forAdmin) {
+          hydratedItems.push(item);
+        }
+        // For storefront, completely skip deleted or inactive products
+        continue;
+      }
+
+      const origPrice = Number(live.price) || item.originalPrice;
+      const salePrice = item.salePrice > 0 ? item.salePrice : Math.round(origPrice * 0.85);
+      const discountAmount = Math.max(0, origPrice - salePrice);
+      const autoBadge = discountAmount > 0 ? `৳${discountAmount} OFF` : item.discountBadge;
+
+      const liveVariants = (live.variants || []).map((v) => ({
+        id: v.id,
+        sku: v.sku || '',
+        name: v.name,
+        price: v.price ? Number(v.price) : origPrice,
+        stock: v.quantity,
+        attributes: (v.attributes && typeof v.attributes === 'object') ? (v.attributes as Record<string, string>) : null,
+        image: v.image || null,
+      }));
+
+      const resolvedImage = live.images[0]?.url || item.imageUrl || '/images/hero-image.jpg';
+
+      const stockUrgencyText =
+        live.quantity <= 5 && live.quantity > 0
+          ? `Only ${live.quantity} units left!`
+          : item.stockUrgencyText;
+
+      const hydratedDeal: FlashDealItem = {
+        ...item,
+        title: live.name || item.title,
+        slug: live.slug || item.slug,
+        originalPrice: origPrice,
+        salePrice: salePrice,
+        imageUrl: resolvedImage,
+        isActive: options?.forAdmin ? item.isActive : (item.isActive && live.isActive),
+      };
+
+      if (autoBadge) hydratedDeal.discountBadge = autoBadge;
+      if (stockUrgencyText) hydratedDeal.stockUrgencyText = stockUrgencyText;
+      if (liveVariants.length > 0) {
+        hydratedDeal.variants = liveVariants;
+      } else if (item.variants && item.variants.length > 0) {
+        hydratedDeal.variants = item.variants;
+      }
+
+      hydratedItems.push(hydratedDeal);
+    }
+
+    return {
+      ...config,
+      items: hydratedItems,
+    };
+  } catch (error) {
+    logOperationalError('flash_deals.hydration_failed', error);
+    return config;
+  }
+}
+
 export async function getHomePageConfig() {
   const [sectionsRaw, categoriesRaw, brandsRaw, heroRaw, flashDealsRaw] = await Promise.all([
     getSiteConfigValue('homeSections'),
@@ -246,12 +378,15 @@ export async function getHomePageConfig() {
     getSiteConfigValue('flashDeals'),
   ]);
 
+  const rawNormalizedFlashDeals = normalizeFlashDealsConfig(flashDealsRaw);
+  const hydratedFlashDeals = await hydrateFlashDealsWithLiveProducts(rawNormalizedFlashDeals);
+
   return {
     sections: normalizeHomeSections(sectionsRaw),
     categories: normalizeHomeCategories(categoriesRaw),
     brands: normalizeHomeBrands(brandsRaw),
     hero: normalizeHeroConfig(heroRaw),
-    flashDeals: normalizeFlashDealsConfig(flashDealsRaw),
+    flashDeals: hydratedFlashDeals,
   };
 }
 
