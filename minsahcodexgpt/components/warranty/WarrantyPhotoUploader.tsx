@@ -13,7 +13,7 @@ interface WarrantyPhotoUploaderProps {
 
 export default function WarrantyPhotoUploader({
   hasUploadedPhoto,
-  uploadedPhotoUrl = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200&auto=format&fit=crop&q=80',
+  uploadedPhotoUrl = '/images/categories/Skincare.png',
   onRemovePhoto,
   onAddPhoto,
 }: WarrantyPhotoUploaderProps) {

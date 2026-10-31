@@ -73,7 +73,7 @@ export default function SeedHeroActionReel({
         title: r.title || 'Texture & Application Demo',
         creator: r.creator || '@minsahbeauty',
         avatarText: r.avatarText || r.creator?.replace('@', '').slice(0, 1).toUpperCase() || 'M',
-        posterUrl: safeImageUrl(r.posterUrl || r.image || r.thumbnail, 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80'),
+        posterUrl: safeImageUrl(r.posterUrl || r.image || r.thumbnail, '/images/categories/Skincare.png'),
         videoUrl: (r.videoUrl && typeof r.videoUrl === 'string' && r.videoUrl.trim() !== '') ? r.videoUrl.trim() : (r.url && typeof r.url === 'string' && r.url.trim() !== '') ? r.url.trim() : undefined,
       }));
     }
@@ -88,7 +88,7 @@ export default function SeedHeroActionReel({
           title: r.title || 'Texture & Application Demo',
           creator: r.creator || '@minsahbeauty',
           avatarText: r.avatarText || r.creator?.replace('@', '').slice(0, 1).toUpperCase() || 'M',
-          posterUrl: safeImageUrl(r.posterUrl || r.image || r.thumbnail, 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80'),
+          posterUrl: safeImageUrl(r.posterUrl || r.image || r.thumbnail, '/images/categories/Skincare.png'),
           videoUrl: (r.videoUrl && typeof r.videoUrl === 'string' && r.videoUrl.trim() !== '') ? r.videoUrl.trim() : (r.url && typeof r.url === 'string' && r.url.trim() !== '') ? r.url.trim() : undefined,
         }));
       }

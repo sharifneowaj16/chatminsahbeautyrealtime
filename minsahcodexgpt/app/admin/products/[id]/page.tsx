@@ -367,7 +367,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid grid-cols-3 gap-2">
               <div className="relative rounded-lg overflow-hidden border-2 border-[#4edea3] aspect-square">
                 <img
-                  src="https://images.unsplash.com/photo-1608248597359-0a67262a5b28?w=200&auto=format&fit=crop&q=80"
+                  src="/images/categories/Skincare.png"
                   alt="Cover"
                   className="w-full h-full object-cover"
                 />
@@ -377,7 +377,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="rounded-lg overflow-hidden border border-[#273647] aspect-square">
                 <img
-                  src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200&auto=format&fit=crop&q=80"
+                  src="/images/categories/Skincare.png"
                   alt="Angle 2"
                   className="w-full h-full object-cover"
                 />

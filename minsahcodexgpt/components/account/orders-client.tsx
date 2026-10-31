@@ -224,7 +224,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           image:
             typeof item.productImage === 'string' && item.productImage.trim()
               ? item.productImage
-              : 'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80',
+              : '/images/categories/Skincare.png',
         })),
         transitProgress: isTransit
           ? {

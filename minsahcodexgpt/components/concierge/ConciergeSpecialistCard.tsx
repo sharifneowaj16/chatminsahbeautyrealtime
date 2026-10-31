@@ -20,13 +20,8 @@ export function ConciergeSpecialistCard() {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative flex-shrink-0">
-            <div className="w-14 h-14 rounded-full overflow-hidden bg-[#e9e8e5] border-2 border-white shadow-sm flex items-center justify-center">
-              {/* Specialist Image */}
-              <img
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
-                alt="Farhana K. Senior Concierge"
-                className="w-full h-full object-cover"
-              />
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-[#062402] text-[#ccee9b] border-2 border-white shadow-sm flex items-center justify-center font-bold text-base select-none">
+              MB
             </div>
             <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#062402] text-[#ccee9b] flex items-center justify-center shadow">
               <Sparkles className="w-3 h-3" />

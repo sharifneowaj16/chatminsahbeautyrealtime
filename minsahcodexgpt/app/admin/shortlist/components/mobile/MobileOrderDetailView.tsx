@@ -29,8 +29,8 @@ export default function MobileOrderDetailView({
 }: MobileOrderDetailViewProps) {
   const orderNumber = orderId.startsWith('ORD-') ? orderId : `#ORD-${orderId}`;
   const [loading, setLoading] = React.useState(true);
-  const [customerName, setCustomerName] = React.useState('Ayesha Siddiqua');
-  const [customerPhone, setCustomerPhone] = React.useState('01712-345678');
+  const [customerName, setCustomerName] = React.useState('Customer');
+  const [customerPhone, setCustomerPhone] = React.useState('01XXXXXXXXX');
   const [customerAddress, setCustomerAddress] = React.useState(
     'House 14, Road 5, Uttara Sector 4, Dhaka-1230'
   );

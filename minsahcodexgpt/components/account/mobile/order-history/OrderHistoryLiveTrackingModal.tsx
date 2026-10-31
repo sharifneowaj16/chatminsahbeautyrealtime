@@ -55,13 +55,7 @@ export default function OrderHistoryLiveTrackingModal({
         </div>
 
         {/* Mini Map View */}
-        <div
-          className="w-full h-44 rounded-2xl bg-cover bg-center relative overflow-hidden flex items-end p-3 shadow-sm border border-[#E2DED8]"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=700&q=80')",
-          }}
-        >
+        <div className="w-full h-44 rounded-2xl bg-gradient-to-br from-[#062402] via-[#153410] to-[#1c3a13] relative overflow-hidden flex items-end p-3 shadow-sm border border-[#E2DED8]">
           <div className="absolute inset-0 bg-gradient-to-t from-[#062402]/80 via-transparent to-transparent pointer-events-none" />
           <div className="relative z-10 flex items-center justify-between w-full text-white">
             <div className="flex items-center gap-2">

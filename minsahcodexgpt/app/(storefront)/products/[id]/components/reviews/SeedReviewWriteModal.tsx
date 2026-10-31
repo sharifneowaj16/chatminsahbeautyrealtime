@@ -262,7 +262,7 @@ export function SeedReviewWriteModal({
                   type="url"
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/... or image link"
+                  placeholder="https://example.com/review-photo.jpg"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-base sm:text-xs text-gray-900 outline-none focus:ring-2 focus:ring-[#1C3A13]"
                 />
                 <button

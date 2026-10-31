@@ -48,8 +48,7 @@ export default async function ReturnReasonsPage() {
           productId: 'prod-1',
           productName: 'Beauty of Joseon Relief Sun Rice + Probiotics (50ml)',
           productSlug: 'beauty-of-joseon-relief-sun',
-          productImage:
-            'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&auto=format&fit=crop&q=80',
+          productImage: '/images/categories/Skincare.png',
           quantity: 1,
           price: 1350,
           totalPrice: 1350,

@@ -35,7 +35,7 @@ interface Shipment {
 }
 
 const INITIAL_SHIPMENTS: Shipment[] = [
-  { orderId: '#ORD-2847', customer: 'Fatima Rahman', phone: '01712-345678', district: 'Dhanmondi, Dhaka', courier: 'Steadfast', consignmentId: 'CN-884920', weight: '0.6 kg', codAmount: 3310, status: 'In Transit', createdAt: '2024-10-21 14:30' },
+  { orderId: '#ORD-2847', customer: 'Fatima Rahman', phone: '01712-111222', district: 'Dhanmondi, Dhaka', courier: 'Steadfast', consignmentId: 'CN-884920', weight: '0.6 kg', codAmount: 3310, status: 'In Transit', createdAt: '2024-10-21 14:30' },
   { orderId: '#ORD-2848', customer: 'Tamanna Chowdhury', phone: '01819-234567', district: 'Chittagong Sadar', courier: 'Steadfast', consignmentId: 'CN-884921', weight: '1.2 kg', codAmount: 4850, status: 'Out for Delivery', createdAt: '2024-10-21 11:20' },
   { orderId: '#ORD-2849', customer: 'Nusrat Jahan', phone: '01611-987654', district: 'Uttara, Dhaka', courier: 'Pathao', consignmentId: 'PTH-33901', weight: '0.4 kg', codAmount: 2150, status: 'Pending Dispatch', createdAt: '2024-10-21 16:15' },
   { orderId: '#ORD-2850', customer: 'Sumiya Khan', phone: '01912-112233', district: 'Sylhet Kotwali', courier: 'Steadfast', consignmentId: 'CN-884922', weight: '0.8 kg', codAmount: 2900, status: 'Delivered', createdAt: '2024-10-20 09:40' },

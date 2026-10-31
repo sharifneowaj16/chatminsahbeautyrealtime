@@ -111,7 +111,7 @@ export function CreateAccountCard({
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="e.g. Tasneem Ahmed"
+            placeholder="Enter your full name"
             className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 text-[#181C1A] focus:border-[#1c3a13] focus:outline-none"
           />
         </div>
@@ -141,7 +141,7 @@ export function CreateAccountCard({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="tasneem@example.com"
+            placeholder="you@example.com"
             className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 text-[#181C1A] focus:border-[#1c3a13] focus:outline-none"
           />
         </div>

@@ -43,8 +43,7 @@ export default function LiveTrackingPackageItemsCard({
                   alt={item.title}
                   className="w-full h-full object-contain rounded-lg"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80';
+                    (e.currentTarget as HTMLImageElement).src = '/images/categories/Skincare.png';
                   }}
                 />
               </div>

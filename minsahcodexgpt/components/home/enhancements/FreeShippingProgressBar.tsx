@@ -334,7 +334,7 @@ export function FreeShippingProgressBar({
                       <img
                         alt="Laneige Mini"
                         className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                        src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=150&q=80"
+                        src="/images/categories/Skincare.png"
                       />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -372,7 +372,7 @@ export function FreeShippingProgressBar({
                       <img
                         alt="Anua Calming Sheet Mask"
                         className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                        src="https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=150&q=80"
+                        src="/images/categories/Skincare.png"
                       />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -410,7 +410,7 @@ export function FreeShippingProgressBar({
                       <img
                         alt="Arisol Sunscreen Mini"
                         className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                        src="https://images.unsplash.com/photo-1570554886111-e80fcca6a029?auto=format&fit=crop&w=150&q=80"
+                        src="/images/categories/Skincare.png"
                       />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -451,7 +451,7 @@ export function FreeShippingProgressBar({
                     <img
                       alt="Elixir Serum"
                       className="w-full h-full object-contain"
-                      src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=150&q=80"
+                      src="/images/categories/Skincare.png"
                     />
                   </div>
                   <div>
@@ -645,7 +645,7 @@ export function FreeShippingProgressBar({
                       <img
                         alt="Elixir Serum"
                         className="w-full h-full object-contain"
-                        src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=150&q=80"
+                        src="/images/categories/Skincare.png"
                       />
                     </div>
                     <div>
@@ -664,7 +664,7 @@ export function FreeShippingProgressBar({
                       <img
                         alt="Sunscreen"
                         className="w-full h-full object-contain"
-                        src="https://images.unsplash.com/photo-1570554886111-e80fcca6a029?auto=format&fit=crop&w=150&q=80"
+                        src="/images/categories/Skincare.png"
                       />
                     </div>
                     <div>

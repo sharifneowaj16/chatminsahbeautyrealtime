@@ -13,71 +13,17 @@ import SpecsPackagingSection from './SpecsPackagingSection';
 import StickyBundleConversionBar from './StickyBundleConversionBar';
 import { ComparisonProduct, CompareFilterCategory } from './types';
 
-const sampleProductA: ComparisonProduct = {
-  id: 'elixir-vital-serum',
-  name: 'Glass Skin Serum',
-  subtitle: 'Rejuvenating K-Beauty Hydration',
-  brand: 'Elixir Vital',
-  image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&auto=format&fit=crop&q=80',
-  size: '30ml Amber Dropper',
-  price: 1890,
-  originalPrice: 2650,
-  discountPercentage: 28,
-  rating: 4.9,
-  reviewCount: 340,
-  routineStep: 'Step 03 · Serum',
-  bestFor: 'Intense Hydration & Dewy Glass Glow',
-  targetSkinTypes: ['Dry', 'Dehydrated', 'Normal'],
-  targetSkinNote: 'Restores tight, parched lipid barriers and moisture sheen.',
-  coreBenefit: 'Deep micro-hyaluronic moisture reservoir plumpness.',
-  heroActiveName: 'Quad-Hyaluronic',
-  heroActiveDesc: '4 molecular weights + 2% Niacinamide & Centella Asiatica.',
-  cleanBadges: ['100% Clean', 'Hypoallergenic'],
-  cleanDesc: 'Fragrance, Alcohol & Essential Oil Free.',
-  comedogenicRating: '0 / 5 (Zero Clog)',
-  textureName: 'Silky Essence Dew',
-  textureDesc: 'Bouncy drop texture. Dries into smooth lit-from-within moisture sheen.',
-  humidityScore: 9.2,
-  humidityNote: 'Ideal for AC / Night Routine',
-  pillingNote: 'Zero Pilling under Sunscreen',
-  bottleType: '30ml Amber Glass Dropper',
-  bottleDesc: 'Travel friendly, luxury UV-protected finish.',
-};
+interface ProductComparisonMobileViewProps {
+  initialProductA?: ComparisonProduct | null;
+  initialProductB?: ComparisonProduct | null;
+}
 
-const sampleProductB: ComparisonProduct = {
-  id: 'anua-heartleaf-toner',
-  name: 'Heartleaf 77% Toner',
-  subtitle: 'Acne-Safe Calming Prep',
-  brand: 'Anua',
-  image: 'https://images.unsplash.com/photo-1608248597359-450419266730?w=400&auto=format&fit=crop&q=80',
-  size: '250ml Sealed Bottle',
-  price: 2100,
-  originalPrice: 2700,
-  discountPercentage: 22,
-  rating: 4.8,
-  reviewCount: 215,
-  routineStep: 'Step 01 · Toner Prep',
-  bestFor: 'Redness Calming & Acne Soothing',
-  targetSkinTypes: ['Sensitive', 'Acne-Prone', 'Oily'],
-  targetSkinNote: 'Pacifies flares, micro-bumps, irritation & rosacea.',
-  coreBenefit: 'Rapid redness reduction, heat dissipation & pH 5.5 balance.',
-  heroActiveName: '77% Heartleaf',
-  heroActiveDesc: 'Houttuynia Cordata extract + Panthenol & Betaine calming blend.',
-  cleanBadges: ['100% Clean', 'EWG Green'],
-  cleanDesc: 'Hypoallergenic & EWG Green Grade Actives.',
-  comedogenicRating: '0 / 5 (Zero Clog)',
-  textureName: 'Ultra-Light Water',
-  textureDesc: 'Absorbs instantly. 0% greasiness or tacky feel even in humid room air.',
-  humidityScore: 9.8,
-  humidityNote: 'Flawless in Peak Heat & Sweat',
-  pillingNote: 'Zero Pilling under Sunscreen',
-  bottleType: '250ml High-Cap Sealed Bottle',
-  bottleDesc: 'Generous 3-4 months daily morning and evening use.',
-};
-
-export default function ProductComparisonMobileView() {
-  const [productA, setProductA] = useState<ComparisonProduct>(sampleProductA);
-  const [productB, setProductB] = useState<ComparisonProduct>(sampleProductB);
+export default function ProductComparisonMobileView({
+  initialProductA = null,
+  initialProductB = null,
+}: ProductComparisonMobileViewProps) {
+  const [productA, setProductA] = useState<ComparisonProduct | null>(initialProductA);
+  const [productB, setProductB] = useState<ComparisonProduct | null>(initialProductB);
   const [activeCategory, setActiveCategory] = useState<CompareFilterCategory>('all');
   const [leftSearch, setLeftSearch] = useState('');
   const [rightSearch, setRightSearch] = useState('');
@@ -106,45 +52,69 @@ export default function ProductComparisonMobileView() {
           onLeftChange={setLeftSearch}
           onRightChange={setRightSearch}
         />
-        <div className="grid grid-cols-2 gap-2 px-4 pb-3">
-          <CompareProductHeaderCard
-            product={productA}
-            onAddToCart={() => alert(`Added ${productA.name} to bag!`)}
-          />
-          <CompareProductHeaderCard
-            product={productB}
-            onAddToCart={() => alert(`Added ${productB.name} to bag!`)}
-          />
+        {productA && productB && (
+          <div className="grid grid-cols-2 gap-2 px-4 pb-3">
+            <CompareProductHeaderCard
+              product={productA}
+              onAddToCart={() => alert(`Added ${productA.name} to bag!`)}
+            />
+            <CompareProductHeaderCard
+              product={productB}
+              onAddToCart={() => alert(`Added ${productB.name} to bag!`)}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Matrix Sections or Empty State */}
+      {!productA || !productB ? (
+        <div className="px-4 py-16 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#EAF7D8] text-[#1c3a13] flex items-center justify-center mb-4">
+            <span className="material-symbols-outlined text-3xl text-[#4b6723]">compare</span>
+          </div>
+          <h3 className="text-base font-bold text-[#062402] mb-1.5">
+            Select Two Products to Compare
+          </h3>
+          <p className="text-xs text-[#5A615D] max-w-xs mb-6">
+            Select two products from the shop to compare formulations, actives, and Dhaka climate performance.
+          </p>
+          <a
+            href="/shop"
+            className="px-6 py-2.5 rounded-full bg-[#062402] text-[#D4F6A2] font-bold text-xs shadow-md transition hover:bg-[#1c3a13]"
+          >
+            Browse Skincare Shop
+          </a>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="px-4 pt-4 space-y-4">
+            <AuthenticityTrustBanner />
 
-      {/* Main Content Matrix Sections */}
-      <div className="px-4 pt-4 space-y-4">
-        <AuthenticityTrustBanner />
+            {(activeCategory === 'all' || activeCategory === 'skin') && (
+              <SpecsGlanceSection productA={productA} productB={productB} />
+            )}
 
-        {(activeCategory === 'all' || activeCategory === 'skin') && (
-          <SpecsGlanceSection productA={productA} productB={productB} />
-        )}
+            {(activeCategory === 'all' || activeCategory === 'actives') && (
+              <SpecsActivesSection productA={productA} productB={productB} />
+            )}
 
-        {(activeCategory === 'all' || activeCategory === 'actives') && (
-          <SpecsActivesSection productA={productA} productB={productB} />
-        )}
+            {(activeCategory === 'all' || activeCategory === 'climate') && (
+              <SpecsClimateSection productA={productA} productB={productB} />
+            )}
 
-        {(activeCategory === 'all' || activeCategory === 'climate') && (
-          <SpecsClimateSection productA={productA} productB={productB} />
-        )}
+            {activeCategory === 'all' && (
+              <SpecsPackagingSection productA={productA} productB={productB} />
+            )}
+          </div>
 
-        {activeCategory === 'all' && (
-          <SpecsPackagingSection productA={productA} productB={productB} />
-        )}
-      </div>
-
-      {/* Sticky Bottom Bundle Conversion Bar */}
-      <StickyBundleConversionBar
-        productA={productA}
-        productB={productB}
-        onAddBundle={handleAddBundle}
-      />
+          {/* Sticky Bottom Bundle Conversion Bar */}
+          <StickyBundleConversionBar
+            productA={productA}
+            productB={productB}
+            onAddBundle={handleAddBundle}
+          />
+        </>
+      )}
     </div>
   );
 }

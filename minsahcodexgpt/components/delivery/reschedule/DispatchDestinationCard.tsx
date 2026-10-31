@@ -9,14 +9,11 @@ interface DispatchDestinationCardProps {
 }
 
 export function DispatchDestinationCard({
-  address = {
-    label: 'Home',
-    addressLine: 'House 14, Road 7, Block E, Banani Model Town',
-    areaCity: 'Dhaka-1213',
-    phone: '+880 1712-894102',
-  },
+  address,
   onChangeAddress,
 }: DispatchDestinationCardProps) {
+  if (!address) return null;
+
   return (
     <div className="bg-white border border-[#EADFD5] rounded-2xl p-4 flex items-start justify-between gap-3 shadow-xs">
       <div className="flex items-start gap-3">

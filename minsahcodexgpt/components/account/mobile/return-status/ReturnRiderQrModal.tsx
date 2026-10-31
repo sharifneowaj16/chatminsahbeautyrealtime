@@ -13,7 +13,7 @@ export function ReturnRiderQrModal({
   isOpen,
   onClose,
   returnNumber,
-  riderName = 'Tariqul I.',
+  riderName = 'Courier Agent',
 }: ReturnRiderQrModalProps) {
   if (!isOpen) return null;
 

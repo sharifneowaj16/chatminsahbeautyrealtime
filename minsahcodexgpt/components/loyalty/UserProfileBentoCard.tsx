@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { Smartphone, MapPin, Sparkles, Wallet, Truck, Check } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { LoyaltyUserStats } from './types';
 
 interface UserProfileBentoCardProps {
@@ -14,18 +14,22 @@ export default function UserProfileBentoCard({
   stats,
   onOpenBreakdown,
 }: UserProfileBentoCardProps) {
+  const { user } = useAuth();
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || (user?.email ? user.email.split('@')[0] : 'Guest Member');
+  const initials = fullName
+    .split(' ')
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'MB';
+
   return (
     <div className="bg-[#F2F6F0] rounded-2xl p-3.5 shadow-sm border border-[#E2DED8]/60 relative overflow-hidden">
       <div className="flex items-center gap-3">
-        {/* User Avatar */}
-        <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-[#062402]/20">
-          <Image
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
-            alt="User avatar"
-            fill
-            sizes="56px"
-            className="object-cover"
-          />
+        {/* User Avatar Initials Badge */}
+        <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-[#062402]/20 bg-[#062402] text-[#ccee9b] flex items-center justify-center font-bold text-base select-none">
+          {initials}
           <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#4b6723] rounded-full flex items-center justify-center ring-1 ring-white">
             <Check className="w-2.5 h-2.5 text-white" />
           </div>
@@ -35,20 +39,22 @@ export default function UserProfileBentoCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <h2 className="text-[16px] text-[#062402] font-bold tracking-tight truncate">
-              Tasneem Ahmed
+              {fullName}
             </h2>
             <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#062402] text-white text-[10px] font-bold">
               <Sparkles className="w-2.5 h-2.5 text-[#D4F6A2]" />
               Minsah VIP
             </span>
           </div>
-          <p className="text-[12px] text-[#43483f] flex items-center gap-1 mt-0.5">
-            <Smartphone className="w-3.5 h-3.5" />
-            +880 1712-894102
-          </p>
+          {user?.phone && (
+            <p className="text-[12px] text-[#43483f] flex items-center gap-1 mt-0.5">
+              <Smartphone className="w-3.5 h-3.5" />
+              {user.phone}
+            </p>
+          )}
           <p className="text-[11px] text-[#43483f]/80 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5" />
-            Banani, Dhaka-1213
+            Dhaka, Bangladesh
           </p>
         </div>
       </div>

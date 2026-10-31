@@ -51,7 +51,7 @@ export function NewInAutoIOSScrollSection() {
         <article className="min-w-[210px] w-[210px] shrink-0 snap-start flex flex-col rounded-3xl bg-white p-3 shadow-xs border border-[#E2DED8]/60">
           <div className="relative w-full aspect-square rounded-2xl bg-[#F8FAF7] overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80"
+              src="/images/categories/Skincare.png"
               alt="Anua Toner"
               className="w-full h-full object-cover"
             />
@@ -96,7 +96,7 @@ export function NewInAutoIOSScrollSection() {
         <article className="min-w-[210px] w-[210px] shrink-0 snap-start flex flex-col rounded-3xl bg-white p-3 shadow-xs border border-[#E2DED8]/60">
           <div className="relative w-full aspect-square rounded-2xl bg-[#F8FAF7] overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=300&q=80"
+              src="/images/categories/Skincare.png"
               alt="Laneige Lip Mask"
               className="w-full h-full object-cover"
             />
@@ -141,7 +141,7 @@ export function NewInAutoIOSScrollSection() {
         <article className="min-w-[210px] w-[210px] shrink-0 snap-start flex flex-col rounded-3xl bg-white p-3 shadow-xs border border-[#E2DED8]/60">
           <div className="relative w-full aspect-square rounded-2xl bg-[#F8FAF7] overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1608248597359-2c6b4d326efc?auto=format&fit=crop&w=300&q=80"
+              src="/images/categories/Skincare.png"
               alt="Snail Mucin"
               className="w-full h-full object-cover"
             />

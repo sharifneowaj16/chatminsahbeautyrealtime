@@ -240,8 +240,7 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
       rating: item.rating || 4.9,
       reviewCount: item.reviewCount || 120,
       image:
-        item.productImage ||
-        'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80',
+        item.productImage || '/images/categories/Skincare.png',
       category: (item.category?.toLowerCase?.().includes('sun')
         ? 'suncare'
         : item.category?.toLowerCase?.().includes('serum')

@@ -48,9 +48,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [isLoading, setIsLoading] = useState(false);
 
   const [customerInfo, setCustomerInfo] = useState({
-    name: 'Fatima Rahman',
-    phone: '01712-345678',
-    email: 'fatima.rahman@gmail.com',
+    name: 'Customer Name',
+    phone: '01XXXXXXXXX',
+    email: 'customer@example.com',
     address: 'House 42, Road 9/A, Dhanmondi R/A, Dhaka-1209',
     city: 'Dhaka',
   });
@@ -64,7 +64,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       price: 850,
       qty: 2,
       total: 1700,
-      image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=120&auto=format&fit=crop&q=80'
+      image: '/images/categories/Skincare.png'
     },
     {
       id: '2',
@@ -74,7 +74,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       price: 1750,
       qty: 1,
       total: 1750,
-      image: 'https://images.unsplash.com/photo-1608248597359-0a67262a5b28?w=120&auto=format&fit=crop&q=80'
+      image: '/images/categories/Skincare.png'
     }
   ]);
 
@@ -134,7 +134,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               price: Number(it.price || 0),
               qty: it.quantity || 1,
               total: Number(it.total || (Number(it.price || 0) * (it.quantity || 1))),
-              image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=120&auto=format&fit=crop&q=80',
+              image: it.image || '/images/categories/Skincare.png',
             }));
             setOrderItems(mappedItems);
           }

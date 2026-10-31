@@ -101,8 +101,7 @@ export default function WishlistSwipeItemCard({
               alt={item.name}
               className="w-full h-full object-cover object-center pointer-events-none"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src =
-                  'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80';
+                (e.currentTarget as HTMLImageElement).src = '/images/categories/Skincare.png';
               }}
             />
             {item.discountPercent && (

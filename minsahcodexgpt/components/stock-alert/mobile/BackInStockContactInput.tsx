@@ -10,8 +10,8 @@ interface BackInStockContactInputProps {
 }
 
 export function BackInStockContactInput({
-  initialContact = '+880 1712-894102',
-  userName = 'Tasneem Ahmed',
+  initialContact = '',
+  userName = '',
   onChangeContact,
 }: BackInStockContactInputProps) {
   const [contact, setContact] = useState(initialContact);
@@ -30,10 +30,12 @@ export function BackInStockContactInput({
         <span className="font-semibold text-[#2D1F18]">
           Contact Number / Email:
         </span>
-        <span className="text-emerald-800 flex items-center gap-1 font-semibold text-[11px]">
-          <CheckCircle className="w-3.5 h-3.5" />
-          <span>{userName} (Verified)</span>
-        </span>
+        {userName ? (
+          <span className="text-emerald-800 flex items-center gap-1 font-semibold text-[11px]">
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span>{userName} (Verified)</span>
+          </span>
+        ) : null}
       </div>
 
       <div className="relative">
@@ -45,6 +47,7 @@ export function BackInStockContactInput({
           value={contact}
           onChange={handleChange}
           readOnly={!isEditing}
+          placeholder="01XXXXXXXXX"
           className={`w-full pl-10 pr-20 py-2.5 rounded-2xl bg-white border border-[#EADFD5] text-[#2D1F18] text-xs font-semibold focus:outline-none focus:border-emerald-800 transition-all shadow-xs ${
             !isEditing ? 'cursor-default' : ''
           }`}

@@ -17,8 +17,7 @@ export default function OrderHistoryProductItem({ product }: OrderHistoryProduct
           className="w-full h-full object-cover rounded-lg"
           onError={(e) => {
             // Fallback placeholder if broken URL
-            (e.currentTarget as HTMLImageElement).src =
-              'https://images.unsplash.com/photo-1608248597359-5773179267ff?auto=format&fit=crop&w=300&q=80';
+            (e.currentTarget as HTMLImageElement).src = '/images/categories/Skincare.png';
           }}
         />
       </div>

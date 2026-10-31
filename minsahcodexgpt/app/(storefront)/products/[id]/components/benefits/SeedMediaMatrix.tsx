@@ -83,7 +83,7 @@ const DEFAULT_FAQS: BenefitFaqItem[] = [
  */
 export function SeedMediaMatrix({
   videoUrl,
-  posterUrl = "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
+  posterUrl = "/images/categories/Skincare.png",
   captionText = "Biologically engineered for rapid barrier penetration and cellular calm...",
   faqs = DEFAULT_FAQS,
   productName = "this product",

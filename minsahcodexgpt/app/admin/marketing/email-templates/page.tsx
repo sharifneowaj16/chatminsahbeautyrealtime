@@ -369,7 +369,7 @@ export default function EmailTemplatesPage() {
                 {/* Footer */}
                 <div className="bg-[#f3f4f6] p-4 text-center text-[10px] text-[#9ca3af] border-t border-[#e5e7eb]">
                   <p>© 2024 Minsah Beauty Bangladesh. All rights reserved.</p>
-                  <p className="mt-0.5">Dhanmondi, Dhaka-1205 • Helpline: 01712-345678</p>
+                  <p className="mt-0.5">Dhanmondi, Dhaka-1205 • Helpline: {'{{support_phone}}'}</p>
                 </div>
               </div>
             </div>

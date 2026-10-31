@@ -41,7 +41,7 @@ const DEFAULT_STEPS: TelemetryStep[] = [
     description: 'Steadfast / Pathao courier rider is heading to your doorstep.',
     status: 'active',
     distance: '1.4 km away',
-    riderName: 'Tariqul I.',
+    riderName: 'Courier Agent',
     eta: '~14 mins',
   },
   {

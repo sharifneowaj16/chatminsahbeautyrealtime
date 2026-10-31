@@ -15,8 +15,8 @@ export function ReturnStatusHeroCard({
   returnNumber,
   orderNumber,
   pickupWindow = '3:00 PM – 5:30 PM',
-  riderName = 'Tariqul I.',
-  riderPhone = '+8801712345678',
+  riderName,
+  riderPhone,
   onReschedule,
 }: ReturnStatusHeroCardProps) {
   return (
@@ -71,20 +71,26 @@ export function ReturnStatusHeroCard({
               {pickupWindow}
             </span>
             <p className="text-[11px] text-[#acd19b] truncate mt-0.5">
-              Paperfly Reverse Express • {riderName} Assigned
+              Paperfly Reverse Express{riderName ? ` • ${riderName} Assigned` : ' • Rider assigning soon'}
             </p>
           </div>
         </div>
 
         {/* Hero Quick Actions */}
         <div className="grid grid-cols-2 gap-2.5 pt-1">
-          <a
-            href={`tel:${riderPhone}`}
-            className="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-full bg-[#D4F6A2] text-[#062402] text-xs font-bold tracking-wide active:scale-95 transition-all shadow-md hover:shadow-lg"
-          >
-            <Phone className="w-4 h-4" />
-            <span>Call Rider</span>
-          </a>
+          {riderPhone ? (
+            <a
+              href={`tel:${riderPhone}`}
+              className="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-full bg-[#D4F6A2] text-[#062402] text-xs font-bold tracking-wide active:scale-95 transition-all shadow-md hover:shadow-lg"
+            >
+              <Phone className="w-4 h-4" />
+              <span>Call Rider</span>
+            </a>
+          ) : (
+            <div className="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-full bg-white/10 text-white/60 text-xs font-medium">
+              <span>Rider pending</span>
+            </div>
+          )}
           <button
             type="button"
             onClick={onReschedule}

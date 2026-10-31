@@ -31,13 +31,7 @@ export function InteractiveMapPinpoint({ onLocationDetected }: InteractiveMapPin
     <section className="px-4 pt-1 pb-2 flex flex-col gap-2">
       <div className="relative w-full h-44 rounded-2xl overflow-hidden shadow-xs border border-[#E2DED8]">
         {/* Map Background layer with Travertine / Street styling */}
-        <div
-          className="w-full h-full bg-cover bg-center transition-transform duration-700 hover:scale-105"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80')",
-          }}
-        />
+        <div className="w-full h-full bg-gradient-to-br from-[#062402] via-[#153410] to-[#1c3a13] transition-transform duration-700" />
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#062402]/60 via-transparent to-[#062402]/20 pointer-events-none" />

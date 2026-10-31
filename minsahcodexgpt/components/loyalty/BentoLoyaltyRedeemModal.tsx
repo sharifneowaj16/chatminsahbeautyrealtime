@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BentoLoyaltyRedeemModalProps {
   isOpen?: boolean;
@@ -15,6 +16,7 @@ export function BentoLoyaltyRedeemModal({
   onClose: controlledOnClose,
   onOpenBreakdown,
 }: BentoLoyaltyRedeemModalProps) {
+  const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
@@ -383,7 +385,8 @@ export function BentoLoyaltyRedeemModal({
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard?.writeText(window.location.origin + "?ref=MINSAH-TASNEEM");
+                const refParam = user?.referralCode ? `?ref=${encodeURIComponent(user.referralCode)}` : "";
+                navigator.clipboard?.writeText(window.location.origin + refParam);
                 alert("Referral link copied! Share with friends to earn +200 Glow Points.");
               }}
               className="shrink-0 py-1.5 px-3 rounded-full bg-[#062402] hover:bg-[#1c3a13] text-[#ccee9b] font-label-md text-[11px] font-bold active:scale-95 transition-all shadow-xs flex items-center gap-1"

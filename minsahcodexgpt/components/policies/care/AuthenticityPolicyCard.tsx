@@ -14,7 +14,7 @@ export function AuthenticityPolicyCard() {
       <div className="relative overflow-hidden rounded-2xl border border-[#E2DED8]/60 bg-[#F8FAF7] shadow-xs mb-4">
         <div className="relative h-36 w-full">
           <Image
-            src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80"
+            src="/images/categories/Skincare.png"
             alt="Authentic Worldwide Skincare"
             fill
             sizes="100vw"

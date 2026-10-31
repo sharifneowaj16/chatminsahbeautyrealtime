@@ -12,14 +12,14 @@ import { AddressCategory, TimingSlot } from "./types";
 
 export function AddNewAddressMobileView() {
   const [category, setCategory] = useState<AddressCategory>("Home");
-  const [name, setName] = useState("Tasneem Ahmed");
-  const [phone, setPhone] = useState("1712 345678");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [division, setDivision] = useState("Dhaka");
-  const [area, setArea] = useState("Banani (Zone 1)");
-  const [streetAddress, setStreetAddress] = useState("House 14, Road 7, Block E, Apt 4B");
-  const [landmark, setLandmark] = useState("Opposite Banani Club entrance, ring bell 4B");
+  const [area, setArea] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [timingSlot, setTimingSlot] = useState<TimingSlot>("anytime");
-  const [isDefault, setIsDefault] = useState(true);
+  const [isDefault, setIsDefault] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const handleSave = () => {

@@ -92,8 +92,7 @@ export default async function ReturnTrackPage({
             name: 'Laneige Lip Sleeping Mask (Berry 20g)',
             quantity: 1,
             price: 1720,
-            image:
-              'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300&auto=format&fit=crop&q=80',
+            image: '/images/categories/Skincare.png',
             issueDescription: 'Broken seal upon unboxing • 100% Covered under Warranty',
           },
         ],

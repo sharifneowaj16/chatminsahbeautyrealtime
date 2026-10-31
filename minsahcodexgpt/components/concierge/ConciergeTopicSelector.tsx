@@ -9,7 +9,7 @@ export const CONCIERGE_TOPICS: ConciergeTopic[] = [
     label: '🔐 Unlock My Account & OTP',
     iconName: 'lock_open',
     incomingMessage:
-      'Assalamu Alaikum Tasneem! 🌿 I see your OTP entry was paused. Would you like me to send an instant 1-tap WhatsApp security login token, or verify via voice call?',
+      'Assalamu Alaikum! 🌿 I see your OTP entry was paused. Would you like me to send an instant 1-tap WhatsApp security login token, or verify via voice call?',
     suggestedDraft: 'Yes please, send my login token on WhatsApp →',
   },
   {
@@ -17,7 +17,7 @@ export const CONCIERGE_TOPICS: ConciergeTopic[] = [
     label: '📦 Track Dhaka Delivery',
     iconName: 'local_shipping',
     incomingMessage:
-      'Hello Tasneem! 📦 I have your Dhaka city courier manifest loaded. Would you like me to send the live rider contact & ETA to your WhatsApp?',
+      'Hello! 📦 I have your Dhaka city courier manifest loaded. Would you like me to send the live rider contact & ETA to your WhatsApp?',
     suggestedDraft: 'Please share my Dhaka delivery rider details →',
   },
   {
@@ -25,7 +25,7 @@ export const CONCIERGE_TOPICS: ConciergeTopic[] = [
     label: '🌿 Routine Consultation',
     iconName: 'spa',
     incomingMessage:
-      "Welcome Tasneem! 🌿 Looking to adjust your hydration step for the Dhaka humidity? Let's curate your customized regimen right now.",
+      "Welcome! 🌿 Looking to adjust your hydration step for the Dhaka humidity? Let's curate your customized regimen right now.",
     suggestedDraft: "I'd love recommendations for daytime routine →",
   },
   {
@@ -33,7 +33,7 @@ export const CONCIERGE_TOPICS: ConciergeTopic[] = [
     label: '🛡️ Batch Authenticity',
     iconName: 'verified',
     incomingMessage:
-      'Assalamu Alaikum Tasneem! 🛡️ Ready to verify your batch certificate. Please send your 6-digit bottle stamp or packaging QR code directly in our chat.',
+      'Assalamu Alaikum! 🛡️ Ready to verify your batch certificate. Please send your 6-digit bottle stamp or packaging QR code directly in our chat.',
     suggestedDraft: 'Here is my product batch number for check →',
   },
 ];

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MailCheck, Send } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { useAuth } from '@/contexts/AuthContext';
 import NotificationChannelSwitch from './NotificationChannelSwitch';
 import WhatsAppMessageBubble from './WhatsAppMessageBubble';
 import SMSMessageBubble from './SMSMessageBubble';
@@ -20,9 +21,10 @@ const defaultProduct: NotificationPreviewProduct = {
 };
 
 export default function NotificationPreviewModal() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [channel, setChannel] = useState<NotificationChannelType>('whatsapp');
-  const [phone] = useState('+880 1712-345678');
+  const phone = user?.phone || '+880 17XX-XXXXXX';
   const [product, setProduct] = useState<NotificationPreviewProduct>(defaultProduct);
 
   const handleOpen = useCallback((e: Event) => {
