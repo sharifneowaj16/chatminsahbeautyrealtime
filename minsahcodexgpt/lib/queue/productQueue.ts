@@ -19,21 +19,30 @@ import Redis from 'ioredis';
 // ─── Redis connection for BullMQ ───────────────────────────────────────
 
 function createBullRedis(): Redis {
+  const isBuildPhase =
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    process.env.BUILD_PHASE === 'true';
   const url = process.env.REDIS_URL;
 
-  if (!url) {
-    console.warn('[productQueue] REDIS_URL not set – using redis://localhost:6379');
+  if (isBuildPhase || !url) {
+    if (!isBuildPhase && !url) {
+      console.warn('[productQueue] REDIS_URL not set – using redis://localhost:6379');
+    }
     return new Redis({
-      host: 'localhost',
+      host: '127.0.0.1',
       port: 6379,
       maxRetriesPerRequest: null, // Required by BullMQ
       lazyConnect: true,
+      enableOfflineQueue: false,
+      retryStrategy: () => null,
     });
   }
 
   return new Redis(url, {
     maxRetriesPerRequest: null, // Required by BullMQ
     enableReadyCheck: false,
+    lazyConnect: true,
+    retryStrategy: (times) => Math.min(times * 200, 2000),
   });
 }
 

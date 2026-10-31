@@ -437,10 +437,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const defaultAuthFallback: AuthContextType = {
+  user: null,
+  loading: false,
+  error: null,
+  login: async () => ({ success: false, error: 'AuthProvider not found' }),
+  loginWithProvider: () => {},
+  logout: async () => {},
+  register: async () => ({ success: false, error: 'AuthProvider not found' }),
+  updateUser: async () => false,
+  updatePreferences: async () => false,
+  changePassword: async () => ({ success: false, error: 'AuthProvider not found' }),
+  uploadAvatar: async () => false,
+  hasPermission: () => false,
+  isInRole: () => false,
+  refreshToken: async () => false,
+  clearError: () => {},
+};
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return defaultAuthFallback;
   }
   return context;
 }

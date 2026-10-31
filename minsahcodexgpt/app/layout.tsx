@@ -227,18 +227,18 @@ export default function RootLayout({
                     <DeliveryLocationProvider>
                       {children}
                       <DeliveryLocationModal />
+                      <ConciergeModalCoordinator />
+                      <StockAlertCoordinator />
+                      <NotificationPreviewModal />
+                      <ProductComparisonDesktopModal />
+                      <IOSSearchModalOverlay />
+                      <MemberAuthModal />
                     </DeliveryLocationProvider>
                   </CartDrawerProvider>
                 </CartProvider>
               </OfferEngineProvider>
             </AuthProvider>
           </TrackingProvider>
-          <ConciergeModalCoordinator />
-          <StockAlertCoordinator />
-          <NotificationPreviewModal />
-          <ProductComparisonDesktopModal />
-          <IOSSearchModalOverlay />
-          <MemberAuthModal />
         </ToastProvider>
 
         <AllPixels />
