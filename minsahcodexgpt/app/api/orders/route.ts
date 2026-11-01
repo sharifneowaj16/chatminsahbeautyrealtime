@@ -236,6 +236,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isOnlinePaymentOrder = isCanonicalOnlinePaymentMethod(paymentMethod);
+    const isCodOrder = isCodPaymentMethod(paymentMethod);
     const orderLifecycleNow = new Date();
     const onlinePaymentExpiresAt = isOnlinePaymentOrder
       ? getOnlinePaymentExpiresAt(orderLifecycleNow)
@@ -972,6 +973,12 @@ export async function POST(request: NextRequest) {
           taxAmount,
           discountAmount,
           total,
+          advancePaidAmount: 0,
+          codCollectionAmount: isCodOrder ? Math.round(total) : 0,
+          pathaoAmountToCollect: null,
+          codPolicyApplied: isCodOrder ? "STANDARD_COD" : "FULL_ONLINE",
+          codCalculatedAt: orderLifecycleNow,
+          pathaoBookingStatus: "READY",
           couponCode: couponValidation.code,
           couponDiscount: discountAmount > 0 ? discountAmount : null,
           checkoutIdempotencyKey,

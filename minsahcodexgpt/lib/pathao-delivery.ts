@@ -46,6 +46,7 @@ export type PathaoDeliveryResult =
 type CreatePathaoDeliveryOptions = {
   preserveOrderStatus?: boolean;
   saveFailureStatus?: boolean;
+  actorId?: string;
 };
 
 function extractField(data: unknown, keys: string[]): string | null {
@@ -295,6 +296,13 @@ export async function createPathaoDeliveryForOrder(
     const paymentMethod = order.paymentMethod?.toLowerCase() ?? '';
     const isCOD = paymentMethod === 'cod' || paymentMethod === 'cash_on_delivery';
 
+    // Strict Dispatch Guard (Master Spec Section 13.2): If online payment order and paymentStatus !== 'COMPLETED', Pathao booking is strictly BLOCKED!
+    if (!isCOD && order.paymentStatus !== 'COMPLETED') {
+      throw new Error(
+        'ONLINE_PAYMENT_NOT_CAPTURED: Pathao dispatch is blocked until online payment is completed',
+      );
+    }
+
     if (!recipientName) {
       throw new Error('Missing recipient_name');
     }
@@ -306,6 +314,33 @@ export async function createPathaoDeliveryForOrder(
     }
     if (finalWeightKg <= 0) {
       throw new Error('Invalid item_weight');
+    }
+
+    // Master Spec Section 13.3: Accurate Collection Formula & Financial Precision
+    const calculatedAmountToCollect = isCOD
+      ? Math.max(0, Math.round(toNumber(order.codCollectionAmount ?? order.total)))
+      : 0;
+
+    // Master Spec Section 13.4: Atomic Database-Level Booking Ownership Mutex
+    const bookingAttemptId = `bk_att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const actorId = options.actorId || 'system';
+
+    const lockResult = await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        pathaoConsignmentId: null,
+        pathaoBookingStatus: { in: ['READY', 'BOOKING_FAILED'] },
+      },
+      data: {
+        pathaoBookingStatus: 'BOOKING_IN_PROGRESS',
+        pathaoBookingAttemptId: bookingAttemptId,
+        pathaoBookingLockedAt: new Date(),
+        pathaoBookingLockedBy: actorId,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      throw new Error('Dispatch booking already in progress, locked, or already booked');
     }
 
     const createOrderPayload = {
@@ -323,7 +358,7 @@ export async function createPathaoDeliveryForOrder(
       item_quantity: totalQuantity,
       item_weight: finalWeightKg,
       item_description: generateItemDescription(order.items),
-      amount_to_collect: isCOD ? Math.max(0, Math.round(toNumber(order.total))) : 0,
+      amount_to_collect: calculatedAmountToCollect,
     };
 
     console.info('Pathao create-order request', {
@@ -368,6 +403,8 @@ export async function createPathaoDeliveryForOrder(
       pathaoStatus: status,
       pathaoConsignmentId: consignmentId ?? null,
       pathaoTrackingCode: trackingCode ?? null,
+      pathaoAmountToCollect: calculatedAmountToCollect,
+      pathaoBookingStatus: 'BOOKED',
       trackingNumber: trackingCode ?? order.trackingNumber,
       pathaoSentAt: new Date(),
       pathaoResponse: toJsonInput(response),
@@ -410,6 +447,31 @@ export async function createPathaoDeliveryForOrder(
       orderId,
       error: message,
     });
+
+    if (resolvedOrderId) {
+      try {
+        const isTimeoutOrNetworkError =
+          message.toLowerCase().includes('timeout') ||
+          message.toLowerCase().includes('econnrefused') ||
+          message.toLowerCase().includes('network') ||
+          message.toLowerCase().includes('fetch failed') ||
+          message.toLowerCase().includes('socket');
+
+        await prisma.order.update({
+          where: { id: resolvedOrderId },
+          data: {
+            pathaoBookingStatus: isTimeoutOrNetworkError
+              ? 'BOOKING_UNKNOWN'
+              : 'BOOKING_FAILED',
+          },
+        });
+      } catch (lockError) {
+        console.error('Failed to update Pathao booking status on failure', {
+          orderId: resolvedOrderId,
+          error: lockError instanceof Error ? lockError.message : lockError,
+        });
+      }
+    }
 
     if (options.saveFailureStatus && resolvedOrderId) {
       try {

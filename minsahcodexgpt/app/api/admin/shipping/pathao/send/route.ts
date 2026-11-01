@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
   const result = await createPathaoDeliveryForOrder(orderId, {
     preserveOrderStatus: false,
     saveFailureStatus: false,
+    actorId: payload.email || payload.adminId || 'admin',
   });
 
   if (!result.success) {
