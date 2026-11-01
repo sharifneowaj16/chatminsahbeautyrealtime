@@ -40,8 +40,11 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
         ? product.images[0].url
         : ((product as { image?: string | null }).image || '/images/hero-image.jpg');
 
+    const campaignRef = `fd_${(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : `${product.id}_${Date.now()}`)}`;
+
     const newDeal: FlashDealItem = {
-      id: `flash-deal-${product.id}-${Date.now()}`,
+      id: campaignRef,
+      campaignRef: campaignRef,
       productId: product.id,
       slug: product.slug || '',
       title: product.name,
@@ -56,6 +59,8 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
       claimedPercentage: 85,
       order: nextOrder,
       isActive: true,
+      limitType: 'LIMITED',
+      maxUnitsPerCustomer: 1,
       ...(Array.isArray(product.variants) && product.variants.length > 0 ? { variants: product.variants } : {}),
     };
 
@@ -69,8 +74,10 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
   // Add fallback empty deal
   const handleAddDealManual = () => {
     const nextOrder = (config.items?.length || 0) + 1;
+    const campaignRef = `fd_custom_${Date.now()}`;
     const newDeal: FlashDealItem = {
-      id: `flash-deal-custom-${Date.now()}`,
+      id: campaignRef,
+      campaignRef: campaignRef,
       productId: 'custom-deal',
       title: 'New Featured Beauty Deal',
       subtitle: 'Exclusive Flash Sale Offer • Limited Quantity',
@@ -84,6 +91,8 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
       claimedPercentage: 80,
       order: nextOrder,
       isActive: true,
+      limitType: 'LIMITED',
+      maxUnitsPerCustomer: 1,
     };
 
     setConfig((prev) => ({
@@ -92,6 +101,7 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
     }));
     setSaveStatus(null);
   };
+
 
   // Update item
   const handleUpdateItem = (updated: FlashDealItem) => {
@@ -140,6 +150,29 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
     setIsSaving(true);
     setSaveStatus(null);
 
+    // Validate and guarantee stable campaignRef on all items
+    const validatedItems = config.items.map((deal, i) => {
+      const campaignRef = deal.campaignRef || deal.id || `fd_${deal.productId || 'item'}_${Date.now()}_${i}`;
+      return {
+        ...deal,
+        campaignRef,
+      };
+    });
+
+    for (let i = 0; i < validatedItems.length; i++) {
+      const deal = validatedItems[i];
+      if (deal.limitType === 'LIMITED') {
+        if (!deal.maxUnitsPerCustomer || deal.maxUnitsPerCustomer < 1) {
+          setSaveStatus({
+            type: 'error',
+            message: `Slot #${i + 1} (${deal.title}): LIMITED ক্যাম্পেইনের জন্য সর্বনিম্ন ১ বা তার বেশি লিমিট নির্ধারণ করতে হবে।`,
+          });
+          setIsSaving(false);
+          return;
+        }
+      }
+    }
+
     try {
       const response = await fetch('/api/admin/site-config', {
         method: 'PUT',
@@ -147,7 +180,10 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
         credentials: 'include',
         body: JSON.stringify({
           key: 'flashDeals',
-          value: config,
+          value: {
+            ...config,
+            items: validatedItems,
+          },
         }),
       });
 
@@ -157,10 +193,13 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
         throw new Error(data.error || 'Failed to save Flash Deals config.');
       }
 
+      setConfig((prev) => ({ ...prev, items: validatedItems }));
+
       setSaveStatus({
         type: 'success',
         message: 'Flash Deals configuration successfully saved & published to live storefront!',
       });
+
 
       // Auto clear success message after 5s
       setTimeout(() => {
@@ -370,6 +409,64 @@ export default function FlashDealsAdminManager({ initialConfig }: FlashDealsAdmi
             </button>
           </div>
         </div>
+
+        {/* Legacy Unconfigured Alert Banner */}
+        {(() => {
+          const unconfiguredDeals = (config.items || []).filter(
+            (it) => it.limitType === 'LEGACY_UNCONFIGURED' || !it.limitType
+          );
+          if (unconfiguredDeals.length === 0) return null;
+
+          return (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                <div>
+                  <p className="font-bold">
+                    {unconfiguredDeals.length}টি ক্যাম্পেইনে এখনও পার-কাস্টমার লিমিট কনফিগার করা হয়নি!
+                  </p>
+                  <p className="text-[#8a8f98] text-[11px] mt-0.5">
+                    ঐতিহাসিক গ্রাহক প্রতিশ্রুতি ("Strictly 1 unit per client") অক্ষত রাখতে এগুলো ১-ইউনিট ফলব্যাকে চলছে।
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfig((prev) => ({
+                      ...prev,
+                      items: prev.items.map((it) =>
+                        it.limitType === 'LEGACY_UNCONFIGURED' || !it.limitType
+                          ? { ...it, limitType: 'LIMITED', maxUnitsPerCustomer: 1 }
+                          : it
+                      ),
+                    }));
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-[11px] font-semibold cursor-pointer transition-colors"
+                >
+                  সবগুলো LIMITED (১ পিস) করুন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfig((prev) => ({
+                      ...prev,
+                      items: prev.items.map((it) =>
+                        it.limitType === 'LEGACY_UNCONFIGURED' || !it.limitType
+                          ? { ...it, limitType: 'UNLIMITED', maxUnitsPerCustomer: undefined }
+                          : it
+                      ),
+                    }));
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-[#f7f8f8] border border-[#232636] text-[11px] font-semibold cursor-pointer transition-colors"
+                >
+                  সবগুলো UNLIMITED করুন
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Product Live Search Bar */}
         <div className="space-y-1.5">

@@ -206,8 +206,10 @@ export function normalizeFlashDealsConfig(raw: unknown): FlashDealsConfig {
 
   const items: FlashDealItem[] = rawItems.map((item, index) => {
     const it = (item && typeof item === 'object') ? (item as Record<string, unknown>) : {};
+    const dealId = String(it.id || `flash-deal-${index}`);
     const deal: FlashDealItem = {
-      id: String(it.id || `flash-deal-${index}`),
+      id: dealId,
+      campaignRef: String(it.campaignRef || dealId),
       productId: String(it.productId || ''),
       title: String(it.title || 'Flash Deal Item'),
       imageUrl: String(it.imageUrl || '/images/hero-image.jpg'),
@@ -216,6 +218,19 @@ export function normalizeFlashDealsConfig(raw: unknown): FlashDealsConfig {
       order: Number(it.order) || index + 1,
       isActive: it.isActive !== false,
     };
+
+    // Purchase limit normalization per Master Spec Section 5.2
+    if (it.limitType === 'LIMITED') {
+      deal.limitType = 'LIMITED';
+      deal.maxUnitsPerCustomer = Math.max(1, Math.trunc(Number(it.maxUnitsPerCustomer) || 1));
+    } else if (it.limitType === 'UNLIMITED') {
+      deal.limitType = 'UNLIMITED';
+      deal.maxUnitsPerCustomer = undefined;
+    } else {
+      // Unconfigured legacy deal: enforce safe 1-unit fallback to preserve historical customer promise
+      deal.limitType = 'LEGACY_UNCONFIGURED';
+      deal.maxUnitsPerCustomer = 1;
+    }
 
     if (it.slug) deal.slug = String(it.slug);
     if (it.subtitle) deal.subtitle = String(it.subtitle);
@@ -232,6 +247,7 @@ export function normalizeFlashDealsConfig(raw: unknown): FlashDealsConfig {
 
     return deal;
   });
+
 
   return {
     isVisible: obj.isVisible !== false,

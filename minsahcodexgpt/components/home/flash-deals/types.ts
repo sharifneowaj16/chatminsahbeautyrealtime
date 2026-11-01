@@ -1,7 +1,10 @@
 import type { ProductVariantItem } from '@/app/(storefront)/products/[id]/components/hero/SeedHeroVariantDropdown';
 
+export type FlashDealLimitType = 'LIMITED' | 'UNLIMITED' | 'LEGACY_UNCONFIGURED';
+
 export interface FlashDealItem {
   id: string;
+  campaignRef?: string; // Stable UUID for customer campaign usage tracking
   productId: string;
   slug?: string;
   title: string;
@@ -17,7 +20,12 @@ export interface FlashDealItem {
   order: number;
   isActive: boolean;
   variants?: ProductVariantItem[];
+
+  // Purchase limit controls
+  limitType?: FlashDealLimitType; // 'LIMITED' | 'UNLIMITED' | 'LEGACY_UNCONFIGURED'
+  maxUnitsPerCustomer?: number; // Integer >= 1 when LIMITED (or fallback 1 when LEGACY_UNCONFIGURED)
 }
+
 
 export interface FlashDealsConfig {
   isVisible: boolean;

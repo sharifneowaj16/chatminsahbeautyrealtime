@@ -230,7 +230,100 @@ export default function FlashDealItemEditor({
             placeholder="e.g. Pore calming toner for acne-prone skin • 250ml"
           />
         </div>
+
+        {/* Campaign Ref & Purchase Limit Controls */}
+        <div className="col-span-1 sm:col-span-2 lg:col-span-4 mt-1 pt-3 border-t border-[#232636]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0b0c14] p-3 rounded-xl border border-[#232636]">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-[#f7f8f8]">Customer Purchase Limit</span>
+                {deal.campaignRef && (
+                  <span className="text-[10px] font-mono text-[#8a8f98] bg-[#161824] px-1.5 py-0.5 rounded border border-[#232636]">
+                    Ref: {deal.campaignRef}
+                  </span>
+                )}
+                {deal.limitType === 'LEGACY_UNCONFIGURED' && (
+                  <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40">
+                    ⚠️ Unconfigured (Active 1-Unit Fallback)
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#8a8f98]">
+                {deal.limitType === 'LIMITED'
+                  ? `Verified customer quota: max ${deal.maxUnitsPerCustomer || 1} unit(s) across all variants.`
+                  : deal.limitType === 'UNLIMITED'
+                  ? 'Customers can purchase unlimited units. Purchases recorded for future limit changes.'
+                  : 'Historical campaign without quota settings. Operating under safe 1-unit customer promise until configured.'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 self-start sm:self-center shrink-0">
+              {/* Limit Mode Selector */}
+              <div className="flex rounded-lg bg-[#161824] p-0.5 border border-[#232636]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdate({
+                      ...deal,
+                      limitType: 'LIMITED',
+                      maxUnitsPerCustomer: deal.maxUnitsPerCustomer && deal.maxUnitsPerCustomer > 0 ? deal.maxUnitsPerCustomer : 1,
+                    });
+                  }}
+                  className={`px-3 py-1 text-xs font-medium rounded-md cursor-pointer transition-all ${
+                    deal.limitType === 'LIMITED'
+                      ? 'bg-[#5e6ad2] text-white shadow-sm'
+                      : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                  }`}
+                >
+                  LIMITED
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdate({
+                      ...deal,
+                      limitType: 'UNLIMITED',
+                      maxUnitsPerCustomer: undefined,
+                    });
+                  }}
+                  className={`px-3 py-1 text-xs font-medium rounded-md cursor-pointer transition-all ${
+                    deal.limitType === 'UNLIMITED'
+                      ? 'bg-[#5e6ad2] text-white shadow-sm'
+                      : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                  }`}
+                >
+                  UNLIMITED
+                </button>
+              </div>
+
+              {/* Max Units Input */}
+              {deal.limitType !== 'UNLIMITED' && (
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[11px] font-semibold text-[#8a8f98] whitespace-nowrap">
+                    Max Units:
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={deal.maxUnitsPerCustomer ?? 1}
+                    onChange={(e) => {
+                      const val = Math.max(1, Math.trunc(Number(e.target.value) || 1));
+                      onUpdate({
+                        ...deal,
+                        limitType: 'LIMITED',
+                        maxUnitsPerCustomer: val,
+                      });
+                    }}
+                    className="w-16 px-2 py-1 text-xs rounded-lg bg-[#161824] border border-[#232636] text-[#f7f8f8] font-bold font-mono focus:border-[#5e6ad2] outline-none text-center"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
