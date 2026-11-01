@@ -37,6 +37,11 @@ import {
   trackViewCart,
 } from "@/lib/tracking/ecommerce";
 import type { DeliveryQuoteResponse } from "@/types/delivery-quote";
+import {
+  PriceRevisionConsentModal,
+  type PriceChangeItem,
+  type PriceRevisionQuote,
+} from "@/components/checkout/PriceRevisionConsentModal";
 
 const SocialLoginModal = dynamic(
   () => import("@/app/(storefront)/products/[id]/components/SocialLoginModal"),
@@ -260,6 +265,10 @@ function CheckoutContent() {
   >("address");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [priceRevisionQuote, setPriceRevisionQuote] = useState<PriceRevisionQuote | null>(null);
+  const [priceQuoteToken, setPriceQuoteToken] = useState<string | null>(null);
+  const [priceChanges, setPriceChanges] = useState<PriceChangeItem[]>([]);
+  const [showPriceRevisionModal, setShowPriceRevisionModal] = useState(false);
   const [shippingForm, setShippingForm] = useState<ShippingFormState>({
     fullName: "",
     phoneNumber: "",
@@ -726,7 +735,10 @@ function CheckoutContent() {
     shippingForm.pathao_area_id,
   ]);
 
-  const submitOrder = async (sessionUserId?: string) => {
+  const submitOrder = async (
+    sessionUserId?: string,
+    quoteTokenOverride?: string,
+  ) => {
     markBeginCheckout();
     setSubmitAttempted(true);
     trackPaymentInfoOnce();
@@ -780,6 +792,7 @@ function CheckoutContent() {
         },
         credentials: "include",
         body: JSON.stringify({
+          priceQuoteToken: quoteTokenOverride || priceQuoteToken || undefined,
           items: items.map((item) => ({
             productId: item.productId ?? item.id,
             variantId: item.variantId ?? undefined,
@@ -835,6 +848,14 @@ function CheckoutContent() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 409 && data.code === "PRICE_CHANGED") {
+          setPriceRevisionQuote(data.quote || null);
+          setPriceQuoteToken(data.priceQuoteToken || null);
+          setPriceChanges(Array.isArray(data.changes) ? data.changes : []);
+          setShowPriceRevisionModal(true);
+          return;
+        }
+
         if (data.code === "IDEMPOTENCY_PAYLOAD_MISMATCH") {
           checkoutIdempotencyKeyRef.current = null;
         }
@@ -875,6 +896,12 @@ function CheckoutContent() {
       pendingOrderRef.current = false;
       await submitOrder(userId);
     }
+  };
+
+  const handleAcceptPriceRevision = async (token: string) => {
+    setShowPriceRevisionModal(false);
+    setPriceQuoteToken(token);
+    await submitOrder(user?.id, token);
   };
 
   const handleCityChange = (cityId: string) => {
@@ -1890,6 +1917,17 @@ function CheckoutContent() {
           </div>
         </div>
       )}
+
+      {/* Price Revision Consent Modal (Master Spec Section 11.2) */}
+      <PriceRevisionConsentModal
+        isOpen={showPriceRevisionModal}
+        onClose={() => setShowPriceRevisionModal(false)}
+        onAccept={handleAcceptPriceRevision}
+        priceQuoteToken={priceQuoteToken || ""}
+        changes={priceChanges}
+        quote={priceRevisionQuote}
+        isSubmitting={isPlacingOrder}
+      />
     </div>
   );
 }

@@ -49,6 +49,10 @@ import {
 import { triggerEventDrivenCatalogSync } from "@/lib/meta-platform/domains/catalog/event-sync";
 import { reserveCampaignUsageInTransaction } from "@/lib/campaign-usage";
 import { normalizeFlashDealsConfig } from "@/lib/homepageConfig";
+import {
+  createPriceQuoteToken,
+  verifyPriceQuoteToken,
+} from "@/lib/price-quote";
 
 export const dynamic = "force-dynamic";
 
@@ -214,6 +218,7 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       couponCode,
       customerNote,
+      priceQuoteToken,
     } = validateAndNormalizeOrderRequest(body);
 
     if (
@@ -456,7 +461,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Calculate totals server-side
+    // 5. Calculate totals server-side & detect campaign expiry or price changes
+    let priceChanged = false;
+    const priceChanges: Array<{
+      productId: string;
+      variantId: string | null;
+      lineKey: string | null;
+      productName: string;
+      oldPrice: number;
+      newPrice: number;
+      reason: string;
+    }> = [];
+
+    const now = new Date();
+    const isDealExpired = (deal: { isActive?: boolean } | null | undefined) => {
+      if (!deal || deal.isActive === false) return true;
+      if (flashDealsConfig.endsAt) {
+        const endTime = new Date(flashDealsConfig.endsAt).getTime();
+        if (!isNaN(endTime) && endTime <= now.getTime()) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     const orderItems = items.map((item) => {
       const product = productMap.get(item.productId)!;
       const variant = item.variantId ? variantMap.get(item.variantId) : null;
@@ -465,24 +493,59 @@ export async function POST(request: NextRequest) {
       );
       const sku = variant?.sku ?? product.sku;
       const name = variant ? `${product.name} - ${variant.name}` : product.name;
-      const pricingSource = item.pricingSource || "REGULAR";
-      const campaignRef = item.campaignRef || null;
       const bundleGroupId = item.bundleGroupId || null;
       const bundleInstanceId = item.bundleInstanceId || null;
-
-      let unitPrice = regularPrice;
       const originalPrice = regularPrice;
+
+      let pricingSource = item.pricingSource || "REGULAR";
+      let campaignRef = item.campaignRef || null;
+      let unitPrice = regularPrice;
       let discountAmount = 0;
 
-      if (pricingSource === "FLASH_DEAL" && campaignRef) {
+      if (pricingSource === "FLASH_DEAL") {
         const deal =
-          dealsByCampaignRef.get(campaignRef) ||
+          (campaignRef ? dealsByCampaignRef.get(campaignRef) : null) ||
           dealsByProductId.get(item.productId);
-        if (deal && deal.salePrice > 0) {
+        const expired = isDealExpired(deal);
+
+        if (expired || !deal || deal.salePrice <= 0) {
+          // Deal expired or inactive: revert to regular price
+          pricingSource = "REGULAR";
+          campaignRef = null;
+          unitPrice = regularPrice;
+          discountAmount = 0;
+
+          priceChanged = true;
+          priceChanges.push({
+            productId: item.productId,
+            variantId: item.variantId || null,
+            lineKey: item.lineKey || null,
+            productName: name,
+            oldPrice: typeof item.price === "number" ? item.price : regularPrice,
+            newPrice: regularPrice,
+            reason: "ফ্ল্যাশ ডিলের মেয়াদ শেষ হওয়ায় নিয়মিত মূল্য প্রযোজ্য",
+          });
+        } else {
           unitPrice = deal.salePrice;
           discountAmount = parseFloat(
             Math.max(0, (regularPrice - unitPrice) * item.quantity).toFixed(2),
           );
+
+          if (
+            typeof item.price === "number" &&
+            Math.abs(item.price - unitPrice) >= 0.01
+          ) {
+            priceChanged = true;
+            priceChanges.push({
+              productId: item.productId,
+              variantId: item.variantId || null,
+              lineKey: item.lineKey || null,
+              productName: name,
+              oldPrice: item.price,
+              newPrice: unitPrice,
+              reason: "অফারের মূল্য পরিবর্তন হয়েছে",
+            });
+          }
         }
       } else if (
         pricingSource === "BUNDLE" &&
@@ -493,6 +556,25 @@ export async function POST(request: NextRequest) {
         discountAmount = parseFloat(
           Math.max(0, (regularPrice - unitPrice) * item.quantity).toFixed(2),
         );
+      } else {
+        unitPrice = regularPrice;
+        discountAmount = 0;
+
+        if (
+          typeof item.price === "number" &&
+          Math.abs(item.price - unitPrice) >= 0.01
+        ) {
+          priceChanged = true;
+          priceChanges.push({
+            productId: item.productId,
+            variantId: item.variantId || null,
+            lineKey: item.lineKey || null,
+            productName: name,
+            oldPrice: item.price,
+            newPrice: unitPrice,
+            reason: "পণ্যের মূল্য পরিবর্তন হয়েছে",
+          });
+        }
       }
 
       const itemTotal = parseFloat((unitPrice * item.quantity).toFixed(2));
@@ -511,6 +593,7 @@ export async function POST(request: NextRequest) {
         campaignRef,
         bundleGroupId,
         bundleInstanceId,
+        lineKey: item.lineKey || null,
       };
     });
 
@@ -640,6 +723,94 @@ export async function POST(request: NextRequest) {
         "INVALID_ORDER_TOTAL",
         400,
       );
+    }
+
+    // Cryptographic Price Quote & Expiry Protection (Master Spec Section 11.1)
+    const quoteAddress = {
+      pathaoCityId: addressData?.pathao_city_id ?? savedAccountingAddress?.pathaoCityId ?? null,
+      pathaoZoneId: addressData?.pathao_zone_id ?? savedAccountingAddress?.pathaoZoneId ?? null,
+      pathaoAreaId: addressData?.pathao_area_id ?? savedAccountingAddress?.pathaoAreaId ?? null,
+      street1: addressData?.streetAddress ?? savedAccountingAddress?.street1 ?? null,
+      phoneNumber: customerPhone,
+    };
+
+    if (priceChanged || priceQuoteToken) {
+      if (priceQuoteToken) {
+        const verifyResult = verifyPriceQuoteToken(priceQuoteToken, {
+          userId,
+          items: orderItems,
+          address: quoteAddress,
+          couponCode,
+          subtotal,
+          discountAmount,
+          shippingCost: shippingCostNum,
+          total,
+        });
+
+        if (!verifyResult.valid) {
+          if (verifyResult.reason === "EXPIRED") {
+            return NextResponse.json(
+              {
+                error: "QUOTE_EXPIRED",
+                code: "QUOTE_EXPIRED",
+                message:
+                  "মূল্য নির্ধারণের সময়সীমা (১০ মিনিট) শেষ হয়ে গেছে। অনুগ্রহ করে নতুন করে কনফার্ম করুন।",
+              },
+              { status: 400 },
+            );
+          }
+          return NextResponse.json(
+            {
+              error: "QUOTE_INVALID",
+              code: "QUOTE_INVALID",
+              message: verifyResult.error,
+            },
+            { status: 400 },
+          );
+        }
+      } else {
+        const { token: newQuoteToken, payload: quotePayload } = createPriceQuoteToken({
+          userId,
+          items: orderItems,
+          address: quoteAddress,
+          couponCode,
+          subtotal,
+          discountAmount,
+          shippingCost: shippingCostNum,
+          total,
+        });
+
+        return NextResponse.json(
+          {
+            error: "PRICE_CHANGED",
+            code: "PRICE_CHANGED",
+            status: "REVISION_REQUIRED",
+            message:
+              "ফ্ল্যাশ ডিলের মেয়াদ বা পণ্যের মূল্যে পরিবর্তন হওয়ায় মূল্য আপডেট করা হয়েছে। অনুগ্রহ করে সংশোধিত মূল্য যাচাই করে কনফার্ম করুন।",
+            priceQuoteToken: newQuoteToken,
+            changes: priceChanges,
+            quote: {
+              quoteId: quotePayload.quoteId,
+              expiresAt: new Date(quotePayload.exp * 1000).toISOString(),
+              items: orderItems.map((i) => ({
+                lineKey: i.lineKey || null,
+                productId: i.productId,
+                variantId: i.variantId || null,
+                name: i.name,
+                quantity: i.quantity,
+                unitPrice: i.price,
+                lineTotal: i.total,
+                pricingSource: i.pricingSource,
+              })),
+              subtotal,
+              couponDiscount: discountAmount,
+              shippingCost: shippingCostNum,
+              grandTotal: total,
+            },
+          },
+          { status: 409 },
+        );
+      }
     }
     const notifyItems = items.map((item) => {
       const product = productMap.get(item.productId)!;
@@ -812,7 +983,21 @@ export async function POST(request: NextRequest) {
           ...orderAttribution,
           ...orderTrackingExclusion,
           items: {
-            create: orderItems,
+            create: orderItems.map((i) => ({
+              productId: i.productId,
+              variantId: i.variantId || null,
+              name: i.name,
+              sku: i.sku,
+              price: i.price,
+              quantity: i.quantity,
+              total: i.total,
+              originalPrice: i.originalPrice,
+              discountAmount: i.discountAmount,
+              pricingSource: i.pricingSource,
+              campaignRef: i.campaignRef,
+              bundleGroupId: i.bundleGroupId,
+              bundleInstanceId: i.bundleInstanceId,
+            })),
           },
         },
       });

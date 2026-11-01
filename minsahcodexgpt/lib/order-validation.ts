@@ -48,6 +48,7 @@ export type NormalizedOrderRequest = {
   paymentMethod: CheckoutPaymentMethod;
   couponCode?: string;
   customerNote?: string;
+  priceQuoteToken?: string;
 };
 
 export class OrderValidationError extends Error {
@@ -263,5 +264,6 @@ export function validateAndNormalizeOrderRequest(body: unknown): NormalizedOrder
     paymentMethod,
     couponCode: cleanOptionalString(record.couponCode)?.toUpperCase(),
     customerNote: cleanOptionalString(record.customerNote),
+    priceQuoteToken: cleanOptionalString(record.priceQuoteToken),
   };
 }
