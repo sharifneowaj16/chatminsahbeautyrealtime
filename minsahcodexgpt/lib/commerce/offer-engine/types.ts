@@ -72,6 +72,7 @@ export interface CartOfferCalculationItem {
   id: string;
   price: number;
   quantity: number;
+  pricingSource?: string | null;
   isBundle?: boolean | null;
   bundleId?: string | null;
   hasFreeDelivery?: boolean | null;
@@ -100,4 +101,6 @@ export interface CartOfferCalculationResult {
   deliveryProgressPercent: number;
   nonBundleSubtotal: number;
   bundleSubtotal: number;
+  flashDealSubtotal: number;
+  regularSubtotal: number;
 }

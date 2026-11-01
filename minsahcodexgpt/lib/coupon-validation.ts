@@ -67,6 +67,7 @@ export async function validateCouponForOrder(params: {
   userId: string;
   couponCode?: string;
   subtotal: number;
+  eligibleSubtotal?: number;
   shippingCost: number;
   phoneNumber?: string | null;
   phoneNumbers?: Array<string | null | undefined>;
@@ -232,23 +233,36 @@ export async function validateCouponForOrder(params: {
   const couponType = String(coupon.type).toUpperCase();
   const value = toMoney(coupon.value);
   const maxDiscount = toMoney(coupon.maxDiscount);
+  const eligibleSubtotal =
+    params.eligibleSubtotal !== undefined
+      ? Math.max(0, params.eligibleSubtotal)
+      : params.subtotal;
+
+  if (eligibleSubtotal <= 0 && params.subtotal > 0 && couponType !== 'FREE_SHIPPING') {
+    throw new CouponValidationError(
+      'Promo vouchers cannot be applied to Flash Deal items',
+      'COUPON_INELIGIBLE_ITEMS',
+      400,
+    );
+  }
+
   let rawDiscount = 0;
 
   if (couponType === 'PERCENTAGE') {
     const rate = value > 1 ? value / 100 : value;
-    rawDiscount = params.subtotal * rate;
+    rawDiscount = eligibleSubtotal * rate;
     if (maxDiscount > 0) rawDiscount = Math.min(rawDiscount, maxDiscount);
   } else if (couponType === 'FIXED') {
-    rawDiscount = value;
+    rawDiscount = Math.min(value, eligibleSubtotal);
   } else if (couponType === 'FREE_SHIPPING') {
     rawDiscount = params.shippingCost;
   } else {
     throw new CouponValidationError('Coupon type is not supported', 'COUPON_TYPE_UNSUPPORTED');
   }
 
-  // Cap promo discount so an order subtotal can never be reduced to 0 by a coupon alone.
-  // Leaving at least 1 taka ensures positive payable balance.
-  const maxDiscountableAmount = Math.max(0, params.subtotal - 1);
+  // Cap promo discount so regular subtotal is never reduced below 0.
+  // Leaving at least 1 taka ensures positive payable balance when subtotal consists only of regular items.
+  const maxDiscountableAmount = Math.max(0, eligibleSubtotal - (eligibleSubtotal === params.subtotal ? 1 : 0));
   const discountAmount =
     couponType === 'FREE_SHIPPING'
       ? capDiscount(rawDiscount, params.shippingCost)

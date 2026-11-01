@@ -26,23 +26,28 @@ export function calculateCartOffers(
     couponsEnabled = true,
   } = params;
 
-  // 1. Differentiate bundle items vs regular items
+  // 1. Differentiate flash deals, bundles, and regular items (Master Spec Section 9.1)
+  let flashDealSubtotal = 0;
   let bundleSubtotal = 0;
-  let nonBundleSubtotal = 0;
+  let regularSubtotal = 0;
   let hasProductFreeDelivery = false;
 
   for (const item of items) {
-    const isBundle = Boolean(
+    const isFlashDeal = item.pricingSource === 'FLASH_DEAL';
+    const isBundle = !isFlashDeal && Boolean(
       item.isBundle ||
+      item.pricingSource === 'BUNDLE' ||
       (typeof item.bundleId === 'string' && item.bundleId.length > 0) ||
       (typeof item.id === 'string' && item.id.startsWith('bundle-'))
     );
     const lineTotal = (item.price || 0) * (item.quantity || 1);
 
-    if (isBundle) {
+    if (isFlashDeal) {
+      flashDealSubtotal += lineTotal;
+    } else if (isBundle) {
       bundleSubtotal += lineTotal;
     } else {
-      nonBundleSubtotal += lineTotal;
+      regularSubtotal += lineTotal;
     }
 
     if (item.hasFreeDelivery) {
@@ -50,7 +55,11 @@ export function calculateCartOffers(
     }
   }
 
+  const nonBundleSubtotal = regularSubtotal;
+
   // 2. Resolve Promo Coupon (Strictly from live Admin Offer Engine coupons)
+  // Anti-Stacking: Coupons apply strictly against regular items (and bundles only if allowOnBundles is true)
+  // Flash Deal items are strictly ineligible for coupon discounts (Spec Section 9.1)
   let promoDiscount = 0;
   let appliedPromoRule: PromoRule | null = null;
   let promoError: string | null = null;
@@ -87,11 +96,14 @@ export function calculateCartOffers(
       } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
         promoError = `Minimum subtotal of ৳${rule.minSubtotal} required for ${rule.code}`;
       } else {
-        const applicableBase = rule.allowOnBundles ? subtotal : nonBundleSubtotal;
+        const applicableBase = rule.allowOnBundles ? (regularSubtotal + bundleSubtotal) : regularSubtotal;
 
-        if (applicableBase <= 0 && bundleSubtotal > 0 && !rule.allowOnBundles && rule.code !== 'FREESHIP') {
-          // Items are all promotional bundles with already applied discounts
-          promoError = `${rule.code} cannot be applied to promotional bundles`;
+        if (applicableBase <= 0 && (flashDealSubtotal > 0 || bundleSubtotal > 0) && rule.code !== 'FREESHIP') {
+          if (flashDealSubtotal > 0 && bundleSubtotal === 0) {
+            promoError = 'Promo vouchers cannot be applied to Flash Deal items';
+          } else {
+            promoError = `${rule.code} cannot be applied to promotional bundles`;
+          }
           promoDiscount = 0;
         } else {
           appliedPromoRule = rule;
@@ -108,15 +120,15 @@ export function calculateCartOffers(
             promoDiscount = rule.maxDiscount;
           }
 
-          // Keep at least 1 taka payable subtotal so promo discounts can never make total 0
-          const maxApplicableDiscount = Math.max(0, subtotal - 1);
+          // Keep at least 1 taka payable subtotal on applicableBase if cart is only regular items
+          const maxApplicableDiscount = Math.max(0, applicableBase - (applicableBase === subtotal ? 1 : 0));
           promoDiscount = Math.max(0, Math.min(promoDiscount, maxApplicableDiscount));
         }
       }
     }
   }
 
-  // 3. Free Delivery Evaluation
+  // 3. Free Delivery Evaluation (Master Spec Section 10.1: Flash Deals MUST count toward threshold)
   const targetThreshold =
     params.freeDeliveryConfig?.nationwideThreshold ??
     DELIVERY_CONFIG.NATIONWIDE_THRESHOLD;
@@ -151,5 +163,7 @@ export function calculateCartOffers(
     deliveryProgressPercent,
     nonBundleSubtotal,
     bundleSubtotal,
+    flashDealSubtotal,
+    regularSubtotal,
   };
 }

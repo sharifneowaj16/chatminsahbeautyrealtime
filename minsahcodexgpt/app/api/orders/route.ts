@@ -612,11 +612,19 @@ export async function POST(request: NextRequest) {
       addressData?.phone,
       savedAccountingAddress?.phone,
     ];
+    const regularSubtotal = parseFloat(
+      orderItems
+        .filter((item) => item.pricingSource !== "FLASH_DEAL")
+        .reduce((s, i) => s + i.total, 0)
+        .toFixed(2),
+    );
+
     const couponValidation = await validateCouponForOrder({
       prisma,
       userId,
       couponCode,
       subtotal,
+      eligibleSubtotal: regularSubtotal,
       shippingCost: shippingCostNum,
       phoneNumber: customerPhone,
       phoneNumbers: checkoutPhones,
