@@ -64,6 +64,7 @@ model User {
   searchClicks        SearchClickEvent[]
   giftsSent           GiftRequest[]       @relation("GiftSender")
   giftsReceived       GiftRequest[]       @relation("GiftRecipient")
+  campaignRedemptions CampaignRedemptionLedger[]
 
   @@index([email])
   @@index([referralCode])
@@ -854,21 +855,28 @@ model UnlistedProduct {
 // ==========================================
 
 model CartItem {
-  id        String  @id @default(cuid())
-  userId    String
-  productId String
-  variantId String?
-  quantity  Int     @default(1)
+  id               String   @id @default(cuid())
+  userId           String
+  productId        String
+  variantId        String?
+  lineKey          String?  // Canonical JSON array line key (NOT NULL after Step 9 Contract DDL)
+  pricingSource    String   @default("REGULAR") // REGULAR | FLASH_DEAL | BUNDLE | LEGACY_UNATTRIBUTED
+  campaignRef      String?  // Flash Deal Campaign UUID
+  bundleId         String?  // Bundle Definition ID
+  bundleGroupId    String?  // Bundle group ID (e.g. bg_3step)
+  bundleInstanceId String?  // Unique bundle purchase instance UUID (bnd_inst_...)
+  quantity         Int      @default(1)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variant ProductVariant? @relation(fields: [variantId], references: [id])
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant          ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@unique([userId, productId, variantId])
   @@index([userId])
+  @@index([userId, lineKey])
 }
 
 model WishlistItem {
@@ -926,6 +934,19 @@ model Order {
   pathaoTrackingCode     String?
   pathaoSentAt           DateTime?
   pathaoResponse         Json?
+
+  // Authoritative COD and advance payment reconciliation
+  advancePaidAmount      Decimal  @default(0) @db.Decimal(10, 2)
+  codCollectionAmount    Decimal  @default(0) @db.Decimal(10, 2)
+  pathaoAmountToCollect  Decimal? @db.Decimal(10, 2)
+  codPolicyApplied       String?
+  codCalculatedAt        DateTime?
+
+  // Pathao atomic booking mutex
+  pathaoBookingStatus    String    @default("READY")
+  pathaoBookingAttemptId String?
+  pathaoBookingLockedAt  DateTime?
+  pathaoBookingLockedBy  String?
 
   couponCode     String?
   couponDiscount Decimal? @db.Decimal(10, 2)
@@ -1057,9 +1078,12 @@ model Order {
   purchaseShortlist      PurchaseShortlist[]
   metaCapiFailures       MetaCapiFailure[]
   convertedMetaLeads     MetaLead[] @relation("MetaLeadConvertedOrder")
+  campaignRedemptions    CampaignRedemptionLedger[]
+  paymentRefunds         PaymentRefund[]
 
   @@unique([userId, checkoutIdempotencyKey])
   @@index([userId])
+  @@index([pathaoBookingStatus])
   @@index([checkoutIdempotencyKey])
   @@index([paymentExpiresAt])
   @@index([stockFinalizedAt])
@@ -1175,6 +1199,14 @@ model OrderItem {
   quantity  Int
   total     Decimal @db.Decimal(10, 2)
 
+  // Historical pricing and campaign snapshot
+  originalPrice    Decimal? @db.Decimal(10, 2)
+  discountAmount   Decimal  @default(0) @db.Decimal(10, 2)
+  pricingSource    String   @default("REGULAR")
+  campaignRef      String?
+  bundleGroupId    String?
+  bundleInstanceId String?
+
   itemStatus   String   @default("FULFILLED") // FULFILLED, RETURNED_GOOD, RETURNED_DAMAGED, EXCHANGED
   returnReason String?
 
@@ -1214,6 +1246,7 @@ model Payment {
   updatedAt            DateTime      @updatedAt
 
   order                Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refunds              PaymentRefund[]
 
   @@index([orderId])
   @@index([method])
@@ -1221,6 +1254,92 @@ model Payment {
   @@index([status])
   @@index([transactionId])
   @@index([verifiedAt])
+}
+
+// ==========================================
+// Flash Deal Campaign Usage & Concurrency Models
+// ==========================================
+
+model CampaignCustomerUsage {
+  id           String   @id @default(cuid())
+  campaignRef  String
+  phone        String   // Normalized 11-digit BD mobile
+  userId       String   // Audit anchor
+  confirmedQty Int      @default(0) // Settled COD or paid online orders
+  reservedQty  Int      @default(0) // Active 15-minute payment window holds
+  updatedAt    DateTime @updatedAt
+
+  @@unique([campaignRef, phone])
+  @@index([campaignRef, userId])
+}
+
+model CampaignRedemptionLedger {
+  id            String                   @id @default(cuid())
+  campaignRef   String
+  phone         String
+  userId        String
+  orderId       String?
+  quantity      Int
+  status        CampaignRedemptionStatus @default(RESERVED) // RESERVED | CONFIRMED | RELEASED
+  reservedUntil DateTime?                // Payment window expiry
+  createdAt     DateTime                 @default(now())
+  confirmedAt   DateTime?
+  releasedAt    DateTime?
+
+  user          User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order         Order?                   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([campaignRef, phone])
+  @@index([orderId])
+  @@index([status, reservedUntil])
+}
+
+enum CampaignRedemptionStatus {
+  RESERVED
+  CONFIRMED
+  RELEASED
+}
+
+// ==========================================
+// Internal Admin-Managed Financial Refund Ledger
+// ==========================================
+
+model PaymentRefund {
+  id                 String              @id @default(cuid())
+  paymentId          String
+  orderId            String
+  refundNumber       String              @unique
+  amount             Decimal             @db.Decimal(10, 2)
+  currency           String              @default("BDT")
+  refundMethod       String              // 'BKASH' | 'NAGAD' | 'BANK_TRANSFER' | 'CASH'
+  recipientAccount   String              // Customer mobile number, bank account details, or recipient identifier
+  transactionRef     String?             // External TrxID or receipt evidence from manual transfer
+  paymentProofUrl    String?             // Supporting document or receipt screenshot URL
+  processedByAdminId String              // Admin who executed and verified the refund
+  adminEmail         String?             // Admin email/identity for immutable audit trail
+  notes              String?             // Operational reason or notes for the customer
+  status             PaymentRefundStatus @default(PENDING) // PENDING | PROCESSING | COMPLETED | FAILED
+  returnId           String?             // Optional reference to physical merchandise Return
+  createdAt          DateTime            @default(now())   // Requested timestamp
+  processedAt        DateTime?           // Processing timestamp
+  completedAt        DateTime?           // Completed timestamp (when customer confirmed receipt)
+  updatedAt          DateTime            @updatedAt
+
+  payment            Payment             @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  order              Order               @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  returnRequest      Return?             @relation(fields: [returnId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([status])
+  @@index([processedByAdminId])
+}
+
+enum PaymentRefundStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 // ==========================================
@@ -1609,9 +1728,10 @@ model Return {
   requestDate  DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  order Order      @relation(fields: [orderId], references: [id])
-  user  User       @relation(fields: [userId], references: [id])
-  items ReturnItem[]
+  order          Order           @relation(fields: [orderId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  items          ReturnItem[]
+  paymentRefunds PaymentRefund[]
 
   @@index([orderId])
   @@index([userId])
