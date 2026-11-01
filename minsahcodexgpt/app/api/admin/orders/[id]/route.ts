@@ -108,6 +108,15 @@ export async function GET(
         pathaoTrackingCode: true,
         pathaoConsignmentId: true,
         pathaoSentAt: true,
+        advancePaidAmount: true,
+        codCollectionAmount: true,
+        pathaoAmountToCollect: true,
+        codPolicyApplied: true,
+        codCalculatedAt: true,
+        pathaoBookingStatus: true,
+        pathaoBookingAttemptId: true,
+        pathaoBookingLockedAt: true,
+        pathaoBookingLockedBy: true,
         couponCode: true,
         couponDiscount: true,
         customerNote: true,
@@ -128,10 +137,19 @@ export async function GET(
             price: true,
             quantity: true,
             total: true,
+            originalPrice: true,
+            discountAmount: true,
+            pricingSource: true,
+            campaignRef: true,
+            bundleGroupId: true,
+            bundleInstanceId: true,
           },
         },
         shippingAddress: true,
         payments: {
+          orderBy: { createdAt: "desc" },
+        },
+        paymentRefunds: {
           orderBy: { createdAt: "desc" },
         },
         returns: {
@@ -235,12 +253,21 @@ export async function GET(
         taxAmount: toNumber(order.taxAmount),
         discountAmount: toNumber(order.discountAmount),
         total: toNumber(order.total),
+        advancePaidAmount: toNumber(order.advancePaidAmount),
+        codCollectionAmount: toNumber(order.codCollectionAmount),
+        pathaoAmountToCollect:
+          order.pathaoAmountToCollect === null
+            ? null
+            : toNumber(order.pathaoAmountToCollect),
         couponDiscount:
           order.couponDiscount === null ? null : toNumber(order.couponDiscount),
         items: order.items.map((item) => ({
           ...item,
           price: toNumber(item.price),
           total: toNumber(item.total),
+          originalPrice:
+            item.originalPrice === null ? null : toNumber(item.originalPrice),
+          discountAmount: toNumber(item.discountAmount),
           product: item.productId
             ? (productMap.get(item.productId) ?? null)
             : null,
@@ -252,6 +279,32 @@ export async function GET(
           ...payment,
           amount: toNumber(payment.amount),
         })),
+        paymentRefunds: order.paymentRefunds.map((refund) => ({
+          ...refund,
+          amount: toNumber(refund.amount),
+        })),
+        financialReconciliation: {
+          grandTotal: toNumber(order.total),
+          advancePaidAmount: toNumber(order.advancePaidAmount),
+          codCollectionAmount: toNumber(order.codCollectionAmount),
+          pathaoAmountToCollect:
+            order.pathaoAmountToCollect === null
+              ? null
+              : toNumber(order.pathaoAmountToCollect),
+          netCapturedAdvance:
+            order.payments
+              .filter((p) => p.status === "COMPLETED")
+              .reduce((sum, p) => sum + toNumber(p.amount), 0) -
+            order.paymentRefunds
+              .filter((r) => r.status === "COMPLETED")
+              .reduce((sum, r) => sum + toNumber(r.amount), 0),
+          totalCompletedRefunds: order.paymentRefunds
+            .filter((r) => r.status === "COMPLETED")
+            .reduce((sum, r) => sum + toNumber(r.amount), 0),
+          activeRefundReservations: order.paymentRefunds
+            .filter((r) => r.status === "PENDING" || r.status === "PROCESSING")
+            .reduce((sum, r) => sum + toNumber(r.amount), 0),
+        },
         returns: order.returns.map((returnItem) => ({
           ...returnItem,
           refundAmount: toNumber(returnItem.refundAmount),

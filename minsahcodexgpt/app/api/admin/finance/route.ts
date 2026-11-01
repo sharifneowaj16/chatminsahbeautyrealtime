@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       paymentWhere.method = { contains: methodFilter, mode: 'insensitive' };
     }
 
-    const [payments, todayRegister, pendingRunnerLedgers, ordersSummary] = await Promise.all([
+    const [payments, todayRegister, pendingRunnerLedgers, ordersSummary, refundsSummary] = await Promise.all([
       prisma.payment.findMany({
         where: paymentWhere,
         orderBy: { createdAt: 'desc' },
@@ -88,6 +88,15 @@ export async function GET(request: NextRequest) {
         },
         _sum: { total: true },
         _count: { id: true },
+      }),
+      prisma.paymentRefund.findMany({
+        where: {
+          createdAt: { gte: start, lte: end },
+        },
+        select: {
+          amount: true,
+          status: true,
+        },
       }),
     ]);
 
@@ -154,7 +163,13 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const netPayout = Number((totalGross - totalFees).toFixed(2));
+    const completedRefundsTotal = refundsSummary
+      .filter((r) => r.status === 'COMPLETED')
+      .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+    const activeRefundReservationsTotal = refundsSummary
+      .filter((r) => r.status === 'PENDING' || r.status === 'PROCESSING')
+      .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+    const netPayout = Number((totalGross - totalFees - completedRefundsTotal).toFixed(2));
 
     // Runner totals
     const runnerDiscrepancyTotal = pendingRunnerLedgers.reduce(
@@ -168,6 +183,8 @@ export async function GET(request: NextRequest) {
         totalGross: totalGross || Number(ordersSummary._sum.total || 0),
         netPayout: netPayout || Number(ordersSummary._sum.total || 0),
         totalFees,
+        totalRefunded: completedRefundsTotal,
+        activeRefundReservations: activeRefundReservationsTotal,
         pendingCod: methodBreakdown.COD,
         orderCount: ordersSummary._count.id,
         methodBreakdown,

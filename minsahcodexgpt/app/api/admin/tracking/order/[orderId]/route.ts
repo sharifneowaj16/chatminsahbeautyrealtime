@@ -125,6 +125,39 @@ export async function GET(
           },
         },
 
+        advancePaidAmount: true,
+        codCollectionAmount: true,
+        pathaoAmountToCollect: true,
+        codPolicyApplied: true,
+        codCalculatedAt: true,
+        pathaoBookingStatus: true,
+        pathaoBookingAttemptId: true,
+        pathaoBookingLockedAt: true,
+        pathaoBookingLockedBy: true,
+        pathaoConsignmentId: true,
+        pathaoTrackingCode: true,
+
+        paymentRefunds: {
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          select: {
+            id: true,
+            refundNumber: true,
+            paymentId: true,
+            amount: true,
+            currency: true,
+            refundMethod: true,
+            recipientAccount: true,
+            transactionRef: true,
+            processedByAdminId: true,
+            adminEmail: true,
+            notes: true,
+            status: true,
+            createdAt: true,
+            completedAt: true,
+          },
+        },
+
         metaCapiFailures: {
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -269,6 +302,54 @@ export async function GET(
         currencyMatched: payment.currencyMatched,
         createdAt: payment.createdAt,
         updatedAt: payment.updatedAt,
+      })),
+      financialReconciliation: {
+        grandTotal: toNumber(order.total),
+        advancePaidAmount: toNumber(order.advancePaidAmount),
+        codCollectionAmount: toNumber(order.codCollectionAmount),
+        pathaoAmountToCollect:
+          order.pathaoAmountToCollect !== null
+            ? toNumber(order.pathaoAmountToCollect)
+            : null,
+        codPolicyApplied: order.codPolicyApplied,
+        codCalculatedAt: order.codCalculatedAt,
+        capturedPaymentsTotal: order.payments
+          .filter((p) => p.status === 'COMPLETED')
+          .reduce((sum, p) => sum + toNumber(p.amount), 0),
+        completedRefundsTotal: order.paymentRefunds
+          .filter((r) => r.status === 'COMPLETED')
+          .reduce((sum, r) => sum + toNumber(r.amount), 0),
+        activeRefundReservationsTotal: order.paymentRefunds
+          .filter((r) => r.status === 'PENDING' || r.status === 'PROCESSING')
+          .reduce((sum, r) => sum + toNumber(r.amount), 0),
+        netCapturedAdvance:
+          order.payments
+            .filter((p) => p.status === 'COMPLETED')
+            .reduce((sum, p) => sum + toNumber(p.amount), 0) -
+          order.paymentRefunds
+            .filter((r) => r.status === 'COMPLETED')
+            .reduce((sum, r) => sum + toNumber(r.amount), 0),
+        pathaoBookingStatus: order.pathaoBookingStatus,
+        pathaoConsignmentId: order.pathaoConsignmentId,
+        pathaoTrackingCode: order.pathaoTrackingCode,
+        pathaoBookingLockedAt: order.pathaoBookingLockedAt,
+        pathaoBookingLockedBy: order.pathaoBookingLockedBy,
+      },
+      paymentRefunds: order.paymentRefunds.map((r) => ({
+        id: r.id,
+        refundNumber: r.refundNumber,
+        paymentId: r.paymentId,
+        amount: toNumber(r.amount),
+        currency: r.currency,
+        refundMethod: r.refundMethod,
+        recipientAccount: r.recipientAccount,
+        transactionRef: r.transactionRef,
+        processedByAdminId: r.processedByAdminId,
+        adminEmail: r.adminEmail,
+        notes: r.notes,
+        status: r.status,
+        createdAt: r.createdAt,
+        completedAt: r.completedAt,
       })),
       recentFailures: order.metaCapiFailures.map((failure) => ({
         id: failure.id,
