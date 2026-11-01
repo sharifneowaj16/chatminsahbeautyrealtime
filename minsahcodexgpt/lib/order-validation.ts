@@ -10,6 +10,13 @@ export type NormalizedOrderItemInput = {
   productId: string;
   variantId?: string;
   quantity: number;
+  lineKey?: string;
+  pricingSource?: string;
+  campaignRef?: string;
+  bundleId?: string;
+  bundleGroupId?: string;
+  bundleInstanceId?: string;
+  price?: number;
 };
 
 export type NormalizedAddressDataInput = {
@@ -121,18 +128,37 @@ function normalizeItems(value: unknown): NormalizedOrderItemInput[] {
       );
     }
 
-    const key = `${productId}:${variantId ?? ''}`;
+    const lineKey = cleanOptionalString(item.lineKey);
+    const pricingSource = cleanOptionalString(item.pricingSource) || 'REGULAR';
+    const campaignRef = cleanOptionalString(item.campaignRef);
+    const bundleId = cleanOptionalString(item.bundleId);
+    const bundleGroupId = cleanOptionalString(item.bundleGroupId);
+    const bundleInstanceId = cleanOptionalString(item.bundleInstanceId);
+    const price = typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : undefined;
+
+    const key = lineKey || `${pricingSource}:${campaignRef ?? ''}:${bundleId ?? ''}:${bundleGroupId ?? ''}:${bundleInstanceId ?? ''}:${productId}:${variantId ?? ''}`;
     const existing = merged.get(key);
     const nextQuantity = (existing?.quantity ?? 0) + quantity;
 
     if (nextQuantity > MAX_LINE_ITEM_QUANTITY) {
       throw new OrderValidationError(
-        `Total quantity for one product cannot exceed ${MAX_LINE_ITEM_QUANTITY}`,
+        `Total quantity for one item line cannot exceed ${MAX_LINE_ITEM_QUANTITY}`,
         'QUANTITY_LIMIT_EXCEEDED',
       );
     }
 
-    merged.set(key, { productId, variantId, quantity: nextQuantity });
+    merged.set(key, {
+      productId,
+      variantId,
+      quantity: nextQuantity,
+      lineKey,
+      pricingSource,
+      campaignRef,
+      bundleId,
+      bundleGroupId,
+      bundleInstanceId,
+      price: price ?? existing?.price,
+    });
   });
 
   return Array.from(merged.values());

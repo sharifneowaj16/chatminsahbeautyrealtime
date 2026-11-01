@@ -1,6 +1,10 @@
 import 'server-only';
 
 import type prismaClient from '@/lib/prisma';
+import {
+  finalizeCampaignUsageInTransaction,
+  releaseCampaignUsageInTransaction,
+} from '@/lib/campaign-usage';
 
 export const ONLINE_PAYMENT_RESERVATION_MINUTES = 15;
 export const ONLINE_PAYMENT_EXPIRY_LIMIT = 100;
@@ -283,6 +287,8 @@ export async function finalizeOnlineOrderStockInTransaction(
     }
   }
 
+  await finalizeCampaignUsageInTransaction(tx, orderId);
+
   return { finalized: true };
 }
 
@@ -358,6 +364,8 @@ export async function releaseOnlineOrderReservationInTransaction(
       throw new OnlinePaymentStockError('ONLINE_STOCK_RELEASE_FAILED');
     }
   }
+
+  await releaseCampaignUsageInTransaction(tx, orderId);
 
   return { released: true };
 }

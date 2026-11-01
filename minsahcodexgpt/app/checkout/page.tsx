@@ -162,6 +162,10 @@ function getFriendlyCheckoutError(data: unknown) {
         ? payload.message
         : "";
 
+  if (code === "CAMPAIGN_LIMIT_EXCEEDED" || code === "PHONE_REQUIRED_FOR_CAMPAIGN") {
+    return rawMessage;
+  }
+
   if (code === "IDEMPOTENCY_PAYLOAD_MISMATCH") {
     return "Cart or address details changed. Please review and place order again.";
   }
@@ -780,6 +784,13 @@ function CheckoutContent() {
             productId: item.productId ?? item.id,
             variantId: item.variantId ?? undefined,
             quantity: item.quantity,
+            lineKey: item.lineKey ?? undefined,
+            pricingSource: item.pricingSource ?? 'REGULAR',
+            campaignRef: item.campaignRef ?? undefined,
+            bundleId: item.bundleId ?? undefined,
+            bundleGroupId: item.bundleGroupId ?? undefined,
+            bundleInstanceId: item.bundleInstanceId ?? undefined,
+            price: typeof item.price === 'number' ? item.price : undefined,
           })),
           addressData: {
             fullName: shippingForm.fullName.trim(),

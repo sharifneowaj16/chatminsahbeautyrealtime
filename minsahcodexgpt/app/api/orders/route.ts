@@ -47,6 +47,8 @@ import {
   reserveOnlineOrderStockInTransaction,
 } from "@/lib/online-payment-stock";
 import { triggerEventDrivenCatalogSync } from "@/lib/meta-platform/domains/catalog/event-sync";
+import { reserveCampaignUsageInTransaction } from "@/lib/campaign-usage";
+import { normalizeFlashDealsConfig } from "@/lib/homepageConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -333,7 +335,7 @@ export async function POST(request: NextRequest) {
       ),
     );
 
-    const [products, variants, customerForTracking] = await Promise.all([
+    const [products, variants, customerForTracking, flashDealsConfigRaw] = await Promise.all([
       prisma.product.findMany({
         where: { id: { in: productIds }, isActive: true },
         select: {
@@ -377,12 +379,30 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         select: { email: true, phone: true },
       }),
+      prisma.siteConfig.findUnique({
+        where: { key: "flashDeals" },
+        select: { value: true },
+      }),
     ]);
+
+    const flashDealsConfig = normalizeFlashDealsConfig(flashDealsConfigRaw?.value);
+    const dealsByCampaignRef = new Map(
+      flashDealsConfig.items.map((deal) => [deal.campaignRef, deal]),
+    );
+    const dealsByProductId = new Map(
+      flashDealsConfig.items.map((deal) => [deal.productId, deal]),
+    );
 
     const productMap = new Map(products.map((p) => [p.id, p]));
     const variantMap = new Map(variants.map((v) => [v.id, v]));
 
     // 4. Validate product/variant ownership and stock before entering transaction.
+    const requestedStockByKey = new Map<string, number>();
+    for (const item of items) {
+      const stockKey = item.variantId ? `variant:${item.variantId}` : `product:${item.productId}`;
+      requestedStockByKey.set(stockKey, (requestedStockByKey.get(stockKey) ?? 0) + item.quantity);
+    }
+
     for (const item of items) {
       const product = productMap.get(item.productId);
       if (!product) {
@@ -420,11 +440,13 @@ export async function POST(request: NextRequest) {
         const availableStock = variant
           ? availableVariantStock(variant)
           : availableProductStock(product);
+        const stockKey = item.variantId ? `variant:${item.variantId}` : `product:${item.productId}`;
+        const totalRequested = requestedStockByKey.get(stockKey) ?? item.quantity;
 
-        if (availableStock < item.quantity) {
+        if (availableStock < totalRequested) {
           return NextResponse.json(
             {
-              error: `Insufficient stock for "${product.name}". Available: ${availableStock}, Requested: ${item.quantity}`,
+              error: `Insufficient stock for "${product.name}". Available: ${availableStock}, Requested: ${totalRequested}`,
               code: "INSUFFICIENT_STOCK",
               productId: item.productId,
             },
@@ -438,12 +460,42 @@ export async function POST(request: NextRequest) {
     const orderItems = items.map((item) => {
       const product = productMap.get(item.productId)!;
       const variant = item.variantId ? variantMap.get(item.variantId) : null;
-      const unitPrice = parseFloat(
+      const regularPrice = parseFloat(
         (variant?.price ?? product.price).toString(),
       );
-      const itemTotal = parseFloat((unitPrice * item.quantity).toFixed(2));
       const sku = variant?.sku ?? product.sku;
       const name = variant ? `${product.name} - ${variant.name}` : product.name;
+      const pricingSource = item.pricingSource || "REGULAR";
+      const campaignRef = item.campaignRef || null;
+      const bundleGroupId = item.bundleGroupId || null;
+      const bundleInstanceId = item.bundleInstanceId || null;
+
+      let unitPrice = regularPrice;
+      const originalPrice = regularPrice;
+      let discountAmount = 0;
+
+      if (pricingSource === "FLASH_DEAL" && campaignRef) {
+        const deal =
+          dealsByCampaignRef.get(campaignRef) ||
+          dealsByProductId.get(item.productId);
+        if (deal && deal.salePrice > 0) {
+          unitPrice = deal.salePrice;
+          discountAmount = parseFloat(
+            Math.max(0, (regularPrice - unitPrice) * item.quantity).toFixed(2),
+          );
+        }
+      } else if (
+        pricingSource === "BUNDLE" &&
+        typeof item.price === "number" &&
+        item.price > 0
+      ) {
+        unitPrice = item.price;
+        discountAmount = parseFloat(
+          Math.max(0, (regularPrice - unitPrice) * item.quantity).toFixed(2),
+        );
+      }
+
+      const itemTotal = parseFloat((unitPrice * item.quantity).toFixed(2));
 
       return {
         productId: item.productId,
@@ -453,6 +505,12 @@ export async function POST(request: NextRequest) {
         price: unitPrice,
         quantity: item.quantity,
         total: itemTotal,
+        originalPrice,
+        discountAmount,
+        pricingSource,
+        campaignRef,
+        bundleGroupId,
+        bundleInstanceId,
       };
     });
 
@@ -783,6 +841,16 @@ export async function POST(request: NextRequest) {
       } else {
         await decrementCodOrderStockInTransaction(tx, orderItems, productMap);
       }
+
+      // 6f. Atomic campaign usage reservation / confirmation
+      await reserveCampaignUsageInTransaction(tx, {
+        items,
+        userId,
+        phone: customerPhone,
+        orderId: newOrder.id,
+        isOnlinePayment: isOnlinePaymentOrder,
+        reservedUntil: onlinePaymentExpiresAt,
+      });
 
       // 6f. Product analytics: order counters are updated in the same DB transaction
       // so backend product analytics never shows an order without matching product metrics.
