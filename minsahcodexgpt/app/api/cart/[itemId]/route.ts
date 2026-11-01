@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import prisma from '@/lib/prisma';
+import { generateCanonicalLineKey } from '@/utils/cartItemHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,11 +88,22 @@ export async function PATCH(
       );
     }
 
+    const targetLineKey = generateCanonicalLineKey({
+      pricingSource: cartItem.pricingSource,
+      campaignRef: cartItem.campaignRef,
+      bundleId: cartItem.bundleId,
+      bundleGroupId: cartItem.bundleGroupId,
+      bundleInstanceId: cartItem.bundleInstanceId,
+      productId: cartItem.productId,
+      variantId: nextVariantId,
+    });
+
     const updated = await prisma.cartItem.update({
       where: { id: itemId },
       data: {
         quantity,
         variantId: nextVariantId,
+        lineKey: targetLineKey,
       },
       include: {
         product: {
@@ -111,6 +123,12 @@ export async function PATCH(
         productId: updated.productId,
         variantId: updated.variantId,
         quantity: updated.quantity,
+        lineKey: updated.lineKey,
+        pricingSource: updated.pricingSource,
+        campaignRef: updated.campaignRef,
+        bundleId: updated.bundleId,
+        bundleGroupId: updated.bundleGroupId,
+        bundleInstanceId: updated.bundleInstanceId,
         product: {
           id: updated.product.id,
           name: updated.product.name,

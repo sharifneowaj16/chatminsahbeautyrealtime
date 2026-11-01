@@ -252,6 +252,7 @@ export default function SeedBundleDrawer({
       })
     );
     const stepName = `${selectedProducts.length}-Step Bundle`;
+    const bundleInstanceId = `bnd_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
     const bundleItems = selectedProducts.map((p) => {
       const activeVar = p.selectedVariantId
@@ -278,6 +279,7 @@ export default function SeedBundleDrawer({
           : null,
         bundleId: bundleGroupId,
         bundleGroupId,
+        bundleInstanceId,
         bundleSource: 'custom-drawer',
         bundleName: stepName,
         discountRatio,

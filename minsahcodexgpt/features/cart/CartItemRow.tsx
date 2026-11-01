@@ -248,6 +248,18 @@ export default function CartItemRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                {item.pricingSource === 'FLASH_DEAL' && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                    ⚡ Flash Deal
+                  </span>
+                )}
+                {item.isBundle && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                    🎁 Bundle
+                  </span>
+                )}
+              </div>
               <h3
                 className={`${isSummary ? "text-sm font-bold text-minsah-text" : isCompact ? "text-[13px] sm:text-[14px] md:text-[12.5px] font-medium text-[#181C1A] leading-snug" : "text-base font-bold text-minsah-text"} line-clamp-2 md:line-clamp-1`}
               >
@@ -411,9 +423,20 @@ export default function CartItemRow({
                   Qty: {item.quantity}
                 </p>
               ) : isAtMaxQuantity && maxQuantity !== null ? (
-                <p className="mt-1 text-xs font-semibold text-minsah-warning">
-                  Maximum available quantity reached
-                </p>
+                item.pricingSource === 'FLASH_DEAL' ? (
+                  <div className="mt-1.5 space-y-1">
+                    <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30">
+                      [Max limit reached]
+                    </span>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium leading-tight">
+                      আপনি এই অফারের সর্বোচ্চ {maxQuantity} পিস নিয়েছেন। আরও নিতে চাইলে Regular Price-এ কিনতে পারবেন।
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-xs font-semibold text-minsah-warning">
+                    Maximum available quantity reached
+                  </p>
+                )
               ) : null}
             </div>
 

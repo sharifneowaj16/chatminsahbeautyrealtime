@@ -92,6 +92,53 @@ export function generateBundleGroupId(
     .join('|');
 }
 
+/**
+ * Deterministic Canonical Server-Derived Cart Line Identity Formula:
+ * JSON.stringify([pricingSource, campaignRef ?? null, bundleId ?? null, bundleGroupId ?? null, bundleInstanceId ?? null, productId, variantId ?? null])
+ */
+export function generateCanonicalLineKey({
+  pricingSource = 'REGULAR',
+  campaignRef = null,
+  bundleId = null,
+  bundleGroupId = null,
+  bundleInstanceId = null,
+  productId,
+  variantId = null,
+  id = null,
+}: {
+  pricingSource?: string | null;
+  campaignRef?: string | null;
+  bundleId?: string | null;
+  bundleGroupId?: string | null;
+  bundleInstanceId?: string | null;
+  productId: string;
+  variantId?: string | null;
+  id?: string | null;
+}): string {
+  const source = pricingSource || 'REGULAR';
+  if (source === 'LEGACY_UNATTRIBUTED') {
+    return JSON.stringify([
+      'LEGACY_UNATTRIBUTED',
+      null,
+      null,
+      null,
+      null,
+      productId,
+      variantId ?? null,
+      id ?? null,
+    ]);
+  }
+  return JSON.stringify([
+    source,
+    campaignRef ?? null,
+    bundleId ?? null,
+    bundleGroupId ?? null,
+    bundleInstanceId ?? null,
+    productId,
+    variantId ?? null,
+  ]);
+}
+
 export interface StandardProductInput {
   id: string;
   name: string;
@@ -120,6 +167,10 @@ export interface CreateStandardCartItemParams {
   variant?: StandardVariantInput | null;
   availableVariants?: ProductVariantItem[];
   quantity?: number;
+  pricingSource?: string;
+  campaignRef?: string | null;
+  limitType?: string | null;
+  maxUnitsPerCustomer?: number | null;
 }
 
 function parseWeightNumber(val: unknown): number | null {
@@ -139,10 +190,23 @@ export function createStandardCartItem({
   variant,
   availableVariants,
   quantity = 1,
+  pricingSource = 'REGULAR',
+  campaignRef = null,
+  limitType = null,
+  maxUnitsPerCustomer = null,
 }: CreateStandardCartItemParams): CartItem {
   const hasVariant = Boolean(variant && variant.id);
   const variantId = hasVariant ? variant!.id : null;
-  const id = generateCartItemId(product.id, variantId);
+  const lineKey = generateCanonicalLineKey({
+    pricingSource,
+    campaignRef,
+    bundleId: null,
+    bundleGroupId: null,
+    bundleInstanceId: null,
+    productId: product.id,
+    variantId,
+  });
+  const id = lineKey;
 
   const effectivePrice =
     hasVariant && typeof variant!.price === 'number' && variant!.price > 0
@@ -167,6 +231,11 @@ export function createStandardCartItem({
 
   return {
     id,
+    lineKey,
+    pricingSource,
+    campaignRef,
+    limitType: (limitType as any) ?? null,
+    maxUnitsPerCustomer: maxUnitsPerCustomer ?? null,
     productId: product.id,
     variantId: variantId || undefined,
     name: product.name,
@@ -187,6 +256,8 @@ export function createStandardCartItem({
     maxQuantity,
     isBundle: false,
     bundleId: null,
+    bundleGroupId: null,
+    bundleInstanceId: null,
     bundleName: null,
     bundleDiscountRatio: null,
     availableVariants: availableVariants && availableVariants.length > 0 ? availableVariants : undefined,
@@ -199,6 +270,7 @@ export interface CreateBundleCartItemParams {
   availableVariants?: ProductVariantItem[];
   bundleId: string;
   bundleGroupId?: string | null;
+  bundleInstanceId?: string | null;
   bundleSource?: 'hero-card' | 'custom-drawer' | null;
   bundleName?: string;
   discountRatio?: number;
@@ -214,6 +286,7 @@ export function createBundleCartItem({
   availableVariants,
   bundleId,
   bundleGroupId,
+  bundleInstanceId,
   bundleSource,
   bundleName = 'Special Bundle',
   discountRatio = 1,
@@ -221,7 +294,22 @@ export function createBundleCartItem({
 }: CreateBundleCartItemParams): CartItem {
   const hasVariant = Boolean(variant && variant.id);
   const variantId = hasVariant ? variant!.id : null;
-  const id = generateCartItemId(product.id, variantId, bundleId);
+  const effectiveBundleInstanceId =
+    bundleInstanceId ||
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `bnd_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
+
+  const lineKey = generateCanonicalLineKey({
+    pricingSource: 'BUNDLE',
+    campaignRef: null,
+    bundleId,
+    bundleGroupId: bundleGroupId ?? bundleId,
+    bundleInstanceId: effectiveBundleInstanceId,
+    productId: product.id,
+    variantId,
+  });
+  const id = lineKey;
 
   const originalItemPrice =
     hasVariant && typeof variant!.price === 'number' && variant!.price > 0
@@ -247,6 +335,8 @@ export function createBundleCartItem({
 
   return {
     id,
+    lineKey,
+    pricingSource: 'BUNDLE',
     productId: product.id,
     variantId: variantId || undefined,
     name: `${product.name} [${bundleName}]`,
@@ -268,6 +358,7 @@ export function createBundleCartItem({
     isBundle: true,
     bundleId,
     bundleGroupId: bundleGroupId ?? bundleId,
+    bundleInstanceId: effectiveBundleInstanceId,
     bundleSource: bundleSource ?? null,
     bundleName,
     bundleDiscountRatio: discountRatio,

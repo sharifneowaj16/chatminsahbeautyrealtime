@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import prisma from '@/lib/prisma';
+import { generateCanonicalLineKey } from '@/utils/cartItemHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,12 @@ export async function GET(request: NextRequest) {
       productId: item.productId,
       variantId: item.variantId,
       quantity: item.quantity,
+      lineKey: item.lineKey,
+      pricingSource: item.pricingSource,
+      campaignRef: item.campaignRef,
+      bundleId: item.bundleId,
+      bundleGroupId: item.bundleGroupId,
+      bundleInstanceId: item.bundleInstanceId,
       product: {
         id: item.product.id,
         name: item.product.name,
@@ -109,7 +116,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { productId, variantId, quantity: rawQuantity = 1 } = body;
+    const {
+      productId,
+      variantId,
+      quantity: rawQuantity = 1,
+      lineKey: clientLineKey,
+      pricingSource = 'REGULAR',
+      campaignRef = null,
+      bundleId = null,
+      bundleGroupId = null,
+      bundleInstanceId = null,
+    } = body;
     const quantity = Math.trunc(Number(rawQuantity));
 
     if (!productId) {
@@ -159,14 +176,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if item already exists in cart
-    const existing = await prisma.cartItem.findFirst({
+    const targetLineKey = clientLineKey || generateCanonicalLineKey({
+      pricingSource: pricingSource || 'REGULAR',
+      campaignRef: campaignRef || null,
+      bundleId: bundleId || null,
+      bundleGroupId: bundleGroupId || null,
+      bundleInstanceId: bundleInstanceId || null,
+      productId: resolvedProductId,
+      variantId: variantId || null,
+    });
+
+    // Check if line item already exists using deterministic canonical lineKey
+    let existing = await prisma.cartItem.findFirst({
       where: {
         userId,
-        productId: resolvedProductId,
-        variantId: variantId || null,
+        lineKey: targetLineKey,
       },
     });
+
+    // Expand-Contract backward-compatibility fallback:
+    // If no match by lineKey and pricingSource is REGULAR, check legacy null-lineKey row
+    if (!existing && (!pricingSource || pricingSource === 'REGULAR')) {
+      existing = await prisma.cartItem.findFirst({
+        where: {
+          userId,
+          productId: resolvedProductId,
+          variantId: variantId || null,
+          lineKey: null,
+        },
+      });
+    }
 
     let cartItem;
 
@@ -188,7 +227,15 @@ export async function POST(request: NextRequest) {
 
       cartItem = await prisma.cartItem.update({
         where: { id: existing.id },
-        data: { quantity: newQuantity },
+        data: {
+          quantity: newQuantity,
+          lineKey: targetLineKey,
+          pricingSource: pricingSource || 'REGULAR',
+          campaignRef: campaignRef || null,
+          bundleId: bundleId || null,
+          bundleGroupId: bundleGroupId || null,
+          bundleInstanceId: bundleInstanceId || null,
+        },
         include: {
           product: {
             include: {
@@ -207,6 +254,12 @@ export async function POST(request: NextRequest) {
           productId: resolvedProductId,
           variantId: variantId || null, // Explicitly set null if undefined
           quantity,
+          lineKey: targetLineKey,
+          pricingSource: pricingSource || 'REGULAR',
+          campaignRef: campaignRef || null,
+          bundleId: bundleId || null,
+          bundleGroupId: bundleGroupId || null,
+          bundleInstanceId: bundleInstanceId || null,
         },
         include: {
           product: {
@@ -227,6 +280,12 @@ export async function POST(request: NextRequest) {
         productId: cartItem.productId,
         variantId: cartItem.variantId,
         quantity: cartItem.quantity,
+        lineKey: cartItem.lineKey,
+        pricingSource: cartItem.pricingSource,
+        campaignRef: cartItem.campaignRef,
+        bundleId: cartItem.bundleId,
+        bundleGroupId: cartItem.bundleGroupId,
+        bundleInstanceId: cartItem.bundleInstanceId,
         product: {
           id: cartItem.product.id,
           name: cartItem.product.name,

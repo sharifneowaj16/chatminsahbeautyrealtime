@@ -52,6 +52,13 @@ export default function DesktopFlashDealCard({
     setIsAdding(true);
     try {
       const drawerIntentId = registerAddIntent();
+      const campaignRef = deal.campaignRef || deal.id;
+      const limitType = deal.limitType || 'LEGACY_UNCONFIGURED';
+      const maxUnitsPerCustomer = deal.maxUnitsPerCustomer ?? 1;
+      const maxQuantity = (limitType === 'LIMITED' || limitType === 'LEGACY_UNCONFIGURED')
+        ? maxUnitsPerCustomer
+        : null;
+
       const cartItem: CartItem = {
         id: deal.productId || deal.id,
         productId: deal.productId || deal.id,
@@ -59,6 +66,11 @@ export default function DesktopFlashDealCard({
         price: currentPrice || deal.salePrice,
         quantity: 1,
         image: currentImage || deal.imageUrl || '',
+        pricingSource: 'FLASH_DEAL',
+        campaignRef,
+        limitType,
+        maxUnitsPerCustomer,
+        maxQuantity,
       };
 
       const success = await addItem(cartItem);
@@ -81,6 +93,13 @@ export default function DesktopFlashDealCard({
 
     try {
       const drawerIntentId = registerAddIntent();
+      const campaignRef = deal.campaignRef || deal.id;
+      const limitType = deal.limitType || 'LEGACY_UNCONFIGURED';
+      const maxUnitsPerCustomer = deal.maxUnitsPerCustomer ?? 1;
+      const maxQuantity = (limitType === 'LIMITED' || limitType === 'LEGACY_UNCONFIGURED')
+        ? maxUnitsPerCustomer
+        : null;
+
       const cartItem: CartItem = {
         id: selectedVar.id || deal.productId || deal.id,
         productId: deal.productId || deal.id,
@@ -95,6 +114,11 @@ export default function DesktopFlashDealCard({
         variantSku: selectedVar.sku,
         stock: selectedVar.stock,
         availableVariants: deal.variants,
+        pricingSource: 'FLASH_DEAL',
+        campaignRef,
+        limitType,
+        maxUnitsPerCustomer,
+        maxQuantity,
       };
 
       const success = await addItem(cartItem);

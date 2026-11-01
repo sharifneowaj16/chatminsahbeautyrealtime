@@ -243,6 +243,7 @@ export default function SeedHeroBundleCard({
       { productId: mainProduct.id, variantId: activeMainVariant?.id },
       { productId: activePairedProduct.id, variantId: activePairedVariant?.id },
     ]);
+    const bundleInstanceId = `bnd_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
     // Add Main Product as Bundle Item with Variant
     const mainItem = createBundleCartItem({
@@ -267,6 +268,7 @@ export default function SeedHeroBundleCard({
       availableVariants: (mainProduct.variants as any[]) || [],
       bundleId: bundleGroupId,
       bundleGroupId,
+      bundleInstanceId,
       bundleSource: 'hero-card',
       bundleName: '2-Step Bundle',
       discountRatio,
@@ -296,6 +298,7 @@ export default function SeedHeroBundleCard({
       availableVariants: (activePairedProduct.variants as any[]) || [],
       bundleId: bundleGroupId,
       bundleGroupId,
+      bundleInstanceId,
       bundleSource: 'hero-card',
       bundleName: '2-Step Bundle',
       discountRatio,

@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { trackAddToCart } from '@/lib/tracking/ecommerce';
 import { calculateCartOffers, DELIVERY_CONFIG, type PromoRule } from '@/lib/commerce/offer-engine';
 import { useOfferEngine } from './OfferEngineContext';
-import { extractVariantAttributes, generateCartItemId } from '@/utils/cartItemHelper';
+import { extractVariantAttributes, generateCartItemId, generateCanonicalLineKey } from '@/utils/cartItemHelper';
 
 export interface ProductVariantItem {
   id: string;
@@ -20,10 +20,18 @@ export interface ProductVariantItem {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export interface CartItem {
-  id: string;          // variantId ?? productId  (used as React key & local lookup)
-  cartItemId?: string; // DB CartItem.id          (used for PATCH/DELETE /api/cart/:id)
-  productId?: string;  // DB Product.id           (MUST be sent to /api/orders)
+  id: string;          // lineKey ?? (variantId ?? productId) (used as React key & local lookup)
+  lineKey?: string;    // Canonical JSON array line key
+  cartItemId?: string; // DB CartItem.id (used for PATCH/DELETE /api/cart/:id)
+  productId?: string;  // DB Product.id (MUST be sent to /api/orders)
   variantId?: string | null;
+  pricingSource?: 'REGULAR' | 'FLASH_DEAL' | 'BUNDLE' | 'LEGACY_UNATTRIBUTED' | string;
+  campaignRef?: string | null;
+  bundleId?: string | null;
+  bundleGroupId?: string | null;
+  bundleInstanceId?: string | null;
+  limitType?: 'LIMITED' | 'UNLIMITED' | 'LEGACY_UNCONFIGURED' | null;
+  maxUnitsPerCustomer?: number | null;
   name: string;
   price: number;
   quantity: number;
@@ -35,8 +43,6 @@ export interface CartItem {
   size?: string | null;
   color?: string | null;
   shade?: string | null;
-  bundleId?: string | null;
-  bundleGroupId?: string | null;
   bundleSource?: 'hero-card' | 'custom-drawer' | null;
   bundleName?: string | null;
   bundleDiscountRatio?: number | null;
@@ -148,6 +154,12 @@ function mapApiItem(apiItem: {
   productId: string;    // DB Product.id
   variantId: string | null;
   quantity: number;
+  lineKey?: string | null;
+  pricingSource?: string | null;
+  campaignRef?: string | null;
+  bundleId?: string | null;
+  bundleGroupId?: string | null;
+  bundleInstanceId?: string | null;
   product: {
     id: string;
     name: string;
@@ -186,10 +198,26 @@ function mapApiItem(apiItem: {
     ? availableStock
     : null;
 
+  const canonicalLineKey = apiItem.lineKey || generateCanonicalLineKey({
+    pricingSource: apiItem.pricingSource || 'REGULAR',
+    campaignRef: apiItem.campaignRef || null,
+    bundleId: apiItem.bundleId || null,
+    bundleGroupId: apiItem.bundleGroupId || null,
+    bundleInstanceId: apiItem.bundleInstanceId || null,
+    productId: apiItem.productId,
+    variantId: apiItem.variantId,
+    id: apiItem.id,
+  });
+
   return {
-    // Local lookup key: prefer variantId so same product with different
-    // variants are distinct in the cart list.
-    id:         apiItem.variantId ?? apiItem.productId,
+    id: canonicalLineKey,
+    lineKey: canonicalLineKey,
+    pricingSource: apiItem.pricingSource || 'REGULAR',
+    campaignRef: apiItem.campaignRef || null,
+    bundleId: apiItem.bundleId || null,
+    bundleGroupId: apiItem.bundleGroupId || null,
+    bundleInstanceId: apiItem.bundleInstanceId || null,
+    isBundle: Boolean(apiItem.pricingSource === 'BUNDLE' || apiItem.bundleId),
 
     // DB IDs — kept separate so order placement always has the right value
     cartItemId: apiItem.id,
@@ -372,11 +400,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     for (const item of guestItems) {
       try {
+        const canonicalLineKey = item.lineKey || generateCanonicalLineKey({
+          pricingSource: item.pricingSource || 'REGULAR',
+          campaignRef: item.campaignRef || null,
+          bundleId: item.bundleId || null,
+          bundleGroupId: item.bundleGroupId || null,
+          bundleInstanceId: item.bundleInstanceId || null,
+          productId: item.productId ?? item.id,
+          variantId: item.variantId ?? null,
+        });
+
         const requestBody = JSON.stringify({
           // Always prefer explicit productId; fall back to id only as last resort
           productId: item.productId ?? item.id,
           variantId: item.variantId ?? null,
           quantity:  clampCartQuantity(item.quantity, item.maxQuantity),
+          lineKey: canonicalLineKey,
+          pricingSource: item.pricingSource || 'REGULAR',
+          campaignRef: item.campaignRef || null,
+          bundleId: item.bundleId || null,
+          bundleGroupId: item.bundleGroupId || null,
+          bundleInstanceId: item.bundleInstanceId || null,
         });
         let res = await fetch('/api/cart', {
           method: 'POST',
@@ -524,20 +568,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     async (item: CartItem, options: AddItemOptions = {}) => {
+      const canonicalLineKey = item.lineKey || generateCanonicalLineKey({
+        pricingSource: item.pricingSource || 'REGULAR',
+        campaignRef: item.campaignRef || null,
+        bundleId: item.bundleId || null,
+        bundleGroupId: item.bundleGroupId || null,
+        bundleInstanceId: item.bundleInstanceId || null,
+        productId: item.productId ?? item.id,
+        variantId: item.variantId ?? null,
+      });
+
+      const normalizedItem: CartItem = {
+        ...item,
+        id: canonicalLineKey,
+        lineKey: canonicalLineKey,
+        pricingSource: item.pricingSource || 'REGULAR',
+        campaignRef: item.campaignRef || null,
+        bundleId: item.bundleId || null,
+        bundleGroupId: item.bundleGroupId || null,
+        bundleInstanceId: item.bundleInstanceId || null,
+        quantity: clampCartQuantity(item.quantity, item.maxQuantity),
+      };
+      if (normalizedItem.quantity <= 0) return false;
+
       if (user) {
         cartSyncVersionRef.current += 1;
         // Optimistic update
-        const normalizedItem: CartItem = {
-          ...item,
-          quantity: clampCartQuantity(item.quantity, item.maxQuantity),
-        };
-        if (normalizedItem.quantity <= 0) return false;
-
         setItems((prev) => {
-          const existing = prev.find((i) => i.id === normalizedItem.id);
+          const existing = prev.find((i) => i.id === canonicalLineKey || (i.lineKey && i.lineKey === canonicalLineKey));
           if (existing) {
             return prev.map((i) =>
-              i.id === normalizedItem.id ? mergeCartItem(i, normalizedItem) : i
+              (i.id === canonicalLineKey || (i.lineKey && i.lineKey === canonicalLineKey))
+                ? mergeCartItem(i, normalizedItem)
+                : i
             );
           }
           return [...prev, normalizedItem];
@@ -548,6 +611,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
             productId: normalizedItem.productId ?? normalizedItem.id,
             variantId: normalizedItem.variantId ?? null,
             quantity:  normalizedItem.quantity,
+            lineKey: canonicalLineKey,
+            pricingSource: normalizedItem.pricingSource,
+            campaignRef: normalizedItem.campaignRef || null,
+            bundleId: normalizedItem.bundleId || null,
+            bundleGroupId: normalizedItem.bundleGroupId || null,
+            bundleInstanceId: normalizedItem.bundleInstanceId || null,
           });
           let res = await fetch('/api/cart', {
             method: 'POST',
@@ -576,7 +645,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             };
             setItems((prev) => {
               const existingIndex = prev.findIndex(
-                (cartItem) => cartItem.id === normalizedItem.id || cartItem.id === mapped.id
+                (cartItem) => cartItem.id === canonicalLineKey || (cartItem.lineKey && cartItem.lineKey === canonicalLineKey) || (mapped.cartItemId && cartItem.cartItemId === mapped.cartItemId)
               );
               if (existingIndex !== -1) {
                 const existing = prev[existingIndex];
@@ -586,13 +655,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
                   cartItemId: mapped.cartItemId,
                   quantity: mapped.quantity,
                   id: existing.id,
+                  lineKey: existing.lineKey || canonicalLineKey,
                   price: existing.price,
                   isBundle: existing.isBundle,
                   bundleId: existing.bundleId,
                   bundleGroupId: existing.bundleGroupId,
+                  bundleInstanceId: existing.bundleInstanceId,
                   bundleSource: existing.bundleSource,
                   bundleName: existing.bundleName,
                   bundleDiscountRatio: existing.bundleDiscountRatio,
+                  limitType: existing.limitType,
+                  maxUnitsPerCustomer: existing.maxUnitsPerCustomer,
                 };
                 const next = [...prev];
                 next[existingIndex] = updatedItem;
@@ -614,17 +687,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
           setCartLoading(false);
         }
       } else {
-        const normalizedItem: CartItem = {
-          ...item,
-          quantity: clampCartQuantity(item.quantity, item.maxQuantity),
-        };
-        if (normalizedItem.quantity <= 0) return false;
-
         setItems((prev) => {
-          const existing = prev.find((i) => i.id === normalizedItem.id);
+          const existing = prev.find((i) => i.id === canonicalLineKey || (i.lineKey && i.lineKey === canonicalLineKey));
           if (existing) {
             return prev.map((i) =>
-              i.id === normalizedItem.id ? mergeCartItem(i, normalizedItem) : i
+              (i.id === canonicalLineKey || (i.lineKey && i.lineKey === canonicalLineKey))
+                ? mergeCartItem(i, normalizedItem)
+                : i
             );
           }
           return [...prev, normalizedItem];
@@ -640,12 +709,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = useCallback(
     async (itemId: string): Promise<boolean> => {
-      const target = items.find((i) => i.id === itemId);
+      const target = items.find((i) => i.id === itemId || i.lineKey === itemId || i.cartItemId === itemId);
       if (!target) return false;
 
       if (user) {
         cartSyncVersionRef.current += 1;
-        setItems((prev) => prev.filter((i) => i.id !== itemId));
+        setItems((prev) => prev.filter((i) => i.id !== target.id && (!target.cartItemId || i.cartItemId !== target.cartItemId)));
 
         if (!target.cartItemId) return true;
 
@@ -668,7 +737,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      setItems((prev) => prev.filter((i) => i.id !== itemId));
+      setItems((prev) => prev.filter((i) => i.id !== target.id));
       return true;
     },
     [user, items, refreshToken, fetchCartFromDB]
@@ -873,7 +942,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback(
     async (itemId: string, quantity: number): Promise<boolean> => {
-      const target = items.find((i) => i.id === itemId);
+      const target = items.find((i) => i.id === itemId || i.lineKey === itemId || i.cartItemId === itemId);
       if (!target) return false;
 
       const nextQuantity = clampCartQuantity(quantity, target.maxQuantity);
@@ -887,7 +956,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (user) {
         cartSyncVersionRef.current += 1;
         setItems((prev) =>
-          prev.map((i) => (i.id === itemId ? { ...i, quantity: nextQuantity } : i))
+          prev.map((i) => (i.id === target.id ? { ...i, quantity: nextQuantity } : i))
         );
 
         if (!target.cartItemId) {
@@ -925,7 +994,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       setItems((prev) =>
-        prev.map((i) => (i.id === itemId ? { ...i, quantity: nextQuantity } : i))
+        prev.map((i) => (i.id === target.id ? { ...i, quantity: nextQuantity } : i))
       );
       if (quantityDelta > 0) {
         trackAddToCart({ ...target, quantity: quantityDelta }, quantityDelta);
