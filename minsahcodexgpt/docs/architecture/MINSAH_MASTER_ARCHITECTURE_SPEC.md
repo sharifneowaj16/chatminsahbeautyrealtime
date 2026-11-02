@@ -892,9 +892,10 @@ graph TD
   * Affected Files: Automated test suites covering all 35 matrix tests.
   * Acceptance: TypeScript checks pass (`npm run typecheck`), Lint passes (`npm run lint`), Build passes (`npm run build`).
 
-* **Phase 10: Production Deployment**
-  * Affected Files: Dokploy deployment configuration.
-  * Acceptance: Post-deployment smoke tests pass on live store.
+* **Phase 10: Production Deployment & Verification**
+  * Affected Files: Dokploy deployment configuration (`docker-entrypoint.sh`, `Dockerfile`, `nixpacks.toml`), Step 9 Contract DDL migration (`prisma/migrations/20261102010000_phase10_smart_ecommerce_contract/`), `prisma/schema.prisma`, production smoke suite (`scripts/smart-ecommerce-production-smoke.ts`).
+  * Acceptance: Expand-contract zero-downtime Step 9 contract enforced; `npm run smoke:smart-ecommerce` passes with 100% reliability; TypeScript checks pass with 0 errors (`npm run typecheck`).
+  * Status: `COMPLETED & VERIFIED`
 
 ---
 

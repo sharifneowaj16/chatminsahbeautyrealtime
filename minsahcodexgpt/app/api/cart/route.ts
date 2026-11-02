@@ -195,14 +195,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Expand-Contract backward-compatibility fallback:
-    // If no match by lineKey and pricingSource is REGULAR, check legacy null-lineKey row
+    // If no match by lineKey and pricingSource is REGULAR, check legacy row
     if (!existing && (!pricingSource || pricingSource === 'REGULAR')) {
       existing = await prisma.cartItem.findFirst({
         where: {
           userId,
           productId: resolvedProductId,
           variantId: variantId || null,
-          lineKey: null,
         },
       });
     }
