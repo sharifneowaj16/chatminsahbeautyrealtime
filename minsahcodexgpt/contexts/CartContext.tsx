@@ -645,7 +645,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             };
             setItems((prev) => {
               const existingIndex = prev.findIndex(
-                (cartItem) => cartItem.id === canonicalLineKey || (cartItem.lineKey && cartItem.lineKey === canonicalLineKey) || (mapped.cartItemId && cartItem.cartItemId === mapped.cartItemId)
+                (cartItem) =>
+                  cartItem.id === canonicalLineKey ||
+                  (cartItem.lineKey && cartItem.lineKey === canonicalLineKey) ||
+                  (Boolean(mapped.cartItemId && cartItem.cartItemId === mapped.cartItemId) &&
+                    (cartItem.lineKey === canonicalLineKey || cartItem.pricingSource === mapped.pricingSource))
               );
               if (existingIndex !== -1) {
                 const existing = prev[existingIndex];
@@ -709,7 +713,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = useCallback(
     async (itemId: string): Promise<boolean> => {
-      const target = items.find((i) => i.id === itemId || i.lineKey === itemId || i.cartItemId === itemId);
+      const target = items.find(
+        (i) =>
+          i.id === itemId ||
+          i.lineKey === itemId ||
+          i.cartItemId === itemId ||
+          ((i.pricingSource === 'REGULAR' || !i.pricingSource) &&
+            ((i.variantId && i.variantId === itemId) || (!i.variantId && i.productId === itemId)))
+      );
       if (!target) return false;
 
       if (user) {
@@ -942,7 +953,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback(
     async (itemId: string, quantity: number): Promise<boolean> => {
-      const target = items.find((i) => i.id === itemId || i.lineKey === itemId || i.cartItemId === itemId);
+      const target = items.find(
+        (i) =>
+          i.id === itemId ||
+          i.lineKey === itemId ||
+          i.cartItemId === itemId ||
+          ((i.pricingSource === 'REGULAR' || !i.pricingSource) &&
+            ((i.variantId && i.variantId === itemId) || (!i.variantId && i.productId === itemId)))
+      );
       if (!target) return false;
 
       const nextQuantity = clampCartQuantity(quantity, target.maxQuantity);

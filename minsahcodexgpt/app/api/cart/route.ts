@@ -187,24 +187,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Check if line item already exists using deterministic canonical lineKey
-    let existing = await prisma.cartItem.findFirst({
+    const existing = await prisma.cartItem.findFirst({
       where: {
         userId,
         lineKey: targetLineKey,
       },
     });
-
-    // Expand-Contract backward-compatibility fallback:
-    // If no match by lineKey and pricingSource is REGULAR, check legacy row
-    if (!existing && (!pricingSource || pricingSource === 'REGULAR')) {
-      existing = await prisma.cartItem.findFirst({
-        where: {
-          userId,
-          productId: resolvedProductId,
-          variantId: variantId || null,
-        },
-      });
-    }
 
     let cartItem;
 

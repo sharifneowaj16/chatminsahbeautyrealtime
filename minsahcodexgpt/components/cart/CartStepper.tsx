@@ -142,7 +142,9 @@ export default function CartStepper({
   const productCartItems = useMemo(
     () =>
       items.filter(
-        (item) => item.productId === productId || (!item.productId && item.id === productId)
+        (item) =>
+          (item.productId === productId || (!item.productId && item.id === productId)) &&
+          (item.pricingSource === 'REGULAR' || !item.pricingSource)
       ),
     [items, productId]
   );
@@ -154,7 +156,7 @@ export default function CartStepper({
       return;
     }
     if (boundVariantId) {
-      const matchingItem = productCartItems.find((item) => item.id === boundVariantId);
+      const matchingItem = productCartItems.find((item) => item.id === boundVariantId || item.variantId === boundVariantId);
       if (matchingItem || zeroStateMode === 'stepper') return;
     }
     const firstVariantItem = productCartItems.find((item) => item.variantId);
@@ -172,7 +174,19 @@ export default function CartStepper({
   }, [currentVariantId, effectiveVariants]);
 
   const currentCartItemId = currentVariantId || productId;
-  const currentCartItem = items.find((item) => item.id === currentCartItemId);
+  const currentCartItem = useMemo(() => {
+    return (
+      items.find((item) => {
+        const matchesSource = item.pricingSource === 'REGULAR' || !item.pricingSource;
+        if (!matchesSource) return false;
+        if (item.id === currentCartItemId || item.lineKey === currentCartItemId) return true;
+        if (currentVariantId) {
+          return item.variantId === currentVariantId;
+        }
+        return item.productId === productId && !item.variantId;
+      }) ?? null
+    );
+  }, [items, currentCartItemId, currentVariantId, productId]);
   const currentItemQty = currentCartItem?.quantity ?? 0;
   const productQty = productCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const qty = variantId ? currentItemQty : isVariantProduct ? productQty : currentItemQty;
@@ -281,7 +295,11 @@ export default function CartStepper({
     parentSku?: string | null
   ) => {
     const targetId = variant.id;
-    const existingItem = items.find((item) => item.id === targetId);
+    const existingItem = items.find(
+      (item) =>
+        (item.pricingSource === 'REGULAR' || !item.pricingSource) &&
+        (item.id === targetId || item.lineKey === targetId || item.variantId === targetId)
+    );
     const existingQty = existingItem?.quantity ?? 0;
     const display = getVariantDisplay(variant);
     const intentId = registerAddIntent();
@@ -290,7 +308,7 @@ export default function CartStepper({
 
     if (existingItem && existingQty > 0) {
       const nextQuantity = existingQty + quantity;
-      const success = await updateQuantity(targetId, nextQuantity);
+      const success = await updateQuantity(existingItem.id, nextQuantity);
       if (success) {
         openDrawerForAdd(
           intentId,
@@ -349,16 +367,21 @@ export default function CartStepper({
 
   const handleAdjustVariant = async ({ variant, delta }: VariantAdjustmentPayload) => {
     const targetId = variant.id;
-    const existingQty = items.find((item) => item.id === targetId)?.quantity ?? 0;
+    const existingItem = items.find(
+      (item) =>
+        (item.pricingSource === 'REGULAR' || !item.pricingSource) &&
+        (item.id === targetId || item.lineKey === targetId || item.variantId === targetId)
+    );
+    const existingQty = existingItem?.quantity ?? 0;
     await runMutation(async () => {
       if (delta === -1) {
         if (!variantId) setBoundVariantId(targetId);
         if (existingQty <= 1) {
-          await removeItem(targetId);
+          await removeItem(existingItem ? existingItem.id : targetId);
           setZeroStateMode('stepper');
           return;
         }
-        await updateQuantity(targetId, existingQty - 1);
+        await updateQuantity(existingItem ? existingItem.id : targetId, existingQty - 1);
         setZeroStateMode('button');
         return;
       }
@@ -384,12 +407,20 @@ export default function CartStepper({
         await addOrIncrementVariant(nextVariant, 1, false, context?.sku);
         return;
       }
-      const existingItem = items.find((item) => item.id === currentCartItemId);
+      const existingItem =
+        currentCartItem ||
+        items.find(
+          (item) =>
+            (item.pricingSource === 'REGULAR' || !item.pricingSource) &&
+            (item.id === currentCartItemId ||
+              item.lineKey === currentCartItemId ||
+              (variantId ? item.variantId === variantId : item.productId === productId && !item.variantId))
+        );
       const existingQty = existingItem?.quantity ?? 0;
       const intentId = registerAddIntent();
       if (existingItem && existingQty > 0) {
         const nextQuantity = existingQty + 1;
-        const success = await updateQuantity(currentCartItemId, nextQuantity);
+        const success = await updateQuantity(existingItem.id, nextQuantity);
         if (success) {
           openDrawerForAdd(intentId, { ...existingItem, quantity: nextQuantity }, 1);
           notifyAddToCartSuccess(1, currentVariantId);
@@ -470,8 +501,16 @@ export default function CartStepper({
         }
         return;
       }
-      const existingItem = items.find((item) => item.id === currentCartItemId);
-      const success = await updateQuantity(currentCartItemId, qty + 1);
+      const existingItem =
+        currentCartItem ||
+        items.find(
+          (item) =>
+            (item.pricingSource === 'REGULAR' || !item.pricingSource) &&
+            (item.id === currentCartItemId ||
+              item.lineKey === currentCartItemId ||
+              (variantId ? item.variantId === variantId : item.productId === productId && !item.variantId))
+        );
+      const success = await updateQuantity(existingItem ? existingItem.id : currentCartItemId, qty + 1);
       if (success && existingItem) {
         openDrawerForAdd(intentId, { ...existingItem, quantity: qty + 1 }, 1);
         notifyAddToCartSuccess(1, currentVariantId);
@@ -492,11 +531,11 @@ export default function CartStepper({
     if (isVariantProduct) { openModal('decrease'); return; }
     await runMutation(async () => {
       if (qty <= 1) {
-        await removeItem(currentCartItemId);
+        await removeItem(currentCartItem ? currentCartItem.id : currentCartItemId);
         setZeroStateMode('stepper');
         return;
       }
-      await updateQuantity(currentCartItemId, qty - 1);
+      await updateQuantity(currentCartItem ? currentCartItem.id : currentCartItemId, qty - 1);
     });
   };
 

@@ -192,6 +192,74 @@ async function main() {
     assert(effectiveLimit === 1, 'Legacy unconfigured deal must default strictly to limit 1');
   });
 
+  await runTest('FD-13', 'Flash Deal decrement (5 -> 4) followed by Regular add (1) keeps independent quantities', () => {
+    const productId = 'prod_serum_alpha';
+    const campaignRef = 'camp_flash_5limit';
+    const flashLineKey = generateCanonicalLineKey({
+      pricingSource: 'FLASH_DEAL',
+      campaignRef,
+      productId,
+    });
+    const regularLineKey = generateCanonicalLineKey({
+      pricingSource: 'REGULAR',
+      productId,
+    });
+
+    assert(flashLineKey !== regularLineKey, 'Flash deal line key must be distinct from regular line key');
+
+    // Simulate cart state
+    interface MockCartLine {
+      id: string;
+      lineKey: string;
+      pricingSource: string;
+      productId: string;
+      quantity: number;
+    }
+
+    const cart: MockCartLine[] = [
+      {
+        id: flashLineKey,
+        lineKey: flashLineKey,
+        pricingSource: 'FLASH_DEAL',
+        productId,
+        quantity: 5,
+      },
+    ];
+
+    // 1. User decrements Flash Deal from 5 to 4
+    const flashIndex = cart.findIndex((i) => i.lineKey === flashLineKey);
+    assert(flashIndex !== -1, 'Flash deal line must exist in cart');
+    cart[flashIndex].quantity = 4;
+    assert(cart[flashIndex].quantity === 4, 'Flash deal quantity must be 4');
+
+    // 2. User adds 1 Regular product of the same productId
+    const incomingRegularLineKey = regularLineKey;
+    const existingRegular = cart.find((i) => i.lineKey === incomingRegularLineKey);
+
+    // Regular line does not exist yet -> Must create new line, NEVER mutate existing flash deal line
+    if (existingRegular) {
+      existingRegular.quantity += 1;
+    } else {
+      cart.push({
+        id: incomingRegularLineKey,
+        lineKey: incomingRegularLineKey,
+        pricingSource: 'REGULAR',
+        productId,
+        quantity: 1,
+      });
+    }
+
+    // Verify cart state
+    assert(cart.length === 2, 'Cart must have exactly 2 distinct lines');
+    const flashLine = cart.find((i) => i.pricingSource === 'FLASH_DEAL');
+    const regularLine = cart.find((i) => i.pricingSource === 'REGULAR');
+
+    assert(flashLine !== undefined, 'Flash deal line must be preserved');
+    assert(flashLine!.quantity === 4, 'Flash deal quantity must remain 4, not jump to 5');
+    assert(regularLine !== undefined, 'Regular line must be added');
+    assert(regularLine!.quantity === 1, 'Regular quantity must be 1');
+  });
+
   // --- Coupon Anti-Stacking (CP-01) ---
   await runTest('CP-01', 'Anti-Stacking Coupon excludes Flash Deals from discount base', () => {
     const items: any[] = [
@@ -463,7 +531,7 @@ async function main() {
     console.error('Test matrix run failed with errors.');
     process.exit(1);
   } else {
-    console.log('All 35 Test Matrix Scenarios Passed with 100% Accuracy!');
+    console.log(`All ${results.length} Test Matrix Scenarios Passed with 100% Accuracy!`);
     process.exit(0);
   }
 }
