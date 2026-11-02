@@ -1,0 +1,21 @@
+-- Recovery / Rollback for: 202606100002_add_product_semantic_seo_fields
+ALTER TABLE "Product"
+    DROP COLUMN IF EXISTS "gender",
+    DROP COLUMN IF EXISTS "faqSchemaReady",
+    DROP COLUMN IF EXISTS "imageAltTexts",
+    DROP COLUMN IF EXISTS "usageInstructions",
+    DROP COLUMN IF EXISTS "shadeOptions",
+    DROP COLUMN IF EXISTS "productAttributes",
+    DROP COLUMN IF EXISTS "productSpecs",
+    DROP COLUMN IF EXISTS "descriptionSections",
+    DROP COLUMN IF EXISTS "entities",
+    DROP COLUMN IF EXISTS "reviewKeywords",
+    DROP COLUMN IF EXISTS "banglaSearchTerms",
+    DROP COLUMN IF EXISTS "synonyms",
+    DROP COLUMN IF EXISTS "searchTags",
+    DROP COLUMN IF EXISTS "buyingIntentKeywords",
+    DROP COLUMN IF EXISTS "keyBenefits",
+    DROP COLUMN IF EXISTS "primaryConcern",
+    DROP COLUMN IF EXISTS "targetAudience",
+    DROP COLUMN IF EXISTS "searchIntent",
+    DROP COLUMN IF EXISTS "bengaliSecondaryKeywords";
