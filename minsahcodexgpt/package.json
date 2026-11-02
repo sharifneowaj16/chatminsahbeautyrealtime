@@ -44,6 +44,7 @@
     "gemini:interactive": "node gemini-cli.js --interactive",
     "cron:tracking-health": "tsx scripts/tracking-health-cron.ts",
     "typecheck": "node scripts/prisma-client-freshness.mjs && npm run typecheck:ts",
+    "test:smart-ecommerce": "node --conditions=react-server --import tsx scripts/smart-ecommerce-test-matrix.ts",
     "qa:production": "tsx scripts/production-qa.ts",
     "audit:security": "node scripts/security-audit.mjs",
     "qa:phase8-static": "node scripts/phase8-static-contract-check.mjs",
