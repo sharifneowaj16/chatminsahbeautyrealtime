@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import {
   CheckCircle2,
   Clock3,
@@ -12,6 +14,7 @@ import {
   Phone,
   Settings2,
   ShieldAlert,
+  Smartphone,
 } from 'lucide-react';
 import { useAdminAuth, PERMISSIONS } from '@/contexts/AdminAuthContext';
 import {
@@ -63,6 +66,28 @@ export default function SettingsPage() {
       </header>
 
       {/* ── Product Delivery Top-Bar Messages (Interactive Config) ── */}
+      {/* ── Mobile Navigation & Search Control Hub ── */}
+      <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white">মোবাইল নেভিগেশন ও সার্চ কন্ট্রোল হাব</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              ৩টি মোবাইল বটম বার স্টাইল (#05, #09, #10), ৫টি স্মার্ট বাটন ও কাস্টম SVG আইকন নিয়ন্ত্রণ করুন।
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/admin/settings/navigation"
+          className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md transition-colors"
+        >
+          <span>কন্ট্রোল প্যানেল ওপেন করুন</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
       <DeliveryMessageSettings />
 
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-300">

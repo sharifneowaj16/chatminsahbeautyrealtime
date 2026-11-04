@@ -1,38 +1,24 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Home } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import {
-  HeartLineIcon,
-  Search2LineIcon,
-  ShoppingBag4LineIcon,
-  UserLineIcon,
-} from '@/components/ui/icons/RemixIcons';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
-import { isMobileNavigationItemActive, mobileNavigationItems } from './navigation-config';
-
-const iconByKey = {
-  home: Home,
-  search: Search2LineIcon,
-  heart: HeartLineIcon,
-  cart: ShoppingBag4LineIcon,
-  user: UserLineIcon,
-} as const;
+  DEFAULT_MOBILE_NAV_CONFIG,
+  MobileNavigationConfig,
+} from '@/types/navigation-config';
+import { useSmartNavButtons } from './useSmartNavButtons';
+import SlidingCapsuleNav from './variants/SlidingCapsuleNav';
+import SegmentedDockNav from './variants/SegmentedDockNav';
+import CompactMicroNav from './variants/CompactMicroNav';
 
 export default function BottomNavigation() {
-  const pathname = usePathname();
-  const { items: cartItems } = useCart();
-  const { user, loading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  const [config, setConfig] = useState<MobileNavigationConfig>(DEFAULT_MOBILE_NAV_CONFIG);
   const [wishlistCount, setWishlistCount] = useState<number>(0);
 
-  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const accountHref = !loading && user ? '/account' : '/login';
-
-  // Synchronize live wishlist count
+  // Synchronize live wishlist count & config
   useEffect(() => {
+    setMounted(true);
+
     const syncWishlist = () => {
       try {
         const raw = localStorage.getItem('minsah_wishlist_count');
@@ -46,61 +32,48 @@ export default function BottomNavigation() {
     window.addEventListener('minsah:wishlist-update', syncWishlist);
     window.addEventListener('storage', syncWishlist);
 
+    // Fetch live mobile navigation config from public API
+    fetch('/api/navigation-config')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.config) {
+          setConfig(data.config);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load navigation config, using default:', err);
+      });
+
+    const handleConfigUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<MobileNavigationConfig>;
+      if (customEvent.detail) {
+        setConfig(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('minsah:navigation-config-updated', handleConfigUpdate);
+
     return () => {
       window.removeEventListener('minsah:wishlist-update', syncWishlist);
       window.removeEventListener('storage', syncWishlist);
+      window.removeEventListener('minsah:navigation-config-updated', handleConfigUpdate);
     };
   }, []);
 
-  return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200/70 bg-white/95 shadow-[0_-4px_20px_rgba(24,28,26,0.06)] backdrop-blur-md minsah-bottom-safe md:hidden"
-      style={{ WebkitBackdropFilter: 'blur(12px)' }}
-      aria-label="Primary mobile navigation"
-    >
-      <div className="mx-auto grid h-[var(--minsah-bottom-nav-height)] max-w-lg grid-cols-5 items-stretch px-1">
-        {mobileNavigationItems.map((item) => {
-          const Icon = iconByKey[item.icon];
-          const href = item.key === 'account' ? accountHref : item.href;
-          const active = isMobileNavigationItemActive(pathname, item.key, item.href);
+  const smartButtons = useSmartNavButtons(config.buttons, wishlistCount);
 
-          const badgeCount =
-            item.key === 'cart'
-              ? totalQuantity
-              : item.key === 'wishlist'
-              ? wishlistCount
-              : 0;
+  if (!mounted) {
+    // Deterministic static SSR layout placeholder with zero shift
+    return <SlidingCapsuleNav buttons={smartButtons} />;
+  }
 
-          const countLabel =
-            badgeCount > 0
-              ? `, ${badgeCount} item${badgeCount > 1 ? 's' : ''}`
-              : '';
-
-          const label = item.key === 'account' && !user ? 'Login' : item.label;
-
-          return (
-            <Link
-              key={item.key}
-              href={href}
-              aria-current={active ? 'page' : undefined}
-              aria-label={`${label}${countLabel}`}
-              className={`minsah-touch-target relative flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition focus-visible:ring-2 focus-visible:ring-minsah-primary ${
-                active ? 'text-minsah-primary font-semibold' : 'text-minsah-secondary hover:text-minsah-primary'
-              }`}
-            >
-              <span className={`relative flex h-7 min-w-10 items-center justify-center rounded-full transition ${active ? 'bg-minsah-surface-subtle text-minsah-primary' : ''}`}>
-                <Icon size={20} strokeWidth={active ? 2.25 : 1.75} aria-hidden="true" />
-                {badgeCount > 0 ? (
-                  <span className="absolute -right-0.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-minsah-primary px-1 text-[10px] font-bold leading-none text-white shadow-xs">
-                    {badgeCount > 99 ? '99+' : badgeCount}
-                  </span>
-                ) : null}
-              </span>
-              <span className="truncate">{label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
-  );
+  switch (config.navBarStyle) {
+    case 'style-09':
+      return <SegmentedDockNav buttons={smartButtons} />;
+    case 'style-10':
+      return <CompactMicroNav buttons={smartButtons} />;
+    case 'style-05':
+    default:
+      return <SlidingCapsuleNav buttons={smartButtons} />;
+  }
 }

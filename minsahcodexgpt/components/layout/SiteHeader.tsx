@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React, { useEffect, useRef, useState } from 'react';
 import HomeSearch from '@/app/components/HomeSearch';
+import DynamicSearchWrapper from '@/components/search/DynamicSearchWrapper';
 import CategoryRail from '@/components/catalog/CategoryRail';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
@@ -129,11 +130,11 @@ export default function SiteHeader() {
 
   return (
     <>
-      <header className="site-header" role="banner">
-        <div className="header-container">
-          <div className="header-main">
+      <header className="site-header overflow-x-hidden w-full max-w-full" role="banner">
+        <div className="header-container overflow-x-hidden max-w-full px-2 sm:px-4">
+          <div className="header-main flex items-center justify-between w-full max-w-full overflow-hidden">
             {/* Left: Brand Logo & Deliver-To */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink">
               {/* Brand Logo */}
               <Link href="/" className="brand" aria-label="Minsah Beauty home" onClick={closeMenu}>
                 <span className="brand-icon">
@@ -171,7 +172,7 @@ export default function SiteHeader() {
                 onClick={() => setDeliveryOpen((v) => !v)}
               >
                 <MapPinUserLineIcon size={14} className="text-[#D4F6A2] shrink-0" />
-                <span className="truncate max-w-[95px] text-[12px] font-semibold text-[#EAF7D8]">
+                <span className="truncate max-w-[70px] sm:max-w-[95px] text-[11px] sm:text-[12px] font-semibold text-[#EAF7D8]">
                   {deliveryDisplayCity}
                 </span>
                 <svg
@@ -197,16 +198,20 @@ export default function SiteHeader() {
 
             {/* Centralized Search Area: Desktop (1024px+) */}
             <div className="search-area hidden lg:block">
-              <HomeSearch showTrendingChips={false} />
+              <DynamicSearchWrapper>
+                <HomeSearch showTrendingChips={false} />
+              </DynamicSearchWrapper>
             </div>
 
             {/* Centralized Search Area: Tablet (768px - 1023px) */}
             <div className="search-area-tablet hidden md:block lg:hidden flex-1 max-w-[340px] mx-2">
-              <HomeSearch variant="compact" showTrendingChips={false} />
+              <DynamicSearchWrapper>
+                <HomeSearch variant="compact" showTrendingChips={false} />
+              </DynamicSearchWrapper>
             </div>
 
             {/* Right Action Controls */}
-            <div className="header-actions">
+            <div className="header-actions shrink-0 flex items-center gap-1 sm:gap-2">
               {/* Wishlist Link (Desktop & Tablet) */}
               <Link
                 className="header-control icon-control wishlist relative hidden md:inline-flex"
@@ -293,34 +298,36 @@ export default function SiteHeader() {
 
           {/* Sub-Row: Seamless Full-Width Touch Search Bar (Mobile < 768px) */}
           <div className="mobile-search-subrow md:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileSearchOpen(true)}
-              className="mobile-search-trigger-btn"
-              aria-label="Search 100% genuine products"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-[#D4F6A2] shrink-0"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
-                <span className="search-placeholder-text">
-                  Search genuine skincare, makeup & more...
-                </span>
-              </div>
-              <span className="mobile-search-kbd">/</span>
-            </button>
+            <DynamicSearchWrapper>
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen(true)}
+                className="mobile-search-trigger-btn w-full"
+                aria-label="Search 100% genuine products"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-[#D4F6A2] shrink-0"
+                    aria-hidden="true"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                  <span className="search-placeholder-text">
+                    Search genuine skincare, makeup & more...
+                  </span>
+                </div>
+                <span className="mobile-search-kbd">/</span>
+              </button>
+            </DynamicSearchWrapper>
           </div>
         </div>
 
