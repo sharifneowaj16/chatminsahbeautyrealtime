@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ShoppingBag,
@@ -9,7 +9,7 @@ import {
   Star,
   Users,
   Truck,
-  CheckCircle,
+  CheckCircle2,
   ChevronRight,
   BarChart3,
   Sparkles,
@@ -18,6 +18,8 @@ import {
   Package,
   Bell,
   ShieldCheck,
+  Clock,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth, useUserPermissions } from '@/contexts/AuthContext';
 import { BentoLoyaltyRedeemModal } from '@/components/loyalty/BentoLoyaltyRedeemModal';
@@ -31,7 +33,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Star,
   Users,
   Truck,
-  CheckCircle,
+  CheckCircle: CheckCircle2,
   BarChart3,
   Sparkles,
   Package,
@@ -83,17 +85,42 @@ interface DashboardClientProps {
   upcomingFeatures: UpcomingFeature[];
 }
 
-// ── Status badge ──────────────────────────────────────────────────────────────
+// ── Linear-Style Status badge ──────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    delivered: 'bg-[#EAF7D8] text-[#1C3A13] border border-[#D4F6A2]/60',
-    shipped: 'bg-sky-50 text-sky-800 border border-sky-200',
-    processing: 'bg-amber-50 text-amber-800 border border-amber-200',
-    cancelled: 'bg-rose-50 text-rose-800 border border-rose-200',
-    pending: 'bg-stone-100 text-stone-700 border border-stone-200',
+  const map: Record<string, { bg: string; text: string; border: string }> = {
+    delivered: {
+      bg: 'bg-[#27a644]/15',
+      text: 'text-[#27a644]',
+      border: 'border-[#27a644]/30',
+    },
+    shipped: {
+      bg: 'bg-[#5e6ad2]/15',
+      text: 'text-[#828fff]',
+      border: 'border-[#5e6ad2]/30',
+    },
+    processing: {
+      bg: 'bg-amber-500/15',
+      text: 'text-amber-300',
+      border: 'border-amber-500/30',
+    },
+    cancelled: {
+      bg: 'bg-rose-500/15',
+      text: 'text-rose-400',
+      border: 'border-rose-500/30',
+    },
+    pending: {
+      bg: 'bg-[#18191a]',
+      text: 'text-[#8a8f98]',
+      border: 'border-[#23252a]',
+    },
   };
+
+  const style = map[status] ?? map.pending;
+
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize ${map[status] ?? 'bg-stone-100 text-stone-700 border border-stone-200'}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium uppercase tracking-wider border ${style.bg} ${style.text} ${style.border}`}
+    >
       {status}
     </span>
   );
@@ -105,50 +132,58 @@ export function DashboardClient({ initialData, quickActions }: DashboardClientPr
   const { isVip, isPremium } = useUserPermissions();
   const [isRedeemOpen, setIsRedeemOpen] = useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!user) return null;
 
-  const memberLabel    = isPremium ? 'Premium Member' : isVip ? 'VIP Member' : 'Member';
+  const memberLabel = isPremium ? 'Premium VIP' : isVip ? 'VIP Member' : 'Member';
   const memberSubtitle = isPremium
-    ? 'Exclusive access to all features'
+    ? 'Exclusive access to VIP drops and concierge fulfillment'
     : isVip
-    ? 'Enjoy your exclusive VIP benefits'
-    : 'Your beauty journey continues here';
+    ? 'Enjoy your exclusive tier privileges and priority care'
+    : 'Your curated luxury skincare journey continues here';
+
+  // Check for the most recent active order (processing or shipped)
+  const activeOrder = initialData.recentOrders.find(
+    (o) => o.status === 'processing' || o.status === 'shipped' || o.status === 'pending'
+  );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-
-      {/* ── Luxury Member Hero Card ─────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#062402] via-[#153410] to-[#0A2207] p-6 sm:p-7 text-white shadow-xl border border-[#D4F6A2]/20">
-        {/* Ambient Glows */}
-        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-[#D4F6A2]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-12 right-20 h-40 w-40 rounded-full bg-[#EAF7D8]/10 blur-2xl" />
+    <div className="w-full space-y-5 overflow-x-hidden">
+      {/* ── Linear Member Hero Card ─────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#0f1011] p-5 sm:p-6 text-white border border-[#23252a] shadow-2xl">
+        {/* Subtle Linear radial glow accents */}
+        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[#5e6ad2]/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-10 right-28 h-40 w-40 rounded-full bg-[#27a644]/10 blur-2xl" />
 
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1C3A13] to-[#062402] text-2xl font-black text-[#D4F6A2] ring-2 ring-[#D4F6A2]/40 shadow-md">
-              {user.firstName?.[0]}{user.lastName?.[0]}
+            <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#18191a] to-[#0f1011] text-xl sm:text-2xl font-bold text-[#f7f8f8] border border-[#23252a] shadow-inner">
+              {user.firstName?.[0]}
+              {user.lastName?.[0]}
               {isVip && (
-                <span className="absolute -top-1 -right-1 text-sm filter drop-shadow-sm" aria-hidden="true">
+                <span className="absolute -top-1 -right-1 text-xs sm:text-sm filter drop-shadow" aria-hidden="true">
                   👑
                 </span>
               )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  Welcome back, {user.firstName}!
-                </h1>
-              </div>
-              <p className="mt-0.5 text-xs sm:text-sm text-[#EAF7D8]/80">{memberSubtitle}</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-[#f7f8f8] truncate">
+                Welcome back, {user.firstName}!
+              </h1>
+              <p className="mt-0.5 text-xs text-[#8a8f98] truncate">{memberSubtitle}</p>
               <button
                 type="button"
                 onClick={() => setIsBreakdownOpen(true)}
-                className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 px-3 py-1 text-xs font-semibold text-[#D4F6A2] border border-[#D4F6A2]/30 cursor-pointer transition-all"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#141516] hover:bg-[#18191a] active:scale-95 px-2.5 py-1 text-xs font-medium text-[#828fff] border border-[#5e6ad2]/30 cursor-pointer transition-all"
               >
                 <span>⭐ {memberLabel}</span>
-                <span className="text-white/60">•</span>
-                <span className="text-white underline decoration-[#D4F6A2]/40 underline-offset-2">View Tier Perks</span>
+                <span className="text-[#62666d]">•</span>
+                <span className="underline decoration-[#5e6ad2]/50 underline-offset-2">Tier Privileges</span>
               </button>
             </div>
           </div>
@@ -157,15 +192,16 @@ export function DashboardClient({ initialData, quickActions }: DashboardClientPr
             type="button"
             onClick={() => setIsBreakdownOpen(true)}
             aria-label="View VIP Loyalty Points breakdown"
-            className="shrink-0 group rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] active:scale-95 p-4 text-left sm:text-right backdrop-blur-md border border-white/15 transition-all cursor-pointer"
+            className="w-full sm:w-auto shrink-0 group rounded-xl bg-[#141516] hover:bg-[#18191a] active:scale-95 p-3.5 text-left sm:text-right border border-[#23252a] transition-all cursor-pointer shadow-sm"
           >
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#D4F6A2]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8a8f98]">
               Beauty Club Balance
             </p>
-            <p className="text-2xl sm:text-3xl font-black text-white leading-tight mt-0.5">
-              {user.loyaltyPoints.toLocaleString()} <span className="text-xs font-semibold text-[#EAF7D8]/70">pts</span>
+            <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8] leading-tight mt-0.5 font-mono">
+              {mounted ? user.loyaltyPoints.toLocaleString() : '---'}{' '}
+              <span className="text-xs font-medium text-[#828fff]">pts</span>
             </p>
-            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-[#062402] font-bold bg-[#D4F6A2] px-2.5 py-0.5 rounded-full shadow-xs group-hover:scale-105 transition-transform">
+            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-[#828fff] font-medium bg-[#5e6ad2]/15 border border-[#5e6ad2]/30 px-2 py-0.5 rounded-md group-hover:scale-105 transition-transform">
               <span>Redeem Vouchers</span>
               <span>✨</span>
             </span>
@@ -173,86 +209,128 @@ export function DashboardClient({ initialData, quickActions }: DashboardClientPr
         </div>
       </div>
 
+      {/* ── Active Delivery Glowing Stepper Card ────────────────────────────── */}
+      {activeOrder && (
+        <div className="relative overflow-hidden rounded-2xl bg-[#0f1011] border border-[#5e6ad2]/40 p-4 sm:p-5 shadow-xl">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-[#5e6ad2] animate-pulse" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#828fff]">
+                Active Shipment #{activeOrder.orderNumber}
+              </p>
+            </div>
+            <Link
+              href={`/account/orders/${activeOrder.id}`}
+              className="text-xs font-medium text-[#828fff] hover:underline flex items-center gap-1"
+            >
+              <span>Track Details</span>
+              <ChevronRight size={13} />
+            </Link>
+          </div>
+
+          {/* Stepper Progress Bar */}
+          <div className="relative pt-2 pb-1">
+            <div className="h-1.5 w-full bg-[#18191a] rounded-full overflow-hidden">
+              <div
+                className={`h-full bg-gradient-to-r from-[#5e6ad2] to-[#27a644] rounded-full transition-all duration-700 ${
+                  activeOrder.status === 'delivered'
+                    ? 'w-full'
+                    : activeOrder.status === 'shipped'
+                    ? 'w-3/4'
+                    : 'w-1/3'
+                }`}
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-1 mt-2 text-center text-[10px] text-[#8a8f98] font-medium">
+              <span className="text-[#828fff]">Confirmed</span>
+              <span className={activeOrder.status !== 'pending' ? 'text-[#828fff]' : ''}>Processing</span>
+              <span className={activeOrder.status === 'shipped' || activeOrder.status === 'delivered' ? 'text-[#828fff]' : ''}>Shipped</span>
+              <span className={activeOrder.status === 'delivered' ? 'text-[#27a644]' : ''}>Delivered</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Bento Grid Stats Row ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
         {[
-          { icon: <Package size={20} />, label: 'Total Orders', value: initialData.recentOrders.length, href: '/account/orders' },
-          { icon: <Heart size={20} />,   label: 'Saved Items',  value: initialData.wishlistItems,       href: '/account/wishlist' },
-          { icon: <MapPin size={20} />,  label: 'Delivery Hubs', value: initialData.savedAddresses,     href: '/account/addresses' },
+          { icon: <Package size={18} />, label: 'Total Orders', value: initialData.recentOrders.length, href: '/account/orders' },
+          { icon: <Heart size={18} />, label: 'Saved Wishlist', value: initialData.wishlistItems, href: '/account/wishlist' },
+          { icon: <MapPin size={18} />, label: 'Delivery Hubs', value: initialData.savedAddresses, href: '/account/addresses' },
         ].map((s) => (
           <Link
             key={s.label}
             href={s.href}
-            className="group flex flex-col items-center sm:items-start rounded-[24px] bg-white border border-[#EFECE6] p-4 sm:p-5 shadow-[0_4px_24px_rgba(6,36,2,0.03)] hover:-translate-y-0.5 hover:shadow-md hover:border-[#D4F6A2]/80 transition-all text-center sm:text-left"
+            className="group flex flex-col items-center sm:items-start rounded-2xl bg-[#0f1011] border border-[#23252a] p-3.5 sm:p-4 hover:border-[#5e6ad2]/60 hover:bg-[#141516] transition-all text-center sm:text-left shadow-lg"
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF7D8] text-[#062402] shadow-xs group-hover:scale-110 transition-transform mb-3">
+            <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-[#141516] text-[#828fff] border border-[#23252a] group-hover:scale-105 transition-transform mb-2 sm:mb-2.5">
               {s.icon}
             </span>
-            <span className="text-2xl font-black text-[#121915] tracking-tight leading-none">
+            <span className="text-xl sm:text-2xl font-bold text-[#f7f8f8] tracking-tight leading-none font-mono">
               {s.value}
             </span>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#7A827B] mt-1.5">
+            <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-[#8a8f98] mt-1 truncate w-full">
               {s.label}
             </span>
           </Link>
         ))}
       </div>
 
-      {/* ── Loyalty Points Instant Redeem Banner ────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-[24px] border border-[#EFECE6] bg-white p-5 shadow-[0_4px_24px_rgba(6,36,2,0.03)]">
-        <div className="flex items-center gap-3.5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF7D8] text-[#062402] shadow-xs shrink-0">
-            <Trophy size={22} />
+      {/* ── Loyalty Points Instant Redeem Strip ─────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-[#23252a] bg-[#0f1011] p-4 sm:p-5 shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#141516] text-[#828fff] border border-[#23252a] shrink-0">
+            <Trophy size={20} />
           </div>
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#7A827B]">Available Reward Points</p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8a8f98]">Available Reward Balance</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-xl font-black leading-tight text-[#062402]">
-                {user.loyaltyPoints.toLocaleString()} Points
+              <p className="text-base sm:text-lg font-bold leading-tight text-[#f7f8f8] font-mono">
+                {mounted ? user.loyaltyPoints.toLocaleString() : '---'} Points
               </p>
-              <span className="text-xs text-[#5E6D64] hidden sm:inline">• Convert to checkout discount vouchers</span>
+              <span className="text-xs text-[#8a8f98] hidden sm:inline">• Convert to checkout discount vouchers</span>
             </div>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setIsRedeemOpen(true)}
-          className="shrink-0 inline-flex items-center justify-center h-10 px-6 rounded-full bg-[#062402] hover:bg-[#153410] active:scale-95 text-[#EAF7D8] text-xs font-bold tracking-wide transition-all shadow-sm cursor-pointer"
+          className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-xl bg-[#5e6ad2] hover:bg-[#828fff] active:scale-95 text-white text-xs font-semibold tracking-wide transition-all shadow-md cursor-pointer"
         >
-          Redeem Now
+          Redeem Vouchers
         </button>
       </div>
 
       {/* ── Notification Nudge ──────────────────────────────────────────────── */}
       {initialData.unreadNotifications > 0 && (
-        <div className="flex items-center gap-3 rounded-2xl border border-[#D4F6A2]/50 bg-[#EAF7D8]/60 px-4 py-3">
-          <Bell size={16} className="shrink-0 text-[#062402]" />
-          <p className="text-xs sm:text-sm font-semibold text-[#062402]">
-            You have <strong>{initialData.unreadNotifications}</strong> exclusive beauty offers waiting for you.
+        <div className="flex items-center gap-3 rounded-xl border border-[#5e6ad2]/30 bg-[#5e6ad2]/10 px-4 py-3">
+          <Bell size={16} className="shrink-0 text-[#828fff]" />
+          <p className="text-xs sm:text-sm font-medium text-[#f7f8f8]">
+            You have <strong className="text-[#828fff]">{initialData.unreadNotifications}</strong> exclusive luxury beauty vouchers waiting for you.
           </p>
         </div>
       )}
 
       {/* ── Quick Actions Grid ──────────────────────────────────────────────── */}
       <div>
-        <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#7A827B]">Quick Actions</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#8a8f98]">Quick Access</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           {quickActions.map((action) => (
             <Link
               key={action.name}
               href={action.href}
-              className="group flex items-center gap-3.5 rounded-[22px] border border-[#EFECE6] bg-white p-4 transition-all hover:border-[#D4F6A2] hover:shadow-md"
+              className="group flex items-center gap-3.5 rounded-xl border border-[#23252a] bg-[#0f1011] p-3.5 transition-all hover:border-[#5e6ad2]/60 hover:bg-[#141516] shadow-md"
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EAF7D8] text-[#062402] transition-transform group-hover:scale-105 shadow-xs">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#141516] text-[#828fff] border border-[#23252a] transition-transform group-hover:scale-105 shadow-inner">
                 <DynamicIcon name={action.icon} className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-[#121915] group-hover:text-[#062402] transition-colors">
+                <p className="truncate text-xs sm:text-sm font-semibold text-[#f7f8f8] group-hover:text-[#828fff] transition-colors">
                   {action.name}
                 </p>
-                <p className="truncate text-xs text-[#5E6D64] mt-0.5">{action.description}</p>
+                <p className="truncate text-xs text-[#8a8f98] mt-0.5">{action.description}</p>
               </div>
-              <ChevronRight size={16} className="text-[#B6AEA5] group-hover:text-[#062402] group-hover:translate-x-0.5 transition-all shrink-0" />
+              <ChevronRight size={15} className="text-[#62666d] group-hover:text-[#828fff] group-hover:translate-x-0.5 transition-all shrink-0" />
             </Link>
           ))}
         </div>
@@ -260,54 +338,62 @@ export function DashboardClient({ initialData, quickActions }: DashboardClientPr
 
       {/* ── Recent Orders ───────────────────────────────────────────────────── */}
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-[#7A827B]">Recent Orders</p>
-          <Link href="/account/orders" className="text-xs font-bold text-[#062402] hover:underline underline-offset-2">
-            View All Orders →
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8a8f98]">Recent Orders</p>
+          <Link href="/account/orders" className="text-xs font-medium text-[#828fff] hover:underline underline-offset-2 flex items-center gap-1">
+            <span>View All</span>
+            <ChevronRight size={13} />
           </Link>
         </div>
 
         {initialData.recentOrders.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-[24px] border border-dashed border-[#E0DBD3] bg-white py-10 px-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-[#EAF7D8] text-[#062402] flex items-center justify-center">
-              <ShoppingBag size={22} />
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[#23252a] bg-[#0f1011] py-10 px-4 text-center">
+            <div className="w-11 h-11 rounded-xl bg-[#141516] text-[#828fff] border border-[#23252a] flex items-center justify-center">
+              <ShoppingBag size={20} />
             </div>
-            <p className="text-sm font-semibold text-[#121915]">No orders placed yet</p>
-            <p className="text-xs text-[#5E6D64] max-w-sm">Discover genuine luxury skincare and cosmetics with nationwide express doorstep delivery.</p>
+            <p className="text-sm font-semibold text-[#f7f8f8]">No orders recorded</p>
+            <p className="text-xs text-[#8a8f98] max-w-sm">
+              Discover verified genuine luxury cosmetics with nationwide express doorstep delivery.
+            </p>
             <Link
               href="/shop"
-              className="mt-1 inline-flex items-center justify-center h-10 px-6 rounded-full bg-[#062402] hover:bg-[#153410] text-[#EAF7D8] text-xs font-bold tracking-wide transition-all shadow-xs"
+              className="w-full sm:w-auto mt-2 inline-flex items-center justify-center h-11 px-6 rounded-xl bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-semibold tracking-wide transition-all shadow-md active:scale-95"
             >
-              Start Shopping
+              Explore Shop
             </Link>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {initialData.recentOrders.map((order) => (
               <Link
                 key={order.id}
                 href={`/account/orders/${order.id}`}
-                className="group flex items-center justify-between rounded-[20px] border border-[#EFECE6] bg-white px-4 py-3.5 transition-all hover:border-[#D4F6A2] hover:shadow-sm"
+                className="group flex items-center justify-between rounded-xl border border-[#23252a] bg-[#0f1011] px-4 py-3 transition-all hover:border-[#5e6ad2]/60 hover:bg-[#141516] shadow-md"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-[#121915] group-hover:text-[#062402] transition-colors">
-                      {order.orderNumber}
+                    <p className="text-xs sm:text-sm font-semibold text-[#f7f8f8] group-hover:text-[#828fff] transition-colors font-mono">
+                      #{order.orderNumber}
                     </p>
                     <StatusBadge status={order.status} />
                   </div>
-                  <p className="mt-1 text-xs text-[#5E6D64]">
-                    {new Date(order.createdAt).toLocaleDateString('en-BD', {
-                      day: 'numeric', month: 'short', year: 'numeric',
-                    })}
-                    {' · '}{order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
+                  <p className="mt-1 text-xs text-[#8a8f98]">
+                    {mounted
+                      ? new Date(order.createdAt).toLocaleDateString('en-BD', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : '---'}
+                    {' · '}
+                    {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-sm font-black text-[#121915]">
+                <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
+                  <span className="text-xs sm:text-sm font-bold text-[#f7f8f8] font-mono">
                     ৳{order.total.toLocaleString()}
                   </span>
-                  <ChevronRight size={15} className="text-[#B6AEA5] group-hover:text-[#062402] group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight size={14} className="text-[#62666d] group-hover:text-[#828fff] group-hover:translate-x-0.5 transition-all" />
                 </div>
               </Link>
             ))}
@@ -316,22 +402,25 @@ export function DashboardClient({ initialData, quickActions }: DashboardClientPr
       </div>
 
       {/* ── Daily Skincare Tip ──────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#FAF8F5] to-[#F2EFE8] border border-[#EFECE6] p-6 shadow-xs">
-        <h2 className="mb-2.5 flex items-center gap-2 text-sm font-bold text-[#062402]">
-          <Sparkles size={18} className="text-[#4b6723]" />
-          <span>Beauty Tip of the Day</span>
+      <div className="relative overflow-hidden rounded-2xl bg-[#0f1011] border border-[#23252a] p-5 shadow-lg">
+        <h2 className="mb-2 flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#f7f8f8]">
+          <Sparkles size={16} className="text-[#828fff]" />
+          <span>Daily Skincare Routine Tip</span>
         </h2>
-        <p className="text-xs sm:text-sm leading-relaxed text-[#5E6D64]">
-          Did you know? Applying serum to slightly damp skin can increase absorption by up to 50%.
+        <p className="text-xs leading-relaxed text-[#8a8f98]">
+          Applying serum to slightly damp skin can increase absorption by up to 50%.
           Pat your face gently after cleansing, then apply your favorite hyaluronic or niacinamide serum while still slightly moist!
         </p>
-        <Link href="/shop" className="mt-3.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#062402] hover:underline underline-offset-2">
+        <Link
+          href="/shop"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[#828fff] hover:underline underline-offset-2"
+        >
           <span>Explore compatible serums</span>
           <ArrowRight size={13} />
         </Link>
       </div>
 
-      {/* Stitch Flow 9: Loyalty Modals */}
+      {/* Loyalty Modals */}
       <BentoLoyaltyRedeemModal
         isOpen={isRedeemOpen}
         onClose={() => setIsRedeemOpen(false)}

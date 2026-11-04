@@ -1,21 +1,24 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { formatPrice } from "@/utils/currency";
-import { useCart, type CartItem } from "@/contexts/CartContext";
-import { useCartDrawer } from "@/contexts/CartDrawerContext";
-import { productPath } from "@/lib/product-url";
-import WishlistMobileView from "@/components/account/mobile/wishlist/WishlistMobileView";
-import type { MobileWishlistItem } from "@/components/account/mobile/wishlist/types";
-import { Heart, ShoppingBag, X, Star, Search, Package } from "lucide-react";
-import { Heart as HeartSolid } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Checkbox } from "@/components/ui/Checkbox";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+import { useMemo, useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { formatPrice } from '@/utils/currency';
+import { useCart, type CartItem } from '@/contexts/CartContext';
+import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { productPath } from '@/lib/product-url';
+import {
+  Heart,
+  ShoppingBag,
+  X,
+  Star,
+  Search,
+  Package,
+  Trash2,
+  CheckCircle2,
+  ChevronRight,
+} from 'lucide-react';
 
 interface WishlistItem {
   id: string;
@@ -43,23 +46,28 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
   const { addItem } = useCart();
   const { registerAddIntent, openForSuccessfulAdd } = useCartDrawer();
   const [wishlistItems, setWishlistItems] = useState(initialItems);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("dateAdded");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('dateAdded');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
   const [removingIds, setRemovingIds] = useState<string[]>([]);
   const [addingToCartIds, setAddingToCartIds] = useState<string[]>([]);
   const [addedToCartIds, setAddedToCartIds] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toDateValue = (value: string | Date) => new Date(value);
 
   const categories = useMemo(
     () => [
-      "all",
+      'all',
       ...Array.from(new Set(wishlistItems.map((item) => item.category))),
     ],
-    [wishlistItems],
+    [wishlistItems]
   );
 
   const filteredItems = useMemo(() => {
@@ -70,31 +78,31 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
       filtered = filtered.filter(
         (item) =>
           item.productName.toLowerCase().includes(normalizedSearchTerm) ||
-          item.category.toLowerCase().includes(normalizedSearchTerm),
+          item.category.toLowerCase().includes(normalizedSearchTerm)
       );
     }
 
-    if (categoryFilter !== "all") {
+    if (categoryFilter !== 'all') {
       filtered = filtered.filter((item) => item.category === categoryFilter);
     }
 
     switch (sortBy) {
-      case "dateAdded":
+      case 'dateAdded':
         filtered.sort(
           (a, b) =>
-            toDateValue(b.addedAt).getTime() - toDateValue(a.addedAt).getTime(),
+            toDateValue(b.addedAt).getTime() - toDateValue(a.addedAt).getTime()
         );
         break;
-      case "priceLow":
+      case 'priceLow':
         filtered.sort((a, b) => a.price - b.price);
         break;
-      case "priceHigh":
+      case 'priceHigh':
         filtered.sort((a, b) => b.price - a.price);
         break;
-      case "name":
+      case 'name':
         filtered.sort((a, b) => a.productName.localeCompare(b.productName));
         break;
-      case "rating":
+      case 'rating':
         filtered.sort((a, b) => b.rating - a.rating);
         break;
     }
@@ -103,22 +111,22 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
   }, [wishlistItems, searchTerm, categoryFilter, sortBy]);
 
   const handleRemoveItem = async (itemId: string) => {
-    setErrorMessage("");
+    setErrorMessage('');
     setRemovingIds((prev) => [...prev, itemId]);
 
     try {
       const response = await fetch(`/api/wishlist/${itemId}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
       if (!response.ok) {
-        throw new Error("Failed to remove item");
+        throw new Error('Failed to remove item');
       }
 
       setWishlistItems((prev) => prev.filter((item) => item.id !== itemId));
       setSelectedItems((prev) => prev.filter((id) => id !== itemId));
       router.refresh();
     } catch {
-      setErrorMessage("Failed to remove wishlist item. Please try again.");
+      setErrorMessage('Failed to remove wishlist item. Please try again.');
     } finally {
       setRemovingIds((prev) => prev.filter((id) => id !== itemId));
     }
@@ -127,29 +135,27 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
   const handleRemoveSelected = async () => {
     if (selectedItems.length === 0) return;
 
-    setErrorMessage("");
+    setErrorMessage('');
     setRemovingIds((prev) => [...new Set([...prev, ...selectedItems])]);
 
     try {
       const responses = await Promise.all(
         selectedItems.map((itemId) =>
-          fetch(`/api/wishlist/${itemId}`, { method: "DELETE" }),
-        ),
+          fetch(`/api/wishlist/${itemId}`, { method: 'DELETE' })
+        )
       );
 
       if (responses.some((response) => !response.ok)) {
-        throw new Error("Failed to remove selected items");
+        throw new Error('Failed to remove selected items');
       }
 
       setWishlistItems((prev) =>
-        prev.filter((item) => !selectedItems.includes(item.id)),
+        prev.filter((item) => !selectedItems.includes(item.id))
       );
       setSelectedItems([]);
       router.refresh();
     } catch {
-      setErrorMessage(
-        "Failed to remove selected wishlist items. Please try again.",
-      );
+      setErrorMessage('Failed to remove selected wishlist items. Please try again.');
     } finally {
       setRemovingIds([]);
     }
@@ -160,7 +166,7 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
       return;
     }
 
-    setErrorMessage("");
+    setErrorMessage('');
     setAddingToCartIds((prev) => [...prev, item.id]);
 
     try {
@@ -171,10 +177,10 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
         name: item.productName,
         price: item.price,
         quantity: 1,
-        image: typeof item.productImage === "string" ? item.productImage : "",
+        image: typeof item.productImage === 'string' ? item.productImage : '',
       };
       const success = await addItem(cartItem);
-      if (!success) throw new Error("Failed to add wishlist item to cart");
+      if (!success) throw new Error('Failed to add wishlist item to cart');
       openForSuccessfulAdd(drawerIntentId, cartItem, 1);
 
       setAddedToCartIds((prev) => [...prev, item.id]);
@@ -182,7 +188,7 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
         setAddedToCartIds((prev) => prev.filter((id) => id !== item.id));
       }, 1800);
     } catch {
-      setErrorMessage("Failed to add item to cart. Please try again.");
+      setErrorMessage('Failed to add item to cart. Please try again.');
     } finally {
       setAddingToCartIds((prev) => prev.filter((id) => id !== item.id));
     }
@@ -192,7 +198,7 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
     setSelectedItems((prev) =>
       prev.includes(itemId)
         ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId],
+        : [...prev, itemId]
     );
   };
 
@@ -207,350 +213,275 @@ export function WishlistClient({ initialItems }: WishlistClientProps) {
   function ProductImage({ src, name }: { src: string | null; name: string }) {
     if (
       src &&
-      (src.startsWith("/") || src.startsWith("http") || src.startsWith("data:"))
+      (src.startsWith('/') || src.startsWith('http') || src.startsWith('data:'))
     ) {
       return (
         <Image
           src={src}
-          alt={name ? `${name} product image` : "Wishlist product image"}
+          alt={name ? `${name} product image` : 'Wishlist product image'}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-contain p-4"
+          className="object-contain p-3"
         />
       );
     }
 
     return (
-      <Package className="h-12 w-12 text-minsah-secondary" aria-hidden="true" />
+      <Package className="h-10 w-10 text-[#62666d]" aria-hidden="true" />
     );
   }
 
-  const mobileWishlistItems: MobileWishlistItem[] = useMemo(() => {
-    return wishlistItems.map((item) => ({
-      id: item.id,
-      productId: item.productId,
-      name: item.productName,
-      brand: (item as any).brand || 'Authentic Brand',
-      variant: item.category || 'Authentic Import',
-      price: item.price,
-      originalPrice: item.originalPrice,
-      discountPercent: item.discount,
-      inStock: item.inStock,
-      stockLabel: item.inStock ? 'In Stock • Banani Hub (24h)' : 'Out of Stock',
-      rating: item.rating || 4.9,
-      reviewCount: item.reviewCount || 120,
-      image:
-        item.productImage || '/images/categories/Skincare.png',
-      category: (item.category?.toLowerCase?.().includes('sun')
-        ? 'suncare'
-        : item.category?.toLowerCase?.().includes('serum')
-          ? 'serum'
-          : item.discount
-            ? 'pricedrop'
-            : 'instock') as any,
-      isFavorite: true,
-    }));
-  }, [wishlistItems]);
-
   return (
-    <>
-      <WishlistMobileView initialItems={mobileWishlistItems} />
-      <div className="hidden lg:block min-h-screen bg-minsah-surface">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-minsah-text mb-2">
-                My Wishlist
-              </h1>
-              <p className="text-minsah-muted">
-                {wishlistItems.length}{" "}
-                {wishlistItems.length === 1 ? "item" : "items"} saved
-              </p>
-            </div>
-            {selectedItems.length > 0 && (
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-minsah-muted">
-                  {selectedItems.length} selected
-                </span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleRemoveSelected}
-                  className="rounded-2xl border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  <X className="w-4 h-4" aria-hidden="true" />
-                  Remove Selected
-                </Button>
-              </div>
-            )}
+    <div className="w-full space-y-6 overflow-x-hidden">
+      {/* ── Page Header ───────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wider uppercase bg-[#5e6ad2]/15 text-[#828fff] border border-[#5e6ad2]/30">
+              <Heart className="w-3 h-3 text-[#828fff] fill-current" />
+              Saved Beauty
+            </span>
           </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#f7f8f8]">
+            My Wishlist
+          </h1>
+          <p className="text-xs text-[#8a8f98] mt-0.5">
+            {wishlistItems.length} {wishlistItems.length === 1 ? 'luxury item' : 'luxury items'} saved for later
+          </p>
         </div>
 
-        {errorMessage && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errorMessage}
+        {selectedItems.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#8a8f98] font-mono">
+              {selectedItems.length} Selected
+            </span>
+            <button
+              type="button"
+              onClick={handleRemoveSelected}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remove Selected</span>
+            </button>
           </div>
         )}
+      </div>
 
-        {/* Filters and Controls */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <Input
-                type="text"
-                placeholder="Search wishlist items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                label="Search wishlist items"
-                hideLabel
-                leading={<Search className="w-5 h-5" aria-hidden="true" />}
-                className="rounded-2xl focus:ring-minsah-focus"
-              />
-            </div>
+      {errorMessage && (
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-300">
+          {errorMessage}
+        </div>
+      )}
 
-            {/* Category Filter */}
-            <div className="lg:w-48">
-              <Select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                label="Filter by category"
-                hideLabel
-                className="rounded-2xl focus:ring-minsah-focus"
-              >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category === "all" ? "All Categories" : category}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            {/* Sort */}
-            <div className="lg:w-48">
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                label="Sort wishlist"
-                hideLabel
-                className="rounded-2xl focus:ring-minsah-focus"
-              >
-                <option value="dateAdded">Date Added</option>
-                <option value="name">Name</option>
-                <option value="priceLow">Price: Low to High</option>
-                <option value="priceHigh">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-              </Select>
-            </div>
-          </div>
+      {/* ── Search, Filters & Controls ────────────────────────────────────────── */}
+      <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-3 sm:p-4 flex flex-col sm:flex-row gap-2.5 shadow-xl">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-[#8a8f98] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search saved cosmetics & skincare..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-11 pl-10 pr-4 bg-[#141516] border border-[#23252a] rounded-xl text-xs sm:text-sm text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] transition-colors"
+          />
         </div>
 
-        {/* Wishlist Items */}
-        {filteredItems.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-minsah-text mb-2">
-              {searchTerm || categoryFilter !== "all"
-                ? "No items found"
-                : "Your wishlist is empty"}
-            </h3>
-            <p className="text-minsah-muted mb-6">
-              {searchTerm || categoryFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Start adding items to your wishlist to keep track of products you love"}
-            </p>
-            <Link
-              href="/shop"
-              className="inline-flex items-center px-6 py-3 bg-minsah-primary text-white rounded-2xl hover:bg-minsah-dark transition"
+        <div className="flex gap-2">
+          <div className="w-1/2 sm:w-44">
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full h-11 px-3 bg-[#141516] border border-[#23252a] rounded-xl text-xs sm:text-sm text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2] transition-colors cursor-pointer"
             >
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              Start Shopping
-            </Link>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat === 'all' ? 'All Categories' : cat}
+                </option>
+              ))}
+            </select>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Select All Checkbox */}
-            {filteredItems.length > 1 && (
-              <div className="bg-white rounded-2xl shadow-sm p-4">
-                <Checkbox
+
+          <div className="w-1/2 sm:w-44">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full h-11 px-3 bg-[#141516] border border-[#23252a] rounded-xl text-xs sm:text-sm text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2] transition-colors cursor-pointer"
+            >
+              <option value="dateAdded">Recently Saved</option>
+              <option value="name">Product Name</option>
+              <option value="priceLow">Price: Low to High</option>
+              <option value="priceHigh">Price: High to Low</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Wishlist Grid ─────────────────────────────────────────────────────── */}
+      {filteredItems.length === 0 ? (
+        <div className="bg-[#0f1011] rounded-2xl border border-dashed border-[#23252a] p-10 text-center shadow-xl">
+          <Heart className="w-12 h-12 text-[#62666d] mx-auto mb-3" />
+          <h3 className="text-sm font-semibold text-[#f7f8f8] mb-1">
+            {searchTerm || categoryFilter !== 'all'
+              ? 'No matching wishlist items'
+              : 'Your luxury wishlist is empty'}
+          </h3>
+          <p className="text-xs text-[#8a8f98] mb-4">
+            {searchTerm || categoryFilter !== 'all'
+              ? 'Try modifying your search or filter options'
+              : 'Save products you love to keep track of exclusive restocks and VIP promotions'}
+          </p>
+          <Link
+            href="/shop"
+            className="w-full sm:w-auto inline-flex items-center justify-center h-11 px-6 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-xl text-xs font-semibold tracking-wide transition-all shadow-md active:scale-95"
+          >
+            Explore Beauty Shop
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredItems.length > 1 && (
+            <div className="flex items-center justify-between px-2 text-xs text-[#8a8f98]">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
                   checked={selectedItems.length === filteredItems.length}
                   onChange={handleSelectAll}
-                  label="Select all items"
-                  labelClassName="text-sm font-medium text-minsah-muted"
+                  className="accent-[#5e6ad2] rounded w-4 h-4 cursor-pointer"
                 />
-              </div>
-            )}
+                <span>Select All ({filteredItems.length})</span>
+              </label>
+            </div>
+          )}
 
-            {/* Items Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  {/* Product Image */}
-                  <div className="relative">
-                    <div className="relative aspect-square bg-gradient-to-br from-minsah-light to-minsah-accent flex items-center justify-center">
-                      <ProductImage
-                        src={item.productImage}
-                        name={item.productName}
-                      />
-                    </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredItems.map((item) => (
+              <div
+                key={item.id}
+                className="group relative rounded-2xl bg-[#0f1011] border border-[#23252a] overflow-hidden shadow-xl hover:border-[#5e6ad2]/50 transition-all flex flex-col justify-between"
+              >
+                <div>
+                  {/* Image Container */}
+                  <div className="relative aspect-square w-full bg-[#141516] flex items-center justify-center overflow-hidden border-b border-[#23252a]">
+                    <ProductImage src={item.productImage} name={item.productName} />
 
-                    {/* Actions Overlay */}
-                    <div className="absolute top-2 right-2 flex flex-col space-y-2">
-                      <Button
+                    {/* Top Right Actions */}
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
+                        onClick={() => handleSelectItem(item.id)}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all cursor-pointer ${
+                          selectedItems.includes(item.id)
+                            ? 'bg-[#5e6ad2] border-[#5e6ad2] text-white'
+                            : 'bg-[#0f1011]/80 backdrop-blur-md border-[#23252a] text-[#8a8f98]'
+                        }`}
+                        aria-label={`Select ${item.productName}`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => handleRemoveItem(item.id)}
                         disabled={removingIds.includes(item.id)}
-                        className="h-auto min-h-0 w-auto min-w-0 rounded-full bg-white p-2 text-minsah-muted shadow-md hover:shadow-lg"
+                        className="w-7 h-7 rounded-lg bg-[#0f1011]/80 backdrop-blur-md border border-[#23252a] flex items-center justify-center text-[#8a8f98] hover:text-rose-400 hover:border-rose-500/40 transition-all cursor-pointer"
                         aria-label={`Remove ${item.productName} from wishlist`}
                       >
-                        <X className="w-4 h-4" aria-hidden="true" />
-                      </Button>
-                      <div className="rounded-full bg-white p-2 shadow-md hover:shadow-lg">
-                        <Checkbox
-                          checked={selectedItems.includes(item.id)}
-                          onChange={() => handleSelectItem(item.id)}
-                          label={<span className="sr-only">Select {item.productName}</span>}
-                          containerClassName="w-auto"
-                        />
-                      </div>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                     {/* Discount Badge */}
                     {item.discount && (
-                      <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                        -{item.discount}%
-                      </div>
+                      <span className="absolute top-2.5 left-2.5 bg-rose-500/20 border border-rose-500/40 text-rose-300 px-2 py-0.5 rounded-md text-[10px] font-bold font-mono">
+                        -{item.discount}% OFF
+                      </span>
                     )}
 
                     {/* Out of Stock Overlay */}
                     {!item.inStock && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                        <div className="bg-white rounded-2xl p-4 text-center">
-                          <p className="text-minsah-text font-medium mb-1">
-                            Out of Stock
-                          </p>
-                          {item.restockDate && (
-                            <p className="text-sm text-minsah-muted">
-                              Expected:{" "}
-                              {toDateValue(
-                                item.restockDate,
-                              ).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
+                      <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 text-center">
+                        <span className="px-3 py-1 rounded-lg bg-[#18191a] border border-[#23252a] text-xs font-semibold text-[#8a8f98]">
+                          Out of Stock
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Product Info */}
+                  {/* Product Details */}
                   <div className="p-4">
-                    <div className="mb-2">
-                      <span className="text-xs text-minsah-primary font-medium uppercase tracking-wide">
-                        {item.category}
-                      </span>
-                    </div>
-                    <h3 className="font-medium text-minsah-text mb-2 line-clamp-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[#828fff] mb-1">
+                      {item.category}
+                    </p>
+                    <Link
+                      href={productPath({ id: item.productId, slug: item.productSlug })}
+                      className="font-medium text-xs sm:text-sm text-[#f7f8f8] hover:text-[#828fff] line-clamp-2 transition-colors"
+                    >
                       {item.productName}
-                    </h3>
+                    </Link>
 
                     {/* Rating */}
-                    <div className="flex items-center mb-3">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < Math.floor(item.rating)
-                                ? "text-yellow-400"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-minsah-muted ml-2">
-                        {item.rating} ({item.reviewCount})
+                    <div className="flex items-center gap-1 mt-2 text-xs">
+                      <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                      <span className="font-semibold text-[#f7f8f8] font-mono">{item.rating || 4.9}</span>
+                      <span className="text-[#8a8f98] text-[11px]">({item.reviewCount || 12})</span>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="flex items-baseline gap-2 mt-2.5">
+                      <span className="text-base font-bold text-[#f7f8f8] font-mono">
+                        {formatPrice(item.price)}
                       </span>
-                    </div>
-
-                    {/* Price */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <span className="text-lg font-bold text-minsah-text">
-                          {formatPrice(item.price)}
+                      {item.originalPrice && item.originalPrice > item.price && (
+                        <span className="text-xs text-[#8a8f98] line-through font-mono">
+                          {formatPrice(item.originalPrice)}
                         </span>
-                        {item.originalPrice && (
-                          <span className="text-sm text-gray-500 line-through ml-2">
-                            {formatPrice(item.originalPrice)}
-                          </span>
-                        )}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-auto min-h-0 w-auto min-w-0 p-2 text-red-500 hover:bg-red-50"
-                        aria-label={
-                          selectedItems.includes(item.id)
-                            ? `${item.productName} is selected`
-                            : `Select ${item.productName}`
-                        }
-                      >
-                        {selectedItems.includes(item.id) ? (
-                          <HeartSolid className="w-5 h-5 fill-current" aria-hidden="true" />
-                        ) : (
-                          <Heart className="w-5 h-5" aria-hidden="true" />
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex space-x-2">
-                      <Button
-                        type="button"
-                        variant="primary"
-                        onClick={() => handleMoveToCart(item)}
-                        disabled={
-                          !item.inStock || addingToCartIds.includes(item.id)
-                        }
-                        className={`flex-1 rounded-2xl ${
-                          item.inStock && !addingToCartIds.includes(item.id)
-                            ? "bg-minsah-primary hover:bg-minsah-dark"
-                            : "bg-gray-200 text-gray-500"
-                        }`}
-                      >
-                        {!item.inStock
-                          ? "Out of Stock"
-                          : addingToCartIds.includes(item.id)
-                            ? "Adding..."
-                            : addedToCartIds.includes(item.id)
-                              ? "Added!"
-                              : "Add to Cart"}
-                      </Button>
-                      <Link
-                        href={productPath({
-                          id: item.productId,
-                          slug: item.productSlug,
-                        })}
-                        className="px-4 py-2 border border-gray-300 rounded-2xl text-minsah-muted hover:bg-minsah-surface transition"
-                      >
-                        View
-                      </Link>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Card Action Buttons (Uniform Sizing) */}
+                <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleMoveToCart(item)}
+                    disabled={!item.inStock || addingToCartIds.includes(item.id)}
+                    className={`w-full h-11 sm:h-9 inline-flex items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm active:scale-95 cursor-pointer ${
+                      !item.inStock
+                        ? 'bg-[#18191a] text-[#62666d] border border-[#23252a] cursor-not-allowed'
+                        : addingToCartIds.includes(item.id)
+                        ? 'bg-[#5e6ad2]/50 text-white'
+                        : addedToCartIds.includes(item.id)
+                        ? 'bg-[#27a644]/20 border border-[#27a644]/40 text-[#27a644]'
+                        : 'bg-[#5e6ad2] hover:bg-[#828fff] text-white shadow-md'
+                    }`}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>
+                      {!item.inStock
+                        ? 'Out of Stock'
+                        : addingToCartIds.includes(item.id)
+                        ? 'Adding...'
+                        : addedToCartIds.includes(item.id)
+                        ? 'Added to Cart'
+                        : 'Add to Cart'}
+                    </span>
+                  </button>
+
+                  <Link
+                    href={productPath({ id: item.productId, slug: item.productSlug })}
+                    className="w-full h-11 sm:h-9 inline-flex items-center justify-center rounded-xl border border-[#23252a] bg-[#141516] hover:bg-[#18191a] text-[#8a8f98] hover:text-[#f7f8f8] text-xs font-medium transition-all"
+                  >
+                    <span>View Product</span>
+                    <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-    </>
   );
 }

@@ -7,6 +7,7 @@ import { ThermalPrintToolbar } from '@/components/admin/thermal/ThermalPrintTool
 import { ThermalSlipHeader } from '@/components/admin/thermal/ThermalSlipHeader';
 import { ThermalSlipCustomerBlock } from '@/components/admin/thermal/ThermalSlipCustomerBlock';
 import { ThermalSlipItemsTable } from '@/components/admin/thermal/ThermalSlipItemsTable';
+import { MarklifeLabelSticker } from '@/components/admin/thermal/MarklifeLabelSticker';
 
 export interface ThermalReceiptModalProps {
   order: Order | null;
@@ -118,41 +119,78 @@ export default function ThermalReceiptModal({
         />
 
         {/* Paper Container */}
-        <div className="p-4 bg-slate-950/60 overflow-y-auto max-h-[82vh] print:p-0 print:max-h-none print:bg-white">
-          <ThermalSlipContainer paperWidth={paperWidth}>
-            <ThermalSlipHeader
-              orderNumber={orderNum}
-              date={order.createdAt}
-              barcodeValue={trackingCode || orderNum}
-            />
+        <div className="p-4 bg-slate-950/60 overflow-y-auto max-h-[82vh] print:p-0 print:max-h-none print:bg-white flex flex-col items-center">
+          {paperWidth === '40x12mm' ? (
+            <div className="flex flex-col items-center py-6">
+              <ThermalSlipContainer paperWidth="40x12mm">
+                <MarklifeLabelSticker
+                  orderId={order.id}
+                  orderNumber={orderNum}
+                  showActions={false}
+                />
+              </ThermalSlipContainer>
+              <div className="mt-4 print:hidden text-center max-w-xs">
+                <MarklifeLabelSticker
+                  orderId={order.id}
+                  orderNumber={orderNum}
+                  showActions={true}
+                  className="mt-1"
+                />
+                <p className="text-[11px] text-slate-400 mt-2 leading-tight">
+                  Marklife 15 হ্যান্ডহেল্ড লেবেল প্রিন্টারের জন্য অপ্টিমাইজড (40mm × 12mm)। এক স্টিকারে স্লিপ ও ওয়ারেন্টি কানেক্টেড।
+                </p>
+              </div>
+            </div>
+          ) : (
+            <ThermalSlipContainer paperWidth={paperWidth}>
+              <ThermalSlipHeader
+                orderNumber={orderNum}
+                date={order.createdAt}
+                barcodeValue={trackingCode || orderNum}
+              />
 
-            <ThermalSlipCustomerBlock
-              customerName={recipientName}
-              phone={recipientPhone}
-              address={recipientAddress}
-              courierPartner={courierPartner}
-              courierTracking={trackingCode}
-              specialInstructions={order.adminNote}
-            />
+              <ThermalSlipCustomerBlock
+                customerName={recipientName}
+                phone={recipientPhone}
+                address={recipientAddress}
+                courierPartner={courierPartner}
+                courierTracking={trackingCode}
+                specialInstructions={order.adminNote}
+              />
 
-            <ThermalSlipItemsTable
-              items={(order.items || []).map((it) => ({
-                name: it.name,
-                sku: it.sku,
-                quantity: it.quantity,
-                price: it.price,
-                total: it.total,
-                variant: it.variant?.name,
-              }))}
-              subtotal={subtotal}
-              deliveryFee={delivery}
-              discount={discount}
-              grandTotal={grandTotal}
-              isCod={order.paymentMethod === 'cash_on_delivery' || order.paymentStatus !== 'paid'}
-              paymentMethod={order.paymentMethod}
-              trxId={order.paymentTransactionId || undefined}
-            />
-          </ThermalSlipContainer>
+              <ThermalSlipItemsTable
+                items={(order.items || []).map((it) => ({
+                  name: it.name,
+                  sku: it.sku,
+                  quantity: it.quantity,
+                  price: it.price,
+                  total: it.total,
+                  variant: it.variant?.name,
+                }))}
+                subtotal={subtotal}
+                deliveryFee={delivery}
+                discount={discount}
+                grandTotal={grandTotal}
+                isCod={order.paymentMethod === 'cash_on_delivery' || order.paymentStatus !== 'paid'}
+                paymentMethod={order.paymentMethod}
+                trxId={order.paymentTransactionId || undefined}
+              />
+
+              {/* Integrated QR Block on standard slips */}
+              <div className="pt-2 pb-1 border-t border-dashed border-black flex flex-col items-center text-center">
+                <span className="text-[8px] font-bold uppercase tracking-wider text-black">
+                  Digital Slip & Warranty QR
+                </span>
+                <div className="py-1">
+                  <MarklifeLabelSticker
+                    orderId={order.id}
+                    orderNumber={orderNum}
+                    showActions={false}
+                  />
+                </div>
+              </div>
+            </ThermalSlipContainer>
+          )}
         </div>
       </div>
     </div>

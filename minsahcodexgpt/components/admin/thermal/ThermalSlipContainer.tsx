@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export type ThermalPaperWidth = '80mm' | '76mm' | '58mm';
+export type ThermalPaperWidth = '80mm' | '76mm' | '58mm' | '40x12mm';
 
 export interface ThermalSlipContainerProps {
   paperWidth: ThermalPaperWidth;
@@ -15,12 +15,19 @@ export const ThermalSlipContainer: React.FC<ThermalSlipContainerProps> = ({
   children,
   className = '',
 }) => {
+  const isLabel = paperWidth === '40x12mm';
+
   const widthClass =
-    paperWidth === '58mm'
+    paperWidth === '40x12mm'
+      ? 'w-[40mm] max-w-[40mm]'
+      : paperWidth === '58mm'
       ? 'w-[58mm] max-w-[58mm]'
       : paperWidth === '76mm'
       ? 'w-[76mm] max-w-[76mm]'
       : 'w-[80mm] max-w-[80mm]';
+
+  const printPageSize = isLabel ? '40mm 12mm' : `${paperWidth} auto`;
+  const printPadding = isLabel ? '0 !important' : '2mm 3mm !important';
 
   return (
     <>
@@ -28,7 +35,7 @@ export const ThermalSlipContainer: React.FC<ThermalSlipContainerProps> = ({
         @media print {
           @page {
             margin: 0;
-            size: ${paperWidth} auto;
+            size: ${printPageSize};
           }
           body {
             margin: 0 !important;
@@ -49,21 +56,26 @@ export const ThermalSlipContainer: React.FC<ThermalSlipContainerProps> = ({
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: ${paperWidth} !important;
-            max-width: ${paperWidth} !important;
+            width: ${paperWidth === '40x12mm' ? '40mm' : paperWidth} !important;
+            max-width: ${paperWidth === '40x12mm' ? '40mm' : paperWidth} !important;
+            height: ${paperWidth === '40x12mm' ? '12mm' : 'auto'} !important;
+            max-height: ${paperWidth === '40x12mm' ? '12mm' : 'none'} !important;
             margin: 0 !important;
-            padding: 2mm 3mm !important;
+            padding: ${printPadding};
             background: #ffffff !important;
             color: #000000 !important;
             box-shadow: none !important;
             border: none !important;
+            overflow: hidden !important;
           }
         }
       `}</style>
 
       <div
         id="thermal-print-area"
-        className={`${widthClass} mx-auto bg-white text-black p-4 font-mono text-xs shadow-2xl rounded-sm border border-slate-300 print:shadow-none print:border-none print:p-1 select-text ${className}`}
+        className={`${widthClass} mx-auto bg-white text-black ${
+          isLabel ? 'p-0 shadow-none border-none' : 'p-4 shadow-2xl rounded-sm border border-slate-300'
+        } font-mono text-xs print:shadow-none print:border-none print:p-0 select-text ${className}`}
       >
         {children}
       </div>

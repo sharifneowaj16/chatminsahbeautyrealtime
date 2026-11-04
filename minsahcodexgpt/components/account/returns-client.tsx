@@ -1,12 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RotateCcw, Search, ChevronRight, Package, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastProvider';
 import { formatPrice } from '@/utils/currency';
 
@@ -42,6 +39,11 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [cancelingReturnId, setCancelingReturnId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const filteredReturns = useMemo(() => {
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
@@ -60,19 +62,19 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
     });
   }, [initialReturns, searchTerm, statusFilter]);
 
-  const getStatusClasses = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-blue-100 text-blue-800';
-      case 'processing':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, { bg: string; text: string; border: string }> = {
+      approved: { bg: 'bg-[#5e6ad2]/15', text: 'text-[#828fff]', border: 'border-[#5e6ad2]/30' },
+      processing: { bg: 'bg-amber-500/15', text: 'text-amber-300', border: 'border-amber-500/30' },
+      completed: { bg: 'bg-[#27a644]/15', text: 'text-[#27a644]', border: 'border-[#27a644]/30' },
+      rejected: { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/30' },
+    };
+    const s = map[status] ?? { bg: 'bg-[#18191a]', text: 'text-[#8a8f98]', border: 'border-[#23252a]' };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider border ${s.bg} ${s.text} ${s.border}`}>
+        {status.replace('_', ' ')}
+      </span>
+    );
   };
 
   const handleCancelReturn = async (returnRequest: ReturnRecord) => {
@@ -102,7 +104,7 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
         throw new Error(data.error || 'Failed to cancel return request');
       }
 
-      setFeedbackMessage(`Return ${returnRequest.id} was cancelled.`);
+      setFeedbackMessage(`Return request ${returnRequest.id} was successfully cancelled.`);
       router.refresh();
     } catch (error) {
       setErrorMessage(
@@ -114,122 +116,141 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">My Returns</h1>
-        <p className="text-gray-600">Track your return requests and refund progress</p>
+    <div className="w-full space-y-5 overflow-x-hidden">
+      {/* ── Page Header ───────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#f7f8f8]">
+            Returns & Exchanges
+          </h1>
+          <p className="text-xs text-[#8a8f98] mt-0.5">
+            Track return authorizations, doorstep pickup status, and refund disbursements
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-[#8a8f98] font-mono">
+          <span className="w-2 h-2 rounded-full bg-[#5e6ad2] animate-pulse" />
+          <span>{filteredReturns.length} {filteredReturns.length === 1 ? 'Request' : 'Requests'}</span>
+        </div>
       </div>
 
       {feedbackMessage && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div className="rounded-xl border border-[#27a644]/30 bg-[#27a644]/10 px-4 py-3 text-xs text-[#27a644]">
           {feedbackMessage}
         </div>
       )}
 
       {errorMessage && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-300">
           {errorMessage}
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col sm:flex-row gap-3">
-        <Input
-          type="text"
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search by return number, order number, or reason..."
-          label="Search returns"
-          hideLabel
-          leading={<Search className="w-4 h-4" aria-hidden="true" />}
-          containerClassName="flex-1"
-          className="focus:ring-minsah-focus"
-        />
-        <Select
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          label="Filter by status"
-          hideLabel
-          containerClassName="sm:w-56"
-          className="focus:ring-minsah-focus"
-        >
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="processing">Processing</option>
-          <option value="completed">Completed</option>
-          <option value="rejected">Rejected</option>
-        </Select>
+      {/* ── Search & Filter Controls ──────────────────────────────────────────── */}
+      <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-3 sm:p-4 flex flex-col sm:flex-row gap-2.5 shadow-xl">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-[#8a8f98] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search by return ID, order # or reason..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-11 pl-10 pr-4 bg-[#141516] border border-[#23252a] rounded-xl text-xs sm:text-sm text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] transition-colors"
+          />
+        </div>
+        <div className="sm:w-48">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full h-11 px-3 bg-[#141516] border border-[#23252a] rounded-xl text-xs sm:text-sm text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2] transition-colors cursor-pointer"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending Review</option>
+            <option value="approved">Approved</option>
+            <option value="processing">Processing</option>
+            <option value="completed">Completed</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
       </div>
 
+      {/* ── Returns Listing ───────────────────────────────────────────────────── */}
       {filteredReturns.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <RotateCcw className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-medium text-gray-900 mb-2">No return requests found</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="bg-[#0f1011] rounded-2xl border border-dashed border-[#23252a] p-10 text-center shadow-xl">
+          <RotateCcw className="w-12 h-12 text-[#62666d] mx-auto mb-3" />
+          <h2 className="text-sm font-semibold text-[#f7f8f8] mb-1">No return requests found</h2>
+          <p className="text-xs text-[#8a8f98] mb-4">
             {searchTerm || statusFilter !== 'all'
-              ? 'Try adjusting your filters'
-              : 'When you request a return, it will appear here.'}
+              ? 'Try adjusting your search criteria or filter options'
+              : 'When you initiate a doorstep replacement or refund, it will display here.'}
           </p>
           <Link
             href="/account/orders"
-            className="inline-flex items-center rounded-lg bg-minsah-action-primary px-6 py-3 text-sm font-medium text-white hover:bg-minsah-action-primary-hover"
+            className="w-full sm:w-auto inline-flex items-center justify-center h-11 px-6 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-xl text-xs font-semibold tracking-wide transition-all shadow-md active:scale-95"
           >
-            View Orders
+            Go to Orders
           </Link>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           {filteredReturns.map((returnRequest) => (
-            <div key={returnRequest.id} className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div
+              key={returnRequest.id}
+              className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-4 sm:p-5 shadow-xl transition-all hover:border-[#5e6ad2]/50"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#23252a]">
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold text-gray-900">{returnRequest.id}</h2>
-                    <span className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusClasses(returnRequest.status)}`}>
-                      {returnRequest.status.replace('_', ' ')}
-                    </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xs sm:text-sm font-semibold text-[#f7f8f8] font-mono">
+                      {returnRequest.id}
+                    </h2>
+                    {getStatusBadge(returnRequest.status)}
                   </div>
-                  <p className="mt-1 text-sm text-gray-600">
-                    Order {returnRequest.orderNumber} - Requested on{' '}
-                    {new Date(returnRequest.requestDate).toLocaleDateString()}
+                  <p className="mt-0.5 text-xs text-[#8a8f98]">
+                    Order #{returnRequest.orderNumber} • Requested on{' '}
+                    <span className="font-mono">
+                      {mounted ? new Date(returnRequest.requestDate).toLocaleDateString() : '---'}
+                    </span>
                   </p>
                 </div>
 
-                <div className="text-left md:text-right">
-                  <p className="text-sm text-gray-500">Estimated Refund</p>
-                  <p className="text-lg font-bold text-minsah-action-primary">
+                <div className="text-left sm:text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8a8f98]">
+                    Estimated Refund
+                  </p>
+                  <p className="text-sm sm:text-base font-bold text-[#27a644] font-mono">
                     {formatPrice(returnRequest.refundAmount)}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-6 lg:grid-cols-[2fr,1fr]">
+              <div className="mt-4 grid gap-4 lg:grid-cols-[2fr,1fr]">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">Reason</h3>
-                  <p className="text-sm text-gray-700">{returnRequest.reason}</p>
-                  {returnRequest.images.length > 0 && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      Evidence photos: {returnRequest.images.length}
-                    </p>
-                  )}
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1">
+                    Return Reason
+                  </h3>
+                  <p className="text-xs text-[#f7f8f8] bg-[#141516] p-3 rounded-xl border border-[#23252a] leading-relaxed">
+                    {returnRequest.reason}
+                  </p>
 
-                  <h3 className="text-sm font-medium text-gray-900 mt-5 mb-3">Returned Items</h3>
-                  <div className="space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mt-3.5 mb-2">
+                    Returned Items
+                  </h3>
+                  <div className="space-y-2">
                     {returnRequest.items.map((item) => (
                       <div
                         key={`${returnRequest.id}-${item.name}-${item.quantity}`}
-                        className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
+                        className="flex items-center justify-between rounded-xl bg-[#141516] border border-[#23252a] px-3.5 py-2.5 text-xs"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-minsah-surface-accent text-minsah-action-primary">
-                            <Package className="h-5 w-5" />
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#18191a] text-[#828fff] border border-[#23252a]">
+                            <Package className="h-4 w-4" />
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{item.name}</p>
-                            <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                          <div className="min-w-0 truncate">
+                            <p className="font-medium text-[#f7f8f8] truncate">{item.name}</p>
+                            <p className="text-[11px] text-[#8a8f98] font-mono">Qty: {item.quantity}</p>
                           </div>
                         </div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="font-semibold text-[#f7f8f8] font-mono shrink-0 ml-2">
                           {formatPrice(item.price * item.quantity)}
                         </p>
                       </div>
@@ -237,45 +258,45 @@ export function ReturnsClient({ returns: initialReturns }: ReturnsClientProps) {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
-                  <div className="space-y-3">
+                <div className="rounded-xl border border-[#23252a] bg-[#141516] p-3.5 flex flex-col justify-between gap-3">
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8a8f98]">
+                      Actions
+                    </h3>
                     <Link
                       href={`/account/orders/${returnRequest.orderId}/return`}
-                      className="inline-flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="w-full inline-flex items-center justify-between h-10 px-3 bg-[#18191a] hover:bg-[#23252a] border border-[#23252a] rounded-xl text-xs font-medium text-[#f7f8f8] transition-all"
                     >
-                      View Return Details
-                      <ChevronRight className="h-4 w-4" />
+                      <span>Return Status Flow</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-[#8a8f98]" />
                     </Link>
                     <Link
                       href={`/account/orders/${returnRequest.orderId}`}
-                      className="inline-flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="w-full inline-flex items-center justify-between h-10 px-3 bg-[#18191a] hover:bg-[#23252a] border border-[#23252a] rounded-xl text-xs font-medium text-[#f7f8f8] transition-all"
                     >
-                      View Original Order
-                      <ChevronRight className="h-4 w-4" />
+                      <span>Original Order Details</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-[#8a8f98]" />
                     </Link>
                     {returnRequest.status === 'pending' && (
-                      <Button
+                      <button
                         type="button"
-                        variant="secondary"
-                        fullWidth
                         onClick={() => handleCancelReturn(returnRequest)}
                         disabled={cancelingReturnId === returnRequest.returnId}
-                        className="border-red-200 text-red-700 hover:bg-red-50"
+                        className="w-full inline-flex items-center justify-center h-10 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold transition-all gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         {cancelingReturnId === returnRequest.returnId && (
-                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                         )}
-                        Cancel Request
-                      </Button>
+                        <span>Cancel Request</span>
+                      </button>
                     )}
                   </div>
 
-                  <div className="mt-4 rounded-lg bg-gray-50 px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Last Updated</p>
-                    <p className="mt-1 text-sm font-medium text-gray-900">
-                      {new Date(returnRequest.updatedAt).toLocaleDateString()}
-                    </p>
+                  <div className="pt-2 border-t border-[#23252a] text-[11px] text-[#8a8f98]">
+                    <span>Last Updated: </span>
+                    <span className="font-mono text-[#f7f8f8]">
+                      {mounted ? new Date(returnRequest.updatedAt).toLocaleDateString() : '---'}
+                    </span>
                   </div>
                 </div>
               </div>

@@ -31,20 +31,26 @@ export const ThermalPrintToolbar: React.FC<ThermalPrintToolbarProps> = ({
       className={`flex items-center justify-between gap-3 p-3 bg-slate-900 border-b border-slate-800 text-xs text-white print:hidden ${className}`}
     >
       {/* Paper Width Selector */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Roll:</span>
-        {(['80mm', '58mm'] as ThermalPaperWidth[]).map((w) => (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Format:</span>
+        {(
+          [
+            { id: '80mm', label: '80mm Roll' },
+            { id: '58mm', label: '58mm Roll' },
+            { id: '40x12mm', label: 'Marklife 40×12mm' },
+          ] as { id: ThermalPaperWidth; label: string }[]
+        ).map(({ id, label }) => (
           <button
-            key={w}
+            key={id}
             type="button"
-            onClick={() => onPaperWidthChange(w)}
-            className={`px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider transition-colors ${
-              paperWidth === w
+            onClick={() => onPaperWidthChange(id)}
+            className={`px-2.5 py-1 rounded text-xs font-semibold tracking-wider transition-colors ${
+              paperWidth === id
                 ? 'bg-rose-600 text-white shadow-sm'
                 : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
             }`}
           >
-            {w}
+            {label}
           </button>
         ))}
       </div>
