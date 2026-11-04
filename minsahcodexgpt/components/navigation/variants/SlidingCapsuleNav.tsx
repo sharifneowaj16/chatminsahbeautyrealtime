@@ -83,7 +83,7 @@ export const SlidingCapsuleNav: React.FC<SlidingCapsuleNavProps> = ({ buttons })
                   key={`${btn.key}-${index}`}
                   type="button"
                   onClick={btn.onClick}
-                  className="flex-1 flex items-center justify-center min-h-11 outline-none"
+                  className="flex-1 flex items-center justify-center min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary rounded-xl"
                   aria-label={btn.label}
                 >
                   {content}
@@ -95,7 +95,7 @@ export const SlidingCapsuleNav: React.FC<SlidingCapsuleNavProps> = ({ buttons })
               <Link
                 key={`${btn.key}-${index}`}
                 href={btn.href || '/'}
-                className="flex-1 flex items-center justify-center min-h-11 outline-none"
+                className="flex-1 flex items-center justify-center min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary rounded-xl"
                 aria-label={btn.label}
               >
                 {content}

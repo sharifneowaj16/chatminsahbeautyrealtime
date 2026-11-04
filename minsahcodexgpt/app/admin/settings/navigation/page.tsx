@@ -422,14 +422,14 @@ export default function MobileNavigationAdminPage() {
                       value={btn.label}
                       onChange={(e) => handleLabelChange(index, e.target.value)}
                       placeholder="বাটন নাম"
-                      className="h-9 px-3 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-minsah-primary w-28"
+                      className="h-9 px-3 rounded-lg bg-slate-900 border border-slate-700 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:border-minsah-primary w-28"
                     />
 
                     {/* Icon Type Dropdown */}
                     <select
                       value={btn.iconType}
                       onChange={(e) => handleIconTypeChange(index, e.target.value as 'system' | 'custom_svg')}
-                      className="h-9 px-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none"
+                      className="h-9 px-2 rounded-lg bg-slate-900 border border-slate-700 text-base sm:text-xs text-slate-200 focus:outline-none"
                     >
                       <option value="system">সিস্টেম আইকন</option>
                       <option value="custom_svg">কাস্টম SVG</option>
@@ -506,7 +506,7 @@ export default function MobileNavigationAdminPage() {
                         onChange={(e) => handleSvgPaste(index, e.target.value)}
                         placeholder='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">...</svg>'
                         rows={2}
-                        className="w-full p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-300 placeholder-slate-600 focus:outline-none focus:border-minsah-primary resize-none"
+                        className="w-full p-2 rounded-lg bg-slate-950 border border-slate-800 text-base sm:text-[11px] font-mono text-slate-300 placeholder-slate-600 focus:outline-none focus:border-minsah-primary resize-none"
                       />
                     </div>
                   </div>

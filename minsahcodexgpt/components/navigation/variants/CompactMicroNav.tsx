@@ -73,7 +73,7 @@ export const CompactMicroNav: React.FC<CompactMicroNavProps> = ({ buttons }) => 
                 key={`${btn.key}-${index}`}
                 type="button"
                 onClick={btn.onClick}
-                className="flex items-center justify-center min-h-11 outline-none"
+                className="flex items-center justify-center min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary rounded-lg"
                 aria-label={btn.label}
               >
                 {inner}
@@ -85,7 +85,7 @@ export const CompactMicroNav: React.FC<CompactMicroNavProps> = ({ buttons }) => 
             <Link
               key={`${btn.key}-${index}`}
               href={btn.href || '/'}
-              className="flex items-center justify-center min-h-11 outline-none"
+              className="flex items-center justify-center min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary rounded-lg"
               aria-label={btn.label}
             >
               {inner}

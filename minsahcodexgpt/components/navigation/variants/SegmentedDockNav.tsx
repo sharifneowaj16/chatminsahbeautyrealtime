@@ -23,7 +23,7 @@ export const SegmentedDockNav: React.FC<SegmentedDockNavProps> = ({ buttons }) =
 
             const innerContent = (
               <div
-                className={`relative flex min-h-11 w-full flex-col items-center justify-center py-1 transition-all ${
+                className={`relative flex min-h-11 w-full flex-col items-center justify-center py-1 transition-colors ${
                   btn.isActive
                     ? 'bg-white dark:bg-[#1a1c1e] text-minsah-primary dark:text-emerald-400 font-bold shadow-inner'
                     : 'text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white font-medium'
@@ -69,7 +69,7 @@ export const SegmentedDockNav: React.FC<SegmentedDockNavProps> = ({ buttons }) =
                   key={`${btn.key}-${index}`}
                   type="button"
                   onClick={btn.onClick}
-                  className="flex items-center justify-center min-h-11 w-full outline-none"
+                  className="flex items-center justify-center min-h-11 w-full outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary rounded-lg"
                   aria-label={btn.label}
                 >
                   {innerContent}
@@ -81,7 +81,7 @@ export const SegmentedDockNav: React.FC<SegmentedDockNavProps> = ({ buttons }) =
               <Link
                 key={`${btn.key}-${index}`}
                 href={btn.href || '/'}
-                className="flex items-center justify-center min-h-11 w-full outline-none"
+                className="flex items-center justify-center min-h-11 w-full outline-none focus-visible:ring-2 focus-visible:ring-minsah-primary rounded-lg"
                 aria-label={btn.label}
               >
                 {innerContent}
