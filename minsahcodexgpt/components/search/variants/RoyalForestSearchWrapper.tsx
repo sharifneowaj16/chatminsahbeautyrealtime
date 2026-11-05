@@ -13,7 +13,7 @@ export const RoyalForestSearchWrapper: React.FC<SearchWrapperProps> = ({
 }) => {
   return (
     <div
-      className={`relative w-full rounded-2xl border-2 border-stone-200/90 dark:border-[#1c3a13]/80 bg-white dark:bg-[#0c130b] shadow-sm transition-colors focus-within:border-minsah-primary dark:focus-within:border-[#27a644] focus-within:ring-2 focus-within:ring-minsah-primary/15 dark:focus-within:ring-[#27a644]/20 overflow-hidden ${className}`}
+      className={`relative w-full rounded-2xl border-2 border-white/20 dark:border-[#1c3a13]/80 bg-[#122416]/90 dark:bg-[#0c130b] shadow-sm transition-colors focus-within:border-[#D4F6A2] dark:focus-within:border-[#27a644] focus-within:ring-2 focus-within:ring-[#D4F6A2]/20 overflow-hidden ${className}`}
     >
       {/* Luxury Champagne Gold Micro Accent */}
       <div className="absolute top-0 right-3 flex items-center gap-1 pointer-events-none pt-1">

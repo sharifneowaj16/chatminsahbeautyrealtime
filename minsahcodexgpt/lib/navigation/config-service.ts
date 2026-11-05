@@ -2,7 +2,9 @@ import prisma from '@/lib/prisma';
 import {
   DEFAULT_MOBILE_NAV_CONFIG,
   DEFAULT_NAV_BUTTONS,
+  DEFAULT_MOBILE_HEADER_CONFIG,
   MobileNavigationConfig,
+  MobileHeaderConfig,
   NavBarStyleId,
   SearchBarStyleId,
   NavButtonItem,
@@ -80,10 +82,20 @@ export function normalizeMobileNavConfig(raw: any): MobileNavigationConfig {
     buttons = DEFAULT_NAV_BUTTONS;
   }
 
+  const rawHeader = raw.mobileHeader || {};
+  const mobileHeader: MobileHeaderConfig = {
+    showLogo: rawHeader.showLogo !== undefined ? Boolean(rawHeader.showLogo) : DEFAULT_MOBILE_HEADER_CONFIG.showLogo,
+    showDeliverTo: rawHeader.showDeliverTo !== undefined ? Boolean(rawHeader.showDeliverTo) : DEFAULT_MOBILE_HEADER_CONFIG.showDeliverTo,
+    showWishlist: rawHeader.showWishlist !== undefined ? Boolean(rawHeader.showWishlist) : DEFAULT_MOBILE_HEADER_CONFIG.showWishlist,
+    showCart: rawHeader.showCart !== undefined ? Boolean(rawHeader.showCart) : DEFAULT_MOBILE_HEADER_CONFIG.showCart,
+    showMenu: rawHeader.showMenu !== undefined ? Boolean(rawHeader.showMenu) : DEFAULT_MOBILE_HEADER_CONFIG.showMenu,
+  };
+
   return {
     navBarStyle,
     searchBarStyle,
     buttons,
+    mobileHeader,
     updatedAt: new Date().toISOString(),
   };
 }

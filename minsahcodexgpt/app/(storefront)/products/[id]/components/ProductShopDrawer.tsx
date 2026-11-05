@@ -46,10 +46,6 @@ export default function ProductShopDrawer({
     }));
   }, [products, currentProductId]);
 
-  if (!isOpen || items.length === 0) {
-    return null;
-  }
-
   // Handle escape key to close
   useEffect(() => {
     if (!isOpen) return;
@@ -60,7 +56,9 @@ export default function ProductShopDrawer({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || items.length === 0) {
+    return null;
+  }
 
   return (
     <div

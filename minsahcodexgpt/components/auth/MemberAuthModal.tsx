@@ -30,6 +30,7 @@ export function MemberAuthModal({
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [showResentNotice, setShowResentNotice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingRegData, setPendingRegData] = useState<CreateAccountFormData | null>(null);
 
   const isModalOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen;
 
@@ -69,13 +70,14 @@ export function MemberAuthModal({
   };
 
   const handleCreateAccountSuccess = (data: CreateAccountFormData) => {
+    setPendingRegData(data);
     setPhone(data.phone);
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
       setStep('otp');
       setShowResentNotice(true);
-    }, 600);
+    }, 400);
   };
 
   const handleVerifyOtp = async (enteredOtp: string) => {
@@ -87,6 +89,24 @@ export function MemberAuthModal({
         enteredOtp === '000000' ||
         (enteredOtp.length === 6 && enteredOtp.startsWith('1'))
       ) {
+        // If there is pending registration data from CreateAccountCard, upsert to backend
+        if (pendingRegData) {
+          try {
+            await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: pendingRegData.fullName,
+                phone: pendingRegData.phone,
+                email: pendingRegData.email,
+                password: pendingRegData.password,
+              }),
+            });
+          } catch (syncErr) {
+            console.warn('[handleVerifyOtp] Registration sync notice:', syncErr);
+          }
+        }
+
         const res = await signIn('credentials', {
           email: phone.trim(),
           password: 'OTP_VERIFIED',

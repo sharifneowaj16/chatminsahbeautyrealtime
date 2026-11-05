@@ -12,6 +12,7 @@ import { useDeliveryLocation } from '@/contexts/DeliveryLocationContext';
 import DeliveryFlyout from '@/components/layout/DeliveryFlyout';
 import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
 import MemberAuthModal from '@/components/auth/MemberAuthModal';
+import { DEFAULT_MOBILE_HEADER_CONFIG, type MobileHeaderConfig } from '@/types/navigation-config';
 import {
   MapPinUserLineIcon,
   HeartLineIcon,
@@ -43,7 +44,28 @@ export default function SiteHeader() {
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [wishlistCount, setWishlistCount] = useState<number>(0);
+  const [mobileHeader, setMobileHeader] = useState<MobileHeaderConfig>(DEFAULT_MOBILE_HEADER_CONFIG);
   const deliveryBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Sync mobile header decluttering config from server / live events
+  useEffect(() => {
+    fetch('/api/navigation-config')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.config?.mobileHeader) {
+          setMobileHeader(data.config.mobileHeader);
+        }
+      })
+      .catch(() => {});
+
+    const handleConfigUpdate = (e: any) => {
+      if (e?.detail?.mobileHeader) {
+        setMobileHeader(e.detail.mobileHeader);
+      }
+    };
+    window.addEventListener('minsah:navigation-config-updated', handleConfigUpdate);
+    return () => window.removeEventListener('minsah:navigation-config-updated', handleConfigUpdate);
+  }, []);
 
   // Derive display label from saved location
   const deliveryDisplayCity = savedLocation?.area || savedLocation?.city || 'Dhaka';
@@ -136,7 +158,7 @@ export default function SiteHeader() {
             {/* Left: Brand Logo & Deliver-To */}
             <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink">
               {/* Brand Logo */}
-              <Link href="/" className="brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] rounded-lg" aria-label="Minsah Beauty home" onClick={closeMenu}>
+              <Link href="/" className={`brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] rounded-lg ${!mobileHeader.showLogo ? 'hidden md:inline-flex' : ''}`} aria-label="Minsah Beauty home" onClick={closeMenu}>
                 <span className="brand-icon">
                   <svg
                     width="20"
@@ -164,7 +186,7 @@ export default function SiteHeader() {
               {/* Deliver To: Location Selector Pill */}
               <button
                 ref={deliveryBtnRef}
-                className="mobile-deliver-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
+                className={`mobile-deliver-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${!mobileHeader.showDeliverTo ? 'hidden md:inline-flex' : ''}`}
                 type="button"
                 aria-label={`Deliver to ${deliveryDisplayCity}, change location`}
                 aria-expanded={deliveryOpen}
@@ -212,9 +234,11 @@ export default function SiteHeader() {
 
             {/* Right Action Controls */}
             <div className="header-actions shrink-0 flex items-center gap-1 sm:gap-2">
-              {/* Wishlist Link (Desktop & Tablet) */}
+              {/* Wishlist Link (Desktop & Tablet, plus mobile if toggled) */}
               <Link
-                className="header-control icon-control wishlist relative hidden md:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
+                className={`header-control icon-control wishlist relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${
+                  mobileHeader.showWishlist ? 'inline-flex' : 'hidden md:inline-flex'
+                }`}
                 href="/wishlist"
                 aria-label="Open wishlist"
               >
@@ -226,7 +250,24 @@ export default function SiteHeader() {
                 )}
               </Link>
 
-              {/* Sign In / VIP Club Profile Pill */}
+              {/* Cart Drawer Trigger Button */}
+              <button
+                className={`header-control cart relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${
+                  !mobileHeader.showCart ? 'hidden md:inline-flex' : ''
+                }`}
+                type="button"
+                onClick={openDrawer}
+                aria-label={`Open cart drawer, ${itemCount} items`}
+              >
+                <ShoppingBag4LineIcon size={19} className="accent-icon text-[#D4F6A2]" />
+                {itemCount > 0 && (
+                  <span className="cart-badge">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Sign In / VIP Club Profile Pill (Moved to Right of Cart for Optimal Reach) */}
               {!loading && user ? (
                 <Link
                   className="header-control vip-profile-pill hidden sm:inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
@@ -250,24 +291,11 @@ export default function SiteHeader() {
                 </button>
               )}
 
-              {/* Cart Drawer Trigger Button */}
-              <button
-                className="header-control cart relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
-                type="button"
-                onClick={openDrawer}
-                aria-label={`Open cart drawer, ${itemCount} items`}
-              >
-                <ShoppingBag4LineIcon size={19} className="accent-icon text-[#D4F6A2]" />
-                {itemCount > 0 && (
-                  <span className="cart-badge">
-                    {itemCount > 99 ? '99+' : itemCount}
-                  </span>
-                )}
-              </button>
-
               {/* Mobile / Tablet Nav Drawer Trigger */}
               <button
-                className="header-control icon-control menu-btn"
+                className={`header-control icon-control menu-btn ${
+                  !mobileHeader.showMenu ? 'hidden' : ''
+                }`}
                 type="button"
                 onClick={() => {
                   console.log('[iOS DEBUG] Hamburger clicked');

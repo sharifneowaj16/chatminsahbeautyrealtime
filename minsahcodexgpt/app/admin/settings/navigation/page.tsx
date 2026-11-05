@@ -516,6 +516,97 @@ export default function MobileNavigationAdminPage() {
           })}
         </div>
       </section>
+
+      {/* 4. Mobile Header Decluttering Controls */}
+      <section className="bg-slate-900/60 rounded-2xl border border-slate-800 p-5 space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span>৪. মোবাইল টপ হেডার এলিমেন্ট কন্ট্রোল</span>
+            <span className="text-[10px] text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
+              Declutter Mode
+            </span>
+          </h2>
+          <p className="text-xs text-slate-400 mt-1">
+            ছোট স্ক্রিনে (&lt;768px) টপ হেডারের উপচে পড়া ভিড় কমাতে প্রয়োজনীয় এলিমেন্ট চালু বা বন্ধ রাখুন।
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            {
+              key: 'showLogo',
+              label: 'Minsah Logo',
+              desc: 'টপ হেডার লোগো প্রদর্শন করুন',
+              value: config.mobileHeader?.showLogo ?? true,
+            },
+            {
+              key: 'showDeliverTo',
+              label: 'Deliver To পিল',
+              desc: 'লোকেশন ও ডেলিভারি সিটি সিলেক্টর বাটন',
+              value: config.mobileHeader?.showDeliverTo ?? true,
+            },
+            {
+              key: 'showWishlist',
+              label: 'Wishlist আইকন',
+              desc: 'টপ হেডারে উইশলিস্ট বাটন (বটমে থাকলে অফ রাখা শ্রেয়)',
+              value: config.mobileHeader?.showWishlist ?? false,
+            },
+            {
+              key: 'showCart',
+              label: 'Cart ব্যাগ আইকন',
+              desc: 'টপ হেডারে কার্ট ড্রয়ার ট্রিগার বাটন',
+              value: config.mobileHeader?.showCart ?? true,
+            },
+            {
+              key: 'showMenu',
+              label: 'Hamburger মেনু বাটন',
+              desc: 'বাম পাশের মোবাইল সাইড নেভিগেশন ড্রয়ার',
+              value: config.mobileHeader?.showMenu ?? true,
+            },
+          ].map((item) => {
+            const isChecked = item.value;
+            return (
+              <div
+                key={item.key}
+                onClick={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    mobileHeader: {
+                      showLogo: prev.mobileHeader?.showLogo ?? true,
+                      showDeliverTo: prev.mobileHeader?.showDeliverTo ?? true,
+                      showWishlist: prev.mobileHeader?.showWishlist ?? false,
+                      showCart: prev.mobileHeader?.showCart ?? true,
+                      showMenu: prev.mobileHeader?.showMenu ?? true,
+                      [item.key]: !isChecked,
+                    },
+                  }))
+                }
+                className={`p-3.5 rounded-xl border cursor-pointer select-none transition-all flex items-center justify-between ${
+                  isChecked
+                    ? 'border-emerald-500/50 bg-emerald-950/20 text-white'
+                    : 'border-slate-800 bg-slate-950/30 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <div>
+                  <p className="text-xs font-bold text-white">{item.label}</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">{item.desc}</p>
+                </div>
+                <div
+                  className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ml-3 ${
+                    isChecked ? 'bg-emerald-500' : 'bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${
+                      isChecked ? 'left-4.5' : 'left-0.5'
+                    }`}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

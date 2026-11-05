@@ -90,61 +90,78 @@ export async function POST(request: NextRequest) {
       lastName = nameParts.slice(1).join(' ') || '';
     }
 
-    // Validate required fields
-    if (!email || !name || !password) {
+    // Validate required fields: Name is required, along with either Phone or Email
+    if (!name || (!email && !phone)) {
       return NextResponse.json(
-        { error: 'Email, name, and password are required' },
+        { error: 'Name and either Phone or Email are required' },
         { status: 400 }
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
+    // Clean phone number if provided
+    let cleanPhone: string | null = null;
+    let rawDigits: string | null = null;
+    if (phone && typeof phone === 'string') {
+      cleanPhone = phone.replace(/[-\s]/g, '');
+      rawDigits = cleanPhone.replace(/^\+?88/, '');
     }
 
-    // Validate password strength
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return NextResponse.json(
-        { error: 'Password requirements not met', details: passwordValidation.errors },
-        { status: 400 }
-      );
+    // Validate email format if provided
+    let cleanEmail: string | null = null;
+    if (email && typeof email === 'string' && email.trim()) {
+      cleanEmail = email.toLowerCase().trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        return NextResponse.json(
+          { error: 'Invalid email format' },
+          { status: 400 }
+        );
+      }
     }
 
-    // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-    });
-
-    if (existingUser) {
-      logger.info('Registration attempt with existing email', { email: email.toLowerCase() });
-      return NextResponse.json(
-        { error: 'An account with this email already exists' },
-        { status: 409 }
-      );
+    // Hash password if provided
+    let passwordHash: string | null = null;
+    if (password && typeof password === 'string' && password.trim()) {
+      if (password.length < 6) {
+        return NextResponse.json(
+          { error: 'Password must be at least 6 characters' },
+          { status: 400 }
+        );
+      }
+      passwordHash = await bcrypt.hash(password, 12);
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    // Generate unique referral code
-    let userReferralCode = generateReferralCode();
-    let codeExists = true;
-    let attempts = 0;
-    while (codeExists && attempts < 10) {
-      const existing = await prisma.user.findUnique({
-        where: { referralCode: userReferralCode },
+    // Check for existing user by Phone OR Email to prevent duplicate records
+    let existingUser = null;
+    if (rawDigits) {
+      existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { phone: rawDigits },
+            { phone: cleanPhone! },
+            { phone: `+88${rawDigits}` },
+            { phone: `+880${rawDigits.replace(/^0/, '')}` },
+          ],
+        },
       });
-      if (!existing) {
-        codeExists = false;
-      } else {
-        userReferralCode = generateReferralCode();
-        attempts++;
+    }
+
+    if (!existingUser && cleanEmail) {
+      existingUser = await prisma.user.findUnique({
+        where: { email: cleanEmail },
+      });
+    }
+
+    // If an account with this email exists under a DIFFERENT user id, prevent collision
+    if (cleanEmail) {
+      const emailUser = await prisma.user.findUnique({
+        where: { email: cleanEmail },
+      });
+      if (emailUser && existingUser && emailUser.id !== existingUser.id) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists' },
+          { status: 409 }
+        );
       }
     }
 
@@ -159,39 +176,87 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create user in database
-    const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase().trim(),
-        passwordHash,
-        firstName,
-        lastName,
-        phone: phone || null,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-        gender: gender || null,
-        referralCode: userReferralCode,
-        referredById,
-        loyaltyPoints: 100, // Welcome bonus
-        newsletter: true,
-        promotions: true,
-        newProducts: true,
-        orderUpdates: true,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        avatar: true,
-        role: true,
-        status: true,
-        emailVerified: true,
-        loyaltyPoints: true,
-        referralCode: true,
-        createdAt: true,
-      },
-    });
+    let user;
+    if (existingUser) {
+      // Upsert/Update existing user with profile details
+      user = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          firstName: firstName || existingUser.firstName,
+          lastName: lastName || existingUser.lastName,
+          email: cleanEmail || existingUser.email,
+          phone: rawDigits || existingUser.phone,
+          ...(passwordHash ? { passwordHash } : {}),
+          status: 'ACTIVE',
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatar: true,
+          role: true,
+          status: true,
+          emailVerified: true,
+          loyaltyPoints: true,
+          referralCode: true,
+          createdAt: true,
+        },
+      });
+    } else {
+      // Generate unique referral code for new customer
+      let userReferralCode = generateReferralCode();
+      let codeExists = true;
+      let attempts = 0;
+      while (codeExists && attempts < 10) {
+        const existing = await prisma.user.findUnique({
+          where: { referralCode: userReferralCode },
+        });
+        if (!existing) {
+          codeExists = false;
+        } else {
+          userReferralCode = generateReferralCode();
+          attempts++;
+        }
+      }
+
+      // Create new user in database
+      user = await prisma.user.create({
+        data: {
+          email: cleanEmail,
+          passwordHash,
+          firstName: firstName || 'Minsah',
+          lastName: lastName || 'Member',
+          phone: rawDigits || null,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          gender: gender || null,
+          referralCode: userReferralCode,
+          referredById,
+          loyaltyPoints: 100, // Welcome bonus
+          newsletter: true,
+          promotions: true,
+          newProducts: true,
+          orderUpdates: true,
+          status: 'ACTIVE',
+          role: 'CUSTOMER',
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatar: true,
+          role: true,
+          status: true,
+          emailVerified: true,
+          loyaltyPoints: true,
+          referralCode: true,
+          createdAt: true,
+        },
+      });
+    }
 
     // Add referral bonus if referred
     if (referredById) {

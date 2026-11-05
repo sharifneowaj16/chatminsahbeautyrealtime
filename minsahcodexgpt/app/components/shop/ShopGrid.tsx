@@ -1493,7 +1493,7 @@ export default function ShopGrid() {
         sortOptions={SHOP_SORT_OPTIONS}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[270px_1fr] xl:grid-cols-[280px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="hidden lg:block shrink-0 sticky top-[76px] self-start" aria-label="Shop filters sidebar">
           <AroggaFilterSidebar
             inStockOnly={normalizedParams.get("inStock") === "true"}
@@ -1551,7 +1551,7 @@ export default function ShopGrid() {
               )}
 
               {viewMode === 'grid' ? (
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 md:grid-cols-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 min-w-0">
                   {displayProducts.map((product, index) => (
                     <ProductCard
                       key={product.id}

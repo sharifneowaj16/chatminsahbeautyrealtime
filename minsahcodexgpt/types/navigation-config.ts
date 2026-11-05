@@ -22,10 +22,27 @@ export interface NavButtonItem {
   order: number;
 }
 
+export interface MobileHeaderConfig {
+  showLogo: boolean;
+  showDeliverTo: boolean;
+  showWishlist: boolean;
+  showCart: boolean;
+  showMenu: boolean;
+}
+
+export const DEFAULT_MOBILE_HEADER_CONFIG: MobileHeaderConfig = {
+  showLogo: true,
+  showDeliverTo: true,
+  showWishlist: false,
+  showCart: true,
+  showMenu: true,
+};
+
 export interface MobileNavigationConfig {
   navBarStyle: NavBarStyleId;
   searchBarStyle: SearchBarStyleId;
   buttons: NavButtonItem[];
+  mobileHeader?: MobileHeaderConfig;
   updatedAt: string;
 }
 
@@ -83,6 +100,7 @@ export const DEFAULT_MOBILE_NAV_CONFIG: MobileNavigationConfig = {
   navBarStyle: 'style-05',
   searchBarStyle: 'style-01',
   buttons: DEFAULT_NAV_BUTTONS,
+  mobileHeader: DEFAULT_MOBILE_HEADER_CONFIG,
   updatedAt: new Date().toISOString(),
 };
 

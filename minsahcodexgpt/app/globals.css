@@ -1241,9 +1241,9 @@ img {
   gap: 10px;
   padding-inline: 14px;
   border-radius: 12px;
-  border: 1px solid rgba(212, 246, 162, 0.22);
-  background: rgba(255, 255, 255, 0.09);
-  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(212, 246, 162, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
   font-size: 13px;
   transition: all 0.2s ease;
   cursor: pointer;
@@ -1345,8 +1345,8 @@ img {
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.45);
-  font-weight: 300;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 400;
   opacity: 1;
 }
 

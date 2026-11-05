@@ -130,10 +130,11 @@ export default function SeedHeroVariantDropdown({
     const activeId = hoveredVariantId || selectedVariantId || (variants[0]?.id ?? '');
     return variants.slice(0, maxVisible).map((v, idx) => {
       const bottomDistance = (maxVisible - 1 - idx) * ROW_HEIGHT + ROW_HEIGHT / 2;
-      const yOffset = -(bottomDistance - 15);
+      const rawYOffset = -(bottomDistance - 15);
+      const clampedY = Math.max(-240, Math.min(-15, rawYOffset));
       return {
         id: v.id,
-        yOffset,
+        yOffset: clampedY,
         isActive: v.id === activeId,
         label: v.name,
       };
@@ -142,18 +143,30 @@ export default function SeedHeroVariantDropdown({
 
   // Update connector targets based on actual DOM row positions within the visible popbar
   const updateConnectorPositions = useCallback(() => {
-    if (!modalRef.current || !listRef.current || variants.length === 0) return;
+    if (!modalRef.current || variants.length === 0) return;
+
+    // Use the active desktop flyout scroll container to avoid collision with hidden mobile portal
+    const listEl = modalRef.current.querySelector<HTMLDivElement>('.ios-scrollbar') || listRef.current;
+    if (!listEl) return;
 
     const modalRect = modalRef.current.getBoundingClientRect();
-    const listRect = listRef.current.getBoundingClientRect();
+    const listRect = listEl.getBoundingClientRect();
     const activeId = hoveredVariantId || selectedVariantId || (variants[0]?.id ?? '');
 
     // Visible bounds inside list container (with 6px padding for socket radius)
     const minVisibleY = listRect.top + 6;
     const maxVisibleY = listRect.bottom - 6;
 
-    // Find all option buttons
-    const optionEls = listRef.current.querySelectorAll<HTMLButtonElement>('button[role="option"]');
+    // Safety clamp helper: ensure yOffset never escapes the physical modal bounds
+    const clampYOffset = (rawYOffset: number) => {
+      const modalHeight = modalRect.height > 0 ? modalRect.height : 260;
+      const maxNegativeOffset = -(modalHeight - 16);
+      const minNegativeOffset = 0;
+      return Math.max(maxNegativeOffset, Math.min(minNegativeOffset, rawYOffset));
+    };
+
+    // Find all option buttons inside the active desktop flyout
+    const optionEls = listEl.querySelectorAll<HTMLButtonElement>('button[role="option"]');
     if (!optionEls || optionEls.length === 0) return;
 
     const newTargets: NodeTarget[] = [];
@@ -178,7 +191,7 @@ export default function SeedHeroVariantDropdown({
 
       if (isVisible) {
         const bottomDistance = modalRect.bottom - rowCenterY;
-        const yOffset = -(bottomDistance - 15);
+        const yOffset = clampYOffset(-(bottomDistance - 15));
 
         newTargets.push({
           id: v.id,
@@ -189,10 +202,13 @@ export default function SeedHeroVariantDropdown({
       }
     });
 
+    // Cap to highest 5 visible targets
+    const clampedTargets = newTargets.slice(0, 5);
+
     // Smart Edge Clamping for Active/Selected Variant:
     // If the active variant is scrolled out of view (above top or below bottom),
     // clamp its socket right to the top or bottom visible edge of the popbar!
-    if (!hasActiveTarget || !newTargets.some((t) => t.isActive)) {
+    if (!hasActiveTarget || !clampedTargets.some((t) => t.isActive)) {
       const activeVar = variants.find((v) => v.id === activeId) || variants[0];
       if (activeVar) {
         let clampedCenterY: number;
@@ -206,9 +222,9 @@ export default function SeedHeroVariantDropdown({
         }
 
         const bottomDistance = modalRect.bottom - clampedCenterY;
-        const yOffset = -(bottomDistance - 15);
+        const yOffset = clampYOffset(-(bottomDistance - 15));
 
-        newTargets.push({
+        clampedTargets.push({
           id: activeVar.id,
           yOffset,
           isActive: true,
@@ -217,10 +233,19 @@ export default function SeedHeroVariantDropdown({
       }
     }
 
-    setDynamicTargets(newTargets);
+    setDynamicTargets(clampedTargets);
   }, [variants, selectedVariantId, hoveredVariantId]);
 
-  const connectorTargets = dynamicTargets && dynamicTargets.length > 0 ? dynamicTargets : safeStaticTargets;
+  const activeConnectorId = hoveredVariantId || selectedVariantId || (variants[0]?.id ?? '');
+
+  const connectorTargets = useMemo(() => {
+    const baseTargets = dynamicTargets && dynamicTargets.length > 0 ? dynamicTargets : safeStaticTargets;
+    // Limit to highest 5 visible options and sync active state instantaneously for 60fps hover glide
+    return baseTargets.slice(0, 5).map((t) => ({
+      ...t,
+      isActive: t.id === activeConnectorId,
+    }));
+  }, [dynamicTargets, safeStaticTargets, activeConnectorId]);
 
   useEffect(() => {
     setMounted(true);
@@ -393,21 +418,49 @@ export default function SeedHeroVariantDropdown({
       return;
     }
 
+    // Initial calculation immediately
+    updateConnectorPositions();
+
+    // Secondary calculation after 150ms Tailwind zoom-in/fade-in animation completes
     const timer = setTimeout(() => {
       updateConnectorPositions();
       const activeEl = listRef.current?.querySelector('[aria-selected="true"]') as HTMLElement | null;
       if (activeEl) {
         activeEl.scrollIntoView({ block: 'nearest' });
       }
-      updateConnectorPositions();
-    }, 40);
+      requestAnimationFrame(() => {
+        updateConnectorPositions();
+      });
+    }, 170);
+
+    // Event listener for completion of CSS transitions
+    const modalEl = modalRef.current;
+    const handleTransitionEnd = (e: TransitionEvent) => {
+      if (e.target === modalEl) {
+        updateConnectorPositions();
+      }
+    };
+
+    if (modalEl) {
+      modalEl.addEventListener('transitionend', handleTransitionEnd as any);
+    }
 
     window.addEventListener('resize', updateConnectorPositions);
     return () => {
       clearTimeout(timer);
+      if (modalEl) {
+        modalEl.removeEventListener('transitionend', handleTransitionEnd as any);
+      }
       window.removeEventListener('resize', updateConnectorPositions);
     };
   }, [isOpen, updateConnectorPositions]);
+
+  // Dynamic live connector recalculation when hover target changes
+  useEffect(() => {
+    if (isOpen) {
+      updateConnectorPositions();
+    }
+  }, [isOpen, hoveredVariantId, updateConnectorPositions]);
 
   // Mouse leave handler for option list
   const handleMouseLeaveList = () => {
@@ -705,7 +758,7 @@ export default function SeedHeroVariantDropdown({
       {mounted && isOpen && compact && typeof document !== 'undefined' && (
         createPortal(
           <div
-            className="fixed inset-0 z-[175] bg-black/35 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in cursor-pointer touch-manipulation"
+            className="fixed inset-0 z-40 bg-black/35 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in cursor-pointer touch-manipulation"
             onClick={(e) => {
               e.stopPropagation();
               closeDropdown();
