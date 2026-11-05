@@ -1494,7 +1494,7 @@ export default function ShopGrid() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[270px_1fr] xl:grid-cols-[280px_1fr]">
-        <aside className="hidden lg:block shrink-0" aria-label="Shop filters sidebar">
+        <aside className="hidden lg:block shrink-0 sticky top-[76px] self-start" aria-label="Shop filters sidebar">
           <AroggaFilterSidebar
             inStockOnly={normalizedParams.get("inStock") === "true"}
             onInStockChange={(inStock) => updateUrlFilters({ inStock: inStock ? "true" : null })}

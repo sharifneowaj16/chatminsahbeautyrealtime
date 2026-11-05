@@ -301,7 +301,7 @@ export default function CategoryRail({
         <button
           type="button"
           onClick={() => scrollByDistance('left')}
-          className="mb-rail-arrow mb-rail-arrow-left"
+          className="mb-rail-arrow mb-rail-arrow-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1c3a13] focus-visible:ring-offset-2"
           aria-label="Scroll categories left"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -315,7 +315,7 @@ export default function CategoryRail({
         <button
           type="button"
           onClick={() => scrollByDistance('right')}
-          className="mb-rail-arrow mb-rail-arrow-right"
+          className="mb-rail-arrow mb-rail-arrow-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1c3a13] focus-visible:ring-offset-2"
           aria-label="Scroll categories right"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -351,7 +351,23 @@ export default function CategoryRail({
                 onClick={(e) => handleCategoryClick(e, cat)}
                 aria-current={isActive ? 'page' : undefined}
                 data-category={cat.name}
-                className={`mb-category ${isActive ? 'active' : ''}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const currentIndex = categories.findIndex((c) => c.name === cat.name);
+                    const targetIndex = e.key === 'ArrowRight' ? currentIndex + 1 : currentIndex - 1;
+                    if (targetIndex >= 0 && targetIndex < categories.length) {
+                      const targetCat = categories[targetIndex];
+                      const targetEl = cellRefs.current.get(targetCat.name);
+                      if (targetEl) {
+                        targetEl.focus();
+                        targetEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                        setActiveCategory(targetCat.name);
+                      }
+                    }
+                  }
+                }}
+                className={`mb-category focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1c3a13] focus-visible:ring-offset-2 rounded-xl ${isActive ? 'active' : ''}`}
               >
                 <span aria-hidden="true" className="mb-cat-icon">
                   {cat.slug === 'for-you' || cat.name === 'For You' ? (

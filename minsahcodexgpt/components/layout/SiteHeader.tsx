@@ -131,12 +131,12 @@ export default function SiteHeader() {
   return (
     <>
       <header className="site-header overflow-x-hidden w-full max-w-full" role="banner">
-        <div className="header-container overflow-x-hidden max-w-full px-2 sm:px-4">
+        <div className="header-container overflow-x-hidden w-full max-w-[1440px] mx-auto px-2 sm:px-4 lg:px-8">
           <div className="header-main flex items-center justify-between w-full max-w-full overflow-hidden">
             {/* Left: Brand Logo & Deliver-To */}
             <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink">
               {/* Brand Logo */}
-              <Link href="/" className="brand" aria-label="Minsah Beauty home" onClick={closeMenu}>
+              <Link href="/" className="brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] rounded-lg" aria-label="Minsah Beauty home" onClick={closeMenu}>
                 <span className="brand-icon">
                   <svg
                     width="20"
@@ -164,7 +164,7 @@ export default function SiteHeader() {
               {/* Deliver To: Location Selector Pill */}
               <button
                 ref={deliveryBtnRef}
-                className="mobile-deliver-chip"
+                className="mobile-deliver-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
                 type="button"
                 aria-label={`Deliver to ${deliveryDisplayCity}, change location`}
                 aria-expanded={deliveryOpen}
@@ -172,7 +172,7 @@ export default function SiteHeader() {
                 onClick={() => setDeliveryOpen((v) => !v)}
               >
                 <MapPinUserLineIcon size={14} className="text-[#D4F6A2] shrink-0" />
-                <span className="truncate max-w-[70px] sm:max-w-[95px] text-[11px] sm:text-[12px] font-semibold text-[#EAF7D8]">
+                <span className="truncate max-w-[70px] sm:max-w-[95px] lg:max-w-[160px] text-[11px] sm:text-[12px] font-semibold text-[#EAF7D8]">
                   {deliveryDisplayCity}
                 </span>
                 <svg
@@ -214,7 +214,7 @@ export default function SiteHeader() {
             <div className="header-actions shrink-0 flex items-center gap-1 sm:gap-2">
               {/* Wishlist Link (Desktop & Tablet) */}
               <Link
-                className="header-control icon-control wishlist relative hidden md:inline-flex"
+                className="header-control icon-control wishlist relative hidden md:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
                 href="/wishlist"
                 aria-label="Open wishlist"
               >
@@ -229,7 +229,7 @@ export default function SiteHeader() {
               {/* Sign In / VIP Club Profile Pill */}
               {!loading && user ? (
                 <Link
-                  className="header-control vip-profile-pill hidden sm:inline-flex items-center gap-1.5"
+                  className="header-control vip-profile-pill hidden sm:inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
                   href="/account"
                   aria-label="Minsah VIP Club Profile"
                 >
@@ -242,7 +242,7 @@ export default function SiteHeader() {
                 <button
                   type="button"
                   onClick={() => setAuthModalOpen(true)}
-                  className="header-control signin hidden sm:inline-flex items-center gap-1.5"
+                  className="header-control signin hidden sm:inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
                   aria-label="Sign in to your account with Phone OTP"
                 >
                   <UserLineIcon size={17} className="accent-icon text-[#D4F6A2]" />
@@ -252,7 +252,7 @@ export default function SiteHeader() {
 
               {/* Cart Drawer Trigger Button */}
               <button
-                className="header-control cart relative"
+                className="header-control cart relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
                 type="button"
                 onClick={openDrawer}
                 aria-label={`Open cart drawer, ${itemCount} items`}

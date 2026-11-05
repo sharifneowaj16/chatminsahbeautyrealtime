@@ -31,7 +31,7 @@ export default function HeroSlideItem({
         src={imageSrc}
         alt={slide.title || 'Minsah Beauty Hero Banner'}
         fill
-        sizes={isMobile ? '90vw' : '(max-width: 1280px) 90vw, 1200px'}
+        sizes={isMobile ? '90vw' : '(max-width: 1280px) 90vw, (max-width: 1536px) 1300px, 1440px'}
         priority={isPriority}
         loading={isPriority ? 'eager' : 'lazy'}
         className={`object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.02] ${imageClassName}`}

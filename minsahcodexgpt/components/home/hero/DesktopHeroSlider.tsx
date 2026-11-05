@@ -96,9 +96,22 @@ export default function DesktopHeroSlider({
 
   return (
     <div
-      className="hidden md:block relative w-full max-w-[1440px] mx-auto px-4 lg:px-8 group select-none"
+      className="hidden md:block relative w-full max-w-[1440px] mx-auto px-4 lg:px-8 group select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1c3a13]/30 rounded-[28px]"
+      tabIndex={0}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Promotional highlights carousel"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          handlePrev();
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          handleNext();
+        }
+      }}
     >
       {/* Clip viewport cleanly with zero left bleed */}
       <div ref={containerRef} className="w-full overflow-hidden">
@@ -121,7 +134,7 @@ export default function DesktopHeroSlider({
             <div
               key={`${slide.id || 'desktop-hero-slide'}-${index}`}
               style={{ width: slideWidthPx > 0 ? `${slideWidthPx}px` : '97.5%' }}
-              className="shrink-0 h-[220px] lg:h-[240px]"
+              className="shrink-0 h-[260px] md:h-[280px] lg:h-[300px] xl:h-[320px]"
             >
               <HeroSlideItem
                 slide={slide}
@@ -134,14 +147,14 @@ export default function DesktopHeroSlider({
         </div>
       </div>
 
-      {/* Sleek Navigation Arrows (Visible on hover if >1 slide) */}
+      {/* Sleek Navigation Arrows (Visible on hover or keyboard focus if >1 slide) */}
       {totalSlides > 1 && (
         <>
           <button
             type="button"
             onClick={handlePrev}
             aria-label="Previous Slide"
-            className="absolute left-6 lg:left-10 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 hover:bg-white text-stone-800 shadow-md backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-95 focus:outline-none z-10"
+            className="absolute left-6 lg:left-10 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 hover:bg-white text-stone-800 shadow-md backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#1c3a13] focus-visible:ring-offset-2 transition-all duration-200 active:scale-95 focus:outline-none z-10"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -149,7 +162,7 @@ export default function DesktopHeroSlider({
             type="button"
             onClick={handleNext}
             aria-label="Next Slide"
-            className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 hover:bg-white text-stone-800 shadow-md backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-95 focus:outline-none z-10"
+            className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 hover:bg-white text-stone-800 shadow-md backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#1c3a13] focus-visible:ring-offset-2 transition-all duration-200 active:scale-95 focus:outline-none z-10"
           >
             <ChevronRight className="w-5 h-5" />
           </button>

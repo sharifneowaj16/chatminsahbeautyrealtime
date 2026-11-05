@@ -117,6 +117,7 @@ export default function SeedHeroVariantDropdown({
   const [placementSide, setPlacementSide] = useState<'left' | 'right'>('right');
   const [cardWidth, setCardWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerBtnRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const mobileModalRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -326,9 +327,18 @@ export default function SeedHeroVariantDropdown({
     }
     if (!isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const isLeftHalf = typeof window !== 'undefined' ? centerX < window.innerWidth / 2 : true;
-      setPlacementSide(isLeftHalf ? 'right' : 'left');
+      const popoverWidth = 260 + 32;
+      const spaceOnRight = typeof window !== 'undefined' ? window.innerWidth - rect.right : 300;
+      const spaceOnLeft = rect.left;
+      let side: 'left' | 'right' = 'right';
+      if (spaceOnRight < popoverWidth && spaceOnLeft >= popoverWidth) {
+        side = 'left';
+      } else if (spaceOnLeft < popoverWidth && spaceOnRight >= popoverWidth) {
+        side = 'right';
+      } else {
+        side = spaceOnRight >= spaceOnLeft ? 'right' : 'left';
+      }
+      setPlacementSide(side);
 
       const cardEl = containerRef.current.closest('article');
       if (cardEl) {
@@ -668,13 +678,13 @@ export default function SeedHeroVariantDropdown({
             placementSide === 'right'
               ? 'left-[calc(100%+32px)]'
               : 'right-[calc(100%+32px)]'
-          } bottom-0 z-[60] w-[190px] sm:w-[240px] md:w-[260px] rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-150`}
+          } bottom-0 z-[180] w-[190px] sm:w-[240px] md:w-[260px] rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-150`}
         >
           {/* NodeConnector: n8n-style dark green curved bezier wire spanning the gap */}
           <div
             className={`absolute ${
               placementSide === 'right' ? '-left-[32px]' : '-right-[32px]'
-            } bottom-[15px] pointer-events-none z-[65]`}
+            } bottom-[15px] pointer-events-none z-[185]`}
           >
             <NodeConnector
               direction={placementSide === 'right' ? 'popover-right' : 'popover-left'}
@@ -695,7 +705,7 @@ export default function SeedHeroVariantDropdown({
       {mounted && isOpen && compact && typeof document !== 'undefined' && (
         createPortal(
           <div
-            className="fixed inset-0 z-40 bg-black/35 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in cursor-pointer touch-manipulation"
+            className="fixed inset-0 z-[175] bg-black/35 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in cursor-pointer touch-manipulation"
             onClick={(e) => {
               e.stopPropagation();
               closeDropdown();

@@ -90,7 +90,7 @@ export default function AroggaFilterSidebar({
   };
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5 shadow-xs font-sans text-xs sm:text-sm">
+    <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5 shadow-xs font-sans text-xs sm:text-sm max-h-[calc(100vh-100px)] overflow-y-auto overscroll-contain ios-scrollbar">
       {/* Top Header: Filters & Clear All */}
       <div className="flex items-center justify-between border-b border-stone-200 pb-3 mb-4">
         <span className="font-bold text-[#1c3a13] text-base">Filters</span>
