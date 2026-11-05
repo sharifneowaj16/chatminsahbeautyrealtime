@@ -46,7 +46,7 @@ export default function BottomNavigation() {
 
     const handleConfigUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<MobileNavigationConfig>;
-      if (customEvent.detail) {
+      if (customEvent.detail && Array.isArray(customEvent.detail.buttons)) {
         setConfig(customEvent.detail);
       }
     };

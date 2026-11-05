@@ -999,6 +999,13 @@ img {
   -webkit-backdrop-filter: blur(10px);
 }
 
+/* Mobile Header Decluttering Override (< 768px): Admin-controlled */
+@media (max-width: 767px) {
+  .site-header [data-mobile-hidden="true"] {
+    display: none !important;
+  }
+}
+
 .header-container,
 .nav-container {
   width: min(1440px, 100%);

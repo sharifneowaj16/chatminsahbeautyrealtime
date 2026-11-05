@@ -153,12 +153,25 @@ export default function SiteHeader() {
   return (
     <>
       <header className="site-header overflow-x-hidden w-full max-w-full" role="banner">
+        <style>{`
+          @media (max-width: 767px) {
+            .site-header [data-mobile-hidden="true"] {
+              display: none !important;
+            }
+          }
+        `}</style>
         <div className="header-container overflow-x-hidden w-full max-w-[1440px] mx-auto px-2 sm:px-4 lg:px-8">
           <div className="header-main flex items-center justify-between w-full max-w-full overflow-hidden">
             {/* Left: Brand Logo & Deliver-To */}
             <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink">
               {/* Brand Logo */}
-              <Link href="/" className={`brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] rounded-lg ${!mobileHeader.showLogo ? 'hidden md:inline-flex' : ''}`} aria-label="Minsah Beauty home" onClick={closeMenu}>
+              <Link
+                href="/"
+                data-mobile-hidden={!mobileHeader.showLogo ? 'true' : undefined}
+                className={`brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] rounded-lg ${!mobileHeader.showLogo ? 'hidden md:inline-flex' : ''}`}
+                aria-label="Minsah Beauty home"
+                onClick={closeMenu}
+              >
                 <span className="brand-icon">
                   <svg
                     width="20"
@@ -186,6 +199,7 @@ export default function SiteHeader() {
               {/* Deliver To: Location Selector Pill */}
               <button
                 ref={deliveryBtnRef}
+                data-mobile-hidden={!mobileHeader.showDeliverTo ? 'true' : undefined}
                 className={`mobile-deliver-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${!mobileHeader.showDeliverTo ? 'hidden md:inline-flex' : ''}`}
                 type="button"
                 aria-label={`Deliver to ${deliveryDisplayCity}, change location`}
@@ -236,6 +250,7 @@ export default function SiteHeader() {
             <div className="header-actions shrink-0 flex items-center gap-1 sm:gap-2">
               {/* Wishlist Link (Desktop & Tablet, plus mobile if toggled) */}
               <Link
+                data-mobile-hidden={!mobileHeader.showWishlist ? 'true' : undefined}
                 className={`header-control icon-control wishlist relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${
                   mobileHeader.showWishlist ? 'inline-flex' : 'hidden md:inline-flex'
                 }`}
@@ -252,6 +267,7 @@ export default function SiteHeader() {
 
               {/* Cart Drawer Trigger Button */}
               <button
+                data-mobile-hidden={!mobileHeader.showCart ? 'true' : undefined}
                 className={`header-control cart relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${
                   !mobileHeader.showCart ? 'hidden md:inline-flex' : ''
                 }`}
@@ -293,6 +309,7 @@ export default function SiteHeader() {
 
               {/* Mobile / Tablet Nav Drawer Trigger */}
               <button
+                data-mobile-hidden={!mobileHeader.showMenu ? 'true' : undefined}
                 className={`header-control icon-control menu-btn ${
                   !mobileHeader.showMenu ? 'hidden' : ''
                 }`}
