@@ -119,6 +119,7 @@ export default function SeedHeroVariantDropdown({
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerBtnRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const mobileFlyoutRef = useRef<HTMLDivElement>(null);
   const mobileModalRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [dynamicTargets, setDynamicTargets] = useState<NodeTarget[] | null>(null);
@@ -143,13 +144,20 @@ export default function SeedHeroVariantDropdown({
 
   // Update connector targets based on actual DOM row positions within the visible popbar
   const updateConnectorPositions = useCallback(() => {
-    if (!modalRef.current || variants.length === 0) return;
+    const activeModal =
+      (modalRef.current && modalRef.current.offsetParent !== null)
+        ? modalRef.current
+        : (mobileFlyoutRef.current && mobileFlyoutRef.current.offsetParent !== null)
+        ? mobileFlyoutRef.current
+        : (modalRef.current || mobileFlyoutRef.current);
 
-    // Use the active desktop flyout scroll container to avoid collision with hidden mobile portal
-    const listEl = modalRef.current.querySelector<HTMLDivElement>('.ios-scrollbar') || listRef.current;
+    if (!activeModal || variants.length === 0) return;
+
+    // Use the active flyout scroll container to avoid collision with hidden containers
+    const listEl = activeModal.querySelector<HTMLDivElement>('.ios-scrollbar') || listRef.current;
     if (!listEl) return;
 
-    const modalRect = modalRef.current.getBoundingClientRect();
+    const modalRect = activeModal.getBoundingClientRect();
     const listRect = listEl.getBoundingClientRect();
     const activeId = hoveredVariantId || selectedVariantId || (variants[0]?.id ?? '');
 
@@ -352,7 +360,8 @@ export default function SeedHeroVariantDropdown({
     }
     if (!isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const popoverWidth = 260 + 32;
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+      const popoverWidth = isMobile ? (172 + 16) : (260 + 32);
       const spaceOnRight = typeof window !== 'undefined' ? window.innerWidth - rect.right : 300;
       const spaceOnLeft = rect.left;
       let side: 'left' | 'right' = 'right';
@@ -390,6 +399,7 @@ export default function SeedHeroVariantDropdown({
         containerRef.current &&
         !containerRef.current.contains(target) &&
         (!modalRef.current || !modalRef.current.contains(target)) &&
+        (!mobileFlyoutRef.current || !mobileFlyoutRef.current.contains(target)) &&
         (!mobileModalRef.current || !mobileModalRef.current.contains(target))
       ) {
         closeDropdown();
@@ -434,7 +444,7 @@ export default function SeedHeroVariantDropdown({
     }, 170);
 
     // Event listener for completion of CSS transitions
-    const modalEl = modalRef.current;
+    const modalEl = modalRef.current || mobileFlyoutRef.current;
     const handleTransitionEnd = (e: TransitionEvent) => {
       if (e.target === modalEl) {
         updateConnectorPositions();
@@ -754,6 +764,42 @@ export default function SeedHeroVariantDropdown({
         </div>
       )}
 
+      {/* 1b. GRID VIEW (MOBILE ONLY <sm): Dedicated Side Flyout with NodeConnector (Desktop 100% untouched) */}
+      {isOpen && compact && layout === 'grid' && (
+        <div
+          ref={mobileFlyoutRef}
+          role="listbox"
+          aria-label="Available variants"
+          style={{
+            maxWidth: 'calc(100vw - 16px)',
+          }}
+          className={`block sm:hidden absolute ${
+            placementSide === 'right'
+              ? 'left-[calc(100%+16px)]'
+              : 'right-[calc(100%+16px)]'
+          } bottom-0 z-[180] w-[172px] rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-white/15 shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-150`}
+        >
+          {/* Mobile NodeConnector: n8n-style curved wire spanning 16px gap */}
+          <div
+            className={`absolute ${
+              placementSide === 'right' ? '-left-[16px]' : '-right-[16px]'
+            } bottom-[15px] pointer-events-none z-[185]`}
+          >
+            <NodeConnector
+              direction={placementSide === 'right' ? 'popover-right' : 'popover-left'}
+              gapWidth={16}
+              color="#1c3a13"
+              targets={connectorTargets}
+            />
+          </div>
+
+          {/* Rounded inner container */}
+          <div className="w-full h-full rounded-2xl overflow-hidden">
+            {dropdownListContent}
+          </div>
+        </div>
+      )}
+
       {/* Shared Full-Screen Backdrop Blur (z-40): Blurs background except active product card (z-50) */}
       {mounted && isOpen && compact && typeof document !== 'undefined' && (
         createPortal(
@@ -769,13 +815,11 @@ export default function SeedHeroVariantDropdown({
         )
       )}
 
-      {/* 2. CENTERED MODAL DIALOG (Portal to document.body): Used for List View always, and Grid View on Mobile (<640px) */}
-      {mounted && isOpen && compact && (layout === 'list' || layout === 'grid') && typeof document !== 'undefined' && (
+      {/* 2. CENTERED MODAL DIALOG (Portal to document.body): Used for List View */}
+      {mounted && isOpen && compact && layout === 'list' && typeof document !== 'undefined' && (
         createPortal(
           <div
-            className={`fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none animate-in fade-in duration-150 ${
-              layout === 'grid' ? 'sm:hidden' : ''
-            }`}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none animate-in fade-in duration-150"
             role="dialog"
             aria-modal="true"
             aria-label="Available variants"
