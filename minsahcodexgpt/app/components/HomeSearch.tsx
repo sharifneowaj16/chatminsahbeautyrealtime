@@ -22,6 +22,7 @@ import { formatPrice } from '@/utils/currency';
 import { buildCatalogSearchPath } from '@/lib/catalog-navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import SeedHeroVariantDropdown, { type ProductVariantItem } from '@/app/(storefront)/products/[id]/components/hero/SeedHeroVariantDropdown';
 
 import type {
   CanonicalSuggestion,
@@ -127,6 +128,8 @@ export default function HomeSearch({
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [isAnyDropdownOpen, setIsAnyDropdownOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -249,42 +252,52 @@ export default function HomeSearch({
     [router, addRecentSearch, onCloseMobile]
   );
 
-  // Quick 1-tap Add to Cart right from suggestion card (with variant and stock guards)
-  const handleQuickAddToCart = (e: React.MouseEvent, suggestion: ProductSuggestion) => {
-    e.stopPropagation();
+  // Variant Selection Add to Cart right from suggestion card
+  const handleVariantAddToCart = useCallback(
+    (prod: ProductSuggestion, variant: ProductVariantItem) => {
+      setAddingProductId(prod.productId);
 
-    const isOutOfStock = suggestion.inStock === false || (suggestion.stock !== undefined && suggestion.stock <= 0);
-    if (isOutOfStock) return;
+      addItem({
+        id: `${prod.productId}-${variant.id}`,
+        productId: prod.productId,
+        name: `${prod.productName || prod.text} (${variant.name})`,
+        price: variant.price || prod.price,
+        quantity: 1,
+        image: variant.image || prod.image || '/images/categories/Serum.png',
+      });
 
-    const hasVariants = Boolean(
-      suggestion.hasVariants ||
-      suggestion.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
-    );
+      setTimeout(() => {
+        setAddingProductId(null);
+      }, 1000);
+    },
+    [addItem]
+  );
 
-    if (hasVariants) {
-      if (onCloseMobile) onCloseMobile();
-      setShowSuggestions(false);
-      router.push(`/products/${suggestion.slug}`);
-      return;
-    }
+  // Quick 1-tap Add to Cart right from suggestion card (with stock guards)
+  const handleQuickAddToCart = useCallback(
+    (e: React.MouseEvent, suggestion: ProductSuggestion) => {
+      e.stopPropagation();
 
-    setAddingProductId(suggestion.productId);
+      const isOutOfStock = suggestion.inStock === false || (suggestion.stock !== undefined && suggestion.stock <= 0);
+      if (isOutOfStock) return;
 
-    addItem({
-      id: suggestion.productId,
-      productId: suggestion.productId,
-      name: suggestion.productName || suggestion.text,
-      price: suggestion.price,
-      quantity: 1,
-      image: suggestion.image || '/images/categories/Serum.png',
-    });
+      setAddingProductId(suggestion.productId);
 
-    openCartDrawer();
-    setTimeout(() => {
-      setAddingProductId(null);
-      if (onCloseMobile) onCloseMobile();
-    }, 450);
-  };
+      addItem({
+        id: suggestion.productId,
+        productId: suggestion.productId,
+        name: suggestion.productName || suggestion.text,
+        price: suggestion.price,
+        quantity: 1,
+        image: suggestion.image || '/images/categories/Serum.png',
+      });
+
+      setTimeout(() => {
+        setAddingProductId(null);
+      }, 1000);
+    },
+    [addItem]
+  );
 
   // Voice Search with Web Speech API
   const startVoiceSearch = useCallback(() => {
@@ -332,6 +345,14 @@ export default function HomeSearch({
 
   // Keyboard Navigation
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    // If a variant dropdown is currently open, yield arrow keys to dropdown navigation
+    if (isAnyDropdownOpen) {
+      if (event.key === 'Escape') {
+        setIsAnyDropdownOpen(false);
+      }
+      return;
+    }
+
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       if (!visibleSuggestions.length) return;
@@ -599,88 +620,112 @@ export default function HomeSearch({
               </div>
 
               {productSuggestions.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {productSuggestions.map((prod) => {
                     const isAdding = addingProductId === prod.productId;
+                    const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
+                    const hasVariants = Boolean(
+                      prod.hasVariants ||
+                      prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
+                    );
+                    const hasVariantList = hasVariants && prod.variants && prod.variants.length > 0;
+                    const currentVariantId = selectedVariants[prod.productId] || prod.variants?.[0]?.id || null;
+
                     return (
                       <div
                         key={prod.productId}
                         onClick={() => selectSuggestion(prod)}
-                        className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] active:scale-[0.99] cursor-pointer transition"
+                        className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] active:scale-[0.99] cursor-pointer transition flex flex-col gap-2.5"
                       >
-                        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-white/10 p-1 flex items-center justify-center">
-                          <Image
-                            src={prod.image || '/images/categories/Serum.png'}
-                            alt={prod.productName || prod.text}
-                            width={52}
-                            height={52}
-                            className="h-full w-full object-contain"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-white line-clamp-1">
-                            {highlightMatch(prod.productName || prod.text, normalizedQuery)}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-price font-bold text-emerald-300">
-                              {formatPrice(prod.price)}
-                            </span>
-                            {prod.badges?.[0] && (
-                              <span className="rounded-full bg-emerald-400/20 px-1.5 py-0.2 text-[9px] font-semibold text-emerald-200">
-                                {prod.badges[0]}
-                              </span>
-                            )}
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-13 w-13 flex-shrink-0 overflow-hidden rounded-xl bg-white/10 p-1 flex items-center justify-center">
+                            <Image
+                              src={prod.image || '/images/categories/Serum.png'}
+                              alt={prod.productName || prod.text}
+                              width={52}
+                              height={52}
+                              className="h-full w-full object-contain"
+                            />
                           </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-white line-clamp-1">
+                              {highlightMatch(prod.productName || prod.text, normalizedQuery)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-xs font-price font-bold text-emerald-300">
+                                {formatPrice(prod.price)}
+                              </span>
+                              {prod.rating && prod.rating > 0 ? (
+                                <span className="flex items-center gap-0.5 text-amber-400 text-[11px] font-bold">
+                                  <span>★</span>
+                                  <span>{prod.rating.toFixed(1)}</span>
+                                  {prod.reviewCount ? (
+                                    <span className="text-stone-400 font-normal text-[10px]">({prod.reviewCount})</span>
+                                  ) : null}
+                                </span>
+                              ) : null}
+                              {prod.badges?.[0] && (
+                                <span className="rounded-full bg-emerald-400/20 px-1.5 py-0.2 text-[9px] font-semibold text-emerald-200">
+                                  {prod.badges[0]}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Button for Simple Products (Right Aligned) */}
+                          {!hasVariantList && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              {isOutOfStock ? (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="flex h-8 items-center rounded-full px-2.5 text-[11px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                                  aria-label="Out of stock"
+                                >
+                                  Sold Out
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleQuickAddToCart(e, prod)}
+                                  className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm ${
+                                    isAdding
+                                      ? 'bg-emerald-500 text-white'
+                                      : 'bg-[#1c3a13] hover:bg-emerald-600 text-white active:scale-95'
+                                  }`}
+                                  aria-label={`Add ${prod.productName || prod.text} to cart`}
+                                >
+                                  {isAdding ? <Check size={12} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
+                                  <span>{isAdding ? 'ADDED' : 'ADD'}</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        {(() => {
-                          const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
-                          const hasVariants = Boolean(
-                            prod.hasVariants ||
-                            prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
-                          );
 
-                          if (isOutOfStock) {
-                            return (
-                              <button
-                                type="button"
-                                disabled
-                                className="flex h-8 items-center rounded-full px-2.5 text-[11px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
-                                aria-label="Out of stock"
-                              >
-                                Sold Out
-                              </button>
-                            );
-                          }
-
-                          if (hasVariants) {
-                            return (
-                              <button
-                                type="button"
-                                onClick={(e) => handleQuickAddToCart(e, prod)}
-                                className="flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95"
-                                aria-label="Select options"
-                              >
-                                <span>Options</span>
-                                <ArrowRight size={11} />
-                              </button>
-                            );
-                          }
-
-                          return (
-                            <button
-                              type="button"
-                              onClick={(e) => handleQuickAddToCart(e, prod)}
-                              className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm ${
-                                isAdding
-                                  ? 'bg-emerald-500 text-white'
-                                  : 'bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95'
-                              }`}
-                            >
-                              {isAdding ? <Check size={12} /> : <Plus size={13} />}
-                              <span>{isAdding ? 'Added' : 'Add'}</span>
-                            </button>
-                          );
-                        })()}
+                        {/* Full Width Variant Selector Row for Variant Products */}
+                        {hasVariantList && (
+                          <div
+                            className="w-full pt-2 border-t border-white/5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SeedHeroVariantDropdown
+                              variants={prod.variants}
+                              selectedVariantId={currentVariantId}
+                              defaultImage={prod.image}
+                              compact
+                              layout="list"
+                              className="w-full"
+                              onOpenChange={(open) => setIsAnyDropdownOpen(open)}
+                              onVariantChange={(vId) => {
+                                setSelectedVariants((prev) => ({ ...prev, [prod.productId]: vId || '' }));
+                              }}
+                              onSelectVariant={(variant) => {
+                                handleVariantAddToCart(prod, variant);
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -947,10 +992,19 @@ export default function HomeSearch({
                           <p className="text-xs font-semibold text-white truncate">
                             {highlightMatch(prod.productName || prod.text, normalizedQuery)}
                           </p>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <span className="text-xs font-price font-bold text-emerald-300">
                               {formatPrice(prod.price)}
                             </span>
+                            {prod.rating && prod.rating > 0 ? (
+                              <span className="flex items-center gap-0.5 text-amber-400 text-[11px] font-bold">
+                                <span>★</span>
+                                <span>{prod.rating.toFixed(1)}</span>
+                                {prod.reviewCount ? (
+                                  <span className="text-stone-400 font-normal text-[10px]">({prod.reviewCount})</span>
+                                ) : null}
+                              </span>
+                            ) : null}
                             {prod.badges?.[0] && (
                               <span className="rounded bg-emerald-400/20 px-1 py-0.2 text-[8.5px] font-semibold text-emerald-200">
                                 {prod.badges[0]}
@@ -959,7 +1013,7 @@ export default function HomeSearch({
                           </div>
                         </div>
 
-                        {/* 1-Tap Add to Cart or Option / Out-of-Stock Button */}
+                        {/* Product Card Variant Selector OR 1-Tap ADD Button */}
                         {(() => {
                           const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
                           const hasVariants = Boolean(
@@ -980,17 +1034,28 @@ export default function HomeSearch({
                             );
                           }
 
-                          if (hasVariants) {
+                          if (hasVariants && prod.variants && prod.variants.length > 0) {
+                            const currentVariantId = selectedVariants[prod.productId] || prod.variants[0]?.id || null;
                             return (
-                              <button
-                                type="button"
-                                onClick={(e) => handleQuickAddToCart(e, prod)}
-                                className="flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold transition-all shadow-sm bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95"
-                                aria-label="Select options"
+                              <div
+                                className="relative shrink-0 w-36 sm:w-44"
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                <span>Options</span>
-                                <ArrowRight size={10} />
-                              </button>
+                                <SeedHeroVariantDropdown
+                                  variants={prod.variants}
+                                  selectedVariantId={currentVariantId}
+                                  defaultImage={prod.image}
+                                  compact
+                                  layout="list"
+                                  onOpenChange={(open) => setIsAnyDropdownOpen(open)}
+                                  onVariantChange={(vId) => {
+                                    setSelectedVariants((prev) => ({ ...prev, [prod.productId]: vId || '' }));
+                                  }}
+                                  onSelectVariant={(variant) => {
+                                    handleVariantAddToCart(prod, variant);
+                                  }}
+                                />
+                              </div>
                             );
                           }
 
@@ -998,14 +1063,15 @@ export default function HomeSearch({
                             <button
                               type="button"
                               onClick={(e) => handleQuickAddToCart(e, prod)}
-                              className={`flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold transition-all shadow-sm ${
+                              className={`flex h-7.5 items-center gap-1 rounded-full px-3 text-[11px] font-bold transition-all shadow-sm ${
                                 isAdding
                                   ? 'bg-emerald-500 text-white'
-                                  : 'bg-white/10 text-white hover:bg-emerald-500 hover:text-white active:scale-95'
+                                  : 'bg-[#1c3a13] hover:bg-emerald-600 text-white active:scale-95'
                               }`}
+                              aria-label={`Add ${prod.productName || prod.text} to cart`}
                             >
-                              {isAdding ? <Check size={11} /> : <Plus size={12} />}
-                              <span>{isAdding ? 'Added' : 'Add'}</span>
+                              {isAdding ? <Check size={11} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
+                              <span>{isAdding ? 'ADDED' : 'ADD'}</span>
                             </button>
                           );
                         })()}

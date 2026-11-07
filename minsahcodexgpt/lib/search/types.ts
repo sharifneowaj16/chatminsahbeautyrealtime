@@ -90,6 +90,16 @@ export interface CanonicalSearchProduct {
 /**
  * Autocomplete / live suggestion types used across header, home search, and shop search bar.
  */
+export interface ProductSuggestionVariant {
+  id: string;
+  sku: string;
+  name: string;
+  price: number;
+  stock: number;
+  image?: string | null;
+  attributes?: Record<string, string> | null;
+}
+
 export interface ProductSuggestion {
   type: 'product';
   text: string;
@@ -103,6 +113,9 @@ export interface ProductSuggestion {
   hasVariants?: boolean;
   inStock?: boolean;
   stock?: number;
+  rating?: number;
+  reviewCount?: number;
+  variants?: ProductSuggestionVariant[];
 }
 
 export interface TrendingSuggestion {

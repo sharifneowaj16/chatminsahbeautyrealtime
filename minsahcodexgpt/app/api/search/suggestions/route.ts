@@ -7,6 +7,8 @@ import {
   getZeroResultQueries,
 } from '@/lib/elasticsearch/trending';
 import { buildActiveProductESFilters, isActiveSearchHit } from '@/lib/search/activeProductFilter';
+import { executeDatabaseSearchFallback } from '@/lib/search/db-fallback';
+import type { ProductSuggestionVariant } from '@/lib/search/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +30,9 @@ interface ProductSuggestSource {
   inStock?: boolean;
   quantity?: number;
   stock?: number;
+  rating?: number;
+  reviewCount?: number;
+  variants?: ProductSuggestionVariant[];
 }
 
 interface SuggestionOption {
@@ -65,10 +70,13 @@ type ApiSuggestion =
       image?: string;
       score?: number | null;
       badges?: string[];
-      source: 'elasticsearch_autocomplete' | 'trending_product';
+      source: 'elasticsearch_autocomplete' | 'trending_product' | 'database_autocomplete_fallback';
       hasVariants?: boolean;
       inStock?: boolean;
       stock?: number;
+      rating?: number;
+      reviewCount?: number;
+      variants?: ProductSuggestionVariant[];
     }
   | {
       type: 'trending';
@@ -224,10 +232,48 @@ export async function GET(request: NextRequest) {
       fetchTrendingProductSuggestions(2),
     ]);
 
+    let activeProductSuggestions = productSuggestions;
+    if (activeProductSuggestions.length === 0 && normalizedQuery.length >= 2) {
+      try {
+        const dbFallback = await executeDatabaseSearchFallback(
+          new URLSearchParams({ q: normalizedQuery, limit: String(limit) }),
+          Date.now()
+        );
+        if (dbFallback.products && dbFallback.products.length > 0) {
+          activeProductSuggestions = dbFallback.products.map((p) => ({
+            type: 'product',
+            text: p.name,
+            productId: p.id,
+            productName: p.name,
+            slug: p.slug,
+            price: p.price,
+            image: p.image || p.images?.[0],
+            rating: p.rating,
+            reviewCount: p.reviewCount,
+            hasVariants: p.hasVariants,
+            variants: p.variants?.map((v) => ({
+              id: v.id,
+              sku: v.sku || '',
+              name: v.name,
+              price: v.price,
+              stock: v.stock,
+              image: v.image,
+              attributes: v.attributes,
+            })),
+            inStock: p.inStock,
+            badges: p.badges,
+            source: 'database_autocomplete_fallback',
+          }));
+        }
+      } catch (err) {
+        console.warn('Database suggestions fallback failed:', err);
+      }
+    }
+
     let fallback: { strategy: string; applied: boolean; message: string } | null = null;
     let zeroResultFallbackSuggestions: ApiSuggestion[] = [];
 
-    if (productSuggestions.length === 0) {
+    if (activeProductSuggestions.length === 0) {
       const zeroResultQueries = await getZeroResultQueries(5);
       zeroResultFallbackSuggestions = zeroResultQueries
         .filter((item) => item.query !== normalizedQuery)
@@ -242,11 +288,11 @@ export async function GET(request: NextRequest) {
     }
 
     const suggestions = dedupeSuggestions([
-      ...productSuggestions,
+      ...activeProductSuggestions,
       ...matchingTrending.map((item) => toTrendingSuggestion(item, 'matching_trending_query')),
       ...synonymSuggestions,
-      ...(productSuggestions.length === 0 ? zeroResultFallbackSuggestions : []),
-      ...(productSuggestions.length === 0 ? trendingProducts : []),
+      ...(activeProductSuggestions.length === 0 ? zeroResultFallbackSuggestions : []),
+      ...(activeProductSuggestions.length === 0 ? trendingProducts : []),
     ], limit);
 
     return jsonNoStore({
@@ -283,7 +329,7 @@ async function fetchProductSuggestions(query: string, limit: number): Promise<Ap
           },
         },
       },
-      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival', 'hasVariants', 'inStock', 'quantity', 'stock'],
+      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival', 'hasVariants', 'inStock', 'quantity', 'stock', 'rating', 'reviewCount', 'variants'],
     });
 
     const suggestData = response.suggest as ElasticsearchSuggestResponse;
@@ -318,7 +364,7 @@ async function fetchTrendingProductSuggestions(limit: number): Promise<ApiSugges
         },
       },
       size: trendingProductIds.length,
-      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival', 'hasVariants', 'inStock', 'quantity', 'stock'],
+      _source: ['id', 'name', 'slug', 'price', 'images', 'image', 'isActive', 'deletedAt', 'status', 'visibility', 'isFeatured', 'isFlashSale', 'isNewArrival', 'hasVariants', 'inStock', 'quantity', 'stock', 'rating', 'reviewCount', 'variants'],
     }) as ProductSearchResponse;
 
     const byId = new Map<string, ProductSuggestSource>();
@@ -372,5 +418,8 @@ function mapProductSourceToSuggestion(
     hasVariants: Boolean(source.hasVariants),
     inStock,
     stock: source.stock ?? source.quantity,
+    rating: source.rating,
+    reviewCount: source.reviewCount,
+    variants: source.variants,
   };
 }
