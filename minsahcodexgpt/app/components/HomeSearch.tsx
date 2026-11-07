@@ -22,6 +22,7 @@ import { formatPrice } from '@/utils/currency';
 import { buildCatalogSearchPath } from '@/lib/catalog-navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useCartDrawer } from '@/contexts/CartDrawerContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import SeedHeroVariantDropdown, { type ProductVariantItem } from '@/app/(storefront)/products/[id]/components/hero/SeedHeroVariantDropdown';
 
 import type {
@@ -115,6 +116,7 @@ export default function HomeSearch({
   const router = useRouter();
   const { addItem } = useCart();
   const { openDrawer: openCartDrawer } = useCartDrawer();
+  const { pushToast } = useToast();
 
   const inputId = useId();
   const listboxId = `${inputId}-suggestions`;
@@ -266,11 +268,18 @@ export default function HomeSearch({
         image: variant.image || prod.image || '/images/categories/Serum.png',
       });
 
+      pushToast({
+        title: 'Added to Bag',
+        description: `${prod.productName || prod.text} (${variant.name})`,
+        tone: 'success',
+        duration: 2500,
+      });
+
       setTimeout(() => {
         setAddingProductId(null);
       }, 1000);
     },
-    [addItem]
+    [addItem, pushToast]
   );
 
   // Quick 1-tap Add to Cart right from suggestion card (with stock guards)
@@ -292,11 +301,18 @@ export default function HomeSearch({
         image: suggestion.image || '/images/categories/Serum.png',
       });
 
+      pushToast({
+        title: 'Added to Bag',
+        description: suggestion.productName || suggestion.text,
+        tone: 'success',
+        duration: 2500,
+      });
+
       setTimeout(() => {
         setAddingProductId(null);
       }, 1000);
     },
-    [addItem]
+    [addItem, pushToast]
   );
 
   // Voice Search with Web Speech API
@@ -519,7 +535,7 @@ export default function HomeSearch({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleInputKeyDown}
               placeholder="Search skincare, serums, makeup..."
-              className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
+              className="w-full bg-transparent text-base text-white placeholder:text-white/40 focus:outline-none touch-manipulation"
             />
             {searchQuery && (
               <button
@@ -857,7 +873,7 @@ export default function HomeSearch({
         </div>
       )}
 
-      {/* ================= DESKTOP 2-COLUMN LUXURY SPLIT OVERLAY ================= */}
+      {/* ================= DESKTOP COMMAND PALETTE OVERLAY ================= */}
       {hasSuggestionsPanel && (
         <div
           className="search-desktop-split absolute left-0 top-[48px] z-50 w-full min-w-[340px] md:min-w-[620px] lg:min-w-[660px] overflow-hidden rounded-2xl border border-white/15 bg-[#141d17]/98 backdrop-blur-2xl text-white shadow-2xl animate-in fade-in zoom-in-95 duration-150"
@@ -866,124 +882,61 @@ export default function HomeSearch({
           {/* Top Status Header */}
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 bg-black/20">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-              {normalizedQuery.length >= 2 ? 'Catalog Live Suggestions' : 'Explore Formulations'}
+              {normalizedQuery.length >= 2
+                ? `Matching Formulations (${productSuggestions.length})`
+                : 'Explore Formulations'}
             </span>
-            {isLoading && <Loader2 size={15} className="animate-spin text-emerald-400" aria-hidden="true" />}
+            <div className="flex items-center gap-3">
+              {normalizedQuery.length >= 2 && (
+                <span className="hidden sm:inline-flex items-center gap-2 text-[10px] text-stone-400 font-mono">
+                  <span>↑↓ Navigate</span>
+                  <span>•</span>
+                  <span>↵ Open</span>
+                  <span>•</span>
+                  <span>ESC Close</span>
+                </span>
+              )}
+              {isLoading && <Loader2 size={15} className="animate-spin text-emerald-400" aria-hidden="true" />}
+            </div>
           </div>
 
-          {/* 2-Column Split Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/10 max-h-[62vh] overflow-y-auto">
-            {/* LEFT COLUMN (38%): Recent Searches, Trending Queries & Categories */}
-            <div className="md:col-span-5 p-3.5 space-y-4 bg-white/[0.02]">
-              {/* Recent Searches (If Any) */}
-              {recentSearches.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-white/60">
-                    <span className="flex items-center gap-1 text-emerald-300">
-                      <Clock size={12} /> Recent Searches
-                    </span>
-                    <button
-                      type="button"
-                      onClick={clearRecentSearches}
-                      className="text-[10px] font-normal text-white/40 hover:text-rose-400 lowercase transition"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {recentSearches.map((term) => (
-                      <span
-                        key={term}
-                        onClick={() => navigateToSearch(term)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/80 hover:bg-white/10 hover:text-white cursor-pointer transition"
-                      >
-                        <span>{term}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => removeRecentSearch(term, e)}
-                          className="text-white/40 hover:text-white"
-                        >
-                          <X size={11} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Trending Queries in Bangladesh */}
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                  <TrendingUp size={12} /> Popular Searches
-                </p>
-                <div className="space-y-1">
-                  {dynamicTrendingChips.slice(0, 5).map((chip, idx) => (
-                    <button
-                      key={chip}
-                      type="button"
-                      onClick={() => navigateToSearch(chip)}
-                      className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition text-left"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-amber-300">#{idx + 1}</span>
-                        <span>{chip}</span>
-                      </span>
-                      <ArrowRight size={12} className="text-white/30" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quick Categories */}
-              <div className="space-y-1.5 pt-1 border-t border-white/5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">Top Categories</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { label: 'Serums', href: '/shop?category=Serum' },
-                    { label: 'Sunscreen', href: '/shop?category=Sunscreen' },
-                    { label: 'Lip Care', href: '/shop?category=Lip%20Care' },
-                    { label: 'Moisturizer', href: '/shop?category=Skincare' },
-                  ].map((cat) => (
-                    <button
-                      key={cat.label}
-                      type="button"
-                      onClick={() => {
-                        setShowSuggestions(false);
-                        router.push(cat.href);
-                      }}
-                      className="p-1.5 px-2 rounded-lg bg-white/5 text-[11px] font-medium text-white/70 hover:bg-white/10 hover:text-white transition text-left"
-                    >
-                      {cat.label} ➔
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN (62%): Instant Product Preview Cards with Add to Cart */}
-            <div className="md:col-span-7 p-3.5 space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-                {productSuggestions.length > 0
-                  ? `Matching Formulations (${productSuggestions.length})`
-                  : 'Instant Results'}
-              </p>
-
+          {/* Unified Linear Command Palette when actively typing (query >= 2) */}
+          {normalizedQuery.length >= 2 ? (
+            <div className="p-3 space-y-3 max-h-[65vh] overflow-y-auto">
               {productSuggestions.length > 0 ? (
-                <div className="space-y-2">
-                  {productSuggestions.slice(0, 4).map((prod) => {
+                <div className="space-y-1.5" role="listbox" id={listboxId}>
+                  {productSuggestions.slice(0, 8).map((prod) => {
+                    const itemIndex = visibleSuggestions.findIndex(
+                      (s) => s.type === 'product' && s.productId === prod.productId
+                    );
+                    const isActive = activeIndex === itemIndex;
                     const isAdding = addingProductId === prod.productId;
+                    const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
+                    const hasVariants = Boolean(
+                      prod.hasVariants ||
+                      prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
+                    );
+                    const currentVariantId = selectedVariants[prod.productId] || prod.variants?.[0]?.id || null;
+
                     return (
                       <div
                         key={prod.productId}
+                        id={`${listboxId}-option-${itemIndex}`}
+                        role="option"
+                        aria-selected={isActive}
                         onClick={() => selectSuggestion(prod)}
-                        className="group flex items-center gap-3 p-2 rounded-xl bg-white/[0.03] border border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.08] cursor-pointer transition"
+                        className={`group flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                          isActive
+                            ? 'bg-white/10 border-emerald-500/50 ring-1 ring-emerald-500/30 text-white shadow-lg'
+                            : 'bg-white/[0.03] border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.07] text-white/90'
+                        }`}
                       >
                         <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white/10 p-1 flex items-center justify-center">
                           <Image
                             src={prod.image || '/images/categories/Serum.png'}
                             alt={prod.productName || prod.text}
-                            width={44}
-                            height={44}
+                            width={48}
+                            height={48}
                             className="h-full w-full object-contain"
                           />
                         </div>
@@ -1013,53 +966,41 @@ export default function HomeSearch({
                           </div>
                         </div>
 
-                        {/* Product Card Variant Selector OR 1-Tap ADD Button */}
-                        {(() => {
-                          const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
-                          const hasVariants = Boolean(
-                            prod.hasVariants ||
-                            prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
-                          );
+                        {/* Action Area: Enter Pill + Variant Dropdown OR 1-Tap ADD Button */}
+                        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {isActive && (
+                            <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono text-emerald-300">
+                              ↵ Enter
+                            </span>
+                          )}
 
-                          if (isOutOfStock) {
-                            return (
-                              <button
-                                type="button"
-                                disabled
-                                className="flex h-7 items-center rounded-full px-2 text-[10.5px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
-                                aria-label="Out of stock"
-                              >
-                                Sold Out
-                              </button>
-                            );
-                          }
-
-                          if (hasVariants && prod.variants && prod.variants.length > 0) {
-                            const currentVariantId = selectedVariants[prod.productId] || prod.variants[0]?.id || null;
-                            return (
-                              <div
-                                className="relative shrink-0 w-36 sm:w-44"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <SeedHeroVariantDropdown
-                                  variants={prod.variants}
-                                  selectedVariantId={currentVariantId}
-                                  defaultImage={prod.image}
-                                  compact
-                                  layout="list"
-                                  onOpenChange={(open) => setIsAnyDropdownOpen(open)}
-                                  onVariantChange={(vId) => {
-                                    setSelectedVariants((prev) => ({ ...prev, [prod.productId]: vId || '' }));
-                                  }}
-                                  onSelectVariant={(variant) => {
-                                    handleVariantAddToCart(prod, variant);
-                                  }}
-                                />
-                              </div>
-                            );
-                          }
-
-                          return (
+                          {isOutOfStock ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="flex h-7.5 items-center rounded-full px-2.5 text-[10.5px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                              aria-label="Out of stock"
+                            >
+                              Sold Out
+                            </button>
+                          ) : hasVariants && prod.variants && prod.variants.length > 0 ? (
+                            <div className="relative shrink-0 w-36 sm:w-44">
+                              <SeedHeroVariantDropdown
+                                variants={prod.variants}
+                                selectedVariantId={currentVariantId}
+                                defaultImage={prod.image}
+                                compact
+                                layout="list"
+                                onOpenChange={(open) => setIsAnyDropdownOpen(open)}
+                                onVariantChange={(vId) => {
+                                  setSelectedVariants((prev) => ({ ...prev, [prod.productId]: vId || '' }));
+                                }}
+                                onSelectVariant={(variant) => {
+                                  handleVariantAddToCart(prod, variant);
+                                }}
+                              />
+                            </div>
+                          ) : (
                             <button
                               type="button"
                               onClick={(e) => handleQuickAddToCart(e, prod)}
@@ -1073,49 +1014,250 @@ export default function HomeSearch({
                               {isAdding ? <Check size={11} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
                               <span>{isAdding ? 'ADDED' : 'ADD'}</span>
                             </button>
-                          );
-                        })()}
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
-              ) : querySuggestions.length > 0 ? (
-                <div className="space-y-1">
-                  {querySuggestions.map((item) => (
-                    <button
-                      key={item.text}
-                      type="button"
-                      onClick={() => selectSuggestion(item)}
-                      className="w-full flex items-center justify-between p-2 rounded-lg text-xs font-medium text-white hover:bg-white/10 transition text-left"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Search size={13} className="text-emerald-400" />
-                        <span>{highlightMatch(item.text, normalizedQuery)}</span>
-                      </span>
-                      <ArrowRight size={13} className="text-white/40" />
-                    </button>
-                  ))}
-                </div>
               ) : !isLoading ? (
                 <div className="py-8 text-center text-xs text-white/60">
-                  <p className="font-semibold text-white">No formulations found.</p>
-                  <p className="mt-1 text-[11px]">Press Enter to search the full store catalog.</p>
+                  <p className="font-semibold text-white">No exact formulations found.</p>
+                  <p className="mt-1 text-[11px]">Press Enter to search the complete store catalog.</p>
                 </div>
               ) : null}
 
-              {/* Bottom Direct CTA */}
-              {normalizedQuery.length >= 2 && (
-                <button
-                  type="button"
-                  onClick={() => navigateToSearch()}
-                  className="w-full flex items-center justify-between mt-2 pt-2 border-t border-white/10 text-xs font-semibold text-emerald-300 hover:text-emerald-200 transition"
-                >
-                  <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
-                  <ArrowRight size={14} />
-                </button>
+              {/* Related Search Queries if any */}
+              {querySuggestions.length > 0 && (
+                <div className="pt-2 border-t border-white/10 space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/50 px-1">Related Queries</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {querySuggestions.map((item) => (
+                      <button
+                        key={item.text}
+                        type="button"
+                        onClick={() => selectSuggestion(item)}
+                        className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition flex items-center gap-1.5"
+                      >
+                        <Search size={11} className="text-emerald-400" />
+                        <span>{item.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
+
+              {/* Bottom Sticky Search CTA */}
+              <button
+                type="button"
+                onClick={() => navigateToSearch()}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-xs font-semibold text-emerald-300 hover:text-emerald-200 transition"
+              >
+                <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
+                <span className="flex items-center gap-1">
+                  <span className="hidden sm:inline text-[10px] font-mono text-white/40">Press ↵</span>
+                  <ArrowRight size={14} />
+                </span>
+              </button>
             </div>
-          </div>
+          ) : (
+            /* Discovery 2-Column Split when query < 2 */
+            <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/10 max-h-[62vh] overflow-y-auto">
+              {/* LEFT COLUMN (38%): Recent Searches, Trending Queries & Categories */}
+              <div className="md:col-span-5 p-3.5 space-y-4 bg-white/[0.02]">
+                {/* Recent Searches (If Any) */}
+                {recentSearches.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-white/60">
+                      <span className="flex items-center gap-1 text-emerald-300">
+                        <Clock size={12} /> Recent Searches
+                      </span>
+                      <button
+                        type="button"
+                        onClick={clearRecentSearches}
+                        className="text-[10px] font-normal text-white/40 hover:text-rose-400 lowercase transition"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {recentSearches.map((term) => (
+                        <span
+                          key={term}
+                          onClick={() => navigateToSearch(term)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/80 hover:bg-white/10 hover:text-white cursor-pointer transition"
+                        >
+                          <span>{term}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => removeRecentSearch(term, e)}
+                            className="text-white/40 hover:text-white"
+                          >
+                            <X size={11} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Trending Queries in Bangladesh */}
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
+                    <TrendingUp size={12} /> Popular Searches
+                  </p>
+                  <div className="space-y-1">
+                    {dynamicTrendingChips.slice(0, 5).map((chip, idx) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => navigateToSearch(chip)}
+                        className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition text-left"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-amber-300">#{idx + 1}</span>
+                          <span>{chip}</span>
+                        </span>
+                        <ArrowRight size={12} className="text-white/30" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Categories */}
+                <div className="space-y-1.5 pt-1 border-t border-white/5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">Top Categories</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { label: 'Serums', href: '/shop?category=Serum' },
+                      { label: 'Sunscreen', href: '/shop?category=Sunscreen' },
+                      { label: 'Lip Care', href: '/shop?category=Lip%20Care' },
+                      { label: 'Moisturizer', href: '/shop?category=Skincare' },
+                    ].map((cat) => (
+                      <button
+                        key={cat.label}
+                        type="button"
+                        onClick={() => {
+                          setShowSuggestions(false);
+                          router.push(cat.href);
+                        }}
+                        className="p-1.5 px-2 rounded-lg bg-white/5 text-[11px] font-medium text-white/70 hover:bg-white/10 hover:text-white transition text-left"
+                      >
+                        {cat.label} ➔
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN (62%): Discovery Products */}
+              <div className="md:col-span-7 p-3.5 space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                  Popular Formulations
+                </p>
+
+                {trendingSuggestions.filter((item): item is ProductSuggestion => item.type === 'product').length > 0 ? (
+                  <div className="space-y-2">
+                    {trendingSuggestions
+                      .filter((item): item is ProductSuggestion => item.type === 'product')
+                      .slice(0, 4)
+                      .map((prod) => {
+                        const isAdding = addingProductId === prod.productId;
+                        const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
+                        const hasVariants = Boolean(
+                          prod.hasVariants ||
+                          prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
+                        );
+                        const currentVariantId = selectedVariants[prod.productId] || prod.variants?.[0]?.id || null;
+
+                        return (
+                          <div
+                            key={prod.productId}
+                            onClick={() => selectSuggestion(prod)}
+                            className="group flex items-center gap-3 p-2 rounded-xl bg-white/[0.03] border border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.08] cursor-pointer transition"
+                          >
+                            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white/10 p-1 flex items-center justify-center">
+                              <Image
+                                src={prod.image || '/images/categories/Serum.png'}
+                                alt={prod.productName || prod.text}
+                                width={44}
+                                height={44}
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-white truncate">
+                                {prod.productName || prod.text}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="text-xs font-price font-bold text-emerald-300">
+                                  {formatPrice(prod.price)}
+                                </span>
+                                {prod.rating && prod.rating > 0 ? (
+                                  <span className="flex items-center gap-0.5 text-amber-400 text-[11px] font-bold">
+                                    <span>★</span>
+                                    <span>{prod.rating.toFixed(1)}</span>
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <div onClick={(e) => e.stopPropagation()}>
+                              {isOutOfStock ? (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="flex h-7 items-center rounded-full px-2 text-[10.5px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                                >
+                                  Sold Out
+                                </button>
+                              ) : hasVariants && prod.variants && prod.variants.length > 0 ? (
+                                <div className="relative shrink-0 w-36 sm:w-44">
+                                  <SeedHeroVariantDropdown
+                                    variants={prod.variants}
+                                    selectedVariantId={currentVariantId}
+                                    defaultImage={prod.image}
+                                    compact
+                                    layout="list"
+                                    onOpenChange={(open) => setIsAnyDropdownOpen(open)}
+                                    onVariantChange={(vId) => {
+                                      setSelectedVariants((prev) => ({ ...prev, [prod.productId]: vId || '' }));
+                                    }}
+                                    onSelectVariant={(variant) => {
+                                      handleVariantAddToCart(prod, variant);
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleQuickAddToCart(e, prod)}
+                                  className={`flex h-7.5 items-center gap-1 rounded-full px-3 text-[11px] font-bold transition-all shadow-sm ${
+                                    isAdding
+                                      ? 'bg-emerald-500 text-white'
+                                      : 'bg-[#1c3a13] hover:bg-emerald-600 text-white active:scale-95'
+                                  }`}
+                                  aria-label={`Add ${prod.productName || prod.text} to cart`}
+                                >
+                                  {isAdding ? <Check size={11} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
+                                  <span>{isAdding ? 'ADDED' : 'ADD'}</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-white/50">
+                    <p>Start typing to search formulations and brands.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

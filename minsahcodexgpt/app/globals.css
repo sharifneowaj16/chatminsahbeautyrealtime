@@ -1836,7 +1836,7 @@ img {
   .cart { width: 44px; height: 44px; min-height: 44px; min-width: 44px; padding: 0; }
   .cart-badge { right: -4px; top: -4px; }
   .shortcut { display: none; }
-  .search-input { font-size: 13px; }
+  .search-input { font-size: 16px; }
   .icon-control, .menu-btn { width: 44px; height: 44px; min-height: 44px; min-width: 44px; }
 }
 

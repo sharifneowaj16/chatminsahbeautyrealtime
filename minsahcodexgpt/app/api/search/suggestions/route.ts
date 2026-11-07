@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { esClient, PRODUCT_INDEX } from '@/lib/elasticsearch';
+import prisma from '@/lib/prisma';
 import {
   getMatchingTrendingQueries,
   getTrendingProductIds,
@@ -295,11 +296,13 @@ export async function GET(request: NextRequest) {
       ...(activeProductSuggestions.length === 0 ? trendingProducts : []),
     ], limit);
 
+    const hydratedSuggestions = await hydrateVariantsIfMissing(suggestions);
+
     return jsonNoStore({
       success: true,
       source: 'elasticsearch_plus_redis_persistent_trending',
-      count: suggestions.length,
-      suggestions,
+      count: hydratedSuggestions.length,
+      suggestions: hydratedSuggestions,
       ...(fallback && { fallback }),
     });
   } catch (error) {
@@ -311,6 +314,70 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+async function hydrateVariantsIfMissing(suggestions: ApiSuggestion[]): Promise<ApiSuggestion[]> {
+  const missingVariantProductIds = suggestions
+    .filter((s): s is Extract<ApiSuggestion, { type: 'product' }> =>
+      s.type === 'product' && Boolean(s.hasVariants) && (!s.variants || s.variants.length === 0)
+    )
+    .map((s) => s.productId);
+
+  if (missingVariantProductIds.length === 0) return suggestions;
+
+  try {
+    const rawVariants = await prisma.productVariant.findMany({
+      where: {
+        productId: { in: missingVariantProductIds },
+        isActive: true,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        productId: true,
+        sku: true,
+        name: true,
+        price: true,
+        salePrice: true,
+        quantity: true,
+        image: true,
+        attributes: true,
+      },
+      take: 60,
+    });
+
+    const variantsByProduct = new Map<string, ProductSuggestionVariant[]>();
+    for (const v of rawVariants) {
+      const list = variantsByProduct.get(v.productId) || [];
+      const vPrice = v.salePrice ? Number(v.salePrice) : v.price ? Number(v.price) : 0;
+      list.push({
+        id: v.id,
+        sku: v.sku,
+        name: v.name,
+        price: vPrice,
+        stock: v.quantity ?? 0,
+        image: v.image ?? null,
+        attributes: (v.attributes as Record<string, string>) || null,
+      });
+      variantsByProduct.set(v.productId, list);
+    }
+
+    return suggestions.map((s) => {
+      if (s.type === 'product' && s.hasVariants && (!s.variants || s.variants.length === 0)) {
+        const variants = variantsByProduct.get(s.productId);
+        if (variants && variants.length > 0) {
+          return {
+            ...s,
+            variants,
+          };
+        }
+      }
+      return s;
+    });
+  } catch (err) {
+    console.warn('Variant hydration warning:', err);
+    return suggestions;
   }
 }
 
