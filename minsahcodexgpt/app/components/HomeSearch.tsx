@@ -94,7 +94,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
     <>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <span key={i} className="font-bold text-emerald-400 underline decoration-emerald-500/40 underline-offset-2">
+          <span key={i} className="font-extrabold text-[#10b981] underline decoration-[#10b981]/50 underline-offset-2">
             {part}
           </span>
         ) : (
@@ -504,7 +504,7 @@ export default function HomeSearch({
   };
 
   // ============================================================================
-  // 1. MOBILE FULL-SCREEN NATIVE SEARCH VIEW (Arogga / Sephora Style)
+  // 1. MOBILE FULL-SCREEN NATIVE SEARCH VIEW (Theme 5: Brand Green & Crisp White)
   // ============================================================================
   if (isMobileFullScreen) {
     return (
@@ -512,22 +512,22 @@ export default function HomeSearch({
         role="dialog"
         aria-modal="true"
         aria-label="Search catalog"
-        className="fixed inset-0 z-50 flex flex-col bg-[#121915] text-white animate-in fade-in duration-200"
+        className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-[#f7faf8] to-[#edf4ef] text-slate-900 animate-in fade-in duration-200"
       >
         {/* Top Header Bar */}
-        <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2.5 bg-[#141d17]">
+        <div className="flex items-center gap-2 border-b border-[#1c3a13]/15 px-3 py-2.5 bg-white/95 backdrop-blur-md shadow-xs">
           <button
             type="button"
             onClick={onCloseMobile}
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition active:scale-95"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#1c3a13]/5 text-[#1c3a13] hover:bg-[#1c3a13]/10 hover:text-[#1c3a13] transition active:scale-95"
             aria-label="Back to page"
           >
             <ArrowLeft size={19} />
           </button>
 
           {/* Search Input Box */}
-          <div className="flex-1 flex items-center h-11 rounded-xl border border-white/15 bg-white/5 px-3 focus-within:border-emerald-500/60 focus-within:bg-[#161412] transition">
-            <Search size={16} className="text-white/50 flex-shrink-0 mr-2" />
+          <div className="flex-1 flex items-center h-11 rounded-xl border border-[#1c3a13]/25 bg-[#f4f7f4] px-3 focus-within:border-[#1c3a13] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#1c3a13]/15 transition shadow-2xs">
+            <Search size={16} className="text-[#1c3a13] flex-shrink-0 mr-2" />
             <input
               ref={inputRef}
               type="text"
@@ -535,13 +535,13 @@ export default function HomeSearch({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleInputKeyDown}
               placeholder="Search skincare, serums, makeup..."
-              className="w-full bg-transparent text-base text-white placeholder:text-white/40 focus:outline-none touch-manipulation"
+              className="w-full bg-transparent text-base text-slate-900 placeholder:text-stone-400 focus:outline-none touch-manipulation font-medium"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="p-1 rounded-full text-white/50 hover:text-white"
+                className="p-1 rounded-full text-stone-400 hover:text-stone-700"
                 aria-label="Clear text"
               >
                 <X size={15} />
@@ -553,8 +553,8 @@ export default function HomeSearch({
           <button
             type="button"
             onClick={startVoiceSearch}
-            className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 ${
-              isListening ? 'bg-amber-500 text-black animate-pulse' : 'bg-white/5 text-amber-300'
+            className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#1c3a13]/15 transition ${
+              isListening ? 'bg-amber-500 text-black animate-pulse' : 'bg-[#1c3a13]/5 text-[#1c3a13] hover:bg-[#1c3a13]/10'
             }`}
             aria-label="Voice search"
           >
@@ -567,14 +567,14 @@ export default function HomeSearch({
           {/* Recent Searches (If any) */}
           {recentSearches.length > 0 && normalizedQuery.length < 2 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-white/60">
-                <span className="flex items-center gap-1.5 text-emerald-400">
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#1c3a13]">
+                <span className="flex items-center gap-1.5">
                   <Clock size={13} /> Recent Searches
                 </span>
                 <button
                   type="button"
                   onClick={clearRecentSearches}
-                  className="text-[11px] font-medium text-white/40 hover:text-rose-400 lowercase transition"
+                  className="text-[11px] font-medium text-stone-500 hover:text-rose-500 lowercase transition"
                 >
                   Clear all
                 </button>
@@ -584,13 +584,13 @@ export default function HomeSearch({
                   <span
                     key={term}
                     onClick={() => navigateToSearch(term)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/90 hover:bg-white/10 active:scale-95 cursor-pointer transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#1c3a13]/20 text-xs font-semibold text-[#1c3a13] hover:bg-[#f4f7f4] shadow-2xs active:scale-95 cursor-pointer transition"
                   >
                     <span>{term}</span>
                     <button
                       type="button"
                       onClick={(e) => removeRecentSearch(term, e)}
-                      className="text-white/40 hover:text-white p-0.5"
+                      className="text-stone-400 hover:text-stone-700 p-0.5"
                     >
                       <X size={12} />
                     </button>
@@ -603,7 +603,7 @@ export default function HomeSearch({
           {/* Trending Searches in Bangladesh */}
           {normalizedQuery.length < 2 && (
             <div className="space-y-2.5">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-[#1c3a13] flex items-center gap-1.5">
                 <TrendingUp size={13} /> Trending in Bangladesh
               </div>
               <div className="grid grid-cols-1 gap-1.5">
@@ -612,15 +612,15 @@ export default function HomeSearch({
                     key={chip}
                     type="button"
                     onClick={() => navigateToSearch(chip)}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] active:scale-[0.99] text-left transition"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#1c3a13]/10 hover:border-[#1c3a13]/30 hover:bg-[#f4f7f4] active:scale-[0.99] text-left transition shadow-2xs"
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-amber-300">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1c3a13]/10 text-[10px] font-bold text-[#1c3a13]">
                         #{idx + 1}
                       </span>
-                      <span className="text-xs font-semibold text-white/90">{chip}</span>
+                      <span className="text-xs font-semibold text-slate-900">{chip}</span>
                     </div>
-                    <ArrowRight size={14} className="text-white/30" />
+                    <ArrowRight size={14} className="text-[#1c3a13]/40" />
                   </button>
                 ))}
               </div>
@@ -630,9 +630,9 @@ export default function HomeSearch({
           {/* Live Autocomplete Products While Typing */}
           {normalizedQuery.length >= 2 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-400">
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#1c3a13]">
                 <span>Matching Formulations ({productSuggestions.length})</span>
-                {isLoading && <Loader2 size={14} className="animate-spin text-emerald-400" />}
+                {isLoading && <Loader2 size={14} className="animate-spin text-[#1c3a13]" />}
               </div>
 
               {productSuggestions.length > 0 ? (
@@ -651,10 +651,10 @@ export default function HomeSearch({
                       <div
                         key={prod.productId}
                         onClick={() => selectSuggestion(prod)}
-                        className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] active:scale-[0.99] cursor-pointer transition flex flex-col gap-2.5"
+                        className="p-3.5 rounded-2xl bg-white border border-[#1c3a13]/20 hover:border-[#1c3a13]/40 active:scale-[0.99] cursor-pointer transition flex flex-col gap-2.5 shadow-sm"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="relative h-13 w-13 flex-shrink-0 overflow-hidden rounded-xl bg-white/10 p-1 flex items-center justify-center">
+                          <div className="relative h-13 w-13 flex-shrink-0 overflow-hidden rounded-xl bg-[#f4f7f4] border border-[#1c3a13]/10 p-1 flex items-center justify-center">
                             <Image
                               src={prod.image || '/images/categories/Serum.png'}
                               alt={prod.productName || prod.text}
@@ -664,24 +664,24 @@ export default function HomeSearch({
                             />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-semibold text-white line-clamp-1">
+                            <p className="text-xs font-bold text-[#142b10] line-clamp-1">
                               {highlightMatch(prod.productName || prod.text, normalizedQuery)}
                             </p>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="text-xs font-price font-bold text-emerald-300">
+                              <span className="text-xs font-price font-extrabold text-[#1c3a13]">
                                 {formatPrice(prod.price)}
                               </span>
                               {prod.rating && prod.rating > 0 ? (
-                                <span className="flex items-center gap-0.5 text-amber-400 text-[11px] font-bold">
+                                <span className="flex items-center gap-0.5 text-amber-600 text-[11px] font-bold">
                                   <span>★</span>
                                   <span>{prod.rating.toFixed(1)}</span>
                                   {prod.reviewCount ? (
-                                    <span className="text-stone-400 font-normal text-[10px]">({prod.reviewCount})</span>
+                                    <span className="text-stone-500 font-normal text-[10px]">({prod.reviewCount})</span>
                                   ) : null}
                                 </span>
                               ) : null}
                               {prod.badges?.[0] && (
-                                <span className="rounded-full bg-emerald-400/20 px-1.5 py-0.2 text-[9px] font-semibold text-emerald-200">
+                                <span className="rounded-full bg-[#1c3a13]/10 px-2 py-0.5 text-[9px] font-bold text-[#1c3a13]">
                                   {prod.badges[0]}
                                 </span>
                               )}
@@ -695,7 +695,7 @@ export default function HomeSearch({
                                 <button
                                   type="button"
                                   disabled
-                                  className="flex h-8 items-center rounded-full px-2.5 text-[11px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                                  className="flex h-8 items-center rounded-full px-2.5 text-[11px] font-semibold text-stone-400 bg-stone-100 cursor-not-allowed"
                                   aria-label="Out of stock"
                                 >
                                   Sold Out
@@ -706,8 +706,8 @@ export default function HomeSearch({
                                   onClick={(e) => handleQuickAddToCart(e, prod)}
                                   className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm ${
                                     isAdding
-                                      ? 'bg-emerald-500 text-white'
-                                      : 'bg-[#1c3a13] hover:bg-emerald-600 text-white active:scale-95'
+                                      ? 'bg-[#1c3a13] text-white'
+                                      : 'bg-[#1c3a13] hover:bg-[#254d1a] text-white active:scale-95'
                                   }`}
                                   aria-label={`Add ${prod.productName || prod.text} to cart`}
                                 >
@@ -722,7 +722,7 @@ export default function HomeSearch({
                         {/* Full Width Variant Selector Row for Variant Products */}
                         {hasVariantList && (
                           <div
-                            className="w-full pt-2 border-t border-white/5"
+                            className="w-full pt-2 border-t border-[#1c3a13]/10"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <SeedHeroVariantDropdown
@@ -747,9 +747,9 @@ export default function HomeSearch({
                   })}
                 </div>
               ) : !isLoading ? (
-                <div className="p-6 text-center rounded-2xl bg-white/[0.02] border border-white/5">
-                  <p className="text-sm font-semibold text-white">No exact match for &ldquo;{normalizedQuery}&rdquo;</p>
-                  <p className="text-xs text-white/60 mt-1">Tap below to search the complete catalog.</p>
+                <div className="p-6 text-center rounded-2xl bg-white border border-[#1c3a13]/10 shadow-2xs">
+                  <p className="text-sm font-semibold text-slate-900">No exact match for &ldquo;{normalizedQuery}&rdquo;</p>
+                  <p className="text-xs text-stone-500 mt-1">Tap below to search the complete catalog.</p>
                 </div>
               ) : null}
             </div>
@@ -758,11 +758,11 @@ export default function HomeSearch({
 
         {/* Sticky Bottom Search CTA */}
         {normalizedQuery.length >= 2 && (
-          <div className="border-t border-white/10 p-3 bg-[#141d17]">
+          <div className="border-t border-[#1c3a13]/15 p-3 bg-white/95 backdrop-blur-md">
             <button
               type="button"
               onClick={() => navigateToSearch()}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#D07A60] to-[#4A7C59] text-white font-bold text-sm shadow-lg active:scale-95 transition"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#1c3a13] via-[#244919] to-[#1c3a13] hover:opacity-95 text-white font-bold text-sm shadow-md active:scale-95 transition"
             >
               <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
               <ArrowRight size={16} />
@@ -873,22 +873,25 @@ export default function HomeSearch({
         </div>
       )}
 
-      {/* ================= DESKTOP COMMAND PALETTE OVERLAY ================= */}
+      {/* ================= DESKTOP COMMAND PALETTE OVERLAY (Theme 5: Brand Green & Crisp White) ================= */}
       {hasSuggestionsPanel && (
         <div
-          className="search-desktop-split absolute left-0 top-[48px] z-50 w-full min-w-[340px] md:min-w-[620px] lg:min-w-[660px] overflow-hidden rounded-2xl border border-white/15 bg-[#141d17]/98 backdrop-blur-2xl text-white shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          className="search-desktop-split absolute left-0 top-[48px] z-50 w-full min-w-[340px] md:min-w-[620px] lg:min-w-[660px] overflow-hidden rounded-2xl border-2 border-[#1c3a13]/25 bg-gradient-to-b from-white via-[#fcfdfc] to-[#f4f7f4] text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
           role="presentation"
         >
+          {/* Top Brand Accent Bar */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-[#1c3a13] via-[#4A7C59] to-[#1c3a13]" />
+
           {/* Top Status Header */}
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 bg-black/20">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+          <div className="flex items-center justify-between border-b border-[#1c3a13]/15 px-4 py-2.5 bg-[#f0f6f1]">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#1c3a13]">
               {normalizedQuery.length >= 2
                 ? `Matching Formulations (${productSuggestions.length})`
                 : 'Explore Formulations'}
             </span>
             <div className="flex items-center gap-3">
               {normalizedQuery.length >= 2 && (
-                <span className="hidden sm:inline-flex items-center gap-2 text-[10px] text-stone-400 font-mono">
+                <span className="hidden sm:inline-flex items-center gap-2 text-[10px] text-stone-600 font-mono">
                   <span>↑↓ Navigate</span>
                   <span>•</span>
                   <span>↵ Open</span>
@@ -896,13 +899,13 @@ export default function HomeSearch({
                   <span>ESC Close</span>
                 </span>
               )}
-              {isLoading && <Loader2 size={15} className="animate-spin text-emerald-400" aria-hidden="true" />}
+              {isLoading && <Loader2 size={15} className="animate-spin text-[#1c3a13]" aria-hidden="true" />}
             </div>
           </div>
 
           {/* Unified Linear Command Palette when actively typing (query >= 2) */}
           {normalizedQuery.length >= 2 ? (
-            <div className="p-3 space-y-3 max-h-[65vh] overflow-y-auto">
+            <div className="p-3.5 space-y-3.5 max-h-[65vh] overflow-y-auto">
               {productSuggestions.length > 0 ? (
                 <div className="space-y-1.5" role="listbox" id={listboxId}>
                   {productSuggestions.slice(0, 8).map((prod) => {
@@ -925,13 +928,13 @@ export default function HomeSearch({
                         role="option"
                         aria-selected={isActive}
                         onClick={() => selectSuggestion(prod)}
-                        className={`group flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        className={`group flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                           isActive
-                            ? 'bg-white/10 border-emerald-500/50 ring-1 ring-emerald-500/30 text-white shadow-lg'
-                            : 'bg-white/[0.03] border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.07] text-white/90'
+                            ? 'bg-[#eef6f0] border-2 border-[#1c3a13]/50 ring-4 ring-[#1c3a13]/10 text-slate-950 shadow-md'
+                            : 'bg-white border border-[#1c3a13]/15 hover:border-[#1c3a13]/35 hover:bg-[#f6faf7] text-slate-800 shadow-xs'
                         }`}
                       >
-                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white/10 p-1 flex items-center justify-center">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-white border border-[#1c3a13]/15 p-1 flex items-center justify-center shadow-xs">
                           <Image
                             src={prod.image || '/images/categories/Serum.png'}
                             alt={prod.productName || prod.text}
@@ -942,24 +945,24 @@ export default function HomeSearch({
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-white truncate">
+                          <p className="text-xs font-bold text-[#142b10] truncate">
                             {highlightMatch(prod.productName || prod.text, normalizedQuery)}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="text-xs font-price font-bold text-emerald-300">
+                            <span className="text-xs font-price font-extrabold text-[#1c3a13]">
                               {formatPrice(prod.price)}
                             </span>
                             {prod.rating && prod.rating > 0 ? (
-                              <span className="flex items-center gap-0.5 text-amber-400 text-[11px] font-bold">
+                              <span className="flex items-center gap-0.5 text-amber-600 text-[11px] font-bold">
                                 <span>★</span>
                                 <span>{prod.rating.toFixed(1)}</span>
                                 {prod.reviewCount ? (
-                                  <span className="text-stone-400 font-normal text-[10px]">({prod.reviewCount})</span>
+                                  <span className="text-stone-500 font-normal text-[10px]">({prod.reviewCount})</span>
                                 ) : null}
                               </span>
                             ) : null}
                             {prod.badges?.[0] && (
-                              <span className="rounded bg-emerald-400/20 px-1 py-0.2 text-[8.5px] font-semibold text-emerald-200">
+                              <span className="rounded-full bg-[#1c3a13]/10 px-2 py-0.5 text-[8.5px] font-bold text-[#1c3a13]">
                                 {prod.badges[0]}
                               </span>
                             )}
@@ -969,7 +972,7 @@ export default function HomeSearch({
                         {/* Action Area: Enter Pill + Variant Dropdown OR 1-Tap ADD Button */}
                         <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                           {isActive && (
-                            <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono text-emerald-300">
+                            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1c3a13]/10 border border-[#1c3a13]/25 text-[10px] font-mono text-[#1c3a13] font-bold">
                               ↵ Enter
                             </span>
                           )}
@@ -978,7 +981,7 @@ export default function HomeSearch({
                             <button
                               type="button"
                               disabled
-                              className="flex h-7.5 items-center rounded-full px-2.5 text-[10.5px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                              className="flex h-7.5 items-center rounded-full px-2.5 text-[10.5px] font-semibold text-stone-400 bg-stone-100 cursor-not-allowed"
                               aria-label="Out of stock"
                             >
                               Sold Out
@@ -1004,10 +1007,10 @@ export default function HomeSearch({
                             <button
                               type="button"
                               onClick={(e) => handleQuickAddToCart(e, prod)}
-                              className={`flex h-7.5 items-center gap-1 rounded-full px-3 text-[11px] font-bold transition-all shadow-sm ${
+                              className={`flex h-8 items-center gap-1.5 rounded-xl px-3.5 text-xs font-extrabold transition-all shadow-sm ${
                                 isAdding
-                                  ? 'bg-emerald-500 text-white'
-                                  : 'bg-[#1c3a13] hover:bg-emerald-600 text-white active:scale-95'
+                                  ? 'bg-[#1c3a13] text-white'
+                                  : 'bg-[#1c3a13] hover:bg-[#264f1a] text-white active:scale-95'
                               }`}
                               aria-label={`Add ${prod.productName || prod.text} to cart`}
                             >
@@ -1021,25 +1024,25 @@ export default function HomeSearch({
                   })}
                 </div>
               ) : !isLoading ? (
-                <div className="py-8 text-center text-xs text-white/60">
-                  <p className="font-semibold text-white">No exact formulations found.</p>
+                <div className="py-8 text-center text-xs text-stone-500">
+                  <p className="font-semibold text-slate-800">No exact formulations found.</p>
                   <p className="mt-1 text-[11px]">Press Enter to search the complete store catalog.</p>
                 </div>
               ) : null}
 
               {/* Related Search Queries if any */}
               {querySuggestions.length > 0 && (
-                <div className="pt-2 border-t border-white/10 space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/50 px-1">Related Queries</p>
+                <div className="pt-2.5 border-t border-[#1c3a13]/10 space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1c3a13] px-1">Related Queries</p>
                   <div className="flex flex-wrap gap-1.5">
                     {querySuggestions.map((item) => (
                       <button
                         key={item.text}
                         type="button"
                         onClick={() => selectSuggestion(item)}
-                        className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition flex items-center gap-1.5"
+                        className="px-3 py-1 rounded-lg bg-[#f0f6f1] hover:bg-[#e4efe6] border border-[#1c3a13]/15 text-xs font-semibold text-[#1c3a13] transition flex items-center gap-1.5"
                       >
-                        <Search size={11} className="text-emerald-400" />
+                        <Search size={11} className="text-[#1c3a13]" />
                         <span>{item.text}</span>
                       </button>
                     ))}
@@ -1051,31 +1054,31 @@ export default function HomeSearch({
               <button
                 type="button"
                 onClick={() => navigateToSearch()}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-xs font-semibold text-emerald-300 hover:text-emerald-200 transition"
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-[#1c3a13] via-[#244919] to-[#1c3a13] hover:opacity-95 text-white font-bold text-xs shadow-md active:scale-95 transition"
               >
                 <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
-                <span className="flex items-center gap-1">
-                  <span className="hidden sm:inline text-[10px] font-mono text-white/40">Press ↵</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="hidden sm:inline text-[10px] font-mono opacity-80">Press ↵</span>
                   <ArrowRight size={14} />
                 </span>
               </button>
             </div>
           ) : (
             /* Discovery 2-Column Split when query < 2 */
-            <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/10 max-h-[62vh] overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-[#1c3a13]/15 max-h-[62vh] overflow-y-auto">
               {/* LEFT COLUMN (38%): Recent Searches, Trending Queries & Categories */}
-              <div className="md:col-span-5 p-3.5 space-y-4 bg-white/[0.02]">
+              <div className="md:col-span-5 p-3.5 space-y-4 bg-[#f8faf8]">
                 {/* Recent Searches (If Any) */}
                 {recentSearches.length > 0 && (
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-white/60">
-                      <span className="flex items-center gap-1 text-emerald-300">
+                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-emerald-900">
+                      <span className="flex items-center gap-1 text-[#1c3a13]">
                         <Clock size={12} /> Recent Searches
                       </span>
                       <button
                         type="button"
                         onClick={clearRecentSearches}
-                        className="text-[10px] font-normal text-white/40 hover:text-rose-400 lowercase transition"
+                        className="text-[10px] font-normal text-stone-500 hover:text-rose-500 lowercase transition"
                       >
                         Clear
                       </button>
@@ -1085,13 +1088,13 @@ export default function HomeSearch({
                         <span
                           key={term}
                           onClick={() => navigateToSearch(term)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/80 hover:bg-white/10 hover:text-white cursor-pointer transition"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#1c3a13]/20 text-xs font-semibold text-[#1c3a13] hover:bg-[#f0f6f1] cursor-pointer transition shadow-2xs"
                         >
                           <span>{term}</span>
                           <button
                             type="button"
                             onClick={(e) => removeRecentSearch(term, e)}
-                            className="text-white/40 hover:text-white"
+                            className="text-stone-400 hover:text-stone-700"
                           >
                             <X size={11} />
                           </button>
@@ -1103,7 +1106,7 @@ export default function HomeSearch({
 
                 {/* Trending Queries in Bangladesh */}
                 <div className="space-y-1.5">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#1c3a13] flex items-center gap-1">
                     <TrendingUp size={12} /> Popular Searches
                   </p>
                   <div className="space-y-1">
@@ -1112,21 +1115,21 @@ export default function HomeSearch({
                         key={chip}
                         type="button"
                         onClick={() => navigateToSearch(chip)}
-                        className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition text-left"
+                        className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg text-xs font-medium text-slate-800 hover:bg-white hover:text-[#1c3a13] transition text-left"
                       >
                         <span className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono text-amber-300">#{idx + 1}</span>
+                          <span className="text-[10px] font-mono text-[#1c3a13] bg-[#1c3a13]/10 px-1 rounded font-bold">#{idx + 1}</span>
                           <span>{chip}</span>
                         </span>
-                        <ArrowRight size={12} className="text-white/30" />
+                        <ArrowRight size={12} className="text-[#1c3a13]/40" />
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Quick Categories */}
-                <div className="space-y-1.5 pt-1 border-t border-white/5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">Top Categories</p>
+                <div className="space-y-1.5 pt-1 border-t border-[#1c3a13]/10">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-600">Top Categories</p>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
                       { label: 'Serums', href: '/shop?category=Serum' },
@@ -1141,7 +1144,7 @@ export default function HomeSearch({
                           setShowSuggestions(false);
                           router.push(cat.href);
                         }}
-                        className="p-1.5 px-2 rounded-lg bg-white/5 text-[11px] font-medium text-white/70 hover:bg-white/10 hover:text-white transition text-left"
+                        className="p-1.5 px-2 rounded-lg bg-white border border-[#1c3a13]/15 text-[11px] font-medium text-[#1c3a13] hover:bg-[#1c3a13] hover:text-white transition text-left shadow-2xs"
                       >
                         {cat.label} ➔
                       </button>
@@ -1151,8 +1154,8 @@ export default function HomeSearch({
               </div>
 
               {/* RIGHT COLUMN (62%): Discovery Products */}
-              <div className="md:col-span-7 p-3.5 space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+              <div className="md:col-span-7 p-3.5 space-y-2 bg-white">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#1c3a13]">
                   Popular Formulations
                 </p>
 
@@ -1174,9 +1177,9 @@ export default function HomeSearch({
                           <div
                             key={prod.productId}
                             onClick={() => selectSuggestion(prod)}
-                            className="group flex items-center gap-3 p-2 rounded-xl bg-white/[0.03] border border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.08] cursor-pointer transition"
+                            className="group flex items-center gap-3 p-2.5 rounded-xl bg-white border border-[#1c3a13]/15 hover:border-[#1c3a13]/35 hover:bg-[#f6faf7] cursor-pointer transition shadow-2xs"
                           >
-                            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white/10 p-1 flex items-center justify-center">
+                            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-[#f4f7f4] border border-[#1c3a13]/10 p-1 flex items-center justify-center">
                               <Image
                                 src={prod.image || '/images/categories/Serum.png'}
                                 alt={prod.productName || prod.text}
@@ -1187,15 +1190,15 @@ export default function HomeSearch({
                             </div>
 
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold text-white truncate">
+                              <p className="text-xs font-semibold text-slate-900 truncate">
                                 {prod.productName || prod.text}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                <span className="text-xs font-price font-bold text-emerald-300">
+                                <span className="text-xs font-price font-extrabold text-[#1c3a13]">
                                   {formatPrice(prod.price)}
                                 </span>
                                 {prod.rating && prod.rating > 0 ? (
-                                  <span className="flex items-center gap-0.5 text-amber-400 text-[11px] font-bold">
+                                  <span className="flex items-center gap-0.5 text-amber-600 text-[11px] font-bold">
                                     <span>★</span>
                                     <span>{prod.rating.toFixed(1)}</span>
                                   </span>
@@ -1209,7 +1212,7 @@ export default function HomeSearch({
                                 <button
                                   type="button"
                                   disabled
-                                  className="flex h-7 items-center rounded-full px-2 text-[10.5px] font-semibold text-white/40 bg-white/5 cursor-not-allowed"
+                                  className="flex h-7 items-center rounded-full px-2 text-[10.5px] font-semibold text-stone-400 bg-stone-100 cursor-not-allowed"
                                 >
                                   Sold Out
                                 </button>
@@ -1236,8 +1239,8 @@ export default function HomeSearch({
                                   onClick={(e) => handleQuickAddToCart(e, prod)}
                                   className={`flex h-7.5 items-center gap-1 rounded-full px-3 text-[11px] font-bold transition-all shadow-sm ${
                                     isAdding
-                                      ? 'bg-emerald-500 text-white'
-                                      : 'bg-[#1c3a13] hover:bg-emerald-600 text-white active:scale-95'
+                                      ? 'bg-[#1c3a13] text-white'
+                                      : 'bg-[#1c3a13] hover:bg-[#264f1a] text-white active:scale-95'
                                   }`}
                                   aria-label={`Add ${prod.productName || prod.text} to cart`}
                                 >
@@ -1251,7 +1254,7 @@ export default function HomeSearch({
                       })}
                   </div>
                 ) : (
-                  <div className="py-6 text-center text-xs text-white/50">
+                  <div className="py-6 text-center text-xs text-stone-500">
                     <p>Start typing to search formulations and brands.</p>
                   </div>
                 )}
