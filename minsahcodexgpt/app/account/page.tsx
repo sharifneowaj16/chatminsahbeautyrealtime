@@ -11,7 +11,12 @@ async function getDashboardData(userId: string) {
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 5,
-      include: {
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        total: true,
+        createdAt: true,
         items: { select: { quantity: true } },
       },
     }),

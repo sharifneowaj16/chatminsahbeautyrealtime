@@ -27,7 +27,7 @@ export default function OrderHistoryFilterTabs({
   ];
 
   return (
-    <div className="px-4 pb-4 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
+    <div className="px-4 pb-4 flex flex-wrap items-center gap-2">
       {tabs.map((tab) => {
         const isActive = currentFilter === tab.key;
         return (
@@ -35,7 +35,7 @@ export default function OrderHistoryFilterTabs({
             key={tab.key}
             type="button"
             onClick={() => onSelectFilter(tab.key)}
-            className={`h-9 px-4 rounded-full text-xs font-bold shrink-0 active:scale-95 transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
+            className={`h-9 px-3.5 rounded-full text-xs font-bold active:scale-95 transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
               isActive
                 ? 'bg-[#062402] text-white ring-1 ring-[#062402]'
                 : 'bg-[#F2F6F0] text-[#1c3a13] hover:bg-[#E8F0E5] border border-[#E2DED8]/70'

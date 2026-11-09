@@ -67,9 +67,9 @@ export function SettingsClient() {
   });
 
   const tabs = [
-    { id: 'profile', name: 'Profile Details', icon: UserIcon },
-    { id: 'preferences', name: 'Alerts & Communications', icon: Bell },
-    { id: 'security', name: 'Credentials & Security', icon: ShieldCheck },
+    { id: 'profile', name: 'Profile Details', shortName: 'Profile', icon: UserIcon },
+    { id: 'preferences', name: 'Alerts & Communications', shortName: 'Alerts', icon: Bell },
+    { id: 'security', name: 'Credentials & Security', shortName: 'Security', icon: ShieldCheck },
   ];
 
   useEffect(() => {
@@ -269,9 +269,9 @@ export function SettingsClient() {
         </div>
       )}
 
-      {/* ── Segmented Navigation Tabs ─────────────────────────────────────────── */}
-      <div className="flex items-center overflow-x-auto no-scrollbar">
-        <nav className="inline-flex rounded-xl bg-[#0f1011] p-1 border border-[#23252a] gap-1">
+      {/* ── Segmented Navigation Tabs (Zero Horizontal Scroll) ───────────────── */}
+      <div className="w-full">
+        <nav className="grid grid-cols-3 rounded-xl bg-[#0f1011] p-1.5 border border-[#23252a] gap-1.5 text-center">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -279,14 +279,15 @@ export function SettingsClient() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   activeTab === tab.id
-                    ? 'bg-[#18191a] text-white border border-[#5e6ad2]/40 shadow-sm'
+                    ? 'bg-[#18191a] text-white border border-[#5e6ad2]/40 shadow-sm font-semibold'
                     : 'text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${activeTab === tab.id ? 'text-[#828fff]' : 'text-[#8a8f98]'}`} />
-                <span>{tab.name}</span>
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${activeTab === tab.id ? 'text-[#828fff]' : 'text-[#8a8f98]'}`} />
+                <span className="hidden sm:inline truncate">{tab.name}</span>
+                <span className="sm:hidden truncate">{tab.shortName}</span>
               </button>
             );
           })}

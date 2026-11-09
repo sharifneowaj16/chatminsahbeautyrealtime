@@ -12,6 +12,8 @@ import {
   PenTool,
   Home,
   ChevronRight,
+  ChevronDown,
+  LayoutGrid,
   Users,
   Sparkles,
   RotateCcw,
@@ -92,10 +94,19 @@ interface AccountLayoutClientProps {
 export function AccountLayoutClient({ user, children }: AccountLayoutClientProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Auto-close mobile menu on page navigation
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  const activeItem = navigation.find((item) => item.href === pathname) || navigation[0];
+  const ActiveIcon = activeItem.icon;
 
   const isVip = user.role === 'vip' || user.role === 'premium';
   const isPremium = user.role === 'premium';
@@ -142,26 +153,95 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
           </Link>
         </div>
 
-        {/* Mobile Horizontal App Tabs with zero overflow glitch */}
-        <div className="px-3 pb-2.5 overflow-x-auto no-scrollbar flex items-center gap-1.5">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
-                  isActive
-                    ? 'bg-[#5e6ad2] text-white shadow-[0_0_12px_rgba(94,106,210,0.35)]'
-                    : 'bg-[#0f1011] text-[#8a8f98] border border-[#23252a] hover:text-[#f7f8f8] hover:bg-[#141516]'
+        {/* Mobile Navigation Hub (Zero Horizontal Scroll) */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center justify-between gap-2 bg-[#0f1011] border border-[#23252a] rounded-xl p-1.5 shadow-sm">
+            {/* Active Page Indicator */}
+            <div className="flex items-center gap-2 px-2.5 py-1 min-w-0">
+              <span className="flex h-2 w-2 rounded-full bg-[#5e6ad2] animate-pulse shrink-0" />
+              <ActiveIcon className="w-4 h-4 text-[#828fff] shrink-0" />
+              <span className="text-xs font-semibold text-[#f7f8f8] truncate">
+                {activeItem.name}
+              </span>
+            </div>
+
+            {/* Hub Switcher Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              aria-expanded={isMobileMenuOpen}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                isMobileMenuOpen
+                  ? 'bg-[#5e6ad2] text-white shadow-[0_0_12px_rgba(94,106,210,0.35)]'
+                  : 'bg-[#141516] text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#18191a] border border-[#23252a]'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>{isMobileMenuOpen ? 'Close' : 'All Sections'}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  isMobileMenuOpen ? 'rotate-180' : ''
                 }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#8a8f98]'}`} />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
+              />
+            </button>
+          </div>
+
+          {/* Quick Shortcuts Bar (Fits on single line with zero horizontal scroll) */}
+          {!isMobileMenuOpen && (
+            <div className="grid grid-cols-4 gap-1.5 mt-2">
+              {navigation.slice(0, 4).map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all text-center truncate ${
+                      isActive
+                        ? 'bg-[#5e6ad2]/20 text-[#828fff] border border-[#5e6ad2]/40 font-semibold'
+                        : 'bg-[#0f1011] text-[#8a8f98] border border-[#23252a] hover:text-[#f7f8f8]'
+                    }`}
+                  >
+                    <Icon className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Expandable 2-Column Grid of All 10 Pages (Zero Horizontal Scroll) */}
+          {isMobileMenuOpen && (
+            <div className="mt-2.5 p-2 bg-[#0b0c0d] border border-[#23252a] rounded-2xl shadow-2xl space-y-1">
+              <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#8a8f98] flex items-center justify-between">
+                <span>Navigate Account ({navigation.length})</span>
+                <span className="text-[#828fff]">1-Tap Direct</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {navigation.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-2 p-2 rounded-xl text-xs font-medium transition-all border ${
+                        isActive
+                          ? 'bg-[#5e6ad2] text-white border-[#5e6ad2] shadow-sm font-semibold'
+                          : 'bg-[#141516] text-[#8a8f98] border-[#23252a] hover:text-[#f7f8f8] hover:bg-[#18191a]'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#828fff]'}`} />
+                      <div className="min-w-0">
+                        <p className="truncate leading-tight">{item.name}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

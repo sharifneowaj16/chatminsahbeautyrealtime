@@ -188,25 +188,25 @@ export function LoyaltyClient({
         </div>
       </div>
 
-      {/* ── Segmented Tab Navigation ─────────────────────────────────────────── */}
-      <div className="flex items-center overflow-x-auto no-scrollbar">
-        <nav className="inline-flex rounded-xl bg-[#0f1011] p-1 border border-[#23252a] gap-1">
+      {/* ── Segmented Tab Navigation (Zero Horizontal Scroll) ─────────────────── */}
+      <div className="w-full">
+        <nav className="grid grid-cols-3 rounded-xl bg-[#0f1011] p-1.5 border border-[#23252a] gap-1.5 text-center">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-[#18191a] text-white border border-[#5e6ad2]/40 shadow-sm'
+                  ? 'bg-[#18191a] text-white border border-[#5e6ad2]/40 shadow-sm font-semibold'
                   : 'text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
               }`}
             >
               <DynamicIcon
                 name={tab.icon}
-                className={`w-3.5 h-3.5 ${activeTab === tab.id ? 'text-[#828fff]' : 'text-[#8a8f98]'}`}
+                className={`w-3.5 h-3.5 shrink-0 ${activeTab === tab.id ? 'text-[#828fff]' : 'text-[#8a8f98]'}`}
               />
-              <span>{tab.name}</span>
+              <span className="truncate">{tab.name}</span>
             </button>
           ))}
         </nav>

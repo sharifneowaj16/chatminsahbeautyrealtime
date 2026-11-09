@@ -36,7 +36,7 @@ export default function WishlistFilterRibbon({
 
   return (
     <section className="px-4 pb-3 flex flex-col gap-2">
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+      <div className="flex flex-wrap items-center gap-2 py-1">
         {filterList.map((f) => {
           const isActive = currentFilter === f.key;
           return (
@@ -44,7 +44,7 @@ export default function WishlistFilterRibbon({
               key={f.key}
               type="button"
               onClick={() => onSelectFilter(f.key)}
-              className={`h-9 px-4 rounded-full text-xs font-bold active:scale-95 transition-all shrink-0 flex items-center gap-2 shadow-xs cursor-pointer ${
+              className={`h-9 px-3.5 rounded-full text-xs font-bold active:scale-95 transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
                 isActive
                   ? 'bg-[#062402] text-white ring-1 ring-[#062402]'
                   : 'bg-[#F2F6F0] border border-[#E2DED8]/70 text-[#1c3a13] hover:bg-[#E8F0E5]'
