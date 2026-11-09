@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { KeyboardEvent } from 'react';
 import {
   ArrowLeft,
@@ -120,6 +121,7 @@ export default function HomeSearch({
 
   const inputId = useId();
   const listboxId = `${inputId}-suggestions`;
+  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -136,6 +138,11 @@ export default function HomeSearch({
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastRequestedQueryRef = useRef('');
+
+  // Safe SSR hydration guard (prevents #418 mismatches on iOS/WebKit)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -507,12 +514,14 @@ export default function HomeSearch({
   // 1. MOBILE FULL-SCREEN NATIVE SEARCH VIEW (Theme 5: Brand Green & Crisp White)
   // ============================================================================
   if (isMobileFullScreen) {
-    return (
+    if (!mounted || typeof document === 'undefined') return null;
+
+    return createPortal(
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Search catalog"
-        className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-[#f7faf8] to-[#edf4ef] text-slate-900 animate-in fade-in duration-200"
+        className="fixed inset-0 z-[180] flex flex-col bg-gradient-to-b from-white via-[#f7faf8] to-[#edf4ef] text-slate-900 animate-in fade-in duration-200"
       >
         {/* Top Header Bar */}
         <div className="flex items-center gap-2 border-b border-[#1c3a13]/15 px-3 py-2.5 bg-white/95 backdrop-blur-md shadow-xs">
@@ -769,7 +778,8 @@ export default function HomeSearch({
             </button>
           </div>
         )}
-      </div>
+      </div>,
+      document.body
     );
   }
 

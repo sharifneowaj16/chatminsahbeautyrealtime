@@ -375,16 +375,16 @@ export default function SiteHeader() {
             </DynamicSearchWrapper>
           </div>
         </div>
-
-        {/* Mobile Full-Screen Search View (Native Overlay) */}
-        {mobileSearchOpen && (
-          <HomeSearch
-            isMobileFullScreen={true}
-            onCloseMobile={() => setMobileSearchOpen(false)}
-            autoFocus={true}
-          />
-        )}
       </header>
+
+      {/* Mobile Full-Screen Search View (Native Overlay - Portaled to document.body) */}
+      {mobileSearchOpen && (
+        <HomeSearch
+          isMobileFullScreen={true}
+          onCloseMobile={() => setMobileSearchOpen(false)}
+          autoFocus={true}
+        />
+      )}
 
       {/* Deliver To: Location Selector Modal / Flyout */}
       <DeliveryFlyout
