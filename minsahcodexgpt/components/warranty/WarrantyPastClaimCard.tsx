@@ -11,18 +11,18 @@ interface WarrantyPastClaimCardProps {
 
 export default function WarrantyPastClaimCard({ claim }: WarrantyPastClaimCardProps) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-[0_2px_12px_rgba(6,36,2,0.03)] flex flex-col gap-2 border border-[#E2DED8]/60">
+    <div className="rounded-2xl bg-[#0f1011] border border-[#23252a] p-4 sm:p-5 shadow-xl flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="px-2 py-0.5 rounded-full bg-[#E8F0E5] text-[#1c3a13] text-[11px] font-bold">
+        <span className="px-2.5 py-0.5 rounded-full bg-[#27a644]/15 text-[#27a644] border border-[#27a644]/30 text-[11px] font-semibold">
           Resolved {claim.resolvedDate}
         </span>
-        <span className="text-[11px] text-[#43483f] font-mono">
+        <span className="text-xs text-[#8a8f98] font-mono">
           {claim.claimNumber}
         </span>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
-        <div className="relative w-14 h-14 rounded-[14px] bg-[#efeeeb] overflow-hidden shrink-0 border border-[#E2DED8]/40">
+      <div className="p-3.5 rounded-2xl bg-[#141516] border border-[#23252a] flex items-center gap-3.5">
+        <div className="relative w-14 h-14 rounded-xl bg-[#0f1011] overflow-hidden shrink-0 border border-[#23252a]">
           <Image
             src={claim.productImage}
             alt={claim.productName}
@@ -32,26 +32,26 @@ export default function WarrantyPastClaimCard({ claim }: WarrantyPastClaimCardPr
           />
         </div>
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-[13px] font-bold text-[#1a1c1a] truncate">
+          <span className="text-sm font-semibold text-[#f7f8f8] truncate">
             {claim.productName}
           </span>
-          <span className="text-[11px] text-[#43483f]">
+          <span className="text-xs text-[#8a8f98] font-mono">
             ৳{claim.price.toLocaleString()} • Order #{claim.orderNumber}
           </span>
-          <span className="text-[11px] text-[#43483f] mt-0.5 truncate">
+          <span className="text-xs text-[#8a8f98] mt-0.5 truncate">
             Issue: {claim.issue}
           </span>
         </div>
       </div>
 
-      <div className="p-2.5 rounded-[16px] bg-[#F8FAF7] flex items-center justify-between text-[12px] mt-1">
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="p-3 rounded-xl bg-[#141516] border border-[#23252a] flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2 min-w-0">
           {claim.resolutionType === 'replacement' ? (
-            <CheckCircle2 className="w-4 h-4 text-[#4b6723] shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#27a644] shrink-0" />
           ) : (
-            <RefreshCw className="w-4 h-4 text-[#4b6723] shrink-0" />
+            <RefreshCw className="w-4 h-4 text-[#27a644] shrink-0" />
           )}
-          <span className="text-[#1a1c1a] font-semibold text-[11px] truncate">
+          <span className="text-[#f7f8f8] font-medium text-xs truncate">
             {claim.resolutionText}
           </span>
         </div>
@@ -59,7 +59,7 @@ export default function WarrantyPastClaimCard({ claim }: WarrantyPastClaimCardPr
           <button
             type="button"
             onClick={() => alert(`Downloading warranty resolution slip for ${claim.claimNumber}...`)}
-            className="text-[#4b6723] font-bold text-[11px] flex items-center gap-0.5 shrink-0 active:opacity-75 cursor-pointer hover:underline"
+            className="text-[#828fff] hover:text-[#f7f8f8] font-semibold text-xs flex items-center gap-1 shrink-0 active:opacity-75 cursor-pointer transition-colors"
           >
             <span>Slip</span>
             <Download className="w-3.5 h-3.5" />

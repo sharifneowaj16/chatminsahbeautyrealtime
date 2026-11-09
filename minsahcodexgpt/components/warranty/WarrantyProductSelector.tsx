@@ -17,78 +17,72 @@ export default function WarrantyProductSelector({
   onSelect,
 }: WarrantyProductSelectorProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 pt-1">
       <div className="flex items-center justify-between px-1">
-        <span className="text-xs font-bold text-[#062402] uppercase tracking-wider">
+        <span className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
           1. Select Item
         </span>
-        <span className="text-[11px] text-[#43483f]">
+        <span className="text-xs text-[#828fff] font-mono">
           {products.length} eligible items
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-2.5">
         {products.length === 0 ? (
-          <div className="rounded-xl p-4 bg-[#F8FAF7] border border-[#E2DED8]/60 text-center text-xs text-[#43483f]">
-            No warranty eligible products found
+          <div className="rounded-2xl p-5 bg-[#0f1011] border border-[#23252a] text-center text-xs text-[#8a8f98]">
+            No warranty eligible products found in past 14 days
           </div>
         ) : (
           products.map((item) => {
-          const isSelected = item.id === selectedProductId;
-          return (
-            <label
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              className={`rounded-xl p-3 flex items-center gap-3 cursor-pointer shadow-sm transition-all ${
-                isSelected
-                  ? 'bg-[#E8F0E5] border-2 border-[#062402]'
-                  : 'bg-[#F8FAF7] border border-[#E2DED8]/60 hover:bg-[#efeeeb]'
-              }`}
-            >
-              <input
-                type="radio"
-                name="claim_product"
-                value={item.id}
-                checked={isSelected}
-                onChange={() => onSelect(item.id)}
-                className="sr-only"
-              />
-              <div className="relative w-12 h-12 rounded-lg bg-white overflow-hidden shrink-0 border border-[#E2DED8]/40">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  fill
-                  sizes="48px"
-                  className="object-cover"
+            const isSelected = item.id === selectedProductId;
+            return (
+              <label
+                key={item.id}
+                onClick={() => onSelect(item.id)}
+                className={`rounded-2xl p-3.5 flex items-center gap-3.5 cursor-pointer shadow-sm transition-all ${
+                  isSelected
+                    ? 'bg-[#141516] border-2 border-[#5e6ad2] text-[#f7f8f8]'
+                    : 'bg-[#0f1011] border border-[#23252a] text-[#8a8f98] hover:border-[#5e6ad2]/40'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="claim_product"
+                  value={item.id}
+                  checked={isSelected}
+                  onChange={() => onSelect(item.id)}
+                  className="sr-only"
                 />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1">
-                  <h3 className="text-[14px] font-bold text-[#062402] truncate">
+                <div className="relative w-14 h-14 rounded-xl bg-[#0f1011] overflow-hidden shrink-0 border border-[#23252a]">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-[#f7f8f8] truncate">
                     {item.name}
-                  </h3>
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                      isSelected
-                        ? 'bg-[#062402] text-white'
-                        : 'bg-[#e3e2e0] text-transparent'
-                    }`}
-                  >
-                    <Check className="w-3.5 h-3.5" />
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-[#8a8f98]">
+                    <span>Order #{item.orderNumber}</span>
+                    <span>•</span>
+                    <span className="text-[#828fff]">{item.daysRemaining} days warranty left</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] text-[#43483f]">
-                    {item.size} • Order #{item.orderNumber}
-                  </span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-[#EAF7D8] text-[#1c3a13] text-[10px] font-bold">
-                    {item.daysRemaining} Days Left
-                  </span>
+                <div
+                  className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-[#5e6ad2] text-white' : 'border border-[#23252a] text-transparent'
+                  }`}
+                >
+                  <Check className="w-3.5 h-3.5" />
                 </div>
-              </div>
-            </label>
-          );
-        }))}
+              </label>
+            );
+          })
+        )}
       </div>
     </div>
   );

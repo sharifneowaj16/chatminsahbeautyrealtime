@@ -12,8 +12,6 @@ import {
   Twitter,
   Link as LinkIcon,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 
 // Icon map — string to component
@@ -91,115 +89,182 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
   const formatPoints = (points: number) => points.toLocaleString();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">Referral Program</h1>
-        <p className="text-gray-600">Share the love and earn rewards</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <div className="flex items-center space-x-3">
-            <Users className="w-7 h-7 text-minsah-action-primary" />
-            <div>
-              <p className="text-xs text-gray-500">Total Referrals</p>
-              <p className="text-2xl font-bold">{referralData.totalReferrals}</p>
-            </div>
+    <div className="w-full space-y-6 overflow-x-hidden">
+      {/* ── Page Header ───────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wider uppercase bg-[#5e6ad2]/15 text-[#828fff] border border-[#5e6ad2]/30">
+              <Users className="w-3 h-3 text-[#828fff]" />
+              Referral Program
+            </span>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <div className="flex items-center space-x-3">
-            <CheckCircle className="w-7 h-7 text-green-600" />
-            <div>
-              <p className="text-xs text-gray-500">Successful</p>
-              <p className="text-2xl font-bold">{referralData.successfulReferrals}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <div className="flex items-center space-x-3">
-            <DollarSign className="w-7 h-7 text-blue-600" />
-            <div>
-              <p className="text-xs text-gray-500">Points Earned</p>
-              <p className="text-2xl font-bold">{formatPoints(referralData.totalEarned)}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <div className="flex items-center space-x-3">
-            <Clock className="w-7 h-7 text-yellow-600" />
-            <div>
-              <p className="text-xs text-gray-500">Pending</p>
-              <p className="text-2xl font-bold">{referralData.pendingReferrals}</p>
-            </div>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#f7f8f8]">
+            Invite Friends &amp; Earn Rewards
+          </h1>
+          <p className="text-xs text-[#8a8f98] mt-0.5">
+            Share your unique invite code with friends to unlock exclusive VIP Beauty Glow Points
+          </p>
         </div>
       </div>
 
-      {/* Share Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-6">Share Your Referral Code</h2>
-
-        <div className="bg-gradient-to-r from-minsah-surface-subtle to-minsah-surface-soft rounded-lg p-6 mb-6">
-          <p className="text-sm text-gray-600 mb-2">Your referral code</p>
-          <div className="flex items-center justify-between">
-            <p className="text-3xl font-bold text-minsah-action-primary">{referralData.referralCode}</p>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleCopyCode}
-              className="bg-minsah-action-primary text-sm hover:bg-minsah-action-primary-hover"
-            >
-              {copied ? <CheckCircle className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
-              {copied ? 'Copied!' : 'Copy Code'}
-            </Button>
+      {/* ── Stats Cards Grid ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+        <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-4 sm:p-5 shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#141516] text-[#828fff] border border-[#23252a]">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-[#8a8f98] uppercase tracking-wider">Total Invites</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8] font-mono leading-tight mt-0.5">{referralData.totalReferrals}</p>
+            </div>
           </div>
-          <p className="text-xs text-gray-500 mt-3 break-all">{referralData.referralLink}</p>
         </div>
 
-        {/* Share Buttons */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-4 sm:p-5 shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#141516] text-[#27a644] border border-[#23252a]">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-[#8a8f98] uppercase tracking-wider">Successful</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8] font-mono leading-tight mt-0.5">{referralData.successfulReferrals}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-4 sm:p-5 shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#141516] text-amber-400 border border-[#23252a]">
+              <DollarSign className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-[#8a8f98] uppercase tracking-wider">Points Earned</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8] font-mono leading-tight mt-0.5">{formatPoints(referralData.totalEarned)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-4 sm:p-5 shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#141516] text-sky-400 border border-[#23252a]">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-[#8a8f98] uppercase tracking-wider">Pending</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#f7f8f8] font-mono leading-tight mt-0.5">{referralData.pendingReferrals}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Share Code Section ──────────────────────────────────────────────── */}
+      <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] p-5 sm:p-6 shadow-xl space-y-5">
+        <div>
+          <h2 className="text-sm sm:text-base font-semibold text-[#f7f8f8]">Share Your Referral Code</h2>
+          <p className="text-xs text-[#8a8f98] mt-0.5">Your friends get instant bonus discounts on their first luxury purchase</p>
+        </div>
+
+        {/* Linear Code Banner */}
+        <div className="relative overflow-hidden rounded-xl bg-[#141516] border border-[#23252a] p-4 sm:p-5">
+          <div className="absolute top-0 right-0 h-28 w-28 bg-[#5e6ad2]/10 blur-2xl pointer-events-none" />
+          <p className="text-[10px] text-[#8a8f98] uppercase tracking-wider font-semibold">Your Referral Code</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-1.5">
+            <p className="text-2xl sm:text-3xl font-extrabold text-[#f7f8f8] font-mono tracking-wider">
+              {referralData.referralCode}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-xl bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                {copied ? <CheckCircle className="w-3.5 h-3.5 text-[#D4F6A2]" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#18191a] hover:bg-[#202225] text-[#8a8f98] hover:text-[#f7f8f8] border border-[#23252a] text-xs font-medium transition-all active:scale-95 cursor-pointer"
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Copy Link</span>
+              </button>
+            </div>
+          </div>
+          <p className="text-[11px] text-[#62666d] mt-2.5 font-mono break-all">{referralData.referralLink}</p>
+        </div>
+
+        {/* Share Channels */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {shareOptions.map((option) => (
-            <Button
+            <button
               key={option.name}
               type="button"
-              variant="secondary"
               onClick={() => handleShare(option.action)}
-              className="flex-col p-4 hover:border-minsah-border-strong hover:bg-minsah-surface-subtle"
+              className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#141516] border border-[#23252a] hover:border-[#5e6ad2]/50 hover:bg-[#18191a] text-[#8a8f98] hover:text-[#f7f8f8] transition-all cursor-pointer group active:scale-95"
             >
-              {/* ✅ icon string → component */}
-              <DynamicIcon name={option.icon} className="w-6 h-6 mb-2 text-minsah-action-primary" />
-              <span className="text-sm text-gray-700">{option.name}</span>
-            </Button>
+              <DynamicIcon name={option.icon} className="w-5 h-5 mb-1.5 text-[#828fff] group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-medium">{option.name}</span>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Referral List */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Your Referrals</h2>
+      {/* ── Your Referrals History ──────────────────────────────────────────── */}
+      <div className="bg-[#0f1011] rounded-2xl border border-[#23252a] shadow-xl overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-[#23252a] flex items-center justify-between">
+          <div>
+            <h2 className="text-sm sm:text-base font-semibold text-[#f7f8f8]">Referred Members</h2>
+            <p className="text-xs text-[#8a8f98] mt-0.5">Friends who signed up and placed orders using your invitation</p>
+          </div>
+          <span className="text-xs font-mono text-[#8a8f98]">
+            {referrals.length} {referrals.length === 1 ? 'Friend' : 'Friends'}
+          </span>
         </div>
-        <div className="divide-y divide-gray-200">
-          {referrals.map((referral) => (
-            <div key={referral.id} className="p-6 flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">{referral.referredName}</p>
-                <p className="text-sm text-gray-500">{referral.referredEmail}</p>
-                <p className="text-xs text-gray-400 mt-1">{new Date(referral.createdAt).toLocaleDateString()}</p>
-              </div>
-              <div className="text-right">
-                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mb-2 ${statusColors[referral.status] || 'bg-gray-100 text-gray-600'}`}>
-                  {referral.status.replace('_', ' ')}
-                </span>
-                {referral.rewardPoints > 0 && (
-                  <p className="text-sm font-semibold text-minsah-action-primary">+{formatPoints(referral.rewardPoints)} pts</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+
+        {referrals.length === 0 ? (
+          <div className="p-8 text-center">
+            <Users className="w-10 h-10 text-[#62666d] mx-auto mb-2.5" />
+            <p className="text-sm font-semibold text-[#f7f8f8]">No referrals recorded yet</p>
+            <p className="text-xs text-[#8a8f98] mt-1 max-w-sm mx-auto">
+              Share your code or invitation link with your friends to start earning VIP Glow Points on every beauty order they make.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#23252a]/70">
+            {referrals.map((referral) => {
+              const statusBadgeStyle =
+                referral.status === 'completed' || referral.status === 'made_purchase'
+                  ? 'bg-[#27a644]/15 text-[#27a644] border-[#27a644]/30'
+                  : referral.status === 'signed_up'
+                  ? 'bg-[#5e6ad2]/15 text-[#828fff] border-[#5e6ad2]/30'
+                  : 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+              return (
+                <div key={referral.id} className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-[#141516]/40 transition-colors">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-[#f7f8f8] truncate">{referral.referredName}</p>
+                    <p className="text-xs text-[#8a8f98] font-mono truncate">{referral.referredEmail}</p>
+                    <p className="text-[11px] text-[#62666d] mt-1">
+                      Joined {new Date(referral.createdAt).toLocaleDateString('en-BD', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${statusBadgeStyle}`}>
+                      {referral.status.replace('_', ' ')}
+                    </span>
+                    {referral.rewardPoints > 0 && (
+                      <p className="text-xs font-bold text-[#828fff] font-mono mt-1">
+                        +{formatPoints(referral.rewardPoints)} pts
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Email Modal */}
@@ -209,51 +274,56 @@ export function ReferralsClient({ referralData, referrals, shareOptions, emailTe
         title="Send Referral Email"
         size="lg"
         footer={
-          <>
-            <Button type="button" variant="secondary" onClick={() => setShowEmailModal(false)}>
-              Cancel
-            </Button>
-            <Button
+          <div className="flex items-center justify-end gap-2">
+            <button
               type="button"
-              variant="primary"
               onClick={() => setShowEmailModal(false)}
-              className="bg-minsah-action-primary hover:bg-minsah-action-primary-hover"
+              className="h-9 px-4 rounded-xl bg-[#141516] hover:bg-[#18191a] text-[#8a8f98] hover:text-[#f7f8f8] border border-[#23252a] text-xs font-medium transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEmailModal(false)}
+              className="h-9 px-4 rounded-xl bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-semibold shadow-sm transition-all"
             >
               Send Email
-            </Button>
-          </>
+            </button>
+          </div>
         }
       >
-        {/* Template Selector */}
-        <div className="flex gap-2 mb-4">
-          {emailTemplates.map((tmpl) => (
-            <Button
-              key={tmpl.id}
-              type="button"
-              variant={selectedTemplate.id === tmpl.id ? 'primary' : 'secondary'}
-              onClick={() => setSelectedTemplate(tmpl)}
-              className={`rounded-full px-3 py-1 text-sm ${selectedTemplate.id === tmpl.id ? 'bg-minsah-action-primary' : 'bg-gray-100 hover:bg-gray-200'}`}
-            >
-              {tmpl.name}
-            </Button>
-          ))}
-        </div>
+        <div className="space-y-4">
+          {/* Template Selector */}
+          <div className="flex flex-wrap gap-2">
+            {emailTemplates.map((tmpl) => (
+              <button
+                key={tmpl.id}
+                type="button"
+                onClick={() => setSelectedTemplate(tmpl)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
+                  selectedTemplate.id === tmpl.id
+                    ? 'bg-[#5e6ad2] text-white shadow-sm'
+                    : 'bg-[#141516] text-[#8a8f98] border border-[#23252a] hover:text-[#f7f8f8]'
+                }`}
+              >
+                {tmpl.name}
+              </button>
+            ))}
+          </div>
 
-        <Input
-          type="email"
-          value={recipientEmail}
-          onChange={(e) => setRecipientEmail(e.target.value)}
-          placeholder="friend@example.com"
-          label="Recipient email"
-          hideLabel
-          containerClassName="mb-4"
-          className="focus:ring-minsah-focus"
-        />
+          <input
+            type="email"
+            value={recipientEmail}
+            onChange={(e) => setRecipientEmail(e.target.value)}
+            placeholder="friend@example.com"
+            className="w-full h-11 px-3.5 bg-[#141516] border border-[#23252a] rounded-xl text-xs sm:text-sm text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e6ad2] focus:outline-none transition-colors"
+          />
 
-        <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
-          {selectedTemplate.body
-            .replace('{referralCode}', referralData.referralCode)
-            .replace('{referralLink}', referralData.referralLink)}
+          <div className="bg-[#141516] border border-[#23252a] rounded-xl p-4 text-xs text-[#c9cdd4] whitespace-pre-wrap max-h-48 overflow-y-auto font-mono">
+            {selectedTemplate.body
+              .replace('{referralCode}', referralData.referralCode)
+              .replace('{referralLink}', referralData.referralLink)}
+          </div>
         </div>
       </Modal>
     </div>

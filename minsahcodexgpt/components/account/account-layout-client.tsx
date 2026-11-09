@@ -146,8 +146,8 @@ export function AccountLayoutClient({ user, children }: AccountLayoutClientProps
         <div className="px-4 pb-3">
           <div className="p-2.5 bg-[#0b0c0d] border border-[#23252a] rounded-2xl shadow-xl space-y-1.5">
             <div className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#8a8f98] flex items-center justify-between">
-              <span>Account Navigation</span>
-              <span className="text-[#828fff] font-mono">10 Sections</span>
+              <span>NAVIGATE ACCOUNT (10)</span>
+              <span className="text-[#828fff] font-mono">1-TAP DIRECT</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {navigation.map((item) => {

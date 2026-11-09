@@ -5,16 +5,16 @@ import { MessageCircle, ArrowRight } from 'lucide-react';
 
 export default function WarrantyConciergeCard() {
   return (
-    <div className="p-4 rounded-2xl bg-[#062402] text-white flex items-center justify-between shadow-sm">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-10 h-10 rounded-full bg-[#28531c] text-[#D4F6A2] flex items-center justify-center shrink-0">
+    <div className="p-4 sm:p-5 rounded-2xl bg-[#0f1011] border border-[#23252a] text-[#f7f8f8] flex items-center justify-between shadow-xl gap-3">
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div className="w-10 h-10 rounded-xl bg-[#5e6ad2]/15 text-[#828fff] border border-[#5e6ad2]/30 flex items-center justify-center shrink-0">
           <MessageCircle className="w-5 h-5" />
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="text-[13px] font-bold text-white leading-tight">
-            Need instant claim help?
+          <span className="text-sm font-semibold text-[#f7f8f8] leading-tight">
+            Need instant claim assistance?
           </span>
-          <span className="text-[11px] text-[#D4F6A2] mt-0.5 truncate">
+          <span className="text-xs text-[#8a8f98] mt-0.5 truncate font-mono">
             Banani Hub Concierge (9 AM – 11 PM)
           </span>
         </div>
@@ -23,7 +23,7 @@ export default function WarrantyConciergeCard() {
         href="https://wa.me/8801700000000"
         target="_blank"
         rel="noopener noreferrer"
-        className="px-4 py-2 rounded-full bg-[#EAF7D8] text-[#1c3a13] font-bold text-[11px] flex items-center gap-1 active:scale-95 transition-transform shrink-0 hover:bg-[#d5f3d7]"
+        className="px-4 py-2 rounded-xl bg-[#27a644] hover:bg-[#2fb34a] text-white font-semibold text-xs flex items-center gap-1.5 active:scale-95 transition-all shrink-0 cursor-pointer shadow-sm"
       >
         <span>WhatsApp</span>
         <ArrowRight className="w-3.5 h-3.5" />

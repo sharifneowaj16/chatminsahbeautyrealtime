@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search, Headphones, Plus, ShieldCheck } from 'lucide-react';
+import { Search, Headphones, Plus, ShieldCheck } from 'lucide-react';
 import WarrantyActiveClaimCard from './WarrantyActiveClaimCard';
 import WarrantyPastClaimCard from './WarrantyPastClaimCard';
 import WarrantyProtectionGuaranteeBanner from './WarrantyProtectionGuaranteeBanner';
@@ -19,144 +19,123 @@ export default function WarrantyHistoryView() {
   const resolvedCount = pastClaims.length;
 
   return (
-    <div className="w-full flex flex-col bg-[#faf9f6] min-h-screen pb-24">
-      {/* Top Header */}
-      <div className="h-16 px-4 flex items-center justify-between border-b border-[#E2DED8]/60 bg-[#faf9f6]/85 backdrop-blur-xl sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/account"
-            aria-label="Go back"
-            className="w-10 h-10 flex items-center justify-center rounded-full text-[#1a1c1a] hover:bg-[#efeeeb] transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-[18px] text-[#062402] font-bold tracking-tight">
-            Warranty Claims
+    <div className="w-full space-y-6 overflow-x-hidden text-[#f7f8f8]">
+      {/* ── Page Header ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#5e6ad2]/15 text-[#828fff] text-[11px] font-semibold border border-[#5e6ad2]/30 mb-2">
+            <ShieldCheck className="w-3 h-3 text-[#828fff]" />
+            <span>100% AUTHENTICITY GUARANTEE • DOORSTEP SWAP</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#f7f8f8] tracking-tight">
+            Warranty &amp; Claims
           </h1>
+          <p className="text-xs sm:text-sm text-[#8a8f98] mt-0.5">
+            Track live claims, doorstep replacement dispatch status, and past resolutions
+          </p>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Search claims"
-            className="w-10 h-10 flex items-center justify-center rounded-full text-[#43483f] hover:bg-[#efeeeb] transition-colors"
-          >
-            <Search className="w-5 h-5" />
-          </button>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             type="button"
             aria-label="Concierge assistance"
             onClick={() => {
               window.dispatchEvent(new CustomEvent('minsah:open-concierge-modal'));
             }}
-            className="w-10 h-10 flex items-center justify-center rounded-full text-[#43483f] hover:bg-[#efeeeb] transition-colors"
+            className="h-10 w-10 flex items-center justify-center rounded-xl bg-[#141516] border border-[#23252a] text-[#828fff] hover:bg-[#18191a] hover:text-[#f7f8f8] transition-colors cursor-pointer shadow-sm"
           >
-            <Headphones className="w-5 h-5" />
+            <Headphones className="w-4 h-4" />
           </button>
-        </div>
-      </div>
-
-      {/* Top Summary & Actions */}
-      <div className="px-4 pt-4 pb-2 flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-[11px] text-[#4b6723] font-bold tracking-widest uppercase">
-              Guarantee Care
-            </span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-[#4b6723]" />
-              <span className="text-xs text-[#1a1c1a] font-semibold">
-                1 Active Claim
-              </span>
-              <span className="text-[#43483f] text-xs">
-                • 2 Completed
-              </span>
-            </div>
-          </div>
           <Link
             href="/account/warranty/claim"
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-[#062402] hover:bg-[#1c3a13] text-white font-bold text-xs tracking-wide shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer border border-[#ccee9b]/20"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl bg-[#5e6ad2] hover:bg-[#828fff] text-white font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-[#D4F6A2]" />
+            <Plus className="w-4 h-4 text-white" />
             <span>File Claim</span>
           </Link>
         </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2.5 pt-2 pb-1 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setFilter('all')}
-            className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
-              filter === 'all'
-                ? 'bg-[#062402] text-white ring-1 ring-[#062402]'
-                : 'bg-[#F2F6F0] text-[#1c3a13] hover:bg-[#E8F0E5] border border-[#E2DED8]/70'
-            }`}
-          >
-            <span>All</span>
-            <span
-              className={`w-5 h-5 rounded-full text-[11px] inline-flex items-center justify-center font-bold ${
-                filter === 'all'
-                  ? 'bg-[#28531c] text-[#D4F6A2]'
-                  : 'bg-[#E2DED8]/70 text-[#43483f]'
-              }`}
-            >
-              {totalCount}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('active')}
-            className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
-              filter === 'active'
-                ? 'bg-[#062402] text-white ring-1 ring-[#062402]'
-                : 'bg-[#F2F6F0] text-[#1c3a13] hover:bg-[#E8F0E5] border border-[#E2DED8]/70'
-            }`}
-          >
-            <span>Active</span>
-            <span
-              className={`w-5 h-5 rounded-full text-[11px] inline-flex items-center justify-center font-bold ${
-                filter === 'active'
-                  ? 'bg-[#28531c] text-[#D4F6A2]'
-                  : 'bg-[#E2DED8]/70 text-[#43483f]'
-              }`}
-            >
-              {activeCount}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('resolved')}
-            className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
-              filter === 'resolved'
-                ? 'bg-[#062402] text-white ring-1 ring-[#062402]'
-                : 'bg-[#F2F6F0] text-[#1c3a13] hover:bg-[#E8F0E5] border border-[#E2DED8]/70'
-            }`}
-          >
-            <span>Resolved</span>
-            <span
-              className={`w-5 h-5 rounded-full text-[11px] inline-flex items-center justify-center font-bold ${
-                filter === 'resolved'
-                  ? 'bg-[#28531c] text-[#D4F6A2]'
-                  : 'bg-[#E2DED8]/70 text-[#43483f]'
-              }`}
-            >
-              {resolvedCount}
-            </span>
-          </button>
-        </div>
       </div>
 
-      {/* Main Claims Content */}
-      <div className="px-4 space-y-4 pt-2">
+      {/* ── Responsive 3-Segment Filter Tabs (Zero Horizontal Scroll) ─────────── */}
+      <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-[#0f1011] border border-[#23252a] rounded-2xl shadow-sm">
+        <button
+          type="button"
+          onClick={() => setFilter('all')}
+          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+            filter === 'all'
+              ? 'bg-[#5e6ad2] text-white shadow-sm font-semibold'
+              : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
+          }`}
+        >
+          <span>All</span>
+          <span
+            className={`px-2 py-0.5 text-[11px] font-mono rounded-full ${
+              filter === 'all' ? 'bg-white/20 text-white' : 'bg-[#18191a] text-[#8a8f98] border border-[#23252a]'
+            }`}
+          >
+            {totalCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setFilter('active')}
+          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+            filter === 'active'
+              ? 'bg-[#5e6ad2] text-white shadow-sm font-semibold'
+              : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
+          }`}
+        >
+          <span>Active</span>
+          <span
+            className={`px-2 py-0.5 text-[11px] font-mono rounded-full ${
+              filter === 'active' ? 'bg-white/20 text-white' : 'bg-[#18191a] text-[#8a8f98] border border-[#23252a]'
+            }`}
+          >
+            {activeCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setFilter('resolved')}
+          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+            filter === 'resolved'
+              ? 'bg-[#5e6ad2] text-white shadow-sm font-semibold'
+              : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
+          }`}
+        >
+          <span>Resolved</span>
+          <span
+            className={`px-2 py-0.5 text-[11px] font-mono rounded-full ${
+              filter === 'resolved' ? 'bg-white/20 text-white' : 'bg-[#18191a] text-[#8a8f98] border border-[#23252a]'
+            }`}
+          >
+            {resolvedCount}
+          </span>
+        </button>
+      </div>
+
+      {/* ── Main Claims Content ──────────────────────────────────────────────── */}
+      <div className="space-y-4">
         {!activeClaim && pastClaims.length === 0 && (
-          <div className="rounded-2xl p-8 bg-[#F8FAF7] border border-[#E2DED8]/60 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[#E8F0E5] text-[#1c3a13] flex items-center justify-center mx-auto">
-              <ShieldCheck className="w-6 h-6" />
+          <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl p-10 sm:p-14 text-center shadow-xl space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 text-[#828fff] flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-7 h-7" />
             </div>
-            <p className="text-base font-bold text-[#062402]">No warranty claims found</p>
-            <p className="text-xs text-[#43483f] max-w-xs mx-auto">
-              You do not have any active or past warranty claims at this time.
-            </p>
+            <div>
+              <h3 className="text-base sm:text-lg font-semibold text-[#f7f8f8]">No warranty claims found</h3>
+              <p className="text-xs sm:text-sm text-[#8a8f98] max-w-sm mx-auto mt-1">
+                You do not have any active or past warranty claims at this time. All eligible purchases carry 14-day protection.
+              </p>
+            </div>
+            <Link
+              href="/account/warranty/claim"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#5e6ad2] hover:bg-[#828fff] text-white font-semibold text-xs transition-all shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>File a New Claim</span>
+            </Link>
           </div>
         )}
 
@@ -169,15 +148,11 @@ export default function WarrantyHistoryView() {
         {pastClaims.length > 0 && (filter === 'all' || filter === 'resolved') && (
           <div className="space-y-3">
             <div className="flex items-center justify-between pt-2">
-              <div className="flex flex-col">
-                <span className="text-[17px] text-[#062402] font-bold">
-                  Claim History
-                </span>
-                <span className="text-xs text-[#43483f]">
-                  Past resolved warranty cases
-                </span>
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold text-[#f7f8f8]">Claim History</h2>
+                <p className="text-xs text-[#8a8f98]">Past resolved warranty cases</p>
               </div>
-              <span className="text-xs text-[#4b6723] font-bold">
+              <span className="text-xs text-[#27a644] font-mono">
                 {pastClaims.length} Cases Solved
               </span>
             </div>

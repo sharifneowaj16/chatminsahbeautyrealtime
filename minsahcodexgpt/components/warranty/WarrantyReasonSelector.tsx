@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Syringe, ShieldCheck, Droplet, FlaskConical, CheckCircle2, Circle } from 'lucide-react';
+import { Syringe, ShieldCheck, Droplet, FlaskConical, CheckCircle2 } from 'lucide-react';
 import { WarrantyReasonId } from './types';
 
 interface WarrantyReasonSelectorProps {
@@ -25,13 +25,13 @@ export default function WarrantyReasonSelector({
   ];
 
   return (
-    <div className="flex flex-col gap-2 pt-1">
+    <div className="flex flex-col gap-2.5 pt-1">
       <div className="flex items-center justify-between px-1">
-        <span className="text-xs font-bold text-[#062402] uppercase tracking-wider">
+        <span className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
           2. What Happened?
         </span>
-        <span className="text-[11px] text-[#4b6723] font-bold">
-          Select one
+        <span className="text-xs text-[#828fff] font-mono">
+          Select defect
         </span>
       </div>
 
@@ -45,42 +45,31 @@ export default function WarrantyReasonSelector({
               onClick={() => onSelectReason(r.id)}
               className={`p-3 rounded-xl flex items-center gap-2.5 text-left active:scale-[0.98] transition-all cursor-pointer shadow-sm ${
                 isSelected
-                  ? 'bg-[#062402] text-white'
-                  : 'bg-[#F8FAF7] text-[#1a1c1a] border border-[#E2DED8]/60 hover:bg-[#efeeeb]'
+                  ? 'bg-[#5e6ad2] text-white border border-[#5e6ad2]'
+                  : 'bg-[#0f1011] text-[#8a8f98] border border-[#23252a] hover:bg-[#141516] hover:text-[#f7f8f8]'
               }`}
             >
-              <span className={`shrink-0 ${isSelected ? 'text-[#D4F6A2]' : 'text-[#4b6723]'}`}>
+              <span className={`shrink-0 ${isSelected ? 'text-white' : 'text-[#828fff]'}`}>
                 {r.icon}
               </span>
-              <span className="text-xs font-bold flex-1 truncate">
+              <span className="text-xs font-semibold flex-1 truncate">
                 {r.label}
               </span>
-              {isSelected ? (
-                <CheckCircle2 className="w-4 h-4 text-[#D4F6A2] shrink-0" />
-              ) : (
-                <Circle className="w-4 h-4 text-[#B5C4BB] shrink-0" />
+              {isSelected && (
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Note Input */}
-      <div className="flex flex-col gap-1.5 pt-2">
-        <div className="flex items-center justify-between px-1">
-          <label className="text-xs font-bold text-[#062402] uppercase tracking-wider">
-            Product Issue <span className="text-[11px] font-normal text-[#43483f] lowercase">(optional)</span>
-          </label>
-          <span className="text-[10px] text-[#43483f] font-medium">
-            Max 200 chars
-          </span>
-        </div>
+      <div className="pt-1">
         <textarea
+          rows={3}
           value={note}
           onChange={(e) => onNoteChange(e.target.value)}
-          maxLength={200}
-          placeholder="Describe the specific issue with the product (e.g. broken dropper, leaking seal)..."
-          className="w-full p-3 rounded-2xl bg-[#efeeeb] border border-[#E2DED8]/60 text-xs text-[#1a1c1a] placeholder:text-[#43483f]/70 focus:outline-none focus:border-[#4b6723] focus:ring-1 focus:ring-[#4b6723] transition-all min-h-[72px] resize-none"
+          placeholder="Optional notes: Describe batch code, leak severity, or packaging condition..."
+          className="w-full p-3 rounded-xl bg-[#141516] border border-[#23252a] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] transition-colors resize-none"
         />
       </div>
     </div>

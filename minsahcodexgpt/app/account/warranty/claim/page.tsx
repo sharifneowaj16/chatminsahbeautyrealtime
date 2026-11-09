@@ -10,16 +10,8 @@ export const metadata: Metadata = {
 
 export default function AccountNewWarrantyClaimPage() {
   return (
-    <div className="w-full">
-      {/* Mobile Form Factor */}
-      <div className="lg:hidden">
-        <WarrantyClaimWizardView />
-      </div>
-
-      {/* Desktop View */}
-      <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <WarrantyClaimWizardView />
-      </div>
+    <div className="w-full overflow-x-hidden">
+      <WarrantyClaimWizardView />
     </div>
   );
 }

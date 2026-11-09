@@ -1,8 +1,23 @@
 'use client';
+
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Star, Edit, Trash2, Search, Plus, Eye, Heart, MessageCircle, Check, X, ShoppingBag, Package } from 'lucide-react';
+import {
+  Star,
+  Edit,
+  Trash2,
+  Search,
+  Plus,
+  Eye,
+  Heart,
+  MessageCircle,
+  Check,
+  X,
+  ShoppingBag,
+  Package,
+  PenTool,
+} from 'lucide-react';
 import { Star as StarSolid } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -10,7 +25,6 @@ import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/ToastProvider';
 import { productPath } from '@/lib/product-url';
 import CatalogProductImage from '@/components/catalog/CatalogProductImage';
-import { ReviewsAutoScrollSection } from '@/components/reviews/mobile/ReviewsAutoScrollSection';
 
 function ProductImage({ src, name }: { src: any; name: string }) {
   if (typeof src === 'string' && src.trim()) {
@@ -24,7 +38,7 @@ function ProductImage({ src, name }: { src: any; name: string }) {
     );
   }
   if (src && typeof src === 'object') return src;
-  return <Package className="h-8 w-8 text-minsah-secondary" aria-hidden="true" />;
+  return <Package className="h-7 w-7 text-[#828fff]" aria-hidden="true" />;
 }
 
 interface ReviewItem {
@@ -62,13 +76,13 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
   const [reviews, setReviews] = useState(initialReviews);
   const [searchTerm, setSearchTerm] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState('my-reviews');
+  const [activeTab, setActiveTab] = useState<'my-reviews' | 'write-review'>('my-reviews');
   const [errorMessage, setErrorMessage] = useState('');
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   const tabs = [
-    { id: 'my-reviews', name: 'My Reviews', count: reviews.length },
-    { id: 'write-review', name: 'Write Review', count: reviewableProducts.length },
+    { id: 'my-reviews' as const, name: 'My Reviews', count: reviews.length },
+    { id: 'write-review' as const, name: 'Write Review', count: reviewableProducts.length },
   ];
 
   const filteredReviews = useMemo(() => {
@@ -76,9 +90,10 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
     if (normalizedSearchTerm) {
-      filtered = filtered.filter((review) =>
-        review.productName.toLowerCase().includes(normalizedSearchTerm) ||
-        review.title.toLowerCase().includes(normalizedSearchTerm)
+      filtered = filtered.filter(
+        (review) =>
+          review.productName.toLowerCase().includes(normalizedSearchTerm) ||
+          review.title.toLowerCase().includes(normalizedSearchTerm)
       );
     }
 
@@ -92,7 +107,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
   const handleDeleteReview = async (reviewId: string) => {
     const confirmed = await requestConfirmation({
       title: 'Delete this review?',
-      description: 'Are you sure you want to delete this review?',
+      description: 'Are you sure you want to permanently delete this review?',
       confirmLabel: 'Delete',
       cancelLabel: 'Cancel',
       tone: 'danger',
@@ -120,147 +135,161 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
   };
 
   const renderStars = (rating: number) => (
-    <div className="flex items-center">
+    <div className="flex items-center gap-0.5">
       {[...Array(5)].map((_, i) =>
         i < rating ? (
-          <StarSolid key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+          <StarSolid key={i} className="w-3.5 h-3.5 text-[#f59e0b] fill-[#f59e0b]" />
         ) : (
-          <Star key={i} className="w-4 h-4 text-gray-300" />
+          <Star key={i} className="w-3.5 h-3.5 text-[#35373e]" />
         )
       )}
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      <div className="lg:hidden -mx-4 -mt-2">
-        <ReviewsAutoScrollSection />
-      </div>
-
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">My Reviews</h1>
-        <p className="text-gray-600">Manage your product reviews</p>
+    <div className="space-y-6 overflow-x-hidden">
+      {/* ── Page Header ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#5e6ad2]/15 text-[#828fff] text-[11px] font-semibold border border-[#5e6ad2]/30 mb-2">
+            <PenTool className="w-3 h-3 text-[#828fff]" />
+            <span>VERIFIED BEAUTY FEEDBACK</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#f7f8f8] tracking-tight">
+            Reviews &amp; Ratings
+          </h1>
+          <p className="text-xs sm:text-sm text-[#8a8f98] mt-0.5">
+            Manage your product reviews, ratings, and unreviewed purchases
+          </p>
+        </div>
       </div>
 
       {errorMessage && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-xs sm:text-sm text-red-300">
           {errorMessage}
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="border-b">
-          <nav className="flex -mb-px">
-            {tabs.map((tab) => (
-              <Button
-                key={tab.id}
-                type="button"
-                variant="ghost"
-                onClick={() => setActiveTab(tab.id)}
-                className={`rounded-none border-b-2 px-6 py-3 ${
-                  activeTab === tab.id
-                    ? 'border-minsah-action-primary text-minsah-action-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.name}
-                {tab.count > 0 && (
-                  <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 rounded-full">
-                    {tab.count}
-                  </span>
-                )}
-              </Button>
-            ))}
-          </nav>
-        </div>
+      {/* ── Linear Segmented Tab Switcher ─────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#0f1011] border border-[#23252a] rounded-2xl shadow-sm">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-[#5e6ad2] text-white shadow-sm font-semibold'
+                  : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
+              }`}
+            >
+              <span>{tab.name}</span>
+              {tab.count > 0 && (
+                <span
+                  className={`px-2 py-0.5 text-[11px] font-mono rounded-full ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-[#18191a] text-[#8a8f98] border border-[#23252a]'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* My Reviews Tab */}
+      {/* ── Tab: My Reviews ───────────────────────────────────────────────────── */}
       {activeTab === 'my-reviews' && (
         <div className="space-y-4">
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col sm:flex-row gap-3">
+          {/* Search & Filter Bar */}
+          <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row gap-3 shadow-md">
             <Input
               type="text"
-              placeholder="Search reviews..."
+              placeholder="Search your reviews..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               label="Search reviews"
               hideLabel
-              leading={<Search className="w-4 h-4" aria-hidden="true" />}
+              leading={<Search className="w-4 h-4 text-[#8a8f98]" aria-hidden="true" />}
               containerClassName="flex-1"
-              className="focus:ring-minsah-focus"
+              className="!bg-[#141516] !text-[#f7f8f8] !border-[#23252a] placeholder-[#62666d] focus:!border-[#5e6ad2]"
             />
             <Select
               value={ratingFilter}
               onChange={(e) => setRatingFilter(e.target.value)}
               label="Filter by rating"
               hideLabel
-              containerClassName="sm:w-40"
-              className="focus:ring-minsah-focus"
+              containerClassName="sm:w-44"
+              className="!bg-[#141516] !text-[#f7f8f8] !border-[#23252a] focus:!border-[#5e6ad2]"
             >
               <option value="all">All Ratings</option>
               {[5, 4, 3, 2, 1].map((r) => (
-                <option key={r} value={r}>{r} Stars</option>
+                <option key={r} value={r}>
+                  {r} Stars
+                </option>
               ))}
             </Select>
           </div>
 
           {filteredReviews.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-              <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No reviews found</h3>
-              <p className="text-gray-600 mb-6">You haven&apos;t written any reviews yet</p>
+            <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl p-10 sm:p-14 text-center shadow-xl">
+              <div className="w-14 h-14 rounded-2xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 text-[#828fff] flex items-center justify-center mx-auto mb-4">
+                <Star className="w-7 h-7" />
+              </div>
+              <h3 className="text-base sm:text-lg font-semibold text-[#f7f8f8] mb-1.5">No reviews found</h3>
+              <p className="text-xs sm:text-sm text-[#8a8f98] max-w-sm mx-auto mb-6">
+                You haven&apos;t written any reviews yet. Share your experience with your purchased beauty products!
+              </p>
               <Button
                 type="button"
                 variant="primary"
                 onClick={() => setActiveTab('write-review')}
-                className="bg-minsah-action-primary px-6 py-3 hover:bg-minsah-action-primary-hover"
+                className="bg-[#5e6ad2] hover:bg-[#828fff] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm cursor-pointer"
               >
-                <Plus className="w-4 h-4" aria-hidden="true" />
+                <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
                 Write Your First Review
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {filteredReviews.map((review) => (
-                <div key={review.id} className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      {/* ✅ Smart image — renders <img> for string paths */}
-                      <div className="w-16 h-16 bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div
+                  key={review.id}
+                  className="bg-[#0f1011] border border-[#23252a] hover:border-[#5e6ad2]/40 rounded-2xl p-4 sm:p-5 shadow-xl transition-all space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-14 h-14 bg-[#141516] border border-[#23252a] rounded-xl flex items-center justify-center overflow-hidden shrink-0">
                         <ProductImage src={review.productImage} name={review.productName} />
-                        {/* Hidden fallback span */}
-                        <span style={{ display: 'none' }}>
-                          <Package className="w-8 h-8 text-minsah-text-muted" aria-hidden="true" />
-                        </span>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <Link
                           href={productPath({ id: review.productId, slug: review.productSlug })}
-                          className="text-lg font-medium hover:text-minsah-action-primary"
+                          className="text-sm sm:text-base font-semibold text-[#f7f8f8] hover:text-[#828fff] transition-colors truncate block"
                         >
                           {review.productName}
                         </Link>
-                        <div className="flex items-center space-x-3 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           {renderStars(review.rating)}
-                          <span className="text-sm text-gray-600">
+                          <span className="text-[11px] text-[#8a8f98] font-mono">
                             {new Date(review.createdAt).toLocaleDateString()}
                           </span>
                           {review.isVerified && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#27a644]/15 text-[#27a644] border border-[#27a644]/30">
                               <Eye className="w-3 h-3 mr-1" />
-                              Verified Purchase
+                              Verified
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1">
+
+                    <div className="flex items-center gap-1 shrink-0">
                       <Link
                         href={`/account/reviews/write?reviewId=${review.id}`}
-                        className="p-2 text-gray-400 hover:text-minsah-action-primary rounded-lg transition"
+                        className="p-2 text-[#8a8f98] hover:text-[#828fff] hover:bg-[#141516] rounded-xl transition"
                         aria-label={`Edit review for ${review.productName}`}
                       >
                         <Edit className="w-4 h-4" aria-hidden="true" />
@@ -271,7 +300,7 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                         size="icon"
                         onClick={() => handleDeleteReview(review.id)}
                         disabled={deletingReviewId === review.id}
-                        className="h-auto min-h-0 w-auto min-w-0 p-2 text-gray-400 hover:text-red-600"
+                        className="h-auto min-h-0 w-auto min-w-0 p-2 text-[#8a8f98] hover:text-red-400 hover:bg-[#141516] rounded-xl transition cursor-pointer"
                         aria-label={`Delete review for ${review.productName}`}
                       >
                         <Trash2 className="w-4 h-4" aria-hidden="true" />
@@ -279,19 +308,19 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-gray-900">{review.title}</h3>
-                    <p className="text-gray-700 text-sm leading-relaxed">{review.content}</p>
+                  <div className="space-y-1 pt-1">
+                    <h3 className="font-semibold text-sm text-[#f7f8f8]">{review.title}</h3>
+                    <p className="text-xs sm:text-sm text-[#c9cdd4] leading-relaxed">{review.content}</p>
                   </div>
 
-                  <div className="flex items-center space-x-6 mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Heart className="w-4 h-4 mr-1" />
-                      {review.helpfulCount} helpful
+                  <div className="flex items-center gap-4 pt-3 border-t border-[#23252a] text-xs text-[#8a8f98]">
+                    <div className="flex items-center gap-1">
+                      <Heart className="w-3.5 h-3.5 text-[#8a8f98]" />
+                      <span>{review.helpfulCount} helpful</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <MessageCircle className="w-4 h-4 mr-1" />
-                      0 comments
+                    <div className="flex items-center gap-1">
+                      <MessageCircle className="w-3.5 h-3.5 text-[#8a8f98]" />
+                      <span>0 comments</span>
                     </div>
                   </div>
                 </div>
@@ -301,44 +330,55 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
         </div>
       )}
 
-      {/* Write Review Tab */}
+      {/* ── Tab: Write Review ─────────────────────────────────────────────────── */}
       {activeTab === 'write-review' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-6">Products to Review</h2>
+          <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-[#f7f8f8]">Products Ready for Review</h2>
+              <span className="text-xs text-[#8a8f98] font-mono">{reviewableProducts.length} Items</span>
+            </div>
+
             {reviewableProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No products to review</h3>
-                <p className="text-gray-600 mb-6">Once you make a purchase, you can review the products here</p>
+              <div className="text-center py-10 sm:py-12">
+                <div className="w-14 h-14 rounded-2xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 text-[#828fff] flex items-center justify-center mx-auto mb-3">
+                  <ShoppingBag className="w-7 h-7" />
+                </div>
+                <h3 className="text-base font-semibold text-[#f7f8f8] mb-1">No pending reviews</h3>
+                <p className="text-xs sm:text-sm text-[#8a8f98] max-w-sm mx-auto mb-5">
+                  Once your delivered orders arrive, you can review the products here and earn reward points!
+                </p>
                 <Link
                   href="/shop"
-                  className="inline-flex items-center px-6 py-3 bg-minsah-action-primary text-white rounded-lg hover:bg-minsah-action-primary-hover"
+                  className="inline-flex items-center px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-semibold rounded-xl transition shadow-sm"
                 >
                   Start Shopping
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {reviewableProducts.map((product) => (
-                  <div key={product.id} className="border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-minsah-surface-soft to-minsah-surface-accent rounded-lg flex items-center justify-center overflow-hidden">
+                  <div
+                    key={product.id}
+                    className="border border-[#23252a] bg-[#141516] hover:border-[#5e6ad2]/40 rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 bg-[#0f1011] border border-[#23252a] rounded-xl flex items-center justify-center overflow-hidden shrink-0">
                         <ProductImage src={product.image} name={product.name} />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{product.name}</h3>
-                        <p className="text-sm text-gray-600">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-sm text-[#f7f8f8] truncate">{product.name}</h3>
+                        <p className="text-xs text-[#8a8f98] mt-0.5">
                           Purchased: {new Date(product.orderDate).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <Link
                       href={`/account/reviews/write?productId=${product.id}`}
-                      className="w-full inline-flex items-center justify-center px-4 py-2 bg-minsah-action-primary text-white rounded-lg hover:bg-minsah-action-primary-hover transition"
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer"
                     >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Write Review
+                      <Edit className="w-3.5 h-3.5" />
+                      <span>Write Review</span>
                     </Link>
                   </div>
                 ))}
@@ -347,20 +387,20 @@ export function ReviewsClient({ reviews: initialReviews, reviewableProducts }: R
           </div>
 
           {/* Review Guidelines */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-4">Review Guidelines</h3>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <p className="text-gray-700 text-sm">Be honest and detailed in your review</p>
+          <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl p-5 sm:p-6 shadow-xl space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8a8f98]">Review Guidelines</h3>
+            <div className="space-y-2.5">
+              <div className="flex items-start gap-2.5 text-xs sm:text-sm text-[#c9cdd4]">
+                <Check className="w-4 h-4 text-[#27a644] mt-0.5 shrink-0" />
+                <span>Be honest, detailed, and focus on product performance and results.</span>
               </div>
-              <div className="flex items-start space-x-3">
-                <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <p className="text-gray-700 text-sm">Include information about product quality and results</p>
+              <div className="flex items-start gap-2.5 text-xs sm:text-sm text-[#c9cdd4]">
+                <Check className="w-4 h-4 text-[#27a644] mt-0.5 shrink-0" />
+                <span>Mention your skin type, texture preferences, and packaging condition.</span>
               </div>
-              <div className="flex items-start space-x-3">
-                <X className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <p className="text-gray-700 text-sm">Don&apos;t include personal information</p>
+              <div className="flex items-start gap-2.5 text-xs sm:text-sm text-[#c9cdd4]">
+                <X className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                <span>Avoid personal details, contact numbers, or unrelated delivery issues.</span>
               </div>
             </div>
           </div>

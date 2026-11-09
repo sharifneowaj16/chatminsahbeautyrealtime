@@ -8,7 +8,15 @@ async function getReviewsData(userId: string) {
   const reviews = await prisma.review.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
-    include: {
+    select: {
+      id: true,
+      productId: true,
+      rating: true,
+      title: true,
+      comment: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
       product: {
         select: {
           id: true,
@@ -34,7 +42,9 @@ async function getReviewsData(userId: string) {
       },
     },
     orderBy: { order: { createdAt: 'desc' } },
-    include: {
+    select: {
+      id: true,
+      productId: true,
       order: {
         select: { createdAt: true },
       },
