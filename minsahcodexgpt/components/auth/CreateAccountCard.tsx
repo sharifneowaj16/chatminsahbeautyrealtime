@@ -86,7 +86,7 @@ export function CreateAccountCard({
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. Nusrat Jahan"
-              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white pl-10 pr-4 text-base sm:text-sm font-medium text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 transition"
+              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white pl-10 pr-4 text-base sm:text-sm font-medium text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 focus-visible:outline-none focus-visible:border-[#1c3a13] focus-visible:ring-2 focus-visible:ring-[#1c3a13]/15 transition"
             />
           </div>
         </div>
@@ -108,7 +108,7 @@ export function CreateAccountCard({
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
               placeholder="17XXXXXXXX"
               maxLength={11}
-              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white pl-24 pr-4 text-base sm:text-sm font-semibold text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 transition"
+              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white pl-24 pr-4 text-base sm:text-sm font-semibold text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 focus-visible:outline-none focus-visible:border-[#1c3a13] focus-visible:ring-2 focus-visible:ring-[#1c3a13]/15 transition"
             />
           </div>
           <p className="flex items-center gap-1.5 text-[11px] text-[#5A615D]">
@@ -128,7 +128,7 @@ export function CreateAccountCard({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com (for order invoices)"
-            className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 text-base sm:text-sm font-medium text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 transition"
+            className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 text-base sm:text-sm font-medium text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 focus-visible:outline-none focus-visible:border-[#1c3a13] focus-visible:ring-2 focus-visible:ring-[#1c3a13]/15 transition"
           />
         </div>
 
@@ -144,7 +144,7 @@ export function CreateAccountCard({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Set a password for email login"
-              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 pr-11 text-base sm:text-sm font-medium text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 transition"
+              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 pr-11 text-base sm:text-sm font-medium text-[#181C1A] placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 focus-visible:outline-none focus-visible:border-[#1c3a13] focus-visible:ring-2 focus-visible:ring-[#1c3a13]/15 transition"
             />
             <button
               type="button"

@@ -513,6 +513,16 @@ img {
   outline-offset: 3px;
 }
 
+/* Global Form Fields: suppress outer offset focus outline across all inputs, textareas, and selects */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+}
+
 .minsah-shop-surface {
   background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-panel) 96%, transparent), color-mix(in srgb, var(--color-surface-subtle) 70%, transparent));
   border: 1px solid color-mix(in srgb, var(--color-surface-accent) 90%, transparent);
