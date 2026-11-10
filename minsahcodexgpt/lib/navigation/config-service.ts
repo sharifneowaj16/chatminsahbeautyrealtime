@@ -88,6 +88,7 @@ export function normalizeMobileNavConfig(raw: any): MobileNavigationConfig {
     showDeliverTo: rawHeader.showDeliverTo !== undefined ? Boolean(rawHeader.showDeliverTo) : DEFAULT_MOBILE_HEADER_CONFIG.showDeliverTo,
     showWishlist: rawHeader.showWishlist !== undefined ? Boolean(rawHeader.showWishlist) : DEFAULT_MOBILE_HEADER_CONFIG.showWishlist,
     showCart: rawHeader.showCart !== undefined ? Boolean(rawHeader.showCart) : DEFAULT_MOBILE_HEADER_CONFIG.showCart,
+    showAccount: rawHeader.showAccount !== undefined ? Boolean(rawHeader.showAccount) : DEFAULT_MOBILE_HEADER_CONFIG.showAccount,
     showMenu: rawHeader.showMenu !== undefined ? Boolean(rawHeader.showMenu) : DEFAULT_MOBILE_HEADER_CONFIG.showMenu,
   };
 

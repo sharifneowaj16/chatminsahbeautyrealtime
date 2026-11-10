@@ -27,6 +27,7 @@ export interface MobileHeaderConfig {
   showDeliverTo: boolean;
   showWishlist: boolean;
   showCart: boolean;
+  showAccount: boolean;
   showMenu: boolean;
 }
 
@@ -35,6 +36,7 @@ export const DEFAULT_MOBILE_HEADER_CONFIG: MobileHeaderConfig = {
   showDeliverTo: true,
   showWishlist: false,
   showCart: true,
+  showAccount: false,
   showMenu: true,
 };
 

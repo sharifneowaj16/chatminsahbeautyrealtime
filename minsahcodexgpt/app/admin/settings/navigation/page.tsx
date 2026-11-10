@@ -558,6 +558,12 @@ export default function MobileNavigationAdminPage() {
               value: config.mobileHeader?.showCart ?? true,
             },
             {
+              key: 'showAccount',
+              label: 'Account / প্রোফাইল আইকন',
+              desc: 'টপ হেডারে সাইন-ইন বা মেম্বার প্রোফাইল বাটন',
+              value: config.mobileHeader?.showAccount ?? false,
+            },
+            {
               key: 'showMenu',
               label: 'Hamburger মেনু বাটন',
               desc: 'বাম পাশের মোবাইল সাইড নেভিগেশন ড্রয়ার',
@@ -576,6 +582,7 @@ export default function MobileNavigationAdminPage() {
                       showDeliverTo: prev.mobileHeader?.showDeliverTo ?? true,
                       showWishlist: prev.mobileHeader?.showWishlist ?? false,
                       showCart: prev.mobileHeader?.showCart ?? true,
+                      showAccount: prev.mobileHeader?.showAccount ?? false,
                       showMenu: prev.mobileHeader?.showMenu ?? true,
                       [item.key]: !isChecked,
                     },

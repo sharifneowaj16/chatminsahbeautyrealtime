@@ -67,6 +67,13 @@ export default function SiteHeader() {
     return () => window.removeEventListener('minsah:navigation-config-updated', handleConfigUpdate);
   }, []);
 
+  // Check if all action icons on mobile top header are toggled off
+  const allMobileIconsOff =
+    !mobileHeader.showWishlist &&
+    !mobileHeader.showCart &&
+    !mobileHeader.showAccount &&
+    !mobileHeader.showMenu;
+
   // Derive display label from saved location
   const deliveryDisplayCity = savedLocation?.area || savedLocation?.city || 'Dhaka';
 
@@ -163,7 +170,7 @@ export default function SiteHeader() {
         <div className="header-container overflow-x-hidden w-full max-w-[1440px] mx-auto px-2 sm:px-4 lg:px-8">
           <div className="header-main flex items-center justify-between w-full max-w-full overflow-hidden">
             {/* Left: Brand Logo & Deliver-To */}
-            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink">
+            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink-0">
               {/* Brand Logo */}
               <Link
                 href="/"
@@ -246,8 +253,44 @@ export default function SiteHeader() {
               </DynamicSearchWrapper>
             </div>
 
+            {/* Dynamic Mobile Search Area: Shifted to Top Row when all mobile action icons are OFF */}
+            {allMobileIconsOff && (
+              <div className="search-area-mobile flex-1 min-w-0 mx-1.5 sm:mx-2 md:hidden">
+                <DynamicSearchWrapper>
+                  <button
+                    type="button"
+                    onClick={() => setMobileSearchOpen(true)}
+                    className="mobile-search-trigger-btn w-full !h-[38px] !min-h-[38px] !px-3 !py-0"
+                    aria-label="Search 100% genuine products"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-[#D4F6A2] shrink-0"
+                        aria-hidden="true"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                      <span className="search-placeholder-text truncate text-xs">
+                        Search skincare, makeup...
+                      </span>
+                    </div>
+                    <span className="mobile-search-kbd text-[10px] px-1.5 py-0.5">/</span>
+                  </button>
+                </DynamicSearchWrapper>
+              </div>
+            )}
+
             {/* Right Action Controls */}
-            <div className="header-actions shrink-0 flex items-center gap-1 sm:gap-2">
+            <div className={`header-actions shrink-0 flex items-center gap-1 sm:gap-2 ${allMobileIconsOff ? 'hidden md:flex' : ''}`}>
               {/* Wishlist Link (Desktop & Tablet, plus mobile if toggled) */}
               <Link
                 data-mobile-hidden={!mobileHeader.showWishlist ? 'true' : undefined}
@@ -283,26 +326,32 @@ export default function SiteHeader() {
                 )}
               </button>
 
-              {/* Sign In / VIP Club Profile Pill (Moved to Right of Cart for Optimal Reach) */}
+              {/* Sign In / VIP Club Profile Pill (Desktop/Tablet pill, Mobile 44x44 icon button when showAccount is on) */}
               {!loading && user ? (
                 <Link
-                  className="header-control vip-profile-pill hidden sm:inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
+                  data-mobile-hidden={!mobileHeader.showAccount ? 'true' : undefined}
+                  className={`header-control vip-profile-pill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${
+                    mobileHeader.showAccount ? 'inline-flex' : 'hidden sm:inline-flex'
+                  } max-sm:w-11 max-sm:h-11 max-sm:min-w-[44px] max-sm:min-h-[44px] max-sm:p-0 max-sm:justify-center items-center gap-1.5`}
                   href="/account"
                   aria-label="Minsah VIP Club Profile"
                 >
-                  <VipCrown2LineIcon size={16} className="text-amber-300 shrink-0" />
-                  <span className="text-xs font-bold text-[#EAF7D8] truncate max-w-[110px]">
+                  <VipCrown2LineIcon size={18} className="text-amber-300 shrink-0" />
+                  <span className="hidden sm:inline text-xs font-bold text-[#EAF7D8] truncate max-w-[110px]">
                     {user.firstName || 'VIP Club'}
                   </span>
                 </Link>
               ) : (
                 <button
                   type="button"
+                  data-mobile-hidden={!mobileHeader.showAccount ? 'true' : undefined}
                   onClick={() => setAuthModalOpen(true)}
-                  className="header-control signin hidden sm:inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402]"
+                  className={`header-control signin focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${
+                    mobileHeader.showAccount ? 'inline-flex' : 'hidden sm:inline-flex'
+                  } max-sm:w-11 max-sm:h-11 max-sm:min-w-[44px] max-sm:min-h-[44px] max-sm:p-0 max-sm:justify-center items-center gap-1.5`}
                   aria-label="Sign in to your account with Phone OTP"
                 >
-                  <UserLineIcon size={17} className="accent-icon text-[#D4F6A2]" />
+                  <UserLineIcon size={18} className="accent-icon text-[#D4F6A2]" />
                   <span className="hidden lg:inline text-xs font-semibold">Sign In</span>
                 </button>
               )}
@@ -341,39 +390,41 @@ export default function SiteHeader() {
             </div>
           </div>
 
-          {/* Sub-Row: Seamless Full-Width Touch Search Bar (Mobile < 768px) */}
-          <div className="mobile-search-subrow md:hidden">
-            <DynamicSearchWrapper>
-              <button
-                type="button"
-                onClick={() => setMobileSearchOpen(true)}
-                className="mobile-search-trigger-btn w-full"
-                aria-label="Search 100% genuine products"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-[#D4F6A2] shrink-0"
-                    aria-hidden="true"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </svg>
-                  <span className="search-placeholder-text">
-                    Search genuine skincare, makeup & more...
-                  </span>
-                </div>
-                <span className="mobile-search-kbd">/</span>
-              </button>
-            </DynamicSearchWrapper>
-          </div>
+          {/* Sub-Row: Seamless Full-Width Touch Search Bar (Mobile < 768px) - Only rendered when action icons are active */}
+          {!allMobileIconsOff && (
+            <div className="mobile-search-subrow md:hidden">
+              <DynamicSearchWrapper>
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen(true)}
+                  className="mobile-search-trigger-btn w-full"
+                  aria-label="Search 100% genuine products"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-[#D4F6A2] shrink-0"
+                      aria-hidden="true"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </svg>
+                    <span className="search-placeholder-text">
+                      Search genuine skincare, makeup & more...
+                    </span>
+                  </div>
+                  <span className="mobile-search-kbd">/</span>
+                </button>
+              </DynamicSearchWrapper>
+            </div>
+          )}
         </div>
       </header>
 
