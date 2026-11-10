@@ -11,6 +11,7 @@ assert.equal(
 
 // Test 2: normalizeMobileNavConfig extracts showAccount properly
 const normalizedDefault = normalizeMobileNavConfig({});
+assert.ok(normalizedDefault.mobileHeader, 'mobileHeader must exist on normalizedDefault');
 assert.equal(
   normalizedDefault.mobileHeader.showAccount,
   false,
@@ -27,6 +28,7 @@ const normalizedCustom = normalizeMobileNavConfig({
     showMenu: false,
   },
 });
+assert.ok(normalizedCustom.mobileHeader, 'mobileHeader must exist on normalizedCustom');
 assert.equal(
   normalizedCustom.mobileHeader.showAccount,
   true,
