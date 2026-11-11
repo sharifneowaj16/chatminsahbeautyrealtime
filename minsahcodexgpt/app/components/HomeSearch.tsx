@@ -521,22 +521,22 @@ export default function HomeSearch({
         role="dialog"
         aria-modal="true"
         aria-label="Search catalog"
-        className="fixed inset-0 z-[180] flex flex-col bg-gradient-to-b from-white via-[#f7faf8] to-[#edf4ef] text-slate-900 animate-in fade-in duration-200"
+        className="fixed inset-0 h-[100dvh] w-full z-[180] flex flex-col bg-[#FAF9F6] text-slate-900 animate-in fade-in duration-200 overflow-hidden"
       >
-        {/* Top Header Bar */}
-        <div className="flex items-center gap-2 border-b border-[#1c3a13]/15 px-3 py-2.5 bg-white/95 backdrop-blur-md shadow-xs">
+        {/* Top Header Bar: Luxury Brand Green */}
+        <div className="flex items-center gap-2.5 px-3 py-2.5 bg-gradient-to-r from-[#062402] via-[#153410] to-[#062402] border-b border-[#D4F6A2]/20 shadow-md shrink-0">
           <button
             type="button"
             onClick={onCloseMobile}
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#1c3a13]/5 text-[#1c3a13] hover:bg-[#1c3a13]/10 hover:text-[#1c3a13] transition active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#EAF7D8] hover:bg-white/20 hover:text-white transition active:scale-95 border border-white/10"
             aria-label="Back to page"
           >
             <ArrowLeft size={19} />
           </button>
 
           {/* Search Input Box */}
-          <div className="flex-1 flex items-center h-11 rounded-xl border border-[#1c3a13]/25 bg-[#f4f7f4] px-3 focus-within:border-[#1c3a13] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#1c3a13]/15 transition shadow-2xs">
-            <Search size={16} className="text-[#1c3a13] flex-shrink-0 mr-2" />
+          <div className="flex-1 flex items-center h-10 rounded-full bg-white px-3.5 focus-within:ring-2 focus-within:ring-[#D4F6A2] transition shadow-xs border border-white/20">
+            <Search size={16} className="text-[#153410] shrink-0 mr-2" />
             <input
               ref={inputRef}
               type="text"
@@ -544,13 +544,13 @@ export default function HomeSearch({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleInputKeyDown}
               placeholder="Search skincare, serums, makeup..."
-              className="w-full bg-transparent text-base text-slate-900 placeholder:text-stone-400 focus:outline-none touch-manipulation font-medium"
+              className="w-full bg-transparent text-sm text-slate-900 placeholder:text-stone-400 focus:outline-none touch-manipulation font-medium"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="p-1 rounded-full text-stone-400 hover:text-stone-700"
+                className="p-1 rounded-full text-stone-400 hover:text-stone-700 transition"
                 aria-label="Clear text"
               >
                 <X size={15} />
@@ -562,8 +562,10 @@ export default function HomeSearch({
           <button
             type="button"
             onClick={startVoiceSearch}
-            className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#1c3a13]/15 transition ${
-              isListening ? 'bg-amber-500 text-black animate-pulse' : 'bg-[#1c3a13]/5 text-[#1c3a13] hover:bg-[#1c3a13]/10'
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95 border ${
+              isListening
+                ? 'bg-[#D4F6A2] text-[#062402] border-[#D4F6A2] animate-pulse shadow-sm'
+                : 'bg-white/10 text-[#D4F6A2] border-[#D4F6A2]/25 hover:bg-white/20'
             }`}
             aria-label="Voice search"
           >
@@ -571,8 +573,8 @@ export default function HomeSearch({
           </button>
         </div>
 
-        {/* Scrollable Body: Zero Keyboard Overlap */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-5">
+        {/* Scrollable Body: 100% Solid Background, Zero Keyboard Overlap */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-5 bg-[#FAF9F6]">
           {/* Recent Searches (If any) */}
           {recentSearches.length > 0 && normalizedQuery.length < 2 && (
             <div className="space-y-2">
@@ -767,11 +769,11 @@ export default function HomeSearch({
 
         {/* Sticky Bottom Search CTA */}
         {normalizedQuery.length >= 2 && (
-          <div className="border-t border-[#1c3a13]/15 p-3 bg-white/95 backdrop-blur-md">
+          <div className="border-t border-[#1c3a13]/15 p-3 bg-white shadow-lg shrink-0">
             <button
               type="button"
               onClick={() => navigateToSearch()}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#1c3a13] via-[#244919] to-[#1c3a13] hover:opacity-95 text-white font-bold text-sm shadow-md active:scale-95 transition"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#062402] via-[#153410] to-[#062402] hover:opacity-95 text-[#D4F6A2] font-bold text-sm shadow-md active:scale-95 transition"
             >
               <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
               <ArrowRight size={16} />

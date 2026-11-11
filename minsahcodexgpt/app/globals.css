@@ -1244,7 +1244,7 @@ select:focus {
 /* Mobile Search Sub-Row */
 .mobile-search-subrow {
   width: 100%;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   padding-top: 2px;
 }
 
@@ -1500,7 +1500,7 @@ select:focus {
 /* Category rail styles */
 .mb-category-strip {
   position: sticky;
-  top: 56px;
+  top: var(--site-header-actual-height, 56px);
   z-index: 40;
   width: 100%;
   height: var(--rail-h);
@@ -1810,14 +1810,14 @@ select:focus {
   }
   .menu-btn { display: inline-flex; }
   .mobile-search-btn { display: inline-flex; }
-  .mb-category-strip { top: 52px; }
+  .mb-category-strip { top: var(--site-header-actual-height, 52px); }
 }
 
 @media (max-width: 767px) {
   :root {
     --cell: 76px;
-    --rail-h: 76px;
-    --item-h: 70px;
+    --rail-h: 74px;
+    --item-h: 68px;
     --indicator-h: 3px;
     --active-bg-w: 56px;
     --active-bg-offset: 10px;
@@ -1827,7 +1827,15 @@ select:focus {
     height: var(--rail-h);
     padding-left: 4px;
     padding-top: 2px;
-    top: 104px;
+    top: var(--site-header-actual-height, 96px);
+  }
+
+  /* Seamless responsive fallback: eliminates sticky gap in both single-row and dual-row mobile header */
+  .site-header[data-all-icons-off="true"] ~ .mb-category-strip {
+    top: var(--site-header-actual-height, 48px);
+  }
+  .site-header[data-all-icons-off="false"] ~ .mb-category-strip {
+    top: var(--site-header-actual-height, 96px);
   }
   .mb-category-scroll { height: calc(var(--rail-h) - 4px); padding-right: 4px; }
   .mb-category-cell { height: 76px; }

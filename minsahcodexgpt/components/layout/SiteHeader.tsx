@@ -46,6 +46,7 @@ export default function SiteHeader() {
   const [wishlistCount, setWishlistCount] = useState<number>(0);
   const [mobileHeader, setMobileHeader] = useState<MobileHeaderConfig>(DEFAULT_MOBILE_HEADER_CONFIG);
   const deliveryBtnRef = useRef<HTMLButtonElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
   // Sync mobile header decluttering config from server / live events
   useEffect(() => {
@@ -73,6 +74,32 @@ export default function SiteHeader() {
     !mobileHeader.showCart &&
     !mobileHeader.showAccount &&
     !mobileHeader.showMenu;
+
+  // Dynamically calculate and sync mobile site header height to CSS variable
+  // This eliminates hardcoded gaps for CategoryRail regardless of whether mobile icons are ON or OFF
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.offsetHeight;
+        document.documentElement.style.setProperty('--site-header-actual-height', `${height}px`);
+        document.documentElement.style.setProperty('--minsah-site-header-height', `${height}px`);
+      }
+    };
+
+    updateHeaderHeight();
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && headerRef.current) {
+      ro = new ResizeObserver(() => updateHeaderHeight());
+      ro.observe(headerRef.current);
+    }
+
+    window.addEventListener('resize', updateHeaderHeight);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', updateHeaderHeight);
+    };
+  }, [allMobileIconsOff, mobileHeader]);
 
   // Derive display label from saved location
   const deliveryDisplayCity = savedLocation?.area || savedLocation?.city || 'Dhaka';
@@ -159,7 +186,12 @@ export default function SiteHeader() {
 
   return (
     <>
-      <header className="site-header overflow-x-hidden w-full max-w-full" role="banner">
+      <header
+        ref={headerRef}
+        data-all-icons-off={allMobileIconsOff ? 'true' : 'false'}
+        className="site-header overflow-x-hidden w-full max-w-full"
+        role="banner"
+      >
         <style>{`
           @media (max-width: 767px) {
             .site-header [data-mobile-hidden="true"] {
