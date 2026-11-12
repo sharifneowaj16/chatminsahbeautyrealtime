@@ -69,6 +69,7 @@ import { ProductOfferDateRangePickers } from '@/components/admin/products/shippi
 import { ProductImportJsonEditor } from '@/components/admin/products/import/ProductImportJsonEditor';
 import { ProductImportStatsBar } from '@/components/admin/products/import/ProductImportStatsBar';
 import { ProductImportBatchActions } from '@/components/admin/products/import/ProductImportBatchActions';
+import { ProductImportAIPromptTemplate } from '@/components/admin/products/import/ProductImportAIPromptTemplate';
 
 const ADMIN_SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_SITE_URL).replace(/\/$/, '');
 const canonicalProductUrl = (slug: string) => slug.trim() ? `${ADMIN_SITE_URL}/products/${slug.trim()}` : undefined;
@@ -390,7 +391,16 @@ export default function ImportPage() {
       </div>
 
       {step === 'paste' ? (
-        <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm space-y-4">
+        <div className="space-y-4">
+          {/* AI Prompt Template — Copy & give to any AI */}
+          <ProductImportAIPromptTemplate
+            onInsertResponse={(json) => {
+              setPasteText(json);
+              setParseError('');
+            }}
+          />
+
+          <div className="bg-[#161824] rounded-xl border border-[#232636] p-6 shadow-sm space-y-4">
           <ProductImportJsonEditor
             value={pasteText}
             onChange={(val) => {
@@ -411,6 +421,7 @@ export default function ImportPage() {
               setParseError('');
             }}
           />
+        </div>
         </div>
       ) : (
         <div className="space-y-6">

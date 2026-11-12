@@ -50,3 +50,5 @@ scratch/
 /playwright/.cache/
 /playwright/.auth/
 .playwright-mcp/
+
+.taste-skill/
