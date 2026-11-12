@@ -154,32 +154,39 @@ export default function SiteHeader() {
     };
   }, []);
 
-  // Global keyboard shortcut '/' to focus search input
+  // Unified global keyboard shortcut (⌘ + K / Ctrl + K / '/') for both mobile and desktop
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === '/' &&
-        !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '') &&
-        !(document.activeElement as HTMLElement)?.isContentEditable
-      ) {
-        e.preventDefault();
-        // Check if on mobile: open mobile search overlay
-        if (window.innerWidth < 768) {
-          setMobileSearchOpen(true);
-        } else {
-          const searchInput = document.querySelector<HTMLInputElement>(
-            '.search-area input[type="text"], .search-area input[type="search"], .search-area-tablet input'
-          );
-          if (searchInput) {
-            searchInput.focus();
-            searchInput.select();
-          }
-        }
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        !!target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+
+      const commandK = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+      const slash = event.key === '/' && !typing;
+      if (!commandK && !slash) return;
+
+      event.preventDefault();
+
+      if (window.innerWidth < 768) {
+        setMobileSearchOpen(true);
+        return;
       }
+
+      const input = Array.from(
+        document.querySelectorAll<HTMLInputElement>(
+          '.search-area input, .search-area-tablet input'
+        )
+      ).find((el) => el.getClientRects().length > 0);
+
+      input?.focus();
+      input?.select();
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   const closeMenu = () => setMenuOpen(false);

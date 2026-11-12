@@ -136,8 +136,10 @@ export default function HomeSearch({
   const [isAnyDropdownOpen, setIsAnyDropdownOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastRequestedQueryRef = useRef('');
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties | null>(null);
 
   // Safe SSR hydration guard (prevents #418 mismatches on iOS/WebKit)
   useEffect(() => {
@@ -417,7 +419,12 @@ export default function HomeSearch({
     if (isMobileFullScreen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const target = event.target as Node | null;
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(target) &&
+        !panelRef.current?.contains(target)
+      ) {
         setShowSuggestions(false);
         setActiveIndex(-1);
       }
@@ -427,18 +434,39 @@ export default function HomeSearch({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMobileFullScreen]);
 
-  // Global [⌘ + K] / [Ctrl + K] keyboard shortcut
+  // Position desktop suggestions panel on document.body
   useEffect(() => {
-    const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        inputRef.current?.focus();
-        setShowSuggestions(true);
-      }
+    if (!hasSuggestionsPanel || isMobileFullScreen) {
+      setPanelStyle(null);
+      return;
+    }
+
+    const place = () => {
+      const anchor = searchRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const width = Math.min(660, window.innerWidth - 16);
+      const left = Math.min(
+        Math.max(8, rect.left + rect.width / 2 - width / 2),
+        window.innerWidth - width - 8
+      );
+      setPanelStyle({
+        position: 'fixed',
+        top: Math.round(rect.bottom + 6),
+        left: Math.round(left),
+        width,
+        zIndex: 220,
+      });
     };
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
+
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [hasSuggestionsPanel, isMobileFullScreen, searchQuery]);
 
   // Fetch trending suggestions on mount
   useEffect(() => {
@@ -886,11 +914,14 @@ export default function HomeSearch({
       )}
 
       {/* ================= DESKTOP COMMAND PALETTE OVERLAY (Theme 5: Brand Green & Crisp White) ================= */}
-      {hasSuggestionsPanel && (
-        <div
-          className="search-desktop-split absolute left-0 top-[48px] z-50 w-full min-w-[340px] md:min-w-[620px] lg:min-w-[660px] overflow-hidden rounded-2xl border-2 border-[#1c3a13]/25 bg-gradient-to-b from-white via-[#fcfdfc] to-[#f4f7f4] text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-          role="presentation"
-        >
+      {hasSuggestionsPanel && panelStyle && mounted
+        ? createPortal(
+            <div
+              ref={panelRef}
+              className="search-desktop-split overflow-hidden rounded-2xl border-2 border-[#1c3a13]/25 bg-gradient-to-b from-white via-[#fcfdfc] to-[#f4f7f4] text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+              style={panelStyle}
+              role="presentation"
+            >
           {/* Top Brand Accent Bar */}
           <div className="h-1.5 w-full bg-gradient-to-r from-[#1c3a13] via-[#4A7C59] to-[#1c3a13]" />
 
@@ -1273,8 +1304,10 @@ export default function HomeSearch({
               </div>
             </div>
           )}
-        </div>
-      )}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
