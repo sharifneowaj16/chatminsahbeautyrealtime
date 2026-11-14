@@ -28,6 +28,7 @@ function safeRecord(record: Awaited<ReturnType<typeof listMetaEventOutbox>>[numb
     dispatchedAt: record.dispatchedAt?.toISOString() ?? null,
     processingAt: record.processingAt?.toISOString() ?? null,
     sentAt: record.sentAt?.toISOString() ?? null,
+    safePayload: record.safePayload ?? null,
     failure: projectMetaAdminFailure(record.lastError),
     suppressReason: safeMetaAdminText(record.suppressReason, 240),
     createdAt: record.createdAt.toISOString(),

@@ -19,6 +19,7 @@ const REFERRER_COOKIE = 'mb_referrer';
 const LAST_NON_GATEWAY_REFERRER_COOKIE = 'mb_last_non_gateway_referrer';
 const VISITOR_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
 const FBC_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
+const FBP_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
 const ATTRIBUTION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const TIKTOK_CLICK_ID_MAX_AGE_SECONDS = resolveTikTokClickIdMaxAgeSeconds(process.env.NEXT_PUBLIC_TIKTOK_CLICK_ID_MAX_AGE_DAYS);
 const ATTRIBUTION_PARAMS = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','campaign_id','adset_id','ad_id','placement','offer_version','ab_variant','coupon_code','free_delivery_threshold','landing_offer','campaign_source_url'] as const;
@@ -45,6 +46,14 @@ function ensureVisitorId() {
   const generated = normalizeMetaExternalIdValue(typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `vid_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   if (!generated) return undefined;
   setCookie(VISITOR_COOKIE, generated, VISITOR_MAX_AGE_SECONDS);
+  return generated;
+}
+function ensureFbpCookie() {
+  if (!hasCurrentExplicitGrant()) return undefined;
+  const existing = getCookieValue('_fbp');
+  if (existing) return existing;
+  const generated = `fb.1.${Date.now()}.${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+  setCookie('_fbp', generated, FBP_MAX_AGE_SECONDS);
   return generated;
 }
 function sanitizeUrl(rawUrl: string | undefined) {
@@ -119,6 +128,7 @@ export default function AttributionCookieCapture() {
   useEffect(() => {
     if (typeof window === 'undefined' || !hasCurrentExplicitGrant()) return;
     const visitorId = ensureVisitorId();
+    ensureFbpCookie();
     const searchParams = new URLSearchParams(window.location.search);
     const paymentReturn = isPaymentReturnPath(window.location.pathname);
     captureTikTokClickId(searchParams);

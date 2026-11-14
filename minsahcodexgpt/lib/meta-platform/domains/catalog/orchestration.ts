@@ -139,6 +139,7 @@ function catalogIdentity(input: { productId: string; productSku: string; variant
 }
 
 export async function buildCanonicalCatalogPlan(options: { inventoryOnly?: boolean; productIds?: readonly string[]; now?: Date } = {}) {
+  assertCanonicalCatalogSkuPolicy();
   const config = getMetaBusinessConfig();
   const productFilter = options.productIds && options.productIds.length > 0
     ? { id: { in: [...options.productIds] } }
@@ -158,7 +159,27 @@ export async function buildCanonicalCatalogPlan(options: { inventoryOnly?: boole
   const invalidItems: InvalidCatalogItem[] = [];
   const retailerIds = new Set<string>();
   for (const product of products as unknown as CatalogProductSource[]) {
-    const mappedItems = mapProductToCatalogItems({ product, resolveIdentity: catalogIdentity, siteUrl: config.siteUrl, currency: 'BDT', now: options.now });
+    let mappedItems: ReturnType<typeof mapProductToCatalogItems>;
+    try {
+      mappedItems = mapProductToCatalogItems({
+        product,
+        resolveIdentity: catalogIdentity,
+        siteUrl: config.siteUrl,
+        currency: 'BDT',
+        now: options.now,
+      });
+    } catch (error) {
+      const rawProduct = product as unknown as { id?: string; sku?: string };
+      invalidItems.push({
+        retailerId: rawProduct.sku?.trim() || rawProduct.id || 'UNKNOWN_RETAILER_ID',
+        sourceType: 'PRODUCT',
+        sourceId: rawProduct.id || 'UNKNOWN_SOURCE_ID',
+        errors: [error instanceof Error ? error.message : 'META_CATALOG_SKU_IDENTITY_UNRESOLVED'],
+        warnings: [],
+      });
+      continue;
+    }
+
     for (const mapped of mappedItems) {
       if (retailerIds.has(mapped.item.retailerId)) mapped.validation.errors.push('Duplicate retailer ID in catalog batch.');
       retailerIds.add(mapped.item.retailerId);

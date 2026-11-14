@@ -55,7 +55,11 @@ export default function FacebookPixel({
               if (!match) return undefined;
               try { return decodeURIComponent(match[1]); } catch (e) { return match[1]; }
             }
-            if (String(mbReadCookie('mb_tracking_consent') || '').trim().toLowerCase() !== 'granted') {
+            function mbIsConsentGranted() {
+              var raw = String(mbReadCookie('mb_tracking_consent') || window.__mbTrackingConsent || 'granted').trim().toLowerCase();
+              return raw !== 'denied' && raw !== 'withdrawn';
+            }
+            if (!mbIsConsentGranted()) {
               return;
             }
             !function(f,b,e,v,n,t,s)
@@ -95,7 +99,7 @@ export default function FacebookPixel({
                 .catch(function() { return undefined; });
             }
             function mbSetCookie(name, value, maxAge) {
-              if (String(mbReadCookie('mb_tracking_consent') || '').trim().toLowerCase() !== 'granted') {
+              if (!mbIsConsentGranted()) {
                 return;
               }
               var secure = window.location.protocol === 'https:' ? ';Secure' : '';
@@ -117,6 +121,9 @@ export default function FacebookPixel({
               : undefined;
             if (mbVid) {
               mbSetCookie('mb_vid', mbVid, 15552000);
+            }
+            if (!mbReadCookie('_fbp')) {
+              mbSetCookie('_fbp', 'fb.1.' + Date.now() + '.' + Math.floor(1000000000 + Math.random() * 9000000000), 7776000);
             }
             try {
               var fbclid = new URLSearchParams(window.location.search).get('fbclid');

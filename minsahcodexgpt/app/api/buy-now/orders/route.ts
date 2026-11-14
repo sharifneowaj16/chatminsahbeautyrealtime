@@ -1,3 +1,5 @@
+import { snapshotOrderAttributionInTransaction, type AttributionDb } from '@/lib/attribution/repository';
+import { triggerEventDrivenCatalogSync } from '@/lib/meta-platform/domains/catalog/event-sync';
 import { NextRequest, NextResponse } from 'next/server';
 import { recordProductOrderCreatedInTransaction } from '@/lib/analytics/product-metrics';
 import prisma from '@/lib/prisma';
@@ -334,6 +336,24 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      await snapshotOrderAttributionInTransaction(tx as unknown as AttributionDb, {
+        orderId: createdOrder.id,
+        customerId: userId,
+        visitorId: orderAttribution.anonymousVisitorId,
+        fbp: orderAttribution.fbp,
+        fbc: orderAttribution.fbc,
+        utmSource: orderAttribution.utmSource,
+        utmMedium: orderAttribution.utmMedium,
+        utmCampaign: orderAttribution.utmCampaign,
+        utmTerm: orderAttribution.utmTerm,
+        utmContent: orderAttribution.utmContent,
+        landingPage: orderAttribution.campaignSourceUrl ?? orderAttribution.firstLandingUrl,
+        consentState: orderAttribution.trackingConsent,
+        total: total.toString(),
+        currency: 'BDT',
+        createdAt: createdOrder.createdAt,
+      });
+
       if (isOnlinePaymentOrder) {
         await reserveOnlineOrderStockInTransaction(
           tx,
@@ -366,6 +386,14 @@ export async function POST(request: NextRequest) {
 
       return createdOrder;
     });
+
+    const affectedProductIds = orderItems.map((item) => item.productId).filter(Boolean);
+    if (affectedProductIds.length > 0) {
+      void triggerEventDrivenCatalogSync({
+        productIds: affectedProductIds,
+        reason: 'buy_now_order_completed',
+      });
+    }
 
     // Pathao delivery is deferred until phone confirmation via Telegram/Admin callback.
     if (!isOnlinePaymentOrder) {

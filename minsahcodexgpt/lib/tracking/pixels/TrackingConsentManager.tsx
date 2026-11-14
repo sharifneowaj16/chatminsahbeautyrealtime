@@ -5,14 +5,19 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   clearNonEssentialTrackingStorage,
+  CURRENT_TRACKING_CONSENT_VERSION,
   getClientTrackingConsent,
-  syncClientTrackingConsentSignals,
+  setClientTrackingConsent,
   TRACKING_CONSENT_COOKIE,
+  TRACKING_CONSENT_MAX_AGE_SECONDS,
+  TRACKING_CONSENT_VERSION_COOKIE,
   type TrackingConsentState,
 } from '@/lib/tracking/tracking-consent';
 
 declare global {
-  interface Window { __mbTrackingConsent?: 'granted' | 'denied'; }
+  interface Window {
+    __mbTrackingConsent?: 'granted' | 'denied';
+  }
 }
 
 function getEffectiveStoredConsent(): Exclude<TrackingConsentState, 'withdrawn'> {
@@ -37,10 +42,18 @@ export function TrackingConsentModeScript() {
             var value = match ? match[1] : null;
             if (!value) { try { value = window.localStorage.getItem('${TRACKING_CONSENT_COOKIE}'); } catch (e) {} }
             try { value = decodeURIComponent(value || ''); } catch (e) {}
-            if (String(value).trim().toLowerCase() === 'denied') return 'denied';
+            var normalized = String(value || '').trim().toLowerCase();
+            if (normalized === 'denied' || normalized === 'withdrawn') return 'denied';
             return 'granted';
           }
           var mbInitialConsent = mbReadStoredTrackingConsent();
+          var secure = window.location.protocol === 'https:' ? ';Secure' : '';
+          document.cookie = '${TRACKING_CONSENT_COOKIE}=' + encodeURIComponent(mbInitialConsent) + ';max-age=${TRACKING_CONSENT_MAX_AGE_SECONDS};path=/;SameSite=Lax' + secure;
+          document.cookie = '${TRACKING_CONSENT_VERSION_COOKIE}=${CURRENT_TRACKING_CONSENT_VERSION};max-age=${TRACKING_CONSENT_MAX_AGE_SECONDS};path=/;SameSite=Lax' + secure;
+          try {
+            window.localStorage.setItem('${TRACKING_CONSENT_COOKIE}', mbInitialConsent);
+            window.localStorage.setItem('${TRACKING_CONSENT_VERSION_COOKIE}', '${CURRENT_TRACKING_CONSENT_VERSION}');
+          } catch (e) {}
           gtag('consent', 'default', {
             ad_storage: mbInitialConsent,
             analytics_storage: mbInitialConsent,
@@ -62,7 +75,7 @@ export function TrackingConsentBanner() {
   useEffect(() => {
     if (pathname?.startsWith('/admin')) return;
     const effective = getEffectiveStoredConsent();
-    syncClientTrackingConsentSignals(effective === 'granted' ? 'granted' : 'denied');
+    setClientTrackingConsent(effective === 'granted' ? 'granted' : 'denied');
     if (effective !== 'granted') {
       clearNonEssentialTrackingStorage();
     }

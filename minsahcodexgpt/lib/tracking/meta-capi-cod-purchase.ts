@@ -52,6 +52,11 @@ function normalizeEmail(email?: string | null) {
   return normalized || null;
 }
 
+function normalizePiiTextValue(value?: string | null) {
+  const normalized = value?.trim().toLowerCase().replace(/\s+/g, ' ');
+  return normalized || null;
+}
+
 function normalizeBangladeshPhone(phone?: string | null) {
   if (!phone) return null;
 
@@ -61,11 +66,35 @@ function normalizeBangladeshPhone(phone?: string | null) {
     digits = digits.slice(2);
   }
 
-  if (digits.startsWith('8801') && digits.length === 13) return `+${digits}`;
-  if (digits.startsWith('01') && digits.length === 11) return `+88${digits}`;
-  if (digits.startsWith('1') && digits.length === 10) return `+880${digits}`;
+  // Meta CAPI Specification: digits only with country code (880...), NO leading '+' sign
+  if (digits.startsWith('8801') && digits.length === 13) return digits;
+  if (digits.startsWith('01') && digits.length === 11) return `88${digits}`;
+  if (digits.startsWith('1') && digits.length === 10) return `880${digits}`;
 
-  return null;
+  return digits.length >= 8 && digits.length <= 15 ? digits : null;
+}
+
+function buildHashedPurchaseAddressData(shippingAddress?: {
+  firstName?: string | null;
+  lastName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+} | null) {
+  const fn = normalizePiiTextValue(shippingAddress?.firstName);
+  const ln = normalizePiiTextValue(shippingAddress?.lastName);
+  const ct = normalizePiiTextValue(shippingAddress?.city);
+  const st = normalizePiiTextValue(shippingAddress?.state);
+  const zp = normalizePiiTextValue(shippingAddress?.postalCode);
+
+  return {
+    ...(fn && { fn: sha256(fn) }),
+    ...(ln && { ln: sha256(ln) }),
+    ...(ct && { ct: sha256(ct) }),
+    ...(st && { st: sha256(st) }),
+    ...(zp && { zp: sha256(zp) }),
+    country: sha256('bd'),
+  };
 }
 
 function toPrismaJson(value: unknown) {
@@ -441,7 +470,16 @@ export async function sendCodPurchaseToMeta(params: {
     where: { id: orderId },
     include: {
       user: true,
-      shippingAddress: { select: { phone: true } },
+      shippingAddress: {
+        select: {
+          firstName: true,
+          lastName: true,
+          phone: true,
+          city: true,
+          state: true,
+          postalCode: true,
+        },
+      },
       items: { include: { product: true, variant: true } },
     },
   });
@@ -515,11 +553,14 @@ export async function sendCodPurchaseToMeta(params: {
   }
 
   const normalizedEmail = normalizeEmail(order.user.email);
-  const normalizedPhone = normalizeBangladeshPhone(order.user.phone);
+  const normalizedPhone =
+    normalizeBangladeshPhone(order.shippingAddress?.phone) ??
+    normalizeBangladeshPhone(order.user.phone);
   const emailHash = normalizedEmail ? sha256(normalizedEmail) : undefined;
   const phoneHash = normalizedPhone ? sha256(normalizedPhone) : undefined;
   const normalizedExternalId = normalizeMetaExternalId(order.externalId, 'visitor');
   const externalIdHash = normalizedExternalId ? sha256(normalizedExternalId) : undefined;
+  const hashedAddressData = buildHashedPurchaseAddressData(order.shippingAddress);
 
   const catalogItems = order.items.map((item) => ({
     ...item,
@@ -568,6 +609,7 @@ export async function sendCodPurchaseToMeta(params: {
           ...(emailHash && { em: emailHash }),
           ...(phoneHash && { ph: phoneHash }),
           ...(externalIdHash && { external_id: externalIdHash }),
+          ...hashedAddressData,
           ...(order.fbp && { fbp: order.fbp }),
           ...(order.fbc && { fbc: order.fbc }),
           ...(order.customerIp && { client_ip_address: order.customerIp }),
@@ -645,7 +687,16 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
     where: { id: orderId },
     include: {
       user: true,
-      shippingAddress: { select: { phone: true } },
+      shippingAddress: {
+        select: {
+          firstName: true,
+          lastName: true,
+          phone: true,
+          city: true,
+          state: true,
+          postalCode: true,
+        },
+      },
       items: { include: { product: true, variant: true } },
     },
   });
@@ -723,11 +774,14 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
   }
 
   const normalizedEmail = normalizeEmail(order.user.email);
-  const normalizedPhone = normalizeBangladeshPhone(order.user.phone);
+  const normalizedPhone =
+    normalizeBangladeshPhone(order.shippingAddress?.phone) ??
+    normalizeBangladeshPhone(order.user.phone);
   const emailHash = normalizedEmail ? sha256(normalizedEmail) : undefined;
   const phoneHash = normalizedPhone ? sha256(normalizedPhone) : undefined;
   const normalizedExternalId = normalizeMetaExternalId(order.externalId, 'visitor');
   const externalIdHash = normalizedExternalId ? sha256(normalizedExternalId) : undefined;
+  const hashedAddressData = buildHashedPurchaseAddressData(order.shippingAddress);
 
   const catalogItems = order.items.map((item) => ({
     ...item,
@@ -829,6 +883,7 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
           ...(emailHash && { em: emailHash }),
           ...(phoneHash && { ph: phoneHash }),
           ...(externalIdHash && { external_id: externalIdHash }),
+          ...hashedAddressData,
           ...(order.fbp && { fbp: order.fbp }),
           ...(order.fbc && { fbc: order.fbc }),
           ...(order.customerIp && { client_ip_address: order.customerIp }),
