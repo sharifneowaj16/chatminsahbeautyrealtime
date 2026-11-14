@@ -29,7 +29,6 @@ type MetaPixelWindow = Window & {
   __mbFbInitReady?: boolean;
 };
 
-
 function getCookieValue(name: string): string | undefined {
   if (typeof document === 'undefined') return undefined;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -93,6 +92,11 @@ export async function dispatchMetaBrowserEvent(
     return { fired: false, capiRequested: false, reason: 'INVALID_EVENT' };
   }
 
+  const sendCapi =
+    options.sendCapi !== false &&
+    event.eventName !== 'Purchase' &&
+    event.policyDecision.allowCapiEvent;
+
   const maxAttempts = options.maxReadyAttempts ?? 50;
   const retryDelayMs = options.retryDelayMs ?? 100;
   let ready = false;
@@ -109,14 +113,14 @@ export async function dispatchMetaBrowserEvent(
   }
 
   if (typeof (window as MetaPixelWindow).fbq !== 'function') {
-    metaBrowserDebug('error', 'Pixel unavailable after readiness window', event);
-    return { fired: false, capiRequested: false, reason: 'PIXEL_UNAVAILABLE' };
+    metaBrowserDebug('error', 'Pixel unavailable after readiness window; falling back to CAPI', event);
+    const capiRequested = sendCapi ? await requestCapi(event) : false;
+    return { fired: false, capiRequested, reason: 'PIXEL_UNAVAILABLE' };
   }
 
   (window as MetaPixelWindow).fbq?.('track', event.eventName, event.payload, { eventID: event.eventId });
   metaBrowserDebug(ready ? 'debug' : 'warn', ready ? 'Pixel fired' : 'Pixel fired through fallback readiness path', event);
 
-  const sendCapi = options.sendCapi !== false && event.eventName !== 'Purchase' && event.policyDecision.allowCapiEvent;
   const capiRequested = sendCapi ? await requestCapi(event) : false;
   return {
     fired: true,

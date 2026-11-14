@@ -74,17 +74,23 @@ function compactObject<T extends Record<string, unknown>>(input: T): Partial<T> 
 }
 
 function getMetaEventSourceUrl(payloadUrl: string | undefined, fallbackUrl: string) {
+  const canonicalSiteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    'https://minsahbeauty.cloud';
   const sanitizedInput = sanitizeUrl(payloadUrl || fallbackUrl);
 
   try {
-    const url = new URL(sanitizedInput, fallbackUrl);
-    // Server-side defense-in-depth: even if an older client sends a raw URL,
-    // Meta receives only origin + pathname for event_source_url. Attribution
-    // params are sent through dedicated custom data/cookies instead.
-    return `${url.origin}${url.pathname}`;
+    const canonical = new URL(canonicalSiteUrl);
+    const url = new URL(sanitizedInput, canonicalSiteUrl);
+    return `${canonical.origin}${url.pathname}`;
   } catch {
-    const fallback = new URL(fallbackUrl);
-    return `${fallback.origin}${fallback.pathname}`;
+    try {
+      const canonical = new URL(canonicalSiteUrl);
+      return `${canonical.origin}/`;
+    } catch {
+      return 'https://minsahbeauty.cloud/';
+    }
   }
 }
 
@@ -318,6 +324,7 @@ export async function GET() {
     status: 'ok',
     configured: isConfigured,
     pixelId: FACEBOOK_PIXEL_ID ? '***' + FACEBOOK_PIXEL_ID.slice(-4) : 'not set',
+    publicPixelId: isConfigured ? FACEBOOK_PIXEL_ID : null,
     queue: 'meta-capi-outbox',
     mode: 'transactional-outbox-phase28-cutover',
     cutover,

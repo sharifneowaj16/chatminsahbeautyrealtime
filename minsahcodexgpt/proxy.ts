@@ -185,22 +185,26 @@ function applyTrackingCookies(request: NextRequest, response: NextResponse): Nex
     });
   }
 
+  const canonicalOrigin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    'https://minsahbeauty.cloud';
+
   if (!request.cookies.get('mb_first_landing_path')?.value) {
-    response.cookies.set(
-      'mb_first_landing_path',
-      encodeURIComponent(
-        sanitizeTrackingPath(`${request.nextUrl.pathname}${request.nextUrl.search}`) ?? request.nextUrl.pathname
-      ),
-      { ...cookieOptions, maxAge: TRACKING_COOKIE_MAX_AGE.visitor }
-    );
+    const safePath = sanitizeTrackingPath(`${request.nextUrl.pathname}${request.nextUrl.search}`) ?? request.nextUrl.pathname;
+    response.cookies.set('mb_first_landing_path', safePath, {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
+    });
   }
 
   if (!request.cookies.get('mb_first_landing_url')?.value) {
-    response.cookies.set(
-      'mb_first_landing_url',
-      encodeURIComponent(sanitizeTrackingUrl(request.nextUrl.href) ?? request.nextUrl.origin),
-      { ...cookieOptions, maxAge: TRACKING_COOKIE_MAX_AGE.visitor }
-    );
+    const rawLandingUrl = `${canonicalOrigin}${request.nextUrl.pathname}${request.nextUrl.search}`;
+    const safeLandingUrl = sanitizeTrackingUrl(rawLandingUrl) ?? canonicalOrigin;
+    response.cookies.set('mb_first_landing_url', safeLandingUrl, {
+      ...cookieOptions,
+      maxAge: TRACKING_COOKIE_MAX_AGE.visitor,
+    });
   }
 
   const referrer = request.headers.get('referer')?.trim();

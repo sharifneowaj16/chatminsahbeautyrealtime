@@ -114,8 +114,16 @@ function isSameOriginUrl(rawUrl: string) { try { return new URL(rawUrl).origin =
 function captureFirstLandingAndReferrer() {
   if (!hasCurrentExplicitGrant()) return;
   const paymentReturn = isPaymentReturnPath(window.location.pathname);
-  if (!getCookieValue(FIRST_LANDING_PATH_COOKIE) && !paymentReturn) setCookie(FIRST_LANDING_PATH_COOKIE, sanitizePath(), ATTRIBUTION_MAX_AGE_SECONDS);
-  if (!getCookieValue(FIRST_LANDING_URL_COOKIE) && !paymentReturn) {
+  const existingPath = getCookieValue(FIRST_LANDING_PATH_COOKIE);
+  if ((!existingPath || existingPath.includes('%25')) && !paymentReturn) {
+    setCookie(FIRST_LANDING_PATH_COOKIE, sanitizePath(), ATTRIBUTION_MAX_AGE_SECONDS);
+  }
+  const existingLandingUrl = getCookieValue(FIRST_LANDING_URL_COOKIE);
+  const hasInvalidDockerHost =
+    !existingLandingUrl ||
+    existingLandingUrl.includes('%25') ||
+    !existingLandingUrl.includes(window.location.hostname);
+  if (hasInvalidDockerHost && !paymentReturn) {
     const safeCurrentUrl = sanitizeUrl(window.location.href);
     if (safeCurrentUrl) setCookie(FIRST_LANDING_URL_COOKIE, safeCurrentUrl, ATTRIBUTION_MAX_AGE_SECONDS);
   }

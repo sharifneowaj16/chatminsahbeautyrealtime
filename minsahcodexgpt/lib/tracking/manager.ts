@@ -305,7 +305,7 @@ class TrackingManager {
 
     return {
       facebook: {
-        enabled: !!facebookPixelId,
+        enabled: process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED !== 'false',
         pixelId: facebookPixelId,
       },
       google: {

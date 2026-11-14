@@ -30,17 +30,20 @@ const SITE_URL =
   'https://minsahbeauty.cloud';
 
 function getSafePurchaseEventSourceUrl(firstLandingUrl?: string | null) {
+  const canonicalBase = sanitizeTrackingUrl(SITE_URL) ?? 'https://minsahbeauty.cloud';
   const sanitizedFirstLandingUrl = sanitizeTrackingUrl(firstLandingUrl);
 
   if (sanitizedFirstLandingUrl) {
     try {
-      return new URL(sanitizedFirstLandingUrl, SITE_URL).toString();
+      const canonical = new URL(canonicalBase);
+      const parsed = new URL(sanitizedFirstLandingUrl, canonicalBase);
+      return `${canonical.origin}${parsed.pathname}`;
     } catch {
-      // Fall through to sanitized site URL.
+      // Fall through to canonical site URL.
     }
   }
 
-  return sanitizeTrackingUrl(SITE_URL) ?? SITE_URL;
+  return canonicalBase;
 }
 
 function sha256(value: string) {
