@@ -94,11 +94,17 @@ type ApiSuggestion =
     };
 
 
-function jsonNoStore(payload: unknown, init?: ResponseInit) {
+function jsonCached(payload: unknown, init?: ResponseInit, isError = false) {
   const response = NextResponse.json(payload, init);
-  response.headers.set('Cache-Control', 'no-store, max-age=0');
+  if (isError) {
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
+  } else {
+    // Vercel Edge CDN Cache: 60s edge cache with 300s background stale-while-revalidate
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  }
   return response;
 }
+
 
 const SYNONYM_EXPANSIONS: Record<string, string[]> = {
   spf: ['sunscreen', 'sunblock', 'sun protection'],
@@ -218,7 +224,7 @@ export async function GET(request: NextRequest) {
         ...trendingProducts,
       ], Math.max(trendingLimit, limit));
 
-      return jsonNoStore({
+      return jsonCached({
         success: true,
         source: 'redis_persistent_trending',
         count: suggestions.length,
@@ -298,7 +304,7 @@ export async function GET(request: NextRequest) {
 
     const hydratedSuggestions = await hydrateVariantsIfMissing(suggestions);
 
-    return jsonNoStore({
+    return jsonCached({
       success: true,
       source: 'elasticsearch_plus_redis_persistent_trending',
       count: hydratedSuggestions.length,
@@ -307,12 +313,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('❌ Suggestions error:', error);
-    return jsonNoStore(
+    return jsonCached(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
+      true
     );
   }
 }

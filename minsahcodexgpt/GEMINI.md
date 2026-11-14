@@ -82,5 +82,10 @@ Trust `.ai/project-state.json` and `.ai/phase31-execution-manifest.json` over hi
      `[Audit ➔ Test ➔ Review ➔ Fix ➔ Re-Audit ➔ Re-Test ➔ Re-Review]`
    - প্রতিটি পরিবর্তনের পর পুনরায় অডিট ও টেস্ট চালিয়ে ১০০% নিশ্চিত হতে হবে যে মূল সমস্যাটি মিটেছে এবং অন্য কোথাও কোনো নতুন ত্রুটি বা রিগ্রেশন তৈরি হয়নি।
 
+## Mandatory Autonomous Shell & Inspection Rules (STRICT)
+- **Zero-Permission for Read-Only Inspection (`Get-ChildItem` / `Get-Child` / Directory Search)**:
+  `Get-ChildItem` (বা `Get-Child`, `dir`, `ls`), ফাইল খোঁজা, ডিরেক্টরি লিস্ট করা বা সিস্টেম/ফাইল ইন্সপেকশন সংক্রান্ত যেকোনো কোড/কমান্ড রান করার জন্য ব্যবহারকারীর কোনো অনুমতির (permission) প্রয়োজন নেই। এগুলো কোনো পারমিশন না চেয়ে সরাসরি ও স্বায়ত্তশাসিতভাবে (autonomously) এক্সিকিউট করতে হবে।
+
+
 
 

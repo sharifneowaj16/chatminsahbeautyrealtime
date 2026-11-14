@@ -54,6 +54,9 @@ export interface HomeSearchProps {
   variant?: 'default' | 'compact';
 }
 
+// Module-level in-memory cache for instant 0ms autocomplete responses (Vercel Performance Best Practice)
+const searchMemoryCache = new Map<string, { suggestions: Suggestion[]; fallbackMessage: string }>();
+
 const RECENT_SEARCHES_KEY = 'minsah_recent_searches';
 const fallbackTrendingChips = ['Sunscreen', 'Lip Tint', 'Serum', 'Korean Skincare', 'Cleanser', 'Centella'];
 
@@ -455,16 +458,26 @@ export default function HomeSearch({
         top: Math.round(rect.bottom + 6),
         left: Math.round(left),
         width,
-        zIndex: 220,
+        zIndex: 180,
       });
     };
 
     place();
     window.addEventListener('resize', place);
-    window.addEventListener('scroll', place, true);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          place();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
     return () => {
       window.removeEventListener('resize', place);
-      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('scroll', onScroll, true);
     };
   }, [hasSuggestionsPanel, isMobileFullScreen, searchQuery]);
 
@@ -484,11 +497,20 @@ export default function HomeSearch({
     return () => controller.abort();
   }, []);
 
-  // Fetch live autocomplete suggestions
+  // Fetch live autocomplete suggestions with Vercel Edge Cache & Instant 0ms In-Memory Hit
   useEffect(() => {
     if (normalizedQuery.length < 2) {
       setSuggestions([]);
       setFallbackMessage('');
+      setIsLoading(false);
+      return;
+    }
+
+    // Instant 0ms cache hit from memory
+    const cached = searchMemoryCache.get(normalizedQuery);
+    if (cached) {
+      setSuggestions(cached.suggestions);
+      setFallbackMessage(cached.fallbackMessage);
       setIsLoading(false);
       return;
     }
@@ -505,8 +527,11 @@ export default function HomeSearch({
         .then((data: SuggestionResponse | null) => {
           if (lastRequestedQueryRef.current !== normalizedQuery) return;
           if (data?.suggestions && Array.isArray(data.suggestions)) {
-            setSuggestions(data.suggestions);
-            setFallbackMessage(data.fallback?.applied ? data.fallback.message || '' : '');
+            const resultList = data.suggestions;
+            const fallbackMsg = data.fallback?.applied ? data.fallback.message || '' : '';
+            searchMemoryCache.set(normalizedQuery, { suggestions: resultList, fallbackMessage: fallbackMsg });
+            setSuggestions(resultList);
+            setFallbackMessage(fallbackMsg);
           } else {
             setSuggestions([]);
             setFallbackMessage('');
@@ -523,7 +548,7 @@ export default function HomeSearch({
             setIsLoading(false);
           }
         });
-    }, 180);
+    }, 75);
 
     return () => {
       clearTimeout(timer);
@@ -551,117 +576,73 @@ export default function HomeSearch({
         aria-label="Search catalog"
         className="fixed inset-0 h-[100dvh] w-full z-[180] flex flex-col bg-[#FAF9F6] text-slate-900 animate-in fade-in duration-200 overflow-hidden"
       >
-        {/* Top Header Bar: Luxury Brand Green */}
-        <div className="flex items-center gap-2.5 px-3 py-2.5 bg-gradient-to-r from-[#062402] via-[#153410] to-[#062402] border-b border-[#D4F6A2]/20 shadow-md shrink-0">
-          <button
-            type="button"
-            onClick={onCloseMobile}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#EAF7D8] hover:bg-white/20 hover:text-white transition active:scale-95 border border-white/10"
-            aria-label="Back to page"
-          >
-            <ArrowLeft size={19} />
-          </button>
+        {/* Top Header Bar: Luxury Brand Green with Top Grab Handle */}
+        <div className="flex flex-col bg-gradient-to-r from-[#062402] via-[#153410] to-[#062402] border-b border-[#D4F6A2]/20 shadow-md shrink-0">
+          {/* Top Grab Handle */}
+          <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mt-2 mb-1" aria-hidden="true" />
+          <div className="flex items-center gap-2.5 px-3 py-2">
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#EAF7D8] hover:bg-white/20 hover:text-white transition active:scale-95 border border-white/10"
+              aria-label="Back to page"
+            >
+              <ArrowLeft size={19} />
+            </button>
 
-          {/* Search Input Box */}
-          <div className="flex-1 flex items-center h-10 rounded-full bg-white px-3.5 focus-within:ring-2 focus-within:ring-[#D4F6A2] transition shadow-xs border border-white/20">
-            <Search size={16} className="text-[#153410] shrink-0 mr-2" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleInputKeyDown}
-              placeholder="Search skincare, serums, makeup..."
-              className="w-full bg-transparent text-sm text-slate-900 placeholder:text-stone-400 focus:outline-none touch-manipulation font-medium"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="p-1 rounded-full text-stone-400 hover:text-stone-700 transition"
-                aria-label="Clear text"
-              >
-                <X size={15} />
-              </button>
-            )}
+            {/* Search Input Box (Font size strictly 16px to prevent iOS Safari auto-zoom) */}
+            <div className="flex-1 flex items-center h-10 rounded-full bg-white px-3.5 focus-within:ring-2 focus-within:ring-[#D4F6A2] transition shadow-xs border border-white/20">
+              <Search size={16} className="text-[#153410] shrink-0 mr-2" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleInputKeyDown}
+                placeholder="Search skincare, serums, makeup..."
+                className="w-full bg-transparent text-[16px] text-slate-900 placeholder:text-stone-400 focus:outline-none touch-manipulation font-medium"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="p-1 rounded-full text-stone-400 hover:text-stone-700 transition"
+                  aria-label="Clear text"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            {/* Voice Search Button */}
+            <button
+              type="button"
+              onClick={startVoiceSearch}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95 border ${
+                isListening
+                  ? 'bg-[#D4F6A2] text-[#062402] border-[#D4F6A2] animate-pulse shadow-sm'
+                  : 'bg-white/10 text-[#D4F6A2] border-[#D4F6A2]/25 hover:bg-white/20'
+              }`}
+              aria-label="Voice search"
+            >
+              <Mic size={17} />
+            </button>
           </div>
-
-          {/* Voice Search Button */}
-          <button
-            type="button"
-            onClick={startVoiceSearch}
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95 border ${
-              isListening
-                ? 'bg-[#D4F6A2] text-[#062402] border-[#D4F6A2] animate-pulse shadow-sm'
-                : 'bg-white/10 text-[#D4F6A2] border-[#D4F6A2]/25 hover:bg-white/20'
-            }`}
-            aria-label="Voice search"
-          >
-            <Mic size={17} />
-          </button>
         </div>
 
         {/* Scrollable Body: 100% Solid Background, Zero Keyboard Overlap */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-5 bg-[#FAF9F6]">
-          {/* Recent Searches (If any) */}
-          {recentSearches.length > 0 && normalizedQuery.length < 2 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#1c3a13]">
-                <span className="flex items-center gap-1.5">
-                  <Clock size={13} /> Recent Searches
-                </span>
-                <button
-                  type="button"
-                  onClick={clearRecentSearches}
-                  className="text-[11px] font-medium text-stone-500 hover:text-rose-500 lowercase transition"
-                >
-                  Clear all
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {recentSearches.map((term) => (
-                  <span
-                    key={term}
-                    onClick={() => navigateToSearch(term)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#1c3a13]/20 text-xs font-semibold text-[#1c3a13] hover:bg-[#f4f7f4] shadow-2xs active:scale-95 cursor-pointer transition"
-                  >
-                    <span>{term}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => removeRecentSearch(term, e)}
-                      className="text-stone-400 hover:text-stone-700 p-0.5"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Trending Searches in Bangladesh */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain p-4 space-y-4 bg-[#FAF9F6]">
+          {/* Minimal Fast Search Prompt when idle */}
           {normalizedQuery.length < 2 && (
-            <div className="space-y-2.5">
-              <div className="text-xs font-bold uppercase tracking-wider text-[#1c3a13] flex items-center gap-1.5">
-                <TrendingUp size={13} /> Trending in Bangladesh
+            <div className="py-14 px-4 text-center space-y-3">
+              <div className="w-13 h-13 rounded-2xl bg-[#1c3a13]/10 text-[#1c3a13] flex items-center justify-center mx-auto">
+                <Search size={22} className="stroke-[2.2]" />
               </div>
-              <div className="grid grid-cols-1 gap-1.5">
-                {dynamicTrendingChips.map((chip, idx) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => navigateToSearch(chip)}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#1c3a13]/10 hover:border-[#1c3a13]/30 hover:bg-[#f4f7f4] active:scale-[0.99] text-left transition shadow-2xs"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1c3a13]/10 text-[10px] font-bold text-[#1c3a13]">
-                        #{idx + 1}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-900">{chip}</span>
-                    </div>
-                    <ArrowRight size={14} className="text-[#1c3a13]/40" />
-                  </button>
-                ))}
+              <div>
+                <h3 className="text-[16px] font-bold text-slate-900">Instant Formulation Search</h3>
+                <p className="text-[13px] text-stone-500 mt-1 max-w-xs mx-auto">
+                  Type any authentic product name, active ingredient or brand for fast live results.
+                </p>
               </div>
             </div>
           )}
@@ -1073,25 +1054,7 @@ export default function HomeSearch({
                 </div>
               ) : null}
 
-              {/* Related Search Queries if any */}
-              {querySuggestions.length > 0 && (
-                <div className="pt-2.5 border-t border-[#1c3a13]/10 space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1c3a13] px-1">Related Queries</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {querySuggestions.map((item) => (
-                      <button
-                        key={item.text}
-                        type="button"
-                        onClick={() => selectSuggestion(item)}
-                        className="px-3 py-1 rounded-lg bg-[#f0f6f1] hover:bg-[#e4efe6] border border-[#1c3a13]/15 text-xs font-semibold text-[#1c3a13] transition flex items-center gap-1.5"
-                      >
-                        <Search size={11} className="text-[#1c3a13]" />
-                        <span>{item.text}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+
 
               {/* Bottom Sticky Search CTA */}
               <button

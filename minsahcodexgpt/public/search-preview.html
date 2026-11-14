@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minsah Beauty - Realtime Search Preview</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#062402',
+              mid: '#153410',
+              forest: '#1c3a13',
+              accent: '#D4F6A2',
+              light: '#EAF7D8',
+              bg: '#FAF9F6'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FAF9F6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #D4F6A2;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-3 sm:p-6 text-slate-800">
+
+  <!-- Container -->
+  <div class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col">
+    
+    <!-- Top Brand Header Bar -->
+    <header class="bg-gradient-to-r from-[#062402] via-[#153410] to-[#062402] px-4 py-3.5 border-b border-[#D4F6A2]/20 flex items-center gap-3">
+      <!-- Back / Logo Icon -->
+      <button class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-[#EAF7D8] hover:bg-white/20 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+      </button>
+
+      <!-- Search Input Container -->
+      <div class="flex-1 flex items-center h-11 rounded-full bg-white px-3.5 border border-white/20 shadow-inner focus-within:ring-2 focus-within:ring-[#D4F6A2]">
+        <!-- Search Icon -->
+        <svg class="w-4 h-4 text-[#153410] mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" stroke-width="2"></circle>
+          <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"></path>
+        </svg>
+
+        <!-- Input Field -->
+        <input 
+          id="searchInput"
+          type="text" 
+          placeholder="Search skincare, serums, makeup..." 
+          class="w-full bg-transparent text-sm text-slate-900 placeholder:text-stone-400 focus:outline-none font-medium"
+          oninput="handleSearch(this.value)"
+        />
+
+        <!-- Clear Button -->
+        <button id="clearBtn" class="hidden p-1 text-stone-400 hover:text-stone-700" onclick="clearSearch()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Voice Search Mic Button -->
+      <button class="w-10 h-10 rounded-full bg-white/10 border border-[#D4F6A2]/25 text-[#D4F6A2] flex items-center justify-center hover:bg-white/20 transition active:scale-95" title="Voice Search">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Search Body -->
+    <div class="p-4 sm:p-5 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar bg-[#FAF9F6]">
+      
+      <!-- Recent Searches -->
+      <section id="recentSection">
+        <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#1c3a13] mb-2.5">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-[#1c3a13]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+              <polyline points="12 6 12 12 16 14" stroke-width="2"></polyline>
+            </svg>
+            Recent Searches
+          </span>
+          <button onclick="clearRecent()" class="text-[11px] font-medium text-stone-500 hover:text-rose-600 transition">Clear all</button>
+        </div>
+        <div id="recentTags" class="flex flex-wrap gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#1c3a13]/20 text-xs font-semibold text-[#1c3a13] shadow-xs cursor-pointer hover:bg-emerald-50" onclick="applySearch('Centella')">
+            Centella
+            <button class="text-stone-400 hover:text-stone-700" onclick="removeTag(event, this)">×</button>
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#1c3a13]/20 text-xs font-semibold text-[#1c3a13] shadow-xs cursor-pointer hover:bg-emerald-50" onclick="applySearch('Sunscreen')">
+            Sunscreen
+            <button class="text-stone-400 hover:text-stone-700" onclick="removeTag(event, this)">×</button>
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#1c3a13]/20 text-xs font-semibold text-[#1c3a13] shadow-xs cursor-pointer hover:bg-emerald-50" onclick="applySearch('Serum')">
+            Serum
+            <button class="text-stone-400 hover:text-stone-700" onclick="removeTag(event, this)">×</button>
+          </span>
+        </div>
+      </section>
+
+      <!-- Trending in Bangladesh -->
+      <section id="trendingSection">
+        <div class="text-xs font-bold uppercase tracking-wider text-[#1c3a13] flex items-center gap-1.5 mb-2.5">
+          <svg class="w-3.5 h-3.5 text-[#1c3a13]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            <polyline points="17 6 23 6 23 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+          Trending in Bangladesh
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button onclick="applySearch('Beauty of Joseon Sunscreen')" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#1c3a13]/10 hover:border-[#1c3a13]/30 hover:bg-[#f4f7f4] text-left transition shadow-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-[#1c3a13]/10 text-[10px] font-bold text-[#1c3a13] flex items-center justify-center">#1</span>
+              <span class="text-xs font-semibold text-slate-800">Beauty of Joseon Sunscreen</span>
+            </div>
+            <span class="text-[10px] text-stone-400">12k searches</span>
+          </button>
+          <button onclick="applySearch('Lip Sleeping Mask')" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#1c3a13]/10 hover:border-[#1c3a13]/30 hover:bg-[#f4f7f4] text-left transition shadow-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-[#1c3a13]/10 text-[10px] font-bold text-[#1c3a13] flex items-center justify-center">#2</span>
+              <span class="text-xs font-semibold text-slate-800">Lip Sleeping Mask</span>
+            </div>
+            <span class="text-[10px] text-stone-400">9.4k searches</span>
+          </button>
+          <button onclick="applySearch('COSRX Snail Mucin')" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#1c3a13]/10 hover:border-[#1c3a13]/30 hover:bg-[#f4f7f4] text-left transition shadow-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-[#1c3a13]/10 text-[10px] font-bold text-[#1c3a13] flex items-center justify-center">#3</span>
+              <span class="text-xs font-semibold text-slate-800">COSRX Snail Mucin</span>
+            </div>
+            <span class="text-[10px] text-stone-400">8.1k searches</span>
+          </button>
+          <button onclick="applySearch('Salicylic Acid Cleanser')" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#1c3a13]/10 hover:border-[#1c3a13]/30 hover:bg-[#f4f7f4] text-left transition shadow-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-[#1c3a13]/10 text-[10px] font-bold text-[#1c3a13] flex items-center justify-center">#4</span>
+              <span class="text-xs font-semibold text-slate-800">Salicylic Acid Cleanser</span>
+            </div>
+            <span class="text-[10px] text-stone-400">6.5k searches</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Live Matching Formulations / Products -->
+      <section id="resultsSection">
+        <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#1c3a13] mb-3">
+          <span id="resultsTitle">Matching Formulations (<span id="resultsCount">3</span>)</span>
+          <span class="text-[11px] text-[#1c3a13] font-medium bg-[#D4F6A2]/40 px-2 py-0.5 rounded-full">100% Authentic</span>
+        </div>
+
+        <div id="productsList" class="space-y-2.5">
+          <!-- Card 1 -->
+          <div class="product-item p-3 rounded-2xl bg-white border border-[#1c3a13]/15 hover:border-[#1c3a13]/40 transition shadow-xs flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-[#f4f7f4] border border-[#1c3a13]/10 flex items-center justify-center text-xl shrink-0">
+                🌿
+              </div>
+              <div>
+                <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-snug">Skin1004 Madagascar Centella Ampoule</h4>
+                <p class="text-[11px] text-stone-500">Skin1004 • 100ml • Soothing & Hydrating</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs font-extrabold text-[#1c3a13]">৳ 1,450</span>
+                  <span class="text-[10px] text-stone-400 line-through">৳ 1,750</span>
+                  <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">In Stock</span>
+                </div>
+              </div>
+            </div>
+            <button onclick="addToBag(this)" class="px-3 py-1.5 rounded-full bg-[#1c3a13] text-[#D4F6A2] text-xs font-bold hover:bg-[#062402] active:scale-95 transition shrink-0">
+              Add to Bag
+            </button>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="product-item p-3 rounded-2xl bg-white border border-[#1c3a13]/15 hover:border-[#1c3a13]/40 transition shadow-xs flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-[#f4f7f4] border border-[#1c3a13]/10 flex items-center justify-center text-xl shrink-0">
+                ☀️
+              </div>
+              <div>
+                <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-snug">Beauty of Joseon Relief Sun: Rice + Probiotics</h4>
+                <p class="text-[11px] text-stone-500">Beauty of Joseon • SPF50+ PA++++ • 50ml</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs font-extrabold text-[#1c3a13]">৳ 1,290</span>
+                  <span class="text-[10px] text-stone-400 line-through">৳ 1,500</span>
+                  <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">In Stock</span>
+                </div>
+              </div>
+            </div>
+            <button onclick="addToBag(this)" class="px-3 py-1.5 rounded-full bg-[#1c3a13] text-[#D4F6A2] text-xs font-bold hover:bg-[#062402] active:scale-95 transition shrink-0">
+              Add to Bag
+            </button>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="product-item p-3 rounded-2xl bg-white border border-[#1c3a13]/15 hover:border-[#1c3a13]/40 transition shadow-xs flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-[#f4f7f4] border border-[#1c3a13]/10 flex items-center justify-center text-xl shrink-0">
+                ✨
+              </div>
+              <div>
+                <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-snug">COSRX Advanced Snail 96 Mucin Power Essence</h4>
+                <p class="text-[11px] text-stone-500">COSRX • 100ml • Repair & Glow</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs font-extrabold text-[#1c3a13]">৳ 1,350</span>
+                  <span class="text-[10px] text-stone-400 line-through">৳ 1,600</span>
+                  <span class="text-[10px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded">Few Left</span>
+                </div>
+              </div>
+            </div>
+            <button onclick="addToBag(this)" class="px-3 py-1.5 rounded-full bg-[#1c3a13] text-[#D4F6A2] text-xs font-bold hover:bg-[#062402] active:scale-95 transition shrink-0">
+              Add to Bag
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Footer Status -->
+    <div class="px-4 py-2.5 bg-stone-100 border-t border-stone-200 text-center text-xs text-stone-500">
+      Press <kbd class="px-1.5 py-0.5 bg-white border rounded shadow-2xs text-[10px] font-bold">Esc</kbd> to close • Powered by <span class="font-bold text-[#1c3a13]">Minsah Realtime Search</span>
+    </div>
+
+  </div>
+
+  <script>
+    const allProducts = [
+      { name: "Skin1004 Madagascar Centella Ampoule", brand: "Skin1004", icon: "🌿", price: "1,450", oldPrice: "1,750", tag: "Soothing & Hydrating", stock: "In Stock" },
+      { name: "Beauty of Joseon Relief Sun: Rice + Probiotics", brand: "Beauty of Joseon", icon: "☀️", price: "1,290", oldPrice: "1,500", tag: "SPF50+ PA++++ • 50ml", stock: "In Stock" },
+      { name: "COSRX Advanced Snail 96 Mucin Power Essence", brand: "COSRX", icon: "✨", price: "1,350", oldPrice: "1,600", tag: "Repair & Glow • 100ml", stock: "Few Left" },
+      { name: "Laneige Lip Sleeping Mask Berry", brand: "Laneige", icon: "🍓", price: "1,650", oldPrice: "1,900", tag: "Overnight Nourishment • 20g", stock: "In Stock" },
+      { name: "Anua Heartleaf 77% Soothing Toner", brand: "Anua", icon: "🍃", price: "1,750", oldPrice: "2,100", tag: "Calming Toner • 250ml", stock: "In Stock" }
+    ];
+
+    function handleSearch(query) {
+      const q = query.trim().toLowerCase();
+      const clearBtn = document.getElementById('clearBtn');
+      clearBtn.classList.toggle('hidden', q.length === 0);
+
+      const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.tag.toLowerCase().includes(q));
+
+      renderProducts(filtered);
+    }
+
+    function renderProducts(list) {
+      const container = document.getElementById('productsList');
+      const countEl = document.getElementById('resultsCount');
+      countEl.innerText = list.length;
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-stone-400">
+            <p class="text-sm">No formulations found.</p>
+            <p class="text-xs text-stone-400 mt-1">Try searching for "Sunscreen", "Centella" or "Serum"</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(prod => `
+        <div class="product-item p-3 rounded-2xl bg-white border border-[#1c3a13]/15 hover:border-[#1c3a13]/40 transition shadow-xs flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-[#f4f7f4] border border-[#1c3a13]/10 flex items-center justify-center text-xl shrink-0">
+              ${prod.icon}
+            </div>
+            <div>
+              <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-snug">${prod.name}</h4>
+              <p class="text-[11px] text-stone-500">${prod.brand} • ${prod.tag}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs font-extrabold text-[#1c3a13]">৳ ${prod.price}</span>
+                <span class="text-[10px] text-stone-400 line-through">৳ ${prod.oldPrice}</span>
+                <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">${prod.stock}</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="addToBag(this)" class="px-3 py-1.5 rounded-full bg-[#1c3a13] text-[#D4F6A2] text-xs font-bold hover:bg-[#062402] active:scale-95 transition shrink-0">
+            Add to Bag
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      handleSearch('');
+      input.focus();
+    }
+
+    function applySearch(term) {
+      const input = document.getElementById('searchInput');
+      input.value = term;
+      handleSearch(term);
+    }
+
+    function removeTag(e, btn) {
+      e.stopPropagation();
+      btn.parentElement.remove();
+    }
+
+    function clearRecent() {
+      document.getElementById('recentTags').innerHTML = '<span class="text-xs text-stone-400">No recent searches</span>';
+    }
+
+    function addToBag(btn) {
+      const originalText = btn.innerText;
+      btn.innerText = "Added! ✓";
+      btn.classList.add("bg-emerald-600", "text-white");
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.classList.remove("bg-emerald-600", "text-white");
+      }, 1200);
+    }
+  </script>
+</body>
+</html>
