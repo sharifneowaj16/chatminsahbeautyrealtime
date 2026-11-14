@@ -43,6 +43,7 @@ interface BuyNowModalProps {
   productName: string;
   productImage: string;
   basePrice: number;
+  sku?: string | null;
   baseWeightKg?: number | null;
   baseStock?: number | null;
   variants?: BuyNowVariantOption[];
@@ -182,6 +183,7 @@ export default function BuyNowModal({
   productName,
   productImage,
   basePrice,
+  sku,
   baseWeightKg = null,
   baseStock = null,
   variants,
@@ -207,7 +209,7 @@ export default function BuyNowModal({
   const [resolvedBaseStock, setResolvedBaseStock] = useState<number | null>(
     baseStock,
   );
-  const [resolvedBaseSku, setResolvedBaseSku] = useState<string | null>(null);
+  const [resolvedBaseSku, setResolvedBaseSku] = useState<string | null>(sku ?? null);
   const [resolvedVariants, setResolvedVariants] = useState<
     BuyNowVariantOption[]
   >(variants ?? []);

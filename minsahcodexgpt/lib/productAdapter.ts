@@ -46,7 +46,7 @@ export function adminProductToShopProduct(p: AdminProduct): ShopProduct {
     discount,
     image: p.image,
     images: p.images?.length ? p.images : [p.image],
-    sku: p.barcode || p.id,
+    sku: p.sku?.trim() || p.barcode?.trim() || '',
     stock: p.stock,
     category: p.category,
     categorySlug: toSlug(p.category),

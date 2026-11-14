@@ -76,6 +76,7 @@ export type DatabaseSearchFallbackResponse = {
   totalPages: number;
   products: Array<{
     id: string;
+    sku?: string;
     name: string;
     slug: string;
     description: string;
@@ -241,6 +242,7 @@ function transformFallbackProduct(product: FallbackProduct): DatabaseSearchFallb
 
   return {
     id: product.id,
+    sku: product.sku || '',
     name: product.name,
     slug: product.slug,
     description: product.description ?? '',

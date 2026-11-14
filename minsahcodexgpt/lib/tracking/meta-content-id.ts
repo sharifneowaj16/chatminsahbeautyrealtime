@@ -165,16 +165,26 @@ export function getMetaParentProductId(item: MetaCatalogItemSource) {
   return cleanId(item.productId) ?? cleanId(item.product?.id) ?? cleanId(item.variant?.productId);
 }
 
+function isCuidLike(value?: string | null): boolean {
+  if (!value) return false;
+  const s = value.trim();
+  return /^c[a-z0-9]{20,}$/i.test(s);
+}
+
 export function getMetaParentProductSku(item: MetaCatalogItemSource) {
   const explicit = cleanId(item.productSku) ?? cleanId(item.product?.sku);
-  if (explicit) return explicit;
-  return hasMetaVariantSelection(item) ? undefined : cleanId(item.sku);
+  if (explicit && !isCuidLike(explicit)) return explicit;
+  const directSku = cleanId(item.sku);
+  if (!hasMetaVariantSelection(item) && directSku && !isCuidLike(directSku)) return directSku;
+  return explicit && !isCuidLike(explicit) ? explicit : undefined;
 }
 
 export function getMetaVariantSku(item: MetaCatalogItemSource) {
   const explicit = cleanId(item.variantSku) ?? cleanId(item.variant?.sku);
-  if (explicit) return explicit;
-  return hasMetaVariantSelection(item) ? cleanId(item.sku) : undefined;
+  if (explicit && !isCuidLike(explicit)) return explicit;
+  const directSku = cleanId(item.sku);
+  if (hasMetaVariantSelection(item) && directSku && !isCuidLike(directSku)) return directSku;
+  return explicit && !isCuidLike(explicit) ? explicit : undefined;
 }
 
 export function resolveMetaCatalogIdentity(
@@ -205,18 +215,20 @@ export function resolveMetaCatalogIdentity(
   const productSku = getMetaParentProductSku(item);
   if (!productSku) {
     const fallbackId = getMetaParentProductId(item) || cleanId((item as any).id);
-    if (fallbackId && !isVariant) {
+    if (fallbackId && !isCuidLike(fallbackId) && !isVariant) {
       return { itemId: fallbackId, itemSource: 'product_sku', isVariant: false };
     }
     if (fallbackId && isVariant) {
       const variantSku = getMetaVariantSku(item);
-      return {
-        itemId: variantSku || variantId || fallbackId,
-        groupId: fallbackId,
-        itemSource: 'variant_sku',
-        groupSource: 'product_sku',
-        isVariant: true,
-      };
+      if (variantSku && !isCuidLike(variantSku)) {
+        return {
+          itemId: variantSku,
+          groupId: !isCuidLike(fallbackId) ? fallbackId : undefined,
+          itemSource: 'variant_sku',
+          groupSource: 'product_sku',
+          isVariant: true,
+        };
+      }
     }
     return null;
   }

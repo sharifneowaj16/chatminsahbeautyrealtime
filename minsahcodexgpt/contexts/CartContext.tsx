@@ -708,7 +708,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return [...prev, normalizedItem];
         });
         if (options.track !== false) {
-          trackAddToCart(normalizedItem, normalizedItem.quantity);
+          let itemToTrack = normalizedItem;
+          const targetProductId = normalizedItem.productId ?? normalizedItem.id;
+          if (!itemToTrack.sku && !itemToTrack.productSku && targetProductId) {
+            try {
+              const res = await fetch(`/api/products/${encodeURIComponent(targetProductId)}`);
+              if (res.ok) {
+                const detail = await res.json();
+                const fetchedProductSku = detail?.product?.sku || detail?.sku;
+                const fetchedVariantSku = normalizedItem.variantId
+                  ? detail?.product?.variants?.find((v: any) => v.id === normalizedItem.variantId)?.sku ??
+                    detail?.variants?.find((v: any) => v.id === normalizedItem.variantId)?.sku
+                  : undefined;
+                const finalSku = fetchedVariantSku || fetchedProductSku;
+                if (finalSku) {
+                  itemToTrack = {
+                    ...normalizedItem,
+                    sku: finalSku,
+                    productSku: fetchedProductSku || finalSku,
+                    variantSku: fetchedVariantSku ?? normalizedItem.variantSku ?? null,
+                  };
+                  setItems((prev) =>
+                    prev.map((i) => (i.id === canonicalLineKey ? { ...i, sku: finalSku, productSku: fetchedProductSku || finalSku } : i))
+                  );
+                }
+              }
+            } catch {
+              // Ignore network error; fallback to available item data
+            }
+          }
+          trackAddToCart(itemToTrack, itemToTrack.quantity);
         }
         return true;
       }

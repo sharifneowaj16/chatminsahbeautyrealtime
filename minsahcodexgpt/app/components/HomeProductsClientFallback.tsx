@@ -53,6 +53,8 @@ function FallbackProductGrid({ products }: { products: Product[] }) {
                     productImage={product.image}
                     price={product.price}
                     stock={product.stock}
+                    sku={product.sku}
+                    productSku={product.sku}
                     hasVariants={hasVariants}
                   />
                 </div>
@@ -69,6 +71,8 @@ function FallbackProductGrid({ products }: { products: Product[] }) {
                 productImage={product.image}
                 price={product.price}
                 stock={product.stock}
+                sku={product.sku}
+                productSku={product.sku}
                 hasVariants={hasVariants}
                 className="w-full"
               />

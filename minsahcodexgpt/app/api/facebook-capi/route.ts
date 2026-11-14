@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 import {
   TrackingPayload,
   FacebookConversionAPIRequest,
@@ -210,15 +211,87 @@ export async function POST(request: NextRequest) {
       client_user_agent: userAgent,
     });
 
+    // Server-side safeguard: Check if any contentIds or contents[].id looks like a Prisma CUID or does not match a known SKU,
+    // and resolve it to the database Product.sku / ProductVariant.sku via Prisma before persisting to the outbox.
+    const isLikelyCuid = (str?: string | null): boolean => {
+      if (!str || typeof str !== 'string') return false;
+      const s = str.trim();
+      return /^c[a-z0-9]{20,}$/i.test(s) || (!s.startsWith('SKU-') && !s.includes('-') && s.length >= 20);
+    };
+
+    let resolvedContentIds = Array.isArray(payload.contentIds) ? [...payload.contentIds] : [];
+    let resolvedContents = Array.isArray(payload.contents) ? payload.contents.map((c) => ({ ...c })) : [];
+
+    const candidateIds = new Set<string>();
+    for (const cid of resolvedContentIds) {
+      if (typeof cid === 'string' && isLikelyCuid(cid)) {
+        candidateIds.add(cid.trim());
+      }
+    }
+    for (const c of resolvedContents) {
+      if (typeof c.id === 'string' && isLikelyCuid(c.id)) {
+        candidateIds.add(c.id.trim());
+      }
+      if (typeof c.variant_id === 'string' && isLikelyCuid(c.variant_id)) {
+        candidateIds.add(c.variant_id.trim());
+      }
+    }
+
+    if (candidateIds.size > 0) {
+      try {
+        const idList = Array.from(candidateIds);
+        const [dbProducts, dbVariants] = await Promise.all([
+          prisma.product.findMany({
+            where: { id: { in: idList } },
+            select: { id: true, sku: true },
+          }),
+          prisma.productVariant.findMany({
+            where: { id: { in: idList } },
+            select: { id: true, sku: true, product: { select: { sku: true } } },
+          }),
+        ]);
+
+        const skuMap = new Map<string, string>();
+        for (const p of dbProducts) {
+          if (p.sku?.trim()) skuMap.set(p.id, p.sku.trim());
+        }
+        for (const v of dbVariants) {
+          const vSku = v.sku?.trim() || v.product?.sku?.trim();
+          if (vSku) skuMap.set(v.id, vSku);
+        }
+
+        if (skuMap.size > 0) {
+          resolvedContentIds = resolvedContentIds.map((id) =>
+            typeof id === 'string' && skuMap.has(id.trim()) ? skuMap.get(id.trim())! : id
+          );
+          resolvedContents = resolvedContents.map((item) => {
+            const canonicalId = typeof item.id === 'string' && skuMap.has(item.id.trim())
+              ? skuMap.get(item.id.trim())!
+              : item.id;
+            const canonicalVariantSku = typeof item.variant_id === 'string' && skuMap.has(item.variant_id.trim())
+              ? skuMap.get(item.variant_id.trim())!
+              : item.variant_sku;
+            return {
+              ...item,
+              id: canonicalId,
+              ...(canonicalVariantSku ? { variant_sku: canonicalVariantSku } : {}),
+            };
+          });
+        }
+      } catch (err) {
+        console.warn('[CAPI][Queue] Failed to resolve CUIDs to SKUs via database safeguard:', err);
+      }
+    }
+
     const customData = withMetaSchemaVersion(
       prepareMetaCatalogPayloadForEvent(payload.eventName, compactObject({
         value: formatCurrency(payload.value),
         currency: payload.currency || 'BDT',
-        content_ids: payload.contentIds,
+        content_ids: resolvedContentIds.length > 0 ? resolvedContentIds : payload.contentIds,
         content_type: payload.contentType,
         content_name: payload.contentName,
         content_category: payload.contentCategory,
-        contents: payload.contents?.map((item) =>
+        contents: resolvedContents.map((item) =>
           compactObject({
             id: item.id,
             quantity: item.quantity,

@@ -124,6 +124,8 @@ export function HomeBuyNowAction({
   productImage,
   price,
   stock,
+  sku,
+  productSku,
   variantCount,
   variantsFullyLoaded,
   variants,
@@ -135,6 +137,7 @@ export function HomeBuyNowAction({
       productName={productName}
       productImage={productImage}
       price={price}
+      sku={sku ?? productSku}
       maxStock={stock}
       variants={toBuyNowVariants(variants)}
       variantCount={variantCount}

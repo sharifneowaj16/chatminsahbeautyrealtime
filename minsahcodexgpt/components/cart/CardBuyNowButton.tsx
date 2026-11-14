@@ -16,6 +16,7 @@ interface CardBuyNowButtonProps {
   productName: string;
   productImage: string;
   price: number;
+  sku?: string | null;
   maxStock?: number;
   variants?: BuyNowVariantOption[];
   variantCount?: number;
@@ -29,6 +30,7 @@ export default function CardBuyNowButton({
   productName,
   productImage,
   price,
+  sku,
   maxStock,
   variants,
   variantCount,
@@ -59,6 +61,7 @@ export default function CardBuyNowButton({
           productName={productName}
           productImage={productImage}
           basePrice={price}
+          sku={sku}
           baseStock={maxStock}
           variants={variants}
           variantCount={variantCount}

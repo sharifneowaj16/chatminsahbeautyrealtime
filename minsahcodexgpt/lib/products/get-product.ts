@@ -72,6 +72,7 @@ export type ProductDetailData = {
   };
   relatedProducts: Array<{
     id: string;
+    sku?: string;
     name: string;
     price: number;
     costPrice?: number | null;
@@ -436,6 +437,7 @@ export async function getProductDetail(idOrSlug: string): Promise<ProductDetailD
         const pImage = p.images.find((i) => i.isDefault) || p.images[0];
         return {
           id: p.id,
+          sku: p.sku || '',
           name: p.name,
           price: p.price.toNumber(),
           costPrice: p.costPrice ? p.costPrice.toNumber() : null,

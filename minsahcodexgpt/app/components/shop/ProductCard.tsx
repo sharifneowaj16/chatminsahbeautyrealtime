@@ -117,27 +117,36 @@ export default function ProductCard({
       setActiveImageIdx(0);
     }
 
-    const cartItem = createStandardCartItem({
-      product: {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        sku: product.sku,
-        stock: product.stock,
-      },
-      variant: {
-        id: selectedVar.id,
-        name: selectedVar.name,
-        price: selectedVar.price,
-        image: selectedVar.image || product.image,
-        sku: selectedVar.sku,
-        stock: selectedVar.stock,
-        attributes: selectedVar.attributes,
-      },
-      availableVariants: dropdownVariants,
-      quantity: 1,
-    });
+    const canonicalProductSku = product.sku?.trim() || undefined;
+    const canonicalVariantSku = selectedVar.sku?.trim() || undefined;
+    const canonicalSku = canonicalVariantSku || canonicalProductSku;
+
+    const cartItem = {
+      ...createStandardCartItem({
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          sku: canonicalProductSku,
+          stock: product.stock,
+        },
+        variant: {
+          id: selectedVar.id,
+          name: selectedVar.name,
+          price: selectedVar.price,
+          image: selectedVar.image || product.image,
+          sku: canonicalVariantSku,
+          stock: selectedVar.stock,
+          attributes: selectedVar.attributes,
+        },
+        availableVariants: dropdownVariants,
+        quantity: 1,
+      }),
+      sku: canonicalSku,
+      productSku: canonicalProductSku,
+      variantSku: canonicalVariantSku ?? null,
+    };
 
     addItem(cartItem);
     openCartDrawer();
@@ -170,8 +179,10 @@ export default function ProductCard({
     e.preventDefault();
     e.stopPropagation();
 
-    if (hasVariants) {
-      const activeVar = dropdownVariants.find((v) => v.id === selectedVariantId) || dropdownVariants[0];
+    if (dropdownVariants.length > 0) {
+      const activeVar =
+        dropdownVariants.find((v) => v.id === selectedVariantId) ||
+        dropdownVariants[0];
       if (activeVar) {
         handleSelectVariantAddToCart(activeVar);
         setIsAdded(true);
@@ -180,17 +191,22 @@ export default function ProductCard({
       }
     }
 
-    const cartItem = createStandardCartItem({
-      product: {
-        id: product.id,
-        name: product.name,
-        price: currentPrice || product.price,
-        image: displayedImage || product.image,
-        sku: product.sku,
-        stock: product.stock,
-      },
-      quantity: 1,
-    });
+    const canonicalSku = product.sku?.trim() || undefined;
+    const cartItem = {
+      ...createStandardCartItem({
+        product: {
+          id: product.id,
+          name: product.name,
+          price: currentPrice || product.price,
+          image: displayedImage || product.image,
+          sku: canonicalSku,
+          stock: product.stock,
+        },
+        quantity: 1,
+      }),
+      sku: canonicalSku,
+      productSku: canonicalSku,
+    };
 
     addItem(cartItem);
     trackShopAddToCart(product, 1, index, listName);

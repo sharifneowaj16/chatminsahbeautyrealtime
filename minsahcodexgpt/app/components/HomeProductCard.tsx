@@ -173,6 +173,7 @@ export default function HomeProductCard({
             price={product.price}
             stock={product.stock}
             sku={product.sku ?? null}
+            productSku={product.sku ?? null}
             hasVariants={product.hasVariants}
             variants={product.variants}
             variantCount={product.variantCount ?? undefined}
@@ -244,6 +245,7 @@ export default function HomeProductCard({
             price={product.price}
             stock={product.stock}
             sku={product.sku ?? null}
+            productSku={product.sku ?? null}
             hasVariants={product.hasVariants}
             variants={product.variants}
             variantCount={product.variantCount ?? undefined}
