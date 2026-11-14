@@ -19,6 +19,7 @@ interface ProductCardProps {
   id: string;
   name: string;
   slug?: string;
+  sku?: string | null;
   price: number;
   originalPrice?: number;
   image: string;
@@ -32,6 +33,7 @@ export default function ProductCard({
   id,
   name,
   slug,
+  sku,
   price,
   originalPrice,
   image,
@@ -84,6 +86,8 @@ export default function ProductCard({
                 productName={name}
                 productImage={image}
                 price={price}
+                sku={sku}
+                productSku={sku}
                 maxStock={stock}
                 hasRequiredVariants={Boolean(hasVariants || (variants && variants.length > 0))}
                 circleAdd

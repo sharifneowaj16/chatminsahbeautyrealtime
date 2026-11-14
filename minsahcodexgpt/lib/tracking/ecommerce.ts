@@ -147,7 +147,14 @@ export function buildCartTrackingData(
 
 export function trackAddToCart(item: TrackableCartItem, quantity = item.quantity) {
   const trackedQuantity = Math.max(1, quantity);
-  const trackingItem = { ...item, quantity: trackedQuantity, item_price: item.price };
+  const resolvedSku = item.sku || item.productSku || (item as any).productId || (item as any).id;
+  const trackingItem = {
+    ...item,
+    sku: resolvedSku,
+    productSku: item.productSku || resolvedSku,
+    quantity: trackedQuantity,
+    item_price: item.price,
+  };
 
   trackCommerceItems('AddToCart', [trackingItem], {
     value: item.price * trackedQuantity,

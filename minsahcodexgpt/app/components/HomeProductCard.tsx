@@ -15,6 +15,7 @@ export interface HomeProductCardData {
   name: string;
   category?: string | null;
   brand?: string | null;
+  sku?: string | null;
   price: number;
   originalPrice?: number | null;
   discount?: number | null;
@@ -171,6 +172,7 @@ export default function HomeProductCard({
             productImage={product.image}
             price={product.price}
             stock={product.stock}
+            sku={product.sku ?? null}
             hasVariants={product.hasVariants}
             variants={product.variants}
             variantCount={product.variantCount ?? undefined}
@@ -241,6 +243,7 @@ export default function HomeProductCard({
             productImage={product.image}
             price={product.price}
             stock={product.stock}
+            sku={product.sku ?? null}
             hasVariants={product.hasVariants}
             variants={product.variants}
             variantCount={product.variantCount ?? undefined}

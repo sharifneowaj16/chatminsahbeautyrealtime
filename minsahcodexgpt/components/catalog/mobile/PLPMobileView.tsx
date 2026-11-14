@@ -113,6 +113,9 @@ export default function PLPMobileView({
     try {
       addItem({
         id: product.id,
+        productId: product.id,
+        sku: product.sku || product.id,
+        productSku: product.sku || product.id,
         name: product.title,
         price: product.price,
         quantity: 1,

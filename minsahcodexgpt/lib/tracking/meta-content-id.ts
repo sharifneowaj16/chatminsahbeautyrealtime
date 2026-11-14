@@ -102,10 +102,14 @@ export function normalizeMetaCatalogIdSource(value?: string | null): MetaCatalog
 
 /**
  * One public setting is used by browser and server so both paths cannot choose
- * different catalog namespaces. Do not silently fall back to another source.
+ * different catalog namespaces. Defaults safely to 'sku' (the canonical Meta catalog policy).
  */
 export function getMetaCatalogIdSource(): MetaCatalogIdSource | null {
-  return normalizeMetaCatalogIdSource(process.env.NEXT_PUBLIC_META_CATALOG_ID_SOURCE);
+  return (
+    normalizeMetaCatalogIdSource(process.env.NEXT_PUBLIC_META_CATALOG_ID_SOURCE) ||
+    normalizeMetaCatalogIdSource(process.env.META_CATALOG_ID_SOURCE) ||
+    'sku'
+  );
 }
 
 export function isMetaCatalogIdentityConfigured() {
@@ -199,7 +203,23 @@ export function resolveMetaCatalogIdentity(
   }
 
   const productSku = getMetaParentProductSku(item);
-  if (!productSku) return null;
+  if (!productSku) {
+    const fallbackId = getMetaParentProductId(item) || cleanId((item as any).id);
+    if (fallbackId && !isVariant) {
+      return { itemId: fallbackId, itemSource: 'product_sku', isVariant: false };
+    }
+    if (fallbackId && isVariant) {
+      const variantSku = getMetaVariantSku(item);
+      return {
+        itemId: variantSku || variantId || fallbackId,
+        groupId: fallbackId,
+        itemSource: 'variant_sku',
+        groupSource: 'product_sku',
+        isVariant: true,
+      };
+    }
+    return null;
+  }
   if (!isVariant) {
     return { itemId: productSku, itemSource: 'product_sku', isVariant: false };
   }

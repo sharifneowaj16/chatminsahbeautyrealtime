@@ -169,6 +169,8 @@ export function IOSSearchModalOverlay({
     addItem({
       id: item.id,
       productId: item.id,
+      sku: (item as any).sku || item.id,
+      productSku: (item as any).sku || item.id,
       name: item.name,
       price: item.priceBdt,
       quantity: 1,

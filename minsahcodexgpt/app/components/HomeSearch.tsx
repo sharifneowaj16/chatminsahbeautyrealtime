@@ -274,10 +274,15 @@ export default function HomeSearch({
       addItem({
         id: `${prod.productId}-${variant.id}`,
         productId: prod.productId,
+        variantId: variant.id,
         name: `${prod.productName || prod.text} (${variant.name})`,
+        variantName: variant.name,
         price: variant.price || prod.price,
         quantity: 1,
         image: variant.image || prod.image || '/images/categories/Serum.png',
+        sku: variant.sku || prod.productId,
+        productSku: prod.productId,
+        variantSku: variant.sku,
       });
 
       pushToast({
@@ -311,6 +316,8 @@ export default function HomeSearch({
         price: suggestion.price,
         quantity: 1,
         image: suggestion.image || '/images/categories/Serum.png',
+        sku: (suggestion as any).sku || suggestion.productId,
+        productSku: (suggestion as any).sku || suggestion.productId,
       });
 
       pushToast({

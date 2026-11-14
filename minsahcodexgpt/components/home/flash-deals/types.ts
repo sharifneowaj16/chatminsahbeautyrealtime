@@ -4,6 +4,7 @@ export type FlashDealLimitType = 'LIMITED' | 'UNLIMITED' | 'LEGACY_UNCONFIGURED'
 
 export interface FlashDealItem {
   id: string;
+  sku?: string;
   campaignRef?: string; // Stable UUID for customer campaign usage tracking
   productId: string;
   slug?: string;

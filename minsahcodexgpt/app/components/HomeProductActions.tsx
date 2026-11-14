@@ -30,6 +30,8 @@ interface HomeProductActionProps {
   productImage: string;
   price: number;
   stock: number;
+  sku?: string | null;
+  productSku?: string | null;
   hasVariants: boolean;
   variantCount?: number;
   variantsFullyLoaded?: boolean;
@@ -55,6 +57,8 @@ export function HomeOverlayCartAction({
   productImage,
   price,
   stock,
+  sku,
+  productSku,
   hasVariants,
   variantCount,
   variantsFullyLoaded,
@@ -68,6 +72,8 @@ export function HomeOverlayCartAction({
       productName={productName}
       productImage={productImage}
       price={price}
+      sku={sku}
+      productSku={productSku ?? sku}
       maxStock={stock}
       hasRequiredVariants={hasVariants}
       variantCount={variantCount}
@@ -85,6 +91,8 @@ export function HomePrimaryCartAction({
   productImage,
   price,
   stock,
+  sku,
+  productSku,
   hasVariants,
   variantCount,
   variantsFullyLoaded,
@@ -97,6 +105,8 @@ export function HomePrimaryCartAction({
       productName={productName}
       productImage={productImage}
       price={price}
+      sku={sku}
+      productSku={productSku ?? sku}
       maxStock={stock}
       hasRequiredVariants={hasVariants}
       variantCount={variantCount}

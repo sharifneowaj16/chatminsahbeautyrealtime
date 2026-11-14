@@ -578,6 +578,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         variantId: item.variantId ?? null,
       });
 
+      const resolvedSku = item.sku || item.productSku || (item as any).product?.sku || undefined;
       const normalizedItem: CartItem = {
         ...item,
         id: canonicalLineKey,
@@ -587,6 +588,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         bundleId: item.bundleId || null,
         bundleGroupId: item.bundleGroupId || null,
         bundleInstanceId: item.bundleInstanceId || null,
+        sku: resolvedSku,
+        productSku: item.productSku || resolvedSku,
         quantity: clampCartQuantity(item.quantity, item.maxQuantity),
       };
       if (normalizedItem.quantity <= 0) return false;
@@ -638,8 +641,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (data.item) {
             const mapped = mapApiItem(data.item);
             itemForTracking = {
-              ...mapped,
               ...normalizedItem,
+              ...mapped,
+              sku: mapped.sku || normalizedItem.sku,
+              productSku: mapped.productSku || normalizedItem.productSku || mapped.sku,
               cartItemId: mapped.cartItemId,
               quantity: mapped.quantity,
             };

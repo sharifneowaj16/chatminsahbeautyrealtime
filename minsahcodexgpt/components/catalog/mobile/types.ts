@@ -9,6 +9,7 @@ export type PLPSortOption =
 
 export interface PLPProduct {
   id: string;
+  sku?: string;
   slug: string;
   title: string;
   brand: string;
