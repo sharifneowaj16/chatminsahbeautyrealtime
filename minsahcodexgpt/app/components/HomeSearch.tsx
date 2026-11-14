@@ -576,23 +576,29 @@ export default function HomeSearch({
         aria-label="Search catalog"
         className="fixed inset-0 h-[100dvh] w-full z-[180] flex flex-col bg-[#FAF9F6] text-slate-900 animate-in fade-in duration-200 overflow-hidden"
       >
-        {/* Top Header Bar: Luxury Brand Green with Top Grab Handle */}
-        <div className="flex flex-col bg-gradient-to-r from-[#062402] via-[#153410] to-[#062402] border-b border-[#D4F6A2]/20 shadow-md shrink-0">
+        {/* Top Header Bar: Solid Deep Forest Green (#062402) with Top Grab Handle */}
+        <div
+          style={{ backgroundColor: '#062402' }}
+          className="flex flex-col bg-[#062402] border-b border-[#D4F6A2]/20 shadow-md shrink-0"
+        >
           {/* Top Grab Handle */}
-          <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mt-2 mb-1" aria-hidden="true" />
+          <div className="w-12 h-1 bg-white/40 rounded-full mx-auto mt-2 mb-1" aria-hidden="true" />
           <div className="flex items-center gap-2.5 px-3 py-2">
             <button
               type="button"
               onClick={onCloseMobile}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#EAF7D8] hover:bg-white/20 hover:text-white transition active:scale-95 border border-white/10"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition active:scale-95 border border-white/20"
               aria-label="Back to page"
             >
               <ArrowLeft size={19} />
             </button>
 
             {/* Search Input Box (Font size strictly 16px to prevent iOS Safari auto-zoom) */}
-            <div className="flex-1 flex items-center h-10 rounded-full bg-white px-3.5 focus-within:ring-2 focus-within:ring-[#D4F6A2] transition shadow-xs border border-white/20">
-              <Search size={16} className="text-[#153410] shrink-0 mr-2" />
+            <div
+              style={{ backgroundColor: '#FFFFFF' }}
+              className="flex-1 flex items-center h-10 rounded-full bg-white px-3.5 focus-within:ring-2 focus-within:ring-[#D4F6A2] transition shadow-xs border border-white/20"
+            >
+              <Search size={16} className="text-[#062402] shrink-0 mr-2" />
               <input
                 ref={inputRef}
                 type="text"
@@ -600,7 +606,7 @@ export default function HomeSearch({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleInputKeyDown}
                 placeholder="Search skincare, serums, makeup..."
-                className="w-full bg-transparent text-[16px] text-slate-900 placeholder:text-stone-400 focus:outline-none touch-manipulation font-medium"
+                className="w-full bg-transparent text-[16px] text-[#181C1A] placeholder:text-stone-400 focus:outline-none touch-manipulation font-medium"
               />
               {searchQuery && (
                 <button
@@ -621,7 +627,7 @@ export default function HomeSearch({
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95 border ${
                 isListening
                   ? 'bg-[#D4F6A2] text-[#062402] border-[#D4F6A2] animate-pulse shadow-sm'
-                  : 'bg-white/10 text-[#D4F6A2] border-[#D4F6A2]/25 hover:bg-white/20'
+                  : 'bg-white/15 text-[#D4F6A2] border-[#D4F6A2]/30 hover:bg-white/25'
               }`}
               aria-label="Voice search"
             >
@@ -635,7 +641,7 @@ export default function HomeSearch({
           {/* Minimal Fast Search Prompt when idle */}
           {normalizedQuery.length < 2 && (
             <div className="py-14 px-4 text-center space-y-3">
-              <div className="w-13 h-13 rounded-2xl bg-[#1c3a13]/10 text-[#1c3a13] flex items-center justify-center mx-auto">
+              <div className="w-13 h-13 rounded-2xl bg-[#062402]/10 text-[#062402] flex items-center justify-center mx-auto">
                 <Search size={22} className="stroke-[2.2]" />
               </div>
               <div>
@@ -650,9 +656,9 @@ export default function HomeSearch({
           {/* Live Autocomplete Products While Typing */}
           {normalizedQuery.length >= 2 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#1c3a13]">
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#062402]">
                 <span>Matching Formulations ({productSuggestions.length})</span>
-                {isLoading && <Loader2 size={14} className="animate-spin text-[#1c3a13]" />}
+                {isLoading && <Loader2 size={14} className="animate-spin text-[#062402]" />}
               </div>
 
               {productSuggestions.length > 0 ? (
@@ -660,21 +666,17 @@ export default function HomeSearch({
                   {productSuggestions.map((prod) => {
                     const isAdding = addingProductId === prod.productId;
                     const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
-                    const hasVariants = Boolean(
-                      prod.hasVariants ||
-                      prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
-                    );
-                    const hasVariantList = hasVariants && prod.variants && prod.variants.length > 0;
+                    const hasMultiVariants = Boolean(prod.variants && prod.variants.length > 1);
                     const currentVariantId = selectedVariants[prod.productId] || prod.variants?.[0]?.id || null;
 
                     return (
                       <div
                         key={prod.productId}
                         onClick={() => selectSuggestion(prod)}
-                        className="p-3.5 rounded-2xl bg-white border border-[#1c3a13]/20 hover:border-[#1c3a13]/40 active:scale-[0.99] cursor-pointer transition flex flex-col gap-2.5 shadow-sm"
+                        className="p-3.5 rounded-2xl bg-white border border-stone-200 hover:border-stone-400 active:scale-[0.99] cursor-pointer transition flex flex-col gap-2.5 shadow-xs"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="relative h-13 w-13 flex-shrink-0 overflow-hidden rounded-xl bg-[#f4f7f4] border border-[#1c3a13]/10 p-1 flex items-center justify-center">
+                          <div className="relative h-13 w-13 flex-shrink-0 overflow-hidden rounded-xl bg-[#f4f7f4] border border-stone-200 p-1 flex items-center justify-center">
                             <Image
                               src={prod.image || '/images/categories/Serum.png'}
                               alt={prod.productName || prod.text}
@@ -688,7 +690,7 @@ export default function HomeSearch({
                               {highlightMatch(prod.productName || prod.text, normalizedQuery)}
                             </p>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="text-xs font-price font-extrabold text-[#1c3a13]">
+                              <span className="text-xs font-price font-extrabold text-[#062402]">
                                 {formatPrice(prod.price)}
                               </span>
                               {prod.rating && prod.rating > 0 ? (
@@ -701,15 +703,15 @@ export default function HomeSearch({
                                 </span>
                               ) : null}
                               {prod.badges?.[0] && (
-                                <span className="rounded-full bg-[#1c3a13]/10 px-2 py-0.5 text-[9px] font-bold text-[#1c3a13]">
+                                <span className="rounded-full bg-[#062402]/10 px-2 py-0.5 text-[9px] font-bold text-[#062402]">
                                   {prod.badges[0]}
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          {/* Action Button for Simple Products (Right Aligned) */}
-                          {!hasVariantList && (
+                          {/* Action Button for Single Products (Right Aligned, Always Visible) */}
+                          {!hasMultiVariants && (
                             <div onClick={(e) => e.stopPropagation()}>
                               {isOutOfStock ? (
                                 <button
@@ -724,25 +726,25 @@ export default function HomeSearch({
                                 <button
                                   type="button"
                                   onClick={(e) => handleQuickAddToCart(e, prod)}
-                                  className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition-all shadow-sm ${
+                                  className={`flex h-8.5 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all shadow-xs ${
                                     isAdding
-                                      ? 'bg-[#1c3a13] text-white'
-                                      : 'bg-[#1c3a13] hover:bg-[#254d1a] text-white active:scale-95'
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-[#062402] hover:bg-[#153410] text-white active:scale-95'
                                   }`}
                                   aria-label={`Add ${prod.productName || prod.text} to cart`}
                                 >
-                                  {isAdding ? <Check size={12} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
-                                  <span>{isAdding ? 'ADDED' : 'ADD'}</span>
+                                  {isAdding ? <Check size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
+                                  <span>{isAdding ? 'Added' : 'Add to Bag'}</span>
                                 </button>
                               )}
                             </div>
                           )}
                         </div>
 
-                        {/* Full Width Variant Selector Row for Variant Products */}
-                        {hasVariantList && (
+                        {/* Full Width Variant Selector Row with Left/Right Node Connector Popup Modal */}
+                        {hasMultiVariants && prod.variants && (
                           <div
-                            className="w-full pt-2 border-t border-[#1c3a13]/10"
+                            className="w-full pt-2 border-t border-stone-100"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <SeedHeroVariantDropdown
@@ -767,7 +769,7 @@ export default function HomeSearch({
                   })}
                 </div>
               ) : !isLoading ? (
-                <div className="p-6 text-center rounded-2xl bg-white border border-[#1c3a13]/10 shadow-2xs">
+                <div className="p-6 text-center rounded-2xl bg-white border border-stone-200 shadow-2xs">
                   <p className="text-sm font-semibold text-slate-900">No exact match for &ldquo;{normalizedQuery}&rdquo;</p>
                   <p className="text-xs text-stone-500 mt-1">Tap below to search the complete catalog.</p>
                 </div>
@@ -776,13 +778,14 @@ export default function HomeSearch({
           )}
         </div>
 
-        {/* Sticky Bottom Search CTA */}
+        {/* Sticky Bottom Search CTA with Safe Area Support */}
         {normalizedQuery.length >= 2 && (
-          <div className="border-t border-[#1c3a13]/15 p-3 bg-white shadow-lg shrink-0">
+          <div className="border-t border-stone-200 p-3 bg-white shadow-lg shrink-0 pb-[max(12px,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={() => navigateToSearch()}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#062402] via-[#153410] to-[#062402] hover:opacity-95 text-[#D4F6A2] font-bold text-sm shadow-md active:scale-95 transition"
+              style={{ backgroundColor: '#062402' }}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#062402] hover:bg-[#153410] text-[#D4F6A2] font-bold text-sm shadow-md active:scale-95 transition"
             >
               <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
               <ArrowRight size={16} />
@@ -939,10 +942,7 @@ export default function HomeSearch({
                     const isActive = activeIndex === itemIndex;
                     const isAdding = addingProductId === prod.productId;
                     const isOutOfStock = prod.inStock === false || (prod.stock !== undefined && prod.stock <= 0);
-                    const hasVariants = Boolean(
-                      prod.hasVariants ||
-                      prod.badges?.some((b) => b.toLowerCase().includes('option') || b.toLowerCase().includes('shade') || b.toLowerCase().includes('variant'))
-                    );
+                    const hasMultiVariants = Boolean(prod.variants && prod.variants.length > 1);
                     const currentVariantId = selectedVariants[prod.productId] || prod.variants?.[0]?.id || null;
 
                     return (
@@ -1010,7 +1010,7 @@ export default function HomeSearch({
                             >
                               Sold Out
                             </button>
-                          ) : hasVariants && prod.variants && prod.variants.length > 0 ? (
+                          ) : hasMultiVariants && prod.variants ? (
                             <div className="relative shrink-0 w-36 sm:w-44">
                               <SeedHeroVariantDropdown
                                 variants={prod.variants}
@@ -1031,15 +1031,15 @@ export default function HomeSearch({
                             <button
                               type="button"
                               onClick={(e) => handleQuickAddToCart(e, prod)}
-                              className={`flex h-8 items-center gap-1.5 rounded-xl px-3.5 text-xs font-extrabold transition-all shadow-sm ${
+                              className={`flex h-8 items-center gap-1.5 rounded-xl px-3.5 text-xs font-extrabold transition-all shadow-xs ${
                                 isAdding
-                                  ? 'bg-[#1c3a13] text-white'
-                                  : 'bg-[#1c3a13] hover:bg-[#264f1a] text-white active:scale-95'
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-[#062402] hover:bg-[#153410] text-white active:scale-95'
                               }`}
                               aria-label={`Add ${prod.productName || prod.text} to cart`}
                             >
                               {isAdding ? <Check size={11} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
-                              <span>{isAdding ? 'ADDED' : 'ADD'}</span>
+                              <span>{isAdding ? 'Added' : 'Add to Bag'}</span>
                             </button>
                           )}
                         </div>
@@ -1060,11 +1060,12 @@ export default function HomeSearch({
               <button
                 type="button"
                 onClick={() => navigateToSearch()}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-[#1c3a13] via-[#244919] to-[#1c3a13] hover:opacity-95 text-white font-bold text-xs shadow-md active:scale-95 transition"
+                style={{ backgroundColor: '#062402' }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-[#062402] hover:bg-[#153410] text-[#D4F6A2] font-bold text-xs shadow-md active:scale-95 transition"
               >
                 <span>See all results for &ldquo;{normalizedQuery}&rdquo;</span>
                 <span className="flex items-center gap-1.5">
-                  <span className="hidden sm:inline text-[10px] font-mono opacity-80">Press ↵</span>
+                  <span className="hidden sm:inline text-[10px] font-mono opacity-80 text-white">Press ↵</span>
                   <ArrowRight size={14} />
                 </span>
               </button>
