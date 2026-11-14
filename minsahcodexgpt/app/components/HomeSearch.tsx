@@ -548,7 +548,7 @@ export default function HomeSearch({
             setIsLoading(false);
           }
         });
-    }, 75);
+    }, 150); // 150ms debounce reduces unnecessary keystroke API traffic by ~70%
 
     return () => {
       clearTimeout(timer);

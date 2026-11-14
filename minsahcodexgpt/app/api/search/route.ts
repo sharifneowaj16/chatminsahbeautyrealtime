@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { esClient, PRODUCT_INDEX } from '@/lib/elasticsearch';
+import { cacheGet, cacheSet } from '@/lib/cache/redis';
 import { sanitizeQuery, validateNumericParam, validateSearchParams } from '@/lib/elasticsearch/utils';
 import { searchMetrics } from '@/lib/elasticsearch/metrics';
 import { BehaviorTracker } from '@/lib/tracking/behavior';
@@ -345,6 +346,37 @@ export async function GET(request: NextRequest) {
     // ✅ Get user behavior for personalization (returns null server-side, handled below)
     const behavior = BehaviorTracker.getBehavior();
     const userCategories = behavior?.categoriesViewed || [];
+    const isPersonalized = userCategories.length > 0;
+    const isCacheable = !isPersonalized && page === 1;
+
+    // ── Tier 2: Page 1 Only Redis Result Cache (Natural 2m TTL) ────────
+    // Normalize query parameters (trim, lowercase, whitespace collapse) to prevent duplicate Redis cache entries
+    const cacheKeyEntries = Array.from(searchParams.entries())
+      .filter(([k]) => !['t', '_r', 'timestamp', 'cacheBuster'].includes(k))
+      .map(([k, v]) => {
+        const normalizedVal = typeof v === 'string'
+          ? v.toLowerCase().replace(/\s+/g, ' ').trim()
+          : String(v);
+        return [k.toLowerCase().trim(), normalizedVal] as [string, string];
+      })
+      .sort(([a], [b]) => a.localeCompare(b));
+    const searchCacheKey = `cache:search:p1:${new URLSearchParams(cacheKeyEntries).toString()}`;
+
+    if (isCacheable) {
+      const cachedResult = await cacheGet<any>(searchCacheKey);
+      if (cachedResult) {
+        const cachedDuration = Date.now() - startTime;
+        return NextResponse.json(cachedResult, {
+          headers: getShopPayloadHeaders(cachedResult, {
+            'X-Search-Duration': String(cachedDuration),
+            'X-Result-Count': String(cachedResult.pagination?.total || 0),
+            'X-Search-Source': 'redis-cache',
+            'X-Search-Cache': 'HIT-REDIS',
+            'Cache-Control': SHOP_LISTING_CACHE_CONTROL,
+          }),
+        });
+      }
+    }
 
     // ✅ FETCH CTR DATA in parallel (Redis cache 5min → DB fallback)
     // Only when sort=relevance — price/newest sort doesn't need CTR boost
@@ -361,17 +393,20 @@ export async function GET(request: NextRequest) {
     let userFilterCount = 0;
     const should: any[] = [];
 
-    // ✅ MAIN SEARCH QUERY with SYNONYMS (via beauty_search analyzer on name/description)
+    // ✅ MAIN SEARCH QUERY ARCHITECTURE (CPU-Safe 2-Layer Fuzziness & Prefix)
     if (query.trim()) {
+      // স্তর ১ (Exact, Prefix & Synonyms - NO Fuzziness on edge_ngram / autocomplete)
       must.push({
         multi_match: {
           query: query,
           fields: [
             'name^5',
-            'brand^3',
-            'brandSlug^2',
-            'categoryName^2',
-            'subcategoryName^2',
+            'name.autocomplete^4',
+            'brand^3.5',
+            'brand.keyword^4',
+            'brandSlug^2.5',
+            'categoryName^2.5',
+            'subcategoryName^2.5',
             'category^1.5',
             'subcategory^1.5',
             'description^1.5',
@@ -380,14 +415,12 @@ export async function GET(request: NextRequest) {
             'secondaryKeywords^3',
             'searchTags^3',
             'synonyms^3',
-            'banglaSearchTerms^3',
+            'banglaSearchTerms^3.5',
             'buyingIntentKeywords^2.5',
             'reviewKeywords^2',
             'entities^2',
           ],
           type: 'best_fields',
-          fuzziness: 'AUTO',
-          prefix_length: 2,
         }
       });
 
@@ -396,8 +429,20 @@ export async function GET(request: NextRequest) {
         match_phrase: {
           name: {
             query: query,
-            boost: 3,
+            boost: 4,
           }
+        }
+      });
+
+      // স্তর ২ (Typo Tolerance: ONLY plain text fields with prefix_length: 1 to prevent CPU spikes)
+      should.push({
+        multi_match: {
+          query: query,
+          fields: ['name^1.5', 'brand^1.2', 'categoryName^1'],
+          type: 'best_fields',
+          fuzziness: 'AUTO',
+          prefix_length: 1, // Requires 1st character exact match
+          boost: 1.0,
         }
       });
     } else {
@@ -901,31 +946,31 @@ export async function GET(request: NextRequest) {
     const responseFacets = zeroResultsFallback
       ? buildFallbackFacetsFromProducts(products)
       : {
-          categories: response.aggregations?.categories?.buckets.map((bucket) => ({
-            label: getAggregationLabel(bucket, 'category_label'),
-            value: bucket.key,
-            count: bucket.doc_count,
-          })) || [],
-          brands: response.aggregations?.brands?.buckets.map((bucket) => ({
-            label: getAggregationLabel(bucket, 'brand_label'),
-            value: bucket.key,
-            count: bucket.doc_count,
-          })) || [],
-          priceRanges: response.aggregations?.price_ranges?.buckets.map(buildPriceRangeFacet) || [],
-          skinTypes: [],
-          concerns: [],
-          availability: Object.entries(response.aggregations?.availability?.buckets || {}).map(([value, bucket]) => ({
-            label: value === 'in_stock' ? 'In Stock' : 'Out of Stock',
-            value,
-            count: (bucket as { doc_count: number }).doc_count,
-          })).filter((facet) => facet.count > 0),
-          ratings: Object.entries(response.aggregations?.ratings?.buckets || {}).map(([value, bucket]) => ({
-            label: value === '4-up' ? '4★ & up' : '3★ & up',
-            value,
-            min: value === '4-up' ? 4 : 3,
-            count: (bucket as { doc_count: number }).doc_count,
-          })).filter((facet) => facet.count > 0),
-        };
+        categories: response.aggregations?.categories?.buckets.map((bucket) => ({
+          label: getAggregationLabel(bucket, 'category_label'),
+          value: bucket.key,
+          count: bucket.doc_count,
+        })) || [],
+        brands: response.aggregations?.brands?.buckets.map((bucket) => ({
+          label: getAggregationLabel(bucket, 'brand_label'),
+          value: bucket.key,
+          count: bucket.doc_count,
+        })) || [],
+        priceRanges: response.aggregations?.price_ranges?.buckets.map(buildPriceRangeFacet) || [],
+        skinTypes: [],
+        concerns: [],
+        availability: Object.entries(response.aggregations?.availability?.buckets || {}).map(([value, bucket]) => ({
+          label: value === 'in_stock' ? 'In Stock' : 'Out of Stock',
+          value,
+          count: (bucket as { doc_count: number }).doc_count,
+        })).filter((facet) => facet.count > 0),
+        ratings: Object.entries(response.aggregations?.ratings?.buckets || {}).map(([value, bucket]) => ({
+          label: value === '4-up' ? '4★ & up' : '3★ & up',
+          value,
+          min: value === '4-up' ? 4 : 3,
+          count: (bucket as { doc_count: number }).doc_count,
+        })).filter((facet) => facet.count > 0),
+      };
 
     const displayTotal = zeroResultsFallback ? products.length : totalHits;
 
@@ -966,16 +1011,21 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    const isPersonalized = userCategories.length > 0;
     const searchCacheControl = isPersonalized
       ? 'private, no-cache, no-store, must-revalidate'
       : SHOP_LISTING_CACHE_CONTROL;
+
+    if (isCacheable && responsePayload.success) {
+      // Natural 2-minute (120s) safe TTL for Page 1 queries
+      await cacheSet(searchCacheKey, responsePayload, 120);
+    }
 
     return NextResponse.json(responsePayload, {
       headers: getShopPayloadHeaders(responsePayload, {
         'X-Search-Duration': String(duration),
         'X-Result-Count': String(totalHits),
         'X-Search-Source': 'elasticsearch',
+        'X-Search-Cache': 'MISS-ES',
         'Cache-Control': searchCacheControl,
       }),
     });

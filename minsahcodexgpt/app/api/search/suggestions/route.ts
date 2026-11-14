@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { esClient, PRODUCT_INDEX } from '@/lib/elasticsearch';
 import prisma from '@/lib/prisma';
+import { searchSuggestL1Cache } from '@/lib/cache/lru';
+import { cacheGet, cacheSet } from '@/lib/cache/redis';
 import {
   getMatchingTrendingQueries,
   getTrendingProductIds,
@@ -62,36 +64,36 @@ interface ElasticsearchSuggestResponse {
 
 type ApiSuggestion =
   | {
-      type: 'product';
-      text: string;
-      productId: string;
-      productName: string;
-      slug: string;
-      price: number;
-      image?: string;
-      score?: number | null;
-      badges?: string[];
-      source: 'elasticsearch_autocomplete' | 'trending_product' | 'database_autocomplete_fallback';
-      hasVariants?: boolean;
-      inStock?: boolean;
-      stock?: number;
-      rating?: number;
-      reviewCount?: number;
-      variants?: ProductSuggestionVariant[];
-    }
+    type: 'product';
+    text: string;
+    productId: string;
+    productName: string;
+    slug: string;
+    price: number;
+    image?: string;
+    score?: number | null;
+    badges?: string[];
+    source: 'elasticsearch_autocomplete' | 'trending_product' | 'database_autocomplete_fallback';
+    hasVariants?: boolean;
+    inStock?: boolean;
+    stock?: number;
+    rating?: number;
+    reviewCount?: number;
+    variants?: ProductSuggestionVariant[];
+  }
   | {
-      type: 'trending';
-      text: string;
-      count: number;
-      icon: string;
-      source: 'popular_query' | 'matching_trending_query' | 'zero_result_fallback';
-    }
+    type: 'trending';
+    text: string;
+    count: number;
+    icon: string;
+    source: 'popular_query' | 'matching_trending_query' | 'zero_result_fallback';
+  }
   | {
-      type: 'completion';
-      text: string;
-      icon: string;
-      source: 'synonym_expansion';
-    };
+    type: 'completion';
+    text: string;
+    icon: string;
+    source: 'synonym_expansion';
+  };
 
 
 function jsonCached(payload: unknown, init?: ResponseInit, isError = false) {
@@ -214,6 +216,32 @@ export async function GET(request: NextRequest) {
     const normalizedQuery = normalizeQuery(query);
 
     if (trending || !normalizedQuery) {
+      const trendingL1Key = `trending:${trendingLimit}:${limit}`;
+      const trendingL2Key = `cache:suggest:trending:${trendingLimit}:${limit}`;
+
+      // Tier 1: In-Memory L1 Cache (0.01ms)
+      const trendingL1Hit = searchSuggestL1Cache.get(trendingL1Key);
+      if (trendingL1Hit) {
+        const response = jsonCached({
+          ...trendingL1Hit,
+          source: 'l1_memory_cache',
+        });
+        response.headers.set('X-Search-Cache', 'HIT-L1');
+        return response;
+      }
+
+      // Tier 2: Redis L2 Cache (1-2ms)
+      const trendingL2Hit = await cacheGet<any>(trendingL2Key);
+      if (trendingL2Hit) {
+        searchSuggestL1Cache.set(trendingL1Key, trendingL2Hit, 120_000);
+        const response = jsonCached({
+          ...trendingL2Hit,
+          source: 'l2_redis_cache',
+        });
+        response.headers.set('X-Search-Cache', 'HIT-L2');
+        return response;
+      }
+
       const [popularQueries, trendingProducts] = await Promise.all([
         getTrendingQueries(trendingLimit),
         fetchTrendingProductSuggestions(Math.max(1, Math.min(limit, 4))),
@@ -224,12 +252,46 @@ export async function GET(request: NextRequest) {
         ...trendingProducts,
       ], Math.max(trendingLimit, limit));
 
-      return jsonCached({
+      const payload = {
         success: true,
         source: 'redis_persistent_trending',
         count: suggestions.length,
         suggestions,
+      };
+
+      // Populate L1 (2m) and L2 Redis (15m)
+      searchSuggestL1Cache.set(trendingL1Key, payload, 120_000);
+      await cacheSet(trendingL2Key, payload, 900);
+
+      const response = jsonCached(payload);
+      response.headers.set('X-Search-Cache', 'MISS-ES');
+      return response;
+    }
+
+    // ── Tier 1: Node.js In-Memory L1 Cache (0.01ms response) ───────────
+    const l1Key = `${normalizedQuery}:${limit}`;
+    const l2Key = `cache:suggest:${normalizedQuery}:${limit}`;
+
+    const l1Hit = searchSuggestL1Cache.get(l1Key);
+    if (l1Hit) {
+      const response = jsonCached({
+        ...l1Hit,
+        source: 'l1_memory_cache',
       });
+      response.headers.set('X-Search-Cache', 'HIT-L1');
+      return response;
+    }
+
+    // ── Tier 2: Redis L2 Cache (1-2ms response) ────────────────────────
+    const l2Hit = await cacheGet<any>(l2Key);
+    if (l2Hit) {
+      searchSuggestL1Cache.set(l1Key, l2Hit, 120_000);
+      const response = jsonCached({
+        ...l2Hit,
+        source: 'l2_redis_cache',
+      });
+      response.headers.set('X-Search-Cache', 'HIT-L2');
+      return response;
     }
 
     const [productSuggestions, matchingTrending, synonymSuggestions, trendingProducts] = await Promise.all([
@@ -304,13 +366,21 @@ export async function GET(request: NextRequest) {
 
     const hydratedSuggestions = await hydrateVariantsIfMissing(suggestions);
 
-    return jsonCached({
+    const payload = {
       success: true,
       source: 'elasticsearch_plus_redis_persistent_trending',
       count: hydratedSuggestions.length,
       suggestions: hydratedSuggestions,
       ...(fallback && { fallback }),
-    });
+    };
+
+    // Populate L1 (2 mins) and L2 Redis (15 mins = 900 seconds)
+    searchSuggestL1Cache.set(l1Key, payload, 120_000);
+    await cacheSet(l2Key, payload, 900);
+
+    const response = jsonCached(payload);
+    response.headers.set('X-Search-Cache', 'MISS-ES');
+    return response;
   } catch (error) {
     console.error('❌ Suggestions error:', error);
     return jsonCached(

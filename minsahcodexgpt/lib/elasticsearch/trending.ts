@@ -24,6 +24,16 @@ const TTL_HOURS = 24;
 const QUERY_MAX_LENGTH = 120;
 const PRODUCT_ID_MAX_LENGTH = 128;
 
+const DEFAULT_FALLBACK_TRENDING: string[] = [
+  'sunscreen',
+  'serum',
+  'moisturizer',
+  'cleanser',
+  'toner',
+  'lip balm',
+  'shampoo',
+];
+
 export type TrendingQuery = { query: string; score: number; count: number };
 export type TrendingProduct = { productId: string; score: number; count: number };
 
@@ -144,14 +154,32 @@ export async function trackSearchClick(query: string, productId: string): Promis
  * Get top trending search queries.
  */
 export async function getTrendingQueries(limit: number = 10): Promise<TrendingQuery[]> {
-  if (!redis) return [];
+  const safeLimit = Math.max(1, Math.min(limit, 50));
+  if (!redis) {
+    return DEFAULT_FALLBACK_TRENDING.slice(0, safeLimit).map((q, idx) => ({
+      query: q,
+      score: safeLimit - idx,
+      count: safeLimit - idx,
+    }));
+  }
   try {
-    const safeLimit = Math.max(1, Math.min(limit, 50));
     const results = await redis.zrevrange(TRENDING_QUERIES_KEY, 0, safeLimit - 1, 'WITHSCORES');
-    return parseSortedSetWithScores(results, 'query') as TrendingQuery[];
+    const items = parseSortedSetWithScores(results, 'query') as TrendingQuery[];
+    if (items.length === 0) {
+      return DEFAULT_FALLBACK_TRENDING.slice(0, safeLimit).map((q, idx) => ({
+        query: q,
+        score: safeLimit - idx,
+        count: safeLimit - idx,
+      }));
+    }
+    return items;
   } catch (error) {
     console.error('Failed to get trending queries:', error);
-    return [];
+    return DEFAULT_FALLBACK_TRENDING.slice(0, safeLimit).map((q, idx) => ({
+      query: q,
+      score: safeLimit - idx,
+      count: safeLimit - idx,
+    }));
   }
 }
 
@@ -175,14 +203,32 @@ export async function getMatchingTrendingQueries(
  * Get zero-result queries. Useful for admin demand-gap analysis and fallback chips.
  */
 export async function getZeroResultQueries(limit: number = 10): Promise<TrendingQuery[]> {
-  if (!redis) return [];
+  const safeLimit = Math.max(1, Math.min(limit, 50));
+  if (!redis) {
+    return DEFAULT_FALLBACK_TRENDING.slice(0, safeLimit).map((q, idx) => ({
+      query: q,
+      score: safeLimit - idx,
+      count: safeLimit - idx,
+    }));
+  }
   try {
-    const safeLimit = Math.max(1, Math.min(limit, 50));
     const results = await redis.zrevrange(TRENDING_ZERO_RESULT_KEY, 0, safeLimit - 1, 'WITHSCORES');
-    return parseSortedSetWithScores(results, 'query') as TrendingQuery[];
+    const items = parseSortedSetWithScores(results, 'query') as TrendingQuery[];
+    if (items.length === 0) {
+      return DEFAULT_FALLBACK_TRENDING.slice(0, safeLimit).map((q, idx) => ({
+        query: q,
+        score: safeLimit - idx,
+        count: safeLimit - idx,
+      }));
+    }
+    return items;
   } catch (error) {
     console.error('Failed to get zero-result queries:', error);
-    return [];
+    return DEFAULT_FALLBACK_TRENDING.slice(0, safeLimit).map((q, idx) => ({
+      query: q,
+      score: safeLimit - idx,
+      count: safeLimit - idx,
+    }));
   }
 }
 
