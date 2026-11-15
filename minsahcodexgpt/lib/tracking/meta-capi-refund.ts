@@ -441,6 +441,15 @@ export async function sendMetaCapiRefund(params: {
     eventTime,
   });
 
+  const customData = payload.data[0].custom_data as Record<string, unknown>;
+  const resolvedSkus = order.items
+    .map((item) => item.variant?.sku?.trim() || item.sku?.trim() || item.product?.sku?.trim())
+    .filter((sku): sku is string => Boolean(sku));
+  const contentIds = Array.isArray(customData.content_ids)
+    ? (customData.content_ids as string[])
+    : resolvedSkus;
+  const contents = Array.isArray(customData.contents) ? customData.contents : [];
+
   const safePayload = withMetaSafePayloadSchema({
     event_name: 'Refund',
     event_id: eventId,
@@ -449,6 +458,13 @@ export async function sendMetaCapiRefund(params: {
     source,
     value: refundAmount,
     currency: 'BDT',
+    content_type: (customData.content_type as string) ?? 'product',
+    content_ids: contentIds,
+    contents,
+    skus: resolvedSkus,
+    content_id_count: contentIds.length,
+    contents_count: contents.length,
+    num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
     has_fbp: Boolean(order.fbp),
     has_fbc: Boolean(order.fbc),
     has_phone_hash: Boolean(payload.data[0].user_data.ph),
@@ -470,6 +486,7 @@ export async function sendMetaCapiRefund(params: {
         attempts: { increment: 1 },
         processingAt: new Date(),
         payload: { kind: 'core_event', request: payload } as any,
+        safePayload: safePayload as any,
       },
       create: {
         correlationId: `refund-${order.id}-${Date.now()}`,

@@ -240,6 +240,7 @@ export async function markMetaOutboxProcessing(input: {
 export async function markMetaOutboxSent(input: {
   outboxId: string;
   response?: Record<string, unknown> | null;
+  safePayload?: Record<string, unknown> | null;
   db?: MetaOutboxDb;
 }) {
   const executor = dbOrDefault(input.db);
@@ -248,6 +249,7 @@ export async function markMetaOutboxSent(input: {
      SET "status" = 'SENT'::"MetaEventOutboxStatus",
          "sentAt" = NOW(),
          "response" = $2::jsonb,
+         "safePayload" = COALESCE($3::jsonb, "safePayload"),
          "lastError" = NULL,
          "nextAttemptAt" = NULL,
          "leaseToken" = NULL,
@@ -256,7 +258,8 @@ export async function markMetaOutboxSent(input: {
      WHERE "id" = $1
      RETURNING *`,
     input.outboxId,
-    json(input.response)
+    json(input.response),
+    json(input.safePayload ?? null)
   );
   if (!rows[0]) return null;
   const record = hydrate(rows[0]);
@@ -265,7 +268,7 @@ export async function markMetaOutboxSent(input: {
     status: 'SENT',
     attempt: record.attempts,
     note: 'Meta accepted the event.',
-    safeDetails: input.response ?? null,
+    safeDetails: input.safePayload ?? input.response ?? null,
   });
   return record;
 }

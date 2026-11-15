@@ -225,6 +225,10 @@ export async function processMetaOutboxById(input: {
     if (delivery.ok) {
       await markMetaOutboxSent({
         outboxId: record.id,
+        safePayload:
+          'safePayload' in delivery && delivery.safePayload
+            ? (delivery.safePayload as Record<string, unknown>)
+            : undefined,
         response: {
           outcome: wasSkipped ? 'already_sent' : 'accepted_or_idempotent',
           reason: 'reason' in delivery ? delivery.reason : undefined,

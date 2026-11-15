@@ -381,6 +381,7 @@ async function deliverPurchaseWithBusinessSdk(params: {
         ok: true,
         retry: false,
         response: responsePayload,
+        safePayload: params.safePayload,
         transport: result.transport,
         cutoverMode: result.cutoverMode,
         graphApiVersion: result.graphApiVersion,
@@ -669,6 +670,10 @@ export async function sendCodPurchaseToMeta(params: {
       : {}),
   };
 
+  const resolvedSkus = catalogItems
+    .map((item) => item.sku)
+    .filter((sku): sku is string => Boolean(sku));
+
   const safePayload = withMetaSafePayloadSchema({
     event_name: 'Purchase',
     event_id: eventId,
@@ -679,8 +684,11 @@ export async function sendCodPurchaseToMeta(params: {
     value: orderValue,
     currency: 'BDT',
     catalog_shape: catalogShape,
-    content_type: metaCatalogData.content_type,
-    content_id_count: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids.length : 0,
+    content_type: metaCatalogData.content_type ?? 'product',
+    content_ids: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids : resolvedSkus,
+    contents: Array.isArray(metaCatalogData.contents) ? metaCatalogData.contents : [],
+    skus: resolvedSkus,
+    content_id_count: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids.length : resolvedSkus.length,
     contents_count: Array.isArray(metaCatalogData.contents) ? metaCatalogData.contents.length : 0,
     num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
     custom_data_keys: Object.keys(payload.data[0].custom_data).sort(),
@@ -959,6 +967,10 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
       : {}),
   };
 
+  const resolvedSkus = catalogItems
+    .map((item) => item.sku)
+    .filter((sku): sku is string => Boolean(sku));
+
   const safePayload = withMetaSafePayloadSchema({
     event_name: 'Purchase',
     event_id: eventId,
@@ -969,8 +981,11 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
     value: orderValue,
     currency: 'BDT',
     catalog_shape: catalogShape,
-    content_type: metaCatalogData.content_type,
-    content_id_count: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids.length : 0,
+    content_type: metaCatalogData.content_type ?? 'product',
+    content_ids: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids : resolvedSkus,
+    contents: Array.isArray(metaCatalogData.contents) ? metaCatalogData.contents : [],
+    skus: resolvedSkus,
+    content_id_count: Array.isArray(metaCatalogData.content_ids) ? metaCatalogData.content_ids.length : resolvedSkus.length,
     contents_count: Array.isArray(metaCatalogData.contents) ? metaCatalogData.contents.length : 0,
     num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
     custom_data_keys: Object.keys(payload.data[0].custom_data).sort(),

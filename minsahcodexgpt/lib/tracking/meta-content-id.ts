@@ -236,7 +236,7 @@ export function resolveMetaCatalogIdentity(
     return { itemId: productSku, itemSource: 'product_sku', isVariant: false };
   }
 
-  const variantSku = getMetaVariantSku(item);
+  const variantSku = getMetaVariantSku(item) ?? productSku;
   if (!variantSku) return null;
   return {
     itemId: variantSku,

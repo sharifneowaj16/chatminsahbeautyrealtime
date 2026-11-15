@@ -105,6 +105,21 @@ export async function GET(
         gaPurchaseSentAt: true,
         gaPurchaseProcessingAt: true,
 
+        items: {
+          select: {
+            id: true,
+            productId: true,
+            variantId: true,
+            name: true,
+            sku: true,
+            quantity: true,
+            price: true,
+            total: true,
+            product: { select: { sku: true } },
+            variant: { select: { sku: true } },
+          },
+        },
+
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 5,
@@ -195,6 +210,7 @@ export async function GET(
             attempts: true,
             sentAt: true,
             suppressReason: true,
+            safePayload: true,
             createdAt: true,
           },
         },
@@ -216,6 +232,23 @@ export async function GET(
         payment.currencyMatched &&
         payment.currency === 'BDT'
     );
+
+    const catalogItems = (order.items || []).map((item) => {
+      const variantSku = item.variant?.sku?.trim() || null;
+      const productSku = item.product?.sku?.trim() || item.sku?.trim() || null;
+      const canonicalSku = variantSku || item.sku?.trim() || productSku || undefined;
+      return {
+        name: item.name,
+        sku: canonicalSku,
+        productSku: productSku ?? canonicalSku,
+        variantSku: variantSku ?? null,
+        quantity: item.quantity,
+        unitPrice: toNumber(item.price),
+      };
+    });
+    const contentIds = catalogItems
+      .map((item) => item.sku)
+      .filter((sku): sku is string => Boolean(sku));
 
     return NextResponse.json({
       success: true,
@@ -244,6 +277,8 @@ export async function GET(
         metaBrowserPurchaseClaimedAt: order.metaBrowserPurchaseClaimedAt,
         metaEventId: order.metaEventId,
         metaEventIdMatchesExpected: order.metaEventId === expectedMetaPurchaseEventId,
+        contentIds,
+        catalogItems,
         metaRefundSent: order.metaEventOutbox.some(
           (e) => (e.eventName === 'Refund' || e.eventName === 'CancelOrder') && e.status === 'SENT'
         ),
