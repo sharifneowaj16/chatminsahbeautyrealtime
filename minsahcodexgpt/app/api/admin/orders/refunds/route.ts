@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma, PaymentRefundStatus } from '@/generated/prisma/client';
+import { dispatchMetaCapiRefundWithFallback } from '@/lib/tracking/meta-capi-refund';
 
 export const dynamic = 'force-dynamic';
 
@@ -259,6 +260,20 @@ export async function POST(request: NextRequest) {
       });
     });
 
+    if (finalStatus === PaymentRefundStatus.COMPLETED) {
+      const parentOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { id: true, metaPurchaseSent: true, isTest: true },
+      });
+      if (parentOrder?.metaPurchaseSent && !parentOrder.isTest) {
+        await dispatchMetaCapiRefundWithFallback({
+          orderId: parentOrder.id,
+          source: 'admin_order_status_refunded',
+          customRefundAmount: Number(refundAmountNum),
+        }).catch((err) => console.error('Admin manual refund Meta CAPI dispatch failed:', err));
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message:
@@ -364,6 +379,20 @@ export async function PATCH(request: NextRequest) {
         completedAt: nextStatus === PaymentRefundStatus.COMPLETED ? now : existing.completedAt,
       },
     });
+
+    if (nextStatus === PaymentRefundStatus.COMPLETED) {
+      const parentOrder = await prisma.order.findUnique({
+        where: { id: existing.orderId },
+        select: { id: true, metaPurchaseSent: true, isTest: true },
+      });
+      if (parentOrder?.metaPurchaseSent && !parentOrder.isTest) {
+        await dispatchMetaCapiRefundWithFallback({
+          orderId: parentOrder.id,
+          source: 'admin_order_status_refunded',
+          customRefundAmount: Number(existing.amount),
+        }).catch((err) => console.error('Admin manual refund PATCH Meta CAPI dispatch failed:', err));
+      }
+    }
 
     return NextResponse.json({
       success: true,

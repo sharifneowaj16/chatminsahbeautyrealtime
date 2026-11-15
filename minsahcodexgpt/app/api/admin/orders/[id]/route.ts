@@ -7,6 +7,7 @@ import {
   enqueueMetaCapiRefund,
   enqueueTikTokPurchase,
 } from "@/lib/queue/metaCapiQueue";
+import { dispatchMetaCapiRefundWithFallback } from "@/lib/tracking/meta-capi-refund";
 import {
   recordProductLifecycleTransitionInTransaction,
 } from "@/lib/analytics/product-metrics";
@@ -406,8 +407,8 @@ export async function PATCH(
         !existing.deliveredAt
       )
         updateData.deliveredAt = new Date();
-      if (normalizedStatus === "cancelled" && !existing.cancelledAt) {
-        updateData.cancelledAt = new Date();
+      if (normalizedStatus === "cancelled") {
+        if (!existing.cancelledAt) updateData.cancelledAt = new Date();
         shouldQueueMetaRefund = existing.metaPurchaseSent && !existing.isTest;
       }
       if (normalizedStatus === "refunded") {
@@ -603,12 +604,15 @@ export async function PATCH(
 
     if (shouldQueueMetaRefund) {
       try {
-        await enqueueMetaCapiRefund(
-          { orderId: existing.id, source: "admin_refund" },
-          { jobId: `admin_refund:meta_refund:${existing.id}:${Date.now()}` },
-        );
+        await dispatchMetaCapiRefundWithFallback({
+          orderId: existing.id,
+          source:
+            normalizedStatus === 'cancelled'
+              ? 'admin_order_status_cancelled'
+              : 'admin_order_status_refunded',
+        });
       } catch (error) {
-        console.error("Admin Meta Refund queue enqueue failed:", error);
+        console.error('Admin Meta Refund dispatch failed:', error);
       }
     }
 

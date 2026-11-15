@@ -469,6 +469,7 @@ export async function sendMetaCapiRefund(params: {
         status: 'PROCESSING',
         attempts: { increment: 1 },
         processingAt: new Date(),
+        payload: { kind: 'core_event', request: payload } as any,
       },
       create: {
         correlationId: `refund-${order.id}-${Date.now()}`,
@@ -481,7 +482,7 @@ export async function sendMetaCapiRefund(params: {
         actionSource: 'website',
         eventSourceUrl: getSafeRefundEventSourceUrl(order.firstLandingUrl),
         eventTime: new Date(eventTime * 1000),
-        payload: payload as any,
+        payload: { kind: 'core_event', request: payload } as any,
         safePayload: safePayload as any,
         policyVersion: TRACKING_SCHEMA_VERSION,
         policyReason: 'CONSENT_GRANTED',
@@ -579,4 +580,40 @@ export async function sendMetaCapiCancellation(params: {
     retryCount: params.retryCount,
     finalAttempt: params.finalAttempt,
   });
+}
+
+export async function dispatchMetaCapiRefundWithFallback(params: {
+  orderId: string;
+  source: MetaRefundSource;
+  customRefundAmount?: number;
+}) {
+  try {
+    const inlineResult = await sendMetaCapiRefund({
+      orderId: params.orderId,
+      source: params.source,
+      customRefundAmount: params.customRefundAmount,
+      retryCount: 0,
+      finalAttempt: false,
+    });
+    if (inlineResult.ok) {
+      return { ...inlineResult, deliveredInline: true };
+    }
+  } catch (err) {
+    console.warn('[MetaCapiRefund] Inline delivery failed, falling back to queue:', err);
+  }
+  try {
+    const { enqueueMetaCapiRefund } = await import('@/lib/queue/metaCapiQueue');
+    const job = await enqueueMetaCapiRefund(
+      {
+        orderId: params.orderId,
+        source: params.source as any,
+        refundAmount: params.customRefundAmount,
+      },
+      { jobId: `meta_refund:${params.orderId}:${Date.now()}` }
+    );
+    return { ok: true, deliveredInline: false, queued: true, jobId: job.id };
+  } catch (queueErr) {
+    console.error('[MetaCapiRefund] Queue fallback also failed:', queueErr);
+    return { ok: false, deliveredInline: false, queued: false };
+  }
 }

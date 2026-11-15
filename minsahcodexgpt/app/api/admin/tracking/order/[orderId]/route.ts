@@ -183,6 +183,21 @@ export async function GET(
             updatedAt: true,
           },
         },
+
+        metaEventOutbox: {
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          select: {
+            id: true,
+            eventName: true,
+            eventId: true,
+            status: true,
+            attempts: true,
+            sentAt: true,
+            suppressReason: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -222,12 +237,21 @@ export async function GET(
       },
       meta: {
         expectedPurchaseEventId: expectedMetaPurchaseEventId,
+        expectedRefundEventId: `META-Refund-${order.id}`,
         metaPurchaseSent: order.metaPurchaseSent,
         metaPurchaseSentAt: order.metaPurchaseSentAt,
         metaPurchaseProcessingAt: order.metaPurchaseProcessingAt,
         metaBrowserPurchaseClaimedAt: order.metaBrowserPurchaseClaimedAt,
         metaEventId: order.metaEventId,
         metaEventIdMatchesExpected: order.metaEventId === expectedMetaPurchaseEventId,
+        metaRefundSent: order.metaEventOutbox.some(
+          (e) => (e.eventName === 'Refund' || e.eventName === 'CancelOrder') && e.status === 'SENT'
+        ),
+        metaRefundSentAt:
+          order.metaEventOutbox.find(
+            (e) => (e.eventName === 'Refund' || e.eventName === 'CancelOrder') && e.status === 'SENT'
+          )?.sentAt ?? null,
+        outboxEvents: order.metaEventOutbox,
       },
       ga4: {
         gaPurchaseSent: order.gaPurchaseSent,

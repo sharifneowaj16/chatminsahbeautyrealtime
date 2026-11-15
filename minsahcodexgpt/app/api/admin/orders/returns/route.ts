@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { Prisma } from '@/generated/prisma/client';
-import { enqueueGa4Refund, enqueueMetaCapiRefund } from '@/lib/queue/metaCapiQueue';
+import { enqueueGa4Refund } from '@/lib/queue/metaCapiQueue';
+import { dispatchMetaCapiRefundWithFallback } from '@/lib/tracking/meta-capi-refund';
 import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
 import { clawbackLoyaltyPointsForReturn } from '@/lib/loyalty';
 
@@ -250,12 +251,9 @@ export async function PATCH(request: NextRequest) {
         }
         if (!returnRequest.order.isTest && returnRequest.order.metaPurchaseSent) {
           try {
-            await enqueueMetaCapiRefund(
-              { orderId, source: 'return_completed' },
-              { jobId: `return_completed:meta_refund:${orderId}:${Date.now()}` }
-            );
+            await dispatchMetaCapiRefundWithFallback({ orderId, source: 'return_received' });
           } catch (error) {
-            console.error('Return completed Meta Refund queue enqueue failed:', error);
+            console.error('Return completed Meta Refund dispatch failed:', error);
           }
         }
       }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
-
 import { clawbackLoyaltyPointsForReturn } from '@/lib/loyalty';
+import { dispatchMetaCapiRefundWithFallback } from '@/lib/tracking/meta-capi-refund';
 
 // PATCH /api/admin/orders/returns/[id] - Approve, reject, or update return status
 export async function PATCH(
@@ -25,6 +25,18 @@ export async function PATCH(
 
     const existing = await prisma.return.findFirst({
       where: { OR: [{ id }, { returnNumber: id }] },
+      include: {
+        order: {
+          select: {
+            id: true,
+            isTest: true,
+            metaPurchaseSent: true,
+            gaRefundSent: true,
+            returnedAt: true,
+            refundedAt: true,
+          },
+        },
+      },
     });
 
     if (!existing) {
@@ -63,6 +75,26 @@ export async function PATCH(
 
       return updatedReturn;
     });
+
+    if (updated.status === 'COMPLETED') {
+      const parentOrderUpdate: Record<string, unknown> = {};
+      if (!existing.order?.returnedAt) parentOrderUpdate.returnedAt = new Date();
+      if (!existing.order?.refundedAt) parentOrderUpdate.refundedAt = new Date();
+      if (Object.keys(parentOrderUpdate).length > 0) {
+        await prisma.order.update({
+          where: { id: existing.orderId },
+          data: parentOrderUpdate,
+        }).catch((err) => console.error('Parent order return timestamp update failed:', err));
+      }
+
+      if (existing.order?.metaPurchaseSent && !existing.order?.isTest) {
+        await dispatchMetaCapiRefundWithFallback({
+          orderId: existing.orderId,
+          source: 'return_received',
+          customRefundAmount: Number(updated.refundAmount) || undefined,
+        }).catch((err) => console.error('Return Meta CAPI refund dispatch failed:', err));
+      }
+    }
 
     return NextResponse.json({
       success: true,
