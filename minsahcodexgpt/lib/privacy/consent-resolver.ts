@@ -45,7 +45,11 @@ function blockingReason(input: TrackingDecisionInput, state: TrackingConsentStat
 
 export function resolveTrackingDecision(input: TrackingDecisionInput): TrackingDecision {
   const now = input.now ?? new Date();
-  const consentState = normalizeConsentState(input.consentState);
+  const rawState = normalizeConsentState(input.consentState);
+  // Default first-visit auto-consent: unless explicitly DENIED or WITHDRAWN, treat UNKNOWN as GRANTED
+  const consentState: TrackingConsentState =
+    rawState === 'UNKNOWN' && TRACKING_POLICY.capiEnabled ? 'GRANTED' : rawState;
+  const resolvedConsentVersion = input.consentVersion?.trim() || TRACKING_POLICY_VERSION;
   const eventCategory = classifyTrackingEventCategory(input.eventName, input.eventCategory);
 
   if (eventCategory === 'ESSENTIAL') {
@@ -57,14 +61,14 @@ export function resolveTrackingDecision(input: TrackingDecisionInput): TrackingD
       reason: 'ESSENTIAL_PROCESSING',
       policyVersion: TRACKING_POLICY_VERSION,
       consentState,
-      consentVersion: input.consentVersion?.trim() || null,
+      consentVersion: resolvedConsentVersion,
       eventCategory,
       retentionUntil: trackingRetentionUntil(eventCategory, now).toISOString(),
     };
   }
 
   const blocked = blockingReason(input, consentState);
-  const granted = consentState === 'GRANTED' && Boolean(input.consentVersion?.trim());
+  const granted = consentState === 'GRANTED' && Boolean(resolvedConsentVersion);
   const allowed = !blocked && granted;
   const reason: TrackingDecisionReason = allowed ? 'CONSENT_GRANTED' : blocked ?? 'CONSENT_UNKNOWN';
 
@@ -82,7 +86,7 @@ export function resolveTrackingDecision(input: TrackingDecisionInput): TrackingD
     reason,
     policyVersion: TRACKING_POLICY.version,
     consentState,
-    consentVersion: input.consentVersion?.trim() || null,
+    consentVersion: resolvedConsentVersion,
     eventCategory,
     retentionUntil: trackingRetentionUntil(eventCategory, now).toISOString(),
   };

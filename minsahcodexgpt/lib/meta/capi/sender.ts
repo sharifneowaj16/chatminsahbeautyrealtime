@@ -14,7 +14,7 @@ import {
   scheduleMetaOutboxRetry,
 } from './outbox-repository';
 import type { MetaEventOutboxRecord, MetaWebsiteServerEvent } from './types';
-import { validateMetaWebsiteEvent } from './validator';
+import { validateMetaWebsiteEvent, type MetaCapiValidationIssue } from './validator';
 import { getMetaOutboxRetryDelayMs, META_OUTBOX_MAX_ATTEMPTS } from './retry';
 import { getMetaJobsRedis } from '@/lib/jobs/connection';
 import { acquireMetaRateLimitPermit, getMetaProviderCooldownMs, setMetaProviderCooldown } from '@/lib/jobs/rate-limit';
@@ -58,9 +58,35 @@ function safeCoreJobData(record: MetaEventOutboxRecord): MetaCapiCoreJobData {
 }
 
 function validateOutboxRecord(record: MetaEventOutboxRecord) {
+  if (record.payload.kind === 'purchase') {
+    const issues: MetaCapiValidationIssue[] = [];
+    if (record.eventName !== 'Purchase') {
+      issues.push({
+        code: 'PURCHASE_EVENT_NAME_INVALID',
+        field: 'eventName',
+        message: 'Purchase outbox record must have eventName=Purchase.',
+      });
+    }
+    if (!record.eventId?.trim()) {
+      issues.push({
+        code: 'EVENT_ID_REQUIRED',
+        field: 'eventId',
+        message: 'Purchase outbox record requires a non-empty eventId.',
+      });
+    }
+    if (!record.payload.orderId?.trim()) {
+      issues.push({
+        code: 'ORDER_ID_REQUIRED',
+        field: 'payload.orderId',
+        message: 'Purchase outbox record requires a non-empty orderId.',
+      });
+    }
+    return { valid: issues.length === 0, issues };
+  }
+
   if (
-    record.payload.kind === 'core_event' &&
-    (!Array.isArray(record.payload.request.data) || record.payload.request.data.length !== 1)
+    !Array.isArray(record.payload.request.data) ||
+    record.payload.request.data.length !== 1
   ) {
     return {
       valid: false,
@@ -72,18 +98,7 @@ function validateOutboxRecord(record: MetaEventOutboxRecord) {
     };
   }
 
-  const event: MetaWebsiteServerEvent =
-    record.payload.kind === 'core_event'
-      ? record.payload.request.data[0]
-      : {
-          event_name: record.eventName,
-          event_id: record.eventId,
-          event_time: Math.floor(record.eventTime.getTime() / 1000),
-          action_source: 'website',
-          event_source_url: record.eventSourceUrl ?? '',
-          user_data: {},
-          custom_data: {},
-        };
+  const event: MetaWebsiteServerEvent = record.payload.request.data[0];
   const validation = validateMetaWebsiteEvent(event);
   const identityMatches =
     event.event_name === record.eventName &&
@@ -99,7 +114,6 @@ function validateOutboxRecord(record: MetaEventOutboxRecord) {
   return { ...validation, valid: validation.issues.length === 0 };
 }
 
-
 export async function processMetaOutboxById(input: {
   outboxId: string;
   leaseToken?: string | null;
@@ -111,7 +125,13 @@ export async function processMetaOutboxById(input: {
     return { ok: false, skipped: true, reason: existing.status };
   }
 
-  if (!existing.policyVersion || existing.policyReason !== 'CONSENT_GRANTED') {
+  const isExplicitlyDenied =
+    existing.consentState === 'DENIED' ||
+    existing.consentState === 'WITHDRAWN' ||
+    existing.policyReason === 'TEST_TRAFFIC' ||
+    existing.policyReason === 'DELETION_REQUESTED';
+
+  if (isExplicitlyDenied || (!existing.policyVersion && existing.payload.kind !== 'purchase')) {
     await markMetaOutboxSuppressed({
       outboxId: existing.id,
       reason: existing.policyReason || 'PRIVACY_POLICY_MISSING',
@@ -137,8 +157,6 @@ export async function processMetaOutboxById(input: {
       if (!permit.allowed) providerDelayMs = Math.max(1_000, permit.retryAfterMs);
     }
   } catch (error) {
-    // BullMQ also enforces a local limiter. A Redis limiter read failure must not
-    // lose a durable DB outbox event or convert a provider outage into data loss.
     console.warn('[MetaCapiSender] distributed limiter unavailable:', error instanceof Error ? error.message : error);
   }
   if (providerDelayMs > 0) {
@@ -189,11 +207,26 @@ export async function processMetaOutboxById(input: {
             finalAttempt,
           });
 
-    if (delivery.ok || ('skipped' in delivery && delivery.skipped)) {
+    const wasSkipped = 'skipped' in delivery && Boolean(delivery.skipped);
+    const skipReason = 'reason' in delivery ? String(delivery.reason ?? '') : '';
+
+    if (wasSkipped && skipReason !== 'ALREADY_SENT') {
+      await markMetaOutboxSuppressed({
+        outboxId: record.id,
+        reason: skipReason || 'DELIVERY_SKIPPED',
+        safeDetails: {
+          outcome: 'skipped',
+          reason: skipReason,
+        },
+      });
+      return delivery;
+    }
+
+    if (delivery.ok) {
       await markMetaOutboxSent({
         outboxId: record.id,
         response: {
-          outcome: delivery.ok ? 'accepted_or_idempotent' : 'skipped',
+          outcome: wasSkipped ? 'already_sent' : 'accepted_or_idempotent',
           reason: 'reason' in delivery ? delivery.reason : undefined,
           transport: 'transport' in delivery ? delivery.transport : undefined,
           cutover_mode: 'cutoverMode' in delivery ? delivery.cutoverMode : undefined,

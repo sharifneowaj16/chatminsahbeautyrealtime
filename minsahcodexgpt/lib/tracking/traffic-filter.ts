@@ -327,18 +327,11 @@ export function classifyStoredOrderTraffic(order: StoredOrderTrafficInput, optio
     return { allowed: false, reason: 'INTERNAL_TRAFFIC' as const, ip: order.customerIp, userAgent: order.customerUa };
   }
 
-  const storedConsent = getServerTrackingConsentFromCookie(order.trackingConsent);
-  const storedDecision = resolveTrackingDecision({
-    eventCategory: 'ADVERTISING',
-    consentState: order.nonEssentialTrackingAllowed === true ? storedConsent : 'UNKNOWN',
-    consentVersion: order.trackingConsentVersion,
-  });
-  if (!storedDecision.allowCapiEvent) {
+  const rawConsent = String(order.trackingConsent ?? '').trim().toLowerCase();
+  if (rawConsent === 'denied' || rawConsent === 'withdrawn') {
     return {
       allowed: false,
-      reason: storedDecision.reason === 'CONSENT_DENIED' || storedDecision.reason === 'CONSENT_WITHDRAWN'
-        ? ('CONSENT_DENIED' as const)
-        : ('CONSENT_NOT_GRANTED' as const),
+      reason: 'CONSENT_DENIED' as const,
       ip: order.customerIp,
       userAgent: order.customerUa,
     };

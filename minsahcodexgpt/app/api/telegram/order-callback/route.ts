@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
 import { enqueueGa4Purchase, enqueueTikTokPurchase } from '@/lib/queue/metaCapiQueue';
-import { createMetaPurchaseOutboxInTransaction } from '@/lib/meta/capi/purchase-outbox';
+import {
+  createMetaPurchaseOutbox,
+  createMetaPurchaseOutboxInTransaction,
+} from '@/lib/meta/capi/purchase-outbox';
 import { requestMetaOutboxDispatch } from '@/lib/meta/capi/dispatcher';
-import type { MetaOutboxDb } from '@/lib/meta/capi/outbox-repository';
 import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
 import { reconcileOrderStockOnStatusTransition } from '@/lib/inventory/order-stock-reconciliation';
 import { getTelegramWebhookInfo } from '@/lib/telegram-notify';
@@ -150,7 +152,7 @@ async function buildPathaoButton(orderId: string, callback: TelegramCallbackQuer
     inline_keyboard: [
       [
         {
-          text: 'Send to Pathao',
+          text: '🚚 Send to Pathao',
           callback_data: pathaoToken.callbackData,
         },
       ],
@@ -190,263 +192,219 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
   const confirmedAt = new Date();
   const eventId = `Purchase-${orderId}`;
 
-  const result = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({
-      where: { id: orderId },
-      select: orderSelectFields(),
-    });
-
-    if (!order) {
-      return { ok: false, status: 'NOT_FOUND' as const, message: 'Order not found' };
-    }
-
-    const allowed = canTelegramPhoneConfirm(order);
-    if (!allowed.ok) {
-      return {
-        ok: false,
-        status: 'BLOCKED' as const,
-        message: allowed.reason,
-        orderNumber: order.orderNumber,
-        isTest: order.isTest,
-      };
-    }
-
-    if (order.phoneConfirmedAt && !order.metaPurchaseSent) {
-      let outbox: any = null;
-      if (!order.isTest) {
-        try {
-          outbox = await createMetaPurchaseOutboxInTransaction(
-            tx as unknown as MetaOutboxDb,
-            {
-              purchaseType: 'cod_purchase',
-              orderId: order.id,
-              eventTime: order.phoneConfirmedAt,
-              sourceType: 'COD_PHONE_CONFIRMED_TELEGRAM',
-              sourceId: callback.id,
-            }
-          );
-        } catch (outboxErr) {
-          console.error('[TelegramCallback] createMetaPurchaseOutboxInTransaction error (already confirmed):', outboxErr);
-        }
-      }
-      return {
-        ok: true,
-        status: 'SUCCESS' as const,
-        message: 'Already phone-confirmed; durable Meta Purchase outbox verified.',
-        orderNumber: order.orderNumber,
-        isTest: order.isTest,
-        shouldQueuePurchase: true,
-        metaOutboxId: outbox?.record?.id,
-      };
-    }
-
-    const updated = await tx.order.update({
-      where: { id: order.id },
-      data: {
-        status: 'CONFIRMED',
-        phoneConfirmedAt: confirmedAt,
-        confirmationStatus: 'CONFIRMED_BY_PHONE',
-        confirmedByAdminId: `telegram:${telegramUserId}`,
-        metaEventId: eventId,
-      },
-      select: orderSelectFields(),
-    });
-
-    try {
-      await recordProductLifecycleTransitionInTransaction(tx, order, updated);
-    } catch (metricErr) {
-      console.error('[TelegramCallback] recordProductLifecycleTransition error:', metricErr);
-    }
-
-    let outbox: any = null;
-    if (!updated.isTest) {
-      try {
-        outbox = await createMetaPurchaseOutboxInTransaction(
-          tx as unknown as MetaOutboxDb,
-          {
-            purchaseType: 'cod_purchase',
-            orderId: updated.id,
-            eventTime: updated.phoneConfirmedAt ?? confirmedAt,
-            sourceType: 'COD_PHONE_CONFIRMED_TELEGRAM',
-            sourceId: callback.id,
-          }
-        );
-      } catch (outboxErr) {
-        console.error('[TelegramCallback] createMetaPurchaseOutboxInTransaction error:', outboxErr);
-      }
-    }
-
-    return {
-      ok: true,
-      status: 'SUCCESS' as const,
-      message: 'Phone confirmed.',
-      orderNumber: updated.orderNumber,
-      isTest: updated.isTest,
-      shouldQueuePurchase: true,
-      metaOutboxId: outbox?.record?.id,
-    };
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: orderSelectFields(),
   });
 
-  await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
-
-  if (result.ok) {
-    try {
-      const pathaoButton = await buildPathaoButton(orderId, callback).catch((btnErr) => {
-        console.error('[TelegramCallback] buildPathaoButton error:', btnErr);
-        return undefined;
-      });
-      await editTelegramMessage(
-        callback,
-        `<b>Phone Confirmed</b>\n\n` +
-          `Order: <b>#${escapeHtml(result.orderNumber)}</b>\n` +
-          `Meta COD Purchase will use phoneConfirmedAt as event_time.` +
-          (result.isTest ? '\n\nTest order: production tracking skipped.' : ''),
-        pathaoButton
-      );
-    } catch (editErr) {
-      console.error('[TelegramCallback] editTelegramMessage error:', editErr);
-    }
+  if (!order) {
+    await answerCallbackQuery(callback.id, 'Order not found', true);
+    return { ok: false, status: 'NOT_FOUND', message: 'Order not found' };
   }
 
-  if (result.shouldQueuePurchase && !result.isTest) {
-    try {
-      await attributeVerifiedSearchConversionsForOrder(orderId, {
-        source: 'cod_phone_confirmed_telegram',
-      });
-    } catch (error) {
-      console.error('Telegram COD search conversion attribution failed:', error);
-    }
+  const allowed = canTelegramPhoneConfirm(order);
+  if (!allowed.ok) {
+    await answerCallbackQuery(callback.id, allowed.reason, true);
+    return {
+      ok: false,
+      status: 'BLOCKED',
+      message: allowed.reason,
+      orderNumber: order.orderNumber,
+      isTest: order.isTest,
+    };
+  }
 
-    if (result.metaOutboxId) {
-      const dispatch = await requestMetaOutboxDispatch(result.metaOutboxId);
+  const effectiveConfirmedAt = order.phoneConfirmedAt ?? confirmedAt;
+  const updated = order.phoneConfirmedAt
+    ? order
+    : await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'CONFIRMED',
+          phoneConfirmedAt: effectiveConfirmedAt,
+          confirmationStatus: 'CONFIRMED_BY_PHONE',
+          confirmedByAdminId: `telegram:${telegramUserId}`,
+          metaEventId: eventId,
+        },
+        select: orderSelectFields(),
+      });
+
+  // 1. Answer Telegram and update the message UI IMMEDIATELY (< 300ms) on 1st click
+  const pathaoButton = await buildPathaoButton(orderId, callback).catch((btnErr) => {
+    console.error('[TelegramCallback] buildPathaoButton error:', btnErr);
+    return undefined;
+  });
+
+  await Promise.all([
+    answerCallbackQuery(callback.id, '✅ Phone confirmed!'),
+    editTelegramMessage(
+      callback,
+      `<b>✅ Phone Confirmed</b>\n\n` +
+        `Order: <b>#${escapeHtml(updated.orderNumber)}</b>\n` +
+        `Meta COD Purchase dispatched (event_id: <code>${escapeHtml(eventId)}</code>).` +
+        (updated.isTest ? '\n\nTest order: production tracking skipped.' : ''),
+      pathaoButton
+    ),
+  ]);
+
+  // 2. Run Outbox, Meta CAPI, Analytics, GA4 & TikTok without blocking or rolling back the order
+  let metaOutboxId: string | undefined;
+  if (!updated.isTest) {
+    try {
+      const outbox = await createMetaPurchaseOutbox({
+        purchaseType: 'cod_purchase',
+        orderId: updated.id,
+        eventTime: effectiveConfirmedAt,
+        sourceType: 'COD_PHONE_CONFIRMED_TELEGRAM',
+        sourceId: callback.id,
+      });
+      metaOutboxId = outbox.record.id;
+      const dispatch = await requestMetaOutboxDispatch(metaOutboxId);
       if (!dispatch.queued) {
-        console.error('COD Meta outbox immediate dispatch failed; durable row remains pending:', dispatch.error);
+        console.error('COD Meta outbox dispatch failed:', dispatch.error);
       }
-    }
-
-    try {
-      await enqueueGa4Purchase({ source: 'cod_phone_confirmed', orderId });
-    } catch (error) {
-      console.error('COD GA4 Purchase queue enqueue failed:', error);
-    }
-
-    try {
-      await enqueueTikTokPurchase({ type: 'tiktok_cod_purchase', orderId });
-    } catch (error) {
-      console.error('COD TikTok Purchase queue enqueue failed:', error);
+    } catch (outboxErr) {
+      console.error('[TelegramCallback] Meta outbox creation/dispatch error:', outboxErr);
     }
   }
 
-  return result;
+  if (!order.phoneConfirmedAt) {
+    prisma.$transaction(async (tx) => {
+      await recordProductLifecycleTransitionInTransaction(tx, order, updated);
+    }).catch((metricErr) => {
+      console.error('[TelegramCallback] recordProductLifecycleTransition error:', metricErr);
+    });
+  }
+
+  if (!updated.isTest) {
+    attributeVerifiedSearchConversionsForOrder(orderId, {
+      source: 'cod_phone_confirmed_telegram',
+    }).catch((err) => console.error('Telegram COD search conversion attribution failed:', err));
+
+    enqueueGa4Purchase({ source: 'cod_phone_confirmed', orderId }).catch((err) =>
+      console.error('COD GA4 Purchase queue enqueue failed:', err)
+    );
+
+    enqueueTikTokPurchase({ type: 'tiktok_cod_purchase', orderId }).catch((err) =>
+      console.error('COD TikTok Purchase queue enqueue failed:', err)
+    );
+  }
+
+  return {
+    ok: true,
+    status: 'SUCCESS',
+    message: 'Phone confirmed.',
+    orderNumber: updated.orderNumber,
+    isTest: updated.isTest,
+    shouldQueuePurchase: true,
+    metaOutboxId,
+  };
 }
 
 async function handlePhoneOff(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
-  const result = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
-    if (!order) return { ok: false, status: 'NOT_FOUND' as const, message: 'Order not found' };
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
+  if (!order) {
+    await answerCallbackQuery(callback.id, 'Order not found', true);
+    return { ok: false, status: 'NOT_FOUND', message: 'Order not found' };
+  }
 
-    const allowed = canTelegramPhoneOff(order);
-    if (!allowed.ok) {
-      return {
-        ok: false,
-        status: 'BLOCKED' as const,
-        message: allowed.reason,
-        orderNumber: order.orderNumber,
-      };
-    }
-
-    await tx.order.update({
-      where: { id: order.id },
-      data: {
-        confirmationStatus: 'PHONE_OFF',
-        confirmationNote: 'Marked phone off from Telegram.',
-      },
-    });
-
+  const allowed = canTelegramPhoneOff(order);
+  if (!allowed.ok) {
+    await answerCallbackQuery(callback.id, allowed.reason, true);
     return {
-      ok: true,
-      status: 'SUCCESS' as const,
-      message: 'Marked as Phone Off.',
+      ok: false,
+      status: 'BLOCKED',
+      message: allowed.reason,
       orderNumber: order.orderNumber,
     };
+  }
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      confirmationStatus: 'PHONE_OFF',
+      confirmationNote: 'Marked phone off from Telegram.',
+    },
   });
 
-  await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
-  if (result.ok) {
-    await editTelegramMessage(
+  await Promise.all([
+    answerCallbackQuery(callback.id, '📵 Marked as Phone Off.'),
+    editTelegramMessage(
       callback,
-      `<b>Phone Off</b>\n\nOrder: <b>#${escapeHtml(result.orderNumber)}</b>\nNo Purchase was sent.`
-    );
-  }
-  return result;
+      `<b>📵 Phone Off</b>\n\nOrder: <b>#${escapeHtml(order.orderNumber)}</b>\nNo Purchase was sent.`
+    ),
+  ]);
+
+  return {
+    ok: true,
+    status: 'SUCCESS',
+    message: 'Marked as Phone Off.',
+    orderNumber: order.orderNumber,
+  };
 }
 
 async function handleCancel(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
-  const result = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
-    if (!order) return { ok: false, status: 'NOT_FOUND' as const, message: 'Order not found' };
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
+  if (!order) {
+    await answerCallbackQuery(callback.id, 'Order not found', true);
+    return { ok: false, status: 'NOT_FOUND', message: 'Order not found' };
+  }
 
-    const allowed = canTelegramCancel(order);
-    if (!allowed.ok) {
-      return {
-        ok: false,
-        status: 'BLOCKED' as const,
-        message: allowed.reason,
-        orderNumber: order.orderNumber,
-      };
-    }
-
-    const updated = await tx.order.update({
-      where: { id: order.id },
-      data: {
-        status: 'CANCELLED',
-        paymentStatus: order.paymentStatus === 'COMPLETED' ? order.paymentStatus : 'CANCELLED',
-        cancelledAt: new Date(),
-        confirmationStatus: 'CANCELLED_FROM_TELEGRAM',
-        confirmationNote: 'Cancelled from Telegram before phone confirmation/dispatch.',
-      },
-      select: orderSelectFields(),
-    });
-
-    try {
-      await recordProductLifecycleTransitionInTransaction(tx, order, updated);
-    } catch (metricErr) {
-      console.error('[TelegramCallback] recordProductLifecycleTransition error on cancel:', metricErr);
-    }
-
-    try {
-      await reconcileOrderStockOnStatusTransition(
-        tx,
-        order.id,
-        order.status,
-        'CANCELLED'
-      );
-    } catch (stockErr) {
-      console.error('[TelegramCallback] reconcileOrderStockOnStatusTransition error on cancel:', stockErr);
-    }
-
+  const allowed = canTelegramCancel(order);
+  if (!allowed.ok) {
+    await answerCallbackQuery(callback.id, allowed.reason, true);
     return {
-      ok: true,
-      status: 'SUCCESS' as const,
-      message: 'Order cancelled.',
+      ok: false,
+      status: 'BLOCKED',
+      message: allowed.reason,
       orderNumber: order.orderNumber,
     };
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      status: 'CANCELLED',
+      paymentStatus: order.paymentStatus === 'COMPLETED' ? order.paymentStatus : 'CANCELLED',
+      cancelledAt: new Date(),
+      confirmationStatus: 'CANCELLED_FROM_TELEGRAM',
+      confirmationNote: 'Cancelled from Telegram before phone confirmation/dispatch.',
+    },
+    select: orderSelectFields(),
   });
 
-  await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
-  if (result.ok) {
-    await editTelegramMessage(
+  await Promise.all([
+    answerCallbackQuery(callback.id, '❌ Order cancelled.'),
+    editTelegramMessage(
       callback,
-      `<b>Order Cancelled</b>\n\nOrder: <b>#${escapeHtml(result.orderNumber)}</b>\nNo Purchase was sent.`
-    );
-  }
-  return result;
+      `<b>❌ Order Cancelled</b>\n\nOrder: <b>#${escapeHtml(order.orderNumber)}</b>\nNo Purchase was sent.`
+    ),
+  ]);
+
+  prisma.$transaction(async (tx) => {
+    await reconcileOrderStockOnStatusTransition(tx, order.id, order.status, 'CANCELLED');
+  }).catch((stockErr) => {
+    console.error('[TelegramCallback] reconcileOrderStockOnStatusTransition error on cancel:', stockErr);
+  });
+
+  prisma.$transaction(async (tx) => {
+    await recordProductLifecycleTransitionInTransaction(tx, order, updated);
+  }).catch((metricErr) => {
+    console.error('[TelegramCallback] recordProductLifecycleTransition error on cancel:', metricErr);
+  });
+
+  return {
+    ok: true,
+    status: 'SUCCESS',
+    message: 'Order cancelled.',
+    orderNumber: order.orderNumber,
+  };
 }
 
 async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
   const order = await prisma.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
   if (!order) {
-    await answerCallbackQuery(callback.id, 'Order not found');
+    await answerCallbackQuery(callback.id, 'Order not found', true);
     return { ok: false, status: 'NOT_FOUND', message: 'Order not found' };
   }
 
@@ -461,6 +419,15 @@ async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string
     };
   }
 
+  // Immediately acknowledge the tap & show "Booking Pathao..." so the user never needs a 2nd click
+  await Promise.all([
+    answerCallbackQuery(callback.id, '⏳ Booking Pathao delivery...'),
+    editTelegramMessage(
+      callback,
+      `<b>⏳ Sending to Pathao...</b>\n\nOrder: <b>#${escapeHtml(order.orderNumber)}</b>\nPlease wait while consignment is created...`
+    ),
+  ]);
+
   const result = await createPathaoDeliveryForOrder(orderId, {
     preserveOrderStatus: false,
     saveFailureStatus: true,
@@ -470,7 +437,15 @@ async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string
   }));
 
   if (!result.success) {
-    await answerCallbackQuery(callback.id, `Pathao failed: ${result.error}`, true);
+    const retryMarkup = await buildPathaoButton(orderId, callback).catch(() => undefined);
+    await editTelegramMessage(
+      callback,
+      `<b>⚠️ Pathao Dispatch Failed</b>\n\n` +
+        `Order: <b>#${escapeHtml(order.orderNumber)}</b>\n` +
+        `Error: <code>${escapeHtml(result.error)}</code>\n\n` +
+        `Tap below to retry:`,
+      retryMarkup
+    );
     return {
       ok: false,
       status: 'FAILED',
@@ -479,20 +454,19 @@ async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string
     };
   }
 
-  await answerCallbackQuery(
-    callback.id,
-    result.alreadyDispatched ? 'Already sent to Pathao' : 'Sent to Pathao'
-  );
-
+  const consignmentLine = result.consignmentId
+    ? `Consignment: <b>${escapeHtml(result.consignmentId)}</b>\n`
+    : '';
   const trackingLine = result.trackingCode
     ? `Tracking: <b>${escapeHtml(result.trackingCode)}</b>\n`
     : '';
   await editTelegramMessage(
     callback,
-    `<b>Pathao Dispatch ${result.alreadyDispatched ? 'Already Exists' : 'Created'}</b>\n\n` +
+    `<b>✅ Pathao Dispatch ${result.alreadyDispatched ? 'Already Exists' : 'Created'}</b>\n\n` +
       `Order: <b>#${escapeHtml(result.orderNumber)}</b>\n` +
+      `${consignmentLine}` +
       `${trackingLine}` +
-      `Status: ${escapeHtml(result.pathaoStatus ?? 'N/A')}`
+      `Status: ${escapeHtml(result.pathaoStatus ?? 'BOOKED')}`
   );
 
   return {
@@ -595,11 +569,9 @@ export async function POST(req: NextRequest) {
   const isFromConfiguredChat = Boolean(
     config.chatId && callbackChatId && String(callbackChatId) === String(config.chatId)
   );
-
   const auth = requireTelegramWebhookAuth(req);
   const isHeaderAuthed = auth.ok;
   const isUserAllowed = assertTelegramUserAllowed(callback.from.id, config.adminUserIds);
-
   const isTrustedRequest = (resolved.ok && isFromConfiguredChat) || (isHeaderAuthed && isUserAllowed);
 
   if (!isTrustedRequest) {
@@ -619,7 +591,7 @@ export async function POST(req: NextRequest) {
 
   const consumed = await consumeTelegramActionToken(resolved.token.id);
   if (!consumed) {
-    await answerCallbackQuery(callback.id, 'Action already processed', true);
+    await answerCallbackQuery(callback.id, 'Action already processed', false);
     await createTelegramLog({ callback, action, orderId, status: 'DUPLICATE', errorMessage: 'Token already consumed' });
     return NextResponse.json({ ok: true, duplicate: true });
   }
@@ -645,19 +617,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const shouldReleasePathaoTokenForRetry =
-    action === TELEGRAM_ORDER_ACTIONS.PATHAO_SEND && result.status === 'FAILED';
-
-  if (shouldReleasePathaoTokenForRetry) {
-    const released = await releaseTelegramActionToken(resolved.token.id);
-    if (!released) {
-      console.warn('Telegram Pathao action token could not be released after retryable failure', {
-        orderId,
-        tokenId: resolved.token.id,
-      });
-    }
-  }
-
   await createTelegramLog({
     callback,
     action,
@@ -672,7 +631,7 @@ export async function POST(req: NextRequest) {
       ? 404
       : result.status === 'BLOCKED'
         ? 409
-        : shouldReleasePathaoTokenForRetry
+        : result.status === 'FAILED'
           ? 200
           : 500;
 
@@ -682,7 +641,6 @@ export async function POST(req: NextRequest) {
       status: result.status,
       message: result.message,
       orderNumber: result.orderNumber,
-      retryable: shouldReleasePathaoTokenForRetry || undefined,
     },
     { status }
   );

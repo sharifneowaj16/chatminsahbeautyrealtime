@@ -307,6 +307,11 @@ export async function ensureTelegramWebhookRegistered(force = false): Promise<{
       'https://minsahbeauty.cloud/api/telegram/order-callback';
 
     try {
+      const currentInfo = await getTelegramWebhookInfo();
+      if (currentInfo.ok && currentInfo.result?.url === webhookUrl) {
+        return { ok: true, webhookInfo: currentInfo.result };
+      }
+
       const res = await fetch(`${config.relayBase}${config.botToken}/setWebhook`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
