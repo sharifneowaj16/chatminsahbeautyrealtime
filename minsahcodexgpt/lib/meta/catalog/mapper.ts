@@ -110,11 +110,18 @@ function buildItem(input: {
   if (!offer.includeInUpdates) return null;
 
   const productImages = uniqueCatalogImages(
-    [product.images.find((image) => image.isDefault)?.url, ...product.images.map((image) => image.url), product.ogImageUrl],
+    [
+      product.images.find((image) => image.isDefault)?.url,
+      ...product.images.map((image) => image.url),
+      product.ogImageUrl,
+    ],
     input.siteUrl
   );
   const variantImage = absoluteCatalogUrl(variant?.image, input.siteUrl);
-  const imageLink = variantImage ?? productImages[0] ?? '';
+  const fallbackImage =
+    absoluteCatalogUrl('/images/categories/Skincare.png', input.siteUrl) ??
+    'https://minsahbeauty.cloud/images/categories/Skincare.png';
+  const imageLink = variantImage ?? productImages[0] ?? fallbackImage;
   const additionalImageLinks = Array.from(new Set(
     productImages.filter((url) => url !== imageLink)
   )).slice(0, 20);
@@ -127,7 +134,14 @@ function buildItem(input: {
   });
   const category = cleanCatalogCategory(product.category?.name);
   const title = text(variant ? `${product.name} - ${variant.name}` : product.name, 150);
-  const description = text(product.description ?? product.shortDescription ?? product.name);
+  const rawDesc = text(product.description ?? product.shortDescription ?? product.name);
+  const description =
+    rawDesc.length >= 40
+      ? rawDesc
+      : text(
+          `${rawDesc} — Shop authentic ${product.name} at Minsah Beauty Bangladesh.`,
+          5000
+        );
   const baseLink = product.canonicalUrl ?? `/products/${product.slug}`;
   const linkWithVariant = variant?.id
     ? `${baseLink}?variant=${encodeURIComponent(variant.id)}`

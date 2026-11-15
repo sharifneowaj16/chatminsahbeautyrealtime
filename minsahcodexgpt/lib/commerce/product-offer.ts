@@ -1,5 +1,5 @@
 import { resolveCatalogSale } from '../meta/catalog/domain/sale-period.ts';
-import type { CatalogAvailability } from '../meta/catalog/domain/types.ts';
+import type { CatalogAvailability, CatalogSale } from '../meta/catalog/domain/types.ts';
 import {
   resolveProductAvailability,
   type ProductAvailabilitySnapshot,
@@ -19,10 +19,7 @@ export type ProductOfferSnapshot = {
   saleState: 'none' | 'future' | 'active' | 'expired' | 'invalid';
   saleEndsAt: string | null;
   saleError?: string;
-  catalogSale?: {
-    price: { amount: number; currency: string };
-    effectiveDate: string;
-  };
+  catalogSale?: CatalogSale;
   availability: CatalogAvailability;
   schemaAvailability: string;
   availableQuantity: number;

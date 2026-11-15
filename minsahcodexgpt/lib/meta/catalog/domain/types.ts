@@ -14,7 +14,7 @@ export type Money = {
 
 export type CatalogSale = {
   price: Money;
-  effectiveDate: string;
+  effectiveDate?: string;
 };
 
 export type CanonicalCatalogItem = {

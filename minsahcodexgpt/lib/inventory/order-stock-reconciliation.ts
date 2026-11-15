@@ -115,6 +115,15 @@ export async function reconcileOrderStockOnStatusTransition(
       movementsLogged++;
     }
 
+    const productIds = Array.from(new Set(order.items.map((it) => it.productId).filter(Boolean) as string[]));
+    if (productIds.length > 0) {
+      import('@/lib/meta-platform/domains/catalog/event-sync')
+        .then(({ triggerEventDrivenCatalogSync }) =>
+          triggerEventDrivenCatalogSync({ productIds, reason: 'order_stock_reconciliation' })
+        )
+        .catch(() => {});
+    }
+
     return {
       reconciled: true,
       action: 'DECREMENTED_ON_DELIVERY',
@@ -252,6 +261,15 @@ export async function reconcileOrderStockOnStatusTransition(
         stockReleasedAt: new Date(),
       },
     });
+
+    const productIds = Array.from(new Set(order.items.map((it) => it.productId).filter(Boolean) as string[]));
+    if (productIds.length > 0) {
+      import('@/lib/meta-platform/domains/catalog/event-sync')
+        .then(({ triggerEventDrivenCatalogSync }) =>
+          triggerEventDrivenCatalogSync({ productIds, reason: 'order_stock_reconciliation' })
+        )
+        .catch(() => {});
+    }
 
     return {
       reconciled: true,

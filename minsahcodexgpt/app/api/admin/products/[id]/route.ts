@@ -6,6 +6,12 @@ import { adminHasPermission, getVerifiedAdmin } from '@/lib/auth/admin-request';
 import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQueue';
 import { normalizeProductCondition } from '@/lib/products/product-condition';
 import { triggerEventDrivenCatalogSync } from '@/lib/meta-platform/domains/catalog/event-sync';
+import {
+  ensureCanonicalProductSku,
+  ensureCanonicalVariantSkus,
+  ensureCanonicalProductUrl,
+  buildAutoProductJsonLd,
+} from '@/lib/commerce/product-catalog-enricher';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -810,8 +816,15 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
   }
 
   const submittedSku = getString(payload.sku);
-  if (submittedSku && submittedSku !== existing.sku) {
-    await assertProductSkuAvailable(submittedSku, existing.id);
+  const targetSku = submittedSku || existing.sku;
+  const canonicalSku = ensureCanonicalProductSku({
+    id: existing.id,
+    sku: targetSku,
+    slug: existing.slug,
+    name: getString(payload.name) || existing.name,
+  });
+  if (canonicalSku && canonicalSku !== existing.sku) {
+    await assertProductSkuAvailable(canonicalSku, existing.id);
   }
 
   const submittedSlug = getString(payload.slug) || getString(payload.urlSlug);
@@ -857,9 +870,42 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     : undefined;
   const dims = dimensionsData(payload);
   const fallbackOgImageUrl = !existing.ogImageUrl && hasOwn(payload, 'images') ? firstImageUrl(payload) : undefined;
+  const targetSlug = slug || existing.slug;
+  const canonicalUrl = ensureCanonicalProductUrl(
+    targetSlug,
+    hasOwn(payload, 'canonicalUrl') ? nullableString(payload.canonicalUrl) : existing.canonicalUrl
+  );
+  const effectiveImageUrl =
+    (hasOwn(payload, 'ogImageUrl') ? nullableString(payload.ogImageUrl) : undefined) ||
+    fallbackOgImageUrl ||
+    existing.ogImageUrl ||
+    existing.images[0]?.url;
+
+  const autoJsonLd = buildAutoProductJsonLd({
+    id: existing.id,
+    sku: canonicalSku,
+    name: getString(payload.name) || existing.name,
+    slug: targetSlug,
+    description: hasOwn(payload, 'description') ? nullableString(payload.description) : existing.description,
+    price: Number(basePrice),
+    salePrice: hasOwn(payload, 'salePrice') ? (payload.salePrice ? Number(payload.salePrice) : null) : existing.salePrice ? Number(existing.salePrice) : null,
+    quantity: quantity ?? existing.quantity,
+    trackInventory: hasOwn(payload, 'trackInventory') ? booleanValue(payload.trackInventory, existing.trackInventory) : existing.trackInventory,
+    allowBackorder: hasOwn(payload, 'allowBackorder') ? booleanValue(payload.allowBackorder, existing.allowBackorder) : existing.allowBackorder,
+    imageUrl: effectiveImageUrl,
+    brandName: hasOwn(payload, 'brand') ? getString(payload.brand) : existing.brand?.name,
+    variants: (variants.length > 0 ? variants : existing.variants).map((v: any, idx: number) => ({
+      id: typeof v.id === 'string' ? v.id : undefined,
+      sku: String(v.sku || `${canonicalSku}-V${idx + 1}`),
+      name: String(v.name || `Variant ${idx + 1}`),
+      price: Number(v.price) || Number(basePrice),
+      quantity: Number(v.quantity) || 0,
+      image: typeof v.image === 'string' ? v.image : undefined,
+    })),
+  });
 
   const updateData = compact({
-    sku: submittedSku || undefined,
+    sku: canonicalSku,
     name: hasOwn(payload, 'name') ? nullableString(payload.name) || existing.name : undefined,
     slug,
     description: hasOwn(payload, 'description') ? nullableString(payload.description) : undefined,
@@ -917,8 +963,8 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     bengaliSecondaryKeywords: hasOwn(payload, 'bengaliSecondaryKeywords') ? stringArray(payload.bengaliSecondaryKeywords) : undefined,
     ogTitle: hasOwn(payload, 'ogTitle') ? nullableString(payload.ogTitle) : undefined,
     ogDescription: hasOwn(payload, 'ogDescription') ? nullableString(payload.ogDescription) : undefined,
-    ogImageUrl: hasOwn(payload, 'ogImageUrl') ? nullableString(payload.ogImageUrl) : fallbackOgImageUrl,
-    canonicalUrl: hasOwn(payload, 'canonicalUrl') ? nullableString(payload.canonicalUrl) : undefined,
+    ogImageUrl: effectiveImageUrl || autoJsonLd.imageUrl,
+    canonicalUrl,
 
     pageH1: hasOwn(payload, 'pageH1') ? nullableString(payload.pageH1) : undefined,
     seoIntro: hasOwn(payload, 'seoIntro') ? nullableString(payload.seoIntro) : undefined,
@@ -936,10 +982,10 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
       : undefined,
     productGroupJsonLd: hasOwn(payload, 'productGroupJsonLd')
       ? jsonValue(payload.productGroupJsonLd, 'Product group JSON-LD')
-      : undefined,
+      : (existing.productGroupJsonLd as any) || autoJsonLd.productGroupJsonLd,
     merchantListingJsonLd: hasOwn(payload, 'merchantListingJsonLd')
       ? jsonValue(payload.merchantListingJsonLd, 'Merchant listing JSON-LD')
-      : undefined,
+      : (existing.merchantListingJsonLd as any) || autoJsonLd.merchantListingJsonLd,
     breadcrumbJsonLd: hasOwn(payload, 'breadcrumbJsonLd')
       ? jsonValue(payload.breadcrumbJsonLd, 'Breadcrumb JSON-LD')
       : undefined,

@@ -55,7 +55,8 @@ export function getMetaBusinessConfig(): MetaBusinessConfig {
     siteUrl:
       clean(process.env.NEXT_PUBLIC_SITE_URL) ??
       clean(process.env.SITE_URL) ??
-      clean(process.env.NEXTAUTH_URL),
+      clean(process.env.NEXTAUTH_URL) ??
+      'https://minsahbeauty.cloud',
     graphApiVersion: META_GRAPH_API_VERSION,
   };
 }

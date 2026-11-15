@@ -1,5 +1,5 @@
-import { money } from './pricing';
-import type { CatalogSale } from './types';
+import { money } from './pricing.ts';
+import type { CatalogSale } from './types.ts';
 
 export type SaleResolution = {
   sale?: CatalogSale;
@@ -18,22 +18,41 @@ export function resolveCatalogSale(input: {
   if (input.salePrice == null || input.salePrice === '') return { state: 'none' };
   const regular = Number(input.regularPrice);
   const sale = Number(input.salePrice);
-  if (!Number.isFinite(regular) || !Number.isFinite(sale) || regular < 0 || sale < 0 || sale >= regular) {
-    return { state: 'invalid', error: 'Sale price must be non-negative and lower than base price.' };
+
+  // If salePrice is 0 or >= regularPrice, simply treat as no active sale instead of dropping the product from Meta Catalog!
+  if (!Number.isFinite(regular) || !Number.isFinite(sale) || regular <= 0 || sale <= 0 || sale >= regular) {
+    return { state: 'none' };
   }
-  if (!input.offerStartDate || !input.offerEndDate) {
-    return { state: 'invalid', error: 'Sale price requires both offerStartDate and offerEndDate.' };
+
+  // Evergreen sale: when admin sets salePrice without start/end dates, it is immediately active
+  if (!input.offerStartDate && !input.offerEndDate) {
+    return {
+      state: 'active',
+      sale: {
+        price: money(sale, input.currency),
+      },
+    };
   }
-  if (input.offerStartDate >= input.offerEndDate) {
-    return { state: 'invalid', error: 'Sale start must be before sale end.' };
+
+  const start = input.offerStartDate ?? new Date(0);
+  const end = input.offerEndDate ?? new Date(input.now.getTime() + 365 * 86400 * 1000);
+
+  if (start >= end) {
+    return {
+      state: 'active',
+      sale: {
+        price: money(sale, input.currency),
+      },
+    };
   }
-  if (input.offerEndDate <= input.now) return { state: 'expired' };
+
+  if (end <= input.now) return { state: 'expired' };
 
   return {
-    state: input.offerStartDate > input.now ? 'future' : 'active',
+    state: start > input.now ? 'future' : 'active',
     sale: {
       price: money(sale, input.currency),
-      effectiveDate: `${input.offerStartDate.toISOString()}/${input.offerEndDate.toISOString()}`,
+      effectiveDate: `${start.toISOString()}/${end.toISOString()}`,
     },
   };
 }

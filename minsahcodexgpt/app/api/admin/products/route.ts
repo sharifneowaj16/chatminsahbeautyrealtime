@@ -10,6 +10,13 @@ import {
 } from '@/lib/admin-products';
 import { enqueueProductIndex } from '@/lib/queue/productQueue';
 import { normalizeProductCondition } from '@/lib/products/product-condition';
+import {
+  ensureCanonicalProductSku,
+  ensureCanonicalVariantSkus,
+  ensureCanonicalProductUrl,
+  buildAutoProductJsonLd,
+  triggerEventDrivenCatalogSync,
+} from '@/lib/commerce/product-catalog-enricher';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -363,14 +370,20 @@ async function createProductFromPayload(body: PlainObject) {
     name
   );
 
-  const fallbackSku = `${slug.toUpperCase().replace(/[^A-Z0-9]+/g, '-')}-${Date.now().toString(36).toUpperCase()}`;
-  const productSku = optionalString(body.sku) || optionalString(firstVariant?.sku) || fallbackSku;
+  const rawProductSku = optionalString(body.sku) || optionalString(firstVariant?.sku);
+  const productSku = ensureCanonicalProductSku({
+    sku: rawProductSku,
+    slug,
+    name,
+  });
+  const canonicalUrl = ensureCanonicalProductUrl(slug, optionalString(body.canonicalUrl));
   const categoryId = await getOrCreateCategoryId(optionalString(body.category) || '');
   const brandId = await getOrCreateBrandId(optionalString(body.brand) || '');
   const status = getString(body.status).toLowerCase();
   const imageAltTexts = stringArray(body.imageAltTexts);
   const imageCreates = buildImageCreates(rawImages, imageAltTexts, name);
-  const variantCreates = buildVariantCreates(rawVariants, productSku, basePrice);
+  const rawVariantCreates = buildVariantCreates(rawVariants, productSku, basePrice);
+  const variantCreates = ensureCanonicalVariantSkus(productSku, rawVariantCreates);
   const explicitQuantity = intValue(body.quantity);
   const quantity = status === 'out_of_stock'
     ? 0
@@ -378,6 +391,28 @@ async function createProductFromPayload(body: PlainObject) {
 
   const dimensions = isPlainObject(body.dimensions) ? body.dimensions : {};
   const defaultOgImageUrl = imageCreates.find((image) => image.isDefault)?.url || imageCreates[0]?.url;
+
+  const autoJsonLd = buildAutoProductJsonLd({
+    id: slug,
+    sku: productSku,
+    name,
+    slug,
+    description: optionalString(body.description),
+    price: Number(basePrice),
+    salePrice: body.salePrice ? Number(body.salePrice) : null,
+    quantity,
+    trackInventory: booleanValue(body.trackInventory, true),
+    allowBackorder: booleanValue(body.allowBackorder, false),
+    imageUrl: optionalString(body.ogImageUrl) || optionalString(defaultOgImageUrl),
+    brandName: optionalString(body.brand),
+    variants: variantCreates.map((v) => ({
+      sku: v.sku,
+      name: v.name,
+      price: Number(v.price),
+      quantity: Number(v.quantity),
+      image: v.image,
+    })),
+  });
 
   const createData = compact({
     sku: productSku,
@@ -414,8 +449,8 @@ async function createProductFromPayload(body: PlainObject) {
     bengaliSecondaryKeywords: stringArray(body.bengaliSecondaryKeywords),
     ogTitle: optionalString(body.ogTitle),
     ogDescription: optionalString(body.ogDescription),
-    ogImageUrl: optionalString(body.ogImageUrl) || optionalString(defaultOgImageUrl),
-    canonicalUrl: optionalString(body.canonicalUrl),
+    ogImageUrl: optionalString(body.ogImageUrl) || optionalString(defaultOgImageUrl) || autoJsonLd.imageUrl,
+    canonicalUrl,
 
     pageH1: optionalString(body.pageH1),
     seoIntro: optionalString(body.seoIntro),
@@ -425,8 +460,8 @@ async function createProductFromPayload(body: PlainObject) {
     seoValidationChecklist: stringArray(body.seoValidationChecklist),
 
     structuredDataJsonLd: jsonValue(body.structuredDataJsonLd),
-    productGroupJsonLd: jsonValue(body.productGroupJsonLd),
-    merchantListingJsonLd: jsonValue(body.merchantListingJsonLd),
+    productGroupJsonLd: jsonValue(body.productGroupJsonLd) || autoJsonLd.productGroupJsonLd,
+    merchantListingJsonLd: jsonValue(body.merchantListingJsonLd) || autoJsonLd.merchantListingJsonLd,
     breadcrumbJsonLd: jsonValue(body.breadcrumbJsonLd),
     sitemapIndexing: jsonValue(body.sitemapIndexing),
     variantUrlStrategy: jsonValue(body.variantUrlStrategy),
@@ -594,6 +629,7 @@ export async function POST(request: NextRequest) {
 
     const product = await createProductFromPayload(body);
     const searchSyncQueued = await enqueueProductIndex(product.id, 'admin product create');
+    triggerEventDrivenCatalogSync({ productIds: [product.id], reason: 'admin_product_create' }).catch(() => {});
 
     return NextResponse.json(
       {

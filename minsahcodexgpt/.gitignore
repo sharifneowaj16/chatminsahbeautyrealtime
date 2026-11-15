@@ -35,6 +35,7 @@ realtime-service/prisma/generated/
 # Generated repository and runtime discovery reports
 meta-webhook-search.txt
 phase31-*.txt
+*_txt/
 next-env.d.ts
 scratch/
 

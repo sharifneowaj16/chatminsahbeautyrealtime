@@ -181,7 +181,16 @@ export async function buildCanonicalCatalogPlan(options: { inventoryOnly?: boole
     }
 
     for (const mapped of mappedItems) {
-      if (retailerIds.has(mapped.item.retailerId)) mapped.validation.errors.push('Duplicate retailer ID in catalog batch.');
+      if (retailerIds.has(mapped.item.retailerId)) {
+        let counter = 1;
+        const suffix = mapped.item.sourceId.slice(-6).toUpperCase() || 'DUP';
+        let candidate = `${mapped.item.retailerId}-${suffix}`;
+        while (retailerIds.has(candidate)) {
+          counter += 1;
+          candidate = `${mapped.item.retailerId}-${suffix}-${counter}`;
+        }
+        mapped.item.retailerId = candidate;
+      }
       retailerIds.add(mapped.item.retailerId);
       if (mapped.validation.errors.length > 0) {
         invalidItems.push({

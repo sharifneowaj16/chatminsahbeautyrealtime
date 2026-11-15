@@ -174,17 +174,35 @@ function isCuidLike(value?: string | null): boolean {
 export function getMetaParentProductSku(item: MetaCatalogItemSource) {
   const explicit = cleanId(item.productSku) ?? cleanId(item.product?.sku);
   if (explicit && !isCuidLike(explicit)) return explicit;
+
   const directSku = cleanId(item.sku);
   if (!hasMetaVariantSelection(item) && directSku && !isCuidLike(directSku)) return directSku;
-  return explicit && !isCuidLike(explicit) ? explicit : undefined;
+
+  const parentId = getMetaParentProductId(item) ?? cleanId(item.id);
+  if (parentId) {
+    return isCuidLike(parentId)
+      ? `MB-PROD-${parentId.slice(-8).toUpperCase()}`
+      : parentId;
+  }
+  return undefined;
 }
 
 export function getMetaVariantSku(item: MetaCatalogItemSource) {
+  const parentSku = getMetaParentProductSku(item);
   const explicit = cleanId(item.variantSku) ?? cleanId(item.variant?.sku);
-  if (explicit && !isCuidLike(explicit)) return explicit;
+  if (explicit && !isCuidLike(explicit) && explicit !== parentSku) return explicit;
+
   const directSku = cleanId(item.sku);
-  if (hasMetaVariantSelection(item) && directSku && !isCuidLike(directSku)) return directSku;
-  return explicit && !isCuidLike(explicit) ? explicit : undefined;
+  if (hasMetaVariantSelection(item) && directSku && !isCuidLike(directSku) && directSku !== parentSku) {
+    return directSku;
+  }
+
+  const variantId = getMetaVariantId(item);
+  if (variantId && parentSku) {
+    const suffix = isCuidLike(variantId) ? variantId.slice(-6).toUpperCase() : variantId.toUpperCase();
+    return `${parentSku}-${suffix}`;
+  }
+  return explicit && !isCuidLike(explicit) ? explicit : parentSku;
 }
 
 export function resolveMetaCatalogIdentity(

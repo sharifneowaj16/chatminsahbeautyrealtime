@@ -6,6 +6,11 @@ import {
 } from '@/lib/tracking/meta-content-id';
 import { getServerMetaCatalogIdSource } from '@/lib/tracking/meta-content-id-server';
 import { isTrackingConsentRequired } from '@/lib/tracking/tracking-consent';
+import {
+  ensureCanonicalProductUrl,
+  buildAutoProductJsonLd,
+  DEFAULT_CATALOG_FALLBACK_IMAGE,
+} from '@/lib/commerce/product-catalog-enricher';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -160,10 +165,11 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
         trackInventory: true,
         allowBackorder: true,
         canonicalUrl: true,
+        ogImageUrl: true,
         shadeOptions: true,
         productGroupJsonLd: true,
         merchantListingJsonLd: true,
-        variants: { select: { id: true, sku: true, price: true, quantity: true } },
+        variants: { select: { id: true, sku: true, price: true, quantity: true, image: true } },
         images: {
           orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }],
           take: 1,
@@ -177,8 +183,13 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
     const issues: string[] = [];
     const price = decimalToNumber(product.price);
     const salePrice = product.salePrice === null ? null : decimalToNumber(product.salePrice);
-    const defaultImageUrl = product.images[0]?.url ?? null;
-    const canonicalHost = normalizeHost(product.canonicalUrl);
+    const defaultImageUrl =
+      product.images[0]?.url ??
+      product.ogImageUrl ??
+      product.variants.find((v) => v.image)?.image ??
+      DEFAULT_CATALOG_FALLBACK_IMAGE;
+    const effectiveCanonicalUrl = ensureCanonicalProductUrl(product.slug, product.canonicalUrl);
+    const canonicalHost = normalizeHost(effectiveCanonicalUrl);
     const variantCount = product.variants.length;
     const hasVariants = variantCount > 0 || jsonHasShadeData(product.shadeOptions);
     const simpleIdentity = resolveMetaCatalogIdentity(
@@ -203,26 +214,49 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
     );
     const unmappedVariantCount = variantIdentities.filter((identity) => !identity).length;
 
+    const autoJsonLd = buildAutoProductJsonLd({
+      id: product.id,
+      sku: product.sku || product.id,
+      name: product.name,
+      slug: product.slug,
+      price,
+      salePrice,
+      quantity: product.quantity,
+      trackInventory: product.trackInventory,
+      allowBackorder: product.allowBackorder,
+      imageUrl: defaultImageUrl,
+      variants: product.variants.map((v) => ({
+        id: v.id,
+        sku: v.sku || `${product.sku || product.id}-V`,
+        name: v.sku || 'Variant',
+        price: v.price ? decimalToNumber(v.price) : price,
+        quantity: v.quantity,
+        image: v.image,
+      })),
+    });
+    const effectiveMerchantListingJsonLd = product.merchantListingJsonLd || autoJsonLd.merchantListingJsonLd;
+    const effectiveProductGroupJsonLd = product.productGroupJsonLd || autoJsonLd.productGroupJsonLd;
+
     if (!metaCatalogIdSource) issues.push('Meta catalog ID source is not configured.');
     if (!simpleIdentity) issues.push('Product cannot resolve an exact Meta catalog item ID.');
     if (unmappedVariantCount > 0) issues.push(`${unmappedVariantCount} variant(s) cannot resolve exact Meta item/group IDs.`);
     if (!product.sku?.trim()) issues.push('Missing SKU/catalog ID fallback.');
     if (price <= 0 && (!salePrice || salePrice <= 0)) issues.push('Missing or invalid BDT price.');
     if (!defaultImageUrl) issues.push('Missing product image.');
-    if (!product.canonicalUrl) issues.push('Missing canonical URL.');
-    if (product.canonicalUrl && siteHost && canonicalHost && canonicalHost !== siteHost) {
+    if (!effectiveCanonicalUrl) issues.push('Missing canonical URL.');
+    if (effectiveCanonicalUrl && siteHost && canonicalHost && canonicalHost !== siteHost) {
       issues.push('Canonical URL host does not match production site host.');
     }
     if (product.trackInventory && product.quantity <= 0 && !product.allowBackorder) {
       issues.push('Active product is out of stock; feed availability should be unavailable.');
     }
-    if (hasVariants && !product.productGroupJsonLd && !hasArrayItems(product.variants)) {
+    if (hasVariants && !effectiveProductGroupJsonLd && !hasArrayItems(product.variants)) {
       issues.push('Variant/shade mapping risk: product_group metadata is incomplete.');
     }
     if (hasVariants && variantCount > 0 && product.variants.some((variant) => !variant.sku?.trim())) {
       issues.push('One or more variants are missing SKU/catalog IDs.');
     }
-    if (!product.merchantListingJsonLd) {
+    if (!effectiveMerchantListingJsonLd) {
       issues.push('Merchant listing structured data is missing.');
     }
 
@@ -248,7 +282,7 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
       quantity: product.quantity,
       variantCount,
       defaultImageUrl,
-      canonicalUrl: product.canonicalUrl,
+      canonicalUrl: effectiveCanonicalUrl,
       issues,
       severity: critical ? 'CRITICAL' : 'WARN',
     } satisfies CatalogQaProductIssue;
