@@ -1089,42 +1089,57 @@ export async function POST(request: NextRequest) {
     // Online payment orders notify admin only after verified payment finalizes stock.
     if (!isOnlinePaymentOrder) {
       const resolvedAddress = order.addressId
-      ? await prisma.address.findUnique({
-          where: { id: order.addressId },
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
-            city: true,
-            street2: true,
-            street1: true,
-          },
-        })
-      : null;
+        ? await prisma.address.findUnique({
+            where: { id: order.addressId },
+            select: {
+              firstName: true,
+              lastName: true,
+              phone: true,
+              city: true,
+              street2: true,
+              street1: true,
+            },
+          })
+        : null;
 
-    notifyNewOrder({
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      customerName: resolvedAddress
-        ? `${resolvedAddress.firstName} ${resolvedAddress.lastName}`.trim()
-        : "N/A",
-      customerPhone: resolvedAddress?.phone || "N/A",
-      address: {
-        city: resolvedAddress?.city || "N/A",
-        zone: resolvedAddress?.street2 || null,
-        area: resolvedAddress?.street1 || null,
-      },
-      items: notifyItems,
-      subtotal,
-      shippingCost: shippingCostNum,
-      courierDeliveryCharge: deliveryAccounting.courierDeliveryCharge,
-      deliveryDiscountAmount: deliveryAccounting.deliveryDiscountAmount,
-      deliveryPricingSource: deliveryAccounting.deliveryPricingSource,
-      deliveryOfferType: deliveryAccounting.deliveryOfferType,
-      deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
-      total,
-      paymentMethod,
-    }).catch(() => {});
+      try {
+        const notifyResult = await notifyNewOrder({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          customerName: resolvedAddress
+            ? `${resolvedAddress.firstName} ${resolvedAddress.lastName}`.trim()
+            : "N/A",
+          customerPhone: resolvedAddress?.phone || "N/A",
+          address: {
+            city: resolvedAddress?.city || "N/A",
+            zone: resolvedAddress?.street2 || null,
+            area: resolvedAddress?.street1 || null,
+          },
+          items: notifyItems,
+          subtotal,
+          shippingCost: shippingCostNum,
+          courierDeliveryCharge: deliveryAccounting.courierDeliveryCharge,
+          deliveryDiscountAmount: deliveryAccounting.deliveryDiscountAmount,
+          deliveryPricingSource: deliveryAccounting.deliveryPricingSource,
+          deliveryOfferType: deliveryAccounting.deliveryOfferType,
+          deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
+          total,
+          paymentMethod,
+        });
+
+        if (notifyResult?.ok) {
+          await prisma.order
+            .update({
+              where: { id: order.id },
+              data: { adminNotifiedAt: new Date() },
+            })
+            .catch((dbErr) =>
+              console.error("Failed to update adminNotifiedAt in /api/orders:", dbErr),
+            );
+        }
+      } catch (notifyErr) {
+        console.error("Telegram notification failed in /api/orders:", notifyErr);
+      }
     }
 
     return NextResponse.json(

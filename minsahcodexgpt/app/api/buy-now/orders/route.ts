@@ -406,33 +406,48 @@ export async function POST(request: NextRequest) {
 
     // Pathao delivery is deferred until phone confirmation via Telegram/Admin callback.
     if (!isOnlinePaymentOrder) {
-      notifyNewOrder({
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        customerName: shippingAddress.name.trim(),
-        customerPhone: shippingAddress.phone.trim(),
-        address: {
-          city: shippingAddress.city.trim(),
-          zone: shippingAddress.zone?.trim() || null,
-          area: shippingAddress.area.trim(),
-        },
-        items: orderItems.map((item) => ({
-          name: item.productName,
-          variant: item.variantLabel || null,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          total: item.total,
-        })),
-        subtotal,
-        shippingCost: deliveryCharge,
-        courierDeliveryCharge: deliveryAccounting.courierDeliveryCharge,
-        deliveryDiscountAmount: deliveryAccounting.deliveryDiscountAmount,
-        deliveryPricingSource: deliveryAccounting.deliveryPricingSource,
-        deliveryOfferType: deliveryAccounting.deliveryOfferType,
-        deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
-        total,
-        paymentMethod,
-      }).catch(() => {});
+      try {
+        const notifyResult = await notifyNewOrder({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          customerName: shippingAddress.name.trim(),
+          customerPhone: shippingAddress.phone.trim(),
+          address: {
+            city: shippingAddress.city.trim(),
+            zone: shippingAddress.zone?.trim() || null,
+            area: shippingAddress.area.trim(),
+          },
+          items: orderItems.map((item) => ({
+            name: item.productName,
+            variant: item.variantLabel || null,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            total: item.total,
+          })),
+          subtotal,
+          shippingCost: deliveryCharge,
+          courierDeliveryCharge: deliveryAccounting.courierDeliveryCharge,
+          deliveryDiscountAmount: deliveryAccounting.deliveryDiscountAmount,
+          deliveryPricingSource: deliveryAccounting.deliveryPricingSource,
+          deliveryOfferType: deliveryAccounting.deliveryOfferType,
+          deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
+          total,
+          paymentMethod,
+        });
+
+        if (notifyResult?.ok) {
+          await prisma.order
+            .update({
+              where: { id: order.id },
+              data: { adminNotifiedAt: new Date() },
+            })
+            .catch((dbErr) =>
+              console.error("Failed to update adminNotifiedAt in /api/buy-now/orders:", dbErr),
+            );
+        }
+      } catch (notifyErr) {
+        console.error("Telegram notification failed in /api/buy-now/orders:", notifyErr);
+      }
     }
 
     const pathaoDelivery = { skipped: true, reason: 'DEFERRED_UNTIL_PHONE_CONFIRMATION' };

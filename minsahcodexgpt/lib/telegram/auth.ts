@@ -47,10 +47,36 @@ export function getTelegramAdminUserIds() {
   return new Set(splitCsv(process.env.TELEGRAM_ADMIN_USER_IDS));
 }
 
+export function normalizeTelegramRelayBase(rawBase?: string | null): string {
+  let base = String(rawBase ?? '').trim();
+  if (!base) return 'https://api.telegram.org/bot';
+
+  // Strip trailing slashes
+  base = base.replace(/\/+$/, '');
+
+  // If base ends with "/bot", return as is
+  if (base.endsWith('/bot')) {
+    return base;
+  }
+
+  return `${base}/bot`;
+}
+
+export function normalizeTelegramBotToken(rawToken?: string | null): string {
+  const token = String(rawToken ?? '').trim();
+  if (!token) return '';
+  // Strip leading 'bot' prefix if user included it in token env variable
+  return token.replace(/^bot/i, '');
+}
+
 export function getTelegramOrderBotConfig() {
-  const relayBase = process.env.TELEGRAM_RELAY_BASE?.trim() || 'https://api.telegram.org/bot';
-  const botToken = process.env.TELEGRAM_ORDER_BOT_TOKEN?.trim() || '';
-  const chatId = process.env.TELEGRAM_ORDER_CHAT_ID?.trim() || '';
+  const relayBase = normalizeTelegramRelayBase(process.env.TELEGRAM_RELAY_BASE);
+  const botToken = normalizeTelegramBotToken(
+    process.env.TELEGRAM_ORDER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN
+  );
+  const chatId = (
+    process.env.TELEGRAM_ORDER_CHAT_ID || process.env.TELEGRAM_CHAT_ID || ''
+  ).trim();
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim() || '';
   const adminUserIds = getTelegramAdminUserIds();
 

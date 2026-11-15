@@ -519,33 +519,48 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    notifyNewOrder({
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      customerName:
-        `${address.firstName} ${address.lastName}`.trim() ||
-        `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-        "N/A",
-      customerPhone: address.phone || user.phone || "N/A",
-      address: {
-        city: address.city || "N/A",
-        zone: address.state || address.street2 || null,
-        area: address.street1 || null,
-      },
-      items: notifyItems,
-      subtotal: toNumber(order.subtotal),
-      shippingCost: toNumber(order.shippingCost),
-      courierDeliveryCharge:
-        order.courierDeliveryCharge === null
-          ? null
-          : toNumber(order.courierDeliveryCharge),
-      deliveryDiscountAmount: toNumber(order.deliveryDiscountAmount),
-      deliveryPricingSource: order.deliveryPricingSource,
-      deliveryOfferType: order.deliveryOfferType,
-      deliveryOfferBadgeText: order.deliveryOfferBadgeText,
-      total: toNumber(order.total),
-      paymentMethod: order.paymentMethod || "cash_on_delivery",
-    }).catch(() => {});
+    try {
+      const notifyResult = await notifyNewOrder({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerName:
+          `${address.firstName} ${address.lastName}`.trim() ||
+          `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+          "N/A",
+        customerPhone: address.phone || user.phone || "N/A",
+        address: {
+          city: address.city || "N/A",
+          zone: address.state || address.street2 || null,
+          area: address.street1 || null,
+        },
+        items: notifyItems,
+        subtotal: toNumber(order.subtotal),
+        shippingCost: toNumber(order.shippingCost),
+        courierDeliveryCharge:
+          order.courierDeliveryCharge === null
+            ? null
+            : toNumber(order.courierDeliveryCharge),
+        deliveryDiscountAmount: toNumber(order.deliveryDiscountAmount),
+        deliveryPricingSource: order.deliveryPricingSource,
+        deliveryOfferType: order.deliveryOfferType,
+        deliveryOfferBadgeText: order.deliveryOfferBadgeText,
+        total: toNumber(order.total),
+        paymentMethod: order.paymentMethod || "cash_on_delivery",
+      });
+
+      if (notifyResult?.ok) {
+        await prisma.order
+          .update({
+            where: { id: order.id },
+            data: { adminNotifiedAt: new Date() },
+          })
+          .catch((dbErr) =>
+            console.error("Failed to update adminNotifiedAt in /api/admin/orders:", dbErr),
+          );
+      }
+    } catch (notifyErr) {
+      console.error("Telegram notification failed in /api/admin/orders:", notifyErr);
+    }
 
     return NextResponse.json(
       {

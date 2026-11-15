@@ -72,28 +72,37 @@ function amountOrFree(value: number) {
   return value <= 0 ? "Free" : `BDT ${formatAmount(value)}`;
 }
 
-function normalizePhoneForTelUrl(phone: string | null | undefined) {
+function normalizeBangladeshPhoneDisplay(phone: string | null | undefined) {
   const raw = String(phone ?? "").trim();
-  if (!raw) return null;
-
-  const compact = raw.replace(/[\s().-]/g, "");
-  if (/^\+\d{8,15}$/.test(compact)) return compact;
+  if (!raw) return "N/A";
 
   const digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
+  if (!digits) return raw;
 
   if (/^8801\d{9}$/.test(digits)) return `+${digits}`;
   if (/^01\d{9}$/.test(digits)) return `+88${digits}`;
   if (/^1\d{9}$/.test(digits)) return `+880${digits}`;
-  if (/^00\d{8,15}$/.test(digits)) return `+${digits.slice(2)}`;
   if (/^\d{8,15}$/.test(digits)) return `+${digits}`;
 
-  return null;
+  return raw;
 }
 
-function buildCustomerCallUrl(phone: string | null | undefined) {
-  const normalized = normalizePhoneForTelUrl(phone);
-  return normalized ? `tel:${normalized}` : null;
+function buildCustomerWhatsAppUrl(phone: string | null | undefined) {
+  const raw = String(phone ?? "").trim();
+  if (!raw) return null;
+
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+
+  let normalized = digits;
+  if (/^01\d{9}$/.test(digits)) normalized = `88${digits}`;
+  else if (/^1\d{9}$/.test(digits)) normalized = `880${digits}`;
+  else if (/^8801\d{9}$/.test(digits)) normalized = digits;
+
+  if (/^8801\d{9}$/.test(normalized)) {
+    return `https://wa.me/${normalized}`;
+  }
+  return null;
 }
 
 function deliverySourceLabel(source?: string | null) {
@@ -160,13 +169,15 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
     })
     .join("\n\n");
 
+  const displayPhone = normalizeBangladeshPhoneDisplay(order.customerPhone);
+
   return (
     `<b>New Order - Minsah Beauty</b>\n\n` +
     `Order: <b>#${escapeHtml(order.orderNumber)}</b>\n` +
     `Time: ${dateStr}, ${timeStr}\n\n` +
     `<b>Customer</b>\n` +
     `Name: ${escapeHtml(order.customerName)}\n` +
-    `Phone: ${escapeHtml(order.customerPhone)}\n` +
+    `Phone: ${escapeHtml(displayPhone)}\n` +
     `Address: ${addressLine}\n\n` +
     `<b>Items</b>\n` +
     `${itemLines || "N/A"}\n\n` +
@@ -211,7 +222,7 @@ async function sendTelegramMessage(body: Record<string, unknown>) {
 }
 
 async function buildOrderActionButtons(orderId: string, customerPhone?: string | null) {
-  const callCustomerUrl = buildCustomerCallUrl(customerPhone);
+  const whatsAppUrl = buildCustomerWhatsAppUrl(customerPhone);
   const [phoneConfirm, phoneOff, cancel] = await Promise.all([
     createTelegramActionToken({
       action: TELEGRAM_ORDER_ACTIONS.PHONE_CONFIRM,
@@ -231,29 +242,29 @@ async function buildOrderActionButtons(orderId: string, customerPhone?: string |
     tokenIds: [phoneConfirm.tokenId, phoneOff.tokenId, cancel.tokenId],
     replyMarkup: {
       inline_keyboard: [
-        ...(callCustomerUrl
+        ...(whatsAppUrl
           ? [
               [
                 {
-                  text: "Call Customer",
-                  url: callCustomerUrl,
+                  text: "💬 WhatsApp Customer",
+                  url: whatsAppUrl,
                 },
               ],
             ]
           : []),
         [
           {
-            text: "Phone Confirmed",
+            text: "📞 Phone Confirmed",
             callback_data: phoneConfirm.callbackData,
           },
         ],
         [
           {
-            text: "Phone Off",
+            text: "📵 Phone Off",
             callback_data: phoneOff.callbackData,
           },
           {
-            text: "Cancel",
+            text: "❌ Cancel",
             callback_data: cancel.callbackData,
           },
         ],
@@ -274,28 +285,41 @@ function extractTelegramSentMessageContext(response: unknown) {
   return { messageId, chatId };
 }
 
-export async function notifyNewOrder(order: NewOrderNotification) {
+export async function notifyNewOrder(order: NewOrderNotification): Promise<{
+  ok: boolean;
+  messageId?: string | number;
+  error?: string;
+}> {
   const config = getTelegramOrderBotConfig();
   if (!config.relayBase || !config.botToken || !config.chatId) {
-    console.error("Telegram order bot not configured - skipping notification.");
-    return;
+    console.warn("[TelegramNotify] Telegram order bot not configured - skipping notification.");
+    return { ok: false, error: "TELEGRAM_NOT_CONFIGURED" };
+  }
+
+  const baseText = isDetailedOrder(order)
+    ? buildDetailedMessage(order)
+    : buildBasicMessage(order);
+
+  let actionTokenIds: string[] = [];
+  let replyMarkup: Record<string, unknown> | undefined = undefined;
+
+  if (isDetailedOrder(order)) {
+    try {
+      const buttons = await buildOrderActionButtons(order.orderId, order.customerPhone);
+      replyMarkup = buttons.replyMarkup;
+      actionTokenIds = buttons.tokenIds;
+    } catch (btnErr) {
+      console.error("[TelegramNotify] Failed to build action buttons:", btnErr);
+    }
   }
 
   try {
     const body: Record<string, unknown> = {
       chat_id: config.chatId,
-      text: isDetailedOrder(order)
-        ? buildDetailedMessage(order)
-        : buildBasicMessage(order),
+      text: baseText,
       parse_mode: "HTML",
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
     };
-
-    let actionTokenIds: string[] = [];
-    if (isDetailedOrder(order)) {
-      const buttons = await buildOrderActionButtons(order.orderId, order.customerPhone);
-      body.reply_markup = buttons.replyMarkup;
-      actionTokenIds = buttons.tokenIds;
-    }
 
     const response = await sendTelegramMessage(body);
     const sentContext = extractTelegramSentMessageContext(response);
@@ -304,9 +328,28 @@ export async function notifyNewOrder(order: NewOrderNotification) {
         tokenIds: actionTokenIds,
         telegramChatId: sentContext.chatId,
         messageId: sentContext.messageId,
-      });
+      }).catch((err) => console.error("[TelegramNotify] attach context failed:", err));
     }
+    return { ok: true, messageId: sentContext?.messageId };
   } catch (err) {
-    console.error("Telegram notify failed:", err);
+    console.error("[TelegramNotify] Primary message failed, attempting plain fallback without buttons:", err);
+    if (replyMarkup) {
+      try {
+        const fallbackBody: Record<string, unknown> = {
+          chat_id: config.chatId,
+          text: baseText,
+          parse_mode: "HTML",
+        };
+        const response = await sendTelegramMessage(fallbackBody);
+        const sentContext = extractTelegramSentMessageContext(response);
+        return { ok: true, messageId: sentContext?.messageId };
+      } catch (fallbackErr) {
+        const errorMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+        console.error("[TelegramNotify] Fallback plain message also failed:", errorMsg);
+        return { ok: false, error: errorMsg };
+      }
+    }
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: errorMsg };
   }
 }
