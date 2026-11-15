@@ -48,7 +48,7 @@ export function roundMoney(value: number): number {
 }
 
 export function roundRate(value: number): number {
-  return Math.round((value + Number.EPSILON) * 10000) / 100;
+  return Math.round((value + Number.EPSILON) * 10000) / 10000;
 }
 
 export function growthPercent(current: number, previous: number): number | null {
@@ -62,7 +62,8 @@ export function safeRatio(numerator: number, denominator: number): number {
 }
 
 export function safePercent(numerator: number, denominator: number): number {
-  return roundRate(safeRatio(numerator, denominator) * 100);
+  const percent = roundRate(safeRatio(numerator, denominator) * 100);
+  return Math.min(999.9999, Math.max(0, percent));
 }
 
 export function parseAdSpend(value: string | null): number | null {

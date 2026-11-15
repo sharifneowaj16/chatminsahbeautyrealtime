@@ -1,7 +1,7 @@
 import 'server-only';
 import prisma from '@/lib/prisma';
-import { resolveTrackingDecision } from '@/lib/privacy/consent-resolver';
-import { TRACKING_POLICY_VERSION } from '@/lib/privacy/consent-types';
+import { normalizeConsentState, resolveTrackingDecision } from '@/lib/privacy/consent-resolver';
+import { TRACKING_POLICY_VERSION, type TrackingConsentState } from '@/lib/privacy/consent-types';
 import { buildMetaPurchaseOutboxInput } from './builder';
 import {
   createMetaEventOutbox,
@@ -20,14 +20,16 @@ export async function resolveOrderPolicyDecision(tx: MetaOutboxDb, orderId: stri
     orderId
   );
   const order = rows[0];
-  const rawConsent = String(order?.trackingConsent ?? '').trim().toUpperCase();
-  let consentState: 'GRANTED' | 'DENIED' | 'WITHDRAWN' | 'UNKNOWN' = 'UNKNOWN';
+  const rawConsent = normalizeConsentState(order?.trackingConsent);
+  let consentState: TrackingConsentState = 'UNKNOWN';
   if (rawConsent === 'DENIED') {
     consentState = 'DENIED';
   } else if (rawConsent === 'WITHDRAWN') {
     consentState = 'WITHDRAWN';
-  } else if (!order?.isTest) {
+  } else if (rawConsent === 'GRANTED' || !order?.isTest) {
     consentState = 'GRANTED';
+  } else {
+    consentState = 'UNKNOWN';
   }
   const consentVersion = order?.trackingConsentVersion?.trim() || TRACKING_POLICY_VERSION;
 

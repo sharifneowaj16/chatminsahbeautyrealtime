@@ -25,7 +25,7 @@ export default function ThermalReceiptModal({
 
   if (!isOpen || !order) return null;
 
-  const orderNum = order.id.slice(-8).toUpperCase();
+  const orderNum = order.id.length > 12 ? order.id.slice(-8).toUpperCase() : order.id;
   const subtotal = order.subtotal ?? order.total;
   const delivery = order.shippingCost || 0;
   const discount = order.discountAmount || 0;

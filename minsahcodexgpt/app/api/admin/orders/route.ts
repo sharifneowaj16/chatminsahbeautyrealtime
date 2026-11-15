@@ -794,10 +794,11 @@ export async function GET(request: NextRequest) {
         customer: {
           name:
             `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+            `${order.shippingAddress?.firstName || ""} ${order.shippingAddress?.lastName || ""}`.trim() ||
             user?.email ||
             "Unknown customer",
           email: user?.email || "",
-          phone: user?.phone || "",
+          phone: user?.phone || order.shippingAddress?.phone || "",
         },
         items: order.items.map((item) => {
           const price = toNumber(item.price);
@@ -841,13 +842,15 @@ export async function GET(request: NextRequest) {
         paymentStatus: order.paymentStatus.toLowerCase(),
         shipping: order.shippingAddress
           ? {
+              name: `${order.shippingAddress.firstName || ""} ${order.shippingAddress.lastName || ""}`.trim(),
+              phone: order.shippingAddress.phone || user?.phone || "",
               address: order.shippingAddress.street1,
               city: order.shippingAddress.city,
               state: order.shippingAddress.state,
               postalCode: order.shippingAddress.postalCode,
               country: order.shippingAddress.country,
             }
-          : { address: "", city: "", state: "", postalCode: "", country: "" },
+          : { name: "", phone: "", address: "", city: "", state: "", postalCode: "", country: "" },
         tracking: order.trackingNumber || undefined,
         shippingMethod: order.shippingMethod || undefined,
         recipientPhone: order.shippingAddress?.phone || undefined,

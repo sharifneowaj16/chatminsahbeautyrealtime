@@ -54,7 +54,7 @@ export default function OrderDetailDrawer({
   const [selectedStatus, setSelectedStatus] = useState(order.status);
   const [copiedId, setCopiedId] = useState(false);
 
-  const orderNum = order.id.slice(-8).toUpperCase();
+  const orderNum = order.id.length > 12 ? order.id.slice(-8).toUpperCase() : order.id;
   const courierPartner =
     order.courier === 'pathao' || order.shippingMethod === 'pathao' ? 'pathao' : 'steadfast';
 

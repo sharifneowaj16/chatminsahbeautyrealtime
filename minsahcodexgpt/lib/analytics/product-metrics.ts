@@ -603,12 +603,12 @@ async function recalculateProductDailyMetricRatios(
   await tx.productDailyMetric.update({
     where: { productId_metricDate: { productId, metricDate } },
     data: {
-      addToCartRate: safePercent(row.addToCarts, row.views),
-      checkoutRate: safePercent(row.checkoutStarts, row.addToCarts),
-      purchaseRate: safePercent(row.confirmedOrders, row.views),
-      confirmationRate: safePercent(row.confirmedOrders, row.orders),
-      deliveryRate: safePercent(row.deliveredOrders, row.confirmedOrders),
-      returnRate: safePercent(row.returnedOrders, row.deliveredOrders),
+      addToCartRate: Math.min(999.9999, Math.max(0, safePercent(row.addToCarts, row.views))),
+      checkoutRate: Math.min(999.9999, Math.max(0, safePercent(row.checkoutStarts, row.addToCarts))),
+      purchaseRate: Math.min(999.9999, Math.max(0, safePercent(row.confirmedOrders, row.views))),
+      confirmationRate: Math.min(999.9999, Math.max(0, safePercent(row.confirmedOrders, row.orders))),
+      deliveryRate: Math.min(999.9999, Math.max(0, safePercent(row.deliveredOrders, row.confirmedOrders))),
+      returnRate: Math.min(999.9999, Math.max(0, safePercent(row.returnedOrders, row.deliveredOrders))),
       grade: productGrade({
         confirmedOrders: row.confirmedOrders,
         deliveredOrders: row.deliveredOrders,

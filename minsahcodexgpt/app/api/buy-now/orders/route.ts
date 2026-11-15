@@ -310,7 +310,8 @@ export async function POST(request: NextRequest) {
           addressId: addressRecord.id,
           status: isOnlinePaymentOrder
             ? ONLINE_PAYMENT_PENDING_ORDER_STATUS
-            : 'CONFIRMED',
+            : 'PENDING',
+          confirmationStatus: 'PENDING',
           paymentStatus: ONLINE_PAYMENT_INITIAL_STATUS,
           paymentMethod,
           paymentExpiresAt: onlinePaymentExpiresAt,

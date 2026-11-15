@@ -29,7 +29,7 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
   className = '',
 }) => {
   const [copied, setCopied] = useState(false);
-  const orderNum = order.id.slice(-8).toUpperCase();
+  const orderNum = order.id.length > 12 ? order.id.slice(-8).toUpperCase() : order.id;
   const recipientName = order.shipping?.name || order.customer?.name || 'Guest';
   const recipientPhone = order.shipping?.phone || order.customer?.phone || '';
 

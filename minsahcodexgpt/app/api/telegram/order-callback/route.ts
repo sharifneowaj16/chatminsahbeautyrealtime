@@ -6,6 +6,7 @@ import { createMetaPurchaseOutboxInTransaction } from '@/lib/meta/capi/purchase-
 import { requestMetaOutboxDispatch } from '@/lib/meta/capi/dispatcher';
 import type { MetaOutboxDb } from '@/lib/meta/capi/outbox-repository';
 import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
+import { reconcileOrderStockOnStatusTransition } from '@/lib/inventory/order-stock-reconciliation';
 import { getTelegramWebhookInfo } from '@/lib/telegram-notify';
 import {
   assertTelegramUserAllowed,
@@ -211,9 +212,10 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
     }
 
     if (order.phoneConfirmedAt && !order.metaPurchaseSent) {
-      const outbox = order.isTest
-        ? null
-        : await createMetaPurchaseOutboxInTransaction(
+      let outbox: any = null;
+      if (!order.isTest) {
+        try {
+          outbox = await createMetaPurchaseOutboxInTransaction(
             tx as unknown as MetaOutboxDb,
             {
               purchaseType: 'cod_purchase',
@@ -223,6 +225,10 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
               sourceId: callback.id,
             }
           );
+        } catch (outboxErr) {
+          console.error('[TelegramCallback] createMetaPurchaseOutboxInTransaction error (already confirmed):', outboxErr);
+        }
+      }
       return {
         ok: true,
         status: 'SUCCESS' as const,
@@ -230,7 +236,7 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
         orderNumber: order.orderNumber,
         isTest: order.isTest,
         shouldQueuePurchase: true,
-        metaOutboxId: outbox?.record.id,
+        metaOutboxId: outbox?.record?.id,
       };
     }
 
@@ -246,11 +252,16 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
       select: orderSelectFields(),
     });
 
-    await recordProductLifecycleTransitionInTransaction(tx, order, updated);
+    try {
+      await recordProductLifecycleTransitionInTransaction(tx, order, updated);
+    } catch (metricErr) {
+      console.error('[TelegramCallback] recordProductLifecycleTransition error:', metricErr);
+    }
 
-    const outbox = updated.isTest
-      ? null
-      : await createMetaPurchaseOutboxInTransaction(
+    let outbox: any = null;
+    if (!updated.isTest) {
+      try {
+        outbox = await createMetaPurchaseOutboxInTransaction(
           tx as unknown as MetaOutboxDb,
           {
             purchaseType: 'cod_purchase',
@@ -260,6 +271,10 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
             sourceId: callback.id,
           }
         );
+      } catch (outboxErr) {
+        console.error('[TelegramCallback] createMetaPurchaseOutboxInTransaction error:', outboxErr);
+      }
+    }
 
     return {
       ok: true,
@@ -268,7 +283,7 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
       orderNumber: updated.orderNumber,
       isTest: updated.isTest,
       shouldQueuePurchase: true,
-      metaOutboxId: outbox?.record.id,
+      metaOutboxId: outbox?.record?.id,
     };
   });
 
@@ -393,7 +408,22 @@ async function handleCancel(callback: TelegramCallbackQuery, orderId: string): P
       select: orderSelectFields(),
     });
 
-    await recordProductLifecycleTransitionInTransaction(tx, order, updated);
+    try {
+      await recordProductLifecycleTransitionInTransaction(tx, order, updated);
+    } catch (metricErr) {
+      console.error('[TelegramCallback] recordProductLifecycleTransition error on cancel:', metricErr);
+    }
+
+    try {
+      await reconcileOrderStockOnStatusTransition(
+        tx,
+        order.id,
+        order.status,
+        'CANCELLED'
+      );
+    } catch (stockErr) {
+      console.error('[TelegramCallback] reconcileOrderStockOnStatusTransition error on cancel:', stockErr);
+    }
 
     return {
       ok: true,
@@ -598,18 +628,19 @@ export async function POST(req: NextRequest) {
   try {
     result = await runTelegramOrderAction(callback, action, orderId);
   } catch (actionErr) {
+    const errMsg = actionErr instanceof Error ? actionErr.message : String(actionErr);
     console.error(`[TelegramCallback] Unexpected error running action ${action}:`, actionErr);
     await releaseTelegramActionToken(resolved.token.id).catch(() => false);
-    await answerCallbackQuery(callback.id, 'Error processing action. Please retry.', true);
+    await answerCallbackQuery(callback.id, `Error: ${errMsg.slice(0, 140)}`, true);
     await createTelegramLog({
       callback,
       action,
       orderId,
       status: 'FAILED',
-      errorMessage: actionErr instanceof Error ? actionErr.message : String(actionErr),
+      errorMessage: errMsg,
     });
     return NextResponse.json(
-      { ok: false, error: 'Internal error processing action' },
+      { ok: false, error: errMsg },
       { status: 500 }
     );
   }

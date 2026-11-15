@@ -62,7 +62,7 @@ export async function reconcileOrderStockOnStatusTransition(
       return { reconciled: false, action: 'NO_OP', itemsAffected: 0, movementsLogged: 0 };
     }
 
-    // Check if we already logged fulfillment for this order to prevent double deduction
+    // Check if we already logged fulfillment for this order or if stock was already finalized at checkout
     const existingMovement = await tx.stockMovement.findFirst({
       where: {
         referenceId: order.orderNumber,
@@ -70,13 +70,13 @@ export async function reconcileOrderStockOnStatusTransition(
       },
     });
 
-    if (existingMovement) {
+    if (existingMovement || order.stockFinalizedAt) {
       return {
         reconciled: false,
         action: 'NO_OP',
         itemsAffected: 0,
         movementsLogged: 0,
-        details: 'Fulfillment already logged for this order',
+        details: 'Fulfillment or stock finalization already logged for this order',
       };
     }
 
@@ -123,12 +123,12 @@ export async function reconcileOrderStockOnStatusTransition(
     };
   }
 
-  // 2. CANCELLATION / RETURN TRANSITION: Was DELIVERED, now CANCELLED / RETURNED / REFUNDED
+  // 2. CANCELLATION / RETURN TRANSITION: Was DELIVERED or stock was finalized, now CANCELLED / RETURNED / REFUNDED
   const isReturnOrCancel =
     normNext === 'CANCELLED' || normNext === 'RETURNED' || normNext === 'REFUNDED';
   const wasPreviouslyDelivered = normPrev === 'DELIVERED';
 
-  if (wasPreviouslyDelivered && isReturnOrCancel) {
+  if (isReturnOrCancel) {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: {
@@ -136,6 +136,7 @@ export async function reconcileOrderStockOnStatusTransition(
           select: {
             id: true,
             productId: true,
+            variantId: true,
             quantity: true,
             sku: true,
             itemStatus: true,
@@ -147,12 +148,23 @@ export async function reconcileOrderStockOnStatusTransition(
                 lastCostPrice: true,
               },
             },
+            variant: {
+              select: {
+                id: true,
+                quantity: true,
+              },
+            },
           },
         },
       },
     });
 
     if (!order || !order.items.length) {
+      return { reconciled: false, action: 'NO_OP', itemsAffected: 0, movementsLogged: 0 };
+    }
+
+    const wasStockDeducted = wasPreviouslyDelivered || Boolean(order.stockFinalizedAt);
+    if (!wasStockDeducted) {
       return { reconciled: false, action: 'NO_OP', itemsAffected: 0, movementsLogged: 0 };
     }
 
@@ -200,7 +212,7 @@ export async function reconcileOrderStockOnStatusTransition(
           tx
         );
       } else {
-        // Restock good condition return
+        // Restock good condition return or cancelled order
         const currentQty = item.product.quantity;
         const nextQty = currentQty + item.quantity;
 
@@ -208,6 +220,13 @@ export async function reconcileOrderStockOnStatusTransition(
           where: { id: item.productId },
           data: { quantity: nextQty },
         });
+
+        if (item.variantId && item.variant) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { quantity: item.variant.quantity + item.quantity },
+          });
+        }
 
         await recordStockMovement(
           {
@@ -225,6 +244,14 @@ export async function reconcileOrderStockOnStatusTransition(
 
       movementsLogged++;
     }
+
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        stockFinalizedAt: null,
+        stockReleasedAt: new Date(),
+      },
+    });
 
     return {
       reconciled: true,

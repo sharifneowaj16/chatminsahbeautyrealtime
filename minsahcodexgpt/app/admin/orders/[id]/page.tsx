@@ -106,21 +106,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           else setOrderStatus('Processing');
 
           // Customer
-          if (data.user) {
+          const userObj = ord.user || data.user;
+          const addr = ord.shippingAddress as any;
+          if (userObj || addr) {
             setCustomerInfo((prev) => ({
               ...prev,
-              name: `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim() || prev.name,
-              phone: data.user.phone || prev.phone,
-              email: data.user.email || prev.email,
-            }));
-          }
-
-          if (ord.shippingAddress && typeof ord.shippingAddress === 'object') {
-            const addr = ord.shippingAddress as any;
-            setCustomerInfo((prev) => ({
-              ...prev,
-              address: addr.address || addr.street || prev.address,
-              city: addr.city || addr.district || prev.city,
+              name:
+                `${userObj?.firstName || ''} ${userObj?.lastName || ''}`.trim() ||
+                `${addr?.firstName || ''} ${addr?.lastName || ''}`.trim() ||
+                addr?.name ||
+                prev.name,
+              phone: addr?.phone || userObj?.phone || prev.phone,
+              email: userObj?.email || addr?.email || prev.email,
+              address: addr?.street1 || addr?.address || addr?.street || prev.address,
+              city: addr?.city || addr?.district || prev.city,
             }));
           }
 
