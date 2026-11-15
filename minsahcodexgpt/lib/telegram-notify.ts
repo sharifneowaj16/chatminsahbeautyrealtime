@@ -285,6 +285,89 @@ function extractTelegramSentMessageContext(response: unknown) {
   return { messageId, chatId };
 }
 
+let webhookRegistrationPromise: Promise<{ ok: boolean; webhookInfo?: unknown; error?: string }> | null = null;
+
+export async function ensureTelegramWebhookRegistered(force = false): Promise<{
+  ok: boolean;
+  webhookInfo?: unknown;
+  error?: string;
+}> {
+  if (webhookRegistrationPromise && !force) {
+    return webhookRegistrationPromise;
+  }
+
+  const runRegistration = async () => {
+    const config = getTelegramOrderBotConfig();
+    if (!config.relayBase || !config.botToken) {
+      return { ok: false, error: 'TELEGRAM_BOT_NOT_CONFIGURED' };
+    }
+
+    const webhookUrl =
+      process.env.TELEGRAM_WEBHOOK_URL ||
+      'https://minsahbeauty.cloud/api/telegram/order-callback';
+
+    try {
+      const res = await fetch(`${config.relayBase}${config.botToken}/setWebhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: webhookUrl,
+          ...(config.webhookSecret ? { secret_token: config.webhookSecret } : {}),
+          allowed_updates: ['callback_query', 'message'],
+          drop_pending_updates: false,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        const err = data?.description || `HTTP ${res.status}`;
+        console.error('[TelegramWebhook] setWebhook failed:', err);
+        return { ok: false, error: err };
+      }
+
+      console.log('[TelegramWebhook] Successfully registered webhook:', webhookUrl);
+      return { ok: true, webhookInfo: data };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('[TelegramWebhook] Error registering webhook:', errorMsg);
+      return { ok: false, error: errorMsg };
+    }
+  };
+
+  webhookRegistrationPromise = runRegistration();
+  return webhookRegistrationPromise;
+}
+
+export async function getTelegramWebhookInfo(): Promise<{
+  ok: boolean;
+  result?: {
+    url?: string;
+    has_custom_certificate?: boolean;
+    pending_update_count?: number;
+    last_error_date?: number;
+    last_error_message?: string;
+    max_connections?: number;
+    ip_address?: string;
+  };
+  error?: string;
+}> {
+  const config = getTelegramOrderBotConfig();
+  if (!config.relayBase || !config.botToken) {
+    return { ok: false, error: 'TELEGRAM_BOT_NOT_CONFIGURED' };
+  }
+
+  try {
+    const res = await fetch(`${config.relayBase}${config.botToken}/getWebhookInfo`);
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) {
+      return { ok: false, error: data?.description || `HTTP ${res.status}` };
+    }
+    return { ok: true, result: data.result };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export async function notifyNewOrder(order: NewOrderNotification): Promise<{
   ok: boolean;
   messageId?: string | number;
@@ -295,6 +378,11 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
     console.warn("[TelegramNotify] Telegram order bot not configured - skipping notification.");
     return { ok: false, error: "TELEGRAM_NOT_CONFIGURED" };
   }
+
+  // Ensure webhook is registered once per server boot in background
+  ensureTelegramWebhookRegistered().catch((err) => {
+    console.warn("[TelegramNotify] Auto-webhook registration error:", err);
+  });
 
   const baseText = isDetailedOrder(order)
     ? buildDetailedMessage(order)

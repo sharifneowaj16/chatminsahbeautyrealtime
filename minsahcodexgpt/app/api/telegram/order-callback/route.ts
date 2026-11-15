@@ -6,11 +6,13 @@ import { createMetaPurchaseOutboxInTransaction } from '@/lib/meta/capi/purchase-
 import { requestMetaOutboxDispatch } from '@/lib/meta/capi/dispatcher';
 import type { MetaOutboxDb } from '@/lib/meta/capi/outbox-repository';
 import { recordProductLifecycleTransitionInTransaction } from '@/lib/analytics/product-metrics';
+import { getTelegramWebhookInfo } from '@/lib/telegram-notify';
 import {
   assertTelegramUserAllowed,
   getTelegramOrderBotConfig,
   requireTelegramWebhookAuth,
   telegramForbiddenResponse,
+  telegramUnauthorizedResponse,
 } from '@/lib/telegram/auth';
 import {
   consumeTelegramActionToken,
@@ -270,18 +272,25 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
     };
   });
 
+  await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
+
   if (result.ok) {
-    await answerCallbackQuery(callback.id, result.message);
-    await editTelegramMessage(
-      callback,
-      `<b>Phone Confirmed</b>\n\n` +
-        `Order: <b>#${escapeHtml(result.orderNumber)}</b>\n` +
-        `Meta COD Purchase will use phoneConfirmedAt as event_time.` +
-        (result.isTest ? '\n\nTest order: production tracking skipped.' : ''),
-      await buildPathaoButton(orderId, callback)
-    );
-  } else {
-    await answerCallbackQuery(callback.id, result.message, result.status === 'BLOCKED');
+    try {
+      const pathaoButton = await buildPathaoButton(orderId, callback).catch((btnErr) => {
+        console.error('[TelegramCallback] buildPathaoButton error:', btnErr);
+        return undefined;
+      });
+      await editTelegramMessage(
+        callback,
+        `<b>Phone Confirmed</b>\n\n` +
+          `Order: <b>#${escapeHtml(result.orderNumber)}</b>\n` +
+          `Meta COD Purchase will use phoneConfirmedAt as event_time.` +
+          (result.isTest ? '\n\nTest order: production tracking skipped.' : ''),
+        pathaoButton
+      );
+    } catch (editErr) {
+      console.error('[TelegramCallback] editTelegramMessage error:', editErr);
+    }
   }
 
   if (result.shouldQueuePurchase && !result.isTest) {
@@ -482,20 +491,23 @@ async function runTelegramOrderAction(
   return { ok: false, status: 'FAILED' as const, message: 'Unknown action' };
 }
 
-export async function POST(req: NextRequest) {
-  const auth = requireTelegramWebhookAuth(req);
-  if (!auth.ok) return auth.response;
+export async function GET() {
+  const info = await getTelegramWebhookInfo();
+  return NextResponse.json({
+    ok: true,
+    service: 'telegram-order-callback',
+    webhook: info,
+  });
+}
 
+export async function POST(req: NextRequest) {
   const update = (await req.json().catch(() => null)) as TelegramUpdate | null;
   const callback = update?.callback_query;
 
   if (!callback) {
+    const auth = requireTelegramWebhookAuth(req);
+    if (!auth.ok) return auth.response;
     return NextResponse.json({ ok: true, skipped: 'not_callback_query' });
-  }
-
-  if (!assertTelegramUserAllowed(callback.from.id, auth.adminUserIds)) {
-    await answerCallbackQuery(callback.id, 'Unauthorized', true);
-    return telegramForbiddenResponse();
   }
 
   const rawToken = parseTelegramCallbackToken(callback.data);
@@ -548,6 +560,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Unknown action' }, { status: 400 });
   }
 
+  const config = getTelegramOrderBotConfig();
+  const callbackChatId = getCallbackChatId(callback);
+  const isFromConfiguredChat = Boolean(
+    config.chatId && callbackChatId && String(callbackChatId) === String(config.chatId)
+  );
+
+  const auth = requireTelegramWebhookAuth(req);
+  const isHeaderAuthed = auth.ok;
+  const isUserAllowed = assertTelegramUserAllowed(callback.from.id, config.adminUserIds);
+
+  const isTrustedRequest = (resolved.ok && isFromConfiguredChat) || (isHeaderAuthed && isUserAllowed);
+
+  if (!isTrustedRequest) {
+    const reason = !isUserAllowed
+      ? 'Unauthorized: Telegram user is not in the allowlist.'
+      : 'Unauthorized Telegram webhook request.';
+    await answerCallbackQuery(callback.id, reason, true);
+    await createTelegramLog({
+      callback,
+      action,
+      orderId,
+      status: 'BLOCKED',
+      errorMessage: reason,
+    });
+    return isHeaderAuthed ? telegramForbiddenResponse(reason) : telegramUnauthorizedResponse(reason);
+  }
+
   const consumed = await consumeTelegramActionToken(resolved.token.id);
   if (!consumed) {
     await answerCallbackQuery(callback.id, 'Action already processed', true);
@@ -555,7 +594,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, duplicate: true });
   }
 
-  const result = await runTelegramOrderAction(callback, action, orderId);
+  let result: TelegramActionResult;
+  try {
+    result = await runTelegramOrderAction(callback, action, orderId);
+  } catch (actionErr) {
+    console.error(`[TelegramCallback] Unexpected error running action ${action}:`, actionErr);
+    await releaseTelegramActionToken(resolved.token.id).catch(() => false);
+    await answerCallbackQuery(callback.id, 'Error processing action. Please retry.', true);
+    await createTelegramLog({
+      callback,
+      action,
+      orderId,
+      status: 'FAILED',
+      errorMessage: actionErr instanceof Error ? actionErr.message : String(actionErr),
+    });
+    return NextResponse.json(
+      { ok: false, error: 'Internal error processing action' },
+      { status: 500 }
+    );
+  }
 
   const shouldReleasePathaoTokenForRetry =
     action === TELEGRAM_ORDER_ACTIONS.PATHAO_SEND && result.status === 'FAILED';
