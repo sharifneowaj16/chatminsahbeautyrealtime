@@ -856,11 +856,22 @@ export async function POST(request: NextRequest) {
       }
 
       if (!resolvedAddressId && addressData) {
+        const rawFullName = (addressData.fullName || addressData.firstName || "").trim();
+        let firstName = rawFullName;
+        let lastName = (addressData.lastName || "").trim();
+        if (!lastName && rawFullName) {
+          const parts = rawFullName.split(/\s+/);
+          if (parts.length > 1) {
+            lastName = parts.pop() || "";
+            firstName = parts.join(" ");
+          }
+        }
+
         const created = await tx.address.create({
           data: {
             userId,
-            firstName: addressData.fullName || addressData.firstName || "",
-            lastName: addressData.lastName || "",
+            firstName,
+            lastName,
             phone: addressData.phoneNumber,
             street1: addressData.streetAddress,
             street2: `${addressData.zone}, ${addressData.area}`,

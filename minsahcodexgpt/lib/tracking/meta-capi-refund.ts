@@ -63,12 +63,64 @@ function normalizeEmail(email?: string | null): string | null {
 
 function normalizeBangladeshPhone(phone?: string | null): string | null {
   if (!phone) return null;
+
   let digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('00880')) digits = digits.slice(2);
-  if (digits.startsWith('880')) digits = digits.slice(2);
-  if (digits.startsWith('0')) digits = '880' + digits.slice(1);
-  else if (digits.length === 10) digits = '880' + digits;
-  return digits.length === 13 ? digits : null;
+
+  if (digits.startsWith('00880')) {
+    digits = digits.slice(2);
+  }
+
+  // Meta CAPI Specification: digits only with country code (880...), NO leading '+' sign
+  if (digits.startsWith('8801') && digits.length === 13) return digits;
+  if (digits.startsWith('01') && digits.length === 11) return `88${digits}`;
+  if (digits.startsWith('1') && digits.length === 10) return `880${digits}`;
+
+  return digits.length >= 8 && digits.length <= 15 ? digits : null;
+}
+
+function normalizePiiTextValue(value?: string | null) {
+  const normalized = value?.trim().toLowerCase().replace(/\s+/g, ' ');
+  return normalized || null;
+}
+
+function buildHashedPurchaseAddressData(
+  shippingAddress?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+  } | null,
+  user?: {
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null
+) {
+  let rawFn = shippingAddress?.firstName?.trim() || user?.firstName?.trim() || null;
+  let rawLn = shippingAddress?.lastName?.trim() || user?.lastName?.trim() || null;
+
+  if (rawFn && (!rawLn || rawLn === '')) {
+    const parts = rawFn.split(/\s+/);
+    if (parts.length > 1) {
+      rawLn = parts.pop() || null;
+      rawFn = parts.join(' ');
+    }
+  }
+
+  const fn = normalizePiiTextValue(rawFn);
+  const ln = normalizePiiTextValue(rawLn);
+  const ct = normalizePiiTextValue(shippingAddress?.city);
+  const st = normalizePiiTextValue(shippingAddress?.state);
+  const zp = normalizePiiTextValue(shippingAddress?.postalCode);
+
+  return {
+    ...(fn && { fn: sha256(fn) }),
+    ...(ln && { ln: sha256(ln) }),
+    ...(ct && { ct: sha256(ct) }),
+    ...(st && { st: sha256(st) }),
+    ...(zp && { zp: sha256(zp) }),
+    country: sha256('bd'),
+  };
 }
 
 function getSafeRefundEventSourceUrl(firstLandingUrl?: string | null) {
@@ -108,7 +160,16 @@ export async function loadOrderForMetaRefund(orderId: string) {
     where: { id: orderId },
     include: {
       user: true,
-      shippingAddress: { select: { phone: true } },
+      shippingAddress: {
+        select: {
+          firstName: true,
+          lastName: true,
+          phone: true,
+          city: true,
+          state: true,
+          postalCode: true,
+        },
+      },
       items: { include: { product: true, variant: true } },
       returns: {
         include: {
@@ -194,17 +255,32 @@ export function buildMetaRefundPayload(params: {
     customerIp?: string | null;
     customerUa?: string | null;
     externalId?: string | null;
+    anonymousVisitorId?: string | null;
+    userId?: string | null;
     firstLandingUrl?: string | null;
     metaEventId?: string | null;
-    user?: { email?: string | null; phone?: string | null } | null;
-    shippingAddress?: { phone?: string | null } | null;
+    user?: {
+      email?: string | null;
+      phone?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+    } | null;
+    shippingAddress?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      phone?: string | null;
+      city?: string | null;
+      state?: string | null;
+      postalCode?: string | null;
+    } | null;
     items: Array<{
       id: string;
       name?: string | null;
       price: unknown;
       quantity: number;
-      product?: { id: string; name?: string | null } | null;
-      variant?: { id: string; name?: string | null } | null;
+      sku?: string | null;
+      product?: { id: string; name?: string | null; sku?: string | null } | null;
+      variant?: { id: string; name?: string | null; sku?: string | null } | null;
     }>;
   };
   eventId: string;
@@ -214,16 +290,35 @@ export function buildMetaRefundPayload(params: {
 }) {
   const { order, eventId, source, refundAmount } = params;
   const normalizedEmail = normalizeEmail(order.user?.email);
-  const normalizedPhone = normalizeBangladeshPhone(order.shippingAddress?.phone || order.user?.phone);
+  const rawPhones = [
+    normalizeBangladeshPhone(order.shippingAddress?.phone),
+    normalizeBangladeshPhone(order.user?.phone),
+  ].filter((p): p is string => Boolean(p));
+  const uniquePhones = Array.from(new Set(rawPhones));
+  const hashedPhones = uniquePhones.map((p) => sha256(p));
+  const phoneHash = hashedPhones.length > 1 ? hashedPhones : hashedPhones[0];
   const emailHash = normalizedEmail ? sha256(normalizedEmail) : undefined;
-  const phoneHash = normalizedPhone ? sha256(normalizedPhone) : undefined;
-  const normalizedExternalId = normalizeMetaExternalId(order.externalId, 'visitor');
+  const normalizedExternalId = normalizeMetaExternalId(
+    order.externalId ||
+      order.anonymousVisitorId ||
+      (order.userId ? `user:${order.userId}` : null),
+    'visitor'
+  );
   const externalIdHash = normalizedExternalId ? sha256(normalizedExternalId) : undefined;
+  const hashedAddressData = buildHashedPurchaseAddressData(order.shippingAddress, order.user);
 
-  const catalogItems = order.items.map((item) => ({
-    ...item,
-    price: decimalToNumber(item.price),
-  }));
+  const catalogItems = order.items.map((item) => {
+    const variantSku = item.variant?.sku?.trim() || null;
+    const productSku = item.product?.sku?.trim() || (item as any).sku?.trim() || null;
+    const canonicalSku = variantSku || (item as any).sku?.trim() || productSku || undefined;
+    return {
+      ...item,
+      sku: canonicalSku,
+      productSku: productSku ?? canonicalSku,
+      variantSku: variantSku ?? null,
+      price: decimalToNumber(item.price),
+    };
+  });
   const resolvedMetaCatalogData = buildMetaCatalogData(catalogItems);
   const metaCatalogData = prepareMetaCatalogPayload(resolvedMetaCatalogData ?? {}) as Partial<MetaCatalogData>;
 
@@ -242,6 +337,7 @@ export function buildMetaRefundPayload(params: {
           ...(emailHash && { em: emailHash }),
           ...(phoneHash && { ph: phoneHash }),
           ...(externalIdHash && { external_id: externalIdHash }),
+          ...hashedAddressData,
           ...(order.fbp && { fbp: order.fbp }),
           ...(order.fbc && { fbc: order.fbc }),
           ...(order.customerIp && { client_ip_address: order.customerIp }),
@@ -388,7 +484,7 @@ export async function sendMetaCapiRefund(params: {
         payload: payload as any,
         safePayload: safePayload as any,
         policyVersion: TRACKING_SCHEMA_VERSION,
-        policyReason: `refund_source_${source}`,
+        policyReason: 'CONSENT_GRANTED',
         consentState: 'GRANTED',
         retentionUntil: new Date(Date.now() + 90 * 86400 * 1000),
         status: 'PROCESSING',

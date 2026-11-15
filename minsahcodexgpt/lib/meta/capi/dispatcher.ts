@@ -4,6 +4,7 @@ import {
   leaseDueMetaEventOutbox,
   releaseMetaOutboxDispatch,
 } from './outbox-repository';
+import { processMetaOutboxById } from './sender';
 
 export type MetaOutboxDispatchResult = {
   leased: number;
@@ -14,12 +15,26 @@ export type MetaOutboxDispatchResult = {
 
 export async function requestMetaOutboxDispatch(outboxId: string, correlationId?: string) {
   try {
+    const inlineResult = await processMetaOutboxById({ outboxId });
+    if (inlineResult.ok) {
+      return { queued: true, jobId: outboxId, deliveredInline: true };
+    }
+  } catch (err) {
+    console.warn('[MetaDispatcher] Inline delivery failed, falling back to queue:', err);
+  }
+
+  try {
     const job = await enqueueMetaCapiOutbox({ outboxId, correlationId });
-    return { queued: true, jobId: job.id == null ? undefined : String(job.id) };
+    return {
+      queued: true,
+      jobId: job.id == null ? undefined : String(job.id),
+      deliveredInline: false,
+    };
   } catch (error) {
     return {
       queued: false,
       error: error instanceof Error ? error.message : 'META_OUTBOX_QUEUE_UNAVAILABLE',
+      deliveredInline: false,
     };
   }
 }

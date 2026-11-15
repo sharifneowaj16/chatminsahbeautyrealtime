@@ -77,15 +77,32 @@ function normalizeBangladeshPhone(phone?: string | null) {
   return digits.length >= 8 && digits.length <= 15 ? digits : null;
 }
 
-function buildHashedPurchaseAddressData(shippingAddress?: {
-  firstName?: string | null;
-  lastName?: string | null;
-  city?: string | null;
-  state?: string | null;
-  postalCode?: string | null;
-} | null) {
-  const fn = normalizePiiTextValue(shippingAddress?.firstName);
-  const ln = normalizePiiTextValue(shippingAddress?.lastName);
+function buildHashedPurchaseAddressData(
+  shippingAddress?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+  } | null,
+  user?: {
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null
+) {
+  let rawFn = shippingAddress?.firstName?.trim() || user?.firstName?.trim() || null;
+  let rawLn = shippingAddress?.lastName?.trim() || user?.lastName?.trim() || null;
+
+  if (rawFn && (!rawLn || rawLn === '')) {
+    const parts = rawFn.split(/\s+/);
+    if (parts.length > 1) {
+      rawLn = parts.pop() || null;
+      rawFn = parts.join(' ');
+    }
+  }
+
+  const fn = normalizePiiTextValue(rawFn);
+  const ln = normalizePiiTextValue(rawLn);
   const ct = normalizePiiTextValue(shippingAddress?.city);
   const st = normalizePiiTextValue(shippingAddress?.state);
   const zp = normalizePiiTextValue(shippingAddress?.postalCode);
@@ -555,20 +572,36 @@ export async function sendCodPurchaseToMeta(params: {
     return { ok: false, retry: false, reason: 'EVENT_TIME_TOO_OLD' };
   }
 
-  const normalizedEmail = normalizeEmail(order.user.email);
-  const normalizedPhone =
-    normalizeBangladeshPhone(order.shippingAddress?.phone) ??
-    normalizeBangladeshPhone(order.user.phone);
+  const normalizedEmail = normalizeEmail(order.user?.email);
+  const rawPhones = [
+    normalizeBangladeshPhone(order.shippingAddress?.phone),
+    normalizeBangladeshPhone(order.user?.phone),
+  ].filter((p): p is string => Boolean(p));
+  const uniquePhones = Array.from(new Set(rawPhones));
+  const hashedPhones = uniquePhones.map((p) => sha256(p));
+  const phoneHash = hashedPhones.length > 1 ? hashedPhones : hashedPhones[0];
   const emailHash = normalizedEmail ? sha256(normalizedEmail) : undefined;
-  const phoneHash = normalizedPhone ? sha256(normalizedPhone) : undefined;
-  const normalizedExternalId = normalizeMetaExternalId(order.externalId, 'visitor');
+  const normalizedExternalId = normalizeMetaExternalId(
+    order.externalId ||
+      order.anonymousVisitorId ||
+      (order.userId ? `user:${order.userId}` : null),
+    'visitor'
+  );
   const externalIdHash = normalizedExternalId ? sha256(normalizedExternalId) : undefined;
-  const hashedAddressData = buildHashedPurchaseAddressData(order.shippingAddress);
+  const hashedAddressData = buildHashedPurchaseAddressData(order.shippingAddress, order.user);
 
-  const catalogItems = order.items.map((item) => ({
-    ...item,
-    price: decimalToNumber(item.price),
-  }));
+  const catalogItems = order.items.map((item) => {
+    const variantSku = item.variant?.sku?.trim() || null;
+    const productSku = item.product?.sku?.trim() || (item as any).sku?.trim() || null;
+    const canonicalSku = variantSku || (item as any).sku?.trim() || productSku || undefined;
+    return {
+      ...item,
+      sku: canonicalSku,
+      productSku: productSku ?? canonicalSku,
+      variantSku: variantSku ?? null,
+      price: decimalToNumber(item.price),
+    };
+  });
   const resolvedMetaCatalogData = buildMetaCatalogData(catalogItems);
   const catalogShape = resolvedMetaCatalogData ? 'product_only' : 'empty';
   const metaCatalogData = prepareMetaCatalogPayload(resolvedMetaCatalogData ?? {}) as Partial<MetaCatalogData>;
@@ -776,20 +809,36 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
     return { ok: false, retry: false, reason: 'EVENT_TIME_TOO_OLD' };
   }
 
-  const normalizedEmail = normalizeEmail(order.user.email);
-  const normalizedPhone =
-    normalizeBangladeshPhone(order.shippingAddress?.phone) ??
-    normalizeBangladeshPhone(order.user.phone);
+  const normalizedEmail = normalizeEmail(order.user?.email);
+  const rawPhones = [
+    normalizeBangladeshPhone(order.shippingAddress?.phone),
+    normalizeBangladeshPhone(order.user?.phone),
+  ].filter((p): p is string => Boolean(p));
+  const uniquePhones = Array.from(new Set(rawPhones));
+  const hashedPhones = uniquePhones.map((p) => sha256(p));
+  const phoneHash = hashedPhones.length > 1 ? hashedPhones : hashedPhones[0];
   const emailHash = normalizedEmail ? sha256(normalizedEmail) : undefined;
-  const phoneHash = normalizedPhone ? sha256(normalizedPhone) : undefined;
-  const normalizedExternalId = normalizeMetaExternalId(order.externalId, 'visitor');
+  const normalizedExternalId = normalizeMetaExternalId(
+    order.externalId ||
+      order.anonymousVisitorId ||
+      (order.userId ? `user:${order.userId}` : null),
+    'visitor'
+  );
   const externalIdHash = normalizedExternalId ? sha256(normalizedExternalId) : undefined;
-  const hashedAddressData = buildHashedPurchaseAddressData(order.shippingAddress);
+  const hashedAddressData = buildHashedPurchaseAddressData(order.shippingAddress, order.user);
 
-  const catalogItems = order.items.map((item) => ({
-    ...item,
-    price: decimalToNumber(item.price),
-  }));
+  const catalogItems = order.items.map((item) => {
+    const variantSku = item.variant?.sku?.trim() || null;
+    const productSku = item.product?.sku?.trim() || (item as any).sku?.trim() || null;
+    const canonicalSku = variantSku || (item as any).sku?.trim() || productSku || undefined;
+    return {
+      ...item,
+      sku: canonicalSku,
+      productSku: productSku ?? canonicalSku,
+      variantSku: variantSku ?? null,
+      price: decimalToNumber(item.price),
+    };
+  });
   const resolvedMetaCatalogData = buildMetaCatalogData(catalogItems);
   const catalogShape = resolvedMetaCatalogData ? 'product_only' : 'empty';
   const metaCatalogData = prepareMetaCatalogPayload(resolvedMetaCatalogData ?? {}) as Partial<MetaCatalogData>;

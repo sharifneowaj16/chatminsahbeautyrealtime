@@ -260,11 +260,20 @@ export async function POST(request: NextRequest) {
     });
 
     const order = await prisma.$transaction(async (tx) => {
+      const rawName = shippingAddress.name.trim();
+      let firstName = rawName;
+      let lastName = '';
+      const nameParts = rawName.split(/\s+/);
+      if (nameParts.length > 1) {
+        lastName = nameParts.pop() || '';
+        firstName = nameParts.join(' ');
+      }
+
       const addressRecord = await tx.address.create({
         data: {
           userId,
-          firstName: shippingAddress.name.trim(),
-          lastName: '',
+          firstName,
+          lastName,
           phone: shippingAddress.phone.trim(),
           street1: shippingAddress.address?.trim() || shippingAddress.area.trim(),
           street2: shippingAddress.zone?.trim() || shippingAddress.area.trim(),

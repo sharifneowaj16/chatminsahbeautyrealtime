@@ -206,10 +206,18 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 4. Return authorised fire payload ────────────────────────────────────
-  const catalogItems = order.items.map((item) => ({
-    ...item,
-    price: decimalToNumber(item.price),
-  }));
+  const catalogItems = order.items.map((item) => {
+    const variantSku = item.variant?.sku?.trim() || null;
+    const productSku = item.product?.sku?.trim() || (item as any).sku?.trim() || null;
+    const canonicalSku = variantSku || (item as any).sku?.trim() || productSku || undefined;
+    return {
+      ...item,
+      sku: canonicalSku,
+      productSku: productSku ?? canonicalSku,
+      variantSku: variantSku ?? null,
+      price: decimalToNumber(item.price),
+    };
+  });
   const metaCatalogData = buildMetaCatalogData(catalogItems);
 
   const contentName = getContentName(order.items);

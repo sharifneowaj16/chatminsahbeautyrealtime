@@ -358,9 +358,22 @@ export async function PATCH(
 
     const normalizedStatus =
       typeof status === "string" ? normalizeStatusInput(status) : undefined;
+    const isCod = isCodPaymentMethod(existing.paymentMethod);
     const codPhoneConfirmedFromAdmin =
-      isPhoneConfirmedStatus(status) &&
-      isCodPaymentMethod(existing.paymentMethod);
+      isPhoneConfirmedStatus(status) && isCod;
+    const isAdvancingStatus =
+      normalizedStatus === "shipped" ||
+      normalizedStatus === "delivered" ||
+      normalizedStatus === "completed";
+    const isPaidStatus = Boolean(
+      paymentStatus && isPaidLikePaymentStatus(paymentStatus.toLowerCase()),
+    );
+    const codCatchAllConfirmed =
+      isCod &&
+      (isAdvancingStatus || isPaidStatus) &&
+      !existing.metaPurchaseSent &&
+      !existing.isTest;
+
     let shouldQueueCodPurchase = false;
     let shouldQueueGa4Refund = false;
     let shouldQueueMetaRefund = false;
@@ -401,18 +414,6 @@ export async function PATCH(
         updateData.refundedAt = existing.refundedAt ?? new Date();
         shouldQueueGa4Refund = !existing.gaRefundSent && !existing.isTest;
         shouldQueueMetaRefund = existing.metaPurchaseSent && !existing.isTest;
-      }
-
-      if (codPhoneConfirmedFromAdmin) {
-        const confirmedAt = existing.phoneConfirmedAt ?? new Date();
-        updateData.phoneConfirmedAt = confirmedAt;
-        updateData.confirmationStatus =
-          existing.confirmationStatus ?? "CONFIRMED_BY_ADMIN";
-        updateData.confirmedByAdminId =
-          existing.confirmedByAdminId ?? payload.adminId;
-        updateData.metaEventId =
-          existing.metaEventId ?? `Purchase-${existing.id}`;
-        shouldQueueCodPurchase = !existing.metaPurchaseSent && !existing.isTest;
       }
     }
 
@@ -466,6 +467,18 @@ export async function PATCH(
         shouldQueueGa4Refund = !existing.gaRefundSent && !existing.isTest;
         shouldQueueMetaRefund = existing.metaPurchaseSent && !existing.isTest;
       }
+    }
+
+    if (codPhoneConfirmedFromAdmin || codCatchAllConfirmed) {
+      const confirmedAt = existing.phoneConfirmedAt ?? new Date();
+      updateData.phoneConfirmedAt = confirmedAt;
+      updateData.confirmationStatus =
+        existing.confirmationStatus ?? "CONFIRMED_BY_ADMIN";
+      updateData.confirmedByAdminId =
+        existing.confirmedByAdminId ?? payload.adminId;
+      updateData.metaEventId =
+        existing.metaEventId ?? `Purchase-${existing.id}`;
+      shouldQueueCodPurchase = !existing.metaPurchaseSent && !existing.isTest;
     }
 
     if (trackingNumber !== undefined)
