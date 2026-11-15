@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPrice } from "@/utils/currency";
 import dynamic from "next/dynamic";
-import { trackInitiateCheckout } from "@/lib/tracking/ecommerce";
+import {
+  trackAddPaymentInfo,
+  trackAddShippingInfo,
+  trackInitiateCheckout,
+} from "@/lib/tracking/ecommerce";
 import type { DeliveryQuoteResponse } from "@/types/delivery-quote";
 import { getCachedProductDetail } from "./productDetailCache";
 import CatalogProductImage from "@/components/catalog/CatalogProductImage";
@@ -247,6 +251,8 @@ export default function BuyNowModal({
     redirectURL?: string;
   } | null>(null);
 
+  const shippingInfoTrackedRef = useRef(false);
+
   const hasVariants = resolvedVariants.length > 0;
   const simpleStock =
     typeof resolvedBaseStock === "number" && Number.isFinite(resolvedBaseStock)
@@ -275,7 +281,8 @@ export default function BuyNowModal({
     setResolvedBasePrice(basePrice);
     setResolvedBaseWeightKg(baseWeightKg);
     setResolvedBaseStock(baseStock);
-    setResolvedBaseSku(null);
+    setResolvedBaseSku(sku ?? null);
+    shippingInfoTrackedRef.current = false;
     setShippingForm({
       name: user
         ? [user.firstName, user.lastName].filter(Boolean).join(" ")
@@ -690,6 +697,48 @@ export default function BuyNowModal({
   ]);
 
   useEffect(() => {
+    if (
+      !isOpen ||
+      stage !== "summary" ||
+      deliveryState !== "success" ||
+      !hasRequiredShippingFields ||
+      shippingInfoTrackedRef.current ||
+      selectedItems.length === 0 ||
+      grandTotal <= 0
+    ) {
+      return;
+    }
+
+    shippingInfoTrackedRef.current = true;
+    trackAddShippingInfo(
+      selectedItems.map((item) => ({
+        id: item.key,
+        productId: item.productId,
+        variantId: item.variantId,
+        name: item.label,
+        price: item.unitPrice,
+        quantity: item.quantity,
+        variantName: item.variantId ? item.label : undefined,
+        sku: item.sku ?? resolvedBaseSku ?? undefined,
+        productSku: resolvedBaseSku ?? item.sku ?? undefined,
+        variantSku: item.variantId ? (item.sku ?? null) : null,
+        size: item.size ?? undefined,
+        color: item.color ?? undefined,
+      })),
+      grandTotal,
+      "Pathao Home Delivery",
+    );
+  }, [
+    deliveryState,
+    grandTotal,
+    hasRequiredShippingFields,
+    isOpen,
+    resolvedBaseSku,
+    selectedItems,
+    stage,
+  ]);
+
+  useEffect(() => {
     if (!isOpen || stage !== "success" || !successPayload) return;
     const timer = window.setTimeout(() => {
       onClose();
@@ -726,7 +775,9 @@ export default function BuyNowModal({
           price: item.unitPrice,
           quantity: item.quantity,
           variantName: item.variantId ? item.label : undefined,
-          sku: item.sku ?? undefined,
+          sku: item.sku ?? resolvedBaseSku ?? undefined,
+          productSku: resolvedBaseSku ?? item.sku ?? undefined,
+          variantSku: item.variantId ? (item.sku ?? null) : null,
           size: item.size ?? undefined,
           color: item.color ?? undefined,
         })),
@@ -742,6 +793,25 @@ export default function BuyNowModal({
       setShowLoginModal(true);
       return;
     }
+
+    trackAddPaymentInfo(
+      selectedItems.map((item) => ({
+        id: item.key,
+        productId: item.productId,
+        variantId: item.variantId,
+        name: item.label,
+        price: item.unitPrice,
+        quantity: item.quantity,
+        variantName: item.variantId ? item.label : undefined,
+        sku: item.sku ?? resolvedBaseSku ?? undefined,
+        productSku: resolvedBaseSku ?? item.sku ?? undefined,
+        variantSku: item.variantId ? (item.sku ?? null) : null,
+        size: item.size ?? undefined,
+        color: item.color ?? undefined,
+      })),
+      grandTotal,
+      "cod",
+    );
 
     setSubmitting(true);
     setError(null);

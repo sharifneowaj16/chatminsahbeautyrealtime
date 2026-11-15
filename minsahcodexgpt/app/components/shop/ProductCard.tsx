@@ -424,6 +424,7 @@ export default function ProductCard({
           productName={product.name}
           productImage={displayedImage}
           basePrice={currentPrice}
+          sku={product.sku}
           baseStock={product.stock}
           variants={variantOptions}
           variantsFullyLoaded={product.hasVariants ? Boolean(product.variants && product.variants.length > 0) : true}
@@ -643,6 +644,7 @@ export default function ProductCard({
         productName={product.name}
         productImage={displayedImage}
         basePrice={currentPrice}
+        sku={product.sku}
         baseStock={product.stock}
         variants={variantOptions}
         variantsFullyLoaded={product.hasVariants ? Boolean(product.variants && product.variants.length > 0) : true}

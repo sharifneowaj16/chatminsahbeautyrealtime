@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Gift,
@@ -18,6 +18,7 @@ import { formatPrice } from "@/utils/currency";
 import { FreeDeliveryIncentiveBanner } from "@/components/cart/FreeDeliveryIncentiveBanner";
 import { OfferSlot } from "@/components/offer/OfferSlot";
 import { useOfferEngine } from "@/contexts/OfferEngineContext";
+import { trackViewCart } from "@/lib/tracking/ecommerce";
 
 
 
@@ -57,6 +58,19 @@ export default function CartDrawer({
     : [];
 
   const hasItems = items.length > 0;
+
+  const lastTrackedViewCartOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      lastTrackedViewCartOpenRef.current = false;
+      return;
+    }
+    if (hasItems && subtotal > 0 && !lastTrackedViewCartOpenRef.current) {
+      lastTrackedViewCartOpenRef.current = true;
+      trackViewCart(items, subtotal);
+    }
+  }, [isOpen, hasItems, items, subtotal]);
 
   // Free delivery calculations (Universal Offer Engine sync)
   const targetThreshold = propThreshold ?? freeDeliveryConfig?.nationwideThreshold ?? contextThreshold;

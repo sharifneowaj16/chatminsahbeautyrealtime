@@ -24,6 +24,11 @@ const PUBLIC_CAPI_EVENTS = new Set([
   'Contact',
 ]);
 
+const CUSTOM_META_PIXEL_EVENTS = new Set([
+  'ViewCart',
+  'AddShippingInfo',
+]);
+
 type MetaPixelWindow = Window & {
   fbq?: (...args: unknown[]) => void;
   __mbFbInitReady?: boolean;
@@ -118,8 +123,9 @@ export async function dispatchMetaBrowserEvent(
     return { fired: false, capiRequested, reason: 'PIXEL_UNAVAILABLE' };
   }
 
-  (window as MetaPixelWindow).fbq?.('track', event.eventName, event.payload, { eventID: event.eventId });
-  metaBrowserDebug(ready ? 'debug' : 'warn', ready ? 'Pixel fired' : 'Pixel fired through fallback readiness path', event);
+  const trackCommand = CUSTOM_META_PIXEL_EVENTS.has(event.eventName) ? 'trackCustom' : 'track';
+  (window as MetaPixelWindow).fbq?.(trackCommand, event.eventName, event.payload, { eventID: event.eventId });
+  metaBrowserDebug(ready ? 'debug' : 'warn', ready ? `Pixel fired (${trackCommand})` : `Pixel fired through fallback readiness path (${trackCommand})`, event);
 
   const capiRequested = sendCapi ? await requestCapi(event) : false;
   return {

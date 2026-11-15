@@ -138,6 +138,7 @@ export default function ProductCard({
         productName={name}
         productImage={image}
         basePrice={price}
+        sku={sku}
         baseStock={stock}
         onClose={() => setIsBuyNowOpen(false)}
       />

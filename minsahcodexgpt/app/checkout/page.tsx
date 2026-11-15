@@ -34,7 +34,6 @@ import {
   trackAddPaymentInfo,
   trackAddShippingInfo,
   trackInitiateCheckout,
-  trackViewCart,
 } from "@/lib/tracking/ecommerce";
 import type { DeliveryQuoteResponse } from "@/types/delivery-quote";
 import {
@@ -308,7 +307,6 @@ function CheckoutContent() {
 
   const pendingOrderRef = useRef(false);
   const checkoutIdempotencyKeyRef = useRef<string | null>(null);
-  const viewCartTrackedRef = useRef(false);
   const initiateCheckoutTrackedRef = useRef(false);
   const shippingInfoTrackedRef = useRef(false);
   const paymentInfoTrackedRef = useRef(false);
@@ -483,11 +481,12 @@ function CheckoutContent() {
     trackInitiateCheckout(items, subtotal);
   };
 
+  // Fire InitiateCheckout immediately when the user lands on /checkout with items
   useEffect(() => {
-    if (viewCartTrackedRef.current || items.length === 0 || subtotal <= 0)
+    if (initiateCheckoutTrackedRef.current || items.length === 0 || subtotal <= 0)
       return;
-    viewCartTrackedRef.current = true;
-    trackViewCart(items, subtotal);
+    initiateCheckoutTrackedRef.current = true;
+    trackInitiateCheckout(items, subtotal);
   }, [items, subtotal]);
 
   useEffect(() => {
