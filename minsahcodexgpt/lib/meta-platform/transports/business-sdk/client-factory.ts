@@ -25,6 +25,7 @@ export function decorateMetaSdkApiWithAppSecretProof(input: {
   });
   const originalCall = input.api.call?.bind(input.api);
   if (!originalCall) return false;
+
   input.api.call = (method, path, params = {}, files = {}, useMultipartFormData = false, urlOverride = '') =>
     originalCall(
       method,
@@ -36,7 +37,6 @@ export function decorateMetaSdkApiWithAppSecretProof(input: {
     );
   return true;
 }
-
 
 export function disposeMetaBusinessSdkClient(client: MetaBusinessSdkClient): void {
   if (typeof client.api.accessToken === 'string') client.api.accessToken = '';
@@ -63,6 +63,7 @@ export class MetaBusinessSdkClientFactory {
     if (runtimeContract.graphVersion && runtimeContract.graphVersion !== graphApiVersion) {
       throw new Error(`META_BUSINESS_SDK_GRAPH_VERSION_MISMATCH:${runtimeContract.graphVersion}:${graphApiVersion}`);
     }
+
     const authorization = await authorizeMetaCapability({
       capability: input.capability,
       connectionKey: input.connectionKey,
@@ -101,20 +102,22 @@ export class MetaBusinessSdkClientFactory {
     if (this.#options.debug && typeof api.setDebug === 'function') api.setDebug(true);
 
     let appSecretProofEnabled = false;
-    const appProvider = this.#options.appCredentialProvider ?? this.#options.credentialProvider;
-    try {
-      const appCredential = await appProvider.resolve({
-        connectionKey: credential.metadata.connectionKey,
-        role: 'APP',
-      });
-      appSecretProofEnabled = decorateMetaSdkApiWithAppSecretProof({
-        api,
-        accessCredential: credential,
-        appCredential,
-      });
-    } catch (error) {
-      if (!(error instanceof MetaCredentialResolutionError && error.code === 'META_CREDENTIAL_NOT_CONFIGURED')) {
-        throw error;
+    if (process.env.META_ENABLE_APPSECRET_PROOF === 'true') {
+      const appProvider = this.#options.appCredentialProvider ?? this.#options.credentialProvider;
+      try {
+        const appCredential = await appProvider.resolve({
+          connectionKey: credential.metadata.connectionKey,
+          role: 'APP',
+        });
+        appSecretProofEnabled = decorateMetaSdkApiWithAppSecretProof({
+          api,
+          accessCredential: credential,
+          appCredential,
+        });
+      } catch (error) {
+        if (!(error instanceof MetaCredentialResolutionError && error.code === 'META_CREDENTIAL_NOT_CONFIGURED')) {
+          throw error;
+        }
       }
     }
 

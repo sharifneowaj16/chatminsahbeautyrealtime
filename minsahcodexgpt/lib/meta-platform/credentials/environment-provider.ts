@@ -147,6 +147,17 @@ export class EnvironmentMetaCredentialProvider implements MetaCredentialProvider
     const connectionKey = input.connectionKey.trim();
     if (!connectionKey) throw new TypeError('META_CONNECTION_KEY_REQUIRED');
 
+    // Prevent mismatched META_APP_SECRET / FACEBOOK_CLIENT_SECRET from breaking
+    // Graph API & Business SDK calls with "Invalid appsecret_proof provided in the API argument"
+    // unless META_ENABLE_APPSECRET_PROOF=true is explicitly enabled.
+    if (input.role === 'APP' && clean(this.#env.META_ENABLE_APPSECRET_PROOF) !== 'true') {
+      throw new MetaCredentialResolutionError(
+        'META_CREDENTIAL_NOT_CONFIGURED',
+        'App secret proof is disabled unless META_ENABLE_APPSECRET_PROOF=true.',
+        { secretRef: 'env:META_APP_SECRET' },
+      );
+    }
+
     const binding = ROLE_BINDINGS[input.role];
     const secretRef = clean(this.#env[binding.secretReferenceKey]) ?? binding.defaultSecretReference;
     const { secret, resolvedRef } = resolveEnvironmentSecret(secretRef, this.#env, binding.fallbackEnvKeys);

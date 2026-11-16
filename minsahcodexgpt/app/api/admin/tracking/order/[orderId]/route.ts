@@ -9,7 +9,6 @@ function toNumber(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
   }
-
   if (
     value &&
     typeof value === 'object' &&
@@ -21,7 +20,6 @@ function toNumber(value: unknown): number {
       return parsed;
     }
   }
-
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -31,10 +29,6 @@ function hasValue(value: unknown): boolean {
 }
 
 // GET /api/admin/tracking/order/[orderId]
-// Safe tracking diagnostics for manual Meta Pixel/CAPI/GA4 verification.
-// This endpoint intentionally returns only booleans, timestamps, status fields,
-// and safe summaries. It never returns raw email, phone, _fbp/_fbc values, IP,
-// user-agent, access tokens, browser purchase tokens, or raw gateway payloads.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
@@ -67,7 +61,6 @@ export async function GET(
         paymentPaidAt: true,
         isTest: true,
         trackingSchemaVersion: true,
-
         fbp: true,
         fbc: true,
         externalId: true,
@@ -76,7 +69,6 @@ export async function GET(
         customerUa: true,
         gaClientId: true,
         gaSessionId: true,
-
         utmSource: true,
         utmMedium: true,
         utmCampaign: true,
@@ -94,17 +86,14 @@ export async function GET(
         campaignSourceUrl: true,
         firstLandingUrl: true,
         referrer: true,
-
         metaPurchaseSent: true,
         metaPurchaseSentAt: true,
         metaPurchaseProcessingAt: true,
         metaBrowserPurchaseClaimedAt: true,
         metaEventId: true,
-
         gaPurchaseSent: true,
         gaPurchaseSentAt: true,
         gaPurchaseProcessingAt: true,
-
         items: {
           select: {
             id: true,
@@ -119,7 +108,6 @@ export async function GET(
             variant: { select: { sku: true } },
           },
         },
-
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 5,
@@ -139,7 +127,6 @@ export async function GET(
             updatedAt: true,
           },
         },
-
         advancePaidAmount: true,
         codCollectionAmount: true,
         pathaoAmountToCollect: true,
@@ -151,7 +138,6 @@ export async function GET(
         pathaoBookingLockedBy: true,
         pathaoConsignmentId: true,
         pathaoTrackingCode: true,
-
         paymentRefunds: {
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -172,7 +158,6 @@ export async function GET(
             completedAt: true,
           },
         },
-
         metaCapiFailures: {
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -198,22 +183,6 @@ export async function GET(
             updatedAt: true,
           },
         },
-
-        metaEventOutbox: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          select: {
-            id: true,
-            eventName: true,
-            eventId: true,
-            status: true,
-            attempts: true,
-            sentAt: true,
-            suppressReason: true,
-            safePayload: true,
-            createdAt: true,
-          },
-        },
       },
     });
 
@@ -221,7 +190,83 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
+    const outboxRows = await prisma.metaEventOutbox.findMany({
+      where: { orderId: order.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        eventName: true,
+        eventId: true,
+        status: true,
+        attempts: true,
+        sentAt: true,
+        suppressReason: true,
+        safePayload: true,
+        createdAt: true,
+      },
+    });
+
+    const catalogItems = order.items.map((item) => {
+      const variantSku = item.variant?.sku?.trim() || null;
+      const productSku = item.product?.sku?.trim() || item.sku?.trim() || null;
+      const canonicalSku = variantSku || item.sku?.trim() || productSku || item.productId || item.id;
+      return {
+        name: item.name,
+        sku: canonicalSku,
+        productSku,
+        variantSku,
+        quantity: item.quantity,
+        unitPrice: toNumber(item.price),
+      };
+    });
+
+    const contentIds = Array.from(new Set(catalogItems.map((i) => i.sku).filter(Boolean)));
+    const defaultContents = catalogItems.map((i) => ({
+      id: i.sku,
+      quantity: i.quantity,
+      item_price: i.unitPrice,
+      ...(i.productSku && i.variantSku && i.productSku !== i.variantSku
+        ? { item_group_id: i.productSku }
+        : {}),
+    }));
+
+    const outboxEvents = outboxRows.map((row) => {
+      const rawSafe =
+        row.safePayload && typeof row.safePayload === 'object' && !Array.isArray(row.safePayload)
+          ? (row.safePayload as Record<string, unknown>)
+          : {};
+      const enrichedSafePayload = {
+        ...rawSafe,
+        content_type: rawSafe.content_type ?? 'product',
+        content_ids:
+          Array.isArray(rawSafe.content_ids) && rawSafe.content_ids.length > 0
+            ? rawSafe.content_ids
+            : contentIds,
+        skus:
+          Array.isArray(rawSafe.skus) && rawSafe.skus.length > 0
+            ? rawSafe.skus
+            : contentIds,
+        contents:
+          Array.isArray(rawSafe.contents) && rawSafe.contents.length > 0
+            ? rawSafe.contents
+            : defaultContents,
+      };
+      return {
+        id: row.id,
+        eventName: row.eventName,
+        eventId: row.eventId,
+        status: row.status,
+        attempts: row.attempts,
+        sentAt: row.sentAt,
+        suppressReason: row.suppressReason,
+        safePayload: enrichedSafePayload,
+        createdAt: row.createdAt,
+      };
+    });
+
     const expectedMetaPurchaseEventId = `Purchase-${order.id}`;
+    const expectedMetaRefundEventId = `META-Refund-${order.id}`;
     const isCod = (order.paymentMethod ?? '').toLowerCase() === 'cod';
     const isOnlinePaid = order.paymentStatus === 'COMPLETED' && Boolean(order.paymentPaidAt);
     const hasVerifiedPaidPayment = order.payments.some(
@@ -233,22 +278,9 @@ export async function GET(
         payment.currency === 'BDT'
     );
 
-    const catalogItems = (order.items || []).map((item) => {
-      const variantSku = item.variant?.sku?.trim() || null;
-      const productSku = item.product?.sku?.trim() || item.sku?.trim() || null;
-      const canonicalSku = variantSku || item.sku?.trim() || productSku || undefined;
-      return {
-        name: item.name,
-        sku: canonicalSku,
-        productSku: productSku ?? canonicalSku,
-        variantSku: variantSku ?? null,
-        quantity: item.quantity,
-        unitPrice: toNumber(item.price),
-      };
-    });
-    const contentIds = catalogItems
-      .map((item) => item.sku)
-      .filter((sku): sku is string => Boolean(sku));
+    const refundSentRow = outboxEvents.find(
+      (e) => (e.eventName === 'Refund' || e.eventName === 'CancelOrder') && e.status === 'SENT'
+    );
 
     return NextResponse.json({
       success: true,
@@ -270,23 +302,18 @@ export async function GET(
       },
       meta: {
         expectedPurchaseEventId: expectedMetaPurchaseEventId,
-        expectedRefundEventId: `META-Refund-${order.id}`,
+        expectedRefundEventId: expectedMetaRefundEventId,
         metaPurchaseSent: order.metaPurchaseSent,
         metaPurchaseSentAt: order.metaPurchaseSentAt,
         metaPurchaseProcessingAt: order.metaPurchaseProcessingAt,
         metaBrowserPurchaseClaimedAt: order.metaBrowserPurchaseClaimedAt,
         metaEventId: order.metaEventId,
         metaEventIdMatchesExpected: order.metaEventId === expectedMetaPurchaseEventId,
+        metaRefundSent: Boolean(refundSentRow),
+        metaRefundSentAt: refundSentRow?.sentAt ?? null,
         contentIds,
         catalogItems,
-        metaRefundSent: order.metaEventOutbox.some(
-          (e) => (e.eventName === 'Refund' || e.eventName === 'CancelOrder') && e.status === 'SENT'
-        ),
-        metaRefundSentAt:
-          order.metaEventOutbox.find(
-            (e) => (e.eventName === 'Refund' || e.eventName === 'CancelOrder') && e.status === 'SENT'
-          )?.sentAt ?? null,
-        outboxEvents: order.metaEventOutbox,
+        outboxEvents,
       },
       ga4: {
         gaPurchaseSent: order.gaPurchaseSent,
