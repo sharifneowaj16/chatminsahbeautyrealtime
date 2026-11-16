@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { buildCatalogCsv } from '@/lib/meta-business/catalog';
 import { getMetaBusinessConfig } from '@/lib/meta-business/config';
+import { getVerifiedAdmin } from '@/lib/auth/admin-request';
 import { cacheGetOrSet } from '@/lib/cache/redis';
 
 export const dynamic = 'force-dynamic';
@@ -19,12 +20,14 @@ export async function GET(request: NextRequest) {
   const config = getMetaBusinessConfig();
   const token = request.nextUrl.searchParams.get('token') ?? '';
   const hasValidToken = Boolean(config.catalogFeedToken && safeEqual(token, config.catalogFeedToken));
+  const admin = hasValidToken ? null : await getVerifiedAdmin(request).catch(() => null);
+  const isAuthorized = hasValidToken || Boolean(admin);
 
-  if (config.catalogFeedToken && !hasValidToken) {
+  if (config.catalogFeedToken && !isAuthorized) {
     return NextResponse.json({ error: 'Invalid catalog feed token' }, { status: 401 });
   }
 
-  const refresh = request.nextUrl.searchParams.get('refresh') === 'true' && hasValidToken;
+  const refresh = request.nextUrl.searchParams.get('refresh') === 'true' && isAuthorized;
   const csv = refresh
     ? await buildCatalogCsv()
     : await cacheGetOrSet(CATALOG_FEED_CACHE_KEY, () => buildCatalogCsv(), CATALOG_FEED_CACHE_TTL);

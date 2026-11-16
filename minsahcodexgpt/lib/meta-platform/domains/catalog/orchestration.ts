@@ -118,11 +118,34 @@ function chunks<T>(items: readonly T[], size: number) {
   for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size));
   return result;
 }
-function extractBatchHandle(value: unknown) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+function extractBatchHandle(value: unknown): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = extractBatchHandle(entry);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (typeof value !== 'object') return undefined;
   const root = value as Record<string, unknown>;
-  const handle = root.handle ?? root.batch_handle ?? root.id;
-  return typeof handle === 'string' && handle.trim() ? handle.trim() : undefined;
+
+  const direct = root.handle ?? root.batch_handle ?? root.id;
+  if (typeof direct === 'string' && direct.trim()) return direct.trim();
+
+  if (Array.isArray(root.handles)) {
+    const fromHandles = extractBatchHandle(root.handles);
+    if (fromHandles) return fromHandles;
+  }
+
+  for (const key of ['_data', 'data', 'result', 'response', 'value']) {
+    if (root[key] !== undefined) {
+      const nested = extractBatchHandle(root[key]);
+      if (nested) return nested;
+    }
+  }
+  return undefined;
 }
 
 export function assertCanonicalCatalogSkuPolicy(env: NodeJS.ProcessEnv = process.env) {
