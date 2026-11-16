@@ -1,5 +1,4 @@
 import 'server-only';
-
 import prisma from '@/lib/prisma';
 import {
   resolveMetaCatalogIdentity,
@@ -128,8 +127,8 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
   const checkedAt = new Date();
   const siteUrl = getSiteUrl();
   const siteHost = normalizeHost(siteUrl);
-
   const privacyPolicyUrl = `${siteUrl}/privacy-policy`;
+
   const trackingDisclosureVerified = isEnvTrue('TRACKING_DISCLOSURE_VERIFIED');
   const cookieDisclosureVerified = isEnvTrue('COOKIE_DISCLOSURE_VERIFIED');
   const consentModeRequired = isTrackingConsentRequired();
@@ -234,6 +233,7 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
         image: v.image,
       })),
     });
+
     const effectiveMerchantListingJsonLd = product.merchantListingJsonLd || autoJsonLd.merchantListingJsonLd;
     const effectiveProductGroupJsonLd = product.productGroupJsonLd || autoJsonLd.productGroupJsonLd;
 
@@ -246,9 +246,6 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
     if (!effectiveCanonicalUrl) issues.push('Missing canonical URL.');
     if (effectiveCanonicalUrl && siteHost && canonicalHost && canonicalHost !== siteHost) {
       issues.push('Canonical URL host does not match production site host.');
-    }
-    if (product.trackInventory && product.quantity <= 0 && !product.allowBackorder) {
-      issues.push('Active product is out of stock; feed availability should be unavailable.');
     }
     if (hasVariants && !effectiveProductGroupJsonLd && !hasArrayItems(product.variants)) {
       issues.push('Variant/shade mapping risk: product_group metadata is incomplete.');
@@ -293,7 +290,9 @@ export async function buildPrivacyCatalogQaSnapshot(options?: {
   const canonicalHostMismatchProducts = issueRows.filter((row) => row.issues.some((issue) => issue.includes('Canonical URL host'))).length;
   const missingSkuProducts = issueRows.filter((row) => row.issues.some((issue) => issue.includes('Missing SKU'))).length;
   const missingPriceProducts = issueRows.filter((row) => row.issues.some((issue) => issue.includes('Missing or invalid'))).length;
-  const activeOutOfStockProducts = issueRows.filter((row) => row.issues.some((issue) => issue.includes('out of stock'))).length;
+  const activeOutOfStockProducts = products.filter(
+    (product) => product.trackInventory && product.quantity <= 0 && !product.allowBackorder
+  ).length;
   const variantMappingRiskProducts = issueRows.filter((row) => row.issues.some((issue) => issue.includes('Variant/shade'))).length;
   const variantProducts = products.filter((product) => product.variants.length > 0 || jsonHasShadeData(product.shadeOptions)).length;
   const unmappedCatalogProducts = issueRows.filter((row) => !row.contentId).length;

@@ -6,6 +6,7 @@ import {
   listCanonicalCatalogItemsForProductSets,
   listCatalogProducts,
   listCatalogs,
+  syncCatalogProducts,
   updateCatalog,
 } from '@/lib/meta-business/catalog';
 import { getMetaBusinessConfig } from '@/lib/meta-business/config';
@@ -19,7 +20,6 @@ export async function GET(request: NextRequest) {
   if (response) return response;
 
   const catalogId = request.nextUrl.searchParams.get('catalogId') ?? undefined;
-
   try {
     if (catalogId) {
       return NextResponse.json({
@@ -80,8 +80,31 @@ export async function POST(request: NextRequest) {
   const guard = await requireAdminPermission(request, ADMIN_PERMISSIONS.META_OPS_OPERATE);
   if (guard.response) return guard.response;
   const admin = guard.admin!;
+
   try {
     const body = await readJsonObject(request);
+
+    if (body.action === 'SYNC_CATALOG') {
+      const catalogId = typeof body.catalogId === 'string' && body.catalogId.trim() ? body.catalogId.trim() : undefined;
+      const productIds = Array.isArray(body.productIds)
+        ? body.productIds.filter((id): id is string => typeof id === 'string' && Boolean(id.trim()))
+        : undefined;
+      const inventoryOnly = Boolean(body.inventoryOnly);
+
+      const executed = await executeMetaAdminAction({
+        request,
+        actorId: admin.adminId,
+        actionKey: 'META_CATALOG_SYNC',
+        resourceType: 'META_CATALOG',
+        resourceId: catalogId ?? null,
+        payload: { catalogId, productIds, inventoryOnly },
+        reason: typeof body.reason === 'string' ? body.reason : 'Manual catalog batch synchronization',
+        run: () => syncCatalogProducts({ catalogId, productIds, inventoryOnly }),
+      });
+
+      return NextResponse.json({ ok: true, result: executed.result, auditId: executed.auditId });
+    }
+
     const name = requiredString(body.name, 'name');
     const vertical = typeof body.vertical === 'string' ? body.vertical : undefined;
     const executed = await executeMetaAdminAction({
@@ -104,6 +127,7 @@ export async function PATCH(request: NextRequest) {
   const guard = await requireAdminPermission(request, ADMIN_PERMISSIONS.META_OPS_OPERATE);
   if (guard.response) return guard.response;
   const admin = guard.admin!;
+
   try {
     const body = await readJsonObject(request);
     const catalogId = requiredString(body.catalogId, 'catalogId');

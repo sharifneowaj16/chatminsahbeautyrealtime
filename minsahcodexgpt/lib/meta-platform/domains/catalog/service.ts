@@ -22,8 +22,14 @@ import { normalizeCatalogBatchItemOutcomes, normalizeCatalogBatchStatus, objectV
 import type { MetaCatalogBatchStatusResult } from './types';
 
 export const META_CATALOG_FIELDS = Object.freeze([
-  'id', 'name', 'vertical', 'product_count', 'feed_count', 'business',
-  'commerce_merchant_settings', 'catalog_segment_filter', 'default_image_url',
+  'id',
+  'name',
+  'vertical',
+  'product_count',
+  'feed_count',
+  'business',
+  'commerce_merchant_settings',
+  'default_image_url',
 ]);
 export const META_PRODUCT_SET_FIELDS = Object.freeze(['id', 'name', 'filter', 'product_count', 'product_catalog']);
 

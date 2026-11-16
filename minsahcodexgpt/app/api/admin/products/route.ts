@@ -11,6 +11,8 @@ import {
 import { enqueueProductIndex } from '@/lib/queue/productQueue';
 import { normalizeProductCondition } from '@/lib/products/product-condition';
 import {
+  DEFAULT_CATALOG_FALLBACK_IMAGE,
+  normalizeCatalogSalePrice,
   ensureCanonicalProductSku,
   ensureCanonicalVariantSkus,
   ensureCanonicalProductUrl,
@@ -118,7 +120,6 @@ function dateValue(value: unknown): Date | undefined {
   const date = new Date(text);
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
-
 
 type AdminDeliveryOfferType = 'DEFAULT' | 'FREE' | 'FIXED';
 
@@ -277,23 +278,7 @@ function getRawImages(body: PlainObject): PlainObject[] {
     : [];
 }
 
-function normalizeVariantSku(rawSku: string, productSku: string, index: number, usedSkus: Set<string>) {
-  const baseSku = rawSku || `${productSku}-${index + 1}`;
-  let sku = baseSku;
-  let suffix = 2;
-
-  while (usedSkus.has(sku)) {
-    sku = `${baseSku}-${suffix}`;
-    suffix += 1;
-  }
-
-  usedSkus.add(sku);
-  return sku;
-}
-
-function buildVariantCreates(rawVariants: PlainObject[], productSku: string, basePrice: string) {
-  const usedSkus = new Set<string>();
-
+function buildVariantCreates(rawVariants: PlainObject[], basePrice: string) {
   return rawVariants.map((variant, index) => {
     const attributes = isPlainObject(variant.attributes)
       ? variant.attributes
@@ -310,10 +295,16 @@ function buildVariantCreates(rawVariants: PlainObject[], productSku: string, bas
         .join(' / ') ||
       `Variant ${index + 1}`;
 
+    const variantPrice = decimalValue(variant.price) || basePrice;
+    const variantSalePrice = normalizeCatalogSalePrice(variantPrice, variant.salePrice);
+
     return compact({
-      sku: normalizeVariantSku(optionalString(variant.sku) || '', productSku, index, usedSkus),
+      sku: optionalString(variant.sku) || '',
       name: variantName,
-      price: decimalValue(variant.price) || basePrice,
+      price: variantPrice,
+      salePrice: variantSalePrice ?? undefined,
+      offerStartDate: dateValue(variant.offerStartDate),
+      offerEndDate: dateValue(variant.offerEndDate),
       quantity: intValue(variant.quantity ?? variant.stock, 0),
       attributes,
       image: optionalString(variant.image),
@@ -322,7 +313,7 @@ function buildVariantCreates(rawVariants: PlainObject[], productSku: string, bas
 }
 
 function buildImageCreates(rawImages: PlainObject[], imageAltTexts: string[], productName: string) {
-  return rawImages
+  const rows = rawImages
     .map((image, index) => {
       const url = optionalString(image.url);
       if (!url) return undefined;
@@ -337,6 +328,20 @@ function buildImageCreates(rawImages: PlainObject[], imageAltTexts: string[], pr
       });
     })
     .filter(Boolean) as PlainObject[];
+
+  if (rows.length === 0) {
+    return [
+      {
+        url: DEFAULT_CATALOG_FALLBACK_IMAGE,
+        alt: productName,
+        title: productName,
+        sortOrder: 0,
+        isDefault: true,
+      },
+    ];
+  }
+
+  return rows;
 }
 
 function sumVariantQuantity(rawVariants: PlainObject[]) {
@@ -370,7 +375,11 @@ async function createProductFromPayload(body: PlainObject) {
     name
   );
 
-  const rawProductSku = optionalString(body.sku) || optionalString(firstVariant?.sku);
+  // Never steal firstVariant.sku when the product has variants
+  const rawProductSku =
+    optionalString(body.sku) ||
+    (rawVariants.length === 0 ? optionalString(firstVariant?.sku) : undefined);
+
   const productSku = ensureCanonicalProductSku({
     sku: rawProductSku,
     slug,
@@ -382,13 +391,14 @@ async function createProductFromPayload(body: PlainObject) {
   const status = getString(body.status).toLowerCase();
   const imageAltTexts = stringArray(body.imageAltTexts);
   const imageCreates = buildImageCreates(rawImages, imageAltTexts, name);
-  const rawVariantCreates = buildVariantCreates(rawVariants, productSku, basePrice);
+  const rawVariantCreates = buildVariantCreates(rawVariants, basePrice);
   const variantCreates = ensureCanonicalVariantSkus(productSku, rawVariantCreates);
   const explicitQuantity = intValue(body.quantity);
   const quantity = status === 'out_of_stock'
     ? 0
     : explicitQuantity ?? sumVariantQuantity(rawVariants);
 
+  const normalizedSalePrice = normalizeCatalogSalePrice(basePrice, body.salePrice);
   const dimensions = isPlainObject(body.dimensions) ? body.dimensions : {};
   const defaultOgImageUrl = imageCreates.find((image) => image.isDefault)?.url || imageCreates[0]?.url;
 
@@ -399,7 +409,7 @@ async function createProductFromPayload(body: PlainObject) {
     slug,
     description: optionalString(body.description),
     price: Number(basePrice),
-    salePrice: body.salePrice ? Number(body.salePrice) : null,
+    salePrice: normalizedSalePrice ? Number(normalizedSalePrice) : null,
     quantity,
     trackInventory: booleanValue(body.trackInventory, true),
     allowBackorder: booleanValue(body.allowBackorder, false),
@@ -409,6 +419,7 @@ async function createProductFromPayload(body: PlainObject) {
       sku: v.sku,
       name: v.name,
       price: Number(v.price),
+      salePrice: v.salePrice ? Number(v.salePrice) : null,
       quantity: Number(v.quantity),
       image: v.image,
     })),
@@ -502,7 +513,7 @@ async function createProductFromPayload(body: PlainObject) {
     ...buildDeliveryOfferData(body),
 
     discountPercentage: decimalValue(body.discountPercentage),
-    salePrice: decimalValue(body.salePrice),
+    salePrice: normalizedSalePrice ?? undefined,
     offerStartDate: dateValue(body.offerStartDate),
     offerEndDate: dateValue(body.offerEndDate),
     flashSaleEligible: booleanValue(body.flashSaleEligible, false),

@@ -100,12 +100,13 @@ function buildItem(input: {
 }): CatalogMappedItem | null {
   const { product, variant } = input;
   const isVariant = Boolean(variant);
+  const siteUrl = (input.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://minsahbeauty.cloud').replace(/\/$/, '');
 
   const offer = resolveProductOffer({
     product,
     variant,
     now: input.now,
-    siteUrl: input.siteUrl,
+    siteUrl,
   });
   if (!offer.includeInUpdates) return null;
 
@@ -115,11 +116,11 @@ function buildItem(input: {
       ...product.images.map((image) => image.url),
       product.ogImageUrl,
     ],
-    input.siteUrl
+    siteUrl
   );
-  const variantImage = absoluteCatalogUrl(variant?.image, input.siteUrl);
+  const variantImage = absoluteCatalogUrl(variant?.image, siteUrl);
   const fallbackImage =
-    absoluteCatalogUrl('/images/categories/Skincare.png', input.siteUrl) ??
+    absoluteCatalogUrl('/images/categories/Skincare.png', siteUrl) ??
     'https://minsahbeauty.cloud/images/categories/Skincare.png';
   const imageLink = variantImage ?? productImages[0] ?? fallbackImage;
   const additionalImageLinks = Array.from(new Set(
@@ -146,7 +147,7 @@ function buildItem(input: {
   const linkWithVariant = variant?.id
     ? `${baseLink}?variant=${encodeURIComponent(variant.id)}`
     : baseLink;
-  const link = absoluteCatalogUrl(linkWithVariant, input.siteUrl) ?? '';
+  const link = absoluteCatalogUrl(linkWithVariant, siteUrl) ?? `${siteUrl}/products/${product.slug}`;
 
   const item: CanonicalCatalogItem = {
     sourceType: isVariant ? 'VARIANT' : 'PRODUCT',
@@ -193,9 +194,10 @@ export function mapProductToCatalogItems(input: {
 }): CatalogMappedItem[] {
   const now = input.now ?? new Date();
   const currency = input.currency ?? 'BDT';
+  const siteUrl = input.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://minsahbeauty.cloud';
   if (input.product.variants.length === 0) {
     const identity = input.resolveIdentity({ productId: input.product.id, productSku: input.product.sku });
-    const mapped = buildItem({ product: input.product, identity, siteUrl: input.siteUrl, currency, now });
+    const mapped = buildItem({ product: input.product, identity, siteUrl, currency, now });
     return mapped ? [mapped] : [];
   }
   return input.product.variants.flatMap((variant) => {
@@ -205,7 +207,7 @@ export function mapProductToCatalogItems(input: {
       variantId: variant.id,
       variantSku: variant.sku,
     });
-    const mapped = buildItem({ product: input.product, variant, identity, siteUrl: input.siteUrl, currency, now });
+    const mapped = buildItem({ product: input.product, variant, identity, siteUrl, currency, now });
     return mapped ? [mapped] : [];
   });
 }

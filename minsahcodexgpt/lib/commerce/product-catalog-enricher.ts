@@ -15,6 +15,23 @@ export function sanitizeSkuSegment(value: string): string {
     .slice(0, 32);
 }
 
+export function normalizeCatalogSalePrice(
+  regularPrice: unknown,
+  salePrice: unknown
+): string | null {
+  if (salePrice === null || salePrice === undefined || salePrice === '') {
+    return null;
+  }
+  const regular = Number(String(regularPrice ?? '').replace(/,/g, '').trim());
+  const saleText = String(salePrice).replace(/,/g, '').trim();
+  const sale = Number(saleText);
+
+  if (!Number.isFinite(regular) || !Number.isFinite(sale) || regular <= 0 || sale <= 0 || sale >= regular) {
+    return null;
+  }
+  return saleText;
+}
+
 export function ensureCanonicalProductSku(input: {
   id?: string | null;
   sku?: string | null;
@@ -32,14 +49,26 @@ export function ensureCanonicalProductSku(input: {
 
 export function ensureCanonicalVariantSkus<
   T extends { id?: string; sku?: string | null; name?: string | null }
->(productSku: string, variants: T[]): Array<T & { sku: string }> {
+>(
+  productSku: string,
+  variants: T[],
+  existingSkuByVariantId?: ReadonlyMap<string, string>
+): Array<T & { sku: string }> {
   const seen = new Set<string>([productSku.toUpperCase()]);
   return variants.map((variant, idx) => {
     const raw = variant.sku?.trim();
-    let candidate =
+    const existingSku = variant.id ? existingSkuByVariantId?.get(variant.id)?.trim() : undefined;
+
+    const preferred =
       raw && !/^c[a-z0-9]{20,}$/i.test(raw) && !seen.has(raw.toUpperCase())
         ? raw
-        : `${productSku}-${sanitizeSkuSegment(variant.name || `V${idx + 1}`) || `V${idx + 1}`}`;
+        : existingSku && !/^c[a-z0-9]{20,}$/i.test(existingSku) && !seen.has(existingSku.toUpperCase())
+          ? existingSku
+          : undefined;
+
+    let candidate =
+      preferred ||
+      `${productSku}-${sanitizeSkuSegment(variant.name || `V${idx + 1}`) || `V${idx + 1}`}`;
 
     if (seen.has(candidate.toUpperCase())) {
       const suffix = variant.id ? variant.id.slice(-4).toUpperCase() : `V${idx + 1}`;

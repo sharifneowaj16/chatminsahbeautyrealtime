@@ -7,6 +7,8 @@ import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQu
 import { normalizeProductCondition } from '@/lib/products/product-condition';
 import { triggerEventDrivenCatalogSync } from '@/lib/meta-platform/domains/catalog/event-sync';
 import {
+  DEFAULT_CATALOG_FALLBACK_IMAGE,
+  normalizeCatalogSalePrice,
   ensureCanonicalProductSku,
   ensureCanonicalVariantSkus,
   ensureCanonicalProductUrl,
@@ -26,6 +28,9 @@ type ProductVariantPayload = PlainObject & {
   color?: unknown;
   shade?: unknown;
   price?: unknown;
+  salePrice?: unknown;
+  offerStartDate?: unknown;
+  offerEndDate?: unknown;
   stock?: unknown;
   quantity?: unknown;
   image?: unknown;
@@ -59,7 +64,6 @@ const productDetailInclude = {
 type ProductDetail = Prisma.ProductGetPayload<{
   include: typeof productDetailInclude;
 }>;
-
 
 type ProductDeliveryOfferFields = {
   deliveryOfferEnabled?: boolean | null;
@@ -209,7 +213,6 @@ function dateNullable(value: unknown, label: string): Date | null {
   return date;
 }
 
-
 function deliveryOfferTypeValue(value: unknown): AdminDeliveryOfferType {
   const normalized = getString(value).toUpperCase();
   if (normalized === 'FREE' || normalized === 'FIXED') return normalized;
@@ -318,7 +321,6 @@ function deliveryOfferUpdateData(payload: PlainObject, existing?: ProductDeliver
   };
 }
 
-
 function stringArray(value: unknown): string[] {
   const rawValues = Array.isArray(value)
     ? value
@@ -375,7 +377,7 @@ function getPayloadImageAltTexts(payload: PlainObject): string[] {
 function buildImageRows(payload: PlainObject, productId: string, productName: string) {
   const imageAltTexts = getPayloadImageAltTexts(payload);
 
-  return getPayloadImages(payload)
+  const rows = getPayloadImages(payload)
     .map((image, index) => {
       const url = getString(image.url);
       if (!url) return null;
@@ -393,6 +395,21 @@ function buildImageRows(payload: PlainObject, productId: string, productName: st
       };
     })
     .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  if (rows.length === 0) {
+    return [
+      {
+        productId,
+        url: DEFAULT_CATALOG_FALLBACK_IMAGE,
+        alt: productName,
+        title: productName,
+        sortOrder: 0,
+        isDefault: true,
+      },
+    ];
+  }
+
+  return rows;
 }
 
 function getVariantId(variant: ProductVariantPayload): string {
@@ -553,6 +570,7 @@ function formatProductDetail(product: ProductDetail) {
       sku: variant.sku,
       name: variant.name,
       price: variant.price ? variant.price.toNumber() : product.price.toNumber(),
+      salePrice: variant.salePrice ? variant.salePrice.toNumber() : null,
       stock: variant.quantity,
       quantity: variant.quantity,
       attributes: variant.attributes || {},
@@ -713,7 +731,8 @@ async function assertProductSkuAvailable(sku: string, productId: string) {
 
 async function assertVariantSkusAvailable(
   variants: ProductVariantPayload[],
-  existingVariantIds: Set<string>
+  existingVariantIds: Set<string>,
+  parentSku?: string
 ) {
   const seen = new Set<string>();
 
@@ -721,10 +740,14 @@ async function assertVariantSkusAvailable(
     const sku = getVariantSku(variant);
     if (!sku) continue;
 
-    if (seen.has(sku)) {
+    if (parentSku && sku.toUpperCase() === parentSku.toUpperCase()) {
+      throw new ProductRouteError(`Variant SKU cannot be identical to parent product SKU: ${sku}`);
+    }
+
+    if (seen.has(sku.toUpperCase())) {
       throw new ProductRouteError(`Duplicate variant SKU: ${sku}`);
     }
-    seen.add(sku);
+    seen.add(sku.toUpperCase());
 
     const conflict = await prisma.productVariant.findUnique({ where: { sku }, select: { id: true } });
     const submittedVariantId = getVariantId(variant);
@@ -801,6 +824,8 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
 
   const variants = getPayloadVariants(payload);
   const existingVariantIds = new Set(existing.variants.map((variant) => variant.id));
+  const existingSkuByVariantId = new Map(existing.variants.map((variant) => [variant.id, variant.sku]));
+  const existingVariantById = new Map(existing.variants.map((variant) => [variant.id, variant]));
   const status = statusFromPayload(payload.status);
   const forceOutOfStock = status === 'out_of_stock';
   const basePrice = resolveBasePrice(payload, variants, existing.price);
@@ -809,10 +834,6 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
   for (const variant of variants) {
     nonNegativeDecimal(variant.price, `Variant ${getVariantSku(variant) || 'price'}`);
     getVariantStock(variant);
-  }
-
-  if (hasOwn(payload, 'variants')) {
-    await assertVariantSkusAvailable(variants, existingVariantIds);
   }
 
   const submittedSku = getString(payload.sku);
@@ -825,6 +846,10 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
   });
   if (canonicalSku && canonicalSku !== existing.sku) {
     await assertProductSkuAvailable(canonicalSku, existing.id);
+  }
+
+  if (hasOwn(payload, 'variants')) {
+    await assertVariantSkusAvailable(variants, existingVariantIds, canonicalSku);
   }
 
   const submittedSlug = getString(payload.slug) || getString(payload.urlSlug);
@@ -881,6 +906,48 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     existing.ogImageUrl ||
     existing.images[0]?.url;
 
+  const effectiveSalePriceStr = hasOwn(payload, 'salePrice')
+    ? normalizeCatalogSalePrice(basePrice, payload.salePrice)
+    : existing.salePrice != null
+      ? normalizeCatalogSalePrice(basePrice, existing.salePrice.toString())
+      : null;
+
+  const preparedVariantsForUpdate = hasOwn(payload, 'variants')
+    ? ensureCanonicalVariantSkus(
+        canonicalSku,
+        variants.map((variant) => {
+          const variantId = getVariantId(variant) || undefined;
+          const prev = variantId ? existingVariantById.get(variantId) : undefined;
+          const vPrice = nonNegativeDecimal(variant.price, 'Variant price') ?? (prev?.price ? prev.price.toString() : String(basePrice));
+          const vSalePrice = hasOwn(variant, 'salePrice')
+            ? normalizeCatalogSalePrice(vPrice, variant.salePrice)
+            : prev?.salePrice != null
+              ? normalizeCatalogSalePrice(vPrice, prev.salePrice.toString())
+              : null;
+          const vOfferStart = hasOwn(variant, 'offerStartDate')
+            ? dateNullable(variant.offerStartDate, 'Variant offer start date')
+            : prev?.offerStartDate ?? null;
+          const vOfferEnd = hasOwn(variant, 'offerEndDate')
+            ? dateNullable(variant.offerEndDate, 'Variant offer end date')
+            : prev?.offerEndDate ?? null;
+
+          return {
+            id: variantId,
+            sku: getVariantSku(variant) || prev?.sku || '',
+            name: buildVariantDisplayName(variant, getString(payload.name) || existing.name),
+            price: vPrice,
+            salePrice: vSalePrice,
+            offerStartDate: vOfferStart,
+            offerEndDate: vOfferEnd,
+            quantity: forceOutOfStock ? 0 : getVariantStock(variant),
+            attributes: getVariantAttributes(variant),
+            image: getString(variant.image) || prev?.image || null,
+          };
+        }),
+        existingSkuByVariantId
+      )
+    : null;
+
   const autoJsonLd = buildAutoProductJsonLd({
     id: existing.id,
     sku: canonicalSku,
@@ -888,17 +955,18 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     slug: targetSlug,
     description: hasOwn(payload, 'description') ? nullableString(payload.description) : existing.description,
     price: Number(basePrice),
-    salePrice: hasOwn(payload, 'salePrice') ? (payload.salePrice ? Number(payload.salePrice) : null) : existing.salePrice ? Number(existing.salePrice) : null,
+    salePrice: effectiveSalePriceStr ? Number(effectiveSalePriceStr) : null,
     quantity: quantity ?? existing.quantity,
     trackInventory: hasOwn(payload, 'trackInventory') ? booleanValue(payload.trackInventory, existing.trackInventory) : existing.trackInventory,
     allowBackorder: hasOwn(payload, 'allowBackorder') ? booleanValue(payload.allowBackorder, existing.allowBackorder) : existing.allowBackorder,
     imageUrl: effectiveImageUrl,
     brandName: hasOwn(payload, 'brand') ? getString(payload.brand) : existing.brand?.name,
-    variants: (variants.length > 0 ? variants : existing.variants).map((v: any, idx: number) => ({
+    variants: (preparedVariantsForUpdate ?? existing.variants).map((v: any, idx: number) => ({
       id: typeof v.id === 'string' ? v.id : undefined,
       sku: String(v.sku || `${canonicalSku}-V${idx + 1}`),
       name: String(v.name || `Variant ${idx + 1}`),
       price: Number(v.price) || Number(basePrice),
+      salePrice: v.salePrice ? Number(v.salePrice) : null,
       quantity: Number(v.quantity) || 0,
       image: typeof v.image === 'string' ? v.image : undefined,
     })),
@@ -1050,7 +1118,7 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     discountPercentage: hasOwn(payload, 'discountPercentage')
       ? decimalNullable(payload.discountPercentage, 'Discount percentage')
       : undefined,
-    salePrice: hasOwn(payload, 'salePrice') ? decimalNullable(payload.salePrice, 'Sale price') : undefined,
+    salePrice: hasOwn(payload, 'salePrice') ? effectiveSalePriceStr : undefined,
     offerStartDate,
     offerEndDate,
     flashSaleEligible: hasOwn(payload, 'flashSaleEligible')
@@ -1090,11 +1158,11 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     }
   }
 
-  if (hasOwn(payload, 'variants')) {
+  if (preparedVariantsForUpdate) {
     const submittedExistingVariantIds = new Set(
-      variants
-        .map(getVariantId)
-        .filter((variantId) => existingVariantIds.has(variantId))
+      preparedVariantsForUpdate
+        .map((v) => v.id)
+        .filter((variantId): variantId is string => Boolean(variantId && existingVariantIds.has(variantId)))
     );
     const removedVariantIds = existing.variants
       .map((variant) => variant.id)
@@ -1118,24 +1186,23 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
       ]);
     }
 
-    for (const [index, variant] of variants.entries()) {
-      const variantId = getVariantId(variant);
-      const sku = getVariantSku(variant) || `${updated.sku}-V${index + 1}-${Date.now().toString(36)}`;
-      const variantStock = forceOutOfStock ? 0 : getVariantStock(variant);
-      const variantPrice = nonNegativeDecimal(variant.price, `Variant ${sku} price`) ?? updated.price.toString();
+    for (const variantItem of preparedVariantsForUpdate) {
       const variantData = {
         productId: existing.id,
-        sku,
-        name: buildVariantDisplayName(variant, updated.name),
-        price: variantPrice,
-        quantity: variantStock,
-        attributes: getVariantAttributes(variant),
-        image: getString(variant.image) || null,
+        sku: variantItem.sku,
+        name: variantItem.name,
+        price: variantItem.price,
+        salePrice: variantItem.salePrice,
+        offerStartDate: variantItem.offerStartDate,
+        offerEndDate: variantItem.offerEndDate,
+        quantity: variantItem.quantity,
+        attributes: variantItem.attributes,
+        image: variantItem.image,
       };
 
-      if (existingVariantIds.has(variantId)) {
+      if (variantItem.id && existingVariantIds.has(variantItem.id)) {
         await prisma.productVariant.update({
-          where: { id: variantId },
+          where: { id: variantItem.id },
           data: variantData satisfies Prisma.ProductVariantUncheckedUpdateInput,
         });
       } else {
@@ -1148,7 +1215,7 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     await prisma.product.update({
       where: { id: existing.id },
       data: {
-        quantity: forceOutOfStock ? 0 : variants.reduce((sum, variant) => sum + getVariantStock(variant), 0),
+        quantity: forceOutOfStock ? 0 : preparedVariantsForUpdate.reduce((sum, v) => sum + v.quantity, 0),
       },
     });
   }
@@ -1389,6 +1456,11 @@ export async function PATCH(
         costPrice: true,
         updatedAt: true,
       },
+    });
+
+    void triggerEventDrivenCatalogSync({
+      productIds: [existing.id],
+      reason: 'admin_product_patch',
     });
 
     return NextResponse.json({

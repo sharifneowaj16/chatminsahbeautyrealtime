@@ -153,16 +153,22 @@ function getVariantAttributes(item: MetaCatalogItemSource) {
   return isRecord(item.variant?.attributes) ? item.variant.attributes : undefined;
 }
 
-export function hasMetaVariantSelection(item: MetaCatalogItemSource) {
-  return Boolean(getMetaVariantId(item));
-}
-
 export function getMetaVariantId(item: MetaCatalogItemSource) {
   return cleanId(item.variantId) ?? cleanId(item.variant?.id);
 }
 
 export function getMetaParentProductId(item: MetaCatalogItemSource) {
   return cleanId(item.productId) ?? cleanId(item.product?.id) ?? cleanId(item.variant?.productId);
+}
+
+export function hasMetaVariantSelection(item: MetaCatalogItemSource) {
+  if (Boolean(getMetaVariantId(item))) return true;
+  const explicitVariantSku = cleanId(item.variantSku) ?? cleanId(item.variant?.sku);
+  if (explicitVariantSku) return true;
+  const directSku = cleanId(item.sku);
+  const parentSku = cleanId(item.productSku) ?? cleanId(item.product?.sku);
+  if (directSku && parentSku && directSku !== parentSku) return true;
+  return false;
 }
 
 function isCuidLike(value?: string | null): boolean {
@@ -212,7 +218,7 @@ export function resolveMetaCatalogIdentity(
   if (!source) return null;
 
   const variantId = getMetaVariantId(item);
-  const isVariant = Boolean(variantId);
+  const isVariant = hasMetaVariantSelection(item);
 
   if (source === 'database_id') {
     const productId = getMetaParentProductId(item);
@@ -220,9 +226,10 @@ export function resolveMetaCatalogIdentity(
     if (!isVariant) {
       return { itemId: productId, itemSource: 'product_id', isVariant: false };
     }
-    if (!variantId) return null;
+    const effectiveVariantId = variantId ?? cleanId(item.variantSku) ?? cleanId(item.variant?.sku);
+    if (!effectiveVariantId) return null;
     return {
-      itemId: variantId,
+      itemId: effectiveVariantId,
       groupId: productId,
       itemSource: 'variant_id',
       groupSource: 'product_id',
@@ -232,7 +239,7 @@ export function resolveMetaCatalogIdentity(
 
   const productSku = getMetaParentProductSku(item);
   if (!productSku) {
-    const fallbackId = getMetaParentProductId(item) || cleanId((item as any).id);
+    const fallbackId = getMetaParentProductId(item) || cleanId(item.id);
     if (fallbackId && !isCuidLike(fallbackId) && !isVariant) {
       return { itemId: fallbackId, itemSource: 'product_sku', isVariant: false };
     }
@@ -355,8 +362,6 @@ export function buildMetaViewContentCatalogData(
   };
 }
 
-// Compatibility exports retained while all Meta consumers migrate to the
-// atomic buildMetaCatalogData() contract.
 export function buildMetaCatalogContentIds(items: MetaCatalogItemSource[]) {
   return buildMetaCatalogData(items)?.content_ids ?? [];
 }
@@ -399,11 +404,6 @@ function stripCatalogFields<T extends MetaCatalogPayloadLike>(payload: T): T {
   return sanitized as T;
 }
 
-/**
- * Final transport guard. Catalog fields are accepted only as one coherent set:
- * valid type, non-empty IDs, non-empty contents, and every content row ID listed
- * in content_ids. Invalid or legacy partial payloads are stripped fail-closed.
- */
 export function prepareMetaCatalogPayload<T extends MetaCatalogPayloadLike | undefined>(payload: T): T {
   if (!payload) return payload;
 
@@ -440,7 +440,6 @@ export function prepareMetaCatalogPayload<T extends MetaCatalogPayloadLike | und
   return payload;
 }
 
-/** Product-group keys are allowed only for an unselected group ViewContent. */
 export function prepareMetaCatalogPayloadForEvent<T extends MetaCatalogPayloadLike | undefined>(
   eventName: string,
   payload: T
@@ -455,4 +454,3 @@ export function prepareMetaCatalogPayloadForEvent<T extends MetaCatalogPayloadLi
 
   return prepared;
 }
-
