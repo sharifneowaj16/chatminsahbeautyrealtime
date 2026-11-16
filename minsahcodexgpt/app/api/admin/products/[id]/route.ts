@@ -723,16 +723,25 @@ async function getOrCreateBrandId(brandName: string): Promise<string | null> {
 }
 
 async function assertProductSkuAvailable(sku: string, productId: string) {
-  const conflict = await prisma.product.findUnique({ where: { sku }, select: { id: true } });
+  const conflict = await prisma.product.findUnique({
+    where: { sku },
+    select: { id: true, deletedAt: true },
+  });
   if (conflict && conflict.id !== productId) {
+    if (conflict.deletedAt) {
+      await prisma.product.update({
+        where: { id: conflict.id },
+        data: { sku: `${sku}-ARCHIVED-${conflict.id.slice(-6).toUpperCase()}` },
+      });
+      return;
+    }
     throw new ProductRouteError(`Product SKU already exists: ${sku}`, 409);
   }
 }
 
 async function assertVariantSkusAvailable(
   variants: ProductVariantPayload[],
-  existingVariantIds: Set<string>,
-  parentSku?: string
+  productId: string
 ) {
   const seen = new Set<string>();
 
@@ -740,19 +749,27 @@ async function assertVariantSkusAvailable(
     const sku = getVariantSku(variant);
     if (!sku) continue;
 
-    if (parentSku && sku.toUpperCase() === parentSku.toUpperCase()) {
-      throw new ProductRouteError(`Variant SKU cannot be identical to parent product SKU: ${sku}`);
+    const key = sku.toUpperCase();
+    if (seen.has(key)) {
+      throw new ProductRouteError(`Duplicate variant SKU in same product: ${sku}`);
     }
+    seen.add(key);
 
-    if (seen.has(sku.toUpperCase())) {
-      throw new ProductRouteError(`Duplicate variant SKU: ${sku}`);
-    }
-    seen.add(sku.toUpperCase());
+    const conflict = await prisma.productVariant.findUnique({
+      where: { sku },
+      select: { id: true, productId: true, product: { select: { deletedAt: true } } },
+    });
 
-    const conflict = await prisma.productVariant.findUnique({ where: { sku }, select: { id: true } });
-    const submittedVariantId = getVariantId(variant);
-    if (conflict && !(existingVariantIds.has(submittedVariantId) && conflict.id === submittedVariantId)) {
-      throw new ProductRouteError(`Variant SKU already exists: ${sku}`, 409);
+    // Same product's own variant SKU is ALWAYS allowed!
+    if (conflict && conflict.productId !== productId) {
+      if (conflict.product?.deletedAt) {
+        await prisma.productVariant.update({
+          where: { id: conflict.id },
+          data: { sku: `${sku}-ARCHIVED-${conflict.id.slice(-6).toUpperCase()}` },
+        });
+        continue;
+      }
+      throw new ProductRouteError(`Variant SKU already exists on another product: ${sku}`, 409);
     }
   }
 }
@@ -826,6 +843,11 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
   const existingVariantIds = new Set(existing.variants.map((variant) => variant.id));
   const existingSkuByVariantId = new Map(existing.variants.map((variant) => [variant.id, variant.sku]));
   const existingVariantById = new Map(existing.variants.map((variant) => [variant.id, variant]));
+  const existingVariantBySku = new Map(
+    existing.variants
+      .filter((variant) => variant.sku)
+      .map((variant) => [variant.sku.trim().toUpperCase(), variant])
+  );
   const status = statusFromPayload(payload.status);
   const forceOutOfStock = status === 'out_of_stock';
   const basePrice = resolveBasePrice(payload, variants, existing.price);
@@ -849,7 +871,7 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
   }
 
   if (hasOwn(payload, 'variants')) {
-    await assertVariantSkusAvailable(variants, existingVariantIds, canonicalSku);
+    await assertVariantSkusAvailable(variants, existing.id);
   }
 
   const submittedSlug = getString(payload.slug) || getString(payload.urlSlug);
@@ -916,9 +938,16 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
     ? ensureCanonicalVariantSkus(
         canonicalSku,
         variants.map((variant) => {
-          const variantId = getVariantId(variant) || undefined;
-          const prev = variantId ? existingVariantById.get(variantId) : undefined;
-          const vPrice = nonNegativeDecimal(variant.price, 'Variant price') ?? (prev?.price ? prev.price.toString() : String(basePrice));
+          const rawId = getVariantId(variant) || undefined;
+          const rawSku = getVariantSku(variant);
+          const prev =
+            (rawId ? existingVariantById.get(rawId) : undefined) ??
+            (rawSku ? existingVariantBySku.get(rawSku.toUpperCase()) : undefined);
+          const resolvedVariantId = prev?.id;
+
+          const vPrice =
+            nonNegativeDecimal(variant.price, 'Variant price') ??
+            (prev?.price ? prev.price.toString() : String(basePrice));
           const vSalePrice = hasOwn(variant, 'salePrice')
             ? normalizeCatalogSalePrice(vPrice, variant.salePrice)
             : prev?.salePrice != null
@@ -932,8 +961,8 @@ async function updateProduct(idOrSlug: string, payload: PlainObject) {
             : prev?.offerEndDate ?? null;
 
           return {
-            id: variantId,
-            sku: getVariantSku(variant) || prev?.sku || '',
+            id: resolvedVariantId,
+            sku: rawSku || prev?.sku || '',
             name: buildVariantDisplayName(variant, getString(payload.name) || existing.name),
             price: vPrice,
             salePrice: vSalePrice,
@@ -1337,7 +1366,14 @@ export async function DELETE(
     const { id } = await params;
     const existing = await prisma.product.findFirst({
       where: { AND: [{ OR: [{ id }, { slug: id }] }, { deletedAt: null }] },
-      select: { id: true },
+      select: {
+        id: true,
+        sku: true,
+        slug: true,
+        variants: {
+          select: { id: true, sku: true },
+        },
+      },
     });
 
     if (!existing) {
@@ -1347,6 +1383,10 @@ export async function DELETE(
     const orderItemCount = await prisma.orderItem.count({ where: { productId: existing.id } });
 
     if (orderItemCount > 0) {
+      const stamp = Date.now().toString(36);
+      const archivedSku = existing.sku ? `${existing.sku}-ARCHIVED-${stamp}` : `${existing.id}-ARCHIVED-${stamp}`;
+      const archivedSlug = `${existing.slug}-ARCHIVED-${stamp}`;
+
       await prisma.$transaction([
         prisma.cartItem.deleteMany({ where: { productId: existing.id } }),
         prisma.wishlistItem.deleteMany({ where: { productId: existing.id } }),
@@ -1357,8 +1397,18 @@ export async function DELETE(
             isActive: false,
             quantity: 0,
             isFeatured: false,
+            sku: archivedSku,
+            slug: archivedSlug,
           },
         }),
+        ...existing.variants.map((variant) =>
+          prisma.productVariant.update({
+            where: { id: variant.id },
+            data: {
+              sku: variant.sku ? `${variant.sku}-ARCHIVED-${stamp}` : `${variant.id}-ARCHIVED-${stamp}`,
+            },
+          })
+        ),
       ]);
 
       const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product soft-delete');

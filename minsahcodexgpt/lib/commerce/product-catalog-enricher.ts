@@ -54,7 +54,7 @@ export function ensureCanonicalVariantSkus<
   variants: T[],
   existingSkuByVariantId?: ReadonlyMap<string, string>
 ): Array<T & { sku: string }> {
-  const seen = new Set<string>([productSku.toUpperCase()]);
+  const seen = new Set<string>();
   return variants.map((variant, idx) => {
     const raw = variant.sku?.trim();
     const existingSku = variant.id ? existingSkuByVariantId?.get(variant.id)?.trim() : undefined;

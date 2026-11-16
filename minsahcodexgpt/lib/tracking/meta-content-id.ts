@@ -196,10 +196,10 @@ export function getMetaParentProductSku(item: MetaCatalogItemSource) {
 export function getMetaVariantSku(item: MetaCatalogItemSource) {
   const parentSku = getMetaParentProductSku(item);
   const explicit = cleanId(item.variantSku) ?? cleanId(item.variant?.sku);
-  if (explicit && !isCuidLike(explicit) && explicit !== parentSku) return explicit;
+  if (explicit && !isCuidLike(explicit)) return explicit;
 
   const directSku = cleanId(item.sku);
-  if (hasMetaVariantSelection(item) && directSku && !isCuidLike(directSku) && directSku !== parentSku) {
+  if (hasMetaVariantSelection(item) && directSku && !isCuidLike(directSku)) {
     return directSku;
   }
 
