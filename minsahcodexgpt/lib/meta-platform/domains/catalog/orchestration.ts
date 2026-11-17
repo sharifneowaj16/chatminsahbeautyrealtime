@@ -287,7 +287,10 @@ async function submitCatalogBatches(input: {
       correlationId: input.correlationId,
     });
     const handle = extractBatchHandle(response);
-    if (!handle) throw new Error('META_CATALOG_BATCH_HANDLE_MISSING');
+    if (!handle) {
+      const details = JSON.stringify((response as Record<string, unknown>)?.validation_status ?? response);
+      throw new Error(`META_CATALOG_BATCH_HANDLE_MISSING: ${details}`);
+    }
     handles.push(handle);
     responseRows.push(response);
     await db.$transaction(async (tx) => {
@@ -416,6 +419,7 @@ export async function syncCatalogProducts(input: { catalogId?: string; inventory
           method: 'UPDATE' as const,
           retailer_id: itemToHide.retailerId,
           data: {
+            id: itemToHide.retailerId,
             availability: 'out of stock',
             visibility: 'staging',
             quantity_to_sell_on_facebook: 0,

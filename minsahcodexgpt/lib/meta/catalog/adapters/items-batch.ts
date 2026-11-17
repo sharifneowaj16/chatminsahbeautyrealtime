@@ -9,49 +9,67 @@ export type MetaItemsBatchRequest = {
 
 function labels(labels?: Record<string, string>) {
   if (!labels) return {};
-  return Object.fromEntries(Object.entries(labels)
-    .filter(([key]) => /^custom_label_[0-4]$/.test(key))
-    .map(([key, value]) => [key, value]));
+  return Object.fromEntries(
+    Object.entries(labels)
+      .filter(([key]) => /^custom_label_[0-4]$/.test(key))
+      .map(([key, value]) => [key, value]),
+  );
 }
 
-export function serializeItemsBatchUpdate(item: CanonicalCatalogItem, options: { inventoryOnly?: boolean } = {}): MetaItemsBatchRequest {
+export function serializeItemsBatchUpdate(
+  item: CanonicalCatalogItem,
+  options: { inventoryOnly?: boolean } = {},
+): MetaItemsBatchRequest {
   const inventoryData = {
+    id: item.retailerId, // Required by Meta POST /{catalog_id}/items_batch
     availability: item.availability,
     availability_date: item.availabilityDate,
     quantity_to_sell_on_facebook: item.quantityToSellOnFacebook,
   };
-  const data = options.inventoryOnly ? inventoryData : {
-    title: item.title,
-    description: item.description,
-    ...inventoryData,
-    condition: item.condition,
-    price: formatCatalogMoney(item.price),
-    sale_price: item.sale ? formatCatalogMoney(item.sale.price) : undefined,
-    sale_price_effective_date: item.sale?.effectiveDate,
-    link: item.link,
-    image_link: item.imageLink,
-    additional_image_link: item.additionalImageLinks,
-    brand: item.brand,
-    gtin: item.gtin,
-    mpn: item.mpn,
-    product_type: item.productType,
-    google_product_category: item.googleProductCategory,
-    facebook_product_category: item.facebookProductCategory,
-    color: item.color,
-    size: item.size,
-    pattern: item.pattern,
-    material: item.material,
-    visibility: item.visibility,
-    item_group_id: item.itemGroupId,
-    ...labels(item.customLabels),
-  };
+
+  const data = options.inventoryOnly
+    ? inventoryData
+    : {
+        title: item.title,
+        description: item.description,
+        ...inventoryData,
+        condition: item.condition,
+        price: formatCatalogMoney(item.price),
+        sale_price: item.sale ? formatCatalogMoney(item.sale.price) : undefined,
+        sale_price_effective_date: item.sale?.effectiveDate,
+        link: item.link,
+        image_link: item.imageLink,
+        additional_image_link: item.additionalImageLinks?.length
+          ? item.additionalImageLinks
+          : undefined,
+        brand: item.brand,
+        gtin: item.gtin,
+        mpn: item.mpn,
+        product_type: item.productType,
+        google_product_category: item.googleProductCategory,
+        facebook_product_category: item.facebookProductCategory,
+        color: item.color,
+        size: item.size,
+        pattern: item.pattern,
+        material: item.material,
+        visibility: item.visibility,
+        item_group_id: item.itemGroupId,
+        ...labels(item.customLabels),
+      };
+
   return {
     method: 'UPDATE',
     retailer_id: item.retailerId,
-    data: Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)),
+    data: Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    ),
   };
 }
 
 export function serializeItemsBatchDelete(retailerId: string): MetaItemsBatchRequest {
-  return { method: 'DELETE', retailer_id: retailerId };
+  return {
+    method: 'DELETE',
+    retailer_id: retailerId,
+    data: { id: retailerId },
+  };
 }
