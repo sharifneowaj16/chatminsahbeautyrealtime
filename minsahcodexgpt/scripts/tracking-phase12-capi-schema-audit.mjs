@@ -28,7 +28,7 @@ const packageJson = JSON.parse(read('package.json') || '{}');
 const sdkDependency = packageJson.dependencies?.['facebook-nodejs-business-sdk'];
 expect(
   'Official Meta Node.js Business SDK dependency is installed',
-  typeof sdkDependency === 'string' && sdkDependency.includes('24.0.1'),
+  typeof sdkDependency === 'string' && sdkDependency.includes('26.0.3'),
   String(sdkDependency ?? 'missing')
 );
 expect(

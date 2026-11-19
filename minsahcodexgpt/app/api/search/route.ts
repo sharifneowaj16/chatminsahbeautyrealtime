@@ -194,10 +194,16 @@ function buildFallbackFacetsFromProducts(products: Array<ProductSource & { score
       });
     }
 
-    if (product.price < 500) priceBuckets['under-500'].count += 1;
-    else if (product.price < 1000) priceBuckets['500-1000'].count += 1;
-    else if (product.price < 2000) priceBuckets['1000-2000'].count += 1;
-    else priceBuckets['over-2000'].count += 1;
+    const bucketKey =
+      product.price < 500
+        ? 'under-500'
+        : product.price < 1000
+          ? '500-1000'
+          : product.price < 2000
+            ? '1000-2000'
+            : 'over-2000';
+    const bucket = priceBuckets[bucketKey];
+    if (bucket) bucket.count += 1;
 
     if (product.inStock) inStockCount += 1;
     else outOfStockCount += 1;
@@ -884,11 +890,9 @@ export async function GET(request: NextRequest) {
 
     // ✅ EXTRACT SPELL CORRECTION SUGGESTION
     let spellSuggestion: string | null = null;
-    if (response.suggest?.spell_correction?.[0]?.options?.length) {
-      const suggestion = response.suggest.spell_correction[0].options[0];
-      if (suggestion.text.toLowerCase() !== query.toLowerCase()) {
-        spellSuggestion = suggestion.text;
-      }
+    const suggestion = response.suggest?.spell_correction?.[0]?.options?.[0];
+    if (suggestion && suggestion.text.toLowerCase() !== query.toLowerCase()) {
+      spellSuggestion = suggestion.text;
     }
 
     // ========================================

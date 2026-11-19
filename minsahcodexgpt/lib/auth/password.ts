@@ -100,7 +100,7 @@ export function validatePassword(password: string): PasswordValidationResult {
  * Generate a secure random password
  */
 function randomChar(chars: string): string {
-  return chars[crypto.randomInt(0, chars.length)];
+  return chars.charAt(crypto.randomInt(0, chars.length));
 }
 
 /**
@@ -128,7 +128,12 @@ export function generateSecurePassword(length: number = 16): string {
   // Fisher-Yates shuffle with crypto-backed indexes.
   for (let i = chars.length - 1; i > 0; i--) {
     const j = crypto.randomInt(0, i + 1);
-    [chars[i], chars[j]] = [chars[j], chars[i]];
+    const charI = chars[i];
+    const charJ = chars[j];
+    if (charI !== undefined && charJ !== undefined) {
+      chars[i] = charJ;
+      chars[j] = charI;
+    }
   }
 
   return chars.join('');

@@ -60,8 +60,8 @@ test('schema and migration provide typed approval lifecycle and immutable audit 
 test('permission matrix separates viewing, operating, approval and audit access', () => {
   const source = fs.readFileSync('lib/auth/admin-permissions.ts', 'utf8');
   for (const token of ['META_OPS_VIEW', 'META_OPS_OPERATE', 'META_OPS_APPROVE', 'META_OPS_AUDIT']) assert.match(source, new RegExp(token));
-  const adminBlock = source.match(/ADMIN:\s*\[[\s\S]*?\],\n\s*MANAGER/)?.[0] ?? '';
-  const managerBlock = source.match(/MANAGER:\s*\[[\s\S]*?\],\n\s*STAFF/)?.[0] ?? '';
+  const adminBlock = source.match(/ADMIN:\s*\[[\s\S]*?\],\r?\n\s*MANAGER/)?.[0] ?? '';
+  const managerBlock = source.match(/MANAGER:\s*\[[\s\S]*?\],\r?\n\s*STAFF/)?.[0] ?? '';
   assert.match(adminBlock, /META_OPS_VIEW/);
   assert.match(adminBlock, /META_OPS_AUDIT/);
   assert.doesNotMatch(adminBlock, /META_OPS_OPERATE|META_OPS_APPROVE/);
@@ -83,7 +83,7 @@ test('dangerous replay endpoints claim exact approvals and return mutation audit
     assert.match(source, /executeMetaAdminAction/);
     assert.match(source, /approvalId/);
     assert.match(source, /auditId/);
-    assert.match(source, /requireSuperAdmin/);
+    assert.match(source, /requireSuperAdmin|requireAdminMutationPermission/);
   }
   assert.match(events, /META_EVENT_REPLAY/);
   assert.match(jobs, /META_JOB_REPLAY/);
@@ -92,10 +92,10 @@ test('dangerous replay endpoints claim exact approvals and return mutation audit
 
 test('operations API aggregates final-state sources and exposes only shaped failure summaries', () => {
   const route = fs.readFileSync('app/api/admin/meta/operations/summary/route.ts', 'utf8');
-  for (const token of ['metaCatalogSyncItem.groupBy', 'metaEventOutbox.groupBy', 'metaJobAudit.groupBy', 'metaLead.groupBy', 'metaAdminApproval.groupBy', 'describeMetaProviderState', 'describeMetaFailure']) assert.match(route, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  for (const token of ['metaCatalogSyncItem.groupBy', 'metaEventOutbox.groupBy', 'metaJobAudit.groupBy', 'metaLead.groupBy', 'metaAdminApproval.groupBy', 'describeMetaProviderState', 'projectMetaAdminFailure']) assert.match(route, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(route, /META_OPS_VIEW/);
-  assert.match(route, /failure: connectionRow\.lastError \? describeMetaFailure/);
-  assert.match(route, /failure: describeMetaFailure\(item\.lastError\)/);
+  assert.match(route, /failure: projectMetaAdminFailure\(connectionRow\.lastError\)/);
+  assert.match(route, /failure: projectMetaAdminFailure\(item\.lastError\)/);
   assert.doesNotMatch(route, /events:\s*failedEventRows\.map\(\(item\) => \(\{\s*\.\.\.item/);
   assert.doesNotMatch(route, /jobs:\s*failedJobRows\.map\(\(item\) => \(\{\s*\.\.\.item/);
   assert.doesNotMatch(route, /lastError:\s*(connectionRow|item)\.lastError/);

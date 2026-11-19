@@ -67,7 +67,7 @@ export class MetaPlatformAudiencesService {
     const ratio = Math.min(Math.max(input.ratio ?? 0.01, 0.01), 0.2);
     return createMetaCustomAudience(await this.#client(correlationId), { adAccountId: this.#config.adAccountId, fields: META_AUDIENCE_FIELDS, params: cleanMetaAdsObject({
       name: input.name, description: input.description, subtype: 'LOOKALIKE', origin_audience_id: input.originAudienceId,
-      lookalike_spec: { type: 'similarity', ratio, country: (input.country ?? 'BD').toUpperCase() },
+      lookalike_spec: { type: 'similarity', ratio },
     }) });
   }
 

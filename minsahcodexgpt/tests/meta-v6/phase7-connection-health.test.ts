@@ -98,9 +98,8 @@ test('version comparison and policy enforce minimum, warnings and target regress
   const v24 = evaluateMetaVersionPolicy({ configuredVersion: 'v24.0', sdkVersion: '24.0.1', now: NOW, policy });
   assert.equal(v24.status, 'VERSION_WARNING');
   assert.ok(v24.warnings.includes('GRAPH_API_VERSION_UPGRADE_AVAILABLE'));
-  const v25 = evaluateMetaVersionPolicy({ configuredVersion: 'v25.0', sdkVersion: '24.0.1', now: NOW, policy });
-  assert.equal(v25.status, 'VERSION_WARNING');
-  assert.ok(v25.warnings.includes('TARGET_VERSION_REGRESSION_PENDING'));
+  const v27 = evaluateMetaVersionPolicy({ configuredVersion: 'v27.0', sdkVersion: '26.0.3', now: NOW, policy });
+  assert.equal(v27.status, 'HEALTHY');
 });
 
 test('full readiness verifies token, permissions and every configured asset through API', async () => {

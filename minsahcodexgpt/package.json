@@ -214,7 +214,7 @@
     "test:meta-v6-phase13": "node --conditions=react-server --import tsx --test tests/meta-v6/phase13-ads-automation.test.ts",
     "qa:meta-v6-phase13": "npm run test:meta-v6-phase13 && node scripts/meta-v6-phase13-ads-automation-audit.mjs",
     "worker:meta-instagram": "tsx workers/meta-instagram.worker.ts",
-    "test:meta-v6-phase14": "node --import tsx --test tests/meta-v6/phase14-instagram-social-crm.test.ts",
+    "test:meta-v6-phase14": "node --conditions=react-server --import tsx --test tests/meta-v6/phase14-instagram-social-crm.test.ts",
     "qa:meta-v6-phase14": "npm run test:meta-v6-phase14 && node scripts/meta-v6-phase14-instagram-audit.mjs",
     "test:meta-v6-phase15": "node --import tsx --test tests/meta-v6/phase15-release-governance.test.ts",
     "qa:meta-v6-phase15": "npm run test:meta-v6-phase15 && node scripts/meta-v6-phase15-release-audit.mjs",
@@ -490,12 +490,12 @@
     "@types/qrcode": "^1.5.6",
     "bcryptjs": "3.0.3",
     "bullmq": "5.79.2",
-    "facebook-nodejs-business-sdk": "24.0.1",
+    "facebook-nodejs-business-sdk": "26.0.3",
     "ioredis": "5.10.1",
     "jose": "6.2.2",
     "lucide-react": "0.554.0",
     "minio": "8.0.7",
-    "next": "^16.4.3",
+    "next": "^16.4.6",
     "next-auth": "4.24.15",
     "pg": "8.20.0",
     "qrcode": "^1.5.4",
@@ -517,7 +517,7 @@
     "concurrently": "^9.2.5",
     "dotenv": "17.3.1",
     "eslint": "9.39.4",
-    "eslint-config-next": "^16.4.3",
+    "eslint-config-next": "^16.4.6",
     "prisma": "^7.10.1",
     "tailwindcss": "4.2.2",
     "tsx": "4.21.0",
@@ -534,7 +534,11 @@
     },
     "next-auth": {
       "uuid": "11.1.1"
-    }
+    },
+    "decode-uri-component": "^0.5.1",
+    "stream-json": "^3.9.0",
+    "fast-xml-parser": "^5.12.1",
+    "follow-redirects": "^1.16.3"
   },
   "packageManager": "npm@10.9.2",
   "allowScripts": {

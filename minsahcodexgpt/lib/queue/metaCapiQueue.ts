@@ -102,24 +102,26 @@ function defaults(): JobsOptions {
   };
 }
 
-export const metaCapiPurchaseQueue = globalQueues.metaCapiLegacyQueue ?? new Queue<MetaCapiJobData>(META_CAPI_PURCHASE_QUEUE_NAME, {
-  connection: bullRedis,
-  defaultJobOptions: defaults(),
-});
-export const ga4EventsQueue = globalQueues.ga4EventsQueue ?? new Queue<Ga4JobData>(GA4_EVENTS_QUEUE_NAME, {
-  connection: bullRedis,
-  defaultJobOptions: defaults(),
-});
-export const tiktokEventsQueue = globalQueues.tiktokEventsQueue ?? new Queue<TikTokJobData>(TIKTOK_EVENTS_QUEUE_NAME, {
-  connection: bullRedis,
-  defaultJobOptions: defaults(),
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  globalQueues.metaCapiLegacyQueue = metaCapiPurchaseQueue;
-  globalQueues.ga4EventsQueue = ga4EventsQueue;
-  globalQueues.tiktokEventsQueue = tiktokEventsQueue;
+function lazyQueue<T>(key: keyof typeof globalQueues, name: string): Queue<T> {
+  return new Proxy({} as Queue<T>, {
+    get(_target, prop, receiver) {
+      let instance = globalQueues[key] as Queue<T> | undefined;
+      if (!instance) {
+        instance = new Queue<T>(name, {
+          connection: bullRedis,
+          defaultJobOptions: defaults(),
+        });
+        globalQueues[key] = instance as never;
+      }
+      const value = Reflect.get(instance as object, prop, receiver);
+      return typeof value === 'function' ? value.bind(instance) : value;
+    },
+  });
 }
+
+export const metaCapiPurchaseQueue = lazyQueue<MetaCapiJobData>('metaCapiLegacyQueue', META_CAPI_PURCHASE_QUEUE_NAME);
+export const ga4EventsQueue = lazyQueue<Ga4JobData>('ga4EventsQueue', GA4_EVENTS_QUEUE_NAME);
+export const tiktokEventsQueue = lazyQueue<TikTokJobData>('tiktokEventsQueue', TIKTOK_EVENTS_QUEUE_NAME);
 
 function sanitizeBullJobId(jobId: string) {
   return jobId.replace(/:/g, '-');

@@ -13,8 +13,9 @@ export async function persistMetaCoreEventOutbox(input: {
   safePayload?: Record<string, unknown> | null;
   policyDecision: TrackingDecision;
 }) {
-  if (input.request.data.length !== 1) throw new Error('META_OUTBOX_SINGLE_EVENT_REQUIRED');
-  const event = assertMetaWebsiteEvent(input.request.data[0]);
+  const firstEvent = input.request.data[0];
+  if (input.request.data.length !== 1 || !firstEvent) throw new Error('META_OUTBOX_SINGLE_EVENT_REQUIRED');
+  const event = assertMetaWebsiteEvent(firstEvent);
   return createMetaEventOutbox(buildMetaCoreOutboxInput({
     ...input,
     request: { ...input.request, data: [event] },

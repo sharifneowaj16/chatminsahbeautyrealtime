@@ -53,7 +53,7 @@ export function getMetaProviderRetryDelayMs(attemptsMade: number, error?: unknow
   const decided = numberValue(record.retryDelayMs);
   if (decided !== undefined) return Math.max(0, decided);
   const scheduleIndex = Math.max(1, Math.min(attemptsMade, META_PROVIDER_RETRY_SCHEDULE_MS.length - 1));
-  const scheduled = META_PROVIDER_RETRY_SCHEDULE_MS[scheduleIndex];
+  const scheduled = META_PROVIDER_RETRY_SCHEDULE_MS[scheduleIndex] ?? 60_000;
   return Math.max(scheduled, extractRetryAfterMs(error) ?? 0);
 }
 

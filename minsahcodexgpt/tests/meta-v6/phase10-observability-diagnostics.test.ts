@@ -113,7 +113,7 @@ test('CAPI and lead webhook flows propagate one correlation ID into durable jobs
   const outbox = fs.readFileSync('lib/meta/capi/outbox-repository.ts', 'utf8');
   const dispatcher = fs.readFileSync('lib/meta/capi/dispatcher.ts', 'utf8');
   const receipt = fs.readFileSync('lib/meta/leads/receipt.ts', 'utf8');
-  const webhook = fs.readFileSync('app/api/webhooks/meta/route.ts', 'utf8');
+  const webhook = fs.readFileSync('app/api/webhooks/meta/route.ts', 'utf8') + '\n' + fs.readFileSync('lib/meta/leads/handoff.ts', 'utf8');
   const queues = fs.readFileSync('lib/jobs/queues.ts', 'utf8');
   assert.match(outbox, /ensureCorrelationId\(input\.correlationId, 'meta-event'\)/);
   assert.match(dispatcher, /correlationId: record\.correlationId/);

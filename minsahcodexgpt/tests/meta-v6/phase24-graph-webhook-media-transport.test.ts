@@ -67,7 +67,7 @@ test('Graph client fixes the provider host, uses bearer auth and adds appsecret 
   assert.equal(result.ok, true);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url.origin, 'https://graph.facebook.com');
-  assert.equal(calls[0].url.pathname, '/v24.0/me');
+  assert.equal(calls[0].url.pathname, '/v27.0/me');
   assert.equal(calls[0].url.searchParams.get('access_token'), null);
   assert.match(calls[0].url.searchParams.get('appsecret_proof') ?? '', /^[a-f0-9]{64}$/);
   assert.equal(new Headers(calls[0].init?.headers).get('authorization'), 'Bearer phase24-business-token');

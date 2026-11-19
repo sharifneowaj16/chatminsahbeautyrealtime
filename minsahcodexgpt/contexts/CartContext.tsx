@@ -291,7 +291,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const paymentMethods = PAYMENT_METHODS;
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<PaymentMethod | null>(PAYMENT_METHODS[0]);
+    useState<PaymentMethod | null>(PAYMENT_METHODS[0] ?? null);
 
   const couponsEnabled = offerConfig?.couponsEnabled !== false;
 
@@ -656,8 +656,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                   (Boolean(mapped.cartItemId && cartItem.cartItemId === mapped.cartItemId) &&
                     (cartItem.lineKey === canonicalLineKey || cartItem.pricingSource === mapped.pricingSource))
               );
-              if (existingIndex !== -1) {
-                const existing = prev[existingIndex];
+              const existing = existingIndex !== -1 ? prev[existingIndex] : undefined;
+              if (existing) {
                 const updatedItem: CartItem = {
                   ...mapped,
                   ...existing,

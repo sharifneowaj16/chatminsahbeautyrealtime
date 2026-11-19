@@ -84,9 +84,11 @@ function validateOutboxRecord(record: MetaEventOutboxRecord) {
     return { valid: issues.length === 0, issues };
   }
 
+  const firstEvent = Array.isArray(record.payload.request.data) ? record.payload.request.data[0] : undefined;
   if (
     !Array.isArray(record.payload.request.data) ||
-    record.payload.request.data.length !== 1
+    record.payload.request.data.length !== 1 ||
+    !firstEvent
   ) {
     return {
       valid: false,
@@ -98,7 +100,7 @@ function validateOutboxRecord(record: MetaEventOutboxRecord) {
     };
   }
 
-  const event: MetaWebsiteServerEvent = record.payload.request.data[0];
+  const event: MetaWebsiteServerEvent = firstEvent;
   const validation = validateMetaWebsiteEvent(event);
   const identityMatches =
     event.event_name === record.eventName &&

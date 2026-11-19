@@ -6,7 +6,7 @@
     {
       "migration": "20260206231151_init",
       "path": "prisma/migrations/20260206231151_init/migration.sql",
-      "sha256": "d82509bad1525b9333bd5dbb2708330be85261820e2f76eb94a07adad099a211",
+      "sha256": "1f833767f898a42390f7c2eee6d73db15ee885c3c3d2aaf5822457cef2836428",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -15,7 +15,7 @@
     {
       "migration": "20260212000000_add_site_config",
       "path": "prisma/migrations/20260212000000_add_site_config/migration.sql",
-      "sha256": "ed1df4b67d09f50bae36a4b4cdee3f7948172641d0f7155b48be578c790932db",
+      "sha256": "f7f52bd45eef7f72d21a567448e2729da51674b871b5d9a90bb07fbeb550dc32",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -24,7 +24,7 @@
     {
       "migration": "20260212100000_add_customer_behavior",
       "path": "prisma/migrations/20260212100000_add_customer_behavior/migration.sql",
-      "sha256": "c8b4a40b3c92bffe6edb68459fa9328f5181ff6e23616016a9757c4b495194d6",
+      "sha256": "0793de8c54af280447dc361d2284ce15edf4399dfffec0cefb5e4c92439bf054",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -33,7 +33,7 @@
     {
       "migration": "20260212110000_add_search_history",
       "path": "prisma/migrations/20260212110000_add_search_history/migration.sql",
-      "sha256": "d53684bd1a1fef514862492f60c332e192aa83d7d29e94beadeed042a9d1af5a",
+      "sha256": "1c46e691d8147bacc7edaf34010ef3fdadb85d901f8c4700debd97e76123e113",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -42,7 +42,7 @@
     {
       "migration": "20260212120000_add_campaign_attribution",
       "path": "prisma/migrations/20260212120000_add_campaign_attribution/migration.sql",
-      "sha256": "4bfb2baae67b616c73f86c33b2ce4965cc899a9745f5316d4b12379b28f83525",
+      "sha256": "d77da85ddbef98c2bad261e91f98700d939fc45515393237e15973f91b86297c",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -51,7 +51,7 @@
     {
       "migration": "20260212130000_add_tracking_device",
       "path": "prisma/migrations/20260212130000_add_tracking_device/migration.sql",
-      "sha256": "e5beb0423518c7eeabbee0dfdb4ea1b10e5fc8612eed68d2e66638ad00e537ad",
+      "sha256": "8c3d487c7f2efeb55a24206806668e89a576a3d3d3e42932154bfe0d9039d565",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -60,7 +60,7 @@
     {
       "migration": "20260213000000_add_returns",
       "path": "prisma/migrations/20260213000000_add_returns/migration.sql",
-      "sha256": "39800e67839a7de2ad6c9f289173bb582cb58f42a6a0a3d475c8a830b3f8ec3a",
+      "sha256": "c1ec6677e0c47cb065d2bb14be4d54c71176afc334985a98a6959f39d7afad42",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -69,7 +69,7 @@
     {
       "migration": "20260216000000_add_search_click_tracking",
       "path": "prisma/migrations/20260216000000_add_search_click_tracking/migration.sql",
-      "sha256": "aa182dbcabd053c3178290f8cbbc86c3cbc1e50a6255042bc555924678ea155c",
+      "sha256": "6249ca1f7f27d8d6c70473da1f0e22842508b5588c1a0da4cf7c19b820160ce4",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -78,7 +78,7 @@
     {
       "migration": "20260219000000_add_seo_fields",
       "path": "prisma/migrations/20260219000000_add_seo_fields/migration.sql",
-      "sha256": "78dc8161cead2630b53c8ad4a53a3e630057c154f264c3b5d0adfabf13e80a90",
+      "sha256": "c8539184bf88834a88c1f38355aef8e0b56bdc5ffa0d2e65dc7462adcf4c2957",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -87,7 +87,7 @@
     {
       "migration": "20260221094858_add_product_fields",
       "path": "prisma/migrations/20260221094858_add_product_fields/migration.sql",
-      "sha256": "657d692933c8dba08838bcf27e9b0e5971eefb240829f86fefb6dc95f782fbc0",
+      "sha256": "dfed0b940448011c755344ec75c783f4af949706ad987da45906acbdd61bccd1",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -96,7 +96,7 @@
     {
       "migration": "20260225160326_add_social_message",
       "path": "prisma/migrations/20260225160326_add_social_message/migration.sql",
-      "sha256": "c98f2cca9e04d9a4733a1a46c5a529fc00cab05f01d1883ff9ef9d1d925b0e19",
+      "sha256": "f3e68da346e181cb9de10eef069ef4f07f9637735a624141bb7bab6b289ffee0",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -105,7 +105,7 @@
     {
       "migration": "20260322000000_add_gift_requests",
       "path": "prisma/migrations/20260322000000_add_gift_requests/migration.sql",
-      "sha256": "b01d871b3dd5a446600389a6022635b6c3989e50ba86700b3c25ddbd59585ddd",
+      "sha256": "9700ecdb5f6492420bcd7656e185172fe75ce396e130e6f1db4b5055df8dbd78",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -114,7 +114,7 @@
     {
       "migration": "20260322000001_add_gift_type",
       "path": "prisma/migrations/20260322000001_add_gift_type/migration.sql",
-      "sha256": "2c8ad31160ca8c7d748404d6343e7812d51eecfbbbe06dfa8d68145ae1b16205",
+      "sha256": "46060ad818cdf962ef77df9f92b3a7e12ba2ff932ac308fbface4fe350c690a8",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -123,7 +123,7 @@
     {
       "migration": "20260322000002_add_gift_sender_id",
       "path": "prisma/migrations/20260322000002_add_gift_sender_id/migration.sql",
-      "sha256": "12e40744fbfec214c15a127edeac9b6495e9e97559d7a2251a055d9e67ffbc7d",
+      "sha256": "e5b7001724a7685b13e5b8626ce528056b6934fe8a3a53ea17dcc19f61bf8416",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -132,7 +132,7 @@
     {
       "migration": "20260322000003_add_gift_sender_phone",
       "path": "prisma/migrations/20260322000003_add_gift_sender_phone/migration.sql",
-      "sha256": "91a4ffa8797605aa32d799d8635bb08c62a99dcc6381bd3f25c375dcd0ac4155",
+      "sha256": "af16c2fa2d8c34fe0e52bfebdbf1264543fcd9a955c015d4c7d474e887c95a8b",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -141,7 +141,7 @@
     {
       "migration": "20260324000000_add_gift_order_fields",
       "path": "prisma/migrations/20260324000000_add_gift_order_fields/migration.sql",
-      "sha256": "9b39fd1fb9c1862c5f7459553bc51ecfff7ba1bb02045cdc2757466a9d2414ea",
+      "sha256": "8cf73a886ceec47e4f13ddf1fdce522ca70a29c6bb68914d31579dbd4ff2c88e",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -150,7 +150,7 @@
     {
       "migration": "20260324000001_add_admin_notifications",
       "path": "prisma/migrations/20260324000001_add_admin_notifications/migration.sql",
-      "sha256": "798b12f9c72e709bc1d048a41a34cdf49b76395a15419e3c9f72e792a1fc68e0",
+      "sha256": "02379a11ba177c7c7752804b55d9b7aacc231954e5826fe4d8375f9e34c4a65c",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -159,7 +159,7 @@
     {
       "migration": "20260404000000_add_procurement_inventory",
       "path": "prisma/migrations/20260404000000_add_procurement_inventory/migration.sql",
-      "sha256": "c9b1004d34be42ac2fa7bc90c3dc8bbf10b6ff5e695a063347efa8836430c10f",
+      "sha256": "033cce3924fb6accfdf80ad88ab43439497b6ea42b04a4e0f9a94e000a44ddb3",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -168,7 +168,7 @@
     {
       "migration": "20260409000000_add_social_message_attachments",
       "path": "prisma/migrations/20260409000000_add_social_message_attachments/migration.sql",
-      "sha256": "d54a562509814e04a2f96b84250a991ea9614bab7378421ad2b8f9b83d14ab15",
+      "sha256": "04a58967d6d572605ab57142f6d6b65dc221e3c650c30218ac179b5b996ef9d0",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -177,7 +177,7 @@
     {
       "migration": "20260411000000_add_fb_conversation_messages",
       "path": "prisma/migrations/20260411000000_add_fb_conversation_messages/migration.sql",
-      "sha256": "4d2cf06d721c0dd0dfadc38b3dbbdc5803e2103dd466c2b90006290d89b9bd02",
+      "sha256": "39d9a9d61b66852c415d0489b437ec783c14c32a18c5946e1b454880a872d718",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -186,7 +186,7 @@
     {
       "migration": "20260415043000_fb_enterprise_outbox_audit",
       "path": "prisma/migrations/20260415043000_fb_enterprise_outbox_audit/migration.sql",
-      "sha256": "69ca3db2687625f14e55cef7ec85e5b34d7c773c2e1dc9bcd01a9047700b98ea",
+      "sha256": "133d87831770b2488f6a21fc46cbe6f0d645d35a1156b0a64f4e07b0f6142f23",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -195,7 +195,7 @@
     {
       "migration": "20260415052000_fb_dead_letter_jobs",
       "path": "prisma/migrations/20260415052000_fb_dead_letter_jobs/migration.sql",
-      "sha256": "290dc49540c7fd2ef592895295f17b84228d6394b4a9d3c43610ee87daaad7f6",
+      "sha256": "7c3b7852853642f1305340d9a0b3e29364a19a8b2426fb1d53daa367806cbf90",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -204,7 +204,7 @@
     {
       "migration": "20260424000000_fb_inbox_profile_and_attachment_meta",
       "path": "prisma/migrations/20260424000000_fb_inbox_profile_and_attachment_meta/migration.sql",
-      "sha256": "8ffa208324afa7ef28e8c81008e5061ee8d69c05ad3e95ddbbb4fb911f9fcffa",
+      "sha256": "a9663fee81973040c22ff074bf9b0712bfe52fa71753c595d272af45adc21b07",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -213,7 +213,7 @@
     {
       "migration": "20260424004000_add_steadfast_webhook_events",
       "path": "prisma/migrations/20260424004000_add_steadfast_webhook_events/migration.sql",
-      "sha256": "023a1b03c8aa4a1cea701c3b58fb8acc6da0c2c76b0cf1475b5768c028a6580f",
+      "sha256": "bcf9671888d4995163dad4af0b2bc79ebf375b0e365847e004e779235324f4ba",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -222,7 +222,7 @@
     {
       "migration": "20260428163000_add_pathao_address_fields",
       "path": "prisma/migrations/20260428163000_add_pathao_address_fields/migration.sql",
-      "sha256": "b78dd2d2c78c1d6fe6e1046f6ba0d9977cf9f02f751de71d2f081b914548a361",
+      "sha256": "02360f1586ab22945cf3b7bba2960b713954cb9ad51755e8d592e86bf942fe0a",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -231,7 +231,7 @@
     {
       "migration": "20260428164000_add_pathao_status_to_order",
       "path": "prisma/migrations/20260428164000_add_pathao_status_to_order/migration.sql",
-      "sha256": "3df8f9930ab30577a2fb6f3963e26c54906bf43871731d6483259b3a5ba6a6d5",
+      "sha256": "88374687cf0bd50757bf0363a291a89a7635cdab3ebd104413ab30122a5324be",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -240,7 +240,7 @@
     {
       "migration": "20260428171000_add_pathao_webhook_and_consignment_fields",
       "path": "prisma/migrations/20260428171000_add_pathao_webhook_and_consignment_fields/migration.sql",
-      "sha256": "f2c1b7e922a7a8ea49c391b2fbfcdeda97d2c17f8d9a0cc28d0a3754e81a2942",
+      "sha256": "971d42ecb0b3391dec20c291416de777d77b22499bf13a84f8688f309fd3abee",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -249,7 +249,7 @@
     {
       "migration": "20260429101500_add_pathao_response_to_order",
       "path": "prisma/migrations/20260429101500_add_pathao_response_to_order/migration.sql",
-      "sha256": "e697d4bc09f2f0ef7e0cc9e0042e6f7c291f04d4cb7113c1766c91bf1b480c0d",
+      "sha256": "090c1a7ee77072202ce713f87967cd232091bb5954dc0bea3fbd0ec656bc1b57",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -258,7 +258,7 @@
     {
       "migration": "20260429123000_repair_pathao_shipping_objects",
       "path": "prisma/migrations/20260429123000_repair_pathao_shipping_objects/migration.sql",
-      "sha256": "5ee7678ef6f25909403e3b160989a4c34b83c7233f50e414e4a2d1ccad4134b2",
+      "sha256": "d3760618f7246d6170b75a2f92e79e1f7f7c1ab2154034c56190ad0ec341ef30",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -267,7 +267,7 @@
     {
       "migration": "20260505120000_add_product_deleted_at",
       "path": "prisma/migrations/20260505120000_add_product_deleted_at/migration.sql",
-      "sha256": "10d7da4c41a192a7e4d98bcc79ab9b1bb424730ad9ef95af4feca3e70581bd18",
+      "sha256": "8aeabd70da488b006f0ec130a22d742095203728a7110b6d65ec033f37d27c35",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -276,7 +276,7 @@
     {
       "migration": "20260528000000_add_product_faqs",
       "path": "prisma/migrations/20260528000000_add_product_faqs/migration.sql",
-      "sha256": "2a7bc836e516abf07e5b5c245d6cbf476e9227954af0db12ed2bd3c0a296aa26",
+      "sha256": "c5028052378df0de5e8261f3edf5a71d141eb5553abd3980811a4d7e3feb6f2a",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -285,7 +285,7 @@
     {
       "migration": "20260530000000_add_secondary_seo_fields",
       "path": "prisma/migrations/20260530000000_add_secondary_seo_fields/migration.sql",
-      "sha256": "e0a0ebec5b9a58147356db2ac900695896a8f3807c67340ca8ebab8316b5f89b",
+      "sha256": "57640f3f8d9d208a71a0a88c1312b37244434b8ff9b25db2d3c7a3256d8b985b",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -294,7 +294,7 @@
     {
       "migration": "20260605000000_add_purchase_shortlist",
       "path": "prisma/migrations/20260605000000_add_purchase_shortlist/migration.sql",
-      "sha256": "703ffa9868652572f72698683611382b3e50b2bec8ac77a463140590f4ac57f2",
+      "sha256": "18ba3e7a06a5be6f007f52b236c79c3a1a463f7e77645df64aa15dad3f919800",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -303,7 +303,7 @@
     {
       "migration": "20260606000000_make_orderitem_product_optional",
       "path": "prisma/migrations/20260606000000_make_orderitem_product_optional/migration.sql",
-      "sha256": "c6e681cb64a61419b116c0402ae2bf2bfa053f032c6b3d823c7ab0183cf29b4f",
+      "sha256": "e0c55d1f99b4e60d59fc2b46ececbf23a5c1ccd0f2e0850a1a225140ad386b3a",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -312,7 +312,7 @@
     {
       "migration": "20260610000000_allow_null_productId_for_custom_products",
       "path": "prisma/migrations/20260610000000_allow_null_productId_for_custom_products/migration.sql",
-      "sha256": "c7f65847530d9c21c399e156ce2de772dab8c9ae2ffdd700f4ac6e1861a8aa3c",
+      "sha256": "42bc24cd00a2efaffc6b4a6767bc4caf2094f92ab90cf60921b4ae0f946e5c06",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -321,7 +321,7 @@
     {
       "migration": "20260610000001_add_unlisted_products",
       "path": "prisma/migrations/20260610000001_add_unlisted_products/migration.sql",
-      "sha256": "f90f34b9f3d92641e7e3fd249ce8525ff50202b43a5a4c491d4061146381305b",
+      "sha256": "ee241350da9c1288ae290d2497affd654d4fdc31c1bb798044bc098e802c5f3e",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -330,7 +330,7 @@
     {
       "migration": "202606100002_add_product_semantic_seo_fields",
       "path": "prisma/migrations/202606100002_add_product_semantic_seo_fields/migration.sql",
-      "sha256": "dd2144731545cfd94c7a1a654e20e309d259cae159e3fe2d53430a24192aa9a3",
+      "sha256": "a1fd60625e361bfacea290b1e9473511d747b1d7de0c9552af28e64929c67f44",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -339,7 +339,7 @@
     {
       "migration": "202606100003_add_Product_SEO_1_22_rendering_fields",
       "path": "prisma/migrations/202606100003_add_Product_SEO_1_22_rendering_fields/migration.sql",
-      "sha256": "73cc32f2daf09d29c2ef7ab2d31da6b37829d7a2b6718e3beb69707f53c62a5c",
+      "sha256": "d58ed8729725325da480ece7573e0a5a66a0ebc147879b5268d1c519fb594193",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -348,7 +348,7 @@
     {
       "migration": "20260628000000_add_tracking_fields",
       "path": "prisma/migrations/20260628000000_add_tracking_fields/migration.sql",
-      "sha256": "627dfb10d01a4ba12d4f91459d68992f6c8f4041d44f7f34d8b58ccc77212b60",
+      "sha256": "62161da290263389b2597f1dc2b1cd8c41dcbc5ca12f20d0e47279a42a4992b2",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -357,7 +357,7 @@
     {
       "migration": "20260629000000_add_meta_purchase_processing_at",
       "path": "prisma/migrations/20260629000000_add_meta_purchase_processing_at/migration.sql",
-      "sha256": "9e7af3081548405093d3fa4d87db73f93e0e22a9700799b9dd7a8ca344c45aec",
+      "sha256": "9b864c7485a0174706251999d023018f89d47fb12660514a792f99fab9552558",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -366,7 +366,7 @@
     {
       "migration": "20260629010000_add_meta_browser_purchase_sent",
       "path": "prisma/migrations/20260629010000_add_meta_browser_purchase_sent/migration.sql",
-      "sha256": "b4aacdc382b31e8a34d5dce85fdd30a354075089e22ae6e6932c7d75137bbc43",
+      "sha256": "485f3378c81ea1c2b50a43ba73c16c0e5f2ae9e3b26c1d90a33189e1a9893cf2",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -375,7 +375,7 @@
     {
       "migration": "20260629020000_add_ga4_purchase_processing",
       "path": "prisma/migrations/20260629020000_add_ga4_purchase_processing/migration.sql",
-      "sha256": "4f119cae75a15ce846aed0bdeb09265e11528a804644596ae07180d2d49084b8",
+      "sha256": "1ef96662ef557138a7dae49f1a1e8f74e098b4f4ce7f08368dbc50882b10fae7",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -384,7 +384,7 @@
     {
       "migration": "20260629030000_rename_meta_browser_purchase_sent_to_claimed",
       "path": "prisma/migrations/20260629030000_rename_meta_browser_purchase_sent_to_claimed/migration.sql",
-      "sha256": "0125e3f01b78a09e6c8260c10ecb9fecc119f407d57ac96057362220ce49cdef",
+      "sha256": "ddb356606a2da466e52529fe4e59e342ddc8140c9747070454b5cbc18a193451",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -393,7 +393,7 @@
     {
       "migration": "20260630000000_add_product_view_dedup",
       "path": "prisma/migrations/20260630000000_add_product_view_dedup/migration.sql",
-      "sha256": "1e803301e1f1861f9712533057caba3ea9fca05c308324ba2466b461e45dd153",
+      "sha256": "d5b8ae2eb3781ad119d6efbc05cc5b89dadc86d1eb73625597323f3961dc536d",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -402,7 +402,7 @@
     {
       "migration": "20260701000000_add_order_tracking_consent",
       "path": "prisma/migrations/20260701000000_add_order_tracking_consent/migration.sql",
-      "sha256": "4237490d5d45e8d07e880adbc600f73b677d9e15776415992bf05d583e1f1a64",
+      "sha256": "434c77d24e3dbfb89a02d1f4be55e050d76ab87debaf99ee9b5125f9c49f2400",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -411,7 +411,7 @@
     {
       "migration": "20260701010000_add_telegram_action_security",
       "path": "prisma/migrations/20260701010000_add_telegram_action_security/migration.sql",
-      "sha256": "c5e7d20606f1837e25cd0bcd45302697a3ddd7d84f9997608d8e0297cf6437a8",
+      "sha256": "d159bf4ff81054f2a90a3e620805ff8a88c273d5e19815cca0b4aba85b7ca0bf",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -420,7 +420,7 @@
     {
       "migration": "20260705000000_add_delivery_offer_pricing_foundation",
       "path": "prisma/migrations/20260705000000_add_delivery_offer_pricing_foundation/migration.sql",
-      "sha256": "0b2445ab9cc8e8876d6833dfe78371d6fe04feb385d6bbf5b5139c2e514df55d",
+      "sha256": "462d29e5efa50c70096e255611725e80dd736c9aa5a24c635caa149f11e868a3",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -429,7 +429,7 @@
     {
       "migration": "20260705010000_phase13_attribution_enrichment",
       "path": "prisma/migrations/20260705010000_phase13_attribution_enrichment/migration.sql",
-      "sha256": "ad3597e4042b6c8e06f8d45bc8995c303f7cb29115524457e3fbb18f249d49e7",
+      "sha256": "e66dc588d51db204fecd842f08073ea00a95c44239400c33337f1c9e18cb23b7",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -438,7 +438,7 @@
     {
       "migration": "20260705030000_phase15_product_lifecycle_metrics",
       "path": "prisma/migrations/20260705030000_phase15_product_lifecycle_metrics/migration.sql",
-      "sha256": "db500efbf2f87f430ea708b3d52879309610a496d8a0c8e560e61eb4a0c78d15",
+      "sha256": "24e0ec1ac23065cae8cae2e200c3cf44c03edcb26d29f6c33ba2ff728b2895dc",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -447,7 +447,7 @@
     {
       "migration": "20260705040000_phase16_tracking_failure_retention",
       "path": "prisma/migrations/20260705040000_phase16_tracking_failure_retention/migration.sql",
-      "sha256": "70b00086bc0498fe4dc3c85b657fc2dd488def0a1d50461d65f32bab03e7c583",
+      "sha256": "a871f7f48427fd2fdba27d5d90efa9a56a91198e103f8637289898d39b8866a9",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -456,7 +456,7 @@
     {
       "migration": "20260707152000_phase8_shop_cro_tracking_events",
       "path": "prisma/migrations/20260707152000_phase8_shop_cro_tracking_events/migration.sql",
-      "sha256": "c272be91740b19c7bc7336c25d3b5156eacd05c9ed5f406c65f919e896828aff",
+      "sha256": "7a4d2f450b461da6550435d9ace9dbe41c0e33058b1dfc3c99a647e1bd01e019",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -465,7 +465,7 @@
     {
       "migration": "20260708000000_add_checkout_order_idempotency",
       "path": "prisma/migrations/20260708000000_add_checkout_order_idempotency/migration.sql",
-      "sha256": "bedf8487a892742ef657b089f2d8f2a39c35e735d1a14b761c9b935d3fb2a19b",
+      "sha256": "9ef0051015d66f7bf5b8c18d37b1288c7d51bd34bdd8f1e202a750f5ca677ecf",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -474,7 +474,7 @@
     {
       "migration": "20260708010000_phase7_online_payment_lifecycle_stock_reservation",
       "path": "prisma/migrations/20260708010000_phase7_online_payment_lifecycle_stock_reservation/migration.sql",
-      "sha256": "e753f471c9f3267b2a2b1749b2c45ce987b85cb24dbaca3eacec4ef6dce4c041",
+      "sha256": "1dd3870cff36c1cd2763dc7c09f92645e574bb871b0836aa50e58098dc8f3873",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -483,7 +483,7 @@
     {
       "migration": "20260709000000_phase5_product_analytics_funnel_actions",
       "path": "prisma/migrations/20260709000000_phase5_product_analytics_funnel_actions/migration.sql",
-      "sha256": "8b2bfefc94180f93b94b4d867b43dc4caaa4c051abe8bd90f96f03f5a84a16e3",
+      "sha256": "02cefafeb48bb11aa83c2f00d988e393be9f0e322af87830af8ce1e4080b4a8f",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -492,7 +492,7 @@
     {
       "migration": "20260709010000_phase31c_tiktok_attribution_capture",
       "path": "prisma/migrations/20260709010000_phase31c_tiktok_attribution_capture/migration.sql",
-      "sha256": "588f0715ffded61a5e91b978d050810a81c5b75950163137d30e60e839227f10",
+      "sha256": "67f5f5f4bd663ca6abfae894c9ea2a51f81be8cb61a2c8f877e3709410b8ff3f",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -501,7 +501,7 @@
     {
       "migration": "20260709020000_phase31e_tiktok_tracking_health_dashboard",
       "path": "prisma/migrations/20260709020000_phase31e_tiktok_tracking_health_dashboard/migration.sql",
-      "sha256": "bd46f404fa08b87d8da10689d42300ea8021d42f14e2191a82c37847bffa8237",
+      "sha256": "e03e05a465dce5b7abd8b5b327d0be431e3b632d00978aefe0e1a1adfba756b4",
       "phase": null,
       "destructive": false,
       "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
@@ -758,6 +758,105 @@
       "destructive": false,
       "rollbackStrategy": "Before Layer 3.7 retention, replay eligibility, approval and audit consumers depend on the new metadata, apply the reviewed recovery SQL; after replay evidence exists, preserve it and ship a reviewed forward-fix migration.",
       "verification": "Generate Prisma Client; apply on disposable PostgreSQL; verify deterministic retention backfill, dedupe-tombstone preservation, source eligibility, unknown-outcome blocking, MetaAdminApproval linkage, replay child trace and sensitive-data absence; recover before dependency, then reapply and run Layer 3.7 tests."
+    },
+    {
+      "migration": "20260831052000_seed_delivery_message_config",
+      "path": "prisma/migrations/20260831052000_seed_delivery_message_config/migration.sql",
+      "sha256": "89c1c1bf7eb46bb5f32872ea645d5d26fa81138719f1b95ac17c94eaa0aa2f18",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260831233228_antigravity_dev",
+      "path": "prisma/migrations/20260831233228_antigravity_dev/migration.sql",
+      "sha256": "e6da8c160030245ae1dadca4f37d1f7a515ccfef60966c1eacf62625b2ae7a53",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260912000000_add_inside_outside_delivery_charges",
+      "path": "prisma/migrations/20260912000000_add_inside_outside_delivery_charges/migration.sql",
+      "sha256": "fa86a1e8905161ef567b6997b415ff60a54387568562081c8aa6616e8b985487",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260912010000_add_loyalty_transaction_and_guards",
+      "path": "prisma/migrations/20260912010000_add_loyalty_transaction_and_guards/migration.sql",
+      "sha256": "d2003fe81168175d7aef167979beb6811c861b89496348878167233caca41daa",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260929110000_inventory_financial_intelligence_pillars",
+      "path": "prisma/migrations/20260929110000_inventory_financial_intelligence_pillars/migration.sql",
+      "sha256": "3fea121b57232083772415b3a9d0f1f7e1031a1bd36a304361107547c3a9413b",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260929140000_advanced_operational_pillars",
+      "path": "prisma/migrations/20260929140000_advanced_operational_pillars/migration.sql",
+      "sha256": "58f2ddfaae0cdf091a1bc34faa20eb7cba95344d67c9dd736c13d16eda37d1d3",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20260930110000_operational_safety_enhancements",
+      "path": "prisma/migrations/20260930110000_operational_safety_enhancements/migration.sql",
+      "sha256": "fb241e9c7a9574535a016a7bab076835831aebfed8397b5adb1a55a27803bfb4",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20261001150000_purchase_shortlist_unique_product_name",
+      "path": "prisma/migrations/20261001150000_purchase_shortlist_unique_product_name/migration.sql",
+      "sha256": "aab2510087ab0d4697c0dd35db9a16ef4fceff3b51f51db832a0fb73ced0c05c",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20261004213500_phone_first_otp_schema",
+      "path": "prisma/migrations/20261004213500_phone_first_otp_schema/migration.sql",
+      "sha256": "5d0fe9f0cfaa942e8fd203ff6d1cb414d424b013489b55b19eb8b801e4cdc83b",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20261102000000_phase1_smart_ecommerce_foundation",
+      "path": "prisma/migrations/20261102000000_phase1_smart_ecommerce_foundation/migration.sql",
+      "sha256": "39b1c41c62e7dfa543c454a72a66c9db8d57f111d6ad4b943946dfc93ae123a5",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
+    },
+    {
+      "migration": "20261102010000_phase10_smart_ecommerce_contract",
+      "path": "prisma/migrations/20261102010000_phase10_smart_ecommerce_contract/migration.sql",
+      "sha256": "bedb815cc3f258f6a3d31b105d7f3493fda17871773ea194b6cae5767c8ecdf4",
+      "phase": null,
+      "destructive": false,
+      "rollbackStrategy": "transactional rollback before production data dependency; forward-fix after deployment",
+      "verification": "prisma migrate deploy on disposable PostgreSQL, schema inspection, then application smoke tests"
     }
   ]
 }

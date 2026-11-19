@@ -32,7 +32,7 @@ function toLegacyError(error: unknown): MetaGraphConnectionError {
   const candidate = error as MetaPlatformError;
   const details = candidate?.safeDetails ?? {};
   return new MetaGraphConnectionError(safeMetaConnectionError({
-    code: candidate?.code ?? 'META_GRAPH_REQUEST_FAILED',
+    code: details.providerCode ?? candidate?.code ?? 'META_GRAPH_REQUEST_FAILED',
     message: candidate?.message ?? 'Meta Graph request failed.',
     subcode: typeof details.providerSubcode === 'string' || typeof details.providerSubcode === 'number' ? details.providerSubcode : undefined,
     traceId: typeof details.traceId === 'string' ? details.traceId : undefined,

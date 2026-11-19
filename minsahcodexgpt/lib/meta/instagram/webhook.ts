@@ -119,6 +119,7 @@ function normalizeCommentChange(input: {
 
 export function normalizeInstagramWebhookEvents(events: readonly MetaWebhookNotification[]): NormalizedInstagramEvent[] {
   const normalized: NormalizedInstagramEvent[] = [];
+  const seenKeys = new Set<string>();
   for (const event of events) {
     if (event.routingTarget !== 'INSTAGRAM') continue;
     const accountId = id(event.objectId);
@@ -131,7 +132,7 @@ export function normalizeInstagramWebhookEvents(events: readonly MetaWebhookNoti
         occurredAt: event.occurredAt,
         payloadDigest: event.payloadDigest,
       });
-      if (item) normalized.push(item);
+      if (item && !seenKeys.has(item.eventKey)) { seenKeys.add(item.eventKey); normalized.push(item); }
       continue;
     }
     if (event.eventKind === 'COMMENT') {
@@ -142,7 +143,7 @@ export function normalizeInstagramWebhookEvents(events: readonly MetaWebhookNoti
         occurredAt: event.occurredAt,
         payloadDigest: event.payloadDigest,
       });
-      if (item) normalized.push(item);
+      if (item && !seenKeys.has(item.eventKey)) { seenKeys.add(item.eventKey); normalized.push(item); }
     }
   }
   return normalized;

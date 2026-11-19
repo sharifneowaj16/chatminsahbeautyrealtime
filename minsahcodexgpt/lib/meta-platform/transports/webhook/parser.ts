@@ -98,7 +98,7 @@ export function parseMetaWebhookEnvelope(input: {
   readonly maxBytes?: number;
   readonly expectedPayloadDigest?: string;
 }): { readonly envelope: MetaWebhookEnvelope; readonly payloadDigest: string } {
-  const maxBytes = Math.min(Math.max(input.maxBytes ?? 1_048_576, 1_024), 10 * 1024 * 1024);
+  const maxBytes = Math.min(Math.max(input.maxBytes ?? 1_048_576, 1), 10 * 1024 * 1024);
   const bytes = Buffer.isBuffer(input.rawBody) ? input.rawBody : Buffer.from(input.rawBody, 'utf8');
   if (bytes.byteLength > maxBytes) invalid('META_WEBHOOK_PAYLOAD_TOO_LARGE');
   let parsed: unknown;

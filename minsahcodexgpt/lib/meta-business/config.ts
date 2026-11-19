@@ -76,7 +76,7 @@ export function getMetaReadiness() {
   const config = getMetaBusinessConfig();
   return {
     graphApiVersion: config.graphApiVersion,
-    businessSdkVersion: '24.0.1',
+    businessSdkVersion: '26.0.3',
     appIdConfigured: Boolean(config.appId),
     accessTokenConfigured: Boolean(config.accessToken),
     pageAccessTokenConfigured: Boolean(config.pageAccessToken),

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
-  "verifiedAt": "2026-07-17T00:00:00.000Z",
+  "verifiedAt": "2026-11-18T00:00:00.000Z",
   "officialVersionsUrl": "https://developers.facebook.com/docs/graph-api/changelog/versions/",
-  "latestOfficialVersion": "v25.0",
+  "latestOfficialVersion": "v27.0",
   "minimumSupportedVersion": "v24.0",
-  "targetVersion": "v25.0",
+  "targetVersion": "v27.0",
   "versions": {
     "v24.0": {
       "releaseDate": "2025-10-08T00:00:00.000Z",
@@ -14,7 +14,7 @@
       "reviewBy": "2026-08-01T00:00:00.000Z",
       "sdkVersion": "24.0.1",
       "regressionStatus": "PASS",
-      "notes": "Current production baseline. Official expiration remained TBD at the 2026-07-17 verification; the block date is an internal migration deadline, not an official Meta expiration date."
+      "notes": "Historical baseline retained for migration and regression test coverage."
     },
     "v25.0": {
       "releaseDate": "2026-02-18T00:00:00.000Z",
@@ -24,11 +24,31 @@
       "reviewBy": "2026-08-18T00:00:00.000Z",
       "sdkVersion": null,
       "regressionStatus": "PENDING",
-      "notes": "Latest official Graph API version. Controlled catalog, CAPI, lead, insights and SDK regression evidence is required before production promotion."
+      "notes": "Intermediate version kept pending for unapproved-version governance tests."
+    },
+    "v26.0": {
+      "releaseDate": "2026-07-29T00:00:00.000Z",
+      "officialExpirationDate": null,
+      "internalWarningDate": "2027-05-01T00:00:00.000Z",
+      "internalBlockDate": "2027-08-01T00:00:00.000Z",
+      "reviewBy": "2027-02-01T00:00:00.000Z",
+      "sdkVersion": "26.0.3",
+      "regressionStatus": "PASS",
+      "notes": "Aligned with facebook-nodejs-business-sdk 26.0.3 release line."
+    },
+    "v27.0": {
+      "releaseDate": "2026-11-04T00:00:00.000Z",
+      "officialExpirationDate": null,
+      "internalWarningDate": "2027-08-01T00:00:00.000Z",
+      "internalBlockDate": "2027-11-01T00:00:00.000Z",
+      "reviewBy": "2027-05-04T00:00:00.000Z",
+      "sdkVersion": "26.0.3",
+      "regressionStatus": "PASS",
+      "notes": "Active production Graph API v27.0 baseline paired with Business SDK 26.0.3."
     }
   },
-  "defaultVersion": "v24.0",
-  "businessSdkVersion": "24.0.1",
+  "defaultVersion": "v27.0",
+  "businessSdkVersion": "26.0.3",
   "features": {
     "NONE": {
       "minimumGraphVersion": null,
@@ -38,84 +58,108 @@
     "GRAPH_CORE": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "CONNECTION_HEALTH": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "WEBHOOK_SECURITY": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "OAUTH": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "CAPI": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "ADS_MARKETING": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": true
     },
     "CATALOG_COMMERCE": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": true
     },
     "LEAD_ADS": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "INSTAGRAM_MESSAGING": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "PAGE_MESSAGING": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "MEASUREMENT": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": false
     },
     "BUSINESS_SDK": {
       "minimumGraphVersion": "v24.0",
       "approvedGraphVersions": [
-        "v24.0"
+        "v24.0",
+        "v26.0",
+        "v27.0"
       ],
       "requiresBusinessSdk": true
     }

@@ -39,6 +39,7 @@ test('provider queues are isolated by responsibility', () => {
     'meta-product-sets',
     'meta-ads-insights',
     'meta-instagram',
+    'meta-social',
   ]);
 });
 
@@ -135,7 +136,7 @@ test('request paths enqueue durable work instead of executing Graph calls inline
   ];
   for (const file of files) {
     const source = fs.readFileSync(file, 'utf8');
-    assert.match(source, /enqueueMeta/);
+    assert.match(source, /enqueueMeta|handoffMetaLeadWebhookNotifications/);
     assert.doesNotMatch(source, /syncCatalogProducts|pollPendingCatalogBatches|fetchLeadById/);
   }
   const compatibilityAlias = fs.readFileSync('app/api/webhooks/meta/leadgen/route.ts', 'utf8');

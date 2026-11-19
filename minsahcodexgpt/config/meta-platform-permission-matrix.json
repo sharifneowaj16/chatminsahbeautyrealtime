@@ -245,6 +245,32 @@
       "allowedRoles": [],
       "permissionsByRole": {},
       "featureId": "NONE"
+    },
+    "lead-rollback-compatibility": {
+      "credentialMode": "OPTIONAL",
+      "allowedRoles": [
+        "PAGE"
+      ],
+      "permissionsByRole": {
+        "PAGE": [
+          "leads_retrieval",
+          "pages_manage_metadata",
+          "pages_read_engagement"
+        ]
+      },
+      "featureId": "LEAD_ADS"
+    },
+    "social-queue-jobs": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
+    },
+    "social-webhook-persistence": {
+      "credentialMode": "NONE",
+      "allowedRoles": [],
+      "permissionsByRole": {},
+      "featureId": "NONE"
     }
   }
 }

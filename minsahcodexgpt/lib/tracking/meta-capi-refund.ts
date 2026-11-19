@@ -441,7 +441,7 @@ export async function sendMetaCapiRefund(params: {
     eventTime,
   });
 
-  const customData = payload.data[0].custom_data as Record<string, unknown>;
+  const customData = (payload.data[0]?.custom_data ?? {}) as Record<string, unknown>;
   const resolvedSkus = order.items
     .map((item) => item.variant?.sku?.trim() || item.sku?.trim() || item.product?.sku?.trim())
     .filter((sku): sku is string => Boolean(sku));
@@ -467,8 +467,8 @@ export async function sendMetaCapiRefund(params: {
     num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
     has_fbp: Boolean(order.fbp),
     has_fbc: Boolean(order.fbc),
-    has_phone_hash: Boolean(payload.data[0].user_data.ph),
-    has_email_hash: Boolean(payload.data[0].user_data.em),
+    has_phone_hash: Boolean(payload.data[0]?.user_data?.ph),
+    has_email_hash: Boolean(payload.data[0]?.user_data?.em),
   });
 
   // Database Outbox Idempotency record

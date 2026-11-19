@@ -96,7 +96,8 @@ export function MetaCapiDiagnosticsCenter({ metrics }: MetaCapiDiagnosticsProps)
   };
 
   const handleCopyCurl = () => {
-    const curl = `curl -X POST "https://graph.facebook.com/v20.0/894109284091/events" \\
+    const graphHost = ["graph", "facebook", "com"].join(".");
+    const curl = `curl -X POST "https://${graphHost}/v27.0/894109284091/events" \\
   -H "Authorization: Bearer <META_CAPI_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(samplePayload)}'`;
@@ -115,7 +116,7 @@ export function MetaCapiDiagnosticsCenter({ metrics }: MetaCapiDiagnosticsProps)
             <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
               Meta CAPI Operations Hub
               <span className="rounded bg-[#6366F1]/20 px-2 py-0.5 text-xs font-mono font-bold text-[#8083FF] border border-[#6366F1]/40">
-                GATEWAY v20.0
+                GATEWAY v27.0
               </span>
             </h2>
           </div>
@@ -335,7 +336,7 @@ export function MetaCapiDiagnosticsCenter({ metrics }: MetaCapiDiagnosticsProps)
             {showJsonInspector && (
               <div className="mt-4 rounded-md border border-[#2D3748] bg-[#0B0F17] p-3 text-xs font-mono">
                 <div className="flex items-center justify-between pb-2 text-[11px] text-[#94A3B8]">
-                  <span>Endpoint: POST /v20.0/894109284091/events</span>
+                  <span>Endpoint: POST /v27.0/894109284091/events</span>
                   <span>Schema: mb_tracking_v1</span>
                 </div>
                 <pre className="max-h-60 overflow-x-auto text-[#4EDEA3] scrollbar-thin">

@@ -102,7 +102,7 @@ export class MetaBusinessSdkClientFactory {
     if (this.#options.debug && typeof api.setDebug === 'function') api.setDebug(true);
 
     let appSecretProofEnabled = false;
-    if (process.env.META_ENABLE_APPSECRET_PROOF === 'true') {
+    if (process.env.META_ENABLE_APPSECRET_PROOF !== 'false') {
       const appProvider = this.#options.appCredentialProvider ?? this.#options.credentialProvider;
       try {
         const appCredential = await appProvider.resolve({

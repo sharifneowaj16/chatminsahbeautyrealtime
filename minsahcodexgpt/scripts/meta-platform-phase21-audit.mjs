@@ -62,7 +62,7 @@ check('server entry loads Prisma repository lazily', /await import\('\.\/referen
 
 const migrationManifest = JSON.parse(read('config/meta-v6-migration-manifest.json'));
 const migrationRow = migrationManifest.migrations.find((row) => row.migration === '20260721233500_add_meta_external_reference');
-const migrationHash = createHash('sha256').update(migration).digest('hex');
+const migrationHash = createHash('sha256').update(migration.replace(/\r\n/g, '\n')).digest('hex');
 check('migration manifest includes Phase 21 migration', Boolean(migrationRow));
 check('migration manifest hash matches Phase 21 SQL', migrationRow?.sha256 === migrationHash);
 check('migration manifest records Phase 21', migrationRow?.phase === 21);

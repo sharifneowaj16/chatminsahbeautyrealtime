@@ -32,10 +32,10 @@ export function buildMetaCoreOutboxInput(input: {
   safePayload?: Record<string, unknown> | null;
   policyDecision?: TrackingDecision;
 }): CreateMetaEventOutboxInput {
-  if (input.request.data.length !== 1) {
+  const event = input.request.data[0];
+  if (input.request.data.length !== 1 || !event) {
     throw new Error('META_OUTBOX_SINGLE_EVENT_REQUIRED');
   }
-  const event = input.request.data[0];
   const payload: MetaCoreOutboxPayload = { kind: 'core_event', request: input.request };
   return {
     eventName: event.event_name,

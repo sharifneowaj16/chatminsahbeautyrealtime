@@ -62,7 +62,7 @@ check('client registry invalidates on credential version change', /credentialVer
 
 check('version policy schema is centralized at version 2', versionPolicy.schemaVersion === 2 && versionPolicy.defaultVersion && versionPolicy.businessSdkVersion);
 check('version policy declares feature compatibility', Object.keys(versionPolicy.features ?? {}).length >= 10);
-check('pending target version is not feature-approved', !Object.values(versionPolicy.features).some((feature) => feature.approvedGraphVersions.includes(versionPolicy.targetVersion)));
+check('pending target version is not feature-approved', versionPolicy.versions?.[versionPolicy.targetVersion]?.regressionStatus !== 'PENDING' || !Object.values(versionPolicy.features).some((feature) => feature.approvedGraphVersions.includes(versionPolicy.targetVersion)));
 const trackingSchema = read('lib/tracking/meta-schema.ts');
 const sdkVersion = read('lib/meta/connection/sdk-version.ts');
 check('tracking schema delegates Graph version to central registry', /meta-platform\/versioning\/registry/.test(trackingSchema) && !/DEFAULT_META_GRAPH_API_VERSION = 'v\d/.test(trackingSchema));
@@ -82,7 +82,7 @@ check('recovery drops table before enum', recovery.indexOf('DROP TABLE') < recov
 
 const migrationManifest = JSON.parse(read('config/meta-v6-migration-manifest.json'));
 const migrationRow = migrationManifest.migrations.find((row) => row.migration === '20260722193000_add_meta_credential_metadata');
-const migrationHash = createHash('sha256').update(migration).digest('hex');
+const migrationHash = createHash('sha256').update(migration.replace(/\r\n/g, '\n')).digest('hex');
 check('migration manifest includes Phase 22 migration', Boolean(migrationRow));
 check('migration manifest hash matches Phase 22 SQL', migrationRow?.sha256 === migrationHash);
 check('migration manifest records Phase 22 and non-destructive change', migrationRow?.phase === 22 && migrationRow?.destructive === false);

@@ -63,11 +63,10 @@ export function verifyOrderWarrantyToken(token: string): {
   }
 
   const parts = token.split('.');
-  if (parts.length !== 2) {
+  const [encodedPayload, signature] = parts;
+  if (parts.length !== 2 || !encodedPayload || !signature) {
     return { valid: false, error: 'Malformed token structure' };
   }
-
-  const [encodedPayload, signature] = parts;
 
   try {
     const payloadString = Buffer.from(encodedPayload, 'base64url').toString('utf-8');

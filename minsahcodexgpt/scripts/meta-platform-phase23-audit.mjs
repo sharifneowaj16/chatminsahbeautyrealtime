@@ -36,7 +36,7 @@ const expectedFiles = [
 for (const file of expectedFiles) check(`${file} exists`, exists(file));
 
 const packageJson = JSON.parse(read('package.json'));
-check('Business SDK dependency is exact', packageJson.dependencies?.['facebook-nodejs-business-sdk'] === '24.0.1');
+check('Business SDK dependency is exact', packageJson.dependencies?.['facebook-nodejs-business-sdk'] === '26.0.3');
 check('Phase 23 focused test script exists', packageJson.scripts?.['test:meta-v6-phase23'] === 'node --conditions=react-server --import tsx --test tests/meta-v6/phase23-business-sdk-transport.test.ts');
 check('Phase 23 static audit script exists', packageJson.scripts?.['qa:meta-platform-phase23'] === 'node scripts/meta-platform-phase23-audit.mjs');
 check('Phase 23 aggregate gate includes tests audit and inventory', /test:meta-v6-phase23/.test(packageJson.scripts?.['qa:meta-v6-phase23'] ?? '') && /qa:meta-platform-phase23/.test(packageJson.scripts?.['qa:meta-v6-phase23'] ?? '') && /qa:meta-platform-inventory/.test(packageJson.scripts?.['qa:meta-v6-phase23'] ?? ''));
@@ -47,7 +47,7 @@ check('runtime uses namespace import only', runtime.includes("import * as busine
 check('runtime validates required exports', /META_BUSINESS_SDK_REQUIRED_EXPORTS/.test(runtime) && /META_BUSINESS_SDK_RUNTIME_EXPORT_MISSING/.test(runtime));
 check('runtime validates SDK major/minor line', /runtimeLine\[1\].*packageLine\[1\]/s.test(runtime) && /runtimeLine\[2\].*packageLine\[2\]/s.test(runtime));
 check('runtime records package/runtime patch drift', /patchMetadataDrift/.test(runtime) && /packageVersion/.test(runtime) && /runtimeVersion/.test(runtime));
-check('official runtime patch metadata expectation is explicit', /META_BUSINESS_SDK_EXPECTED_RUNTIME_VERSION = '24\.0\.0'/.test(runtime));
+check('official runtime patch metadata expectation is explicit', /META_BUSINESS_SDK_EXPECTED_RUNTIME_VERSION = '26\.0\.3'/.test(runtime));
 check('runtime initialization is lazy and memoized', /let validatedRuntime.*null/.test(runtime) && /if \(!validatedRuntime\)/.test(runtime));
 
 const clientFactory = read(`${transportRoot}/client-factory.ts`);

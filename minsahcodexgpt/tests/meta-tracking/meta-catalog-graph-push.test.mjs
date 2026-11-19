@@ -39,13 +39,13 @@ test('Meta Catalog Graph Push: Successful POST upload trigger', async () => {
   const result = await triggerMetaCatalogFeedUpload({
     feedId: 'test_feed_123',
     accessToken: 'test_meta_token_abc',
-    graphApiVersion: 'v20.0',
+    graphApiVersion: 'v27.0',
     fetchImpl: mockFetch,
   });
 
   assert.equal(result.ok, true);
   assert.equal(result.uploadId, 'feed_upload_job_7788');
-  assert.equal(capturedUrl, 'https://graph.facebook.com/v20.0/test_feed_123/uploads');
+  assert.equal(capturedUrl, 'https://graph.facebook.com/v27.0/test_feed_123/uploads');
   assert.equal(capturedMethod, 'POST');
   assert.equal(capturedAuth, 'Bearer test_meta_token_abc');
 });

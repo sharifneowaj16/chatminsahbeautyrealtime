@@ -24,7 +24,7 @@ export function parseWeightToKg(value: unknown): number | null {
   }
 
   const match = normalized.match(/(\d+(?:\.\d+)?)/);
-  if (!match) {
+  if (!match?.[1]) {
     return null;
   }
 
@@ -228,6 +228,7 @@ export function estimateDeliveryCharge(params: {
     }
     // beyond 3kg: keep it predictable (20৳ per extra 1kg block)
     const last = slabs[slabs.length - 1];
+    if (!last) return 0;
     const extraKg = Math.max(0, weight - last.maxKg);
     const extraBlocks = Math.ceil(extraKg / 1);
     return last.charge + extraBlocks * 20;

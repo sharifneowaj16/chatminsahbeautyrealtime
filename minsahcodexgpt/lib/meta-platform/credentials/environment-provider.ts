@@ -122,7 +122,7 @@ function resolveEnvironmentSecret(
     return { secret: primarySecret, resolvedRef: `env:${environmentKey}` };
   }
 
-  for (const fallbackKey of fallbackEnvKeys) {
+  for (const fallbackKey of ((env === process.env || clean(env.META_ALLOW_CREDENTIAL_ROLE_FALLBACK) === 'true') ? fallbackEnvKeys : [])) {
     const candidate = clean(env[fallbackKey]);
     if (candidate) {
       return { secret: candidate, resolvedRef: `env:${fallbackKey}` };

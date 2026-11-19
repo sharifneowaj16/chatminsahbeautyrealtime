@@ -543,15 +543,13 @@ async function getFacebookConversationThread(
     .map((message) => mapFacebookMessageRecord(message, conversation))
     .filter((message) => !unreadOnly || (message.isIncoming && !message.isRead))
 
+  const latestConversationMessage = conversation.messages[0];
   return {
     messages,
     unreadCount: includeUnreadSummary ? (unreadCountResult?._sum.unreadCount ?? 0) : 0,
     conversation: mapFacebookConversationRecord({
       ...conversation,
-      messages:
-        conversation.messages.length > 0
-          ? [conversation.messages[0]]
-          : [],
+      messages: latestConversationMessage ? [latestConversationMessage] : [],
     }),
     pageInfo: {
       nextMessageCursor: oldestMessage
@@ -677,12 +675,12 @@ async function getFacebookConversations(
 
   const hasMoreConversations = conversations.length > conversationLimit
   const pageConversations = conversations.slice(0, conversationLimit)
+  const lastPageConversation = pageConversations[pageConversations.length - 1];
   const nextConversationCursor =
-    hasMoreConversations && pageConversations.length > 0
+    hasMoreConversations && lastPageConversation?.lastMessageAt
       ? encodeConversationCursor({
-          id: pageConversations[pageConversations.length - 1].id,
-          lastMessageAt:
-            pageConversations[pageConversations.length - 1].lastMessageAt!.toISOString(),
+          id: lastPageConversation.id,
+          lastMessageAt: lastPageConversation.lastMessageAt.toISOString(),
         })
       : null
 

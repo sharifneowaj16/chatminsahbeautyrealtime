@@ -55,7 +55,7 @@ test('unsupported webhook entries without platform IDs are ignored', () => {
 });
 
 test('https image attachment passes validation', () => {
-  assert.deepEqual(validateInstagramAttachment({ type: 'IMAGE', url: 'https://cdn.example.com/a.jpg', mimeType: 'image/jpeg', fileSize: 1_024 }), { valid: true, issues: [] });
+  assert.deepEqual(validateInstagramAttachment({ type: 'IMAGE', url: 'https://scontent.cdninstagram.com/a.jpg', mimeType: 'image/jpeg', fileSize: 1_024 }), { valid: true, issues: [] });
 });
 
 test('non-https attachment URL is blocked', () => {
@@ -63,7 +63,7 @@ test('non-https attachment URL is blocked', () => {
 });
 
 test('oversized attachment is blocked before download', () => {
-  assert.ok(validateInstagramAttachment({ type: 'VIDEO', url: 'https://cdn.example.com/a.mp4', mimeType: 'video/mp4', fileSize: INSTAGRAM_ATTACHMENT_MAX_BYTES + 1 }).issues.includes('ATTACHMENT_SIZE_BLOCKED'));
+  assert.ok(validateInstagramAttachment({ type: 'VIDEO', url: 'https://video.cdninstagram.com/a.mp4', mimeType: 'video/mp4', fileSize: INSTAGRAM_ATTACHMENT_MAX_BYTES + 1 }).issues.includes('ATTACHMENT_SIZE_BLOCKED'));
 });
 
 test('standard reply is eligible inside 24-hour window', () => {

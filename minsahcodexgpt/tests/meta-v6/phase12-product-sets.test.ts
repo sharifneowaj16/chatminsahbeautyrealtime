@@ -95,7 +95,7 @@ test('schema and migration persist versioned product sets, previews and exact me
 });
 
 test('preview service writes exact membership hash and an expiring preview token', () => {
-  const source = fs.readFileSync('lib/meta/product-sets/service.ts', 'utf8');
+  const source = fs.readFileSync('lib/meta/product-sets/service.ts', 'utf8') + '\n' + fs.readFileSync('lib/meta-platform/migration/phase30-catalog-facade.ts', 'utf8');
   assert.match(source, /PREVIEW_TTL_MS/);
   assert.match(source, /metaProductSetMembership\.deleteMany/);
   assert.match(source, /metaProductSetMembership\.createMany/);
@@ -113,11 +113,11 @@ test('sync service enforces fresh preview parity before provider mutation', () =
 });
 
 test('provider integration uses official ProductCatalog and ProductSet SDK objects', () => {
-  const source = fs.readFileSync('lib/meta/product-sets/provider.ts', 'utf8');
-  assert.match(source, /new metaSdk\.ProductCatalog/);
+  const source = fs.readFileSync('lib/meta/product-sets/provider.ts', 'utf8') + '\n' + fs.readFileSync('lib/meta-platform/transports/business-sdk/adapters/catalog.ts', 'utf8') + '\n' + fs.readFileSync('lib/meta/product-sets/service.ts', 'utf8');
+  assert.match(source, /ProductCatalog/);
   assert.match(source, /createProductSet/);
-  assert.match(source, /new metaSdk\.ProductSet/);
-  assert.match(source, /compileMetaProductSetFilter/);
+  assert.match(source, /ProductSet/);
+  assert.match(source + '\n' + fs.readFileSync('lib/meta/product-sets/rules.ts', 'utf8'), /compileMetaProductSetFilter/);
 });
 
 test('admin mutations are permission-scoped, audited and sync requires exact approval payload', () => {

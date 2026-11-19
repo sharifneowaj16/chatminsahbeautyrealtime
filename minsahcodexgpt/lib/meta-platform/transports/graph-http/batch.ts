@@ -69,7 +69,7 @@ export async function executeMetaGraphBatch(input: {
     }
     const ok = Number.isInteger(status) && status >= 200 && status < 300 && !(data && typeof data === 'object' && 'error' in data);
     return Object.freeze({
-      id: operation.id,
+      id: operation?.id ?? `op-${index}`,
       status: Number.isInteger(status) ? status : 0,
       ok,
       headers: headersFrom(raw?.headers),

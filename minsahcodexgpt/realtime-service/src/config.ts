@@ -13,7 +13,7 @@ const envSchema = z.object({
   FB_PAGE_ACCESS_TOKEN: z.string().min(10).optional(),
   FB_SYSTEM_USER_TOKEN: z.string().optional(),
   FB_PAGE_ID: z.string().min(1).optional(),
-  FB_GRAPH_API_VERSION: z.string().default('v22.0'),
+  FB_GRAPH_API_VERSION: z.string().default('v27.0'),
   REALTIME_PUBLIC_BASE_URL: z.string().default('http://localhost:3001'),
   MEDIA_STORAGE_BACKEND: z.enum(['local', 'minio']).default('local'),
   MEDIA_STORAGE_DIR: z.string().default('./data'),

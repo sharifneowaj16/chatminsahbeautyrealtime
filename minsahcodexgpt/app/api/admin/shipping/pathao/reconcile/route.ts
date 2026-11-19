@@ -134,6 +134,8 @@ export async function POST(request: NextRequest) {
         message: 'Pathao booking status safely reset to READY for new dispatch attempt',
       });
     }
+
+    return NextResponse.json({ error: 'Unsupported reconciliation decision' }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Reconciliation failed';
     return NextResponse.json({ error: message }, { status: 500 });

@@ -7,7 +7,7 @@
 - Active scan roots: `app`, `components`, `contexts`, `hooks`, `lib`, `workers`, `realtime-service/src`, `realtime-service/prisma`, `prisma`, `types`, `config`, `.github/workflows`, `.env.example`, `realtime-service/.env.example`, `package.json`, `docker-compose.realtime.yml`, `instrumentation.ts`, `proxy.ts`, `next.config.ts`.
 - Excluded support scopes: `docs/**`, `scripts/**`, `tests/**`, `historical root Markdown evidence`.
 - Candidate rule: path segment meta/facebook/instagram OR direct SDK/Graph/provider-env/webhook/domain-symbol signal.
-- Inventory entries: **623** across **26** capabilities.
+- Inventory entries: **656** across **26** capabilities.
 - New unmapped active paths fail the Phase 19 audit.
 - No provider call, secret capture, schema migration, or runtime cutover was performed to create this inventory.
 
@@ -17,10 +17,10 @@
 
 | Root | Files |
 | --- | --- |
-| lib | 427 |
-| app | 85 |
-| prisma | 45 |
-| realtime-service | 23 |
+| lib | 431 |
+| app | 92 |
+| prisma | 68 |
+| realtime-service | 22 |
 | config | 15 |
 | workers | 15 |
 | .github | 2 |
@@ -41,20 +41,23 @@
 | SOURCE | 449 |
 | ADMIN_SURFACE | 74 |
 | MIGRATION_HISTORY | 45 |
-| MACHINE_CONFIG | 22 |
+| MIGRATION_SQL | 23 |
+| MACHINE_CONFIG | 21 |
 | WORKER | 15 |
 | ROUTE | 13 |
+| API_ROUTE | 5 |
+| LIBRARY_MODULE | 4 |
+| UI_COMPONENT | 4 |
 | TYPE_CONTRACT | 2 |
-| UI_COMPONENT | 2 |
 | SCHEMA | 1 |
 
 ### By detection signal
 
 | Signal | Files |
 | --- | --- |
-| PATH_NAME | 533 |
-| PROVIDER_ENV | 405 |
-| META_DOMAIN_SYMBOL | 247 |
+| PATH_NAME | 559 |
+| PROVIDER_ENV | 411 |
+| META_DOMAIN_SYMBOL | 266 |
 | GRAPH_URL | 10 |
 | WEBHOOK_SIGNATURE | 6 |
 | BUSINESS_SDK_IMPORT | 1 |
@@ -72,6 +75,7 @@
 | app/admin/meta/instagram/page.tsx | PATH_NAME, PROVIDER_ENV | instagram-crm | 31 | MIGRATE_THEN_DISABLE_DIRECT_GRAPH_CLIENTS |
 | app/admin/meta/MetaJobsPanel.tsx | PATH_NAME, PROVIDER_ENV | admin-observability | 32 | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
 | app/admin/meta/page.tsx | PATH_NAME, PROVIDER_ENV | admin-observability | 32 | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
+| app/admin/tracking-health/MetaCapiDiagnosticsCenter.tsx | META_DOMAIN_SYMBOL, PROVIDER_ENV | admin-observability | 32 | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
 | app/api/admin/inbox/messages/route.ts | PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | app/api/admin/inbox/reply/route.ts | PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | app/api/admin/inbox/sync/dead-letter/route.ts | PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
@@ -209,6 +213,7 @@
 | lib/meta-platform/domains/capi/config.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/meta-platform/domains/capi/service.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/meta-platform/domains/capi/types.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
+| lib/meta-platform/domains/catalog/event-sync.ts | PATH_NAME, PROVIDER_ENV | catalog-commerce | 30 | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | lib/meta-platform/domains/catalog/normalization.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | catalog-commerce | 30 | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | lib/meta-platform/domains/catalog/orchestration.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | catalog-commerce | 30 | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | lib/meta-platform/domains/catalog/service.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | catalog-commerce | 30 | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
@@ -371,6 +376,7 @@
 | lib/meta/ads/safety.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | ads-marketing | 29 | MIGRATE_WITH_APPROVAL_AND_KILL_SWITCH |
 | lib/meta/audiences/mutations.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | ads-marketing | 29 | MIGRATE_WITH_APPROVAL_AND_KILL_SWITCH |
 | lib/meta/audiences/safety.ts | PATH_NAME, PROVIDER_ENV | ads-marketing | 29 | MIGRATE_WITH_APPROVAL_AND_KILL_SWITCH |
+| lib/meta/browser/client.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/meta/browser/diagnostics.ts | PATH_NAME, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/meta/capi/builder.ts | PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/meta/capi/core-outbox.ts | PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
@@ -433,12 +439,14 @@
 | lib/tracking/meta-business-sdk.ts | PATH_NAME, PROVIDER_ENV | sdk-transport | 23 | REPLACE_WITH_UNIFIED_TRANSPORT |
 | lib/tracking/meta-capi-cod-purchase.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/tracking/meta-capi-core-event.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
+| lib/tracking/meta-capi-refund.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/tracking/meta-content-id-env.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-content-id-server.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-content-id.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-external-id.ts | PATH_NAME, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-schema.ts | PATH_NAME, PROVIDER_ENV | credentials-versioning | 22 | CENTRALIZE_AND_REMOVE_CROSS_ROLE_FALLBACKS |
 | lib/tracking/pixels/AllPixels.tsx | META_DOMAIN_SYMBOL, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
+| lib/tracking/pixels/FacebookPixel.tsx | PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/privacy-catalog-qa.ts | META_DOMAIN_SYMBOL, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/production-qa.ts | META_DOMAIN_SYMBOL, PROVIDER_ENV | browser-measurement | 32 | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/workers/metaCapiWorker.ts | META_DOMAIN_SYMBOL, PROVIDER_ENV | capi-delivery | 28 | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
@@ -452,7 +460,6 @@
 | prisma/migrations/20260725123000_phase31_payload_retention_replay_metadata/migration.sql | META_DOMAIN_SYMBOL, PROVIDER_ENV | social-webhook-persistence | 31 | ADOPT_CANONICAL_RECEIPTS_THEN_RETIRE_DUPLICATE_RECEIPT_WRITES |
 | prisma/schema.prisma | META_DOMAIN_SYMBOL, PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | proxy.ts | GRAPH_URL | graph-media-boundary | 24 | MIGRATE_TO_GRAPH_AND_MEDIA_TRANSPORTS |
-| realtime-service/.env.example | PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/app.ts | PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/config.ts | PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/facebook/graph.client.ts | GRAPH_URL, PATH_NAME, PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
@@ -460,9 +467,9 @@
 | realtime-service/src/facebook/outbound-write-control.ts | PATH_NAME, PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/facebook/outgoing-retry.ts | PATH_NAME, PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/facebook/token-health.ts | GRAPH_URL, PATH_NAME | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
-| realtime-service/src/realtime/main-app-facebook-handoff.ts | PATH_NAME, WEBHOOK_SIGNATURE | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
+| realtime-service/src/realtime/main-app-facebook-handoff.ts | PATH_NAME, PROVIDER_ENV, WEBHOOK_SIGNATURE | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/realtime/pubsub.ts | PROVIDER_ENV | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
-| realtime-service/src/routes/bridge-webhook.router.ts | WEBHOOK_SIGNATURE | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
+| realtime-service/src/routes/bridge-webhook.router.ts | PROVIDER_ENV, WEBHOOK_SIGNATURE | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/routes/webhook.router.ts | WEBHOOK_SIGNATURE | social-realtime | 31 | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | workers/meta-ads-insights.worker.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | ads-marketing | 29 | MIGRATE_WITH_APPROVAL_AND_KILL_SWITCH |
 | workers/meta-batch-status.worker.ts | META_DOMAIN_SYMBOL, PATH_NAME, PROVIDER_ENV | catalog-commerce | 30 | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
@@ -493,6 +500,8 @@
 | app/admin/meta/MetaJobsPanel.tsx | ACTIVE | ADMIN_SURFACE | admin-observability | Platform Operations | INHERITED, NONE | ADMIN_UI, POSTGRESQL, BULLMQ, LOGGING, METRICS | MULTIPLE | 32 | META_PLATFORM_ADMIN_CONTROL | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
 | app/admin/meta/page.tsx | ACTIVE | ADMIN_SURFACE | admin-observability | Platform Operations | INHERITED, NONE | ADMIN_UI, POSTGRESQL, BULLMQ, LOGGING, METRICS | MULTIPLE | 32 | META_PLATFORM_ADMIN_CONTROL | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
 | app/admin/meta/ProviderHealthPanel.tsx | ACTIVE | ADMIN_SURFACE | admin-observability | Platform Operations | INHERITED, NONE | ADMIN_UI, POSTGRESQL, BULLMQ, LOGGING, METRICS | MULTIPLE | 32 | META_PLATFORM_ADMIN_CONTROL | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
+| app/admin/orders/components/meta-refund-badge/MetaRefundBadge.tsx | ACTIVE | UI_COMPONENT | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
+| app/admin/tracking-health/MetaCapiDiagnosticsCenter.tsx | ACTIVE | UI_COMPONENT | admin-observability | Platform Operations | INHERITED, NONE | ADMIN_UI, POSTGRESQL, BULLMQ, LOGGING, METRICS | MULTIPLE | 32 | META_PLATFORM_ADMIN_CONTROL | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
 | app/admin/tracking-health/page.tsx | ACTIVE | ADMIN_SURFACE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | app/api/admin/inbox/messages/route.ts | ACTIVE | ADMIN_SURFACE | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | app/api/admin/inbox/reply/route.ts | ACTIVE | ADMIN_SURFACE | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
@@ -553,19 +562,24 @@
 | app/api/admin/orders/returns/route.ts | ACTIVE | ADMIN_SURFACE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | app/api/admin/social/facebook/sync/route.ts | LEGACY_ACTIVE | ADMIN_SURFACE | legacy-facebook | Social CRM | PAGE, APP, NONE | GRAPH_HTTP, BROWSER_PIXEL, POSTGRESQL | PAGE, PIXEL | 31 | META_PLATFORM_LEGACY_FACEBOOK | DEPRECATE_AFTER_OBSERVED_CUTOVER |
 | app/api/admin/tracking-health/route.ts | ACTIVE | ADMIN_SURFACE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
+| app/api/admin/tracking/meta-refund/route.ts | ACTIVE | API_ROUTE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | app/api/admin/tracking/order/[orderId]/route.ts | ACTIVE | ADMIN_SURFACE | admin-observability | Platform Operations | INHERITED, NONE | ADMIN_UI, POSTGRESQL, BULLMQ, LOGGING, METRICS | MULTIPLE | 32 | META_PLATFORM_ADMIN_CONTROL | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
 | app/api/facebook-capi/route.ts | ACTIVE | ROUTE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | app/api/internal/meta/catalog-batch-status/route.ts | ACTIVE | ROUTE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | app/api/internal/meta/catalog-sync/route.ts | ACTIVE | ROUTE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | app/api/meta/catalog/feed/route.ts | ACTIVE | ROUTE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
+| app/api/meta/catalogs/feed/route.ts | ACTIVE | API_ROUTE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | app/api/payments/verified/route.ts | ACTIVE | ROUTE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | app/api/social/messages/route.ts | ACTIVE | ROUTE | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | app/api/telegram/order-callback/route.ts | ACTIVE | ROUTE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | app/api/tracking/meta/online-purchase/route.ts | ACTIVE | ROUTE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | app/api/webhook/facebook/route.ts | ACTIVE | ROUTE | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
+| app/api/webhook/steadfast/route.ts | ACTIVE | API_ROUTE | shared-meta-support | Growth Platform | INHERITED | INTERNAL_SERVICE | MULTIPLE | 20 | META_PLATFORM_FACADE | ADAPT_TO_METAPLATFORM_FACADE |
+| app/api/webhooks/facebook/route.ts | ACTIVE | API_ROUTE | shared-meta-support | Growth Platform | INHERITED | INTERNAL_SERVICE | MULTIPLE | 20 | META_PLATFORM_FACADE | ADAPT_TO_METAPLATFORM_FACADE |
 | app/api/webhooks/meta/instagram/route.ts | ACTIVE | ROUTE | instagram-crm | Social CRM | INSTAGRAM, PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, BULLMQ, ADMIN_UI | INSTAGRAM_ACCOUNT, PAGE | 31 | META_PLATFORM_INSTAGRAM | MIGRATE_THEN_DISABLE_DIRECT_GRAPH_CLIENTS |
 | app/api/webhooks/meta/leadgen/route.ts | ACTIVE | ROUTE | lead-ads-crm | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, POSTGRESQL, BULLMQ, ADMIN_UI | PAGE, LEAD_FORM | 31 | META_PLATFORM_LEADS | MIGRATE_WITH_RECEIPT_FIRST_CUTOVER |
 | app/api/webhooks/meta/route.ts | ACTIVE | ROUTE | meta-webhooks | Platform Security | APP | WEBHOOK | APP, PAGE, INSTAGRAM_ACCOUNT | 24 | META_PLATFORM_WEBHOOK_TRANSPORT | MIGRATE_TO_WEBHOOK_TRANSPORT |
+| app/api/webhooks/pathao/route.ts | ACTIVE | API_ROUTE | shared-meta-support | Growth Platform | INHERITED | INTERNAL_SERVICE | MULTIPLE | 20 | META_PLATFORM_FACADE | ADAPT_TO_METAPLATFORM_FACADE |
 | app/checkout/payment-complete/page.tsx | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | app/components/admin/SocialMediaInboxChat.tsx | ACTIVE | ADMIN_SURFACE | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | app/data-deletion/route.ts | ACTIVE | ROUTE | privacy-governance | Privacy and Security | APP, NONE | WEBHOOK, POSTGRESQL, ADMIN_UI | APP, CUSTOMER_DATA | 32 | META_PLATFORM_PRIVACY | RETAIN_AND_EXTEND_TO_PLATFORM_DATA |
@@ -675,6 +689,8 @@
 | lib/meta-platform/domains/capi/index.ts | ACTIVE | SOURCE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/meta-platform/domains/capi/service.ts | ACTIVE | SOURCE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/meta-platform/domains/capi/types.ts | ACTIVE | SOURCE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
+| lib/meta-platform/domains/catalog/event-sync.ts | ACTIVE | LIBRARY_MODULE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
+| lib/meta-platform/domains/catalog/hide-governance.ts | ACTIVE | LIBRARY_MODULE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | lib/meta-platform/domains/catalog/normalization.ts | ACTIVE | SOURCE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | lib/meta-platform/domains/catalog/orchestration.ts | ACTIVE | SOURCE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | lib/meta-platform/domains/catalog/service.ts | ACTIVE | SOURCE | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
@@ -1005,12 +1021,14 @@
 | lib/tracking/meta-business-sdk.ts | ACTIVE | SOURCE | sdk-transport | Growth Platform | BUSINESS_SYSTEM_USER, CAPI, PAGE, INSTAGRAM | BUSINESS_SDK | BUSINESS, AD_ACCOUNT, CATALOG, PIXEL, PAGE, INSTAGRAM_ACCOUNT | 23 | META_PLATFORM_SDK_TRANSPORT | REPLACE_WITH_UNIFIED_TRANSPORT |
 | lib/tracking/meta-capi-cod-purchase.ts | ACTIVE | SOURCE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/tracking/meta-capi-core-event.ts | ACTIVE | SOURCE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
+| lib/tracking/meta-capi-refund.ts | ACTIVE | LIBRARY_MODULE | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | lib/tracking/meta-content-id-env.ts | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-content-id-server.ts | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-content-id.ts | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-external-id.ts | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/meta-schema.ts | ACTIVE | SOURCE | credentials-versioning | Platform Security | APP, BUSINESS_SYSTEM_USER, CAPI, PAGE, INSTAGRAM | INTERNAL_CONFIG | APP, BUSINESS, AD_ACCOUNT, CATALOG, PIXEL, DATASET, PAGE, INSTAGRAM_ACCOUNT | 22 | META_PLATFORM_CREDENTIALS | CENTRALIZE_AND_REMOVE_CROSS_ROLE_FALLBACKS |
 | lib/tracking/pixels/AllPixels.tsx | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
+| lib/tracking/pixels/FacebookPixel.tsx | ACTIVE | LIBRARY_MODULE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/privacy-catalog-qa.ts | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/production-qa.ts | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
 | lib/tracking/shop-cro-events.ts | ACTIVE | SOURCE | browser-measurement | Growth Analytics | NONE | BROWSER_PIXEL, POSTGRESQL, CLIENT_UI | PIXEL, CATALOG | 32 | META_PLATFORM_BROWSER_MEASUREMENT | ADAPT_TO_CANONICAL_MEASUREMENT_CONTRACT |
@@ -1019,26 +1037,47 @@
 | next.config.ts | SUPPORT_ACTIVE | MACHINE_CONFIG | graph-media-boundary | Growth Platform | BUSINESS_SYSTEM_USER, PAGE, INSTAGRAM | GRAPH_HTTP, MEDIA | CATALOG, PAGE, INSTAGRAM_ACCOUNT | 24 | META_PLATFORM_GRAPH_TRANSPORT | MIGRATE_TO_GRAPH_AND_MEDIA_TRANSPORTS |
 | package.json | SUPPORT_ACTIVE | MACHINE_CONFIG | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260424000000_fb_inbox_profile_and_attachment_meta/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
+| prisma/migrations/20260424000000_fb_inbox_profile_and_attachment_meta/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260628000000_add_tracking_fields/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | measurement-attribution | Growth Analytics | BUSINESS_SYSTEM_USER, CAPI, NONE | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, ADMIN_UI | PIXEL, DATASET, AD_ACCOUNT | 32 | META_PLATFORM_MEASUREMENT | MIGRATE_TO_GOVERNED_MEASUREMENT_DOMAIN |
+| prisma/migrations/20260628000000_add_tracking_fields/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260629000000_add_meta_purchase_processing_at/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-data-model | Data Platform | INHERITED | PRISMA_SCHEMA, POSTGRESQL | MULTIPLE | 21 | META_PLATFORM_DATA_MODEL | MAP_TO_CANONICAL_MODELS_AND_FORWARD_MIGRATIONS |
+| prisma/migrations/20260629000000_add_meta_purchase_processing_at/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260629010000_add_meta_browser_purchase_sent/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-data-model | Data Platform | INHERITED | PRISMA_SCHEMA, POSTGRESQL | MULTIPLE | 21 | META_PLATFORM_DATA_MODEL | MAP_TO_CANONICAL_MODELS_AND_FORWARD_MIGRATIONS |
+| prisma/migrations/20260629010000_add_meta_browser_purchase_sent/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260629030000_rename_meta_browser_purchase_sent_to_claimed/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-data-model | Data Platform | INHERITED | PRISMA_SCHEMA, POSTGRESQL | MULTIPLE | 21 | META_PLATFORM_DATA_MODEL | MAP_TO_CANONICAL_MODELS_AND_FORWARD_MIGRATIONS |
+| prisma/migrations/20260629030000_rename_meta_browser_purchase_sent_to_claimed/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260705040000_phase16_tracking_failure_retention/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | measurement-attribution | Growth Analytics | BUSINESS_SYSTEM_USER, CAPI, NONE | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, ADMIN_UI | PIXEL, DATASET, AD_ACCOUNT | 32 | META_PLATFORM_MEASUREMENT | MIGRATE_TO_GOVERNED_MEASUREMENT_DOMAIN |
+| prisma/migrations/20260705040000_phase16_tracking_failure_retention/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260716000100_add_meta_business_platform/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-data-model | Data Platform | INHERITED | PRISMA_SCHEMA, POSTGRESQL | MULTIPLE | 21 | META_PLATFORM_DATA_MODEL | MAP_TO_CANONICAL_MODELS_AND_FORWARD_MIGRATIONS |
+| prisma/migrations/20260716000100_add_meta_business_platform/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260716000200_add_meta_business_sync_lock/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-data-model | Data Platform | INHERITED | PRISMA_SCHEMA, POSTGRESQL | MULTIPLE | 21 | META_PLATFORM_DATA_MODEL | MAP_TO_CANONICAL_MODELS_AND_FORWARD_MIGRATIONS |
+| prisma/migrations/20260716000200_add_meta_business_sync_lock/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260716000300_add_meta_catalog_batch_status/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
+| prisma/migrations/20260716000300_add_meta_catalog_batch_status/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | prisma/migrations/20260717010000_meta_v6_phase2_catalog_domain/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
+| prisma/migrations/20260717010000_meta_v6_phase2_catalog_domain/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
 | prisma/migrations/20260717020000_meta_v6_phase4_capi_outbox/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-operations | Platform Reliability | INHERITED | POSTGRESQL, BULLMQ, REDIS | MULTIPLE | 25 | META_PLATFORM_OPERATIONS_LEDGER | RETAIN_AND_ADAPT_TO_OPERATION_LEDGER |
+| prisma/migrations/20260717020000_meta_v6_phase4_capi_outbox/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | capi-delivery | Commerce Tracking | CAPI | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ | PIXEL, DATASET | 28 | META_PLATFORM_CAPI_WRITES | MIGRATE_THEN_DISABLE_LEGACY_PRODUCER |
 | prisma/migrations/20260717030000_meta_v6_phase5_durable_jobs/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-operations | Platform Reliability | INHERITED | POSTGRESQL, BULLMQ, REDIS | MULTIPLE | 25 | META_PLATFORM_OPERATIONS_LEDGER | RETAIN_AND_ADAPT_TO_OPERATION_LEDGER |
+| prisma/migrations/20260717030000_meta_v6_phase5_durable_jobs/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260717040000_meta_v6_phase6_privacy_governance/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | privacy-governance | Privacy and Security | APP, NONE | WEBHOOK, POSTGRESQL, ADMIN_UI | APP, CUSTOMER_DATA | 32 | META_PLATFORM_PRIVACY | RETAIN_AND_EXTEND_TO_PLATFORM_DATA |
+| prisma/migrations/20260717040000_meta_v6_phase6_privacy_governance/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260717050000_meta_v6_phase7_connection_health/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | connection-health | Growth Platform | APP, BUSINESS_SYSTEM_USER | GRAPH_HTTP, BUSINESS_SDK, POSTGRESQL, BULLMQ | APP, BUSINESS, AD_ACCOUNT, CATALOG, PIXEL, PAGE, INSTAGRAM_ACCOUNT | 28 | META_PLATFORM_CONNECTION_READS | MIGRATE_THEN_DISABLE_LEGACY_PATH |
+| prisma/migrations/20260717050000_meta_v6_phase7_connection_health/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260717060000_meta_v6_phase8_lead_crm/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | lead-ads-crm | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, POSTGRESQL, BULLMQ, ADMIN_UI | PAGE, LEAD_FORM | 31 | META_PLATFORM_LEADS | MIGRATE_WITH_RECEIPT_FIRST_CUTOVER |
+| prisma/migrations/20260717060000_meta_v6_phase8_lead_crm/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260718010000_meta_v6_phase9_admin_operations/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | admin-observability | Platform Operations | INHERITED, NONE | ADMIN_UI, POSTGRESQL, BULLMQ, LOGGING, METRICS | MULTIPLE | 32 | META_PLATFORM_ADMIN_CONTROL | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
+| prisma/migrations/20260718010000_meta_v6_phase9_admin_operations/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260718020000_meta_v6_phase10_observability/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | admin-observability | Platform Operations | INHERITED, NONE | ADMIN_UI, POSTGRESQL, BULLMQ, LOGGING, METRICS | MULTIPLE | 32 | META_PLATFORM_ADMIN_CONTROL | MIGRATE_TO_UNIFIED_CONTROL_PLANE |
+| prisma/migrations/20260718020000_meta_v6_phase10_observability/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260718030000_meta_v6_phase11_attribution/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | measurement-attribution | Growth Analytics | BUSINESS_SYSTEM_USER, CAPI, NONE | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, ADMIN_UI | PIXEL, DATASET, AD_ACCOUNT | 32 | META_PLATFORM_MEASUREMENT | MIGRATE_TO_GOVERNED_MEASUREMENT_DOMAIN |
+| prisma/migrations/20260718030000_meta_v6_phase11_attribution/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260718040000_meta_v6_phase12_product_sets/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | catalog-commerce | Catalog Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, HTTP_FEED, ADMIN_UI | CATALOG, PRODUCT_ITEM, PRODUCT_SET | 30 | META_PLATFORM_CATALOG_WRITES | MIGRATE_THEN_DISABLE_LEGACY_CATALOG_WRITES |
+| prisma/migrations/20260718040000_meta_v6_phase12_product_sets/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260718050000_meta_v6_phase13_ads_automation/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | ads-marketing | Marketing Operations | BUSINESS_SYSTEM_USER | BUSINESS_SDK, GRAPH_HTTP, POSTGRESQL, BULLMQ, ADMIN_UI | BUSINESS, AD_ACCOUNT, AUDIENCE | 29 | META_PLATFORM_ADS_WRITES | MIGRATE_WITH_APPROVAL_AND_KILL_SWITCH |
+| prisma/migrations/20260718050000_meta_v6_phase13_ads_automation/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260718060000_meta_v6_phase14_instagram_social_crm/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | instagram-crm | Social CRM | INSTAGRAM, PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, BULLMQ, ADMIN_UI | INSTAGRAM_ACCOUNT, PAGE | 31 | META_PLATFORM_INSTAGRAM | MIGRATE_THEN_DISABLE_DIRECT_GRAPH_CLIENTS |
+| prisma/migrations/20260718060000_meta_v6_phase14_instagram_social_crm/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/migrations/20260721233500_add_meta_external_reference/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | meta-data-model | Data Platform | INHERITED | PRISMA_SCHEMA, POSTGRESQL | MULTIPLE | 21 | META_PLATFORM_DATA_MODEL | MAP_TO_CANONICAL_MODELS_AND_FORWARD_MIGRATIONS |
 | prisma/migrations/20260721233500_add_meta_external_reference/recovery.sql | SUPPORT_ACTIVE | MIGRATION_HISTORY | meta-data-model | Data Platform | INHERITED | PRISMA_SCHEMA, POSTGRESQL | MULTIPLE | 21 | META_PLATFORM_DATA_MODEL | MAP_TO_CANONICAL_MODELS_AND_FORWARD_MIGRATIONS |
 | prisma/migrations/20260722193000_add_meta_credential_metadata/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | credentials-versioning | Platform Security | APP, BUSINESS_SYSTEM_USER, CAPI, PAGE, INSTAGRAM | INTERNAL_CONFIG | APP, BUSINESS, AD_ACCOUNT, CATALOG, PIXEL, DATASET, PAGE, INSTAGRAM_ACCOUNT | 22 | META_PLATFORM_CREDENTIALS | CENTRALIZE_AND_REMOVE_CROSS_ROLE_FALLBACKS |
@@ -1062,9 +1101,10 @@
 | prisma/migrations/20260725093000_phase31_instagram_message_persistence/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | instagram-crm | Social CRM | INSTAGRAM, PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, BULLMQ, ADMIN_UI | INSTAGRAM_ACCOUNT, PAGE | 31 | META_PLATFORM_INSTAGRAM | MIGRATE_THEN_DISABLE_DIRECT_GRAPH_CLIENTS |
 | prisma/migrations/20260725093000_phase31_instagram_message_persistence/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | instagram-crm | Social CRM | INSTAGRAM, PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, BULLMQ, ADMIN_UI | INSTAGRAM_ACCOUNT, PAGE | 31 | META_PLATFORM_INSTAGRAM | MIGRATE_THEN_DISABLE_DIRECT_GRAPH_CLIENTS |
 | prisma/migrations/20260725123000_phase31_payload_retention_replay_metadata/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | social-webhook-persistence | Social CRM | APP, PAGE, INSTAGRAM | WEBHOOK, POSTGRESQL | APP, PAGE, INSTAGRAM_ACCOUNT, LEAD_FORM | 31 | META_PLATFORM_SOCIAL_WEBHOOKS | ADOPT_CANONICAL_RECEIPTS_THEN_RETIRE_DUPLICATE_RECEIPT_WRITES |
+| prisma/migrations/20260831233228_antigravity_dev/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
+| prisma/migrations/20260831233228_antigravity_dev/recovery.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_SQL | release-governance | Release Engineering | NONE | CONFIG, CI | MULTIPLE | 33 | NONE_REQUIRED | RETAIN_AND_UPDATE_FOR_UNIFIED_PLATFORM |
 | prisma/schema.prisma | ACTIVE | SCHEMA | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | proxy.ts | SUPPORT_ACTIVE | SOURCE | graph-media-boundary | Growth Platform | BUSINESS_SYSTEM_USER, PAGE, INSTAGRAM | GRAPH_HTTP, MEDIA | CATALOG, PAGE, INSTAGRAM_ACCOUNT | 24 | META_PLATFORM_GRAPH_TRANSPORT | MIGRATE_TO_GRAPH_AND_MEDIA_TRANSPORTS |
-| realtime-service/.env.example | ACTIVE | MACHINE_CONFIG | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/prisma/migrations/20260424000000_fb_inbox_profile_and_attachment_meta/migration.sql | HISTORICAL_ACTIVE_SCHEMA | MIGRATION_HISTORY | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/app.ts | ACTIVE | SOURCE | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |
 | realtime-service/src/config.ts | ACTIVE | SOURCE | social-realtime | Social CRM | PAGE, APP | GRAPH_HTTP, WEBHOOK, MEDIA, POSTGRESQL, REDIS, WEBSOCKET | PAGE | 31 | META_PLATFORM_SOCIAL_REALTIME | MIGRATE_OR_BRIDGE_THEN_REMOVE_PARALLEL_CLIENT |

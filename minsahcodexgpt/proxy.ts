@@ -263,7 +263,10 @@ function handleCors(request: NextRequest, response: NextResponse): NextResponse 
     response.headers.set('Access-Control-Allow-Origin', origin);
   } else if (!origin) {
     // Same-origin request or server-to-server
-    response.headers.set('Access-Control-Allow-Origin', allowedOrigins[0]);
+    const defaultOrigin = allowedOrigins[0];
+    if (defaultOrigin) {
+      response.headers.set('Access-Control-Allow-Origin', defaultOrigin);
+    }
   }
 
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');

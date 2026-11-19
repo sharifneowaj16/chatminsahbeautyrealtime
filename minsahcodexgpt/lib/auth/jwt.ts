@@ -249,9 +249,10 @@ export async function generateAdminTokenPair(payload: {
 export function decodeToken(token: string): JWTPayload | null {
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) return null;
+    const payloadPart = parts[1];
+    if (parts.length !== 3 || !payloadPart) return null;
 
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    const payload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString());
     return payload;
   } catch {
     return null;

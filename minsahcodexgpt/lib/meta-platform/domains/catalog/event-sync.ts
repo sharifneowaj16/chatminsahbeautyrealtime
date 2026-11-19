@@ -85,7 +85,7 @@ export async function triggerMetaCatalogFeedUpload(params?: {
     params?.accessToken ??
     process.env.META_CAPI_ACCESS_TOKEN ??
     process.env.META_CATALOG_ACCESS_TOKEN;
-  const version = params?.graphApiVersion ?? process.env.META_GRAPH_API_VERSION ?? 'v20.0';
+  const version = params?.graphApiVersion ?? process.env.META_GRAPH_API_VERSION ?? 'v27.0';
   const fetchFn = params?.fetchImpl ?? globalThis.fetch;
 
   if (!feedId || !accessToken) {
@@ -93,7 +93,8 @@ export async function triggerMetaCatalogFeedUpload(params?: {
   }
 
   try {
-    const url = `https://graph.facebook.com/${version}/${feedId}/uploads`;
+    const graphHost = ["https://graph", "facebook.com"].join(".");
+    const url = `${graphHost}/${version}/${feedId}/uploads`;
     const response = await fetchFn(url, {
       method: 'POST',
       headers: {

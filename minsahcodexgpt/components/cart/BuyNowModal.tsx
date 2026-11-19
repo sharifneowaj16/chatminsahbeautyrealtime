@@ -538,7 +538,7 @@ export default function BuyNowModal({
       return resolvedVariants
         .filter((variant) => (selectedQuantities[variant.id] ?? 0) > 0)
         .map((variant) => {
-          const quantity = selectedQuantities[variant.id];
+          const quantity = selectedQuantities[variant.id] ?? 0;
           const unitWeightKg = variant.weight ?? resolvedBaseWeightKg ?? 0.1;
           return {
             key: variant.id,

@@ -14,7 +14,7 @@ function getTodayDhakaDateString(): string {
   // Dhaka is UTC+6
   const utc = d.getTime() + d.getTimezoneOffset() * 60000;
   const dhakaTime = new Date(utc + 3600000 * 6);
-  return dhakaTime.toISOString().split('T')[0];
+  return dhakaTime.toISOString().slice(0, 10);
 }
 
 // GET: Live cash calculation & current register status for a given date

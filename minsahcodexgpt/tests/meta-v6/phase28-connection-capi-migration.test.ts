@@ -68,7 +68,7 @@ test('connection health resolves exact credential roles, verifies permissions/as
     config: {
       connectionName: 'primary', appId: 'app-1', businessId: 'business-1', catalogId: undefined,
       datasetId: 'pixel-1', pixelId: 'pixel-1', adAccountId: 'act_123', pageId: 'page-1', instagramAccountId: undefined,
-      graphApiVersion: 'v24.0', requiredPermissions,
+      graphApiVersion: 'v27.0', requiredPermissions,
     },
   });
   assert.ok(['HEALTHY', 'VERSION_WARNING'].includes(result.status));
@@ -77,7 +77,7 @@ test('connection health resolves exact credential roles, verifies permissions/as
   assert.equal(result.assets.business.ok, true);
   assert.equal(result.assets.adAccount.ok, true);
   assert.equal(result.platform.transport, 'GRAPH_HTTP');
-  assert.ok(calls.includes('/v24.0/debug_token'));
+  assert.ok(calls.includes('/v27.0/debug_token'));
   assert.equal(JSON.stringify(result).includes(businessToken), false);
   assert.equal(JSON.stringify(result).includes(appSecret), false);
 });
@@ -136,8 +136,8 @@ test('unified CAPI adapter uses worker credential, configured Graph version, tes
   const client = {
     runtime,
     api: {},
-    sdkVersion: '24.0.1',
-    graphApiVersion: 'v24.0',
+    sdkVersion: '26.0.3',
+    graphApiVersion: 'v27.0',
     appSecretProofEnabled: true,
     credential: {
       metadata: {
@@ -171,10 +171,10 @@ test('unified CAPI adapter uses worker credential, configured Graph version, tes
   });
   assert.equal(result.ok, true);
   assert.equal(result.transport, 'META_PLATFORM_BUSINESS_SDK');
-  assert.equal(result.graphApiVersion, 'v24.0');
-  assert.equal(result.sdkVersion, '24.0.1');
+  assert.equal(result.graphApiVersion, 'v27.0');
+  assert.equal(result.sdkVersion, '26.0.3');
   assert.equal(result.credentialVersion, 'credential-v2');
-  assert.match(requestedUrl, /\/v24\.0\/pixel-1\/events/);
+  assert.match(requestedUrl, /\/v27\.0\/pixel-1\/events/);
   assert.equal(FakeEventRequest.lastAccessToken, accessToken);
   assert.equal(FakeEventRequest.lastPartnerAgent, 'minsahbeauty-meta-platform');
   assert.equal(FakeEventRequest.lastTestCode, 'TEST123');

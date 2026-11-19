@@ -2,7 +2,7 @@
  * lib/redis.ts
  *
  * Exports:
- *   redis               — singleton publisher/general-purpose client
+ *   redis                   — singleton publisher/general-purpose client
  *   createRedisSubscriber() — factory; call once per SSE connection,
  *                             disconnect when done (never share across requests)
  *
@@ -14,18 +14,20 @@ function buildRedisOptions(): {
   lazyConnect: boolean;
   maxRetriesPerRequest: null;
   enableReadyCheck: boolean;
+  keepAlive: number;
   retryStrategy: (times: number) => number;
 } {
   return {
-    lazyConnect: false,
+    lazyConnect: true,
     maxRetriesPerRequest: null,
     enableReadyCheck: true,
+    keepAlive: 10_000,
     retryStrategy: (times: number) => Math.min(times * 200, 5000),
   };
 }
 
 function getRedisUrl(): string {
-  const url = process.env.REDIS_URL;
+  const url = process.env.REDIS_URL?.trim();
   if (!url) throw new Error('[redis] REDIS_URL environment variable is not set');
   return url;
 }
@@ -46,7 +48,9 @@ function getPublisher(): Redis {
 
 export const redis: Redis = new Proxy({} as Redis, {
   get(_target, prop) {
-    return (getPublisher() as unknown as Record<string, unknown>)[prop as string];
+    const client = getPublisher();
+    const value = (client as unknown as Record<PropertyKey, unknown>)[prop];
+    return typeof value === 'function' ? value.bind(client) : value;
   },
 });
 

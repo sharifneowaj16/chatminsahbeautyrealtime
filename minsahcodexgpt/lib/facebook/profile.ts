@@ -1,6 +1,6 @@
 import { buildLegacyMetaGraphRedirectUrl, createLegacyMetaGraphClient } from '@/lib/meta-platform/transports/graph-http';
 
-const FACEBOOK_GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || 'v21.0';
+const FACEBOOK_GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || process.env.META_GRAPH_API_VERSION || 'v27.0';
 
 export interface FacebookProfile {
   id: string;

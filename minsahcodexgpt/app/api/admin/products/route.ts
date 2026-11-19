@@ -68,11 +68,12 @@ function optionalString(value: unknown): string | undefined {
 }
 
 function toSlug(value: string): string {
-  const cleaned = value
-    .replace(/^https?:\/\/[^/]+\/products\//i, '')
-    .replace(/^\/?products\//i, '')
-    .split('?')[0]
-    .split('#')[0];
+  const cleaned = (
+    value
+      .replace(/^https?:\/\/[^/]+\/products\//i, '')
+      .replace(/^\/?products\//i, '')
+      .split('?')[0] ?? ''
+  ).split('#')[0] ?? '';
 
   const slug = cleaned
     .toLowerCase()

@@ -35,6 +35,6 @@ export function toLegacyNormalizedMetaLead(
     ...(record.safeContact.emailMasked ? { emailMasked: record.safeContact.emailMasked } : {}),
     ...record.location,
     ...(record.productInterest ? { productInterest: record.productInterest } : {}),
-    customFields: {},
+    customFields: Object.fromEntries(record.customFields.map((cf) => [cf.name, [...(record.sensitiveProviderFields.find((f) => f.name === cf.name)?.values ?? [])]])),
   };
 }

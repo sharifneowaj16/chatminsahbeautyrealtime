@@ -157,7 +157,9 @@ export class PrismaMetaWorkflowStore implements MetaWorkflowStore {
         );
       }
       const rows = await tx.$queryRawUnsafe<Record<string, unknown>[]>(`SELECT * FROM "MetaWorkflowStep" WHERE "workflowId" = $1 ORDER BY "ordinal" ASC`, id);
-      return { created: true, workflow: workflow(inserted[0]), steps: Object.freeze(rows.map(step)) };
+      const insertedRow = inserted[0];
+      if (!insertedRow) throw new Error('META_WORKFLOW_INSERT_FAILED');
+      return { created: true, workflow: workflow(insertedRow), steps: Object.freeze(rows.map(step)) };
     });
   }
 

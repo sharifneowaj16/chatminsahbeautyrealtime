@@ -30,7 +30,7 @@ for (const row of manifest.migrations) {
   const exists = fs.existsSync(full);
   add(`${row.migration} file exists`, exists);
   if (!exists) continue;
-  const source = fs.readFileSync(full);
+  const source = fs.readFileSync(full, 'utf8').replace(/\r\n/g, '\n');
   const digest = createHash('sha256').update(source).digest('hex');
   add(`${row.migration} hash matches`, digest === row.sha256);
   add(`${row.migration} rollback/forward-fix note exists`, typeof row.rollbackStrategy === 'string' && row.rollbackStrategy.length >= 20);

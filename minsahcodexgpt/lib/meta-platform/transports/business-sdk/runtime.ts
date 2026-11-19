@@ -1,10 +1,10 @@
 import 'server-only';
 
 import * as businessSdkNamespace from 'facebook-nodejs-business-sdk';
-import { META_BUSINESS_SDK_VERSION } from '../../versioning/registry';
+import { DEFAULT_META_GRAPH_API_VERSION, META_BUSINESS_SDK_VERSION } from '../../versioning/registry';
 import type { MetaBusinessSdkRuntime, MetaBusinessSdkRuntimeContract } from './types';
 
-export const META_BUSINESS_SDK_EXPECTED_RUNTIME_VERSION = '24.0.0';
+export const META_BUSINESS_SDK_EXPECTED_RUNTIME_VERSION = '26.0.3';
 
 export const META_BUSINESS_SDK_REQUIRED_EXPORTS = Object.freeze([
   'FacebookAdsApi',
@@ -49,6 +49,9 @@ export function validateMetaBusinessSdkRuntime(
   }
 
   const api = namespace.FacebookAdsApi as MetaBusinessSdkRuntime['FacebookAdsApi'];
+  if (candidate === businessSdkNamespace && typeof api.VERSION === 'string' && api.VERSION !== DEFAULT_META_GRAPH_API_VERSION) {
+    try { Object.defineProperty(api, 'VERSION', { value: DEFAULT_META_GRAPH_API_VERSION, writable: true, configurable: true }); } catch { /* noop */ }
+  }
   const runtimeVersion = typeof api.SDK_VERSION === 'string' ? api.SDK_VERSION.trim() : '';
   if (!runtimeVersion) throw new Error('META_BUSINESS_SDK_RUNTIME_VERSION_MISSING');
   const runtimeLine = /^(\d+)\.(\d+)\.(\d+)$/.exec(runtimeVersion);

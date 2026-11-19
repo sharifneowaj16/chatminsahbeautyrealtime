@@ -17,7 +17,7 @@ function fakeRuntime(version = META_BUSINESS_SDK_VERSION) {
   class FakeConstructor {}
   class FakeApi {
     static SDK_VERSION = version;
-    static VERSION = 'v24.0';
+    static VERSION = 'v27.0';
     static GRAPH = 'https://graph.facebook.com';
   }
   return {
@@ -66,7 +66,7 @@ test('installed SDK namespace satisfies the Phase 23 runtime contract', () => {
   const contract = getMetaBusinessSdkRuntimeContract();
   assert.equal(contract.packageVersion, META_BUSINESS_SDK_VERSION);
   assert.equal(contract.runtimeVersion, META_BUSINESS_SDK_EXPECTED_RUNTIME_VERSION);
-  assert.equal(contract.graphVersion, 'v24.0');
+  assert.equal(contract.graphVersion, 'v27.0');
   assert.equal(contract.requiredExports.every((name) => contract.availableExports.includes(name)), true);
 });
 

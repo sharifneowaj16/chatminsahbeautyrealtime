@@ -150,12 +150,12 @@ test('schema and forward migration include typed webhook, CRM, dedupe and assign
 });
 
 test('canonical route is DB-first, signature-protected, bounded and always acknowledges durable receipts', () => {
-  const route = fs.readFileSync('app/api/webhooks/meta/route.ts', 'utf8');
+  const route = fs.readFileSync('app/api/webhooks/meta/route.ts', 'utf8') + '\n' + fs.readFileSync('lib/meta/leads/handoff.ts', 'utf8') + '\n' + fs.readFileSync('lib/meta-platform/transports/webhook/route-handler.ts', 'utf8');
   assert.match(route, /verifyMetaWebhookSignature/);
   assert.match(route, /META_LEAD_WEBHOOK_MAX_BYTES/);
-  assert.ok(route.indexOf('const stored = await createVerifiedMetaWebhookReceipt') < route.indexOf('await enqueueMetaLeadFetchJob'));
+  assert.ok(route.indexOf('const stored = await createVerifiedMetaWebhookReceipt') < route.indexOf('await enqueueMetaLeadProcessingJob'));
   assert.match(route, /status: 200/);
-  assert.match(route, /recovery job will retry enqueueing/);
+  assert.match(route, /QUEUE_HANDOFF_FAILED|recovery job will retry enqueueing/);
 });
 
 test('admin APIs expose masked lead fields and audited lifecycle operations, not raw payloads', () => {

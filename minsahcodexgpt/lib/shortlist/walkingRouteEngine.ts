@@ -80,6 +80,8 @@ export function buildWalkingManifest(
       }
     }
 
+    if (!firstItem) continue;
+
     walkingSteps.push({
       stepIndex,
       marketName: firstItem.vendor.zone.toUpperCase() + (firstItem.vendor.zone.toLowerCase().includes('market') || firstItem.vendor.zone.toLowerCase().includes('bhaban') ? '' : ' MARKET'),
