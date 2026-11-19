@@ -3,10 +3,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  cacheHandler: (process.env.REDIS_CACHE_URL || process.env.REDIS_URL) ? path.resolve(process.cwd(), 'lib/cache/nextjs-redis-handler.cjs') : undefined,
+  cacheHandler: path.join(__dirname, "lib/cache/nextjs-redis-handler.cjs"),
   cacheMaxMemorySize: 0,
   outputFileTracingRoot: path.join(__dirname),
-  serverExternalPackages: ["bullmq", "ioredis"],
+  serverExternalPackages: ["bullmq", "ioredis", "minio"],
   devIndicators: false,
   transpilePackages: [
     "@headlessui/react",

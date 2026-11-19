@@ -16722,7 +16722,7 @@
       "signals": [
         "GRAPH_URL"
       ],
-      "sha256": "905314ea5dea4be2e166598b04064468bf2d510c971e69f9a344570556d5c27e",
+      "sha256": "6e88de8f35ff9e7381fc948df2c8ab3cb448d5edccc63af3b899dac33e2ab189",
       "primaryCapabilityId": "graph-media-boundary",
       "owner": "Growth Platform",
       "tokenRoles": [
@@ -16750,7 +16750,7 @@
       "signals": [
         "META_DOMAIN_SYMBOL"
       ],
-      "sha256": "968c4327d7a081b4128fa5828987979fe2e3840952f6fd495fc93e86ea66062e",
+      "sha256": "b3286c6db54bb4343cb5d4e24e7c0478229404e7e6befacad61d2adf4227ea11",
       "primaryCapabilityId": "release-governance",
       "owner": "Release Engineering",
       "tokenRoles": [

@@ -536,7 +536,6 @@
       "uuid": "11.1.1"
     },
     "decode-uri-component": "^0.5.1",
-    "stream-json": "^3.9.0",
     "fast-xml-parser": "^5.12.1",
     "follow-redirects": "^1.16.3"
   },

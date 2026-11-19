@@ -70,7 +70,7 @@ test('Next.js 16.4.6+ security release, ESLint CLI contract, and npm overrides',
     );
   }
 
-  for (const dep of ['decode-uri-component', 'stream-json', 'fast-xml-parser', 'follow-redirects']) {
+  for (const dep of ['decode-uri-component', 'fast-xml-parser', 'follow-redirects']) {
     assert.ok(pkg.overrides?.[dep], `Expected security override for ${dep} in package.json`);
   }
 });
