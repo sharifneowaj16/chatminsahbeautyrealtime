@@ -2,9 +2,6 @@
  * instrumentation.ts (project root — next to next.config.ts)
  *
  * Starts long-running BullMQ workers when the Next.js server starts.
- * This keeps product-sync, Meta CAPI, and Phase 31 social queues alive in
- * single-container deployments where no separate worker process is configured.
- *
  * In larger deployments, run `npm run worker:all` in a dedicated worker service
  * and set DISABLE_EMBEDDED_WORKERS=true on the web service.
  */
@@ -12,6 +9,8 @@
 const globalForWorkers = globalThis as unknown as {
   minsahProductWorkerStarted?: boolean;
   minsahMetaCapiWorkerStarted?: boolean;
+  minsahMetaCatalogWorkerStarted?: boolean;
+  minsahMetaBatchStatusWorkerStarted?: boolean;
   minsahMetaLeadWorkerStarted?: boolean;
   minsahMetaInstagramWorkerStarted?: boolean;
   minsahMetaSocialWorkerStarted?: boolean;
@@ -44,6 +43,20 @@ export async function register() {
     startMetaCapiWorker();
     globalForWorkers.minsahMetaCapiWorkerStarted = true;
     console.log('[instrumentation] ✅ Meta CAPI/GA4 worker started');
+  }
+
+  if (!globalForWorkers.minsahMetaCatalogWorkerStarted) {
+    const { startMetaCatalogWorker } = await import('./workers/meta-catalog.worker');
+    startMetaCatalogWorker();
+    globalForWorkers.minsahMetaCatalogWorkerStarted = true;
+    console.log('[instrumentation] ✅ Meta catalog sync worker started');
+  }
+
+  if (!globalForWorkers.minsahMetaBatchStatusWorkerStarted) {
+    const { startMetaBatchStatusWorker } = await import('./workers/meta-batch-status.worker');
+    startMetaBatchStatusWorker();
+    globalForWorkers.minsahMetaBatchStatusWorkerStarted = true;
+    console.log('[instrumentation] ✅ Meta catalog batch-status worker started');
   }
 
   if (!globalForWorkers.minsahMetaLeadWorkerStarted) {

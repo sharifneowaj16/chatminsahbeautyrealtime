@@ -1,6 +1,9 @@
+import crypto from 'node:crypto';
 import { buildLegacyMetaGraphRedirectUrl, createLegacyMetaGraphClient } from '@/lib/meta-platform/transports/graph-http';
+import { cacheGet, cacheSet } from '@/lib/cache/redis';
 
 const FACEBOOK_GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || process.env.META_GRAPH_API_VERSION || 'v27.0';
+const FB_PROFILE_TTL_SECONDS = 60 * 60 * 6; // 6h
 
 export interface FacebookProfile {
   id: string;
@@ -19,7 +22,8 @@ interface FacebookProfileResponse {
   };
 }
 
-const profileCache = new Map<string, Promise<FacebookProfile>>();
+// Short-lived in-flight deduplication only (entries always removed in finally — zero memory leak)
+const inflightProfiles = new Map<string, Promise<FacebookProfile>>();
 
 function buildFacebookAvatarUrl(id: string, accessToken: string) {
   return buildLegacyMetaGraphRedirectUrl({
@@ -44,10 +48,21 @@ export async function getFacebookProfile(
 
   if (!id || !accessToken) return fallbackProfile;
 
-  const cacheKey = `${id}:${accessToken.slice(-12)}`;
-  const cached = profileCache.get(cacheKey);
+  const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex').slice(0, 12);
+  const redisKey = `fb:profile:v1:${id}:${tokenHash}`;
+
+  const cached = await cacheGet<FacebookProfile>(redisKey);
   if (cached) {
-    const profile = await cached;
+    return {
+      id: cached.id,
+      name: cached.name ?? fallbackProfile.name,
+      avatar: cached.avatar ?? fallbackProfile.avatar,
+    };
+  }
+
+  const existingInflight = inflightProfiles.get(redisKey);
+  if (existingInflight) {
+    const profile = await existingInflight;
     return {
       id: profile.id,
       name: profile.name ?? fallbackProfile.name,
@@ -64,16 +79,20 @@ export async function getFacebookProfile(
       const data = await client.get<FacebookProfileResponse>(id, {
         fields: 'id,name,profile_pic,picture.width(128).height(128)',
       });
-      return {
+      const resolved: FacebookProfile = {
         id: data.id ?? safeId,
         name: data.name ?? fallbackProfile.name,
         avatar: data.profile_pic ?? data.picture?.data?.url ?? fallbackProfile.avatar,
       };
+      void cacheSet(redisKey, resolved, FB_PROFILE_TTL_SECONDS);
+      return resolved;
     } catch {
       return fallbackProfile;
+    } finally {
+      inflightProfiles.delete(redisKey);
     }
   })();
 
-  profileCache.set(cacheKey, pending);
+  inflightProfiles.set(redisKey, pending);
   return pending;
 }

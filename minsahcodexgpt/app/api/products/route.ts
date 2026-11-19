@@ -7,7 +7,9 @@ import { AdminProductError, createAdminProduct } from '@/lib/admin-products';
 import { normalizeShopSearchParams } from '@/lib/shopUtils';
 import { resolveProductTrustBadges } from '@/lib/shopTrust';
 import { SHOP_LISTING_CACHE_CONTROL, getShopPayloadHeaders } from '@/lib/shopPerformance';
+import crypto from 'node:crypto';
 import { normalizeShopSort } from '@/lib/search/sort';
+import { cacheDeletePattern, cacheGetOrSet } from '@/lib/cache/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -459,6 +461,7 @@ export async function GET(request: NextRequest) {
       include: typeof fullProductQueryArgs.include;
     }>;
 
+    const computeProductsPayload = async () => {
     const [products, totalCount, facets] = await Promise.all([
       listingView
         ? prisma.product.findMany(listingProductQueryArgs)
@@ -698,6 +701,19 @@ export async function GET(request: NextRequest) {
       },
     };
 
+    return responsePayload;
+    };
+
+    const sortedEntries = Array.from(searchParams.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const queryHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify({ entries: sortedEntries, activeOnly, listingView }))
+      .digest('hex')
+      .slice(0, 24);
+    const responsePayload = activeOnly
+      ? await cacheGetOrSet(`shop:v1:products:list:${queryHash}`, computeProductsPayload, 60)
+      : await computeProductsPayload();
+
     return NextResponse.json(responsePayload, {
       headers: getShopPayloadHeaders(responsePayload, {
         'Cache-Control': listingView ? SHOP_LISTING_CACHE_CONTROL : 'no-store',
@@ -726,6 +742,7 @@ export async function POST(request: NextRequest) {
     }
 
     const product = await createAdminProduct(await request.json());
+    void cacheDeletePattern('shop:v1:products:*');
 
     return NextResponse.json(
       { success: true, product: { id: product.id, slug: product.slug, name: product.name } },

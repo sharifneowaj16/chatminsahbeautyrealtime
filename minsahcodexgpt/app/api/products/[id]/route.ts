@@ -7,6 +7,7 @@ import { getDeliveryOfferBadgeText, isDeliveryOfferActive } from '@/lib/delivery
 import { enqueueProductDelete, enqueueProductIndex } from '@/lib/queue/productQueue';
 import { normalizeProductCondition } from '@/lib/products/product-condition';
 import { getProductDetail } from '@/lib/products/get-product';
+import { cacheDelete, cacheDeletePattern, cacheGetOrSet } from '@/lib/cache/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const data = await getProductDetail(id);
+    const data = await cacheGetOrSet(`shop:v1:product:${encodeURIComponent(id)}`, () => getProductDetail(id), 45);
     if (!data) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
@@ -323,6 +324,13 @@ export async function PUT(
     }
 
     const searchSyncQueued = await enqueueProductIndex(updated.id, 'admin product update legacy route');
+    void Promise.allSettled([
+      cacheDelete(`shop:v1:product:${encodeURIComponent(id)}`),
+      cacheDelete(`shop:v1:product:${encodeURIComponent(existing.id)}`),
+      cacheDelete(`shop:v1:product:${encodeURIComponent(existing.slug)}`),
+      cacheDelete(`shop:v1:product:${encodeURIComponent(updated.slug)}`),
+      cacheDeletePattern('shop:v1:products:*'),
+    ]);
 
     return NextResponse.json({
       success: true,
@@ -369,12 +377,24 @@ export async function DELETE(
       ]);
 
       const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product soft-delete legacy route');
+      void Promise.allSettled([
+        cacheDelete(`shop:v1:product:${encodeURIComponent(id)}`),
+        cacheDelete(`shop:v1:product:${encodeURIComponent(existing.id)}`),
+        cacheDelete(`shop:v1:product:${encodeURIComponent(existing.slug)}`),
+        cacheDeletePattern('shop:v1:products:*'),
+      ]);
 
       return NextResponse.json({ success: true, archived: true, searchSyncQueued });
     }
 
     await prisma.product.delete({ where: { id: existing.id } });
     const searchSyncQueued = await enqueueProductDelete(existing.id, 'admin product hard-delete legacy route');
+    void Promise.allSettled([
+      cacheDelete(`shop:v1:product:${encodeURIComponent(id)}`),
+      cacheDelete(`shop:v1:product:${encodeURIComponent(existing.id)}`),
+      cacheDelete(`shop:v1:product:${encodeURIComponent(existing.slug)}`),
+      cacheDeletePattern('shop:v1:products:*'),
+    ]);
     return NextResponse.json({ success: true, searchSyncQueued });
   } catch (error) {
     console.error('DELETE /api/products/[id] error:', error);

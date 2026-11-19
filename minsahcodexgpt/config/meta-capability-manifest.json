@@ -3928,7 +3928,7 @@
       "signals": [
         "META_DOMAIN_SYMBOL"
       ],
-      "sha256": "d45f02fe3f36c0cfd5f136699129b273a80d0bda0bc76ba91affcba623a4bf45",
+      "sha256": "3e2679ff6771698a5205ec00fb161aeea123d46533043dbcfad3f6656ef19265",
       "primaryCapabilityId": "admin-observability",
       "owner": "Platform Operations",
       "tokenRoles": [
@@ -4247,7 +4247,7 @@
         "PATH_NAME",
         "PROVIDER_ENV"
       ],
-      "sha256": "f744a724018b4a4b59b922ba0268c80c8946cc21e05bcfa255b1fa32dba0bae3",
+      "sha256": "a0554ee3d7eb1e1b60cb1c9591c047aeeb0ba1eb6b8ba302ae352931864213a7",
       "primaryCapabilityId": "legacy-facebook",
       "owner": "Social CRM",
       "tokenRoles": [
@@ -19704,7 +19704,7 @@
         "PATH_NAME",
         "PROVIDER_ENV"
       ],
-      "sha256": "a1c1f0feacf1fd62d95b213c979f7a888a8779e6ba7feff568a39a0eca74a6d0",
+      "sha256": "6d08c0f7b95d794d37f925d2c512b94b9c2d46e9a916b51a45ad9a1db3c11480",
       "primaryCapabilityId": "meta-operations",
       "owner": "Platform Reliability",
       "tokenRoles": [
