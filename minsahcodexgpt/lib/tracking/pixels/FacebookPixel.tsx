@@ -81,6 +81,7 @@ export default function FacebookPixel({
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
             if (window.fbq) { window.fbq.disablePushState = true; }
+            (function __mbPushStateGuard(){ var n=0; var t=setInterval(function(){ if(window.fbq){ window.fbq.disablePushState=true; } if(++n>=20){ clearInterval(t); } }, 500); })();
             function mbNormalizeMetaExternalId(input) {
               if (input === undefined || input === null) return undefined;
               var normalized = String(input).trim().toLowerCase();
