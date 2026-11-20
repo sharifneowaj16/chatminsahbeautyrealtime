@@ -3,7 +3,7 @@ import { createLegacyMetaGraphClient } from '@/lib/meta-platform/transports/grap
 import { persistSocialMessage, type SocialAttachmentInput } from '@/lib/social/socialMessageIngest';
 import { getFacebookProfile } from '@/lib/facebook/profile';
 
-const FACEBOOK_GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || process.env.META_GRAPH_API_VERSION || 'v27.0';
+const FACEBOOK_GRAPH_API_VERSION = process.env.META_GRAPH_API_VERSION || process.env.FACEBOOK_GRAPH_API_VERSION || 'v27.0';
 
 interface GraphPaging {
   cursors?: { after?: string; before?: string };

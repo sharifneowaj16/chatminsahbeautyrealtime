@@ -295,9 +295,9 @@ class TrackingManager {
    */
   private loadConfig(): AllPlatformsConfig {
     const facebookPixelId =
+      process.env.NEXT_PUBLIC_META_PIXEL_ID ||
       process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
       process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
-      process.env.NEXT_PUBLIC_META_PIXEL_ID ||
       '';
     const tiktokPixelId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || '';
     const tiktokPixelEnabled =
@@ -305,7 +305,7 @@ class TrackingManager {
 
     return {
       facebook: {
-        enabled: process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED !== 'false',
+        enabled: (process.env.NEXT_PUBLIC_META_PIXEL_ENABLED || process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED) !== 'false',
         pixelId: facebookPixelId,
       },
       google: {

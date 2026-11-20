@@ -52,7 +52,7 @@ type MessageCursor = {
 }
 
 function getFacebookPageId() {
-  return process.env.FACEBOOK_PAGE_ID ?? process.env.FB_PAGE_ID
+  return process.env.META_PAGE_ID || process.env.FACEBOOK_PAGE_ID || process.env.FB_PAGE_ID
 }
 
 function clampLimit(value: string | null, fallback = 300) {

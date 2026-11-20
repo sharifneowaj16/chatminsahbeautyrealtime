@@ -54,10 +54,14 @@ function useIdleTrackingReady(enabled: boolean) {
 }
 
 const BUILD_TIME_FB_PIXEL_ID =
+  process.env.NEXT_PUBLIC_META_PIXEL_ID ||
   process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
   process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
-  process.env.NEXT_PUBLIC_META_PIXEL_ID ||
   '';
+
+const META_PIXEL_ENABLED_FLAG =
+  process.env.NEXT_PUBLIC_META_PIXEL_ENABLED ||
+  process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED;
 
 export default function AllPixels() {
   const [trackingAllowed, setTrackingAllowed] = useState(false);
@@ -83,7 +87,7 @@ export default function AllPixels() {
   }, []);
 
   useEffect(() => {
-    if (runtimeFbPixelId || process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED === 'false') return;
+    if (runtimeFbPixelId || META_PIXEL_ENABLED_FLAG === 'false') return;
     let active = true;
     fetch('/api/facebook-capi', { credentials: 'same-origin' })
       .then((res) => (res.ok ? res.json() : null))
@@ -100,8 +104,8 @@ export default function AllPixels() {
 
   const facebookPixelId = runtimeFbPixelId;
   const facebookPixelEnabled =
-    process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED === 'true' ||
-    (!!facebookPixelId && process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED !== 'false');
+    META_PIXEL_ENABLED_FLAG === 'true' ||
+    (!!facebookPixelId && META_PIXEL_ENABLED_FLAG !== 'false');
   const tiktokPixelId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || '';
   const tiktokPixelEnabled = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ENABLED === 'true' && !!tiktokPixelId;
 

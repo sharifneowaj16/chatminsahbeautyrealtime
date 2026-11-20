@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { buildLegacyMetaGraphRedirectUrl, createLegacyMetaGraphClient } from '@/lib/meta-platform/transports/graph-http';
 import { cacheGet, cacheSet } from '@/lib/cache/redis';
 
-const FACEBOOK_GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || process.env.META_GRAPH_API_VERSION || 'v27.0';
+const FACEBOOK_GRAPH_API_VERSION = process.env.META_GRAPH_API_VERSION || process.env.FACEBOOK_GRAPH_API_VERSION || 'v27.0';
 const FB_PROFILE_TTL_SECONDS = 60 * 60 * 6; // 6h
 
 export interface FacebookProfile {

@@ -101,7 +101,7 @@ export async function requestFacebookAdminReplyProduction(input: Readonly<{
   const endpoint = process.env.REALTIME_SERVICE_INTERNAL_URL ?? 'http://realtime-service:3001';
   const secret = process.env.REPLY_API_SECRET ?? '';
   if (!secret) throw Object.assign(new Error('FACEBOOK_REPLY_BRIDGE_NOT_CONFIGURED'), { status: 503 });
-  const configuredPageId = process.env.FACEBOOK_PAGE_ID ?? '';
+  const configuredPageId = process.env.META_PAGE_ID || process.env.FACEBOOK_PAGE_ID || '';
   const pageId = typeof input.pageId === 'string' && input.pageId.trim()
     ? requireMetaAdminOpaqueId(input.pageId, 'FACEBOOK_REPLY_PAGE_ID_INVALID')
     : configuredPageId;

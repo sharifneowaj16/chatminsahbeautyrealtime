@@ -31,7 +31,7 @@ function parseSignedRequest(signedRequest: string) {
     throw new Error('Unsupported Meta signature algorithm');
   }
 
-  const secret = process.env.FACEBOOK_CLIENT_SECRET;
+  const secret = process.env.META_APP_SECRET || process.env.FACEBOOK_CLIENT_SECRET;
   if (secret) {
     const receivedSignature = decodeBase64Url(encodedSignature);
     const expectedSignature = createHmac('sha256', secret).update(encodedPayload).digest();

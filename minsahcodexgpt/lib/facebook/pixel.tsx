@@ -22,9 +22,9 @@ import { buildVisitorMetaExternalId } from '@/lib/tracking/meta-external-id';
 
 // Get Pixel ID from environment
 const PIXEL_ID =
+  process.env.NEXT_PUBLIC_META_PIXEL_ID ||
   process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
-  process.env.NEXT_PUBLIC_FB_PIXEL_ID ||
-  process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 
 // Window.fbq is declared globally in lib/tracking/manager.ts
 

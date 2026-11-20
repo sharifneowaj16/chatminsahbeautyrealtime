@@ -375,12 +375,25 @@ export type AppConfig = z.infer<typeof envSchema>
 
 let cachedConfig: AppConfig | null = null
 
+function normalizeRealtimeMetaEnv(raw: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return {
+    ...raw,
+    FB_APP_ID: raw.META_APP_ID?.trim() || raw.FB_APP_ID?.trim() || raw.FACEBOOK_CLIENT_ID?.trim() || undefined,
+    FB_APP_SECRET: raw.META_APP_SECRET?.trim() || raw.FB_APP_SECRET?.trim() || raw.FACEBOOK_CLIENT_SECRET?.trim() || undefined,
+    FB_VERIFY_TOKEN: raw.META_WEBHOOK_VERIFY_TOKEN?.trim() || raw.FB_VERIFY_TOKEN?.trim() || raw.FACEBOOK_VERIFY_TOKEN?.trim() || undefined,
+    FB_PAGE_ACCESS_TOKEN: raw.META_PAGE_ACCESS_TOKEN?.trim() || raw.FB_PAGE_ACCESS_TOKEN?.trim() || raw.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() || undefined,
+    FB_SYSTEM_USER_TOKEN: raw.META_SYSTEM_USER_TOKEN?.trim() || raw.META_BUSINESS_ACCESS_TOKEN?.trim() || raw.FB_SYSTEM_USER_TOKEN?.trim() || undefined,
+    FB_PAGE_ID: raw.META_PAGE_ID?.trim() || raw.FB_PAGE_ID?.trim() || raw.FACEBOOK_PAGE_ID?.trim() || undefined,
+    FB_GRAPH_API_VERSION: raw.META_GRAPH_API_VERSION?.trim() || raw.FB_GRAPH_API_VERSION?.trim() || raw.FACEBOOK_GRAPH_API_VERSION?.trim() || undefined,
+  }
+}
+
 export function getConfig(): AppConfig {
   if (cachedConfig) {
     return cachedConfig
   }
 
-  const parsed = envSchema.safeParse(process.env)
+  const parsed = envSchema.safeParse(normalizeRealtimeMetaEnv(process.env))
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)
