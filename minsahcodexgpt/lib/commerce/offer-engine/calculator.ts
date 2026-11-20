@@ -5,15 +5,6 @@ import type {
   PromoRule,
 } from './types';
 
-/**
- * Universal Offer & Anti-Conflict Calculation Engine
- * 
- * Rules:
- * 1. Bundles have built-in profit-sharing discounts (15%-30% via Real Benefit engine).
- *    Coupons apply strictly to regular (non-bundle) items by default to prevent double-discounting margin loss.
- * 2. Nationwide Free Delivery is unlocked when subtotal >= ৳1,100 or when any item has active product free delivery.
- * 3. Inside Dhaka Metro, orders >= ৳500 qualify for free delivery.
- */
 export function calculateCartOffers(
   params: CartOfferCalculationParams
 ): CartOfferCalculationResult {
@@ -24,9 +15,12 @@ export function calculateCartOffers(
     destinationCity,
     availableCoupons,
     couponsEnabled = true,
+    antiConflict,
   } = params;
 
-  // 1. Differentiate flash deals, bundles, and regular items (Master Spec Section 9.1)
+  const strictAntiStacking = antiConflict?.strictAntiStacking !== false;
+  const maxCartDiscountCap = Math.max(0, Number(antiConflict?.maxCartDiscountCap ?? 0) || 0);
+
   let flashDealSubtotal = 0;
   let bundleSubtotal = 0;
   let regularSubtotal = 0;
@@ -57,9 +51,6 @@ export function calculateCartOffers(
 
   const nonBundleSubtotal = regularSubtotal;
 
-  // 2. Resolve Promo Coupon (Strictly from live Admin Offer Engine coupons)
-  // Anti-Stacking: Coupons apply strictly against regular items (and bundles only if allowOnBundles is true)
-  // Flash Deal items are strictly ineligible for coupon discounts (Spec Section 9.1)
   let promoDiscount = 0;
   let appliedPromoRule: PromoRule | null = null;
   let promoError: string | null = null;
@@ -70,7 +61,6 @@ export function calculateCartOffers(
     } else {
       const normalizedCode = promoCode.trim().toUpperCase();
 
-      // Look up strictly in live availableCoupons from Admin Offer Engine
       let rule: PromoRule | null = null;
       if (Array.isArray(availableCoupons) && availableCoupons.length > 0) {
         rule = availableCoupons.find((c) => c && c.code && c.code.trim().toUpperCase() === normalizedCode) ?? null;
@@ -94,11 +84,13 @@ export function calculateCartOffers(
       if (!rule || rule.isActive === false || !isDateValid) {
         promoError = 'Invalid or expired promo code';
       } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
-        promoError = `Minimum subtotal of ৳${rule.minSubtotal} required for ${rule.code}`;
+        promoError = `Minimum subtotal of \u09F3${rule.minSubtotal} required for ${rule.code}`;
       } else {
-        const applicableBase = rule.allowOnBundles ? (regularSubtotal + bundleSubtotal) : regularSubtotal;
+        const isFreeShipCode = rule.code.trim().toUpperCase() === 'FREESHIP';
+        const allowBundleDiscount = !strictAntiStacking && Boolean(rule.allowOnBundles);
+        const applicableBase = allowBundleDiscount ? (regularSubtotal + bundleSubtotal) : regularSubtotal;
 
-        if (applicableBase <= 0 && (flashDealSubtotal > 0 || bundleSubtotal > 0) && rule.code !== 'FREESHIP') {
+        if (applicableBase <= 0 && (flashDealSubtotal > 0 || bundleSubtotal > 0) && !isFreeShipCode) {
           if (flashDealSubtotal > 0 && bundleSubtotal === 0) {
             promoError = 'Promo vouchers cannot be applied to Flash Deal items';
           } else {
@@ -108,7 +100,9 @@ export function calculateCartOffers(
         } else {
           appliedPromoRule = rule;
 
-          if (rule.type === 'percentage') {
+          if (isFreeShipCode && (Number(rule.value) || 0) <= 0) {
+            promoDiscount = 0;
+          } else if (rule.type === 'percentage') {
             const rawRate = Number(rule.value) || 0;
             const rate = rawRate > 1 ? rawRate / 100 : rawRate;
             promoDiscount = Math.round(applicableBase * rate);
@@ -120,7 +114,10 @@ export function calculateCartOffers(
             promoDiscount = rule.maxDiscount;
           }
 
-          // Keep at least 1 taka payable subtotal on applicableBase if cart is only regular items
+          if (maxCartDiscountCap > 0 && promoDiscount > maxCartDiscountCap) {
+            promoDiscount = maxCartDiscountCap;
+          }
+
           const maxApplicableDiscount = Math.max(0, applicableBase - (applicableBase === subtotal ? 1 : 0));
           promoDiscount = Math.max(0, Math.min(promoDiscount, maxApplicableDiscount));
         }
@@ -128,7 +125,6 @@ export function calculateCartOffers(
     }
   }
 
-  // 3. Free Delivery Evaluation (Master Spec Section 10.1: Flash Deals MUST count toward threshold)
   const targetThreshold =
     params.freeDeliveryConfig?.nationwideThreshold ??
     DELIVERY_CONFIG.NATIONWIDE_THRESHOLD;
@@ -144,7 +140,7 @@ export function calculateCartOffers(
     hasProductFreeDelivery ||
     subtotal >= targetThreshold ||
     (isCityDhaka && subtotal >= dhakaThreshold) ||
-    Boolean(appliedPromoRule?.code === 'FREESHIP');
+    Boolean(appliedPromoRule && appliedPromoRule.code.trim().toUpperCase() === 'FREESHIP');
 
   const remainingForFreeDelivery = isFreeDeliveryUnlocked
     ? 0
@@ -152,7 +148,9 @@ export function calculateCartOffers(
 
   const deliveryProgressPercent = isFreeDeliveryUnlocked
     ? 100
-    : Math.min(100, Math.round((subtotal / targetThreshold) * 100));
+    : targetThreshold > 0
+      ? Math.min(100, Math.round((subtotal / targetThreshold) * 100))
+      : 100;
 
   return {
     promoDiscount,

@@ -35,7 +35,7 @@ export function FreeShippingProgressBar({
 }: FreeShippingProgressBarProps) {
   const [mounted, setMounted] = useState(false);
   const { config } = useOfferEngine();
-  const effectiveThreshold = freeShippingThreshold ?? config?.freeDelivery?.dhakaThreshold ?? 1500;
+  const effectiveThreshold = freeShippingThreshold ?? config?.freeDelivery?.nationwideThreshold ?? 1100;
 
   useEffect(() => {
     setMounted(true);

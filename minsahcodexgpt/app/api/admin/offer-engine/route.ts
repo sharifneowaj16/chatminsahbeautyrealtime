@@ -245,6 +245,8 @@ export async function PUT(request: NextRequest) {
         const codeUpper = c.code.trim().toUpperCase();
         submittedCodes.push(codeUpper);
         const typeEnum = c.type === 'percentage' ? 'PERCENTAGE' : 'FIXED';
+        const parsedStartDate = c.startDate && !isNaN(new Date(c.startDate).getTime()) ? new Date(c.startDate) : null;
+        const parsedEndDate = c.endDate && !isNaN(new Date(c.endDate).getTime()) ? new Date(c.endDate) : null;
         try {
           await prisma.coupon.upsert({
             where: { code: codeUpper },
@@ -252,17 +254,21 @@ export async function PUT(request: NextRequest) {
               code: codeUpper,
               description: c.description || null,
               type: typeEnum as any,
-              value: c.value,
-              minPurchase: c.minSubtotal || 0,
-              maxDiscount: c.maxDiscount || 0,
+              value: Number(c.value) || 0,
+              minPurchase: Number(c.minSubtotal) || 0,
+              maxDiscount: Number(c.maxDiscount) || 0,
+              startDate: parsedStartDate,
+              endDate: parsedEndDate,
               isActive: couponsEnabled && (c.isActive !== false),
             },
             update: {
               description: c.description || null,
               type: typeEnum as any,
-              value: c.value,
-              minPurchase: c.minSubtotal || 0,
-              maxDiscount: c.maxDiscount || 0,
+              value: Number(c.value) || 0,
+              minPurchase: Number(c.minSubtotal) || 0,
+              maxDiscount: Number(c.maxDiscount) || 0,
+              startDate: parsedStartDate,
+              endDate: parsedEndDate,
               isActive: couponsEnabled && (c.isActive !== false),
             },
           });
@@ -326,7 +332,10 @@ export async function PUT(request: NextRequest) {
     try {
       revalidatePath('/');
       revalidatePath('/shop');
+      revalidatePath('/cart');
       revalidatePath('/checkout');
+      revalidatePath('/offers');
+      revalidatePath('/shipping-policy');
     } catch {
       // Revalidation failure shouldn't block response
     }

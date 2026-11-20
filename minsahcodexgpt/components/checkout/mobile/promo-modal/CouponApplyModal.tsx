@@ -19,7 +19,7 @@ import { useOfferEngine } from '@/contexts/OfferEngineContext';
 export function CouponApplyModal({
   isOpen,
   onClose,
-  subtotal = 4420,
+  subtotal = 0,
   appliedCoupon: externalAppliedCoupon,
   onApplyCoupon,
   onRemoveCoupon,
@@ -71,14 +71,30 @@ export function CouponApplyModal({
   if (!mounted || !isOpen) return null;
 
   const handleApplyCoupon = (coupon: CouponItem) => {
+    if (coupon.minSpend && subtotal < coupon.minSpend) {
+      setErrorMessage(`Minimum subtotal of \u09F3${coupon.minSpend} required for ${coupon.code}.`);
+      return;
+    }
+    const rawRule = config?.coupons?.find(
+      (c) => c && c.code && c.code.trim().toUpperCase() === coupon.code.trim().toUpperCase()
+    );
     let savings = 0;
     if (coupon.discountType === 'flat' || coupon.discountType === 'welcome') {
-      savings = coupon.discountValue;
+      savings = Math.min(coupon.discountValue, subtotal);
     } else if (coupon.discountType === 'percentage') {
-      savings = Math.round((subtotal * coupon.discountValue) / 100);
+      const rate = coupon.discountValue > 1 ? coupon.discountValue / 100 : coupon.discountValue;
+      savings = Math.round(subtotal * rate);
     } else if (coupon.discountType === 'shipping') {
-      savings = 120;
+      savings = 0;
     }
+    if (rawRule?.maxDiscount && savings > rawRule.maxDiscount) {
+      savings = rawRule.maxDiscount;
+    }
+    const cap = Number(config?.antiConflict?.maxCartDiscountCap ?? 0) || 0;
+    if (cap > 0 && savings > cap) {
+      savings = cap;
+    }
+    savings = Math.max(0, Math.min(savings, Math.max(0, subtotal - 1)));
 
     const appliedData: AppliedCoupon = {
       code: coupon.code,

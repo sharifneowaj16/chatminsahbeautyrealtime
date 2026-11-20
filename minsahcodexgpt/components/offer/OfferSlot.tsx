@@ -38,11 +38,13 @@ export function OfferSlot({
 
   const handleCopy = (code: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(code);
-      setCopiedCode(code);
-      window.setTimeout(() => setCopiedCode(null), 2000);
-    }
+    try {
+      if (navigator?.clipboard?.writeText) {
+        void navigator.clipboard.writeText(code);
+      }
+    } catch {}
+    setCopiedCode(code);
+    window.setTimeout(() => setCopiedCode(null), 2000);
     if (onApplyCoupon) {
       onApplyCoupon(code);
     }
@@ -128,12 +130,12 @@ export function OfferSlot({
               {copiedCode === offer.code ? (
                 <>
                   <Check size={13} className="text-emerald-600" />
-                  <span>Copied</span>
+                  <span>{onApplyCoupon ? 'Applied' : 'Copied'}</span>
                 </>
               ) : (
                 <>
                   <Copy size={13} className="text-[#7A6E65]" />
-                  <span>Copy Code</span>
+                  <span>{onApplyCoupon ? 'Apply' : 'Copy Code'}</span>
                 </>
               )}
             </button>

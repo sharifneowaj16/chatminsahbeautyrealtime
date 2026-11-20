@@ -14,6 +14,7 @@ import { notifyNewOrder } from '@/lib/telegram-notify';
 import { readOrderAttribution } from '@/lib/tracking/order-attribution';
 import { buildOrderTrackingExclusionData } from '@/lib/tracking/traffic-filter';
 import { resolveOrderDeliveryAccounting } from '@/lib/order-delivery-accounting';
+import { normalizeBangladeshPhoneNumber } from '@/lib/phone';
 import { isCanonicalOnlinePaymentMethod } from '@/lib/payments/canonical-payment-contract';
 import { parseSupportedCheckoutPaymentMethod } from '@/lib/payments/payment-methods';
 import {
@@ -100,9 +101,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No items selected' }, { status: 400 });
     }
 
+    const normalizedBuyNowPhone = normalizeBangladeshPhoneNumber(shippingAddress?.phone);
     if (
       !shippingAddress?.name?.trim() ||
-      !shippingAddress.phone?.trim() ||
+      !normalizedBuyNowPhone ||
       !shippingAddress.city?.trim() ||
       !shippingAddress.area?.trim() ||
       !shippingAddress.pathao_city_id ||
@@ -237,6 +239,7 @@ export async function POST(request: NextRequest) {
       products,
       variants,
       address: shippingAddress,
+      subtotal,
       client: {
         shippingCost: clientDeliveryCharge,
         customerDeliveryCharge: body.customerDeliveryCharge,
@@ -274,7 +277,7 @@ export async function POST(request: NextRequest) {
           userId,
           firstName,
           lastName,
-          phone: shippingAddress.phone.trim(),
+          phone: normalizedBuyNowPhone,
           street1: shippingAddress.address?.trim() || shippingAddress.area.trim(),
           street2: shippingAddress.zone?.trim() || shippingAddress.area.trim(),
           city: shippingAddress.city.trim(),
@@ -412,7 +415,7 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
           orderNumber: order.orderNumber,
           customerName: shippingAddress.name.trim(),
-          customerPhone: shippingAddress.phone.trim(),
+          customerPhone: normalizedBuyNowPhone,
           address: {
             city: shippingAddress.city.trim(),
             zone: shippingAddress.zone?.trim() || null,

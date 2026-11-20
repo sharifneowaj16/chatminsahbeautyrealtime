@@ -166,7 +166,7 @@ export default function CartDrawer({
           </div>
 
           {/* ── Universal Offer Engine Placement: Cart Drawer ── */}
-          <OfferSlot placement="cart_drawer" className="px-6 mb-3" />
+          <OfferSlot placement="cart_drawer" className="px-6 mb-3" onApplyCoupon={(code) => handleApplyCoupon(code)} />
 
           {/* ── Cart Items List ── */}
           <div className="px-6 divide-y divide-black/[0.06]">

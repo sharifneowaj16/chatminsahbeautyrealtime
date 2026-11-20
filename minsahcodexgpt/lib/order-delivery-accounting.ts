@@ -11,6 +11,7 @@ import {
   type DeliveryOfferType,
   type DeliveryPricingSource,
 } from '@/lib/delivery-pricing';
+import { getUniversalOfferEngineServerConfig } from '@/lib/commerce/offer-engine/server';
 
 const PATHAO_MIN_WEIGHT_KG = 0.5;
 const PATHAO_MAX_WEIGHT_KG = 10;
@@ -273,21 +274,121 @@ function resolveFallbackDeliveryAccounting(params: {
   };
 }
 
+async function applyOrderThresholdDeliveryRules(params: {
+  result: OrderDeliveryAccountingResult;
+  subtotal?: number | null;
+  couponCode?: string | null;
+  isInsideDhaka: boolean;
+}): Promise<OrderDeliveryAccountingResult> {
+  const { result, subtotal, couponCode, isInsideDhaka } = params;
+  const normalizedSubtotal = typeof subtotal === 'number' && Number.isFinite(subtotal) ? Math.max(0, subtotal) : null;
+  const normalizedCode = typeof couponCode === 'string' ? couponCode.trim().toUpperCase() : '';
+  const offerConfig = await getUniversalOfferEngineServerConfig();
+  const thresholdConfig = offerConfig.freeDelivery;
+
+  let isFreeShipCoupon = false;
+  if (normalizedCode === 'FREESHIP' && offerConfig.couponsEnabled) {
+    const now = Date.now();
+    const rule = offerConfig.coupons.find(
+      (c) => c && c.code && String(c.code).trim().toUpperCase() === 'FREESHIP' && c.isActive !== false
+    );
+    if (rule) {
+      const startOk = !rule.startDate || isNaN(new Date(rule.startDate).getTime()) || now >= new Date(rule.startDate).getTime();
+      const endOk = !rule.endDate || isNaN(new Date(rule.endDate).getTime()) || now <= new Date(rule.endDate).getTime();
+      const minOk = !rule.minSubtotal || (normalizedSubtotal !== null && normalizedSubtotal >= rule.minSubtotal);
+      if (startOk && endOk && minOk) {
+        isFreeShipCoupon = true;
+      }
+    }
+  }
+
+  if (normalizedSubtotal === null && !isFreeShipCoupon) {
+    return result;
+  }
+  const baseCourier = result.courierDeliveryCharge ?? result.shippingCost;
+  let targetCharge = result.shippingCost;
+  let targetOfferType: DeliveryOfferType = result.deliveryOfferType;
+  let targetBadge = result.deliveryOfferBadgeText;
+  let targetProductId = result.deliveryOfferProductId;
+
+  if (
+    isFreeShipCoupon ||
+    (normalizedSubtotal !== null && normalizedSubtotal >= thresholdConfig.nationwideThreshold)
+  ) {
+    if (0 < targetCharge) {
+      targetCharge = 0;
+      targetOfferType = 'FREE';
+      targetBadge = isFreeShipCoupon ? 'Free Shipping Coupon' : 'Free Nationwide Delivery';
+      targetProductId = null;
+    }
+  } else if (
+    isInsideDhaka &&
+    normalizedSubtotal !== null &&
+    normalizedSubtotal >= thresholdConfig.dhakaThreshold
+  ) {
+    if (0 < targetCharge) {
+      targetCharge = 0;
+      targetOfferType = 'FREE';
+      targetBadge = 'Free Dhaka Delivery';
+      targetProductId = null;
+    }
+  } else if (
+    !isInsideDhaka &&
+    normalizedSubtotal !== null &&
+    thresholdConfig.outsideDhakaSubsidizedThreshold &&
+    thresholdConfig.outsideDhakaSubsidizedThreshold > 0 &&
+    typeof thresholdConfig.outsideDhakaSubsidizedFee === 'number' &&
+    normalizedSubtotal >= thresholdConfig.outsideDhakaSubsidizedThreshold
+  ) {
+    const capped = roundMoney(Math.max(0, thresholdConfig.outsideDhakaSubsidizedFee));
+    if (capped < targetCharge) {
+      targetCharge = capped;
+      targetOfferType = 'FIXED';
+      targetBadge = `Subsidized Delivery (\u09F3${capped})`;
+      targetProductId = null;
+    }
+  }
+
+  if (targetCharge === result.shippingCost) {
+    return result;
+  }
+
+  return {
+    ...result,
+    shippingCost: roundMoney(targetCharge),
+    deliveryDiscountAmount: roundMoney(Math.max(0, baseCourier - targetCharge)),
+    deliveryOfferType: targetOfferType,
+    deliveryOfferProductId: targetProductId,
+    deliveryOfferBadgeText: targetBadge,
+  };
+}
+
 export async function resolveOrderDeliveryAccounting(params: {
   items: OrderDeliveryAccountingItemInput[];
   products: OrderDeliveryAccountingProductInput[];
   variants: OrderDeliveryAccountingVariantInput[];
   address: OrderDeliveryAccountingAddressInput | null | undefined;
   client: ClientDeliveryAccountingInput;
+  subtotal?: number | null;
+  couponCode?: string | null;
 }): Promise<OrderDeliveryAccountingResult> {
   const recipientCity = getAddressId(params.address?.pathao_city_id ?? params.address?.pathaoCityId);
   const recipientZone = getAddressId(params.address?.pathao_zone_id ?? params.address?.pathaoZoneId);
 
+  const addrCityName = typeof params.address?.city === 'string' ? params.address.city.trim().toLowerCase() : '';
+  const isAddressInsideDhaka = addrCityName.includes('dhaka') || recipientCity === 1;
+
   if (!recipientCity || !recipientZone || !params.items.length) {
-    return resolveFallbackDeliveryAccounting({
+    const fallback = resolveFallbackDeliveryAccounting({
       client: params.client,
       products: params.products,
       address: params.address,
+    });
+    return applyOrderThresholdDeliveryRules({
+      result: fallback,
+      subtotal: params.subtotal,
+      couponCode: params.couponCode,
+      isInsideDhaka: isAddressInsideDhaka,
     });
   }
 
@@ -317,7 +418,7 @@ export async function resolveOrderDeliveryAccounting(params: {
       destinationCity: params.address?.city ?? (isInsideDhaka ? 'Dhaka' : null),
     });
 
-    return {
+    const baseResult: OrderDeliveryAccountingResult = {
       shippingCost: deliveryPricing.customerDeliveryCharge,
       courierDeliveryCharge: deliveryPricing.courierDeliveryCharge,
       deliveryDiscountAmount: deliveryPricing.deliveryDiscountAmount,
@@ -328,12 +429,24 @@ export async function resolveOrderDeliveryAccounting(params: {
       quoteVerified: true,
       pricingNote: null,
     };
+    return applyOrderThresholdDeliveryRules({
+      result: baseResult,
+      subtotal: params.subtotal,
+      couponCode: params.couponCode,
+      isInsideDhaka,
+    });
   } catch (error) {
     console.error('Order delivery accounting quote failed:', error);
-    return resolveFallbackDeliveryAccounting({
+    const fallback = resolveFallbackDeliveryAccounting({
       client: params.client,
       products: params.products,
       address: params.address,
+    });
+    return applyOrderThresholdDeliveryRules({
+      result: fallback,
+      subtotal: params.subtotal,
+      couponCode: params.couponCode,
+      isInsideDhaka: isAddressInsideDhaka,
     });
   }
 }

@@ -3,6 +3,7 @@
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeliveryLocation } from "@/contexts/DeliveryLocationContext";
+import { useOfferEngine } from "@/contexts/OfferEngineContext";
 import { useState, useRef, Suspense, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -101,16 +102,39 @@ function createCheckoutIdempotencyKey() {
   return `checkout-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
-function normalizeBdMobileNumber(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.startsWith("8801") && digits.length >= 13)
-    return digits.slice(2, 13);
+const BN_DIGITS_MAP: Record<string, string> = {
+  "\u09E6": "0",
+  "\u09E7": "1",
+  "\u09E8": "2",
+  "\u09E9": "3",
+  "\u09EA": "4",
+  "\u09EB": "5",
+  "\u09EC": "6",
+  "\u09ED": "7",
+  "\u09EE": "8",
+  "\u09EF": "9",
+};
+
+function sanitizePhoneInput(value: string) {
+  const ascii = value.replace(/[\u09E6-\u09EF]/g, (ch) => BN_DIGITS_MAP[ch] ?? ch);
+  let digits = ascii.replace(/\D/g, "");
+  if (digits.startsWith("00880")) digits = digits.slice(2);
+  if (digits.startsWith("88001") && digits.length >= 14) return digits.slice(3, 14);
+  if (digits.startsWith("8801") && digits.length >= 13) return "0" + digits.slice(3, 13);
+  if (digits.startsWith("8801") && digits.length > 4) return "0" + digits.slice(3, 13);
+  if (/^1[3-9]\d{8}$/.test(digits)) return "0" + digits;
   if (digits.startsWith("01")) return digits.slice(0, 11);
   return digits.slice(0, 11);
 }
 
+function normalizeBdMobileNumber(value: string) {
+  const cleaned = sanitizePhoneInput(value);
+  if (/^1[3-9]\d{8}$/.test(cleaned)) return "0" + cleaned;
+  return cleaned;
+}
+
 function isValidBdMobileNumber(value: string) {
-  return /^01[3-9]\d{8}$/.test(value);
+  return /^01[3-9]\d{8}$/.test(normalizeBdMobileNumber(value));
 }
 
 export type CheckoutFieldKey =
@@ -248,7 +272,8 @@ function CheckoutContent() {
     subtotal,
     discount,
     promoCode,
-    isFreeDeliveryUnlocked,
+    applyPromoCode,
+    removePromoCode,
     selectedPaymentMethod,
     setSelectedPaymentMethod,
     paymentMethods,
@@ -257,6 +282,8 @@ function CheckoutContent() {
     clearCart,
   } = useCart();
   const { savedLocation, saveLocation } = useDeliveryLocation();
+  const { freeDelivery, couponsEnabled, coupons: activeOfferCoupons } = useOfferEngine();
+  const [promoInput, setPromoInput] = useState("");
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const [, setExpandedSection] = useState<
@@ -377,9 +404,68 @@ function CheckoutContent() {
     hasDeliveryLocation,
   );
 
-  const effectiveDeliveryCharge = isFreeDeliveryUnlocked ? 0 : deliveryCharge;
+  const isCheckoutCityDhaka =
+    shippingForm.pathao_city_id === 1 ||
+    shippingForm.city.trim().toLowerCase().includes("dhaka");
+  const hasSelectedCity = Boolean(shippingForm.pathao_city_id || shippingForm.city.trim());
+  const hasProductFreeDelivery =
+    deliveryQuote?.deliveryOfferType === "FREE" ||
+    items.some((item) => Boolean((item as { hasFreeDelivery?: boolean }).hasFreeDelivery));
+
+  const isAdminFreeShipApplied =
+    couponsEnabled &&
+    promoCode.trim().toUpperCase() === "FREESHIP" &&
+    activeOfferCoupons.some(
+      (c) =>
+        c &&
+        c.code &&
+        c.code.trim().toUpperCase() === "FREESHIP" &&
+        c.isActive !== false &&
+        (!c.minSubtotal || subtotal >= c.minSubtotal),
+    );
+
+  const checkoutFreeDeliveryUnlocked =
+    hasProductFreeDelivery ||
+    subtotal >= freeDelivery.nationwideThreshold ||
+    (hasSelectedCity && isCheckoutCityDhaka && subtotal >= freeDelivery.dhakaThreshold) ||
+    isAdminFreeShipApplied;
+
+  const subsidizedThreshold = freeDelivery.outsideDhakaSubsidizedThreshold ?? 0;
+  const subsidizedFee = freeDelivery.outsideDhakaSubsidizedFee;
+  const isOutsideDhakaSubsidized =
+    !checkoutFreeDeliveryUnlocked &&
+    hasSelectedCity &&
+    !isCheckoutCityDhaka &&
+    subsidizedThreshold > 0 &&
+    typeof subsidizedFee === "number" &&
+    subtotal >= subsidizedThreshold;
+
+  const fallbackDeliveryEstimate = isCheckoutCityDhaka ? 80 : 130;
+  const resolvedBaseDelivery =
+    deliveryState === "success"
+      ? deliveryCharge
+      : deliveryState === "error" && hasDeliveryLocation
+        ? fallbackDeliveryEstimate
+        : deliveryCharge;
+
+  const effectiveDeliveryCharge = checkoutFreeDeliveryUnlocked
+    ? 0
+    : isOutsideDhakaSubsidized && typeof subsidizedFee === "number" && hasDeliveryLocation
+      ? Math.min(resolvedBaseDelivery || fallbackDeliveryEstimate, subsidizedFee)
+      : resolvedBaseDelivery;
+
   const finalTotal = Math.max(0, subtotal - discount) + effectiveDeliveryCharge;
-  const deliveryOfferMessage = getDeliveryOfferMessage(deliveryQuote);
+  const deliveryOfferMessage = checkoutFreeDeliveryUnlocked
+    ? subtotal >= freeDelivery.nationwideThreshold
+      ? `Free Nationwide Delivery unlocked (\u09F3${freeDelivery.nationwideThreshold}+ order)`
+      : hasSelectedCity && isCheckoutCityDhaka && subtotal >= freeDelivery.dhakaThreshold
+        ? `Free Dhaka Delivery unlocked (\u09F3${freeDelivery.dhakaThreshold}+ order)`
+        : isAdminFreeShipApplied
+          ? "Free Shipping coupon applied"
+          : getDeliveryOfferMessage(deliveryQuote)
+    : isOutsideDhakaSubsidized && typeof subsidizedFee === "number"
+      ? `Subsidized Outside Dhaka delivery applied (\u09F3${subsidizedFee})`
+      : getDeliveryOfferMessage(deliveryQuote);
 
   const fieldErrors = useMemo<CheckoutFieldErrors>(() => {
     const errors: CheckoutFieldErrors = {};
@@ -389,25 +475,25 @@ function CheckoutContent() {
     }
 
     if (!isValidBdMobileNumber(normalizedShippingPhone)) {
-      errors.phoneNumber = "Phone number ta 11 digit-er valid BD number din.";
+      errors.phoneNumber = "Please enter a valid 11-digit BD mobile number (e.g. 017XXXXXXXX).";
     }
 
     if (!shippingForm.pathao_city_id) {
-      errors.city = "City select korun.";
+      errors.city = "Please select your city.";
     }
 
     if (!shippingForm.pathao_zone_id) {
-      errors.zone = "Zone select korun.";
+      errors.zone = "Please select your zone / thana.";
     }
 
     if (!shippingForm.pathao_area_id) {
-      errors.area = "Area select korun.";
+      errors.area = "Please select your delivery area.";
     } else if (selectedArea && !selectedArea.homeDeliveryAvailable) {
-      errors.area = "Home delivery is not available in this area";
+      errors.area = "Home delivery is not available in this area.";
     }
 
     if (!shippingForm.streetAddress.trim()) {
-      errors.streetAddress = "Street address ta din.";
+      errors.streetAddress = "Please enter your house, road, or street address.";
     }
 
     return errors;
@@ -437,22 +523,24 @@ function CheckoutContent() {
     const firstFieldError = Object.values(fieldErrors)[0];
     if (firstFieldError) return firstFieldError;
     if (!selectedPaymentMethod) return "Please select a payment method.";
-    if (deliveryState === "loading") return "Delivery charge calculate hocche.";
-    if (deliveryState !== "success") {
-      return "Delivery calculation failed. Please re-check address.";
+    if (deliveryState === "loading" && !checkoutFreeDeliveryUnlocked) {
+      return "Calculating delivery charge...";
+    }
+    if (deliveryState === "idle" && !checkoutFreeDeliveryUnlocked && !hasDeliveryLocation) {
+      return "Please select your delivery city, zone, and area.";
     }
     if (finalTotal <= 0) {
       return "Order total must be greater than ৳0 to place an order.";
     }
     return null;
-  }, [deliveryState, fieldErrors, finalTotal, items.length, selectedPaymentMethod]);
+  }, [checkoutFreeDeliveryUnlocked, deliveryState, fieldErrors, finalTotal, hasDeliveryLocation, items.length, selectedPaymentMethod]);
 
   const placeOrderDisabled =
     isPlacingOrder ||
     items.length === 0 ||
     !selectedPaymentMethod ||
     finalTotal <= 0 ||
-    (Boolean(user) && deliveryState === "loading");
+    (Boolean(user) && deliveryState === "loading" && !checkoutFreeDeliveryUnlocked);
 
   const orderButtonLabel = useMemo(() => {
     if (isPlacingOrder) {
@@ -480,6 +568,25 @@ function CheckoutContent() {
     initiateCheckoutTrackedRef.current = true;
     trackInitiateCheckout(items, subtotal);
   };
+
+  // Invalidate stale quote token & idempotency key whenever order inputs change
+  useEffect(() => {
+    checkoutIdempotencyKeyRef.current = null;
+    setPriceQuoteToken(null);
+    setPriceRevisionQuote(null);
+    setPriceChanges([]);
+  }, [
+    items,
+    promoCode,
+    selectedPaymentMethod?.type,
+    shippingForm.fullName,
+    shippingForm.phoneNumber,
+    shippingForm.pathao_city_id,
+    shippingForm.pathao_zone_id,
+    shippingForm.pathao_area_id,
+    shippingForm.streetAddress,
+    effectiveDeliveryCharge,
+  ]);
 
   // Fire InitiateCheckout immediately when the user lands on /checkout with items
   useEffect(() => {
@@ -525,7 +632,7 @@ function CheckoutContent() {
       fullName:
         current.fullName ||
         [user.firstName, user.lastName].filter(Boolean).join(" "),
-      phoneNumber: current.phoneNumber || user.phone || "",
+      phoneNumber: current.phoneNumber || sanitizePhoneInput(user.phone || ""),
     }));
   }, [user]);
 
@@ -537,7 +644,7 @@ function CheckoutContent() {
 
     setShippingForm((current) => ({
       fullName: current.fullName || savedLocation.fullName || "",
-      phoneNumber: current.phoneNumber || savedLocation.phoneNumber || "",
+      phoneNumber: current.phoneNumber || sanitizePhoneInput(savedLocation.phoneNumber || ""),
       city: current.city || savedLocation.city || "",
       zone: current.zone || savedLocation.zone || "",
       area: current.area || savedLocation.area || "",
@@ -748,6 +855,24 @@ function CheckoutContent() {
       if (finalTotal > 0) {
         setExpandedSection("address");
       }
+      const firstErrKey = (
+        ["fullName", "phoneNumber", "city", "zone", "area", "streetAddress"] as CheckoutFieldKey[]
+      ).find((k) => Boolean(fieldErrors[k]));
+      if (firstErrKey && typeof document !== "undefined") {
+        const idMap: Record<CheckoutFieldKey, string> = {
+          fullName: "checkout-full-name",
+          phoneNumber: "checkout-phone",
+          city: "checkout-city",
+          zone: "checkout-zone",
+          area: "checkout-area",
+          streetAddress: "checkout-street-address",
+        };
+        const el = document.getElementById(idMap[firstErrKey]);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (typeof el.focus === "function") el.focus({ preventScroll: true });
+        }
+      }
       return;
     }
 
@@ -765,7 +890,7 @@ function CheckoutContent() {
     if (shippingForm.city && shippingForm.pathao_city_id) {
       saveLocation({
         fullName: shippingForm.fullName.trim(),
-        phoneNumber: shippingForm.phoneNumber.trim(),
+        phoneNumber: normalizedShippingPhone,
         city: shippingForm.city.trim(),
         zone: shippingForm.zone.trim(),
         area: shippingForm.area.trim(),
@@ -806,7 +931,7 @@ function CheckoutContent() {
           })),
           addressData: {
             fullName: shippingForm.fullName.trim(),
-            phoneNumber: shippingForm.phoneNumber.trim(),
+            phoneNumber: normalizedShippingPhone,
             address: shippingForm.area.trim(),
             area: shippingForm.area.trim(),
             streetAddress: shippingForm.streetAddress.trim(),
@@ -822,22 +947,25 @@ function CheckoutContent() {
           paymentMethod: selectedPaymentMethod.type,
           couponCode: promoCode || undefined,
           shippingCost: effectiveDeliveryCharge,
-          customerDeliveryCharge: isFreeDeliveryUnlocked
-            ? 0
-            : (deliveryQuote?.customerDeliveryCharge ?? deliveryCharge),
-          courierDeliveryCharge: deliveryQuote?.courierDeliveryCharge ?? null,
-          deliveryDiscountAmount: isFreeDeliveryUnlocked
-            ? deliveryCharge
-            : (deliveryQuote?.deliveryDiscountAmount ?? 0),
+          customerDeliveryCharge: effectiveDeliveryCharge,
+          courierDeliveryCharge: deliveryQuote?.courierDeliveryCharge ?? (deliveryState === "error" ? fallbackDeliveryEstimate : null),
+          deliveryDiscountAmount: Math.max(
+            0,
+            (deliveryQuote?.courierDeliveryCharge ?? resolvedBaseDelivery) - effectiveDeliveryCharge,
+          ),
           deliveryPricingSource:
-            deliveryQuote?.deliveryPricingSource ?? "PATHAO",
-          deliveryOfferType: isFreeDeliveryUnlocked
+            deliveryQuote?.deliveryPricingSource ?? (deliveryState === "error" ? "FALLBACK" : "PATHAO"),
+          deliveryOfferType: checkoutFreeDeliveryUnlocked
             ? "FREE"
-            : (deliveryQuote?.deliveryOfferType ?? "DEFAULT"),
+            : isOutsideDhakaSubsidized
+              ? "FIXED"
+              : (deliveryQuote?.deliveryOfferType ?? "DEFAULT"),
           deliveryOfferProductId: deliveryQuote?.deliveryOfferProductId ?? null,
-          deliveryOfferBadgeText: isFreeDeliveryUnlocked
+          deliveryOfferBadgeText: checkoutFreeDeliveryUnlocked
             ? "Free Delivery Offer"
-            : (deliveryQuote?.deliveryOfferBadgeText ?? null),
+            : isOutsideDhakaSubsidized
+              ? `Subsidized Delivery (\u09F3${subsidizedFee})`
+              : (deliveryQuote?.deliveryOfferBadgeText ?? null),
           shippingMethod: "pathao",
           customerNote: "",
           sessionUserId,
@@ -855,9 +983,7 @@ function CheckoutContent() {
           return;
         }
 
-        if (data.code === "IDEMPOTENCY_PAYLOAD_MISMATCH") {
-          checkoutIdempotencyKeyRef.current = null;
-        }
+        checkoutIdempotencyKeyRef.current = null;
         setCheckoutError(getFriendlyCheckoutError(data));
         return;
       }
@@ -1137,14 +1263,15 @@ function CheckoutContent() {
                           : "border-[#E2D9CF] hover:border-[#984B29]/60"
                     }`}
                   >
-                    <div className="flex items-center pl-4 pr-2 text-xs font-bold text-[#7A6E65] border-r border-[#E2D9CF] select-none">
-                      +880
+                    <div className="flex items-center pl-4 pr-2.5 text-xs font-bold text-[#7A6E65] border-r border-[#E2D9CF] select-none">
+                      +88
                     </div>
                     <input
                       id="checkout-phone"
                       type="tel"
                       inputMode="tel"
-                      maxLength={11}
+                      autoComplete="tel"
+                      maxLength={20}
                       style={{ outline: "none", boxShadow: "none" }}
                       value={shippingForm.phoneNumber}
                       onFocus={() => {
@@ -1153,12 +1280,16 @@ function CheckoutContent() {
                       }}
                       onBlur={() => {
                         setFocusedField(null);
+                        setShippingForm((current) => ({
+                          ...current,
+                          phoneNumber: normalizeBdMobileNumber(current.phoneNumber),
+                        }));
                         markFieldTouched("phoneNumber");
                       }}
                       onChange={(event) =>
                         setShippingForm((current) => ({
                           ...current,
-                          phoneNumber: normalizeBdMobileNumber(event.target.value),
+                          phoneNumber: sanitizePhoneInput(event.target.value),
                         }))
                       }
                       placeholder="Phone number"
@@ -1774,7 +1905,57 @@ function CheckoutContent() {
               </div>
 
               {/* Universal Offer Engine Placement: Checkout Page */}
-              <OfferSlot placement="checkout_page" className="my-3" />
+              <OfferSlot
+                placement="checkout_page"
+                className="my-3"
+                onApplyCoupon={(code) => {
+                  setPromoInput(code);
+                  applyPromoCode(code);
+                }}
+              />
+
+              {/* Promo Code Input */}
+              {couponsEnabled && (
+                <div className="mt-3">
+                  {promoCode ? (
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs">
+                      <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                        <Sparkles size={13} className="text-emerald-600" />
+                        Promo <span className="font-mono font-bold">{promoCode}</span> applied
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          removePromoCode();
+                          setPromoInput("");
+                        }}
+                        className="text-[11px] font-bold text-[#8B261D] hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                        placeholder="Promo / coupon code"
+                        className="flex-1 rounded-xl border border-[#E2D9CF] bg-[#FDFBF9] px-3 py-2 text-xs font-medium uppercase tracking-wide text-[#2D1F18] outline-none focus:border-[#984B29]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (promoInput.trim()) applyPromoCode(promoInput.trim());
+                        }}
+                        className="rounded-xl border border-[#984B29] px-3.5 py-2 text-xs font-bold text-[#984B29] hover:bg-[#984B29] hover:text-white transition-colors"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Price Breakdown */}
               <div className="mt-4 space-y-2.5 border-t border-[#F4EFEA] pt-4 text-xs">
@@ -1797,12 +1978,12 @@ function CheckoutContent() {
                     <Truck size={14} className="text-[#984B29]" /> Delivery Fee
                   </span>
                   <span className="font-semibold text-[#2D1F18] font-price">
-                    {isFreeDeliveryUnlocked ? (
-                      <span className="font-bold text-emerald-700">🎉 FREE</span>
+                    {checkoutFreeDeliveryUnlocked ? (
+                      <span className="font-bold text-emerald-700">FREE</span>
                     ) : deliveryState === "loading"
                       ? "Calculating..."
-                      : deliveryState === "success"
-                        ? formatCustomerDeliveryCharge(deliveryCharge)
+                      : deliveryState === "success" || (deliveryState === "error" && hasDeliveryLocation)
+                        ? formatCustomerDeliveryCharge(effectiveDeliveryCharge)
                         : "Select Address"}
                   </span>
                 </div>
@@ -1813,9 +1994,9 @@ function CheckoutContent() {
                   </p>
                 )}
 
-                {deliveryError && (
-                  <p className="rounded-lg bg-[#FDF6F5] border border-[#F0D5D1] p-2 text-[11px] text-[#8B261D]">
-                    {deliveryError}
+                {deliveryError && !checkoutFreeDeliveryUnlocked && (
+                  <p className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800">
+                    Live courier rate unavailable; estimated delivery charge applied.
                   </p>
                 )}
 
@@ -1920,7 +2101,10 @@ function CheckoutContent() {
       {/* Price Revision Consent Modal (Master Spec Section 11.2) */}
       <PriceRevisionConsentModal
         isOpen={showPriceRevisionModal}
-        onClose={() => setShowPriceRevisionModal(false)}
+        onClose={() => {
+          setShowPriceRevisionModal(false);
+          setPriceQuoteToken(null);
+        }}
         onAccept={handleAcceptPriceRevision}
         priceQuoteToken={priceQuoteToken || ""}
         changes={priceChanges}

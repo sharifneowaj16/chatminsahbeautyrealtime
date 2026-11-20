@@ -92,6 +92,8 @@ export async function POST(request: NextRequest) {
             deliveryOfferEnabled: true,
             deliveryOfferType: true,
             deliveryOfferAmount: true,
+            deliveryChargeInsideDhaka: true,
+            deliveryChargeOutsideDhaka: true,
             deliveryOfferStartDate: true,
             deliveryOfferEndDate: true,
             deliveryOfferBadgeText: true,
@@ -115,6 +117,8 @@ export async function POST(request: NextRequest) {
         deliveryOfferEnabled: product.deliveryOfferEnabled,
         deliveryOfferType: product.deliveryOfferType,
         deliveryOfferAmount: product.deliveryOfferAmount,
+        deliveryChargeInsideDhaka: product.deliveryChargeInsideDhaka,
+        deliveryChargeOutsideDhaka: product.deliveryChargeOutsideDhaka,
         deliveryOfferStartDate: product.deliveryOfferStartDate,
         deliveryOfferEndDate: product.deliveryOfferEndDate,
         deliveryOfferBadgeText: product.deliveryOfferBadgeText,
@@ -223,6 +227,7 @@ export async function POST(request: NextRequest) {
       courierDeliveryCharge: shippingCharge,
       courierPricingSource: 'PATHAO',
       products: deliveryOfferProducts,
+      isInsideDhaka: recipientCity === 1,
     });
 
     return NextResponse.json({

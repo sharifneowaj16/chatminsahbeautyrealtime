@@ -88,8 +88,14 @@ export interface CartOfferCalculationParams {
   freeDeliveryConfig?: {
     nationwideThreshold?: number;
     dhakaThreshold?: number;
+    outsideDhakaSubsidizedThreshold?: number;
+    outsideDhakaSubsidizedFee?: number;
   } | null;
   availableCoupons?: PromoRule[] | null;
+  antiConflict?: {
+    strictAntiStacking?: boolean;
+    maxCartDiscountCap?: number;
+  } | null;
 }
 
 export interface CartOfferCalculationResult {

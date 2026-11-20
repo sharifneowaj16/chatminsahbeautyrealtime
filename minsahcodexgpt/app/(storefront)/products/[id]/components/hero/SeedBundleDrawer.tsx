@@ -151,7 +151,13 @@ export default function SeedBundleDrawer({
     let totalStoreAbsorbedDelivery = 0;
     let hasAnyFreeDelivery = false;
 
-    const costRatio = bundleConfig?.estimatedCostRatio ?? 0.75;
+    const rawCostRatio = Number(bundleConfig?.estimatedCostRatio ?? 60);
+    const costRatio =
+      Number.isFinite(rawCostRatio) && rawCostRatio > 0
+        ? rawCostRatio > 1
+          ? rawCostRatio / 100
+          : rawCostRatio
+        : 0.6;
 
     selectedProducts.forEach((p) => {
       totalSellingPrice += p.price;

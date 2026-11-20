@@ -134,7 +134,13 @@ export default function SeedHeroBundleCard({
 
     const totalSellingPrice = effectiveMainPrice + effectivePairedPrice;
     // Fallback purchase cost: from admin bundle config or 75% to guarantee zero loss
-    const costRatio = bundleConfig?.estimatedCostRatio ?? 0.75;
+    const rawCostRatio = Number(bundleConfig?.estimatedCostRatio ?? 60);
+    const costRatio =
+      Number.isFinite(rawCostRatio) && rawCostRatio > 0
+        ? rawCostRatio > 1
+          ? rawCostRatio / 100
+          : rawCostRatio
+        : 0.6;
     const mainCost = (mainProduct.costPrice != null && Number(mainProduct.costPrice) > 0)
       ? Number(mainProduct.costPrice)
       : effectiveMainPrice * costRatio;

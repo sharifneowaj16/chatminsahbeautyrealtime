@@ -49,6 +49,8 @@ import {
 import { triggerEventDrivenCatalogSync } from "@/lib/meta-platform/domains/catalog/event-sync";
 import { reserveCampaignUsageInTransaction } from "@/lib/campaign-usage";
 import { normalizeFlashDealsConfig } from "@/lib/homepageConfig";
+import { getUniversalOfferEngineServerConfig } from "@/lib/commerce/offer-engine/server";
+import { resolveProductOffer } from "@/lib/commerce/product-offer";
 import {
   createPriceQuoteToken,
   verifyPriceQuoteToken,
@@ -349,6 +351,9 @@ export async function POST(request: NextRequest) {
           name: true,
           sku: true,
           price: true,
+          salePrice: true,
+          offerStartDate: true,
+          offerEndDate: true,
           quantity: true,
           reservedQuantity: true,
           trackInventory: true,
@@ -373,6 +378,9 @@ export async function POST(request: NextRequest) {
               id: true,
               productId: true,
               price: true,
+              salePrice: true,
+              offerStartDate: true,
+              offerEndDate: true,
               quantity: true,
               reservedQuantity: true,
               sku: true,
@@ -486,12 +494,26 @@ export async function POST(request: NextRequest) {
       return false;
     };
 
+    const offerEngineServerConfig = await getUniversalOfferEngineServerConfig();
+    const bundlesEnabledByAdmin = offerEngineServerConfig.bundles.enabled !== false;
+
+    const bundleGroupCounts = new Map<string, number>();
+    for (const item of items) {
+      if (item.pricingSource === "BUNDLE") {
+        const gKey = item.bundleInstanceId || item.bundleGroupId || item.bundleId || "bundle";
+        bundleGroupCounts.set(gKey, (bundleGroupCounts.get(gKey) ?? 0) + item.quantity);
+      }
+    }
+
     const orderItems = items.map((item) => {
       const product = productMap.get(item.productId)!;
       const variant = item.variantId ? variantMap.get(item.variantId) : null;
-      const regularPrice = parseFloat(
-        (variant?.price ?? product.price).toString(),
-      );
+      const offerSnapshot = resolveProductOffer({
+        product,
+        variant: variant ?? null,
+        now,
+      });
+      const regularPrice = parseFloat(offerSnapshot.effectivePrice.toFixed(2));
       const sku = variant?.sku ?? product.sku;
       const name = variant ? `${product.name} - ${variant.name}` : product.name;
       const bundleGroupId = item.bundleGroupId || null;
@@ -553,10 +575,20 @@ export async function POST(request: NextRequest) {
         typeof item.price === "number" &&
         item.price > 0
       ) {
-        unitPrice = item.price;
-        discountAmount = parseFloat(
-          Math.max(0, (regularPrice - unitPrice) * item.quantity).toFixed(2),
-        );
+        const gKey = item.bundleInstanceId || item.bundleGroupId || item.bundleId || "bundle";
+        const groupSize = bundleGroupCounts.get(gKey) ?? 0;
+        const minAllowedBundlePrice = parseFloat((regularPrice * 0.5).toFixed(2));
+        if (bundlesEnabledByAdmin && groupSize >= 2) {
+          unitPrice = parseFloat(
+            Math.max(minAllowedBundlePrice, Math.min(regularPrice, item.price)).toFixed(2),
+          );
+          discountAmount = parseFloat(
+            Math.max(0, (regularPrice - unitPrice) * item.quantity).toFixed(2),
+          );
+        } else {
+          unitPrice = regularPrice;
+          discountAmount = 0;
+        }
       } else {
         unitPrice = regularPrice;
         discountAmount = 0;
@@ -672,6 +704,8 @@ export async function POST(request: NextRequest) {
       products,
       variants,
       address: addressData ?? savedAccountingAddress,
+      subtotal,
+      couponCode,
       client: {
         shippingCost,
         customerDeliveryCharge,
@@ -698,7 +732,13 @@ export async function POST(request: NextRequest) {
     ];
     const regularSubtotal = parseFloat(
       orderItems
-        .filter((item) => item.pricingSource !== "FLASH_DEAL")
+        .filter((item) => item.pricingSource !== "FLASH_DEAL" && item.pricingSource !== "BUNDLE")
+        .reduce((s, i) => s + i.total, 0)
+        .toFixed(2),
+    );
+    const bundleSubtotal = parseFloat(
+      orderItems
+        .filter((item) => item.pricingSource === "BUNDLE")
         .reduce((s, i) => s + i.total, 0)
         .toFixed(2),
     );
@@ -709,6 +749,7 @@ export async function POST(request: NextRequest) {
       couponCode,
       subtotal,
       eligibleSubtotal: regularSubtotal,
+      bundleSubtotal,
       shippingCost: shippingCostNum,
       phoneNumber: customerPhone,
       phoneNumbers: checkoutPhones,
@@ -813,19 +854,16 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    const notifyItems = items.map((item) => {
-      const product = productMap.get(item.productId)!;
-      const variant = item.variantId ? variantMap.get(item.variantId) : null;
-      const unitPrice = parseFloat(
-        (variant?.price ?? product.price).toString(),
-      );
+    const notifyItems = orderItems.map((orderItem) => {
+      const product = productMap.get(orderItem.productId)!;
+      const variant = orderItem.variantId ? variantMap.get(orderItem.variantId) : null;
 
       return {
         name: product.name,
         variant: formatVariantForNotification(variant),
-        quantity: item.quantity,
-        unitPrice,
-        total: parseFloat((unitPrice * item.quantity).toFixed(2)),
+        quantity: orderItem.quantity,
+        unitPrice: orderItem.price,
+        total: orderItem.total,
       };
     });
     const orderAttribution = readOrderAttribution(request, { userId });

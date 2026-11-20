@@ -1,7 +1,6 @@
 import type { Prisma, PrismaClient } from '@/generated/prisma/client';
 import { getBangladeshPhoneVariations } from '@/lib/phone';
-
-const UNIVERSAL_OFFER_CONFIG_KEY = 'universalOfferEngineConfig';
+import { getUniversalOfferEngineServerConfig } from '@/lib/commerce/offer-engine/server';
 
 type MoneyLike = number | string | null | undefined | { toString(): string };
 
@@ -68,6 +67,7 @@ export async function validateCouponForOrder(params: {
   couponCode?: string;
   subtotal: number;
   eligibleSubtotal?: number;
+  bundleSubtotal?: number;
   shippingCost: number;
   phoneNumber?: string | null;
   phoneNumbers?: Array<string | null | undefined>;
@@ -84,96 +84,65 @@ export async function validateCouponForOrder(params: {
     };
   }
 
-  // 1. Check SiteConfig master switch for couponsEnabled
-  try {
-    const siteConfig = await params.prisma.siteConfig.findUnique({
-      where: { key: UNIVERSAL_OFFER_CONFIG_KEY },
-    });
-    if (siteConfig?.value && typeof siteConfig.value === 'object') {
-      const configVal = siteConfig.value as any;
-      if (configVal.couponsEnabled === false) {
-        throw new CouponValidationError(
-          'Promo vouchers are currently disabled',
-          'COUPON_DISABLED',
-          400
-        );
-      }
-    }
-  } catch (err) {
-    if (err instanceof CouponValidationError) throw err;
-    // Continue
+  // 1. Read authoritative Admin Universal Offer Engine config
+  const offerConfig = await getUniversalOfferEngineServerConfig();
+  if (!offerConfig.couponsEnabled) {
+    throw new CouponValidationError(
+      'Promo vouchers are currently disabled',
+      'COUPON_DISABLED',
+      400
+    );
   }
+
+  const matchedOfferRule = offerConfig.coupons.find(
+    (c) => c && c.code && String(c.code).trim().toUpperCase() === couponCode
+  );
+  const strictAntiStacking = offerConfig.antiConflict.strictAntiStacking !== false;
+  const maxCartDiscountCap = Math.max(0, Number(offerConfig.antiConflict.maxCartDiscountCap ?? 0) || 0);
+  const allowBundleForCoupon = !strictAntiStacking && Boolean(matchedOfferRule?.allowOnBundles);
 
   let coupon = (await params.prisma.coupon.findUnique({
     where: { code: couponCode },
   })) as CouponRecord | null;
 
-  // If found in database and explicitly deactivated, reject immediately
   if (coupon && !coupon.isActive) {
     throw new CouponValidationError('Coupon is invalid or inactive', 'COUPON_NOT_FOUND');
   }
 
-  // Fallback to Universal Offer Engine (siteConfig)
-  if (!coupon) {
-    try {
-      const siteConfig = await params.prisma.siteConfig.findUnique({
-        where: { key: UNIVERSAL_OFFER_CONFIG_KEY },
-      });
-      if (siteConfig?.value && typeof siteConfig.value === 'object') {
-        const configCoupons = (siteConfig.value as {
-          coupons?: Array<{
-            code: string;
-            type: 'percentage' | 'flat';
-            value: number;
-            minSubtotal?: number;
-            maxDiscount?: number;
-            isActive?: boolean;
-            startDate?: string | null;
-            endDate?: string | null;
-          }>;
-        }).coupons;
-
-        if (Array.isArray(configCoupons)) {
-          const matched = configCoupons.find(
-            (c) => c && c.code && c.code.trim().toUpperCase() === couponCode
-          );
-          if (matched) {
-            if (matched.isActive === false) {
-              throw new CouponValidationError('Coupon is invalid or inactive', 'COUPON_NOT_FOUND');
-            }
-            coupon = {
-              id: '',
-              code: couponCode,
-              type: matched.type === 'percentage' ? 'PERCENTAGE' : 'FIXED',
-              value: matched.value,
-              minPurchase: matched.minSubtotal ?? 0,
-              maxDiscount: matched.maxDiscount ?? 0,
-              usageLimit: null,
-              usageCount: 0,
-              perUserLimit: null,
-              startDate: matched.startDate ? new Date(matched.startDate) : null,
-              endDate: matched.endDate ? new Date(matched.endDate) : null,
-              isActive: true,
-            };
-          }
-        }
-      }
-    } catch (err) {
-      if (err instanceof CouponValidationError) throw err;
-      // Continue
+  // Fallback to Universal Offer Engine rule if not synced in relational table
+  if (!coupon && matchedOfferRule) {
+    if (matchedOfferRule.isActive === false) {
+      throw new CouponValidationError('Coupon is invalid or inactive', 'COUPON_NOT_FOUND');
     }
+    coupon = {
+      id: '',
+      code: couponCode,
+      type: matchedOfferRule.type === 'percentage' ? 'PERCENTAGE' : 'FIXED',
+      value: matchedOfferRule.value,
+      minPurchase: matchedOfferRule.minSubtotal ?? 0,
+      maxDiscount: matchedOfferRule.maxDiscount ?? 0,
+      usageLimit: null,
+      usageCount: 0,
+      perUserLimit: null,
+      startDate: matchedOfferRule.startDate ? new Date(matchedOfferRule.startDate) : null,
+      endDate: matchedOfferRule.endDate ? new Date(matchedOfferRule.endDate) : null,
+      isActive: true,
+    };
   }
 
   if (!coupon || !coupon.isActive) {
     throw new CouponValidationError('Coupon is invalid or inactive', 'COUPON_NOT_FOUND');
   }
 
+  // Enforce date window from both DB coupon and Offer Engine rule
   const now = new Date();
-  if (coupon.startDate && coupon.startDate > now) {
+  const effectiveStart = coupon.startDate ?? (matchedOfferRule?.startDate ? new Date(matchedOfferRule.startDate) : null);
+  const effectiveEnd = coupon.endDate ?? (matchedOfferRule?.endDate ? new Date(matchedOfferRule.endDate) : null);
+
+  if (effectiveStart && !isNaN(effectiveStart.getTime()) && effectiveStart > now) {
     throw new CouponValidationError('Coupon is not active yet', 'COUPON_NOT_STARTED');
   }
-
-  if (coupon.endDate && coupon.endDate < now) {
+  if (effectiveEnd && !isNaN(effectiveEnd.getTime()) && effectiveEnd < now) {
     throw new CouponValidationError('Coupon has expired', 'COUPON_EXPIRED');
   }
 
@@ -184,7 +153,7 @@ export async function validateCouponForOrder(params: {
   const minPurchase = toMoney(coupon.minPurchase);
   if (minPurchase > 0 && params.subtotal < minPurchase) {
     throw new CouponValidationError(
-      `Minimum order amount for this coupon is ৳${minPurchase}`,
+      `Minimum order amount for this coupon is \u09F3${minPurchase}`,
       'COUPON_MIN_PURCHASE_NOT_MET'
     );
   }
@@ -230,17 +199,27 @@ export async function validateCouponForOrder(params: {
     }
   }
 
-  const couponType = String(coupon.type).toUpperCase();
+  const rawCouponType = String(coupon.type).toUpperCase();
   const value = toMoney(coupon.value);
+  const couponType =
+    coupon.code.trim().toUpperCase() === 'FREESHIP' && value <= 0
+      ? 'FREE_SHIPPING'
+      : rawCouponType;
   const maxDiscount = toMoney(coupon.maxDiscount);
-  const eligibleSubtotal =
+  const baseRegularSubtotal =
     params.eligibleSubtotal !== undefined
       ? Math.max(0, params.eligibleSubtotal)
       : params.subtotal;
+  const bundleBase = Math.max(0, params.bundleSubtotal ?? 0);
+  const eligibleSubtotal = allowBundleForCoupon
+    ? baseRegularSubtotal + bundleBase
+    : baseRegularSubtotal;
 
   if (eligibleSubtotal <= 0 && params.subtotal > 0 && couponType !== 'FREE_SHIPPING') {
     throw new CouponValidationError(
-      'Promo vouchers cannot be applied to Flash Deal items',
+      bundleBase > 0
+        ? `${coupon.code} cannot be applied to promotional bundles`
+        : 'Promo vouchers cannot be applied to Flash Deal items',
       'COUPON_INELIGIBLE_ITEMS',
       400,
     );
@@ -250,7 +229,7 @@ export async function validateCouponForOrder(params: {
 
   if (couponType === 'PERCENTAGE') {
     const rate = value > 1 ? value / 100 : value;
-    rawDiscount = eligibleSubtotal * rate;
+    rawDiscount = Math.round(eligibleSubtotal * rate);
     if (maxDiscount > 0) rawDiscount = Math.min(rawDiscount, maxDiscount);
   } else if (couponType === 'FIXED') {
     rawDiscount = Math.min(value, eligibleSubtotal);
@@ -260,8 +239,10 @@ export async function validateCouponForOrder(params: {
     throw new CouponValidationError('Coupon type is not supported', 'COUPON_TYPE_UNSUPPORTED');
   }
 
-  // Cap promo discount so regular subtotal is never reduced below 0.
-  // Leaving at least 1 taka ensures positive payable balance when subtotal consists only of regular items.
+  if (maxCartDiscountCap > 0 && couponType !== 'FREE_SHIPPING') {
+    rawDiscount = Math.min(rawDiscount, maxCartDiscountCap);
+  }
+
   const maxDiscountableAmount = Math.max(0, eligibleSubtotal - (eligibleSubtotal === params.subtotal ? 1 : 0));
   const discountAmount =
     couponType === 'FREE_SHIPPING'

@@ -162,10 +162,13 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
         freeDeliveryConfig: {
           nationwideThreshold: freeDelivery.nationwideThreshold,
           dhakaThreshold: freeDelivery.dhakaThreshold,
+          outsideDhakaSubsidizedThreshold: freeDelivery.outsideDhakaSubsidizedThreshold,
+          outsideDhakaSubsidizedFee: freeDelivery.outsideDhakaSubsidizedFee,
         },
+        antiConflict: config?.antiConflict ?? { strictAntiStacking: true, maxCartDiscountCap: 0 },
       });
     },
-    [coupons, couponsEnabled, freeDelivery]
+    [config?.antiConflict, coupons, couponsEnabled, freeDelivery]
   );
 
   const value = useMemo<OfferEngineContextValue>(

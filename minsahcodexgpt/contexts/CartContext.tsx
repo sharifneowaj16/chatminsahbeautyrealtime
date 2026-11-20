@@ -125,6 +125,73 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const CART_LINE_META_KEY = 'minsah_cart_line_meta';
+type StoredCartLineMeta = {
+  price: number;
+  name?: string;
+  bundleName?: string | null;
+  bundleDiscountRatio?: number | null;
+  bundleSource?: 'hero-card' | 'custom-drawer' | null;
+  isBundle?: boolean | null;
+  updatedAt: number;
+};
+
+function readCartLineMetaMap(): Record<string, StoredCartLineMeta> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const rawMeta = localStorage.getItem(CART_LINE_META_KEY);
+    if (!rawMeta) return {};
+    const parsed = JSON.parse(rawMeta) as Record<string, StoredCartLineMeta>;
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const cleaned: Record<string, StoredCartLineMeta> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (v && typeof v.price === 'number' && v.price > 0 && (!v.updatedAt || v.updatedAt >= cutoff)) {
+        cleaned[k] = v;
+      }
+    }
+    return cleaned;
+  } catch {
+    return {};
+  }
+}
+
+function saveCartLineMeta(lineKey: string, item: CartItem) {
+  if (typeof window === 'undefined') return;
+  if (item.pricingSource !== 'BUNDLE' && item.pricingSource !== 'FLASH_DEAL' && !item.isBundle) return;
+  if (typeof item.price !== 'number' || item.price <= 0) return;
+  try {
+    const map = readCartLineMetaMap();
+    map[lineKey] = {
+      price: item.price,
+      name: item.name,
+      bundleName: item.bundleName ?? null,
+      bundleDiscountRatio: item.bundleDiscountRatio ?? null,
+      bundleSource: item.bundleSource ?? null,
+      isBundle: Boolean(item.isBundle || item.pricingSource === 'BUNDLE'),
+      updatedAt: Date.now(),
+    };
+    localStorage.setItem(CART_LINE_META_KEY, JSON.stringify(map));
+  } catch {}
+}
+
+function removeCartLineMeta(lineKey?: string | null) {
+  if (typeof window === 'undefined' || !lineKey) return;
+  try {
+    const map = readCartLineMetaMap();
+    if (lineKey in map) {
+      delete map[lineKey];
+      localStorage.setItem(CART_LINE_META_KEY, JSON.stringify(map));
+    }
+  } catch {}
+}
+
+function clearCartLineMeta() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(CART_LINE_META_KEY);
+  } catch {}
+}
+
 const PAYMENT_METHODS: PaymentMethod[] = [
   { id: '1', type: 'cod', name: 'Cash on Delivery', icon: '💵' },
   { id: '2', type: 'bkash', name: 'bKash', icon: '💳' },
@@ -209,6 +276,19 @@ function mapApiItem(apiItem: {
     id: apiItem.id,
   });
 
+  const isBundleLine = Boolean(apiItem.pricingSource === 'BUNDLE' || apiItem.bundleId);
+  const metaMap = readCartLineMetaMap();
+  const savedMeta = metaMap[canonicalLineKey];
+  const resolvedPrice =
+    savedMeta &&
+    (isBundleLine || apiItem.pricingSource === 'FLASH_DEAL') &&
+    savedMeta.price > 0 &&
+    savedMeta.price <= price
+      ? savedMeta.price
+      : price;
+  const resolvedName =
+    savedMeta?.name && isBundleLine ? savedMeta.name : apiItem.product.name;
+
   return {
     id: canonicalLineKey,
     lineKey: canonicalLineKey,
@@ -217,15 +297,18 @@ function mapApiItem(apiItem: {
     bundleId: apiItem.bundleId || null,
     bundleGroupId: apiItem.bundleGroupId || null,
     bundleInstanceId: apiItem.bundleInstanceId || null,
-    isBundle: Boolean(apiItem.pricingSource === 'BUNDLE' || apiItem.bundleId),
+    isBundle: isBundleLine,
+    bundleName: savedMeta?.bundleName ?? null,
+    bundleDiscountRatio: savedMeta?.bundleDiscountRatio ?? null,
+    bundleSource: savedMeta?.bundleSource ?? null,
 
     // DB IDs — kept separate so order placement always has the right value
     cartItemId: apiItem.id,
     productId:  apiItem.productId,   // ← never null/undefined
     variantId:  apiItem.variantId,   // ← null when no variant
 
-    name:     apiItem.product.name,
-    price,
+    name:     resolvedName,
+    price:    resolvedPrice,
     quantity: apiItem.quantity,
     image:    apiItem.product.image ?? '',
     sku:      apiItem.variant?.sku ?? apiItem.product.sku ?? undefined,
@@ -314,8 +397,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       freeDeliveryConfig,
       availableCoupons: couponsEnabled ? activeCoupons : [],
       couponsEnabled,
+      antiConflict: offerConfig?.antiConflict ?? { strictAntiStacking: true, maxCartDiscountCap: 0 },
     });
-  }, [items, subtotal, promoCode, selectedAddress?.city, freeDeliveryConfig, couponsEnabled, activeCoupons]);
+  }, [items, subtotal, promoCode, selectedAddress?.city, freeDeliveryConfig, couponsEnabled, activeCoupons, offerConfig?.antiConflict]);
 
   const isFreeDeliveryUnlocked = offerEvaluation.isFreeDeliveryUnlocked;
 
@@ -409,6 +493,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           productId: item.productId ?? item.id,
           variantId: item.variantId ?? null,
         });
+        saveCartLineMeta(canonicalLineKey, item);
 
         const requestBody = JSON.stringify({
           // Always prefer explicit productId; fall back to id only as last resort
@@ -593,6 +678,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         quantity: clampCartQuantity(item.quantity, item.maxQuantity),
       };
       if (normalizedItem.quantity <= 0) return false;
+      saveCartLineMeta(canonicalLineKey, normalizedItem);
 
       if (user) {
         cartSyncVersionRef.current += 1;
@@ -756,6 +842,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             ((i.variantId && i.variantId === itemId) || (!i.variantId && i.productId === itemId)))
       );
       if (!target) return false;
+      removeCartLineMeta(target.lineKey || target.id);
 
       if (user) {
         cartSyncVersionRef.current += 1;
@@ -1063,6 +1150,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setItems([]);
     cartSyncVersionRef.current += 1;
+    clearCartLineMeta();
     setPromoCode('');
     setDiscount(0);
     if (user) {
@@ -1111,6 +1199,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       freeDeliveryConfig,
       availableCoupons: couponsToUse,
       couponsEnabled: true,
+      antiConflict: offerConfig?.antiConflict ?? { strictAntiStacking: true, maxCartDiscountCap: 0 },
     });
 
     if (result.appliedPromoRule && !result.promoError) {
@@ -1123,7 +1212,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else {
       pushToast({ title: result.promoError || 'Invalid or expired promo code', tone: 'danger' });
     }
-  }, [couponsEnabled, promoCode, activeCoupons, items, subtotal, selectedAddress?.city, freeDeliveryConfig, pushToast]);
+  }, [couponsEnabled, promoCode, activeCoupons, items, subtotal, selectedAddress?.city, freeDeliveryConfig, offerConfig?.antiConflict, pushToast]);
 
   const removePromoCode = useCallback(() => {
     setDiscount(0);
