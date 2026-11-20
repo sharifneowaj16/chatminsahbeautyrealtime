@@ -15,6 +15,10 @@ const globalForWorkers = globalThis as unknown as {
   minsahMetaInstagramWorkerStarted?: boolean;
   minsahMetaSocialWorkerStarted?: boolean;
   minsahMetaSchedulerWorkerStarted?: boolean;
+  minsahMetaAdsInsightsWorkerStarted?: boolean;
+  minsahMetaProductSetsWorkerStarted?: boolean;
+  minsahMetaDiagnosticsWorkerStarted?: boolean;
+  minsahMetaTokenHealthWorkerStarted?: boolean;
 };
 
 export async function register() {
@@ -85,5 +89,35 @@ export async function register() {
     startMetaSchedulerWorker();
     globalForWorkers.minsahMetaSchedulerWorkerStarted = true;
     console.log('[instrumentation] ✅ Meta scheduler started');
+  }
+
+  if (process.env.ENABLE_META_EXTENDED_SYNC === 'true') {
+    if (!globalForWorkers.minsahMetaAdsInsightsWorkerStarted) {
+      const { startMetaAdsInsightsWorker } = await import('./workers/meta-ads-insights.worker');
+      startMetaAdsInsightsWorker();
+      globalForWorkers.minsahMetaAdsInsightsWorkerStarted = true;
+      console.log('[instrumentation] ✅ Meta ads insights worker started');
+    }
+
+    if (!globalForWorkers.minsahMetaProductSetsWorkerStarted) {
+      const { startMetaProductSetsWorker } = await import('./workers/meta-product-sets.worker');
+      startMetaProductSetsWorker();
+      globalForWorkers.minsahMetaProductSetsWorkerStarted = true;
+      console.log('[instrumentation] ✅ Meta product sets worker started');
+    }
+
+    if (!globalForWorkers.minsahMetaDiagnosticsWorkerStarted) {
+      const { startMetaDiagnosticsWorker } = await import('./workers/meta-diagnostics.worker');
+      startMetaDiagnosticsWorker();
+      globalForWorkers.minsahMetaDiagnosticsWorkerStarted = true;
+      console.log('[instrumentation] ✅ Meta diagnostics worker started');
+    }
+
+    if (!globalForWorkers.minsahMetaTokenHealthWorkerStarted) {
+      const { startMetaTokenHealthWorker } = await import('./workers/meta-token-health.worker');
+      startMetaTokenHealthWorker();
+      globalForWorkers.minsahMetaTokenHealthWorkerStarted = true;
+      console.log('[instrumentation] ✅ Meta token health worker started');
+    }
   }
 }

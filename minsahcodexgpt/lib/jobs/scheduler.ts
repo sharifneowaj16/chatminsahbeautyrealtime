@@ -36,6 +36,13 @@ export type MetaSchedulePlanItem = {
   due: boolean;
 };
 
+const EXTENDED_META_QUEUES = new Set<MetaSchedulePlanItem['queue']>([
+  'connection-health',
+  'diagnostics',
+  'product-sets',
+  'ads-insights',
+]);
+
 export function buildMetaSchedulePlan(now = new Date()): MetaSchedulePlanItem[] {
   const minute = now.getUTCMinutes();
   const hour = now.getUTCHours();
@@ -62,11 +69,13 @@ export function buildMetaSchedulePlan(now = new Date()): MetaSchedulePlanItem[] 
 export async function scheduleMetaMaintenanceJobs(now = new Date()) {
   const catalogId = process.env.META_CATALOG_ID?.trim() || undefined;
   const connectionId = process.env.META_BUSINESS_ID?.trim() || undefined;
+  const extendedSyncEnabled = process.env.ENABLE_META_EXTENDED_SYNC === 'true';
   const plan = buildMetaSchedulePlan(now);
   const accepted: unknown[] = [];
 
   for (const item of plan) {
     if (!item.due) continue;
+    if (!extendedSyncEnabled && EXTENDED_META_QUEUES.has(item.queue)) continue;
     if (item.key === 'batch-status-5m') {
       accepted.push(await enqueueMetaCatalogStatusJob({
         catalogId,
