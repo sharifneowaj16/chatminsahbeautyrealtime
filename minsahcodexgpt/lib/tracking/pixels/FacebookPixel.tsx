@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { canRunClientTracking } from '@/lib/tracking/client-traffic-filter';
 import { buildMetaBrowserEvent } from '@/lib/meta/browser/payload';
 import { dispatchMetaBrowserEvent } from '@/lib/meta/browser/client';
+import MetaDebugPanel from './MetaDebugPanel';
 
 interface FacebookPixelProps {
   pixelId: string;
@@ -39,12 +40,21 @@ export default function FacebookPixel({
     void dispatchMetaBrowserEvent(pageViewEvent);
   }, [pathname, searchParams, pixelId, enabled]);
 
-  if (!enabled || !pixelId || typeof window === 'undefined' || !canRunClientTracking()) {
-    return null;
+  const isBrowser = typeof window !== 'undefined';
+  const trackingAllowed = enabled && Boolean(pixelId) && isBrowser && canRunClientTracking();
+
+  if (!trackingAllowed) {
+    const blockReason = !enabled
+      ? 'Pixel disabled'
+      : !pixelId
+        ? 'Missing Pixel ID'
+        : 'STAFF_IPS / Traffic Filter blocked';
+    return isBrowser ? <MetaDebugPanel trackingBlocked={true} blockReason={blockReason} /> : null;
   }
 
   return (
-    <Script
+    <>
+      <Script
       id="facebook-pixel"
       strategy="afterInteractive"
       dangerouslySetInnerHTML={{
@@ -151,5 +161,7 @@ export default function FacebookPixel({
         `,
       }}
     />
+      <MetaDebugPanel trackingBlocked={false} />
+    </>
   );
 }
