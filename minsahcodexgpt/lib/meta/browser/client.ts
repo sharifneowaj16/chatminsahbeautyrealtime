@@ -88,6 +88,8 @@ function isMetaDebugActive(): boolean {
   }
 }
 
+const DEBUG_LOGS_STORAGE_KEY = 'mb_meta_debug_logs';
+
 function emitMetaDebug(
   event: MetaBrowserEventEnvelope,
   pixelStatus: string,
@@ -96,17 +98,47 @@ function emitMetaDebug(
   if (!isMetaDebugActive()) return;
   try {
     const win = window as MetaPixelWindow;
+    const payload = (event.payload || {}) as Record<string, unknown>;
+    const rawValue = payload.value;
+    const parsedValue =
+      typeof rawValue === 'number' && Number.isFinite(rawValue)
+        ? rawValue
+        : typeof rawValue === 'string' && rawValue.trim() && Number.isFinite(Number(rawValue))
+          ? Number(rawValue)
+          : undefined;
+    const currency = typeof payload.currency === 'string' ? payload.currency : undefined;
+    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+
     const entry: MetaDebugEntry = {
       id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
       time: new Date().toLocaleTimeString(),
+      path,
       eventName: event.eventName,
       eventId: event.eventId,
+      value: parsedValue,
+      currency,
       pixelStatus,
       capiStatus,
       fbp: Boolean(getCookieValue('_fbp')),
       fbc: Boolean(getCookieValue('_fbc')),
+      mbVid: Boolean(getCookieValue('mb_vid')),
     };
-    win.__mbMetaDebugQueue = [entry, ...(win.__mbMetaDebugQueue || [])].slice(0, 30);
+
+    let existing: MetaDebugEntry[] = Array.isArray(win.__mbMetaDebugQueue) ? win.__mbMetaDebugQueue : [];
+    if (existing.length === 0) {
+      try {
+        const saved = sessionStorage.getItem(DEBUG_LOGS_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) existing = parsed;
+        }
+      } catch {}
+    }
+    const nextQueue = [entry, ...existing].slice(0, 40);
+    win.__mbMetaDebugQueue = nextQueue;
+    try {
+      sessionStorage.setItem(DEBUG_LOGS_STORAGE_KEY, JSON.stringify(nextQueue));
+    } catch {}
     window.dispatchEvent(new CustomEvent('mb:meta-debug', { detail: entry }));
   } catch {
     // ignore debug hook errors
