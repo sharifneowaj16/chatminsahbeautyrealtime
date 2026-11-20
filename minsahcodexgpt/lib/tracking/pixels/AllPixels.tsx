@@ -8,6 +8,7 @@ import { TrackingConsentBanner, TrackingConsentModeScript } from './TrackingCons
 
 const AttributionCookieCapture = dynamic(() => import('./AttributionCookieCapture'), { ssr: false });
 const MetaPixelProvider = dynamic(() => import('@/components/tracking/MetaPixelProvider'), { ssr: false });
+const MetaDebugPanel = dynamic(() => import('./MetaDebugPanel'), { ssr: false });
 const MetaEventBridge = dynamic(
   () => import('@/components/tracking/MetaEventBridge').then((module) => module.MetaEventBridge),
   { ssr: false },
@@ -155,6 +156,18 @@ export default function AllPixels() {
       ) : process.env.NODE_ENV !== 'production' && blockReason ? (
         <span data-mb-tracking-blocked={blockReason} hidden />
       ) : null}
+      <MetaDebugPanel
+        trackingBlocked={!trackingAllowed || !config.facebook.enabled || !config.facebook.pixelId}
+        blockReason={
+          !trackingAllowed
+            ? blockReason || 'STAFF_IPS / Traffic Filter blocked'
+            : !config.facebook.enabled
+              ? 'Pixel disabled'
+              : !config.facebook.pixelId
+                ? 'Missing Pixel ID'
+                : undefined
+        }
+      />
     </>
   );
 }

@@ -93,7 +93,8 @@ const DEBUG_LOGS_STORAGE_KEY = 'mb_meta_debug_logs';
 function emitMetaDebug(
   event: MetaBrowserEventEnvelope,
   pixelStatus: string,
-  capiStatus: string
+  capiStatus: string,
+  detail?: string
 ) {
   if (!isMetaDebugActive()) return;
   try {
@@ -122,6 +123,7 @@ function emitMetaDebug(
       fbp: Boolean(getCookieValue('_fbp')),
       fbc: Boolean(getCookieValue('_fbc')),
       mbVid: Boolean(getCookieValue('mb_vid')),
+      ...(detail ? { detail } : {}),
     };
 
     let existing: MetaDebugEntry[] = Array.isArray(win.__mbMetaDebugQueue) ? win.__mbMetaDebugQueue : [];
@@ -177,7 +179,13 @@ export async function dispatchMetaBrowserEvent(
   }
   if (!event.validation.valid) {
     metaBrowserDebug('warn', 'Invalid event blocked', event);
-    emitMetaDebug(event, 'INVALID_EVENT', 'SKIPPED');
+    const valObj = event.validation as unknown as { errors?: string[]; reasons?: string[]; reason?: string };
+    const reasonText = Array.isArray(valObj.errors) && valObj.errors.length
+      ? valObj.errors.join(', ')
+      : Array.isArray(valObj.reasons) && valObj.reasons.length
+        ? valObj.reasons.join(', ')
+        : valObj.reason || 'Validation failed';
+    emitMetaDebug(event, 'INVALID_EVENT', 'SKIPPED', reasonText);
     return { fired: false, capiRequested: false, reason: 'INVALID_EVENT' };
   }
 

@@ -531,9 +531,9 @@ class TrackingManager {
     });
     if (!metaEvent.validation.valid) {
       metaBrowserDebug('warn', 'Manager blocked invalid Meta browser event', metaEvent);
-      return;
     }
 
+    // dispatchMetaBrowserEvent enforces validation and reports INVALID_EVENT to MetaDebugPanel
     void dispatchMetaBrowserEvent(metaEvent);
   }
 

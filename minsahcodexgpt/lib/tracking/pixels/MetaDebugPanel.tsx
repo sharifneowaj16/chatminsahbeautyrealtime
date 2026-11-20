@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export interface MetaDebugEntry {
   id: string;
@@ -15,6 +16,7 @@ export interface MetaDebugEntry {
   fbp: boolean;
   fbc: boolean;
   mbVid?: boolean;
+  detail?: string;
 }
 
 type MetaDebugWindow = Window & {
@@ -26,7 +28,7 @@ type MetaDebugWindow = Window & {
 
 const STORAGE_KEY = 'mb_meta_debug_enabled';
 const LOGS_STORAGE_KEY = 'mb_meta_debug_logs';
-const POS_STORAGE_KEY = 'mb_meta_debug_pos';
+const POS_STORAGE_KEY = 'mb_meta_debug_pos_v2';
 
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -42,24 +44,23 @@ function readCookie(name: string): string | null {
 function readDebugFlag(): boolean {
   if (typeof window === 'undefined') return false;
   const win = window as MetaDebugWindow;
-  const params = new URLSearchParams(window.location.search);
-  const flag = params.get('mb_debug');
-
-  if (flag === '1') {
-    win.__mbMetaDebugEnabled = true;
-    try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch {}
-    return true;
-  }
-  if (flag === '0') {
-    win.__mbMetaDebugEnabled = false;
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
-    return false;
-  }
-  if (win.__mbMetaDebugEnabled) return true;
   try {
+    const params = new URLSearchParams(window.location.search);
+    const flag = params.get('mb_debug');
+    if (flag === '1') {
+      win.__mbMetaDebugEnabled = true;
+      sessionStorage.setItem(STORAGE_KEY, '1');
+      return true;
+    }
+    if (flag === '0') {
+      win.__mbMetaDebugEnabled = false;
+      sessionStorage.removeItem(STORAGE_KEY);
+      return false;
+    }
+    if (win.__mbMetaDebugEnabled) return true;
     return sessionStorage.getItem(STORAGE_KEY) === '1';
   } catch {
-    return false;
+    return Boolean(win.__mbMetaDebugEnabled);
   }
 }
 
@@ -118,158 +119,197 @@ export default function MetaDebugPanel({
   trackingBlocked?: boolean;
   blockReason?: string;
 }) {
+  const pathname = usePathname();
   const [active, setActive] = useState(false);
   const [minimized, setMinimized] = useState(true);
   const [logs, setLogs] = useState<MetaDebugEntry[]>([]);
   const [cookies, setCookies] = useState({ fbp: false, fbc: false, mbVid: false });
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'fallback'>('idle');
   const [rawReportText, setRawReportText] = useState('');
-  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 10, y: 72 });
-  const [dockTop, setDockTop] = useState(true);
+  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 8, y: 64 });
 
+  const posRef = useRef<{ x: number; y: number }>({ x: 8, y: 64 });
+  const panelRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
-    dragging: boolean;
+    active: boolean;
     moved: boolean;
-    startClientX: number;
-    startClientY: number;
+    startX: number;
+    startY: number;
     origX: number;
     origY: number;
   }>({
-    dragging: false,
+    active: false,
     moved: false,
-    startClientX: 0,
-    startClientY: 0,
-    origX: 10,
-    origY: 72,
+    startX: 0,
+    startY: 0,
+    origX: 8,
+    origY: 64,
   });
 
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  const clampPos = (x: number, y: number, isMin: boolean) => {
+  const clampPos = useCallback((x: number, y: number, isMin: boolean) => {
     if (typeof window === 'undefined') return { x, y };
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const elW = panelRef.current?.offsetWidth || (isMin ? 132 : Math.min(vw - 16, 420));
-    const elH = panelRef.current?.offsetHeight || (isMin ? 38 : 260);
+    const vw = window.visualViewport?.width || window.innerWidth;
+    const vh = window.visualViewport?.height || window.innerHeight;
+    const elW = panelRef.current?.offsetWidth || (isMin ? 96 : Math.min(vw - 16, 320));
+    const elH = panelRef.current?.offsetHeight || (isMin ? 32 : 240);
     const maxX = Math.max(6, vw - elW - 6);
     const maxY = Math.max(6, vh - elH - 6);
     return {
       x: Math.min(Math.max(6, Math.round(x)), maxX),
       y: Math.min(Math.max(6, Math.round(y)), maxY),
     };
-  };
+  }, []);
 
+  const updatePos = useCallback((next: { x: number; y: number }, persist = false) => {
+    posRef.current = next;
+    setPos(next);
+    if (persist) {
+      try {
+        sessionStorage.setItem(POS_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+    }
+  }, []);
+
+  const syncCookies = useCallback(() => {
+    setCookies({
+      fbp: Boolean(readCookie('_fbp')),
+      fbc: Boolean(readCookie('_fbc')),
+      mbVid: Boolean(readCookie('mb_vid')),
+    });
+  }, []);
+
+  // Re-check debug flag, logs & cookies on initial mount AND every route change (/ -> PDP -> /checkout)
   useEffect(() => {
     const enabled = readDebugFlag();
     setActive(enabled);
     if (!enabled) return;
 
     const win = window as MetaDebugWindow;
-    let initialLogs: MetaDebugEntry[] = [];
+    let currentLogs: MetaDebugEntry[] = [];
     if (Array.isArray(win.__mbMetaDebugQueue) && win.__mbMetaDebugQueue.length > 0) {
-      initialLogs = [...win.__mbMetaDebugQueue];
+      currentLogs = [...win.__mbMetaDebugQueue];
     } else {
       try {
         const saved = sessionStorage.getItem(LOGS_STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
-            initialLogs = parsed;
+            currentLogs = parsed;
             win.__mbMetaDebugQueue = parsed;
           }
         }
       } catch {}
     }
-    setLogs(initialLogs);
-    setCookies({
-      fbp: Boolean(readCookie('_fbp')),
-      fbc: Boolean(readCookie('_fbc')),
-      mbVid: Boolean(readCookie('mb_vid')),
-    });
+    setLogs(currentLogs);
+    syncCookies();
+  }, [pathname, syncCookies]);
 
+  // Restore saved position once active
+  useEffect(() => {
+    if (!active) return;
     try {
       const savedPos = sessionStorage.getItem(POS_STORAGE_KEY);
       if (savedPos) {
         const p = JSON.parse(savedPos);
         if (typeof p?.x === 'number' && typeof p?.y === 'number') {
-          setPos(clampPos(p.x, p.y, true));
+          updatePos(clampPos(p.x, p.y, minimized), false);
         }
       }
     } catch {}
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
 
+  // Auto-clamp whenever expanding, minimizing, or viewport changes so modal never goes off-screen
+  useEffect(() => {
+    if (!active) return;
+    const raf = window.requestAnimationFrame(() => {
+      updatePos(clampPos(posRef.current.x, posRef.current.y, minimized), false);
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [active, minimized, copyState, clampPos, updatePos]);
+
+  // Listen to live meta debug events and viewport resizes
   useEffect(() => {
     if (!active) return;
     const onEvent = (e: Event) => {
       const detail = (e as CustomEvent<MetaDebugEntry>).detail;
       if (!detail) return;
-      setLogs((prev) => [detail, ...prev].slice(0, 40));
-      setCookies({
-        fbp: Boolean(readCookie('_fbp')),
-        fbc: Boolean(readCookie('_fbc')),
-        mbVid: Boolean(readCookie('mb_vid')),
+      setLogs((prev) => {
+        if (prev.some((item) => item.id === detail.id)) return prev;
+        return [detail, ...prev].slice(0, 40);
       });
+      syncCookies();
     };
     const onResize = () => {
-      setPos((prev) => clampPos(prev.x, prev.y, minimized));
+      updatePos(clampPos(posRef.current.x, posRef.current.y, minimized), false);
     };
     window.addEventListener('mb:meta-debug', onEvent);
     window.addEventListener('resize', onResize);
+    window.visualViewport?.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('mb:meta-debug', onEvent);
       window.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [active, minimized]);
+  }, [active, minimized, clampPos, updatePos, syncCookies]);
+
+  // Global move/end listeners while dragging ? works reliably on iOS Safari, Android Chrome & Desktop
+  const startDrag = (clientX: number, clientY: number) => {
+    dragRef.current = {
+      active: true,
+      moved: false,
+      startX: clientX,
+      startY: clientY,
+      origX: posRef.current.x,
+      origY: posRef.current.y,
+    };
+
+    const handleMove = (cx: number, cy: number) => {
+      if (!dragRef.current.active) return;
+      const dx = cx - dragRef.current.startX;
+      const dy = cy - dragRef.current.startY;
+      if (Math.abs(dx) > 9 || Math.abs(dy) > 9) {
+        dragRef.current.moved = true;
+      }
+      const next = clampPos(dragRef.current.origX + dx, dragRef.current.origY + dy, minimized);
+      updatePos(next, false);
+    };
+
+    const onPointerMove = (ev: PointerEvent) => {
+      ev.preventDefault();
+      handleMove(ev.clientX, ev.clientY);
+    };
+    const onTouchMove = (ev: TouchEvent) => {
+      if (ev.touches.length === 0) return;
+      ev.preventDefault();
+      handleMove(ev.touches[0].clientX, ev.touches[0].clientY);
+    };
+    const onEnd = () => {
+      if (!dragRef.current.active) return;
+      dragRef.current.active = false;
+      updatePos(clampPos(posRef.current.x, posRef.current.y, minimized), true);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
+  };
+
+  const handleDragStart = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement)?.closest('button, textarea, input, a')) return;
+    startDrag(e.clientX, e.clientY);
+  };
 
   if (!active) return null;
-
-  const persistPos = (next: { x: number; y: number }) => {
-    try { sessionStorage.setItem(POS_STORAGE_KEY, JSON.stringify(next)); } catch {}
-  };
-
-  const onDragStart = (clientX: number, clientY: number) => {
-    dragRef.current = {
-      dragging: true,
-      moved: false,
-      startClientX: clientX,
-      startClientY: clientY,
-      origX: pos.x,
-      origY: pos.y,
-    };
-  };
-
-  const onDragMove = (clientX: number, clientY: number) => {
-    if (!dragRef.current.dragging) return;
-    const dx = clientX - dragRef.current.startClientX;
-    const dy = clientY - dragRef.current.startClientY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-      dragRef.current.moved = true;
-    }
-    const next = clampPos(dragRef.current.origX + dx, dragRef.current.origY + dy, minimized);
-    setPos(next);
-  };
-
-  const onDragEnd = () => {
-    if (!dragRef.current.dragging) return;
-    dragRef.current.dragging = false;
-    persistPos(pos);
-  };
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement)?.closest('button, textarea, input')) return;
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-    onDragStart(e.clientX, e.clientY);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!dragRef.current.dragging) return;
-    e.preventDefault();
-    onDragMove(e.clientX, e.clientY);
-  };
-
-  const handlePointerUp = () => {
-    onDragEnd();
-  };
 
   const buildReportText = () => {
     const win = window as MetaDebugWindow;
@@ -279,6 +319,7 @@ export default function MetaDebugPanel({
     const report = {
       timestamp: new Date().toISOString(),
       platform: detectPlatformLabel(),
+      path: pathname || (typeof window !== 'undefined' ? window.location.pathname : ''),
       url: typeof window !== 'undefined' ? window.location.href : '',
       trackingBlocked,
       blockReason: trackingBlocked ? blockReason : null,
@@ -302,6 +343,7 @@ export default function MetaDebugPanel({
         eventId: l.eventId,
         fbp: l.fbp,
         fbc: l.fbc,
+        ...(l.detail ? { detail: l.detail } : {}),
       })),
     };
     return JSON.stringify(report, null, 2);
@@ -333,31 +375,22 @@ export default function MetaDebugPanel({
     setActive(false);
   };
 
-  const toggleDockPosition = () => {
-    if (typeof window === 'undefined') return;
-    const nextTop = !dockTop;
-    setDockTop(nextTop);
-    const vh = window.innerHeight;
-    const nextY = nextTop ? 10 : Math.max(10, vh - 320);
-    const nextPos = clampPos(pos.x, nextY, false);
-    setPos(nextPos);
-    persistPos(nextPos);
-  };
+  const hasErr =
+    trackingBlocked ||
+    logs.some(
+      (l) =>
+        !l.pixelStatus.startsWith('OK') ||
+        (l.capiStatus !== 'SKIPPED' && !l.capiStatus.startsWith('200'))
+    );
 
   // =========================================================================
-  // MINIMIZED FLOATING DRAGGABLE PILL (Never blocks checkout buttons)
+  // 1. ULTRA-COMPACT DRAGGABLE MINI PILL
   // =========================================================================
   if (minimized) {
-    const hasErr = trackingBlocked || logs.some(
-      (l) => !l.pixelStatus.startsWith('OK') || (l.capiStatus !== 'SKIPPED' && !l.capiStatus.startsWith('200'))
-    );
     return (
       <div
         ref={panelRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerDown={handleDragStart}
         onClick={() => {
           if (dragRef.current.moved) {
             dragRef.current.moved = false;
@@ -372,38 +405,40 @@ export default function MetaDebugPanel({
           zIndex: 999999,
           touchAction: 'none',
           userSelect: 'none',
+          WebkitUserSelect: 'none',
           cursor: 'grab',
-          background: hasErr ? '#7F1D1D' : '#111827',
+          background: hasErr ? 'rgba(127,29,29,0.95)' : 'rgba(17,24,39,0.94)',
           color: '#F9FAFB',
           border: '1.5px solid ' + (hasErr ? '#F87171' : '#34D399'),
           borderRadius: 999,
-          padding: '6px 11px',
-          boxShadow: '0 6px 18px rgba(0,0,0,0.45)',
+          padding: '5px 9px',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.45)',
           fontFamily: 'monospace',
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: 700,
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
-          gap: 6,
+          gap: 5,
+          lineHeight: 1,
         }}
       >
         <span
           style={{
-            width: 8,
-            height: 8,
+            width: 7,
+            height: 7,
             borderRadius: '50%',
             background: hasErr ? '#F87171' : '#34D399',
-            display: 'inline-block',
+            flexShrink: 0,
           }}
         />
-        <span>MB ({logs.length})</span>
-        <span style={{ color: '#9CA3AF', fontSize: 10 }}>::</span>
+        <span>MB {logs.length}</span>
+        <span style={{ color: '#9CA3AF', fontSize: 9 }}>::</span>
       </div>
     );
   }
 
   // =========================================================================
-  // EXPANDED MOVABLE DEBUG MODAL + COPY REPORT + SAFARI FALLBACK BOX
+  // 2. COMPACT MOVABLE FLOATING DEBUG MODAL (Drag header to move anywhere)
   // =========================================================================
   return (
     <div
@@ -413,49 +448,52 @@ export default function MetaDebugPanel({
         left: pos.x,
         top: pos.y,
         zIndex: 999999,
-        width: 'min(calc(100vw - 16px), 420px)',
-        background: '#111827',
+        width: 'min(calc(100vw - 16px), 320px)',
+        background: 'rgba(17,24,39,0.97)',
         color: '#F9FAFB',
-        borderRadius: 12,
-        border: '1px solid #374151',
-        boxShadow: '0 12px 30px rgba(0,0,0,0.55)',
+        borderRadius: 10,
+        border: '1px solid ' + (hasErr ? '#F87171' : '#374151'),
+        boxShadow: '0 10px 28px rgba(0,0,0,0.55)',
         fontFamily: 'monospace',
-        fontSize: 11,
+        fontSize: 10,
       }}
     >
-      {/* Draggable Header Bar */}
+      {/* Draggable Compact Header */}
       <div
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerDown={handleDragStart}
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 6,
-          padding: '8px 10px',
+          gap: 4,
+          padding: '6px 8px',
           borderBottom: '1px solid #374151',
           touchAction: 'none',
           userSelect: 'none',
+          WebkitUserSelect: 'none',
           cursor: 'grab',
           background: '#1F2937',
-          borderTopLeftRadius: 11,
-          borderTopRightRadius: 11,
+          borderTopLeftRadius: 9,
+          borderTopRightRadius: 9,
         }}
       >
-        <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', minWidth: 0 }}>
           <span style={{ color: '#9CA3AF', fontWeight: 700 }}>::</span>
-          <span style={{ color: '#34D399', fontWeight: 700 }}>MB Meta</span>
-          <span style={{ color: '#9CA3AF' }}>({logs.length})</span>
+          <span style={{ color: hasErr ? '#FCA5A5' : '#34D399', fontWeight: 700 }}>
+            MB ({logs.length})
+          </span>
           <span style={{ color: cookies.fbp ? '#34D399' : '#F87171' }}>
-            fbp:{cookies.fbp ? 'OK' : 'NO'}
+            p:{cookies.fbp ? '1' : '0'}
           </span>
           <span style={{ color: cookies.fbc ? '#34D399' : '#9CA3AF' }}>
-            fbc:{cookies.fbc ? 'OK' : '-'}
+            c:{cookies.fbc ? '1' : '0'}
+          </span>
+          <span style={{ color: cookies.mbVid ? '#34D399' : '#F87171' }}>
+            v:{cookies.mbVid ? '1' : '0'}
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+
+        <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
           <button
             type="button"
             onClick={handleCopyReport}
@@ -463,30 +501,14 @@ export default function MetaDebugPanel({
               background: copyState === 'copied' ? '#059669' : '#2563EB',
               color: '#fff',
               border: 0,
-              borderRadius: 5,
-              padding: '3px 7px',
-              fontSize: 10,
+              borderRadius: 4,
+              padding: '3px 6px',
+              fontSize: 9.5,
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            {copyState === 'copied' ? 'Copied!' : 'Copy'}
-          </button>
-          <button
-            type="button"
-            onClick={toggleDockPosition}
-            title="Move panel Top / Bottom"
-            style={{
-              background: '#374151',
-              color: '#fff',
-              border: 0,
-              borderRadius: 5,
-              padding: '3px 6px',
-              fontSize: 10,
-              cursor: 'pointer',
-            }}
-          >
-            {dockTop ? 'Down' : 'Up'}
+            {copyState === 'copied' ? 'OK!' : 'Copy'}
           </button>
           <button
             type="button"
@@ -495,9 +517,9 @@ export default function MetaDebugPanel({
               background: '#374151',
               color: '#fff',
               border: 0,
-              borderRadius: 5,
-              padding: '3px 6px',
-              fontSize: 10,
+              borderRadius: 4,
+              padding: '3px 5px',
+              fontSize: 9.5,
               cursor: 'pointer',
             }}
           >
@@ -510,14 +532,14 @@ export default function MetaDebugPanel({
               background: '#4B5563',
               color: '#fff',
               border: 0,
-              borderRadius: 5,
+              borderRadius: 4,
               padding: '3px 6px',
-              fontSize: 10,
+              fontSize: 9.5,
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            Min
+            -
           </button>
           <button
             type="button"
@@ -526,9 +548,9 @@ export default function MetaDebugPanel({
               background: '#991B1B',
               color: '#fff',
               border: 0,
-              borderRadius: 5,
-              padding: '3px 6px',
-              fontSize: 10,
+              borderRadius: 4,
+              padding: '3px 5px',
+              fontSize: 9.5,
               fontWeight: 700,
               cursor: 'pointer',
             }}
@@ -540,50 +562,54 @@ export default function MetaDebugPanel({
 
       {/* Fallback Selectable Textarea if iOS / In-App Browser blocks clipboard */}
       {copyState === 'fallback' && rawReportText && (
-        <div style={{ padding: 8, borderBottom: '1px solid #374151', background: '#0F172A' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#FDE68A', fontSize: 10 }}>
-            <span>Tap box, Select All &amp; Copy:</span>
+        <div style={{ padding: 6, borderBottom: '1px solid #374151', background: '#0F172A' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#FDE68A', fontSize: 9.5 }}>
+            <span>Tap box &gt; Select All &gt; Copy:</span>
             <button
               type="button"
               onClick={() => setCopyState('idle')}
-              style={{ background: 'transparent', color: '#9CA3AF', border: 0, cursor: 'pointer', fontSize: 10 }}
+              style={{ background: 'transparent', color: '#9CA3AF', border: 0, cursor: 'pointer', fontSize: 9.5 }}
             >
-              Close
+              Hide
             </button>
           </div>
           <textarea
             readOnly
             value={rawReportText}
             onFocus={(e) => e.currentTarget.select()}
-            rows={5}
+            rows={4}
             style={{
               width: '100%',
               background: '#1E293B',
               color: '#E2E8F0',
               border: '1px solid #475569',
-              borderRadius: 6,
-              padding: 6,
-              fontSize: 10,
+              borderRadius: 5,
+              padding: 5,
+              fontSize: 9.5,
               fontFamily: 'monospace',
             }}
           />
         </div>
       )}
 
-      {/* Scrollable Event List */}
-      <div style={{ maxHeight: 210, overflowY: 'auto', padding: 8, WebkitOverflowScrolling: 'touch' }}>
+      {/* Compact Scrollable Event Feed */}
+      <div style={{ maxHeight: 175, overflowY: 'auto', padding: 6, WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ color: '#9CA3AF', fontSize: 9, marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {pathname || '/'}
+          </span>
+          <span style={{ flexShrink: 0 }}>Drag :: to move</span>
+        </div>
+
         {trackingBlocked && (
-          <div style={{ background: '#7F1D1D', color: '#FECACA', padding: 6, borderRadius: 6, marginBottom: 6 }}>
-            Blocked: {blockReason}. Use mobile data (4G/5G) to test.
+          <div style={{ background: '#7F1D1D', color: '#FECACA', padding: 5, borderRadius: 5, marginBottom: 5, fontSize: 9.5 }}>
+            Blocked: {blockReason}
           </div>
         )}
-        <div style={{ color: '#9CA3AF', fontSize: 10, marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
-          <span>Drag header or tap Min to move</span>
-          <span>vid:{cookies.mbVid ? 'OK' : 'NO'}</span>
-        </div>
+
         {logs.length === 0 ? (
-          <div style={{ color: '#9CA3AF', padding: '6px 2px' }}>
-            Waiting for events... Browse a product or tap Add to Cart.
+          <div style={{ color: '#9CA3AF', padding: '4px 2px', fontSize: 9.5 }}>
+            Waiting for events...
           </div>
         ) : (
           logs.map((item) => (
@@ -591,36 +617,41 @@ export default function MetaDebugPanel({
               key={item.id}
               style={{
                 borderBottom: '1px solid #1F2937',
-                padding: '6px 0',
+                padding: '4px 0',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 2,
+                gap: 1.5,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
                 <strong style={{ color: '#60A5FA' }}>
                   {item.eventName}
                   {typeof item.value === 'number' ? ' (' + (item.currency || 'BDT') + ' ' + item.value + ')' : ''}
                 </strong>
                 <span style={{ color: '#9CA3AF', flexShrink: 0 }}>{item.time}</span>
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <span>
-                  Pixel:{' '}
+                  Px:{' '}
                   <b style={{ color: item.pixelStatus.startsWith('OK') ? '#34D399' : '#F87171' }}>
                     {item.pixelStatus}
                   </b>
                 </span>
                 <span>
-                  CAPI:{' '}
+                  CA:{' '}
                   <b style={{ color: item.capiStatus.startsWith('200') ? '#34D399' : '#FBBF24' }}>
                     {item.capiStatus}
                   </b>
                 </span>
                 {item.path && <span style={{ color: '#9CA3AF' }}>{item.path}</span>}
               </div>
-              <div style={{ color: '#D1D5DB', wordBreak: 'break-all', fontSize: 10 }}>
-                ID: {item.eventId}
+              {item.detail && (
+                <div style={{ color: '#FCA5A5', fontSize: 9, wordBreak: 'break-word' }}>
+                  Err: {item.detail}
+                </div>
+              )}
+              <div style={{ color: '#9CA3AF', wordBreak: 'break-all', fontSize: 8.5 }}>
+                {item.eventId}
               </div>
             </div>
           ))
