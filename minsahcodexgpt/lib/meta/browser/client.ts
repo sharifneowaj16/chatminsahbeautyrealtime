@@ -31,7 +31,7 @@ const CUSTOM_META_PIXEL_EVENTS = new Set([
 ]);
 
 type MetaPixelWindow = Window & {
-  fbq?: (...args: unknown[]) => void;
+  fbq?: ((...args: unknown[]) => void) & { disablePushState?: boolean };
   __mbFbInitReady?: boolean;
   __mbMetaDebugEnabled?: boolean;
   __mbMetaDebugQueue?: MetaDebugEntry[];
@@ -180,7 +180,11 @@ export async function dispatchMetaBrowserEvent(
     return { fired: false, capiRequested: capi.sent, reason: 'PIXEL_UNAVAILABLE' };
   }
 
-  const trackCommand = CUSTOM_META_PIXEL_EVENTS.has(event.eventName) ? 'trackCustom' : 'track';
+  const fbqRef = (window as MetaPixelWindow).fbq;
+  if (fbqRef) {
+    fbqRef.disablePushState = true;
+  }
+    const trackCommand = CUSTOM_META_PIXEL_EVENTS.has(event.eventName) ? 'trackCustom' : 'track';
   (window as MetaPixelWindow).fbq?.(trackCommand, event.eventName, event.payload, {
     eventID: event.eventId,
   });

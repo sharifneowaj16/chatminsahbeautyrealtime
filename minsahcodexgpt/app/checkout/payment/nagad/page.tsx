@@ -341,7 +341,7 @@ function NagadPaymentContent() {
                 setPhoneNumber(normalizeBdMobileNumber(e.target.value))
               }
               placeholder="01XXXXXXXXX"
-              maxLength={11}
+              maxLength={20}
               required
               disabled={summaryLoading || !summary?.canInitiatePayment}
               label="Nagad Account Number"

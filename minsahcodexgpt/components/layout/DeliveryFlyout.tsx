@@ -547,7 +547,7 @@ function FlyoutContent({
               id="dlv-phone"
               type="tel"
               inputMode="tel"
-              maxLength={11}
+              maxLength={20}
               className="dlv-input w-full rounded-r-2xl bg-transparent px-3.5 py-3.5 text-sm text-[#2D1F18] placeholder:text-transparent"
               value={form.phoneNumber}
               placeholder="Phone number"

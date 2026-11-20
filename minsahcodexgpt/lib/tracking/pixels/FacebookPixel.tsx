@@ -26,6 +26,13 @@ export default function FacebookPixel({
   useEffect(() => {
     if (!enabled || !pixelId || !canRunClientTracking()) return;
 
+    if (typeof window !== 'undefined') {
+      const win = window as Window & { fbq?: { disablePushState?: boolean } };
+      if (win.fbq) {
+        win.fbq.disablePushState = true;
+      }
+    }
+
     const pageViewKey =
       typeof window !== 'undefined'
         ? `${window.location.pathname}${window.location.search}`
