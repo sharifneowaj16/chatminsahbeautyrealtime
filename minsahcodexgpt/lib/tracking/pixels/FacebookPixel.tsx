@@ -70,6 +70,7 @@ export default function FacebookPixel({
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
+            if (window.fbq) { window.fbq.disablePushState = true; }
             function mbNormalizeMetaExternalId(input) {
               if (input === undefined || input === null) return undefined;
               var normalized = String(input).trim().toLowerCase();
