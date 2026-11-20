@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOfferEngine } from "@/contexts/OfferEngineContext";
+import { normalizeBangladeshPhoneNumber, toAsciiDigits } from "@/lib/phone";
 import { formatPrice } from "@/utils/currency";
 import dynamic from "next/dynamic";
 import {
@@ -84,6 +86,18 @@ type ModalStage = "select" | "summary" | "success";
 
 function formatCustomerDeliveryCharge(amount: number) {
   return amount <= 0 ? "Free" : formatPrice(amount);
+}
+
+function sanitizeBuyNowPhone(value: string) {
+  const ascii = toAsciiDigits(value);
+  let digits = ascii.replace(/\D/g, "");
+  if (digits.startsWith("00880")) digits = digits.slice(2);
+  if (digits.startsWith("88001") && digits.length >= 14) return digits.slice(3, 14);
+  if (digits.startsWith("8801") && digits.length >= 13) return "0" + digits.slice(3, 13);
+  if (digits.startsWith("8801") && digits.length > 4) return "0" + digits.slice(3, 13);
+  if (/^1[3-9]\d{8}$/.test(digits)) return "0" + digits;
+  if (digits.startsWith("01")) return digits.slice(0, 11);
+  return digits.slice(0, 11);
 }
 
 function getDeliveryOfferMessage(quote: DeliveryQuoteResponse | null) {
@@ -244,7 +258,9 @@ export default function BuyNowModal({
   const [deliveryCharge, setDeliveryCharge] = useState<number | null>(null);
   const [deliveryQuote, setDeliveryQuote] =
     useState<DeliveryQuoteResponse | null>(null);
+  const { freeDelivery } = useOfferEngine();
   const [deliveryMessage, setDeliveryMessage] = useState<string | null>(null);
+  const [deliveryHardError, setDeliveryHardError] = useState<string | null>(null);
   const [successPayload, setSuccessPayload] = useState<{
     orderNumber: string;
     estimatedDelivery: string;
@@ -271,6 +287,7 @@ export default function BuyNowModal({
     setDeliveryCharge(null);
     setDeliveryQuote(null);
     setDeliveryMessage(null);
+    setDeliveryHardError(null);
     setSuccessPayload(null);
     setShowLoginModal(false);
     setLocationError(null);
@@ -287,7 +304,7 @@ export default function BuyNowModal({
       name: user
         ? [user.firstName, user.lastName].filter(Boolean).join(" ")
         : "",
-      phone: user?.phone ?? "",
+      phone: sanitizeBuyNowPhone(user?.phone ?? ""),
       city: "",
       zone: "",
       area: "",
@@ -598,18 +615,75 @@ export default function BuyNowModal({
   const subtotal = Number(
     selectedItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2),
   );
-  const grandTotal = Number((subtotal + (deliveryCharge ?? 0)).toFixed(2));
-  const canContinue = selectedItems.length > 0;
-  const hasRequiredShippingFields = Boolean(
-    shippingForm.name.trim() &&
-    shippingForm.phone.trim() &&
+  const normalizedBuyNowPhone = normalizeBangladeshPhoneNumber(shippingForm.phone);
+  const isBuyNowCityDhaka =
+    shippingForm.pathao_city_id === 1 ||
+    shippingForm.city.trim().toLowerCase().includes("dhaka");
+  const hasSelectedCity = Boolean(
+    shippingForm.pathao_city_id || shippingForm.city.trim(),
+  );
+  const hasSelectedLocation = Boolean(
     shippingForm.city.trim() &&
     shippingForm.zone.trim() &&
     shippingForm.area.trim() &&
-    shippingForm.streetAddress.trim() &&
     shippingForm.pathao_city_id &&
     shippingForm.pathao_zone_id &&
     shippingForm.pathao_area_id,
+  );
+  const hasProductFreeDelivery = deliveryQuote?.deliveryOfferType === "FREE";
+  const buyNowFreeDeliveryUnlocked =
+    hasProductFreeDelivery ||
+    subtotal >= freeDelivery.nationwideThreshold ||
+    (hasSelectedCity && isBuyNowCityDhaka && subtotal >= freeDelivery.dhakaThreshold);
+
+  const subsidizedThreshold = freeDelivery.outsideDhakaSubsidizedThreshold ?? 0;
+  const subsidizedFee = freeDelivery.outsideDhakaSubsidizedFee;
+  const isOutsideDhakaSubsidized =
+    !buyNowFreeDeliveryUnlocked &&
+    hasSelectedCity &&
+    !isBuyNowCityDhaka &&
+    subsidizedThreshold > 0 &&
+    typeof subsidizedFee === "number" &&
+    subtotal >= subsidizedThreshold;
+
+  const fallbackDeliveryEstimate = isBuyNowCityDhaka
+    ? (freeDelivery.fallbackDhakaFee ?? 80)
+    : (freeDelivery.fallbackOutsideDhakaFee ?? 130);
+
+  const resolvedBaseDelivery =
+    deliveryState === "success"
+      ? (deliveryCharge ?? 0)
+      : deliveryState === "error" && !deliveryHardError && hasSelectedLocation
+        ? fallbackDeliveryEstimate
+        : (deliveryCharge ?? 0);
+
+  const effectiveDeliveryCharge = buyNowFreeDeliveryUnlocked
+    ? 0
+    : isOutsideDhakaSubsidized && typeof subsidizedFee === "number" && hasSelectedLocation
+      ? Math.min(resolvedBaseDelivery || fallbackDeliveryEstimate, subsidizedFee)
+      : resolvedBaseDelivery;
+
+  const effectiveDeliveryMessage = deliveryHardError
+    ? deliveryHardError
+    : buyNowFreeDeliveryUnlocked
+      ? subtotal >= freeDelivery.nationwideThreshold
+        ? `Free Nationwide Delivery unlocked (\u09F3${freeDelivery.nationwideThreshold}+ order)`
+        : hasSelectedCity && isBuyNowCityDhaka && subtotal >= freeDelivery.dhakaThreshold
+          ? `Free Dhaka Delivery unlocked (\u09F3${freeDelivery.dhakaThreshold}+ order)`
+          : deliveryMessage
+      : isOutsideDhakaSubsidized && typeof subsidizedFee === "number"
+        ? `Subsidized Outside Dhaka delivery applied (\u09F3${subsidizedFee})`
+        : deliveryState === "error" && hasSelectedLocation
+          ? "Live courier rate unavailable; estimated delivery charge applied."
+          : deliveryMessage;
+
+  const grandTotal = Number((subtotal + effectiveDeliveryCharge).toFixed(2));
+  const canContinue = selectedItems.length > 0;
+  const hasRequiredShippingFields = Boolean(
+    shippingForm.name.trim() &&
+    normalizedBuyNowPhone &&
+    hasSelectedLocation &&
+    shippingForm.streetAddress.trim(),
   );
   const selectedParcelWeightKg = Number(
     selectedItems.reduce((sum, item) => sum + item.totalWeightKg, 0).toFixed(3),
@@ -618,7 +692,10 @@ export default function BuyNowModal({
     canContinue &&
     hasRequiredShippingFields &&
     !submitting &&
-    deliveryState === "success";
+    !deliveryHardError &&
+    (buyNowFreeDeliveryUnlocked ||
+      deliveryState === "success" ||
+      (deliveryState === "error" && hasSelectedLocation));
 
   useEffect(() => {
     if (!isOpen || stage !== "summary" || !canContinue) return;
@@ -627,6 +704,7 @@ export default function BuyNowModal({
       setDeliveryCharge(null);
       setDeliveryQuote(null);
       setDeliveryMessage(null);
+      setDeliveryHardError(null);
       return;
     }
 
@@ -636,6 +714,7 @@ export default function BuyNowModal({
       setDeliveryState("loading");
       setDeliveryQuote(null);
       setDeliveryMessage(null);
+      setDeliveryHardError(null);
       try {
         const response = await fetch("/api/shipping/pathao/price", {
           method: "POST",
@@ -657,10 +736,36 @@ export default function BuyNowModal({
         });
         const data = (await response.json()) as DeliveryQuoteResponse;
         if (!active) return;
+        if (!response.ok) {
+          const errPayload = data as unknown as { error?: string; message?: string };
+          if (response.status === 400 && typeof errPayload?.error === "string") {
+            let hardMsg: string | null = null;
+            if (errPayload.error === "PATHAO_WEIGHT_OUT_OF_RANGE") {
+              hardMsg =
+                typeof errPayload.message === "string"
+                  ? errPayload.message
+                  : "Parcel weight exceeds courier limit (10kg). Please reduce quantity.";
+            } else if (
+              errPayload.error === "PATHAO_PRICE_PRODUCT_NOT_FOUND" ||
+              errPayload.error === "PATHAO_PRICE_VARIANT_INVALID"
+            ) {
+              hardMsg = "Selected item is currently unavailable. Please refresh the page.";
+            }
+            if (hardMsg) {
+              setDeliveryCharge(0);
+              setDeliveryQuote(null);
+              setDeliveryHardError(hardMsg);
+              setDeliveryMessage(hardMsg);
+              setDeliveryState("error");
+              return;
+            }
+          }
+          throw new Error(data.error || "Could not calculate delivery charge");
+        }
         const customerDeliveryCharge =
           data.customerDeliveryCharge ?? data.shippingCharge;
-        if (!response.ok || typeof customerDeliveryCharge !== "number") {
-          throw new Error(data.error || "Could not calculate delivery charge");
+        if (typeof customerDeliveryCharge !== "number") {
+          throw new Error("Could not calculate delivery charge");
         }
         setDeliveryCharge(customerDeliveryCharge);
         setDeliveryQuote(data);
@@ -830,7 +935,7 @@ export default function BuyNowModal({
           parcelWeight: selectedParcelWeightKg,
           shippingAddress: {
             name: shippingForm.name.trim(),
-            phone: shippingForm.phone.trim(),
+            phone: normalizedBuyNowPhone || sanitizeBuyNowPhone(shippingForm.phone),
             address: shippingForm.streetAddress.trim(),
             city: shippingForm.city.trim(),
             zone: shippingForm.zone.trim(),
@@ -839,20 +944,33 @@ export default function BuyNowModal({
             pathao_zone_id: shippingForm.pathao_zone_id,
             pathao_area_id: shippingForm.pathao_area_id,
           },
-          deliveryCharge: deliveryCharge ?? 0,
-          customerDeliveryCharge:
-            deliveryQuote?.customerDeliveryCharge ?? deliveryCharge ?? 0,
-          courierDeliveryCharge: deliveryQuote?.courierDeliveryCharge ?? null,
-          deliveryDiscountAmount: deliveryQuote?.deliveryDiscountAmount ?? 0,
+          deliveryCharge: effectiveDeliveryCharge,
+          customerDeliveryCharge: effectiveDeliveryCharge,
+          courierDeliveryCharge:
+            deliveryQuote?.courierDeliveryCharge ??
+            (deliveryState === "error" ? fallbackDeliveryEstimate : null),
+          deliveryDiscountAmount: Math.max(
+            0,
+            (deliveryQuote?.courierDeliveryCharge ?? resolvedBaseDelivery) - effectiveDeliveryCharge,
+          ),
           deliveryPricingSource:
-            deliveryQuote?.deliveryPricingSource ?? "PATHAO",
-          deliveryOfferType: deliveryQuote?.deliveryOfferType ?? "DEFAULT",
+            deliveryQuote?.deliveryPricingSource ??
+            (deliveryState === "error" ? "FALLBACK" : "PATHAO"),
+          deliveryOfferType: buyNowFreeDeliveryUnlocked
+            ? "FREE"
+            : isOutsideDhakaSubsidized
+              ? "FIXED"
+              : (deliveryQuote?.deliveryOfferType ?? "DEFAULT"),
           deliveryOfferProductId: deliveryQuote?.deliveryOfferProductId ?? null,
-          deliveryOfferBadgeText: deliveryQuote?.deliveryOfferBadgeText ?? null,
+          deliveryOfferBadgeText: buyNowFreeDeliveryUnlocked
+            ? "Free Delivery Offer"
+            : isOutsideDhakaSubsidized
+              ? `Subsidized Delivery (\u09F3${subsidizedFee})`
+              : (deliveryQuote?.deliveryOfferBadgeText ?? null),
           subtotal,
           grandTotal,
           paymentMethod: "COD",
-          deliveryPendingConfirmation: false,
+          deliveryPendingConfirmation: deliveryState === "error" && !buyNowFreeDeliveryUnlocked,
         }),
       });
 
@@ -1196,18 +1314,36 @@ export default function BuyNowModal({
                   placeholder="Your full name"
                   required
                 />
-                <Input
-                  id="buy-now-phone"
-                  label="Phone number"
-                  type="tel"
-                  inputMode="tel"
-                  value={shippingForm.phone}
-                  onChange={(event) =>
-                    setShippingForm((current) => ({ ...current, phone: event.target.value }))
-                  }
-                  placeholder="01XXXXXXXXX"
-                  required
-                />
+                <div>
+                  <Input
+                    id="buy-now-phone"
+                    label="Phone number"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={20}
+                    value={shippingForm.phone}
+                    onChange={(event) =>
+                      setShippingForm((current) => ({
+                        ...current,
+                        phone: sanitizeBuyNowPhone(event.target.value),
+                      }))
+                    }
+                    onBlur={() =>
+                      setShippingForm((current) => ({
+                        ...current,
+                        phone: normalizeBangladeshPhoneNumber(current.phone) || sanitizeBuyNowPhone(current.phone),
+                      }))
+                    }
+                    placeholder="01XXXXXXXXX"
+                    required
+                  />
+                  {shippingForm.phone.trim().length > 0 && !normalizedBuyNowPhone ? (
+                    <p className="mt-1 text-xs font-medium text-[#8B261D]">
+                      Enter a valid 11-digit BD mobile number (e.g. 017XXXXXXXX).
+                    </p>
+                  ) : null}
+                </div>
                 <Select
                   id="buy-now-city"
                   label="City"
@@ -1303,11 +1439,14 @@ export default function BuyNowModal({
                 <div className="flex items-center justify-between">
                   <dt className="text-minsah-text-muted">Delivery Charge</dt>
                   <dd className="font-bold text-minsah-text-primary">
-                    {deliveryState === "loading"
-                      ? "Calculating..."
-                      : deliveryState === "success"
-                        ? formatCustomerDeliveryCharge(deliveryCharge ?? 0)
-                        : "Select city, zone and area"}
+                    {buyNowFreeDeliveryUnlocked
+                      ? "Free"
+                      : deliveryState === "loading"
+                        ? "Calculating..."
+                        : deliveryState === "success" ||
+                            (deliveryState === "error" && !deliveryHardError && hasSelectedLocation)
+                          ? formatCustomerDeliveryCharge(effectiveDeliveryCharge)
+                          : "Select city, zone and area"}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between border-t border-minsah-border-default pt-3">
@@ -1315,13 +1454,19 @@ export default function BuyNowModal({
                   <dd className="text-lg font-black text-minsah-action-primary font-price">{formatPrice(grandTotal)}</dd>
                 </div>
               </dl>
-              {deliveryMessage ? (
+              {effectiveDeliveryMessage ? (
                 <Alert
-                  tone={deliveryState === "error" ? "danger" : "success"}
+                  tone={
+                    deliveryHardError
+                      ? "danger"
+                      : deliveryState === "error" && !buyNowFreeDeliveryUnlocked
+                        ? "warning"
+                        : "success"
+                  }
                   className="mt-3"
                   announcement="polite"
                 >
-                  {deliveryMessage}
+                  {effectiveDeliveryMessage}
                 </Alert>
               ) : null}
             </section>
