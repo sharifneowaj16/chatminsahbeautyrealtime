@@ -8,6 +8,8 @@ export interface FreeDeliveryThresholdConfig {
   dhakaThreshold: number;
   outsideDhakaSubsidizedThreshold?: number;
   outsideDhakaSubsidizedFee?: number;
+  fallbackDhakaFee?: number;
+  fallbackOutsideDhakaFee?: number;
 }
 
 export interface UniversalOfferServerConfig {
@@ -40,6 +42,8 @@ export function getDefaultUniversalOfferServerConfig(): UniversalOfferServerConf
       dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
       outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
       outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
+      fallbackDhakaFee: DELIVERY_CONFIG.FALLBACK_DHAKA_FEE,
+      fallbackOutsideDhakaFee: DELIVERY_CONFIG.FALLBACK_OUTSIDE_DHAKA_FEE,
     },
     coupons: [],
     bundles: { ...DEFAULT_BUNDLE_CONFIG },
@@ -75,6 +79,14 @@ export async function getUniversalOfferEngineServerConfig(): Promise<UniversalOf
           outsideDhakaSubsidizedFee: nonNegativeOrFallback(
             fd.outsideDhakaSubsidizedFee,
             defaults.freeDelivery.outsideDhakaSubsidizedFee
+          ),
+          fallbackDhakaFee: nonNegativeOrFallback(
+            fd.fallbackDhakaFee,
+            defaults.freeDelivery.fallbackDhakaFee
+          ),
+          fallbackOutsideDhakaFee: nonNegativeOrFallback(
+            fd.fallbackOutsideDhakaFee,
+            defaults.freeDelivery.fallbackOutsideDhakaFee
           ),
         },
         coupons: Array.isArray(cfg.coupons) ? cfg.coupons : [],

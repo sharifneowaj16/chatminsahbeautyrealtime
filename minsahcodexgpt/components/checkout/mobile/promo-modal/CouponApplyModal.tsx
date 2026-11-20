@@ -50,7 +50,7 @@ export function CouponApplyModal({
             (c.type === 'percentage'
               ? `${c.value}% discount on eligible items`
               : `Flat ৳${c.value} discount on eligible items`),
-          discountType: (c.type === 'flat' ? 'flat' : 'percentage') as CouponItem['discountType'],
+          discountType: (c.type === 'free_shipping' ? 'shipping' : c.type === 'flat' ? 'flat' : 'percentage') as CouponItem['discountType'],
           discountValue: c.value,
           badgeText: c.badgeText || (c.type === 'percentage' ? `${c.value}% OFF` : `৳${c.value} OFF`),
           badgeVariant: 'primary' as const,

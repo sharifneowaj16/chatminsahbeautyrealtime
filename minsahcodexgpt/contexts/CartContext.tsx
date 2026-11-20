@@ -367,6 +367,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems]             = useState<CartItem[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
   const [promoCode, setPromoCode]     = useState('');
+
+  // Hydrate saved promo code on mount so page refresh preserves applied coupon
+  useEffect(() => {
+    try {
+      const savedCode = localStorage.getItem('minsah_promo_code');
+      if (savedCode && savedCode.trim()) {
+        setPromoCode(savedCode.trim().toUpperCase());
+      }
+    } catch {}
+  }, []);
   const [discount, setDiscount]       = useState(0);
   const [addresses, setAddresses]     = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);

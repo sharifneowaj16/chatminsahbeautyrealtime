@@ -28,10 +28,12 @@ export interface AdminOfferPayload {
     dhakaThreshold: number;
     outsideDhakaSubsidizedThreshold: number;
     outsideDhakaSubsidizedFee: number;
+    fallbackDhakaFee?: number;
+    fallbackOutsideDhakaFee?: number;
   };
   coupons: Array<{
     code: string;
-    type: 'percentage' | 'flat';
+    type: 'percentage' | 'flat' | 'free_shipping';
     value: number;
     description: string;
     minSubtotal?: number;
@@ -87,6 +89,8 @@ export function getDefaultAdminOfferConfig(): AdminOfferPayload {
       dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
       outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
       outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
+      fallbackDhakaFee: DELIVERY_CONFIG.FALLBACK_DHAKA_FEE,
+      fallbackOutsideDhakaFee: DELIVERY_CONFIG.FALLBACK_OUTSIDE_DHAKA_FEE,
     },
     coupons: [],
     bundles: {
@@ -244,7 +248,7 @@ export async function PUT(request: NextRequest) {
         if (!c || !c.code) continue;
         const codeUpper = c.code.trim().toUpperCase();
         submittedCodes.push(codeUpper);
-        const typeEnum = c.type === 'percentage' ? 'PERCENTAGE' : 'FIXED';
+        const typeEnum = c.type === 'free_shipping' ? 'FREE_SHIPPING' : c.type === 'percentage' ? 'PERCENTAGE' : 'FIXED';
         const parsedStartDate = c.startDate && !isNaN(new Date(c.startDate).getTime()) ? new Date(c.startDate) : null;
         const parsedEndDate = c.endDate && !isNaN(new Date(c.endDate).getTime()) ? new Date(c.endDate) : null;
         try {

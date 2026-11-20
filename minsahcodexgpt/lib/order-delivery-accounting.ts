@@ -233,13 +233,17 @@ function resolveFallbackDeliveryAccounting(params: {
   client: ClientDeliveryAccountingInput;
   products: OrderDeliveryAccountingProductInput[];
   address?: OrderDeliveryAccountingAddressInput | null;
+  fallbackDhakaFee?: number;
+  fallbackOutsideDhakaFee?: number;
 }): OrderDeliveryAccountingResult {
   const cityName = typeof params.address?.city === 'string' ? params.address.city.trim().toLowerCase() : '';
   const cityId = Number(params.address?.pathao_city_id ?? params.address?.pathaoCityId);
   const isInsideDhaka = cityName.includes('dhaka') || cityId === 1;
 
-  // Standard fallback courier rates if live courier quote failed
-  const standardCourierCharge = isInsideDhaka ? 80 : 130;
+  // Admin-configured fallback courier rates if live courier quote failed
+  const dhakaRate = typeof params.fallbackDhakaFee === 'number' && params.fallbackDhakaFee >= 0 ? params.fallbackDhakaFee : 80;
+  const outsideRate = typeof params.fallbackOutsideDhakaFee === 'number' && params.fallbackOutsideDhakaFee >= 0 ? params.fallbackOutsideDhakaFee : 130;
+  const standardCourierCharge = isInsideDhaka ? dhakaRate : outsideRate;
   const clientCourierCharge = toMoney(params.client.courierDeliveryCharge);
   const fallbackCourierCharge = clientCourierCharge > 0
     ? roundMoney(clientCourierCharge)
@@ -287,10 +291,15 @@ async function applyOrderThresholdDeliveryRules(params: {
   const thresholdConfig = offerConfig.freeDelivery;
 
   let isFreeShipCoupon = false;
-  if (normalizedCode === 'FREESHIP' && offerConfig.couponsEnabled) {
+  if (normalizedCode && offerConfig.couponsEnabled) {
     const now = Date.now();
     const rule = offerConfig.coupons.find(
-      (c) => c && c.code && String(c.code).trim().toUpperCase() === 'FREESHIP' && c.isActive !== false
+      (c) =>
+        c &&
+        c.code &&
+        String(c.code).trim().toUpperCase() === normalizedCode &&
+        c.isActive !== false &&
+        (c.type === 'free_shipping' || (normalizedCode === 'FREESHIP' && (Number(c.value) || 0) <= 0))
     );
     if (rule) {
       const startOk = !rule.startDate || isNaN(new Date(rule.startDate).getTime()) || now >= new Date(rule.startDate).getTime();
@@ -378,11 +387,15 @@ export async function resolveOrderDeliveryAccounting(params: {
   const addrCityName = typeof params.address?.city === 'string' ? params.address.city.trim().toLowerCase() : '';
   const isAddressInsideDhaka = addrCityName.includes('dhaka') || recipientCity === 1;
 
+  const serverOfferCfg = await getUniversalOfferEngineServerConfig();
+
   if (!recipientCity || !recipientZone || !params.items.length) {
     const fallback = resolveFallbackDeliveryAccounting({
       client: params.client,
       products: params.products,
       address: params.address,
+      fallbackDhakaFee: serverOfferCfg.freeDelivery.fallbackDhakaFee,
+      fallbackOutsideDhakaFee: serverOfferCfg.freeDelivery.fallbackOutsideDhakaFee,
     });
     return applyOrderThresholdDeliveryRules({
       result: fallback,
@@ -441,6 +454,8 @@ export async function resolveOrderDeliveryAccounting(params: {
       client: params.client,
       products: params.products,
       address: params.address,
+      fallbackDhakaFee: serverOfferCfg.freeDelivery.fallbackDhakaFee,
+      fallbackOutsideDhakaFee: serverOfferCfg.freeDelivery.fallbackOutsideDhakaFee,
     });
     return applyOrderThresholdDeliveryRules({
       result: fallback,

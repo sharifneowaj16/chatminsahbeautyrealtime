@@ -86,7 +86,7 @@ export function calculateCartOffers(
       } else if (rule.minSubtotal && subtotal < rule.minSubtotal) {
         promoError = `Minimum subtotal of \u09F3${rule.minSubtotal} required for ${rule.code}`;
       } else {
-        const isFreeShipCode = rule.code.trim().toUpperCase() === 'FREESHIP';
+        const isFreeShipCode = rule.type === 'free_shipping' || (rule.code.trim().toUpperCase() === 'FREESHIP' && (Number(rule.value) || 0) <= 0);
         const allowBundleDiscount = !strictAntiStacking && Boolean(rule.allowOnBundles);
         const applicableBase = allowBundleDiscount ? (regularSubtotal + bundleSubtotal) : regularSubtotal;
 
@@ -100,7 +100,7 @@ export function calculateCartOffers(
         } else {
           appliedPromoRule = rule;
 
-          if (isFreeShipCode && (Number(rule.value) || 0) <= 0) {
+          if (isFreeShipCode) {
             promoDiscount = 0;
           } else if (rule.type === 'percentage') {
             const rawRate = Number(rule.value) || 0;
@@ -140,7 +140,11 @@ export function calculateCartOffers(
     hasProductFreeDelivery ||
     subtotal >= targetThreshold ||
     (isCityDhaka && subtotal >= dhakaThreshold) ||
-    Boolean(appliedPromoRule && appliedPromoRule.code.trim().toUpperCase() === 'FREESHIP');
+    Boolean(
+      appliedPromoRule &&
+        (appliedPromoRule.type === 'free_shipping' ||
+          (appliedPromoRule.code.trim().toUpperCase() === 'FREESHIP' && (Number(appliedPromoRule.value) || 0) <= 0))
+    );
 
   const remainingForFreeDelivery = isFreeDeliveryUnlocked
     ? 0

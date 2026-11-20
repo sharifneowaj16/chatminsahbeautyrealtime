@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PiggyBank, Zap, CheckCircle2 } from 'lucide-react';
 import { useOfferEngine } from '@/contexts/OfferEngineContext';
+import { useCart } from '@/contexts/CartContext';
 
 interface FreeShippingCalculatorCardProps {
   currentCartBdt?: number;
@@ -10,10 +11,12 @@ interface FreeShippingCalculatorCardProps {
 }
 
 export function FreeShippingCalculatorCard({
-  currentCartBdt = 0,
+  currentCartBdt,
   targetBdt,
 }: FreeShippingCalculatorCardProps) {
   const { freeDelivery } = useOfferEngine();
+  const { subtotal } = useCart();
+  const activeCartBdt = currentCartBdt ?? subtotal;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -21,8 +24,8 @@ export function FreeShippingCalculatorCard({
   }, []);
 
   const threshold = targetBdt ?? freeDelivery?.nationwideThreshold ?? 1100;
-  const diff = Math.max(threshold - currentCartBdt, 0);
-  const percentage = threshold > 0 ? Math.min(Math.round((currentCartBdt / threshold) * 100), 100) : 100;
+  const diff = Math.max(threshold - activeCartBdt, 0);
+  const percentage = threshold > 0 ? Math.min(Math.round((activeCartBdt / threshold) * 100), 100) : 100;
 
   return (
     <section className="bg-[#FAF6F2] rounded-2xl p-4 border border-[#EADFD5] shadow-xs relative overflow-hidden">
@@ -53,7 +56,7 @@ export function FreeShippingCalculatorCard({
         </div>
         <div className="flex justify-between items-center text-[11px] font-medium text-[#7A6E65]">
           <span>
-            Current cart: <strong className="text-[#2D1F18] font-bold">৳{currentCartBdt.toLocaleString()}</strong>
+            Current cart: <strong className="text-[#2D1F18] font-bold">৳{activeCartBdt.toLocaleString()}</strong>
           </span>
           <span>
             Free delivery threshold: <strong className="text-[#2D1F18] font-bold">৳{threshold.toLocaleString()}</strong>

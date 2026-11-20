@@ -48,7 +48,7 @@ export default function UniversalOfferEngineAdminPage() {
   const [showAddCoupon, setShowAddCoupon] = useState(false);
   const [newCoupon, setNewCoupon] = useState({
     code: '',
-    type: 'percentage' as 'percentage' | 'flat',
+    type: 'percentage' as 'percentage' | 'flat' | 'free_shipping',
     value: 10,
     description: '',
     minSubtotal: 0,
@@ -416,12 +416,13 @@ export default function UniversalOfferEngineAdminPage() {
                     >
                       <option value="percentage">% Percentage Discount</option>
                       <option value="flat">৳ Fixed Flat Amount</option>
+                        <option value="free_shipping">Free Shipping (100% Delivery Off)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-[#8A8F98] mb-1">
-                      Value {newCoupon.type === 'percentage' ? '(%)' : '(৳)'} *
+                      Value {newCoupon.type === 'free_shipping' ? '(Auto 0)' : newCoupon.type === 'percentage' ? '(%)' : '(\u09F3)'} *
                     </label>
                     <input
                       type="number"
@@ -556,10 +557,12 @@ export default function UniversalOfferEngineAdminPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5 font-semibold text-[#F7F8F8]">
-                          {coupon.type === 'percentage' ? (
+                          {coupon.type === 'free_shipping' ? (
+                            <span className="text-purple-400 font-bold">Free Shipping</span>
+                          ) : coupon.type === 'percentage' ? (
                             <span className="text-emerald-400 font-bold">{coupon.value}% Off</span>
                           ) : (
-                            <span className="text-blue-400 font-bold">৳{coupon.value} Flat Off</span>
+                            <span className="text-blue-400 font-bold">{'\u09F3'}{coupon.value} Flat Off</span>
                           )}
                           {coupon.minSubtotal ? (
                             <span className="block text-[11px] text-[#8A8F98] font-normal">
@@ -1257,6 +1260,66 @@ export default function UniversalOfferEngineAdminPage() {
                 </div>
                 <p className="text-[11px] text-[#8A8F98] mt-2">
                   Reduced shipping charge charged to outside Dhaka customers once subsidized threshold is met.
+                </p>
+              </div>
+
+              {/* Fallback Inside Dhaka Delivery Fee */}
+              <div className="p-4 rounded-xl border border-slate-500/30 bg-slate-500/5">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-[#F7F8F8]">
+                    Fallback Inside Dhaka Fee ({'\u09F3'})
+                  </label>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/20 text-slate-300">
+                    Courier Offline Rate
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  value={config.freeDelivery.fallbackDhakaFee ?? 80}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      freeDelivery: {
+                        ...config.freeDelivery,
+                        fallbackDhakaFee: Math.max(0, Number(e.target.value) || 0),
+                      },
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[#232636] font-bold text-sm bg-[#10121b] text-[#F7F8F8] focus:ring-1 focus:ring-emerald-500 outline-none"
+                />
+                <p className="text-[11px] text-[#8A8F98] mt-1.5">
+                  Used automatically inside Dhaka if live Pathao quote is temporarily unavailable.
+                </p>
+              </div>
+
+              {/* Fallback Outside Dhaka Delivery Fee */}
+              <div className="p-4 rounded-xl border border-slate-500/30 bg-slate-500/5">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-[#F7F8F8]">
+                    Fallback Outside Dhaka Fee ({'\u09F3'})
+                  </label>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/20 text-slate-300">
+                    Courier Offline Rate
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  value={config.freeDelivery.fallbackOutsideDhakaFee ?? 130}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      freeDelivery: {
+                        ...config.freeDelivery,
+                        fallbackOutsideDhakaFee: Math.max(0, Number(e.target.value) || 0),
+                      },
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[#232636] font-bold text-sm bg-[#10121b] text-[#F7F8F8] focus:ring-1 focus:ring-emerald-500 outline-none"
+                />
+                <p className="text-[11px] text-[#8A8F98] mt-1.5">
+                  Used automatically outside Dhaka if live Pathao quote is temporarily unavailable.
                 </p>
               </div>
             </div>

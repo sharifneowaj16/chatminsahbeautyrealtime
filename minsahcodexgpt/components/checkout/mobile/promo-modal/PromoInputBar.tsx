@@ -23,7 +23,6 @@ export function PromoInputBar({ onApply, disabled }: PromoInputBarProps) {
     } catch {
       // Fallback
     }
-    setCode('FREESHIP');
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -65,7 +64,7 @@ export function PromoInputBar({ onApply, disabled }: PromoInputBarProps) {
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Enter promo code (e.g., FREESHIP)"
+            placeholder="Enter promo code"
             disabled={disabled}
             className="w-full pl-10 pr-20 py-3 rounded-full bg-[#faf9f6] text-[#062402] placeholder:text-[#5A615D]/60 text-base sm:text-xs font-semibold uppercase tracking-wider border border-[#E2DED8]/60 focus:outline-none focus:border-[#4b6723] focus:ring-2 focus:ring-[#4b6723]/20 shadow-inner transition-all"
           />

@@ -236,6 +236,10 @@ export default function SeedHeroBundleCard({
   // If disabled by prop or admin offer engine, return null
   if (!enabled || (bundleConfig && bundleConfig.enabled === false)) return null;
 
+  const tier2Percent = bundleConfig?.twoStepDiscountPercent ?? 15;
+  const tier3Percent = bundleConfig?.threeStepDiscountPercent ?? 25;
+  const tier4Percent = bundleConfig?.fourStepDiscountPercent ?? 30;
+
   // Direct 1-Click Add 2-Step Bundle to Bag
   const handleAddBaseBundle = async () => {
     if (!activePairedProduct) return;
@@ -459,7 +463,7 @@ export default function SeedHeroBundleCard({
                     <span className="truncate">Create Custom Bundle</span>
                   </span>
                   <span className="shrink-0 text-emerald-700 dark:text-emerald-300 font-bold font-mono text-[11px] group-hover:translate-x-0.5 transition-transform ml-2">
-                    Up to 30% OFF ›
+                    Up to {tier4Percent}% OFF ›
                   </span>
                 </button>
               </div>
@@ -472,7 +476,7 @@ export default function SeedHeroBundleCard({
         /* 1B. STANDALONE CUSTOM BUNDLE ROUTINE BUILDER (WHEN NO PAIRED ITEM EXISTS) */
         /* ========================================================================= */
         <div className="p-5 sm:p-6 rounded-[28px] bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-white/10 shadow-xs space-y-4">
-          {/* Header with SAVE UP TO 30% badge */}
+          {/* Header with SAVE UP TO {tier4Percent}% badge */}
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-400">
@@ -485,7 +489,7 @@ export default function SeedHeroBundleCard({
             </div>
 
             <span className="shrink-0 inline-flex items-center rounded-full bg-[#EAF5EC] dark:bg-emerald-950/60 border border-[#D4EBD9] dark:border-emerald-500/25 px-3 py-1 text-[#1E6839] dark:text-emerald-300 shadow-2xs font-inter text-xs font-bold">
-              SAVE UP TO 30%
+              SAVE UP TO {tier4Percent}%
             </span>
           </div>
 
@@ -497,15 +501,15 @@ export default function SeedHeroBundleCard({
           <div className="grid grid-cols-3 gap-2 pt-1">
             <div className="rounded-xl border border-stone-200/90 dark:border-white/10 bg-stone-50/70 dark:bg-zinc-800/60 p-2.5 text-center">
               <p className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400 tracking-wider">2 Products</p>
-              <p className="font-inter font-bold text-xs sm:text-sm text-[#122A16] dark:text-emerald-400 mt-0.5">15% OFF</p>
+              <p className="font-inter font-bold text-xs sm:text-sm text-[#122A16] dark:text-emerald-400 mt-0.5">{tier2Percent}% OFF</p>
             </div>
             <div className="rounded-xl border border-stone-200/90 dark:border-white/10 bg-stone-50/70 dark:bg-zinc-800/60 p-2.5 text-center">
               <p className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400 tracking-wider">3 Products</p>
-              <p className="font-inter font-bold text-xs sm:text-sm text-[#122A16] dark:text-emerald-400 mt-0.5">25% OFF</p>
+              <p className="font-inter font-bold text-xs sm:text-sm text-[#122A16] dark:text-emerald-400 mt-0.5">{tier3Percent}% OFF</p>
             </div>
             <div className="rounded-xl border border-emerald-500/30 dark:border-emerald-500/40 bg-emerald-50/60 dark:bg-emerald-950/30 p-2.5 text-center">
               <p className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-400 tracking-wider">4+ Products</p>
-              <p className="font-inter font-bold text-xs sm:text-sm text-emerald-700 dark:text-emerald-300 mt-0.5">30% OFF</p>
+              <p className="font-inter font-bold text-xs sm:text-sm text-emerald-700 dark:text-emerald-300 mt-0.5">{tier4Percent}% OFF</p>
             </div>
           </div>
 

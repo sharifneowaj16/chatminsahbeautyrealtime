@@ -48,6 +48,8 @@ const initialContextValue: OfferEngineContextValue = {
     dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
     outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
     outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
+    fallbackDhakaFee: DELIVERY_CONFIG.FALLBACK_DHAKA_FEE,
+    fallbackOutsideDhakaFee: DELIVERY_CONFIG.FALLBACK_OUTSIDE_DHAKA_FEE,
   },
   refreshOffers: async () => {},
   getOffersForPlacement: () => [],
@@ -86,6 +88,8 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
             dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
             outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
             outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
+    fallbackDhakaFee: DELIVERY_CONFIG.FALLBACK_DHAKA_FEE,
+    fallbackOutsideDhakaFee: DELIVERY_CONFIG.FALLBACK_OUTSIDE_DHAKA_FEE,
           },
           coupons: Array.isArray(data.coupons) ? data.coupons : [],
           bundles: data.bundles || DEFAULT_BUNDLE_CONFIG,
@@ -125,6 +129,8 @@ export function OfferEngineProvider({ children }: { children: React.ReactNode })
         dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
         outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
         outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
+    fallbackDhakaFee: DELIVERY_CONFIG.FALLBACK_DHAKA_FEE,
+    fallbackOutsideDhakaFee: DELIVERY_CONFIG.FALLBACK_OUTSIDE_DHAKA_FEE,
       }
     );
   }, [config?.freeDelivery]);

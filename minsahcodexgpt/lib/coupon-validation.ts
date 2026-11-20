@@ -117,7 +117,7 @@ export async function validateCouponForOrder(params: {
     coupon = {
       id: '',
       code: couponCode,
-      type: matchedOfferRule.type === 'percentage' ? 'PERCENTAGE' : 'FIXED',
+      type: matchedOfferRule.type === 'free_shipping' ? 'FREE_SHIPPING' : matchedOfferRule.type === 'percentage' ? 'PERCENTAGE' : 'FIXED',
       value: matchedOfferRule.value,
       minPurchase: matchedOfferRule.minSubtotal ?? 0,
       maxDiscount: matchedOfferRule.maxDiscount ?? 0,
@@ -202,7 +202,9 @@ export async function validateCouponForOrder(params: {
   const rawCouponType = String(coupon.type).toUpperCase();
   const value = toMoney(coupon.value);
   const couponType =
-    coupon.code.trim().toUpperCase() === 'FREESHIP' && value <= 0
+    matchedOfferRule?.type === 'free_shipping' ||
+    rawCouponType === 'FREE_SHIPPING' ||
+    (coupon.code.trim().toUpperCase() === 'FREESHIP' && value <= 0)
       ? 'FREE_SHIPPING'
       : rawCouponType;
   const maxDiscount = toMoney(coupon.maxDiscount);

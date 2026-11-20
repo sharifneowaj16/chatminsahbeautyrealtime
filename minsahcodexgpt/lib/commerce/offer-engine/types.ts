@@ -1,4 +1,4 @@
-export type PromoDiscountType = 'percentage' | 'flat';
+export type PromoDiscountType = 'percentage' | 'flat' | 'free_shipping';
 
 export type OfferPlacement =
   | 'top_bar'
@@ -35,6 +35,8 @@ export interface DeliveryTierConfig {
   DHAKA_METRO_THRESHOLD: number;
   OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD: number;
   OUTSIDE_DHAKA_SUBSIDIZED_FEE: number;
+  FALLBACK_DHAKA_FEE: number;
+  FALLBACK_OUTSIDE_DHAKA_FEE: number;
 }
 
 export interface BundleConfig {
@@ -53,6 +55,8 @@ export interface UniversalOfferConfig {
     dhakaThreshold: number;
     outsideDhakaSubsidizedThreshold?: number;
     outsideDhakaSubsidizedFee?: number;
+    fallbackDhakaFee?: number;
+    fallbackOutsideDhakaFee?: number;
   };
   coupons: PromoRule[];
   bundles: BundleConfig;

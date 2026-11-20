@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { safeImageUrl } from '@/lib/safe-image';
 import { formatPrice } from '@/utils/currency';
+import { useOfferEngine } from '@/contexts/OfferEngineContext';
 
 export interface MobileDrawerCategory {
   id: string;
@@ -109,6 +110,7 @@ export default function MobileNavDrawer({
 }: MobileNavDrawerProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('shop');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const { couponsEnabled, coupons, freeDelivery, bundles } = useOfferEngine();
 
   // Lock body scroll when open
   useEffect(() => {
@@ -351,38 +353,57 @@ export default function MobileNavDrawer({
               >
                 <div className="flex items-center justify-between font-bold text-amber-300">
                   <span className="flex items-center gap-1">
-                    <Zap size={13} className="fill-amber-400" /> Flash Sale
+                    <Zap size={13} className="fill-amber-400" /> Flash Sale &amp; Deals
                   </span>
-                  <span className="bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-full text-[10px]">
-                    Up to 30% OFF
-                  </span>
+                  {bundles.enabled && (
+                    <span className="bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-full text-[10px]">
+                      Up to {bundles.fourStepDiscountPercent}% Bundle Off
+                    </span>
+                  )}
                 </div>
                 <p className="text-white mt-1 text-[11px]">
-                  Special seasonal discounts across bestselling beauty formulations.
+                  Explore live flash deals and routine bundle discounts.
                 </p>
               </Link>
 
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-1 font-mono text-xs font-bold text-emerald-300">
-                    <Tag size={12} /> WELCOME10
+              {couponsEnabled &&
+                coupons.slice(0, 3).map((coupon) => (
+                  <div
+                    key={coupon.code}
+                    className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1 font-mono text-xs font-bold text-emerald-300">
+                        <Tag size={12} /> {coupon.code}
+                      </div>
+                      <p className="text-[10.5px] text-white/70 truncate">
+                        {coupon.description ||
+                          coupon.badgeText ||
+                          (coupon.type === 'free_shipping'
+                            ? 'Free Delivery Voucher'
+                            : coupon.type === 'percentage'
+                              ? `${coupon.value}% off eligible items`
+                              : `Flat \u09F3${coupon.value} off eligible items`)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyVoucher(coupon.code)}
+                      className="flex items-center gap-1 text-[11px] font-semibold bg-white/10 px-2.5 py-1 rounded-full text-white hover:bg-white/20 transition active:scale-95 shrink-0"
+                    >
+                      {copiedCode === coupon.code ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      <span>{copiedCode === coupon.code ? 'Copied' : 'Copy'}</span>
+                    </button>
                   </div>
-                  <p className="text-[10.5px] text-white/70">10% off on your first order</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => copyVoucher('WELCOME10')}
-                  className="flex items-center gap-1 text-[11px] font-semibold bg-white/10 px-2.5 py-1 rounded-full text-white hover:bg-white/20 transition active:scale-95"
-                >
-                  {copiedCode === 'WELCOME10' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                  <span>{copiedCode === 'WELCOME10' ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
+                ))}
 
               <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2.5">
                 <Truck size={18} className="text-emerald-400 flex-shrink-0" />
                 <p className="text-[11px] text-white/90">
-                  Free nationwide shipping on orders over <span className="font-price font-bold text-emerald-300">৳999</span>
+                  Free nationwide shipping on orders {'\u2265'}{' '}
+                  <span className="font-price font-bold text-emerald-300">
+                    {'\u09F3'}{freeDelivery.nationwideThreshold.toLocaleString()}
+                  </span>
                 </p>
               </div>
             </div>

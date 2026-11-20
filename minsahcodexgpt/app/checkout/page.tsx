@@ -320,6 +320,7 @@ function CheckoutContent() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  const [deliveryHardError, setDeliveryHardError] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [touchedFields, setTouchedFields] = useState<CheckoutTouchedFields>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -333,6 +334,7 @@ function CheckoutContent() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const pendingOrderRef = useRef(false);
+  const submittingOrderRef = useRef(false);
   const checkoutIdempotencyKeyRef = useRef<string | null>(null);
   const initiateCheckoutTrackedRef = useRef(false);
   const shippingInfoTrackedRef = useRef(false);
@@ -383,6 +385,12 @@ function CheckoutContent() {
     [areas, shippingForm.pathao_area_id],
   );
 
+  const isAreaListPending = Boolean(
+    shippingForm.pathao_area_id &&
+    !selectedArea &&
+    (locationLoading === "areas" || areas.length === 0),
+  );
+
   const selectedAreaHomeDeliveryAvailable = Boolean(
     selectedArea?.homeDeliveryAvailable,
   );
@@ -412,15 +420,18 @@ function CheckoutContent() {
     deliveryQuote?.deliveryOfferType === "FREE" ||
     items.some((item) => Boolean((item as { hasFreeDelivery?: boolean }).hasFreeDelivery));
 
+  const normalizedAppliedPromo = promoCode.trim().toUpperCase();
   const isAdminFreeShipApplied =
     couponsEnabled &&
-    promoCode.trim().toUpperCase() === "FREESHIP" &&
+    Boolean(normalizedAppliedPromo) &&
     activeOfferCoupons.some(
       (c) =>
         c &&
         c.code &&
-        c.code.trim().toUpperCase() === "FREESHIP" &&
+        c.code.trim().toUpperCase() === normalizedAppliedPromo &&
         c.isActive !== false &&
+        (c.type === "free_shipping" ||
+          (normalizedAppliedPromo === "FREESHIP" && (Number(c.value) || 0) <= 0)) &&
         (!c.minSubtotal || subtotal >= c.minSubtotal),
     );
 
@@ -440,7 +451,9 @@ function CheckoutContent() {
     typeof subsidizedFee === "number" &&
     subtotal >= subsidizedThreshold;
 
-  const fallbackDeliveryEstimate = isCheckoutCityDhaka ? 80 : 130;
+  const fallbackDeliveryEstimate = isCheckoutCityDhaka
+    ? (freeDelivery.fallbackDhakaFee ?? 80)
+    : (freeDelivery.fallbackOutsideDhakaFee ?? 130);
   const resolvedBaseDelivery =
     deliveryState === "success"
       ? deliveryCharge
@@ -490,6 +503,8 @@ function CheckoutContent() {
       errors.area = "Please select your delivery area.";
     } else if (selectedArea && !selectedArea.homeDeliveryAvailable) {
       errors.area = "Home delivery is not available in this area.";
+    } else if (!selectedArea && !isAreaListPending && areas.length > 0) {
+      errors.area = "Please re-select your delivery area.";
     }
 
     if (!shippingForm.streetAddress.trim()) {
@@ -497,7 +512,7 @@ function CheckoutContent() {
     }
 
     return errors;
-  }, [normalizedShippingPhone, selectedArea, shippingForm]);
+  }, [areas.length, isAreaListPending, normalizedShippingPhone, selectedArea, shippingForm]);
 
   const visibleFieldErrors = useMemo<CheckoutFieldErrors>(() => {
     const visibleErrors: CheckoutFieldErrors = {};
@@ -523,6 +538,8 @@ function CheckoutContent() {
     const firstFieldError = Object.values(fieldErrors)[0];
     if (firstFieldError) return firstFieldError;
     if (!selectedPaymentMethod) return "Please select a payment method.";
+    if (isAreaListPending) return "Verifying delivery area...";
+    if (deliveryHardError) return deliveryHardError;
     if (deliveryState === "loading" && !checkoutFreeDeliveryUnlocked) {
       return "Calculating delivery charge...";
     }
@@ -533,7 +550,7 @@ function CheckoutContent() {
       return "Order total must be greater than ৳0 to place an order.";
     }
     return null;
-  }, [checkoutFreeDeliveryUnlocked, deliveryState, fieldErrors, finalTotal, hasDeliveryLocation, items.length, selectedPaymentMethod]);
+  }, [checkoutFreeDeliveryUnlocked, deliveryHardError, deliveryState, fieldErrors, finalTotal, hasDeliveryLocation, isAreaListPending, items.length, selectedPaymentMethod]);
 
   const placeOrderDisabled =
     isPlacingOrder ||
@@ -774,6 +791,7 @@ function CheckoutContent() {
       setDeliveryQuote(null);
       setDeliveryState("idle");
       setDeliveryError(null);
+      setDeliveryHardError(null);
       return;
     }
 
@@ -784,6 +802,7 @@ function CheckoutContent() {
       setDeliveryState("loading");
       setDeliveryQuote(null);
       setDeliveryError(null);
+      setDeliveryHardError(null);
       try {
         const response = await fetch("/api/shipping/pathao/price", {
           method: "POST",
@@ -801,6 +820,30 @@ function CheckoutContent() {
         });
 
         if (!response.ok) {
+          const errPayload = await response.json().catch(() => null);
+          if (response.status === 400 && errPayload && typeof errPayload.error === "string") {
+            let hardMessage: string | null = null;
+            if (errPayload.error === "PATHAO_WEIGHT_OUT_OF_RANGE") {
+              hardMessage =
+                typeof errPayload.message === "string"
+                  ? errPayload.message
+                  : "Parcel weight exceeds courier limit (10kg). Please split your order.";
+            } else if (
+              errPayload.error === "PATHAO_PRICE_PRODUCT_NOT_FOUND" ||
+              errPayload.error === "PATHAO_PRICE_VARIANT_INVALID"
+            ) {
+              hardMessage =
+                "One or more items in your cart are unavailable. Please refresh your cart.";
+            }
+            if (hardMessage && !isCancelled) {
+              setDeliveryCharge(0);
+              setDeliveryQuote(null);
+              setDeliveryHardError(hardMessage);
+              setDeliveryError(hardMessage);
+              setDeliveryState("error");
+              return;
+            }
+          }
           throw new Error("Failed to quote delivery");
         }
 
@@ -845,6 +888,7 @@ function CheckoutContent() {
     sessionUserId?: string,
     quoteTokenOverride?: string,
   ) => {
+    if (submittingOrderRef.current) return;
     markBeginCheckout();
     setSubmitAttempted(true);
     trackPaymentInfoOnce();
@@ -901,6 +945,7 @@ function CheckoutContent() {
       });
     }
 
+    submittingOrderRef.current = true;
     setIsPlacingOrder(true);
 
     const idempotencyKey =
@@ -1002,6 +1047,7 @@ function CheckoutContent() {
         "Network connection failed. Please check your internet and try again.",
       );
     } finally {
+      submittingOrderRef.current = false;
       setIsPlacingOrder(false);
     }
   };
@@ -1994,11 +2040,15 @@ function CheckoutContent() {
                   </p>
                 )}
 
-                {deliveryError && !checkoutFreeDeliveryUnlocked && (
+                {deliveryHardError ? (
+                  <p className="rounded-lg bg-[#FDF6F5] border border-[#F0D5D1] p-2 text-[11px] font-medium text-[#8B261D]">
+                    {deliveryHardError}
+                  </p>
+                ) : deliveryError && !checkoutFreeDeliveryUnlocked ? (
                   <p className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800">
                     Live courier rate unavailable; estimated delivery charge applied.
                   </p>
-                )}
+                ) : null}
 
                 <div className="flex justify-between border-t border-[#F4EFEA] pt-3 text-sm font-bold text-[#2D1F18]">
                   <span>Total</span>

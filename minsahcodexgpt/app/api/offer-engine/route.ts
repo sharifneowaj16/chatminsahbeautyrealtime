@@ -18,6 +18,8 @@ export async function GET() {
       dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
       outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
       outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
+      fallbackDhakaFee: DELIVERY_CONFIG.FALLBACK_DHAKA_FEE,
+      fallbackOutsideDhakaFee: DELIVERY_CONFIG.FALLBACK_OUTSIDE_DHAKA_FEE,
     };
 
     let topBarConfig = null;
@@ -74,6 +76,8 @@ export async function GET() {
         dhakaThreshold: DELIVERY_CONFIG.DHAKA_METRO_THRESHOLD,
         outsideDhakaSubsidizedThreshold: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_THRESHOLD,
         outsideDhakaSubsidizedFee: DELIVERY_CONFIG.OUTSIDE_DHAKA_SUBSIDIZED_FEE,
+        fallbackDhakaFee: DELIVERY_CONFIG.FALLBACK_DHAKA_FEE,
+        fallbackOutsideDhakaFee: DELIVERY_CONFIG.FALLBACK_OUTSIDE_DHAKA_FEE,
       },
       coupons: [],
       bundles: DEFAULT_BUNDLE_CONFIG,
