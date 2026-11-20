@@ -115,6 +115,7 @@ interface CartContextType {
   selectedPaymentMethod: PaymentMethod | null;
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
   cartLoading: boolean;
+  cartHydrated: boolean;
   freeDeliveryConfig: {
     nationwideThreshold: number;
     dhakaThreshold: number;
@@ -355,7 +356,7 @@ function mergeCartItem(existing: CartItem, incoming: CartItem): CartItem {
 
 // ── Provider ───────────────────────────────────────────────────────────────
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { user, refreshToken } = useAuth();
+  const { user, loading: authLoading, refreshToken } = useAuth();
   const { pushToast } = useToast();
   const {
     config: offerConfig,
@@ -364,8 +365,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     freeDelivery: offerFreeDelivery,
   } = useOfferEngine();
 
-  const [items, setItems]             = useState<CartItem[]>([]);
-  const [cartLoading, setCartLoading] = useState(false);
+  const [items, setItems]               = useState<CartItem[]>([]);
+  const [cartLoading, setCartLoading]   = useState(true);
+  const [cartHydrated, setCartHydrated] = useState(false);
+  const hasLoadedGuestCartRef           = useRef(false);
   const [promoCode, setPromoCode]     = useState('');
 
   // Hydrate saved promo code on mount so page refresh preserves applied coupon
@@ -543,48 +546,65 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ── Load cart on auth change ────────────────────────────────────
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (user) {
       const guestCart = (() => {
         try {
           const saved = localStorage.getItem('minsah_cart');
           const parsed = saved ? (JSON.parse(saved) as CartItem[]) : [];
-          return parsed.filter((item) => !item.cartItemId);
+          return Array.isArray(parsed) ? parsed.filter((item) => !item.cartItemId) : [];
         } catch { return []; }
       })();
 
       const init = async () => {
-        const failedGuestItems = guestCart.length > 0
-          ? await mergeGuestCartToDB(guestCart)
-          : [];
-        if (failedGuestItems.length > 0) {
-          localStorage.setItem('minsah_cart', JSON.stringify(failedGuestItems));
-        } else {
-          localStorage.removeItem('minsah_cart');
-        }
-        await fetchCartFromDB();
-        if (failedGuestItems.length > 0) {
-          setItems((serverItems) => {
-            const merged = [...serverItems];
-            for (const failedItem of failedGuestItems) {
-              const existing = merged.find((item) => item.id === failedItem.id);
-              if (existing) {
-                continue;
+        setCartLoading(true);
+        try {
+          const failedGuestItems = guestCart.length > 0
+            ? await mergeGuestCartToDB(guestCart)
+            : [];
+          if (failedGuestItems.length > 0) {
+            localStorage.setItem('minsah_cart', JSON.stringify(failedGuestItems));
+          } else {
+            localStorage.removeItem('minsah_cart');
+          }
+          await fetchCartFromDB();
+          if (failedGuestItems.length > 0) {
+            setItems((serverItems) => {
+              const merged = [...serverItems];
+              for (const failedItem of failedGuestItems) {
+                const existing = merged.find((item) => item.id === failedItem.id);
+                if (existing) {
+                  continue;
+                }
+                merged.push({ ...failedItem, cartItemId: undefined });
               }
-              merged.push({ ...failedItem, cartItemId: undefined });
-            }
-            return merged;
-          });
+              return merged;
+            });
+          }
+        } finally {
+          hasLoadedGuestCartRef.current = true;
+          setCartLoading(false);
+          setCartHydrated(true);
         }
       };
-      init();
+      void init();
     } else {
       try {
         const saved = localStorage.getItem('minsah_cart');
-        if (saved) setItems(JSON.parse(saved));
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setItems(parsed);
+          }
+        }
       } catch { /* ignore */ }
+      hasLoadedGuestCartRef.current = true;
+      setCartLoading(false);
+      setCartHydrated(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [authLoading, user?.id]);
 
   // ── Address helpers ─────────────────────────────────────────────
 
@@ -1161,6 +1181,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
     cartSyncVersionRef.current += 1;
     clearCartLineMeta();
+    try {
+      localStorage.removeItem('minsah_promo_code');
+      sessionStorage.removeItem('minsah_promo_code');
+    } catch {}
     setPromoCode('');
     setDiscount(0);
     if (user) {
@@ -1185,8 +1209,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [discount, fetchCartFromDB, items, promoCode, refreshToken, user]);
 
   useEffect(() => {
-    if (!user) localStorage.setItem('minsah_cart', JSON.stringify(items));
-  }, [items, user]);
+    if (authLoading || !hasLoadedGuestCartRef.current) return;
+    if (!user) {
+      try {
+        localStorage.setItem('minsah_cart', JSON.stringify(items));
+      } catch { /* ignore */ }
+    }
+  }, [items, user, authLoading]);
 
   // ── Promo code ──────────────────────────────────────────────────
 
@@ -1362,6 +1391,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       selectedPaymentMethod,
       setSelectedPaymentMethod,
       cartLoading,
+      cartHydrated,
       freeDeliveryConfig,
       freeDeliveryThreshold: freeDeliveryConfig.nationwideThreshold,
       isFreeDeliveryUnlocked,
@@ -1375,6 +1405,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       applyPromoCode,
       removePromoCode,
       cartLoading,
+      cartHydrated,
       clearCart,
       deleteAddress,
       discount,

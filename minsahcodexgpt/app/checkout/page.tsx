@@ -280,6 +280,8 @@ function CheckoutContent() {
     updateQuantity,
     removeItem,
     clearCart,
+    cartLoading,
+    cartHydrated,
   } = useCart();
   const { savedLocation, saveLocation } = useDeliveryLocation();
   const { freeDelivery, couponsEnabled, coupons: activeOfferCoupons } = useOfferEngine();
@@ -290,6 +292,7 @@ function CheckoutContent() {
     "address" | "payment" | "summary" | null
   >("address");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isRedirectingAfterOrder, setIsRedirectingAfterOrder] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [priceRevisionQuote, setPriceRevisionQuote] = useState<PriceRevisionQuote | null>(null);
   const [priceQuoteToken, setPriceQuoteToken] = useState<string | null>(null);
@@ -1038,10 +1041,11 @@ function CheckoutContent() {
         data.redirectURL ||
         "/checkout/order-confirmed";
       checkoutIdempotencyKeyRef.current = null;
+      setIsRedirectingAfterOrder(true);
       if (selectedPaymentMethod.type === "cod") {
         await clearCart();
       }
-      router.push(nextURL);
+      router.replace(nextURL);
     } catch {
       setCheckoutError(
         "Network connection failed. Please check your internet and try again.",
@@ -1065,6 +1069,7 @@ function CheckoutContent() {
     setShowLoginModal(false);
     if (pendingOrderRef.current) {
       pendingOrderRef.current = false;
+      await new Promise((resolve) => setTimeout(resolve, 350));
       await submitOrder(userId);
     }
   };
@@ -1138,6 +1143,24 @@ function CheckoutContent() {
       a.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [areas, searchQuery]);
+
+  if (isRedirectingAfterOrder) {
+    return (
+      <div className="min-h-screen bg-[#FAF6F2] flex flex-col items-center justify-center gap-3 px-4 text-[#2D1F18]">
+        <div className="h-9 w-9 border-4 border-[#984B29] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-semibold">Order confirmed! Redirecting...</p>
+      </div>
+    );
+  }
+
+  if (!cartHydrated || (cartLoading && items.length === 0)) {
+    return (
+      <div className="min-h-screen bg-[#FAF6F2] flex flex-col items-center justify-center gap-3 px-4 text-[#2D1F18]">
+        <div className="h-9 w-9 border-4 border-[#984B29] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium text-[#7A6E65]">Loading your checkout...</p>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
