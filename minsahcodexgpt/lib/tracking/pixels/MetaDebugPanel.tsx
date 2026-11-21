@@ -67,7 +67,7 @@ function evaluateEntryHealth(item: MetaDebugEntry): 'ok' | 'warn' | 'err' {
     item.pixelStatus === 'COD_SERVER_CAPI' ||
     item.pixelStatus === 'ONLINE_VERIFIED';
   const caOk =
-    item.capiStatus.startsWith('200') ||
+    /^2\d\d/.test(item.capiStatus) ||
     item.capiStatus === 'SKIPPED' ||
     item.capiStatus === 'SERVER_CAPI_ON_CONFIRM' ||
     item.capiStatus === 'SERVER_CAPI';
@@ -80,7 +80,7 @@ function evaluateEntryHealth(item: MetaDebugEntry): 'ok' | 'warn' | 'err' {
     return 'err';
   }
   if (pxOk && caOk) return 'ok';
-  if (item.capiStatus === 'SENDING...' || item.capiStatus.startsWith('200') || pxOk) {
+  if (item.capiStatus === 'SENDING...' || /^2\d\d/.test(item.capiStatus) || pxOk) {
     return 'warn';
   }
   return 'err';
@@ -729,7 +729,7 @@ export default function MetaDebugPanel({
             const pxColor =
               health === 'err' ? '#F87171' : item.pixelStatus.startsWith('OK') || item.pixelStatus === 'COD_SERVER_CAPI' || item.pixelStatus === 'ONLINE_VERIFIED' ? '#34D399' : '#FBBF24';
             const caColor =
-              item.capiStatus.startsWith('200') || item.capiStatus === 'SERVER_CAPI_ON_CONFIRM' || item.capiStatus === 'SERVER_CAPI'
+              /^2\d\d/.test(item.capiStatus) || item.capiStatus === 'SERVER_CAPI_ON_CONFIRM' || item.capiStatus === 'SERVER_CAPI'
                 ? '#34D399'
                 : item.capiStatus === 'SKIPPED'
                   ? '#94A3B8'

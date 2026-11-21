@@ -1330,7 +1330,7 @@ function CheckoutContent() {
                           fullName: event.target.value,
                         }))
                       }
-                      placeholder="Full name"
+                      placeholder={focusedField === "fullName" ? "Enter your full name" : ""}
                       aria-invalid={Boolean(fieldErrors.fullName)}
                       className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
@@ -1397,7 +1397,7 @@ function CheckoutContent() {
                           phoneNumber: sanitizePhoneInput(event.target.value),
                         }))
                       }
-                      placeholder="Phone number"
+                      placeholder={focusedField === "phoneNumber" ? "017XXXXXXXX" : ""}
                       aria-invalid={Boolean(fieldErrors.phoneNumber)}
                       className="w-full rounded-2xl border-0 border-none bg-transparent px-3.5 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
@@ -1800,7 +1800,7 @@ function CheckoutContent() {
                           streetAddress: event.target.value,
                         }))
                       }
-                      placeholder="Street address"
+                      placeholder={focusedField === "streetAddress" ? "House, road, block, landmark" : ""}
                       className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label

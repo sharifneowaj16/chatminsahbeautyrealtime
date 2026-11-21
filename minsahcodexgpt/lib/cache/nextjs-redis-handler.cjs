@@ -1,112 +1,133 @@
-/**
- * lib/cache/nextjs-redis-handler.cjs
- *
- * Shared Next.js 16 ISR & Data Cache Handler backed by Redis (REDIS_CACHE_URL || REDIS_URL).
- * Keeps cache & revalidateTag() 100% synchronized across multiple Dokploy/Traefik replicas.
- */
+const fs = require('fs');
+const path = require('path');
+const { createClient } = require('redis');
 
-const Redis = require('ioredis');
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const BOOT_FALLBACK_ID = 'boot-' + Date.now().toString(36);
 
-const KEY_PREFIX = 'next16:cache:';
-const TAG_PREFIX = 'next16:tag:';
-const DEFAULT_TTL_SECONDS = 60 * 60 * 24; // 24h fallback TTL
+function resolveBuildId(options) {
+  const candidates = [];
+  if (options && options.serverDistDir) {
+    candidates.push(path.resolve(options.serverDistDir, '..', 'BUILD_ID'));
+  }
+  candidates.push(path.join(process.cwd(), '.next', 'BUILD_ID'));
+  candidates.push(path.resolve(__dirname, '..', '..', '.next', 'BUILD_ID'));
 
-let sharedClient = null;
-const memoryFallback = new Map();
-
-function getClient() {
-  if (process.env.NEXT_PHASE === 'phase-production-build') return null;
-  if (sharedClient) return sharedClient;
-
-  const url = (process.env.REDIS_CACHE_URL || process.env.REDIS_URL || '').trim();
-  if (!url) return null;
-
-  sharedClient = new Redis(url, {
-    lazyConnect: true,
-    maxRetriesPerRequest: 1,
-    connectTimeout: 3000,
-    enableOfflineQueue: false,
-    retryStrategy: (times) => Math.min(times * 250, 5000),
-  });
-  sharedClient.on('error', () => {});
-  return sharedClient;
+  for (const filePath of candidates) {
+    try {
+      if (fs.existsSync(filePath)) {
+        const id = fs.readFileSync(filePath, 'utf8').trim();
+        if (id) return id;
+      }
+    } catch {}
+  }
+  return process.env.NEXT_BUILD_ID || BOOT_FALLBACK_ID;
 }
 
-module.exports = class NextRedisCacheHandler {
+function isNonCacheableKey(key) {
+  if (typeof key !== 'string') return false;
+  const k = key.toLowerCase();
+  return (
+    k === '/checkout' ||
+    k.startsWith('/checkout/') ||
+    k.startsWith('checkout') ||
+    k.startsWith('/admin') ||
+    k.startsWith('/account') ||
+    k.startsWith('/api')
+  );
+}
+
+let client = null;
+let connectPromise = null;
+
+async function getRedisClient() {
+  if (!client) {
+    client = createClient({
+      url: REDIS_URL,
+      socket: {
+        reconnectStrategy: (retries) => {
+          if (retries > 5) return false;
+          return Math.min(retries * 100, 1000);
+        },
+        connectTimeout: 2000,
+      },
+    });
+    client.on('error', () => {
+      // Silently handle Redis connection errors to prevent crashes
+    });
+  }
+
+  if (!client.isOpen) {
+    if (!connectPromise) {
+      connectPromise = client.connect().catch(() => {
+        connectPromise = null;
+      });
+    }
+    await connectPromise;
+  }
+
+  return client && client.isOpen ? client : null;
+}
+
+class RedisCacheHandler {
   constructor(options) {
     this.options = options;
+    this.keyPrefix = 'nextjs:cache:' + resolveBuildId(options) + ':';
   }
 
   async get(key) {
-    const client = getClient();
-    if (!client) return memoryFallback.get(key) ?? null;
-
+    if (isNonCacheableKey(key)) return null;
     try {
-      const raw = await client.get(KEY_PREFIX + key);
+      const redis = await getRedisClient();
+      if (!redis) return null;
+      const raw = await redis.get(this.keyPrefix + key);
       if (!raw) return null;
       return JSON.parse(raw);
     } catch {
-      return memoryFallback.get(key) ?? null;
+      return null;
     }
   }
 
   async set(key, data, ctx) {
-    const entry = {
-      value: data,
-      lastModified: Date.now(),
-      tags: Array.isArray(ctx?.tags) ? ctx.tags : [],
-    };
-
-    const client = getClient();
-    if (!client) {
-      if (memoryFallback.size > 500) memoryFallback.clear();
-      memoryFallback.set(key, entry);
-      return;
-    }
-
-    const ttl =
-      typeof ctx?.revalidate === 'number' && ctx.revalidate > 0
-        ? Math.max(60, Math.floor(ctx.revalidate))
-        : DEFAULT_TTL_SECONDS;
-
+    if (isNonCacheableKey(key)) return;
     try {
-      const pipeline = client.pipeline();
-      pipeline.setex(KEY_PREFIX + key, ttl, JSON.stringify(entry));
-      for (const tag of entry.tags) {
-        pipeline.sadd(TAG_PREFIX + tag, key);
-        pipeline.expire(TAG_PREFIX + tag, Math.max(ttl, DEFAULT_TTL_SECONDS));
-      }
-      await pipeline.exec();
+      const redis = await getRedisClient();
+      if (!redis) return;
+      const entry = {
+        value: data,
+        lastModified: Date.now(),
+        tags: ctx?.tags || [],
+      };
+      // Store for 24 hours scoped strictly to the active Next.js BUILD_ID
+      await redis.set(this.keyPrefix + key, JSON.stringify(entry), { EX: 86400 });
     } catch {
-      memoryFallback.set(key, entry);
+      // Ignore cache write errors
     }
   }
 
   async revalidateTag(tags) {
-    const tagList = Array.isArray(tags) ? tags : [tags];
-    const client = getClient();
-
-    if (!client) {
-      for (const [k, v] of memoryFallback.entries()) {
-        if (v?.tags?.some((t) => tagList.includes(t))) memoryFallback.delete(k);
-      }
-      return;
-    }
-
     try {
+      const redis = await getRedisClient();
+      if (!redis) return;
+      const tagList = Array.isArray(tags) ? tags : [tags];
       for (const tag of tagList) {
         if (!tag) continue;
-        const tagKey = TAG_PREFIX + tag;
-        const members = await client.smembers(tagKey);
-        if (members.length > 0) {
-          await client.unlink(...members.map((m) => KEY_PREFIX + m));
+        const keys = await redis.keys(this.keyPrefix + '*');
+        for (const k of keys) {
+          const raw = await redis.get(k);
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed.tags) && parsed.tags.includes(tag)) {
+              await redis.del(k);
+            }
+          } catch {}
         }
-        await client.unlink(tagKey);
       }
     } catch {
-      // Fail open on cache invalidation error
+      // Ignore revalidation errors
     }
   }
+}
 
-  resetRequestCache() {}
-};
+module.exports = RedisCacheHandler;
