@@ -9,6 +9,7 @@ import { SuccessState } from '@/components/ui/SuccessState';
 import { canRunClientTracking } from '@/lib/tracking/client-traffic-filter';
 import { buildMetaBrowserEvent } from '@/lib/meta/browser/payload';
 import { dispatchMetaBrowserEvent } from '@/lib/meta/browser/client';
+import { recordMetaDebugDiagnostic } from '@/lib/meta/browser/debug-store';
 
 type OnlinePurchaseResponse = {
   track?: boolean;
@@ -97,6 +98,15 @@ function PaymentCompleteContent() {
 
     void claimAndFireBrowserPurchase(orderId).then((result) => {
       if (cancelled) return;
+      if (!result.ok) {
+        recordMetaDebugDiagnostic({
+          eventName: 'Purchase',
+          eventId: orderId ? 'Purchase-' + orderId : 'Purchase-skipped',
+          pixelStatus: 'SKIPPED',
+          capiStatus: 'SERVER_CAPI',
+          detail: 'Online Purchase claim: ' + (result.reason || 'SKIPPED'),
+        });
+      }
       setStatus(result.ok ? 'done' : 'skipped');
       window.setTimeout(() => {
         if (!cancelled) window.location.replace(confirmationHref);

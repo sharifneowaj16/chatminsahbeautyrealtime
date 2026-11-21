@@ -9,6 +9,7 @@ import { TrackingEvent, TrackingEventData, AllPlatformsConfig, CustomerSession }
 import { canRunClientTracking, getClientTrackingBlockReason } from '@/lib/tracking/client-traffic-filter';
 import { buildMetaBrowserEvent, sanitizeMetaBrowserPayload } from '@/lib/meta/browser/payload';
 import { dispatchMetaBrowserEvent } from '@/lib/meta/browser/client';
+import { recordMetaDebugDiagnostic } from '@/lib/meta/browser/debug-store';
 import { metaBrowserDebug } from '@/lib/meta/browser/diagnostics';
 import type { MetaBrowserEventName } from '@/lib/meta/browser/types';
 
@@ -449,7 +450,19 @@ class TrackingManager {
    * Track event across all enabled platforms
    */
   track(event: TrackingEvent, data?: TrackingEventData, options: TrackingDispatchOptions = {}): void {
-    if (!canRunClientTracking()) return;
+    if (!canRunClientTracking()) {
+      const reason = getClientTrackingBlockReason() || 'FILTERED';
+      recordMetaDebugDiagnostic({
+        eventName: String(event),
+        eventId: options.metaEventId,
+        value: typeof data?.value === 'number' ? data.value : undefined,
+        currency: typeof data?.currency === 'string' ? data.currency : 'BDT',
+        pixelStatus: 'BLOCKED',
+        capiStatus: 'SKIPPED',
+        detail: 'Client traffic filter: ' + reason,
+      });
+      return;
+    }
 
     if (!this.initialized) {
       this.initSession();

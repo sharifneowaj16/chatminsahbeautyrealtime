@@ -1,12 +1,13 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Home, MessageCircle, Package } from 'lucide-react';
 import Link from 'next/link';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { SuccessState } from '@/components/ui/SuccessState';
 import { SOCIAL_PLATFORM_COLORS } from '@/lib/design-token-exceptions';
+import { recordMetaDebugDiagnostic } from '@/lib/meta/browser/debug-store';
 
 const ADMIN_WHATSAPP_NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8801700000000')
   .replace(/[^\d]/g, '');
@@ -20,6 +21,51 @@ function OrderConfirmedContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get('orderNumber') || '-';
   const trackOrderUrl = buildTrackOrderUrl(orderNumber);
+  const debugRecordedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!orderNumber || orderNumber === '-' || debugRecordedRef.current === orderNumber) {
+      return;
+    }
+    debugRecordedRef.current = orderNumber;
+
+    let paymentMethod = 'cod';
+    let orderTotal: number | undefined;
+    let orderId: string | undefined;
+    try {
+      const rawMeta =
+        sessionStorage.getItem('mb_last_order_debug') ||
+        localStorage.getItem('mb_last_order_debug');
+      if (rawMeta) {
+        const parsed = JSON.parse(rawMeta) as {
+          orderId?: string | null;
+          orderNumber?: string | null;
+          paymentMethod?: string;
+          total?: number;
+        };
+        if (!parsed.orderNumber || parsed.orderNumber === orderNumber) {
+          if (parsed.paymentMethod) paymentMethod = String(parsed.paymentMethod).toLowerCase();
+          if (typeof parsed.total === 'number' && Number.isFinite(parsed.total)) {
+            orderTotal = parsed.total;
+          }
+          if (parsed.orderId) orderId = String(parsed.orderId);
+        }
+      }
+    } catch {}
+
+    const isCod = paymentMethod.includes('cod') || paymentMethod.includes('cash');
+    recordMetaDebugDiagnostic({
+      eventName: 'OrderConfirmed',
+      eventId: orderId ? 'Order-' + orderId : 'Order-' + orderNumber,
+      value: orderTotal,
+      currency: 'BDT',
+      pixelStatus: isCod ? 'COD_SERVER_CAPI' : 'ONLINE_VERIFIED',
+      capiStatus: isCod ? 'SERVER_CAPI_ON_CONFIRM' : 'SERVER_CAPI',
+      detail: isCod
+        ? 'COD #' + orderNumber + ' confirmed. Meta CAPI Purchase sends on phone/admin confirm.'
+        : 'Online #' + orderNumber + ' confirmed.',
+    });
+  }, [orderNumber]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-minsah-surface-page px-4 py-12">

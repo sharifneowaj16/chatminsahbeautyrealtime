@@ -1,7 +1,12 @@
 'use client';
 
 import { buildVisitorMetaExternalId } from '@/lib/tracking/meta-external-id';
-import type { MetaDebugEntry } from '@/lib/tracking/pixels/MetaDebugPanel';
+import {
+  isMetaDebugEnabled,
+  upsertMetaDebugEntry,
+  updateMetaDebugEntry,
+  type MetaDebugEntry,
+} from './debug-store';
 import { canDispatchMetaBrowserEvent } from './consent';
 import { metaBrowserDebug } from './diagnostics';
 import { buildMetaBrowserCapiRequest } from './payload';
@@ -70,35 +75,14 @@ function wait(ms: number) {
   return new Promise<void>((resolve) => globalThis.setTimeout(resolve, ms));
 }
 
-function isMetaDebugActive(): boolean {
-  if (typeof window === 'undefined') return false;
-  const win = window as MetaPixelWindow;
-  try {
-    const flag = new URLSearchParams(window.location.search).get('mb_debug');
-    if (flag === '1') {
-      win.__mbMetaDebugEnabled = true;
-      sessionStorage.setItem('mb_meta_debug_enabled', '1');
-      return true;
-    }
-    if (flag === '0') return false;
-    if (win.__mbMetaDebugEnabled) return true;
-    return sessionStorage.getItem('mb_meta_debug_enabled') === '1';
-  } catch {
-    return Boolean(win.__mbMetaDebugEnabled);
-  }
-}
-
-const DEBUG_LOGS_STORAGE_KEY = 'mb_meta_debug_logs';
-
 function emitMetaDebug(
   event: MetaBrowserEventEnvelope,
   pixelStatus: string,
   capiStatus: string,
   detail?: string
-) {
-  if (!isMetaDebugActive()) return;
+): string | null {
+  if (!isMetaDebugEnabled()) return null;
   try {
-    const win = window as MetaPixelWindow;
     const payload = (event.payload || {}) as Record<string, unknown>;
     const rawValue = payload.value;
     const parsedValue =
@@ -109,9 +93,11 @@ function emitMetaDebug(
           : undefined;
     const currency = typeof payload.currency === 'string' ? payload.currency : undefined;
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
+    const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
 
-    const entry: MetaDebugEntry = {
-      id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    upsertMetaDebugEntry({
+      id,
+      ts: Date.now(),
       time: new Date().toLocaleTimeString(),
       path,
       eventName: event.eventName,
@@ -124,26 +110,10 @@ function emitMetaDebug(
       fbc: Boolean(getCookieValue('_fbc')),
       mbVid: Boolean(getCookieValue('mb_vid')),
       ...(detail ? { detail } : {}),
-    };
-
-    let existing: MetaDebugEntry[] = Array.isArray(win.__mbMetaDebugQueue) ? win.__mbMetaDebugQueue : [];
-    if (existing.length === 0) {
-      try {
-        const saved = sessionStorage.getItem(DEBUG_LOGS_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) existing = parsed;
-        }
-      } catch {}
-    }
-    const nextQueue = [entry, ...existing].slice(0, 40);
-    win.__mbMetaDebugQueue = nextQueue;
-    try {
-      sessionStorage.setItem(DEBUG_LOGS_STORAGE_KEY, JSON.stringify(nextQueue));
-    } catch {}
-    window.dispatchEvent(new CustomEvent('mb:meta-debug', { detail: entry }));
+    });
+    return id;
   } catch {
-    // ignore debug hook errors
+    return null;
   }
 }
 
@@ -215,8 +185,9 @@ export async function dispatchMetaBrowserEvent(
 
   if (typeof (window as MetaPixelWindow).fbq !== 'function') {
     metaBrowserDebug('error', 'Pixel unavailable after readiness window; falling back to CAPI', event);
+    const debugId = emitMetaDebug(event, 'PIXEL_UNAVAILABLE', sendCapi ? 'SENDING...' : 'SKIPPED');
     const capi = sendCapi ? await requestCapi(event) : { sent: false, status: 'SKIPPED' };
-    emitMetaDebug(event, 'PIXEL_UNAVAILABLE', capi.status);
+    if (debugId) updateMetaDebugEntry(debugId, { capiStatus: capi.status });
     return { fired: false, capiRequested: capi.sent, reason: 'PIXEL_UNAVAILABLE' };
   }
 
@@ -224,7 +195,7 @@ export async function dispatchMetaBrowserEvent(
   if (fbqRef) {
     fbqRef.disablePushState = true;
   }
-    const trackCommand = CUSTOM_META_PIXEL_EVENTS.has(event.eventName) ? 'trackCustom' : 'track';
+  const trackCommand = CUSTOM_META_PIXEL_EVENTS.has(event.eventName) ? 'trackCustom' : 'track';
   (window as MetaPixelWindow).fbq?.(trackCommand, event.eventName, event.payload, {
     eventID: event.eventId,
   });
@@ -236,8 +207,10 @@ export async function dispatchMetaBrowserEvent(
     event
   );
 
+  const debugId = emitMetaDebug(event, 'OK (' + trackCommand + ')', sendCapi ? 'SENDING...' : 'SKIPPED');
   const capi = sendCapi ? await requestCapi(event) : { sent: false, status: 'SKIPPED' };
-  emitMetaDebug(event, 'OK (' + trackCommand + ')', capi.status);
+  if (debugId) updateMetaDebugEntry(debugId, { capiStatus: capi.status });
+
   return {
     fired: true,
     capiRequested: capi.sent,

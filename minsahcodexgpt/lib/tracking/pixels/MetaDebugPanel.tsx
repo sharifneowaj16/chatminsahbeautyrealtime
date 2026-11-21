@@ -1,34 +1,39 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import {
+  clearMetaDebugEntries,
+  isMetaDebugEnabled,
+  META_DEBUG_EVENT,
+  META_DEBUG_SYNC_EVENT,
+  readMetaDebugEntries,
+  setMetaDebugEnabled,
+  type MetaDebugEntry,
+} from '@/lib/meta/browser/debug-store';
 
-export interface MetaDebugEntry {
-  id: string;
-  time: string;
-  path?: string;
-  eventName: string;
-  eventId: string;
-  value?: number;
-  currency?: string;
-  pixelStatus: string;
-  capiStatus: string;
-  fbp: boolean;
-  fbc: boolean;
-  mbVid?: boolean;
-  detail?: string;
-}
+export type { MetaDebugEntry };
 
 type MetaDebugWindow = Window & {
-  __mbMetaDebugQueue?: MetaDebugEntry[];
-  __mbMetaDebugEnabled?: boolean;
   __mbFbInitReady?: boolean;
   fbq?: ((...args: unknown[]) => void) & { disablePushState?: boolean };
 };
 
-const STORAGE_KEY = 'mb_meta_debug_enabled';
-const LOGS_STORAGE_KEY = 'mb_meta_debug_logs';
-const POS_STORAGE_KEY = 'mb_meta_debug_pos_v2';
+const POS_STORAGE_KEY = 'mb_meta_debug_pos_v3';
+const MIN_STORAGE_KEY = 'mb_meta_debug_min_v3';
+
+const FUNNEL_STEPS: Array<{ key: string; label: string; events: string[] }> = [
+  { key: 'pv', label: 'PV', events: ['PageView'] },
+  { key: 'vc', label: 'VC', events: ['ViewContent'] },
+  { key: 'atc', label: 'ATC', events: ['AddToCart'] },
+  { key: 'cart', label: 'CART', events: ['ViewCart'] },
+  { key: 'ic', label: 'IC', events: ['InitiateCheckout'] },
+  { key: 'ship', label: 'SHIP', events: ['AddShippingInfo'] },
+  { key: 'pay', label: 'PAY', events: ['AddPaymentInfo'] },
+  { key: 'ord', label: 'ORD', events: ['Purchase', 'OrderConfirmed'] },
+];
+
+type StepStatus = 'idle' | 'ok' | 'warn' | 'err';
 
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -38,29 +43,6 @@ function readCookie(name: string): string | null {
     return decodeURIComponent(m[1]);
   } catch {
     return m[1];
-  }
-}
-
-function readDebugFlag(): boolean {
-  if (typeof window === 'undefined') return false;
-  const win = window as MetaDebugWindow;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const flag = params.get('mb_debug');
-    if (flag === '1') {
-      win.__mbMetaDebugEnabled = true;
-      sessionStorage.setItem(STORAGE_KEY, '1');
-      return true;
-    }
-    if (flag === '0') {
-      win.__mbMetaDebugEnabled = false;
-      sessionStorage.removeItem(STORAGE_KEY);
-      return false;
-    }
-    if (win.__mbMetaDebugEnabled) return true;
-    return sessionStorage.getItem(STORAGE_KEY) === '1';
-  } catch {
-    return Boolean(win.__mbMetaDebugEnabled);
   }
 }
 
@@ -79,8 +61,37 @@ function detectPlatformLabel(): string {
   return os + ' / ' + browser + (isInApp ? ' (In-App)' : '');
 }
 
+function evaluateEntryHealth(item: MetaDebugEntry): 'ok' | 'warn' | 'err' {
+  const pxOk =
+    item.pixelStatus.startsWith('OK') ||
+    item.pixelStatus === 'COD_SERVER_CAPI' ||
+    item.pixelStatus === 'ONLINE_VERIFIED';
+  const caOk =
+    item.capiStatus.startsWith('200') ||
+    item.capiStatus === 'SKIPPED' ||
+    item.capiStatus === 'SERVER_CAPI_ON_CONFIRM' ||
+    item.capiStatus === 'SERVER_CAPI';
+
+  if (
+    item.pixelStatus === 'INVALID_EVENT' ||
+    item.pixelStatus === 'CONSENT_BLOCKED' ||
+    item.pixelStatus === 'BLOCKED'
+  ) {
+    return 'err';
+  }
+  if (pxOk && caOk) return 'ok';
+  if (item.capiStatus === 'SENDING...' || item.capiStatus.startsWith('200') || pxOk) {
+    return 'warn';
+  }
+  return 'err';
+}
+
 async function copyTextReliable(text: string): Promise<boolean> {
-  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === 'function'
+  ) {
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -129,10 +140,13 @@ export default function MetaDebugPanel({
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: 8, y: 64 });
 
   const posRef = useRef<{ x: number; y: number }>({ x: 8, y: 64 });
+  const minRef = useRef<boolean>(true);
+  const prevPathRef = useRef<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
     active: boolean;
     moved: boolean;
+    pointerId: number | null;
     startX: number;
     startY: number;
     origX: number;
@@ -140,6 +154,7 @@ export default function MetaDebugPanel({
   }>({
     active: false,
     moved: false,
+    pointerId: null,
     startX: 0,
     startY: 0,
     origX: 8,
@@ -150,8 +165,8 @@ export default function MetaDebugPanel({
     if (typeof window === 'undefined') return { x, y };
     const vw = window.visualViewport?.width || window.innerWidth;
     const vh = window.visualViewport?.height || window.innerHeight;
-    const elW = panelRef.current?.offsetWidth || (isMin ? 96 : Math.min(vw - 16, 320));
-    const elH = panelRef.current?.offsetHeight || (isMin ? 32 : 240);
+    const elW = panelRef.current?.offsetWidth || (isMin ? 108 : Math.min(vw - 16, 330));
+    const elH = panelRef.current?.offsetHeight || (isMin ? 30 : 250);
     const maxX = Math.max(6, vw - elW - 6);
     const maxY = Math.max(6, vh - elH - 6);
     return {
@@ -164,10 +179,15 @@ export default function MetaDebugPanel({
     posRef.current = next;
     setPos(next);
     if (persist) {
-      try {
-        sessionStorage.setItem(POS_STORAGE_KEY, JSON.stringify(next));
-      } catch {}
+      try { localStorage.setItem(POS_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      try { sessionStorage.setItem(POS_STORAGE_KEY, JSON.stringify(next)); } catch {}
     }
+  }, []);
+
+  const setMinWithPersist = useCallback((nextMin: boolean) => {
+    minRef.current = nextMin;
+    setMinimized(nextMin);
+    try { sessionStorage.setItem(MIN_STORAGE_KEY, nextMin ? '1' : '0'); } catch {}
   }, []);
 
   const syncCookies = useCallback(() => {
@@ -178,138 +198,178 @@ export default function MetaDebugPanel({
     });
   }, []);
 
-  // Re-check debug flag, logs & cookies on initial mount AND every route change (/ -> PDP -> /checkout)
-  useEffect(() => {
-    const enabled = readDebugFlag();
+  const syncFromStore = useCallback(() => {
+    const enabled = isMetaDebugEnabled();
     setActive(enabled);
     if (!enabled) return;
-
-    const win = window as MetaDebugWindow;
-    let currentLogs: MetaDebugEntry[] = [];
-    if (Array.isArray(win.__mbMetaDebugQueue) && win.__mbMetaDebugQueue.length > 0) {
-      currentLogs = [...win.__mbMetaDebugQueue];
-    } else {
-      try {
-        const saved = sessionStorage.getItem(LOGS_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            currentLogs = parsed;
-            win.__mbMetaDebugQueue = parsed;
-          }
-        }
-      } catch {}
-    }
-    setLogs(currentLogs);
+    setLogs(readMetaDebugEntries());
     syncCookies();
-  }, [pathname, syncCookies]);
+  }, [syncCookies]);
 
-  // Restore saved position once active
+  // Sync on mount and on every route change (Home -> PDP -> Cart -> Checkout -> Order Confirmed)
+  useEffect(() => {
+    syncFromStore();
+
+    // Auto-minimize when landing on /checkout so Confirm Order button is never blocked
+    const currentPath = pathname || '';
+    if (
+      prevPathRef.current !== currentPath &&
+      currentPath === '/checkout' &&
+      !minRef.current
+    ) {
+      setMinWithPersist(true);
+    }
+    prevPathRef.current = currentPath;
+  }, [pathname, syncFromStore, setMinWithPersist]);
+
+  // Restore persisted position & minimized state once activated
   useEffect(() => {
     if (!active) return;
     try {
-      const savedPos = sessionStorage.getItem(POS_STORAGE_KEY);
+      const savedMin = sessionStorage.getItem(MIN_STORAGE_KEY);
+      if (savedMin === '0' && pathname !== '/checkout') {
+        minRef.current = false;
+        setMinimized(false);
+      }
+    } catch {}
+
+    try {
+      const savedPos = localStorage.getItem(POS_STORAGE_KEY) || sessionStorage.getItem(POS_STORAGE_KEY);
       if (savedPos) {
         const p = JSON.parse(savedPos);
         if (typeof p?.x === 'number' && typeof p?.y === 'number') {
-          updatePos(clampPos(p.x, p.y, minimized), false);
+          updatePos(clampPos(p.x, p.y, minRef.current), false);
         }
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
-  // Auto-clamp whenever expanding, minimizing, or viewport changes so modal never goes off-screen
+  // Re-clamp whenever expanding, collapsing, toggling copy fallback, or changing route
   useEffect(() => {
     if (!active) return;
     const raf = window.requestAnimationFrame(() => {
       updatePos(clampPos(posRef.current.x, posRef.current.y, minimized), false);
     });
     return () => window.cancelAnimationFrame(raf);
-  }, [active, minimized, copyState, clampPos, updatePos]);
+  }, [active, minimized, copyState, pathname, clampPos, updatePos]);
 
-  // Listen to live meta debug events and viewport resizes
+  // Listen to live debug events, cross-storage updates, bfcache pageshow & viewport resizes
   useEffect(() => {
     if (!active) return;
-    const onEvent = (e: Event) => {
-      const detail = (e as CustomEvent<MetaDebugEntry>).detail;
-      if (!detail) return;
-      setLogs((prev) => {
-        if (prev.some((item) => item.id === detail.id)) return prev;
-        return [detail, ...prev].slice(0, 40);
-      });
+
+    const onSingleEvent = () => {
+      setLogs(readMetaDebugEntries());
       syncCookies();
     };
-    const onResize = () => {
-      updatePos(clampPos(posRef.current.x, posRef.current.y, minimized), false);
+    const onSyncEvent = (e: Event) => {
+      const detail = (e as CustomEvent<MetaDebugEntry[]>).detail;
+      if (Array.isArray(detail)) {
+        setLogs(detail);
+      } else {
+        setLogs(readMetaDebugEntries());
+      }
+      syncCookies();
     };
-    window.addEventListener('mb:meta-debug', onEvent);
+    const onPageShow = () => {
+      syncFromStore();
+    };
+    const onResize = () => {
+      updatePos(clampPos(posRef.current.x, posRef.current.y, minRef.current), false);
+    };
+
+    window.addEventListener(META_DEBUG_EVENT, onSingleEvent);
+    window.addEventListener(META_DEBUG_SYNC_EVENT, onSyncEvent);
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('storage', onPageShow);
     window.addEventListener('resize', onResize);
     window.visualViewport?.addEventListener('resize', onResize);
     return () => {
-      window.removeEventListener('mb:meta-debug', onEvent);
+      window.removeEventListener(META_DEBUG_EVENT, onSingleEvent);
+      window.removeEventListener(META_DEBUG_SYNC_EVENT, onSyncEvent);
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('storage', onPageShow);
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
-  }, [active, minimized, clampPos, updatePos, syncCookies]);
+  }, [active, clampPos, updatePos, syncCookies, syncFromStore]);
 
-  // Global move/end listeners while dragging ? works reliably on iOS Safari, Android Chrome & Desktop
-  const startDrag = (clientX: number, clientY: number) => {
+  // Clean Pointer-Events-only drag (no dual touch+pointer conflict on iOS/Android)
+  const beginDrag = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if ((e.target as HTMLElement)?.closest('button, textarea, input, a')) return;
+
     dragRef.current = {
       active: true,
       moved: false,
-      startX: clientX,
-      startY: clientY,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
       origX: posRef.current.x,
       origY: posRef.current.y,
     };
 
-    const handleMove = (cx: number, cy: number) => {
+    const onPointerMove = (ev: PointerEvent) => {
       if (!dragRef.current.active) return;
-      const dx = cx - dragRef.current.startX;
-      const dy = cy - dragRef.current.startY;
-      if (Math.abs(dx) > 9 || Math.abs(dy) > 9) {
+      if (dragRef.current.pointerId !== null && ev.pointerId !== dragRef.current.pointerId) return;
+      const dx = ev.clientX - dragRef.current.startX;
+      const dy = ev.clientY - dragRef.current.startY;
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
         dragRef.current.moved = true;
       }
-      const next = clampPos(dragRef.current.origX + dx, dragRef.current.origY + dy, minimized);
-      updatePos(next, false);
+      if (dragRef.current.moved) {
+        ev.preventDefault();
+        const next = clampPos(
+          dragRef.current.origX + dx,
+          dragRef.current.origY + dy,
+          minRef.current
+        );
+        updatePos(next, false);
+      }
     };
 
-    const onPointerMove = (ev: PointerEvent) => {
-      ev.preventDefault();
-      handleMove(ev.clientX, ev.clientY);
-    };
-    const onTouchMove = (ev: TouchEvent) => {
-      if (ev.touches.length === 0) return;
-      ev.preventDefault();
-      handleMove(ev.touches[0].clientX, ev.touches[0].clientY);
-    };
-    const onEnd = () => {
+    const onPointerEnd = (ev: PointerEvent) => {
       if (!dragRef.current.active) return;
+      if (dragRef.current.pointerId !== null && ev.pointerId !== dragRef.current.pointerId) return;
       dragRef.current.active = false;
-      updatePos(clampPos(posRef.current.x, posRef.current.y, minimized), true);
+      dragRef.current.pointerId = null;
+      if (dragRef.current.moved) {
+        updatePos(clampPos(posRef.current.x, posRef.current.y, minRef.current), true);
+      }
       window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onEnd);
-      window.removeEventListener('pointercancel', onEnd);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onEnd);
-      window.removeEventListener('touchcancel', onEnd);
+      window.removeEventListener('pointerup', onPointerEnd);
+      window.removeEventListener('pointercancel', onPointerEnd);
     };
 
     window.addEventListener('pointermove', onPointerMove, { passive: false });
-    window.addEventListener('pointerup', onEnd);
-    window.addEventListener('pointercancel', onEnd);
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onEnd);
-    window.addEventListener('touchcancel', onEnd);
+    window.addEventListener('pointerup', onPointerEnd);
+    window.addEventListener('pointercancel', onPointerEnd);
   };
 
-  const handleDragStart = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement)?.closest('button, textarea, input, a')) return;
-    startDrag(e.clientX, e.clientY);
-  };
+  // Compute 8-step funnel status across the whole session
+  const funnelStatus = useMemo(() => {
+    return FUNNEL_STEPS.map((step) => {
+      const matched = logs.filter((l) => step.events.includes(l.eventName));
+      if (matched.length === 0) {
+        return { ...step, status: 'idle' as StepStatus, count: 0 };
+      }
+      const healths = matched.map(evaluateEntryHealth);
+      const status: StepStatus = healths.includes('ok')
+        ? 'ok'
+        : healths.includes('warn')
+          ? 'warn'
+          : 'err';
+      return { ...step, status, count: matched.length };
+    });
+  }, [logs]);
+
+  const completedFunnelSteps = funnelStatus.filter((s) => s.status === 'ok' || s.status === 'warn').length;
 
   if (!active) return null;
+
+  const stopBtnDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+  };
 
   const buildReportText = () => {
     const win = window as MetaDebugWindow;
@@ -331,6 +391,11 @@ export default function MetaDebugPanel({
         _fbc: fbcVal || null,
         mb_vid: vidVal || null,
       },
+      funnelProgress: completedFunnelSteps + '/' + FUNNEL_STEPS.length,
+      funnel: funnelStatus.reduce<Record<string, { status: StepStatus; count: number }>>((acc, s) => {
+        acc[s.label] = { status: s.status, count: s.count };
+        return acc;
+      }, {}),
       totalEvents: logs.length,
       events: logs.map((l) => ({
         time: l.time,
@@ -361,60 +426,56 @@ export default function MetaDebugPanel({
     }
   };
 
-  const clearLogs = () => {
-    (window as MetaDebugWindow).__mbMetaDebugQueue = [];
-    try { sessionStorage.removeItem(LOGS_STORAGE_KEY); } catch {}
+  const handleClearLogs = () => {
+    clearMetaDebugEntries();
     setLogs([]);
     setCopyState('idle');
     setRawReportText('');
   };
 
-  const closePanel = () => {
-    (window as MetaDebugWindow).__mbMetaDebugEnabled = false;
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+  const handleClosePanel = () => {
+    setMetaDebugEnabled(false);
     setActive(false);
   };
 
   const hasErr =
     trackingBlocked ||
-    logs.some(
-      (l) =>
-        !l.pixelStatus.startsWith('OK') ||
-        (l.capiStatus !== 'SKIPPED' && !l.capiStatus.startsWith('200'))
-    );
+    logs.some((l) => evaluateEntryHealth(l) === 'err');
 
   // =========================================================================
-  // 1. ULTRA-COMPACT DRAGGABLE MINI PILL
+  // 1. ULTRA-COMPACT DRAGGABLE MINI PILL (Never blocks Checkout or Add to Cart)
   // =========================================================================
   if (minimized) {
     return (
       <div
         ref={panelRef}
-        onPointerDown={handleDragStart}
+        onPointerDown={beginDrag}
         onClick={() => {
           if (dragRef.current.moved) {
             dragRef.current.moved = false;
             return;
           }
-          setMinimized(false);
+          setMinWithPersist(false);
         }}
+        role="button"
+        aria-label="Open Meta Debug Panel"
         style={{
           position: 'fixed',
           left: pos.x,
           top: pos.y,
-          zIndex: 999999,
+          zIndex: 2147483000,
           touchAction: 'none',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           cursor: 'grab',
-          background: hasErr ? 'rgba(127,29,29,0.95)' : 'rgba(17,24,39,0.94)',
+          background: hasErr ? 'rgba(127,29,29,0.95)' : 'rgba(15,23,42,0.94)',
           color: '#F9FAFB',
           border: '1.5px solid ' + (hasErr ? '#F87171' : '#34D399'),
           borderRadius: 999,
-          padding: '5px 9px',
+          padding: '6px 10px',
           boxShadow: '0 4px 14px rgba(0,0,0,0.45)',
-          fontFamily: 'monospace',
-          fontSize: 10,
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+          fontSize: 10.5,
           fontWeight: 700,
           display: 'inline-flex',
           alignItems: 'center',
@@ -432,14 +493,32 @@ export default function MetaDebugPanel({
           }}
         />
         <span>MB {logs.length}</span>
-        <span style={{ color: '#9CA3AF', fontSize: 9 }}>::</span>
+        <span style={{ color: '#94A3B8', fontSize: 9.5 }}>
+          ({completedFunnelSteps}/{FUNNEL_STEPS.length})
+        </span>
       </div>
     );
   }
 
   // =========================================================================
-  // 2. COMPACT MOVABLE FLOATING DEBUG MODAL (Drag header to move anywhere)
+  // 2. COMPACT MOVABLE PANEL + 8-STEP FUNNEL BAR + TOUCH-SAFE CONTROLS
   // =========================================================================
+  const btnBase: React.CSSProperties = {
+    border: 0,
+    borderRadius: 6,
+    minWidth: 28,
+    minHeight: 26,
+    padding: '0 7px',
+    fontSize: 10.5,
+    fontWeight: 700,
+    color: '#fff',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    touchAction: 'manipulation',
+  };
+
   return (
     <div
       ref={panelRef}
@@ -447,128 +526,161 @@ export default function MetaDebugPanel({
         position: 'fixed',
         left: pos.x,
         top: pos.y,
-        zIndex: 999999,
-        width: 'min(calc(100vw - 16px), 320px)',
-        background: 'rgba(17,24,39,0.97)',
-        color: '#F9FAFB',
-        borderRadius: 10,
-        border: '1px solid ' + (hasErr ? '#F87171' : '#374151'),
-        boxShadow: '0 10px 28px rgba(0,0,0,0.55)',
-        fontFamily: 'monospace',
+        zIndex: 2147483000,
+        width: 'min(calc(100vw - 16px), 336px)',
+        background: 'rgba(15,23,42,0.97)',
+        color: '#F8FAFC',
+        borderRadius: 12,
+        border: '1px solid ' + (hasErr ? '#F87171' : '#334155'),
+        boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
         fontSize: 10,
       }}
     >
-      {/* Draggable Compact Header */}
+      {/* Header: Left side = Dedicated Drag Grip | Right side = Touch-Safe Buttons */}
       <div
-        onPointerDown={handleDragStart}
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 4,
+          gap: 6,
           padding: '6px 8px',
-          borderBottom: '1px solid #374151',
-          touchAction: 'none',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          cursor: 'grab',
-          background: '#1F2937',
-          borderTopLeftRadius: 9,
-          borderTopRightRadius: 9,
+          borderBottom: '1px solid #334155',
+          background: '#1E293B',
+          borderTopLeftRadius: 11,
+          borderTopRightRadius: 11,
         }}
       >
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center', minWidth: 0 }}>
-          <span style={{ color: '#9CA3AF', fontWeight: 700 }}>::</span>
+        <div
+          onPointerDown={beginDrag}
+          style={{
+            display: 'flex',
+            gap: 5,
+            alignItems: 'center',
+            flex: 1,
+            minWidth: 0,
+            padding: '3px 2px',
+            touchAction: 'none',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            cursor: 'grab',
+          }}
+        >
+          <span style={{ color: '#94A3B8', fontWeight: 700 }}>::</span>
           <span style={{ color: hasErr ? '#FCA5A5' : '#34D399', fontWeight: 700 }}>
-            MB ({logs.length})
+            MB {logs.length}
           </span>
-          <span style={{ color: cookies.fbp ? '#34D399' : '#F87171' }}>
+          <span style={{ color: cookies.fbp ? '#34D399' : '#F87171', fontSize: 9.5 }}>
             p:{cookies.fbp ? '1' : '0'}
           </span>
-          <span style={{ color: cookies.fbc ? '#34D399' : '#9CA3AF' }}>
+          <span style={{ color: cookies.fbc ? '#34D399' : '#94A3B8', fontSize: 9.5 }}>
             c:{cookies.fbc ? '1' : '0'}
           </span>
-          <span style={{ color: cookies.mbVid ? '#34D399' : '#F87171' }}>
+          <span style={{ color: cookies.mbVid ? '#34D399' : '#F87171', fontSize: 9.5 }}>
             v:{cookies.mbVid ? '1' : '0'}
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
           <button
             type="button"
+            onPointerDown={stopBtnDrag}
             onClick={handleCopyReport}
             style={{
+              ...btnBase,
               background: copyState === 'copied' ? '#059669' : '#2563EB',
-              color: '#fff',
-              border: 0,
-              borderRadius: 4,
-              padding: '3px 6px',
-              fontSize: 9.5,
-              fontWeight: 700,
-              cursor: 'pointer',
             }}
           >
             {copyState === 'copied' ? 'OK!' : 'Copy'}
           </button>
           <button
             type="button"
-            onClick={clearLogs}
-            style={{
-              background: '#374151',
-              color: '#fff',
-              border: 0,
-              borderRadius: 4,
-              padding: '3px 5px',
-              fontSize: 9.5,
-              cursor: 'pointer',
-            }}
+            onPointerDown={stopBtnDrag}
+            onClick={handleClearLogs}
+            style={{ ...btnBase, background: '#334155' }}
           >
             Clr
           </button>
           <button
             type="button"
-            onClick={() => setMinimized(true)}
-            style={{
-              background: '#4B5563',
-              color: '#fff',
-              border: 0,
-              borderRadius: 4,
-              padding: '3px 6px',
-              fontSize: 9.5,
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            onPointerDown={stopBtnDrag}
+            onClick={() => setMinWithPersist(true)}
+            aria-label="Minimize Debug Panel"
+            style={{ ...btnBase, background: '#475569', fontSize: 13 }}
           >
             -
           </button>
           <button
             type="button"
-            onClick={closePanel}
-            style={{
-              background: '#991B1B',
-              color: '#fff',
-              border: 0,
-              borderRadius: 4,
-              padding: '3px 5px',
-              fontSize: 9.5,
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            onPointerDown={stopBtnDrag}
+            onClick={handleClosePanel}
+            aria-label="Close Debug Panel"
+            style={{ ...btnBase, background: '#991B1B' }}
           >
             X
           </button>
         </div>
       </div>
 
+      {/* 8-Step Funnel Checklist Strip: Home -> PDP -> ATC -> Cart -> Checkout -> Ship -> Pay -> Order */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+          gap: 3,
+          padding: '5px 6px',
+          borderBottom: '1px solid #1E293B',
+          background: '#0F172A',
+        }}
+      >
+        {funnelStatus.map((step) => {
+          const bg =
+            step.status === 'ok'
+              ? '#064E3B'
+              : step.status === 'warn'
+                ? '#78350F'
+                : step.status === 'err'
+                  ? '#7F1D1D'
+                  : '#1E293B';
+          const fg =
+            step.status === 'ok'
+              ? '#6EE7B7'
+              : step.status === 'warn'
+                ? '#FDE68A'
+                : step.status === 'err'
+                  ? '#FCA5A5'
+                  : '#64748B';
+          return (
+            <div
+              key={step.key}
+              title={step.events.join(' / ') + ': ' + step.status}
+              style={{
+                background: bg,
+                color: fg,
+                borderRadius: 4,
+                padding: '3px 2px',
+                textAlign: 'center',
+                fontSize: 8.5,
+                fontWeight: 700,
+                lineHeight: 1.1,
+              }}
+            >
+              {step.label}
+              {step.count > 1 ? '*' : ''}
+            </div>
+          );
+        })}
+      </div>
+
       {/* Fallback Selectable Textarea if iOS / In-App Browser blocks clipboard */}
       {copyState === 'fallback' && rawReportText && (
-        <div style={{ padding: 6, borderBottom: '1px solid #374151', background: '#0F172A' }}>
+        <div style={{ padding: 6, borderBottom: '1px solid #334155', background: '#0B1120' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#FDE68A', fontSize: 9.5 }}>
             <span>Tap box &gt; Select All &gt; Copy:</span>
             <button
               type="button"
               onClick={() => setCopyState('idle')}
-              style={{ background: 'transparent', color: '#9CA3AF', border: 0, cursor: 'pointer', fontSize: 9.5 }}
+              style={{ background: 'transparent', color: '#94A3B8', border: 0, cursor: 'pointer', fontSize: 10 }}
             >
               Hide
             </button>
@@ -585,7 +697,7 @@ export default function MetaDebugPanel({
               border: '1px solid #475569',
               borderRadius: 5,
               padding: 5,
-              fontSize: 9.5,
+              fontSize: 10,
               fontFamily: 'monospace',
             }}
           />
@@ -594,11 +706,11 @@ export default function MetaDebugPanel({
 
       {/* Compact Scrollable Event Feed */}
       <div style={{ maxHeight: 175, overflowY: 'auto', padding: 6, WebkitOverflowScrolling: 'touch' }}>
-        <div style={{ color: '#9CA3AF', fontSize: 9, marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+        <div style={{ color: '#94A3B8', fontSize: 9, marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 4 }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {pathname || '/'}
           </span>
-          <span style={{ flexShrink: 0 }}>Drag :: to move</span>
+          <span style={{ flexShrink: 0 }}>Drag :: | Tap - to shrink</span>
         </div>
 
         {trackingBlocked && (
@@ -608,53 +720,59 @@ export default function MetaDebugPanel({
         )}
 
         {logs.length === 0 ? (
-          <div style={{ color: '#9CA3AF', padding: '4px 2px', fontSize: 9.5 }}>
+          <div style={{ color: '#94A3B8', padding: '4px 2px', fontSize: 9.5 }}>
             Waiting for events...
           </div>
         ) : (
-          logs.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                borderBottom: '1px solid #1F2937',
-                padding: '4px 0',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
-                <strong style={{ color: '#60A5FA' }}>
-                  {item.eventName}
-                  {typeof item.value === 'number' ? ' (' + (item.currency || 'BDT') + ' ' + item.value + ')' : ''}
-                </strong>
-                <span style={{ color: '#9CA3AF', flexShrink: 0 }}>{item.time}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <span>
-                  Px:{' '}
-                  <b style={{ color: item.pixelStatus.startsWith('OK') ? '#34D399' : '#F87171' }}>
-                    {item.pixelStatus}
-                  </b>
-                </span>
-                <span>
-                  CA:{' '}
-                  <b style={{ color: item.capiStatus.startsWith('200') ? '#34D399' : '#FBBF24' }}>
-                    {item.capiStatus}
-                  </b>
-                </span>
-                {item.path && <span style={{ color: '#9CA3AF' }}>{item.path}</span>}
-              </div>
-              {item.detail && (
-                <div style={{ color: '#FCA5A5', fontSize: 9, wordBreak: 'break-word' }}>
-                  Err: {item.detail}
+          logs.map((item) => {
+            const health = evaluateEntryHealth(item);
+            const pxColor =
+              health === 'err' ? '#F87171' : item.pixelStatus.startsWith('OK') || item.pixelStatus === 'COD_SERVER_CAPI' || item.pixelStatus === 'ONLINE_VERIFIED' ? '#34D399' : '#FBBF24';
+            const caColor =
+              item.capiStatus.startsWith('200') || item.capiStatus === 'SERVER_CAPI_ON_CONFIRM' || item.capiStatus === 'SERVER_CAPI'
+                ? '#34D399'
+                : item.capiStatus === 'SKIPPED'
+                  ? '#94A3B8'
+                  : '#FBBF24';
+
+            return (
+              <div
+                key={item.id}
+                style={{
+                  borderBottom: '1px solid #1E293B',
+                  padding: '4px 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1.5,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+                  <strong style={{ color: '#60A5FA' }}>
+                    {item.eventName}
+                    {typeof item.value === 'number' ? ' (' + (item.currency || 'BDT') + ' ' + item.value + ')' : ''}
+                  </strong>
+                  <span style={{ color: '#94A3B8', flexShrink: 0 }}>{item.time}</span>
                 </div>
-              )}
-              <div style={{ color: '#9CA3AF', wordBreak: 'break-all', fontSize: 8.5 }}>
-                {item.eventId}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <span>
+                    Px: <b style={{ color: pxColor }}>{item.pixelStatus}</b>
+                  </span>
+                  <span>
+                    CA: <b style={{ color: caColor }}>{item.capiStatus}</b>
+                  </span>
+                  {item.path && <span style={{ color: '#94A3B8' }}>{item.path}</span>}
+                </div>
+                {item.detail && (
+                  <div style={{ color: '#FCA5A5', fontSize: 9, wordBreak: 'break-word' }}>
+                    {item.detail}
+                  </div>
+                )}
+                <div style={{ color: '#64748B', wordBreak: 'break-all', fontSize: 8.5 }}>
+                  {item.eventId}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

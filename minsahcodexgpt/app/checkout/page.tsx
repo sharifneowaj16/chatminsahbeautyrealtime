@@ -616,11 +616,28 @@ function CheckoutContent() {
     trackInitiateCheckout(items, subtotal);
   }, [items, subtotal]);
 
-  useEffect(() => {
+  const trackShippingInfoOnce = () => {
     if (
       shippingInfoTrackedRef.current ||
       !hasRequiredShippingFields ||
-      deliveryState !== "success" ||
+      items.length === 0 ||
+      finalTotal <= 0
+    ) {
+      return;
+    }
+    shippingInfoTrackedRef.current = true;
+    trackAddShippingInfo(items, finalTotal, "Pathao Home Delivery");
+  };
+
+  useEffect(() => {
+    const shippingRateReady =
+      deliveryState === "success" ||
+      checkoutFreeDeliveryUnlocked ||
+      (deliveryState === "error" && !deliveryHardError);
+    if (
+      shippingInfoTrackedRef.current ||
+      !hasRequiredShippingFields ||
+      !shippingRateReady ||
       items.length === 0 ||
       finalTotal <= 0
     ) {
@@ -629,7 +646,14 @@ function CheckoutContent() {
 
     shippingInfoTrackedRef.current = true;
     trackAddShippingInfo(items, finalTotal, "Pathao Home Delivery");
-  }, [deliveryState, finalTotal, hasRequiredShippingFields, items]);
+  }, [
+    checkoutFreeDeliveryUnlocked,
+    deliveryHardError,
+    deliveryState,
+    finalTotal,
+    hasRequiredShippingFields,
+    items,
+  ]);
 
   const trackPaymentInfoOnce = (paymentMethod = selectedPaymentMethod) => {
     if (
@@ -894,6 +918,7 @@ function CheckoutContent() {
     if (submittingOrderRef.current) return;
     markBeginCheckout();
     setSubmitAttempted(true);
+    trackShippingInfoOnce();
     trackPaymentInfoOnce();
     setCheckoutError(null);
 
@@ -1041,6 +1066,17 @@ function CheckoutContent() {
         data.redirectURL ||
         "/checkout/order-confirmed";
       checkoutIdempotencyKeyRef.current = null;
+      try {
+        const orderMeta = JSON.stringify({
+          orderId: data.order?.id || data.orderId || null,
+          orderNumber: data.order?.orderNumber || data.orderNumber || null,
+          paymentMethod: selectedPaymentMethod.type,
+          total: finalTotal,
+          ts: Date.now(),
+        });
+        sessionStorage.setItem("mb_last_order_debug", orderMeta);
+        localStorage.setItem("mb_last_order_debug", orderMeta);
+      } catch {}
       setIsRedirectingAfterOrder(true);
       if (selectedPaymentMethod.type === "cod") {
         await clearCart();
