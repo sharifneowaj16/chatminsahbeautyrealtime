@@ -563,11 +563,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const failedGuestItems = guestCart.length > 0
             ? await mergeGuestCartToDB(guestCart)
             : [];
-          if (failedGuestItems.length > 0) {
-            localStorage.setItem('minsah_cart', JSON.stringify(failedGuestItems));
-          } else {
-            localStorage.removeItem('minsah_cart');
-          }
+          try {
+            if (failedGuestItems.length > 0) {
+              localStorage.setItem('minsah_cart', JSON.stringify(failedGuestItems));
+            } else {
+              localStorage.removeItem('minsah_cart');
+            }
+          } catch { /* ignore storage restrictions */ }
           await fetchCartFromDB();
           if (failedGuestItems.length > 0) {
             setItems((serverItems) => {
@@ -645,7 +647,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const parsed: Address[] = (data.addresses ?? []).map(dbToCartAddress);
       setAddresses(parsed);
       setSelectedAddress(parsed.find((a) => a.isDefault) || parsed[0] || null);
-      localStorage.setItem('minsah_addresses', JSON.stringify(parsed));
+      try {
+        localStorage.setItem('minsah_addresses', JSON.stringify(parsed));
+      } catch { /* ignore storage restrictions */ }
     } catch {
       try {
         const saved = localStorage.getItem('minsah_addresses');
@@ -676,7 +680,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user) localStorage.setItem('minsah_addresses', JSON.stringify(addresses));
+    if (!user) {
+      try {
+        localStorage.setItem('minsah_addresses', JSON.stringify(addresses));
+      } catch { /* ignore storage restrictions */ }
+    }
   }, [addresses, user]);
 
   // ── Cart CRUD ───────────────────────────────────────────────────
@@ -1203,7 +1211,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return false;
       }
     } else {
-      localStorage.setItem('minsah_cart', JSON.stringify([]));
+      try {
+        localStorage.setItem('minsah_cart', JSON.stringify([]));
+      } catch { /* ignore storage restrictions */ }
       return true;
     }
   }, [discount, fetchCartFromDB, items, promoCode, refreshToken, user]);

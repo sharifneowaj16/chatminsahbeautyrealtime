@@ -404,10 +404,14 @@ class TrackingManager {
     };
 
     // Store UTM params in localStorage for attribution
-    if (this.sessionData.utmParams?.source) {
-      localStorage.setItem('first_touch_utm', JSON.stringify(this.sessionData.utmParams));
+    try {
+      if (this.sessionData.utmParams?.source) {
+        localStorage.setItem('first_touch_utm', JSON.stringify(this.sessionData.utmParams));
+      }
+      localStorage.setItem('last_touch_utm', JSON.stringify(this.sessionData.utmParams));
+    } catch {
+      // Ignore storage restrictions (e.g. Safari Block All Cookies)
     }
-    localStorage.setItem('last_touch_utm', JSON.stringify(this.sessionData.utmParams));
 
     this.initialized = true;
 
@@ -901,10 +905,19 @@ class TrackingManager {
   private getOrCreateDeviceId(): string {
     if (typeof window === 'undefined') return '';
 
-    let deviceId = localStorage.getItem('device_id');
+    let deviceId: string | null = null;
+    try {
+      deviceId = localStorage.getItem('device_id');
+    } catch {
+      // Ignore storage restrictions
+    }
     if (!deviceId) {
       deviceId = `device-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      localStorage.setItem('device_id', deviceId);
+      try {
+        localStorage.setItem('device_id', deviceId);
+      } catch {
+        // Keep in-memory deviceId for this session
+      }
       // Register new device in DB (fire-and-forget)
       fetch('/api/tracking-device', {
         method: 'PUT',
@@ -925,7 +938,12 @@ class TrackingManager {
   async restoreFromDB(): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    const deviceId = localStorage.getItem('device_id');
+    let deviceId: string | null = null;
+    try {
+      deviceId = localStorage.getItem('device_id');
+    } catch {
+      return;
+    }
     if (!deviceId) return;
 
     try {
