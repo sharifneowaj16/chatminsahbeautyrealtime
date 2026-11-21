@@ -71,6 +71,13 @@ export type MetaBrowserCapiRequest = {
   fbc?: string;
   fbp?: string;
   externalId?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
   value?: number;
   currency?: string;
   contentIds?: string[];

@@ -166,7 +166,19 @@ export function buildMetaBrowserEvent(input: {
 
 export function buildMetaBrowserCapiRequest(
   event: MetaBrowserEventEnvelope,
-  identity: { fbc?: string; fbp?: string; externalId?: string; eventSourceUrl?: string }
+  identity: {
+    fbc?: string;
+    fbp?: string;
+    externalId?: string;
+    eventSourceUrl?: string;
+    phone?: string;
+    firstName?: string;
+    lastName?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  }
 ) {
   const data = event.payload;
   return {
@@ -176,6 +188,13 @@ export function buildMetaBrowserCapiRequest(
     fbc: identity.fbc,
     fbp: identity.fbp,
     externalId: identity.externalId,
+    ...(identity.phone ? { phone: identity.phone } : {}),
+    ...(identity.firstName ? { firstName: identity.firstName } : {}),
+    ...(identity.lastName ? { lastName: identity.lastName } : {}),
+    ...(identity.city ? { city: identity.city } : {}),
+    ...(identity.state ? { state: identity.state } : {}),
+    ...(identity.zipCode ? { zipCode: identity.zipCode } : {}),
+    ...(identity.country ? { country: identity.country } : {}),
     value: data.value,
     currency: data.currency || 'BDT',
     contentIds: data.content_ids,

@@ -62,12 +62,107 @@ function getEventSourceUrl() {
   }
 }
 
+function getSavedCustomerHints(): {
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country: string;
+} {
+  const hints: {
+    phone?: string;
+    firstName?: string;
+    lastName?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country: string;
+  } = { country: 'bd' };
+
+  if (typeof window === 'undefined') return hints;
+
+  try {
+    const rawLoc = window.localStorage.getItem('minsah_delivery_location');
+    if (rawLoc) {
+      const loc = JSON.parse(rawLoc) as {
+        fullName?: string;
+        phoneNumber?: string;
+        city?: string;
+        zone?: string;
+      };
+      if (typeof loc.phoneNumber === 'string' && loc.phoneNumber.trim()) {
+        hints.phone = loc.phoneNumber.trim();
+      }
+      if (typeof loc.fullName === 'string' && loc.fullName.trim()) {
+        hints.firstName = loc.fullName.trim();
+      }
+      if (typeof loc.city === 'string' && loc.city.trim()) {
+        hints.city = loc.city.trim();
+      }
+      if (typeof loc.zone === 'string' && loc.zone.trim()) {
+        hints.state = loc.zone.trim();
+      }
+    }
+  } catch {
+    // Ignore storage restrictions (e.g. Safari Block All Cookies)
+  }
+
+  try {
+    if (!hints.phone || !hints.city || !hints.firstName) {
+      const rawAddrs = window.localStorage.getItem('minsah_addresses');
+      if (rawAddrs) {
+        const list = JSON.parse(rawAddrs) as Array<{
+          isDefault?: boolean;
+          fullName?: string;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
+          city?: string;
+          state?: string;
+          postalCode?: string;
+        }>;
+        if (Array.isArray(list) && list.length > 0) {
+          const preferred = list.find((a) => a?.isDefault) || list[0];
+          if (preferred) {
+            if (!hints.phone && typeof preferred.phone === 'string' && preferred.phone.trim()) {
+              hints.phone = preferred.phone.trim();
+            }
+            if (!hints.firstName) {
+              const fn = (preferred.firstName || preferred.fullName || '').trim();
+              if (fn) hints.firstName = fn;
+            }
+            if (!hints.lastName && typeof preferred.lastName === 'string' && preferred.lastName.trim()) {
+              hints.lastName = preferred.lastName.trim();
+            }
+            if (!hints.city && typeof preferred.city === 'string' && preferred.city.trim()) {
+              hints.city = preferred.city.trim();
+            }
+            if (!hints.state && typeof preferred.state === 'string' && preferred.state.trim()) {
+              hints.state = preferred.state.trim();
+            }
+            if (!hints.zipCode && typeof preferred.postalCode === 'string' && preferred.postalCode.trim()) {
+              hints.zipCode = preferred.postalCode.trim();
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Ignore storage restrictions
+  }
+
+  return hints;
+}
+
 function getIdentity() {
   return {
     fbc: getCookieValue('_fbc'),
     fbp: getCookieValue('_fbp'),
     externalId: buildVisitorMetaExternalId(getCookieValue('mb_vid')),
     eventSourceUrl: getEventSourceUrl(),
+    ...getSavedCustomerHints(),
   };
 }
 

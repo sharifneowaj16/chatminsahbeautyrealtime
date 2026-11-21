@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { verifyAccessToken } from '@/lib/auth/jwt';
 import {
   TrackingPayload,
   FacebookConversionAPIRequest,
@@ -95,6 +96,192 @@ function getMetaEventSourceUrl(payloadUrl: string | undefined, fallbackUrl: stri
   }
 }
 
+
+type EnrichedCustomerPii = {
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+};
+
+const PII_ENRICH_CACHE_TTL_MS = 5 * 60 * 1000;
+const PII_ENRICH_CACHE_MAX = 500;
+const piiEnrichCache = new Map<string, { value: EnrichedCustomerPii; expiresAt: number }>();
+
+function readEnrichCache(key: string): EnrichedCustomerPii | null {
+  const hit = piiEnrichCache.get(key);
+  if (!hit) return null;
+  if (Date.now() > hit.expiresAt) {
+    piiEnrichCache.delete(key);
+    return null;
+  }
+  return hit.value;
+}
+
+function writeEnrichCache(key: string, value: EnrichedCustomerPii) {
+  if (piiEnrichCache.size >= PII_ENRICH_CACHE_MAX) {
+    const oldestKey = piiEnrichCache.keys().next().value;
+    if (oldestKey) piiEnrichCache.delete(oldestKey);
+  }
+  piiEnrichCache.set(key, { value, expiresAt: Date.now() + PII_ENRICH_CACHE_TTL_MS });
+}
+
+function sanitizeRealEmail(email?: string | null): string | undefined {
+  const clean = email?.trim().toLowerCase();
+  if (!clean || !clean.includes('@')) return undefined;
+  if (/(@guest.|@placeholder.|@minsah.local$|@phone.|@temp.|@noemail.)/i.test(clean)) {
+    return undefined;
+  }
+  return clean;
+}
+
+function normalizeMetaCountryCode(value?: string | null): string {
+  const clean = value?.trim().toLowerCase();
+  if (!clean || clean === 'bangladesh' || clean === 'bd' || clean === 'bgd') return 'bd';
+  if (/^[a-z]{2}$/.test(clean)) return clean;
+  return 'bd';
+}
+
+function splitFirstAndLastName(firstName?: string | null, lastName?: string | null) {
+  let rawFn = firstName?.trim() || undefined;
+  let rawLn = lastName?.trim() || undefined;
+  if (rawFn && !rawLn) {
+    const parts = rawFn.split(/s+/);
+    if (parts.length > 1) {
+      rawLn = parts.pop() || undefined;
+      rawFn = parts.join(' ') || undefined;
+    }
+  }
+  return { firstName: rawFn, lastName: rawLn };
+}
+
+async function enrichCustomerPiiFromServer(input: {
+  request: NextRequest;
+  rawMbVid?: string;
+  externalId?: string;
+  fbp?: string;
+}): Promise<EnrichedCustomerPii> {
+  try {
+    // 1. Logged-in user via auth_token JWT cookie
+    const token =
+      input.request.cookies.get('auth_token')?.value ||
+      input.request.headers.get('authorization')?.replace(/^Bearers+/i, '');
+
+    if (token) {
+      const auth = await verifyAccessToken(token);
+      if (auth?.userId) {
+        const cacheKey = 'u:' + auth.userId;
+        const cached = readEnrichCache(cacheKey);
+        if (cached) return cached;
+
+        const user = await prisma.user.findUnique({
+          where: { id: auth.userId },
+          select: {
+            email: true,
+            phone: true,
+            verifiedPhone: true,
+            firstName: true,
+            lastName: true,
+            addresses: {
+              orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+              take: 1,
+              select: {
+                firstName: true,
+                lastName: true,
+                phone: true,
+                city: true,
+                state: true,
+                postalCode: true,
+                country: true,
+              },
+            },
+          },
+        });
+
+        if (user) {
+          const addr = user.addresses[0];
+          const enriched: EnrichedCustomerPii = {
+            email: sanitizeRealEmail(user.email),
+            phone: user.verifiedPhone || user.phone || addr?.phone || undefined,
+            firstName: addr?.firstName || user.firstName || undefined,
+            lastName: addr?.lastName || user.lastName || undefined,
+            city: addr?.city || undefined,
+            state: addr?.state || undefined,
+            zipCode: addr?.postalCode || undefined,
+            country: addr?.country || 'bd',
+          };
+          writeEnrichCache(cacheKey, enriched);
+          return enriched;
+        }
+      }
+    }
+
+    // 2. Returning guest customer via indexed Order visitor/fbp columns
+    const visitorOr: Array<Record<string, string>> = [];
+    if (input.rawMbVid) visitorOr.push({ anonymousVisitorId: input.rawMbVid });
+    if (input.externalId) visitorOr.push({ externalId: input.externalId });
+    if (input.fbp) visitorOr.push({ fbp: input.fbp });
+
+    if (visitorOr.length > 0) {
+      const cacheKey = 'v:' + (input.rawMbVid || input.externalId || input.fbp);
+      const cached = readEnrichCache(cacheKey);
+      if (cached) return cached;
+
+      const latestOrder = await prisma.order.findFirst({
+        where: {
+          isTest: false,
+          OR: visitorOr,
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          user: {
+            select: {
+              email: true,
+              phone: true,
+              verifiedPhone: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          shippingAddress: {
+            select: {
+              firstName: true,
+              lastName: true,
+              phone: true,
+              city: true,
+              state: true,
+              postalCode: true,
+              country: true,
+            },
+          },
+        },
+      });
+
+      const addr = latestOrder?.shippingAddress;
+      const usr = latestOrder?.user;
+      const enriched: EnrichedCustomerPii = {
+        email: sanitizeRealEmail(usr?.email),
+        phone: addr?.phone || usr?.verifiedPhone || usr?.phone || undefined,
+        firstName: addr?.firstName || usr?.firstName || undefined,
+        lastName: addr?.lastName || usr?.lastName || undefined,
+        city: addr?.city || undefined,
+        state: addr?.state || undefined,
+        zipCode: addr?.postalCode || undefined,
+        country: addr?.country || 'bd',
+      };
+      writeEnrichCache(cacheKey, enriched);
+      return enriched;
+    }
+  } catch (err) {
+    console.warn('[CAPI][Queue] Server PII enrichment skipped:', redactPiiString(err instanceof Error ? err.message : 'Unknown error'));
+  }
+
+  return {};
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -191,20 +378,42 @@ export async function POST(request: NextRequest) {
     const userAgent = headers.get('user-agent') || undefined;
     const fbc = payload.fbc || request.cookies.get('_fbc')?.value;
     const fbp = payload.fbp || request.cookies.get('_fbp')?.value;
+    const rawMbVid = request.cookies.get('mb_vid')?.value;
     const externalId =
       normalizeMetaExternalId(payload.externalId, 'visitor') ??
-      normalizeMetaExternalId(request.cookies.get('mb_vid')?.value, 'visitor');
+      normalizeMetaExternalId(rawMbVid, 'visitor');
+
+    const serverPii = await enrichCustomerPiiFromServer({
+      request,
+      rawMbVid,
+      externalId,
+      fbp,
+    });
+
+    const resolvedEmail = sanitizeRealEmail(payload.email) || serverPii.email;
+    const resolvedPhone = payload.phone || serverPii.phone;
+    const { firstName: resolvedFirstName, lastName: resolvedLastName } = splitFirstAndLastName(
+      payload.firstName || serverPii.firstName,
+      payload.lastName || serverPii.lastName
+    );
+    const resolvedCity = payload.city || serverPii.city;
+    const resolvedState = payload.state || serverPii.state;
+    const resolvedZip = payload.zipCode || serverPii.zipCode;
+    const resolvedCountry = normalizeMetaCountryCode(payload.country || serverPii.country);
+
+    const emailHash = hashPiiEmail(resolvedEmail);
+    const phoneHash = hashPiiPhone(resolvedPhone);
 
     const hashedUserData = compactObject({
-      em: payload.email ? ([hashPiiEmail(payload.email)].filter(Boolean) as string[]) : undefined,
-      ph: payload.phone ? ([hashPiiPhone(payload.phone)].filter(Boolean) as string[]) : undefined,
+      em: emailHash ? [emailHash] : undefined,
+      ph: phoneHash ? [phoneHash] : undefined,
       external_id: hashNormalizedPii(externalId),
-      fn: hashPiiText(payload.firstName),
-      ln: hashPiiText(payload.lastName),
-      ct: hashPiiText(payload.city),
-      st: hashPiiText(payload.state),
-      zp: hashPiiText(payload.zipCode),
-      country: hashPiiText(payload.country),
+      fn: hashPiiText(resolvedFirstName),
+      ln: hashPiiText(resolvedLastName),
+      ct: hashPiiText(resolvedCity),
+      st: hashPiiText(resolvedState),
+      zp: hashPiiText(resolvedZip),
+      country: hashPiiText(resolvedCountry),
       fbc,
       fbp,
       client_ip_address: clientIp,
