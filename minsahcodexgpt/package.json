@@ -37,7 +37,7 @@
     "worker": "tsx lib/workers/productWorker.ts",
     "worker:steadfast": "tsx lib/workers/steadfastWorker.ts",
     "worker:meta-capi": "tsx workers/meta-capi-sender.worker.ts",
-    "worker:all": "concurrently \"npm run worker\" \"npm run worker:steadfast\" \"npm run worker:meta-outbox-dispatcher\" \"npm run worker:meta-capi-sender\" \"npm run worker:meta-catalog\" \"npm run worker:meta-batch-status\" \"npm run worker:meta-lead\" \"npm run worker:meta-diagnostics\" \"npm run worker:meta-token-health\" \"npm run worker:meta-scheduler\" \"npm run worker:meta-ads-insights\" \"npm run worker:meta-instagram\" \"npm run worker:meta-social\" \"npm run worker:ga4\" \"npm run worker:tiktok\"",
+    "worker:all": "concurrently \"npm run worker\" \"npm run worker:steadfast\" \"npm run worker:meta-outbox-dispatcher\" \"npm run worker:meta-capi-sender\" \"npm run worker:meta-catalog\" \"npm run worker:meta-batch-status\" \"npm run worker:meta-lead\" \"npm run worker:meta-diagnostics\" \"npm run worker:meta-token-health\" \"npm run worker:meta-scheduler\" \"npm run worker:meta-ads-insights\" \"npm run worker:meta-instagram\" \"npm run worker:meta-social\" \"npm run worker:ga4\" \"npm run worker:tiktok\" \"npm run worker:order-telegram\"",
     "search:analytics": "tsx scripts/search-analytics.ts",
     "search:trending": "tsx scripts/seed-trending.ts",
     "gemini": "node gemini-cli.js",
@@ -476,7 +476,8 @@
     "qa:meta-platform-phase31-layer9.8": "node scripts/meta-platform-phase31-layer9.8-audit.mjs",
     "qa:phase31-meta-layer9.8-source": "npm run test:meta-v6-phase31-layer9.8 && npm run qa:meta-platform-phase31-layer9.8",
     "qa:phase31-meta-layer9.8-runtime": "node scripts/phase31-layer9.8-final-release-gate.mjs",
-    "qa:phase31-meta-layer9.8": "npm run qa:phase31-meta-layer9.8-source && npm run qa:phase31-meta-layer9.8-runtime"
+    "qa:phase31-meta-layer9.8": "npm run qa:phase31-meta-layer9.8-source && npm run qa:phase31-meta-layer9.8-runtime",
+    "worker:order-telegram": "tsx lib/workers/orderTelegramWorker.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

@@ -6,6 +6,7 @@ import {
   TELEGRAM_ORDER_ACTIONS,
 } from "@/lib/telegram/action-tokens";
 import { getTelegramOrderBotConfig } from "@/lib/telegram/auth";
+import type { CustomerFraudRiskDetails } from "@/lib/courier/fraud-check";
 
 interface OrderItemDetail {
   name: string;
@@ -21,7 +22,7 @@ interface AddressDetail {
   area?: string | null;
 }
 
-interface DetailedOrderNotification {
+export interface DetailedOrderNotification {
   orderId: string;
   orderNumber: string;
   customerName: string;
@@ -40,6 +41,7 @@ interface DetailedOrderNotification {
   deliveryOfferBadgeText?: string | null;
   total: number;
   paymentMethod: string;
+  courierVerification?: CustomerFraudRiskDetails | null;
 }
 
 interface BasicOrderNotification {
@@ -128,6 +130,92 @@ function deliveryOfferLabel(type?: string | null) {
   return labels[normalized] || normalized || "No product offer";
 }
 
+function formatCourierStatusText(status: string): string {
+  switch (status) {
+    case "timeout":
+      return "Unavailable (Timeout)";
+    case "circuit_open":
+      return "Paused (Auth/Rate limit)";
+    case "unconfigured":
+      return "Not configured";
+    case "invalid_phone":
+      return "Invalid BD phone";
+    default:
+      return "Unavailable";
+  }
+}
+
+export function formatCourierHistoryForTelegram(
+  details?: CustomerFraudRiskDetails | null,
+): string {
+  const bullet = "\u2022";
+  if (!details) {
+    return (
+      `<b>Courier &amp; Store History</b>\n` +
+      `${bullet} Steadfast: Unavailable\n` +
+      `${bullet} Pathao: Unavailable`
+    );
+  }
+
+  let sfLine = formatCourierStatusText(details.steadfast.status);
+  if (details.steadfast.status === "ok") {
+    const sf = details.steadfast;
+    const parts: string[] = [];
+    if (sf.deliveryRatio !== null) parts.push(`Success ${sf.deliveryRatio}%`);
+    if (sf.cancellationRatio !== null) parts.push(`Cancelled ${sf.cancellationRatio}%`);
+    if (sf.volumeRange) {
+      parts.push(`Volume ${escapeHtml(sf.volumeRange)}`);
+    } else if (sf.totalParcels !== null) {
+      parts.push(`Parcels ${sf.totalParcels}`);
+    }
+    if (sf.deliveredCount !== null && sf.cancelledCount !== null) {
+      parts.push(`(${sf.deliveredCount} ok / ${sf.cancelledCount} cancel)`);
+    }
+    if (parts.length === 0) {
+      parts.push("No parcel history");
+    }
+    parts.push(
+      sf.totalReports > 0
+        ? `Reports: <b>${sf.totalReports}</b>`
+        : "Reports: 0",
+    );
+    if (sf.fraudCategories.length > 0) {
+      parts.push(`Flags: ${escapeHtml(sf.fraudCategories.join(", "))}`);
+    }
+    sfLine = parts.join(" | ");
+  }
+
+  let pathaoLine = formatCourierStatusText(details.pathao.status);
+  if (details.pathao.status === "ok") {
+    const p = details.pathao;
+    const parts: string[] = [];
+    if (p.totalParcels !== null && p.deliveredCount !== null) {
+      parts.push(`Total ${p.totalParcels}`);
+      parts.push(
+        `Delivered ${p.deliveredCount}${p.successRate !== null ? ` (${p.successRate}%)` : ""}`,
+      );
+      parts.push(`Cancelled ${p.cancelledCount ?? 0}`);
+    }
+    if (p.customerRatingLabel) {
+      parts.push(escapeHtml(p.customerRatingLabel));
+    }
+    pathaoLine = parts.length > 0 ? parts.join(" | ") : "No parcel history";
+  }
+
+  const s = details.storeHistory;
+  const storeLine =
+    s.totalOrders === 0
+      ? "0 (First order)"
+      : `Total ${s.totalOrders} | Delivered ${s.deliveredCount} | Cancelled ${s.cancelledCount} | Returned ${s.returnedCount}${s.pendingCount > 0 ? ` | Active ${s.pendingCount}` : ""}`;
+
+  return (
+    `<b>Courier &amp; Store History</b>${details.cached ? " <i>(cached)</i>" : ""}\n` +
+    `${bullet} <b>Steadfast:</b> ${sfLine}\n` +
+    `${bullet} <b>Pathao:</b> ${pathaoLine}\n` +
+    `${bullet} <b>Minsah Prev Orders:</b> ${storeLine}`
+  );
+}
+
 function buildBasicMessage(order: BasicOrderNotification) {
   return (
     `<b>New Order</b>\n\n` +
@@ -170,6 +258,9 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
     .join("\n\n");
 
   const displayPhone = normalizeBangladeshPhoneDisplay(order.customerPhone);
+  const courierSection = order.courierVerification !== undefined
+    ? `${formatCourierHistoryForTelegram(order.courierVerification)}\n\n`
+    : "";
 
   return (
     `<b>New Order - Minsah Beauty</b>\n\n` +
@@ -179,6 +270,7 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
     `Name: ${escapeHtml(order.customerName)}\n` +
     `Phone: ${escapeHtml(displayPhone)}\n` +
     `Address: ${addressLine}\n\n` +
+    courierSection +
     `<b>Items</b>\n` +
     `${itemLines || "N/A"}\n\n` +
     `Subtotal: BDT ${formatAmount(order.subtotal)}\n` +
@@ -443,6 +535,32 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
       }
     }
     const errorMsg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: errorMsg };
+  }
+}
+
+export async function sendTelegramHtmlMessage(message: string): Promise<{
+  ok: boolean;
+  messageId?: string | number;
+  error?: string;
+}> {
+  const config = getTelegramOrderBotConfig();
+  if (!config.relayBase || !config.botToken || !config.chatId) {
+    console.warn("[TelegramNotify] Telegram order bot not configured - skipping HTML message.");
+    return { ok: false, error: "TELEGRAM_NOT_CONFIGURED" };
+  }
+
+  try {
+    const response = await sendTelegramMessage({
+      chat_id: config.chatId,
+      text: message,
+      parse_mode: "HTML",
+    });
+    const sentContext = extractTelegramSentMessageContext(response);
+    return { ok: true, messageId: sentContext?.messageId };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[TelegramNotify] sendTelegramHtmlMessage failed:", errorMsg);
     return { ok: false, error: errorMsg };
   }
 }

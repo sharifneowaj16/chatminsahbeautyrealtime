@@ -38,6 +38,7 @@ export const OrderDetailOverviewTab: React.FC<OrderDetailOverviewTabProps> = ({
       <CustomerTrustScoreBadge
         score={order.fraudRiskScore}
         level={order.fraudRiskLevel}
+        fraudDetails={order.fraudRiskDetails}
       />
 
       {/* Shipping Address */}

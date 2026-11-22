@@ -8,6 +8,7 @@
 
 const globalForWorkers = globalThis as unknown as {
   minsahProductWorkerStarted?: boolean;
+  minsahOrderTelegramWorkerStarted?: boolean;
   minsahMetaCapiWorkerStarted?: boolean;
   minsahMetaCatalogWorkerStarted?: boolean;
   minsahMetaBatchStatusWorkerStarted?: boolean;
@@ -40,6 +41,13 @@ export async function register() {
     startProductWorker();
     globalForWorkers.minsahProductWorkerStarted = true;
     console.log('[instrumentation] ✅ Product sync worker started');
+  }
+
+  if (!globalForWorkers.minsahOrderTelegramWorkerStarted) {
+    const { startOrderTelegramWorker } = await import('./lib/workers/orderTelegramWorker');
+    startOrderTelegramWorker();
+    globalForWorkers.minsahOrderTelegramWorkerStarted = true;
+    console.log('[instrumentation] \u2705 Order Telegram & Courier worker started');
   }
 
   if (!globalForWorkers.minsahMetaCapiWorkerStarted) {

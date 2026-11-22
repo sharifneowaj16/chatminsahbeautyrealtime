@@ -11,7 +11,7 @@ import {
   validateVerifiedPaymentContract,
 } from '@/lib/payments/canonical-payment-contract';
 import { attributeVerifiedSearchConversionsForOrder } from '@/lib/search/conversion-attribution';
-import { notifyNewOrder } from '@/lib/telegram-notify';
+import { enqueueOrderTelegramNotification } from '@/lib/queue/orderTelegramQueue';
 import { finalizeOnlineOrderStockInTransaction } from '@/lib/online-payment-stock';
 import { verifyHmacSha256Signature } from '@/lib/security/request-secret';
 import { expireOnlinePaymentOrderInTransaction } from '@/lib/orders/online-payment-lifecycle';
@@ -418,7 +418,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (notificationOrder) {
-      await notifyNewOrder({
+      await enqueueOrderTelegramNotification({
+        type: 'standard_order',
+        sourceRoute: '/api/payments/verified',
+        order: {
         orderId: notificationOrder.id,
         orderNumber: notificationOrder.orderNumber,
         customerName: notificationOrder.shippingAddress
@@ -448,11 +451,7 @@ export async function POST(request: NextRequest) {
         deliveryOfferBadgeText: notificationOrder.deliveryOfferBadgeText,
         total: toNumber(notificationOrder.total),
         paymentMethod: notificationOrder.paymentMethod || gateway,
-      });
-
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { adminNotifiedAt: new Date() },
+      },
       });
     }
   }

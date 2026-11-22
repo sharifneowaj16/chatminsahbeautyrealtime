@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@/generated/prisma/client";
 import { getAuthenticatedUserId } from "@/app/api/auth/_utils";
 import { generateDailyOrderNumber } from "@/lib/order-number";
-import { notifyNewOrder } from "@/lib/telegram-notify";
+import { enqueueOrderTelegramNotification } from "@/lib/queue/orderTelegramQueue";
 import { readOrderAttribution } from "@/lib/tracking/order-attribution";
 import { snapshotOrderAttributionInTransaction, type AttributionDb } from "@/lib/attribution/repository";
 import { buildOrderTrackingExclusionData } from "@/lib/tracking/traffic-filter";
@@ -1142,7 +1142,10 @@ export async function POST(request: NextRequest) {
         : null;
 
       try {
-        const notifyResult = await notifyNewOrder({
+        await enqueueOrderTelegramNotification({
+          type: "standard_order",
+          sourceRoute: "/api/orders",
+          order: {
           orderId: order.id,
           orderNumber: order.orderNumber,
           customerName: resolvedAddress
@@ -1164,18 +1167,8 @@ export async function POST(request: NextRequest) {
           deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
           total,
           paymentMethod,
+        },
         });
-
-        if (notifyResult?.ok) {
-          await prisma.order
-            .update({
-              where: { id: order.id },
-              data: { adminNotifiedAt: new Date() },
-            })
-            .catch((dbErr) =>
-              console.error("Failed to update adminNotifiedAt in /api/orders:", dbErr),
-            );
-        }
       } catch (notifyErr) {
         console.error("Telegram notification failed in /api/orders:", notifyErr);
       }

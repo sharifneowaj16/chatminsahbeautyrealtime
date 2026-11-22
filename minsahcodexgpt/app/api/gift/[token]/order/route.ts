@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth';
 import prisma from '@/lib/prisma';
-import { getTelegramOrderBotConfig } from '@/lib/telegram/auth';
+import { enqueueOrderTelegramNotification } from '@/lib/queue/orderTelegramQueue';
 
 // ── Telegram notification ──────────────────────────────────────────────────────
 function escapeTelegramHtml(value: unknown) {
@@ -12,19 +12,6 @@ function escapeTelegramHtml(value: unknown) {
     .replace(/>/g, '&gt;');
 }
 
-async function sendTelegram(message: string) {
-  const { relayBase, botToken, chatId } = getTelegramOrderBotConfig();
-  if (!relayBase || !botToken || !chatId) return;
-  try {
-    await fetch(`${relayBase}${botToken}/sendMessage`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
-    });
-  } catch (e) {
-    console.error('[Gift Order] Telegram error:', e);
-  }
-}
 
 // ── Guest user resolver ────────────────────────────────────────────────────────
 // In the Order schema, userId is NOT NULL — for guest orders:
@@ -276,7 +263,13 @@ export async function POST(
       `📋 Order: #${escapeTelegramHtml(result.order.orderNumber)}`,
     ].join('\n');
 
-    sendTelegram(tgMsg).catch(() => {});
+    await enqueueOrderTelegramNotification({
+      type: 'gift_order',
+      orderId: result.order.id,
+      orderNumber: result.order.orderNumber,
+      customerPhone: deliveryPhone,
+      baseHtmlMessage: tgMsg,
+    });
 
     // ── 8. Response ───────────────────────────────────────────────────────────
     return NextResponse.json({

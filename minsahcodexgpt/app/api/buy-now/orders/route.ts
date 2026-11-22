@@ -10,7 +10,7 @@ import {
   resolvePackagingWeightKg,
 } from '@/lib/buy-now';
 import { generateDailyOrderNumber } from '@/lib/order-number';
-import { notifyNewOrder } from '@/lib/telegram-notify';
+import { enqueueOrderTelegramNotification } from '@/lib/queue/orderTelegramQueue';
 import { readOrderAttribution } from '@/lib/tracking/order-attribution';
 import { buildOrderTrackingExclusionData } from '@/lib/tracking/traffic-filter';
 import { resolveOrderDeliveryAccounting } from '@/lib/order-delivery-accounting';
@@ -411,7 +411,10 @@ export async function POST(request: NextRequest) {
     // Pathao delivery is deferred until phone confirmation via Telegram/Admin callback.
     if (!isOnlinePaymentOrder) {
       try {
-        const notifyResult = await notifyNewOrder({
+        await enqueueOrderTelegramNotification({
+          type: 'standard_order',
+          sourceRoute: '/api/buy-now/orders',
+          order: {
           orderId: order.id,
           orderNumber: order.orderNumber,
           customerName: shippingAddress.name.trim(),
@@ -437,18 +440,8 @@ export async function POST(request: NextRequest) {
           deliveryOfferBadgeText: deliveryAccounting.deliveryOfferBadgeText,
           total,
           paymentMethod,
+        },
         });
-
-        if (notifyResult?.ok) {
-          await prisma.order
-            .update({
-              where: { id: order.id },
-              data: { adminNotifiedAt: new Date() },
-            })
-            .catch((dbErr) =>
-              console.error("Failed to update adminNotifiedAt in /api/buy-now/orders:", dbErr),
-            );
-        }
       } catch (notifyErr) {
         console.error("Telegram notification failed in /api/buy-now/orders:", notifyErr);
       }

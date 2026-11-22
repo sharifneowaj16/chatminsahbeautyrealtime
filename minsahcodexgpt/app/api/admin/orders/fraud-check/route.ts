@@ -1,5 +1,5 @@
 // app/api/admin/orders/fraud-check/route.ts
-// Courier Return Risk & Customer Fraud Scoring API
+// Courier Return Risk & Customer Delivery Verification API (Steadfast + Pathao + Local History)
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const phone = searchParams.get('phone');
     const orderId = searchParams.get('orderId');
+    const refresh = searchParams.get('refresh') === 'true';
 
     let targetPhone = phone;
 
@@ -38,9 +39,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Phone or orderId is required' }, { status: 400 });
     }
 
-    const result = await evaluateCustomerFraudRisk(targetPhone);
+    const result = await evaluateCustomerFraudRisk(targetPhone, {
+      excludeOrderId: orderId,
+      bypassCache: refresh,
+    });
 
-    // If orderId is provided, cache on order
     if (orderId) {
       await prisma.order.update({
         where: { id: orderId },
@@ -54,7 +57,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: result,
+      data: {
+        ...result,
+        fraudRiskDetails: result.details,
+      },
     });
   } catch (err: any) {
     console.error('[fraud-check-GET] Error:', err);
@@ -78,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { orderIds } = body;
+    const { orderIds, refresh } = body;
 
     if (!Array.isArray(orderIds) || orderIds.length === 0) {
       return NextResponse.json({ error: 'orderIds array is required' }, { status: 400 });
@@ -94,7 +100,11 @@ export async function POST(request: NextRequest) {
       const phone = order.shippingAddress?.phone || order.user?.phone;
       if (!phone) continue;
 
-      const risk = await evaluateCustomerFraudRisk(phone);
+      const risk = await evaluateCustomerFraudRisk(phone, {
+        excludeOrderId: order.id,
+        bypassCache: Boolean(refresh),
+      });
+
       await prisma.order.update({
         where: { id: order.id },
         data: {
@@ -110,6 +120,7 @@ export async function POST(request: NextRequest) {
         phone,
         fraudRiskLevel: risk.fraudRiskLevel,
         fraudRiskScore: risk.fraudRiskScore,
+        fraudRiskDetails: risk.details,
       });
     }
 

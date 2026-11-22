@@ -3,7 +3,7 @@
 // components/admin/OrderFraudAndReturnPanel.tsx
 // Pillar 4, 6, 7 & Refinements 5, 7: Courier Return Risk, Vendor Defect Queue & Exchange Price Gap Reconciler
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -56,6 +56,13 @@ export default function OrderFraudAndReturnPanel({
   const [checkingFraud, setCheckingFraud] = useState<boolean>(false);
   const [fraudError, setFraudError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setFraudScore(initialFraudScore ?? null);
+    setFraudLevel(initialFraudLevel ?? null);
+    setFraudDetails(initialFraudDetails ?? null);
+    setFraudError(null);
+  }, [orderId, initialFraudScore, initialFraudLevel, initialFraudDetails]);
+
   // Item inspection state
   const [inspectingItemId, setInspectingItemId] = useState<string | null>(null);
   const [inspectReason, setInspectReason] = useState<string>('');
@@ -69,24 +76,29 @@ export default function OrderFraudAndReturnPanel({
   const [exchangeQty, setExchangeQty] = useState<number>(1);
   const [exchanging, setExchanging] = useState<boolean>(false);
 
-  const handleCheckFraud = async () => {
+  const handleCheckFraud = async (forceRefresh = false) => {
     if (!customerPhone) return;
     try {
       setCheckingFraud(true);
       setFraudError(null);
-      const res = await fetch(`/api/admin/orders/fraud-check?phone=${encodeURIComponent(customerPhone)}&orderId=${orderId}`, {
-        credentials: 'include',
+      const params = new URLSearchParams({
+        phone: customerPhone,
+        orderId,
+      });
+      if (forceRefresh) params.set("refresh", "true");
+      const res = await fetch(`/api/admin/orders/fraud-check?${params.toString()}`, {
+        credentials: "include",
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Fraud check failed');
+        throw new Error(json.error || "Courier verification failed");
       }
 
-      setFraudScore(json.data.fraudRiskScore);
-      setFraudLevel(json.data.fraudRiskLevel);
-      setFraudDetails(json.data.fraudRiskDetails);
+      setFraudScore(json.data.fraudRiskScore ?? null);
+      setFraudLevel(json.data.fraudRiskLevel ?? null);
+      setFraudDetails(json.data.fraudRiskDetails ?? json.data.details ?? null);
     } catch (err: any) {
-      setFraudError(err?.message || 'Could not evaluate customer risk');
+      setFraudError(err?.message || "Could not verify courier history");
     } finally {
       setCheckingFraud(false);
     }
@@ -169,74 +181,170 @@ export default function OrderFraudAndReturnPanel({
     }
   };
 
-  const isHighRisk = fraudLevel === 'HIGH' || (fraudScore != null && fraudScore >= 40);
-  const isMediumRisk = fraudLevel === 'MEDIUM' || (fraudScore != null && fraudScore >= 20 && fraudScore < 40);
+  const sf = fraudDetails?.steadfast ?? null;
+  const pathao = fraudDetails?.pathao ?? null;
+  const storeHist = fraudDetails?.storeHistory ?? (
+    typeof fraudDetails?.totalOrders === "number"
+      ? {
+          totalOrders: fraudDetails.totalOrders,
+          deliveredCount: fraudDetails.deliveredCount ?? 0,
+          cancelledCount: fraudDetails.cancelledCount ?? 0,
+          returnedCount: fraudDetails.returnedCount ?? 0,
+          pendingCount: 0,
+          successRate: fraudDetails.successRate ?? null,
+        }
+      : null
+  );
+  const hasStructuredData = Boolean(sf || pathao || storeHist || fraudLevel);
+
+  const statusText = (st?: string | null) => {
+    switch (st) {
+      case "timeout": return "Timeout";
+      case "circuit_open": return "Paused (Auth/Rate limit)";
+      case "unconfigured": return "Not configured";
+      case "invalid_phone": return "Invalid BD phone";
+      default: return "Unavailable";
+    }
+  };
+
+  const checkedAtLabel = fraudDetails?.checkedAt
+    ? new Date(fraudDetails.checkedAt).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" })
+    : null;
 
   return (
     <div className="space-y-3 font-sans">
-      {/* Pillar 6: Courier Return Risk & Fraud Scoring Badge */}
-      <div className="p-3 rounded-lg bg-[#0d1c2d] border border-[#1f2f45] space-y-2">
-        <div className="flex items-center justify-between">
+      {/* Pillar 6: Courier Delivery History (Raw Steadfast, Pathao & Minsah Data) */}
+      <div className="p-3 rounded-lg bg-[#0d1c2d] border border-[#1f2f45] space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] font-semibold text-[#908fa0] uppercase tracking-wider flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-            Courier Delivery & Return Risk (Steadfast/Pathao)
+            Courier &amp; Store History (Steadfast / Pathao)
           </span>
 
-          <button
-            type="button"
-            onClick={handleCheckFraud}
-            disabled={checkingFraud || !customerPhone}
-            className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors cursor-pointer"
-          >
-            <RefreshCw className={`w-3 h-3 ${checkingFraud ? 'animate-spin' : ''}`} />
-            <span>{checkingFraud ? 'Scanning API...' : 'Check Risk Score'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {checkedAtLabel && (
+              <span className="text-[10px] font-mono text-[#8a8f98]">
+                {fraudDetails?.cached ? "Cached" : "Live"} {checkedAtLabel}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => handleCheckFraud(true)}
+              disabled={checkingFraud || !customerPhone}
+              className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+              title="Bypass 12h Redis cache and query Steadfast & Pathao live"
+            >
+              <RefreshCw className={`w-3 h-3 ${checkingFraud ? "animate-spin" : ""}`} />
+              <span>{checkingFraud ? "Checking..." : hasStructuredData ? "Live Refresh" : "Check Now"}</span>
+            </button>
+          </div>
         </div>
 
-        {fraudLevel ? (
-          <div
-            className={`p-2.5 rounded-md border flex items-center justify-between text-xs ${
-              isHighRisk
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                : isMediumRisk
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {isHighRisk ? (
-                <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
-              ) : isMediumRisk ? (
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              )}
-              <div>
-                <span className="font-bold">
-                  {isHighRisk ? 'HIGH RETURN RISK' : isMediumRisk ? 'MODERATE RISK' : 'LOW RISK (SAFE)'}
-                </span>
-                <span className="ml-1.5 font-mono text-[11px] opacity-90">
-                  {fraudScore != null ? `(Risk Score: ${fraudScore}/100)` : ''}
-                </span>
-                {fraudDetails?.reason && (
-                  <p className="text-[10px] mt-0.5 opacity-80">{fraudDetails.reason}</p>
+        {hasStructuredData ? (
+          <div className="space-y-2 text-xs">
+            {/* Steadfast Row */}
+            <div className="p-2.5 rounded-md bg-[#081320] border border-[#1f2f45] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-slate-200">Steadfast Courier</span>
+                {sf?.status === "ok" ? (
+                  <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                    {sf.deliveryRatio !== null && sf.deliveryRatio !== undefined && (
+                      <span className={`px-1.5 py-0.5 rounded font-semibold ${
+                        sf.deliveryRatio >= 85
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : sf.deliveryRatio >= 65
+                            ? "bg-amber-500/15 text-amber-300"
+                            : "bg-rose-500/15 text-rose-300"
+                      }`}>
+                        {sf.deliveryRatio}% Success
+                      </span>
+                    )}
+                    {sf.volumeRange && (
+                      <span className="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300">
+                        Vol {sf.volumeRange}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {sf ? statusText(sf.status) : "Legacy snapshot"}
+                  </span>
                 )}
               </div>
+
+              {sf?.status === "ok" ? (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-mono text-slate-300">
+                  <span>Cancelled: {sf.cancellationRatio ?? 0}%</span>
+                  {sf.totalParcels !== null && sf.totalParcels !== undefined && (
+                    <span>Parcels: {sf.totalParcels} ({sf.deliveredCount ?? 0} ok / {sf.cancelledCount ?? 0} cancel)</span>
+                  )}
+                  <span className={(sf.totalReports ?? 0) > 0 ? "text-rose-400 font-bold" : "text-slate-400"}>
+                    Merchant Reports: {sf.totalReports ?? 0}
+                  </span>
+                  {Array.isArray(sf.fraudCategories) && sf.fraudCategories.length > 0 && (
+                    <span className="text-rose-300">Flags: {sf.fraudCategories.join(", ")}</span>
+                  )}
+                </div>
+              ) : fraudDetails?.steadfastHistory ? (
+                <div className="text-[11px] font-mono text-slate-400">
+                  Success: {fraudDetails.steadfastHistory.delivery_ratio ?? "N/A"}% | Vol: {fraudDetails.steadfastHistory.volume_range ?? fraudDetails.steadfastHistory.total_parcels ?? "N/A"} | Reports: {fraudDetails.steadfastHistory.total_reports ?? 0}
+                </div>
+              ) : null}
             </div>
 
-            {fraudDetails?.steadfast && (
-              <div className="text-right text-[10px] font-mono opacity-80">
-                <span>Success: {fraudDetails.steadfast.success_rate || '100%'}</span>
-                <span className="block text-[9px]">Total: {fraudDetails.steadfast.total_parcels || 0} parcels</span>
-              </div>
-            )}
+            {/* Pathao Row */}
+            <div className="p-2.5 rounded-md bg-[#081320] border border-[#1f2f45] flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold text-slate-200">Pathao Courier</span>
+              {pathao?.status === "ok" ? (
+                <div className="flex flex-wrap items-center justify-end gap-2 text-[11px] font-mono text-slate-300">
+                  {pathao.totalParcels !== null && pathao.deliveredCount !== null && (
+                    <span>
+                      {pathao.deliveredCount}/{pathao.totalParcels} ok
+                      {pathao.successRate !== null ? ` (${pathao.successRate}%)` : ""}
+                    </span>
+                  )}
+                  {pathao.customerRatingLabel && (
+                    <span className="px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-200">
+                      {pathao.customerRatingLabel}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-[10px] font-mono text-slate-400">
+                  {pathao ? statusText(pathao.status) : "Not checked"}
+                </span>
+              )}
+            </div>
+
+            {/* Minsah Store Previous Orders Row */}
+            <div className="p-2.5 rounded-md bg-[#081320] border border-[#1f2f45] flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold text-slate-200">Minsah Prev Orders</span>
+              {storeHist ? (
+                storeHist.totalOrders === 0 ? (
+                  <span className="text-[11px] font-mono text-slate-400">0 (First order)</span>
+                ) : (
+                  <div className="flex flex-wrap items-center justify-end gap-2 text-[11px] font-mono text-slate-300">
+                    <span>Total: {storeHist.totalOrders}</span>
+                    <span className="text-emerald-400">Delivered: {storeHist.deliveredCount}</span>
+                    <span className={storeHist.cancelledCount > 0 ? "text-amber-300" : "text-slate-400"}>
+                      Cancel: {storeHist.cancelledCount}
+                    </span>
+                    <span className={storeHist.returnedCount > 0 ? "text-rose-400" : "text-slate-400"}>
+                      Return: {storeHist.returnedCount}
+                    </span>
+                  </div>
+                )
+              ) : (
+                <span className="text-[11px] font-mono text-slate-400">N/A</span>
+              )}
+            </div>
           </div>
         ) : (
           <div className="text-[11px] text-[#8a8f98] flex items-center justify-between">
-            <span>Customer delivery reliability score not yet checked for this order.</span>
+            <span>Courier history not checked yet for this order.</span>
             <button
               type="button"
-              onClick={handleCheckFraud}
+              onClick={() => handleCheckFraud(false)}
               className="text-xs px-2 py-0.5 rounded bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/30 transition-colors"
             >
               Verify Now
