@@ -1,4 +1,7 @@
 import { fetchPathaoAreas, type PathaoArea } from '@/lib/pathao-locations';
+import { cacheGet, cacheSet } from '@/lib/cache/redis';
+
+const PATHAO_AREAS_TTL_SECONDS = 60 * 60 * 12;
 
 export class PathaoAreaAvailabilityError extends Error {
   status: number;
@@ -21,26 +24,47 @@ export async function verifyPathaoHomeDeliveryArea(params: {
   pathaoZoneId?: number | null;
   pathaoAreaId?: number | null;
   selectedAreaName?: string | null;
-}): Promise<PathaoArea> {
+}): Promise<PathaoArea | null> {
   const pathaoZoneId = toPositiveInt(params.pathaoZoneId);
   const pathaoAreaId = toPositiveInt(params.pathaoAreaId);
 
-  if (!pathaoZoneId || !pathaoAreaId) {
+  if (!pathaoZoneId) {
     throw new PathaoAreaAvailabilityError(
-      'Please select a valid city, zone and area for delivery.',
+      'Please select a valid city and zone for delivery.',
       'PATHAO_LOCATION_REQUIRED',
     );
   }
 
   let areas: PathaoArea[];
   try {
-    areas = await fetchPathaoAreas(pathaoZoneId);
+    const cacheKey = `pathao:v1:areas:${pathaoZoneId}`;
+    const cached = await cacheGet<PathaoArea[]>(cacheKey);
+    if (cached && cached.length > 0) {
+      areas = cached;
+    } else {
+      areas = await fetchPathaoAreas(pathaoZoneId);
+      if (areas.length > 0) {
+        void cacheSet(cacheKey, areas, PATHAO_AREAS_TTL_SECONDS);
+      }
+    }
   } catch (error) {
     console.error('Pathao area availability check failed:', error);
     throw new PathaoAreaAvailabilityError(
       'Could not verify delivery area right now. Please try again.',
       'PATHAO_AREA_VERIFY_FAILED',
       502,
+    );
+  }
+
+  // Some Pathao zones have no sub-areas (empty area-list). Zone-level delivery is valid.
+  if (areas.length === 0) {
+    return null;
+  }
+
+  if (!pathaoAreaId) {
+    throw new PathaoAreaAvailabilityError(
+      'Please select a valid delivery area for this zone.',
+      'PATHAO_LOCATION_REQUIRED',
     );
   }
 

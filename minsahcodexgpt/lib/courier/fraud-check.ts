@@ -3,7 +3,8 @@
 // Integrates:
 //   1. Steadfast Official Fraud Score API (/api/v1/fraud_check/score/{phone})
 //   2. Pathao Merchant Portal Success API (/api/v1/user/success) with Redis token cache + lock
-//   3. Minsah Beauty local order history (excluding current order)
+//   3. Optional SmartPOSBD 5-Courier Enricher (POST /api/v1/fraud-check) when SMARTPOSBD_FRAUD_API_KEY is set
+//   4. Minsah Beauty local order history (excluding current order)
 // Load-balancer safe across multiple replicas via shared Redis cache (lib/cache/redis.ts).
 
 import prisma from '@/lib/prisma';
@@ -57,6 +58,42 @@ export interface PathaoVerificationData {
   error?: string;
 }
 
+export interface SmartPosBdCourierMetric {
+  total: number;
+  success: number;
+  cancel: number;
+  deliveredPercentage: number | null;
+  returnPercentage: number | null;
+  rating: string | null;
+  isRealCount?: boolean;
+  fraudCount?: number;
+  totalReports?: number;
+  volumeBand?: string | null;
+  nameHint?: string | null;
+}
+
+export interface SmartPosBdVerificationData {
+  status: CourierFetchStatus;
+  source: string | null;
+  score: number | null;
+  riskStatus: string | null;
+  totalParcels: number;
+  successParcels: number;
+  cancelParcels: number;
+  unresolvedReports: number;
+  communityReportsCount: number;
+  customerNameHint: string | null;
+  couriers: {
+    steadfast: SmartPosBdCourierMetric | null;
+    pathao: SmartPosBdCourierMetric | null;
+    redx: SmartPosBdCourierMetric | null;
+    carrybee: SmartPosBdCourierMetric | null;
+    paperfly: SmartPosBdCourierMetric | null;
+  };
+  responseMs?: number;
+  error?: string;
+}
+
 export interface StoreOrderHistoryData {
   totalOrders: number;
   deliveredCount: number;
@@ -92,6 +129,7 @@ export interface CustomerFraudRiskDetails {
   cached: boolean;
   steadfast: SteadfastVerificationData;
   pathao: PathaoVerificationData;
+  smartposbd?: SmartPosBdVerificationData;
   storeHistory: StoreOrderHistoryData;
 }
 
@@ -112,19 +150,22 @@ export interface EvaluateFraudRiskOptions {
   timeoutMs?: number;
 }
 
-// ??? Redis Keys & Tuning Constants ??????????????????????????????????????????
+// --- Redis Keys & Tuning Constants ---
 
-const COURIER_CACHE_PREFIX = 'courier:verify:v1:';
+const COURIER_CACHE_PREFIX = 'courier:verify:v2:';
 const COURIER_CACHE_TTL_SECONDS = 12 * 60 * 60; // 12 hours
 
 const STEADFAST_CB_OPEN_KEY = 'courier:cb:steadfast:open';
-const STEADFAST_CB_TTL_SECONDS = 60 * 60; // 60 min (prevents Steadfast 429 IP lockout)
+const STEADFAST_CB_TTL_SECONDS = 60 * 60; // 60 min
 
 const PATHAO_TOKEN_KEY = 'courier:pathao:merchant_token:v1';
 const PATHAO_LOGIN_LOCK = 'courier:pathao:login';
 const PATHAO_CB_FAILS_KEY = 'courier:cb:pathao:fails';
 const PATHAO_CB_OPEN_KEY = 'courier:cb:pathao:open';
-const PATHAO_CB_TTL_SECONDS = 45 * 60; // 45 min pause on repeated auth/rate failures
+const PATHAO_CB_TTL_SECONDS = 45 * 60; // 45 min
+
+const SMARTPOSBD_CB_OPEN_KEY = 'courier:cb:smartposbd:open';
+const SMARTPOSBD_CB_TTL_SECONDS = 60 * 60; // 60 min (pauses cleanly when daily 50 quota hits 429)
 
 const DEFAULT_TIMEOUT_MS = 4_500;
 
@@ -132,9 +173,10 @@ interface CachedExternalCouriers {
   checkedAt: string;
   steadfast: SteadfastVerificationData;
   pathao: PathaoVerificationData;
+  smartposbd: SmartPosBdVerificationData;
 }
 
-// ??? Phone & Formatting Helpers ?????????????????????????????????????????????
+// --- Phone & Formatting Helpers ---
 
 export function normalizeBangladeshPhone(phone: string | null | undefined): string {
   const digits = String(phone ?? '').replace(/\D/g, '');
@@ -231,7 +273,7 @@ async function fetchJsonWithTimeout(
   }
 }
 
-// ??? Steadfast Official Fraud Score API ?????????????????????????????????????
+// --- 1. Steadfast Official Fraud Score API ---
 
 function emptySteadfast(status: CourierFetchStatus, error?: string, responseMs?: number): SteadfastVerificationData {
   return {
@@ -341,7 +383,7 @@ async function querySteadfastFraudScore(
   };
 }
 
-// ??? Pathao Merchant Portal Success API (Distributed Token Cache + Lock) ????
+// --- 2. Pathao Merchant Portal Success API (Distributed Token Cache + Lock) ---
 
 function emptyPathao(status: CourierFetchStatus, error?: string, responseMs?: number): PathaoVerificationData {
   return {
@@ -587,7 +629,219 @@ async function queryPathaoSuccessRate(
   };
 }
 
-// ??? Local Minsah Beauty Order History (Always Live, Excludes Current Order) ?
+// --- 3. Optional SmartPOSBD 5-Courier Enricher (POST /api/v1/fraud-check) ---
+
+function emptySmartPosBd(
+  status: CourierFetchStatus,
+  error?: string,
+  responseMs?: number
+): SmartPosBdVerificationData {
+  return {
+    status,
+    source: null,
+    score: null,
+    riskStatus: null,
+    totalParcels: 0,
+    successParcels: 0,
+    cancelParcels: 0,
+    unresolvedReports: 0,
+    communityReportsCount: 0,
+    customerNameHint: null,
+    couriers: {
+      steadfast: null,
+      pathao: null,
+      redx: null,
+      carrybee: null,
+      paperfly: null,
+    },
+    ...(responseMs !== undefined ? { responseMs } : {}),
+    ...(error ? { error } : {}),
+  };
+}
+
+function parseSmartPosBdCourier(raw: unknown): SmartPosBdCourierMetric | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const entry = raw as Record<string, unknown>;
+  if (entry.status === false) return null;
+  const data =
+    entry.data && typeof entry.data === 'object'
+      ? (entry.data as Record<string, unknown>)
+      : entry;
+
+  const total = toFiniteNumberOrNull(data.total) ?? 0;
+  const success = toFiniteNumberOrNull(data.success) ?? 0;
+  const cancel = toFiniteNumberOrNull(data.cancel) ?? Math.max(0, total - success);
+
+  const rawName = typeof data.name === 'string' ? data.name.replace(/^Name\s*-\s*/i, '').trim() : '';
+
+  return {
+    total,
+    success,
+    cancel,
+    deliveredPercentage: toFiniteNumberOrNull(data.deliveredPercentage),
+    returnPercentage: toFiniteNumberOrNull(data.returnPercentage),
+    rating: typeof data.rating === 'string' ? data.rating : null,
+    isRealCount: Boolean(data.is_real_count),
+    fraudCount: toFiniteNumberOrNull(data.fraud_count) ?? 0,
+    totalReports: toFiniteNumberOrNull(data.total_reports) ?? 0,
+    volumeBand: typeof data.volume_band === 'string' ? data.volume_band : null,
+    nameHint: rawName || null,
+  };
+}
+
+async function querySmartPosBdFraudCheck(
+  normalizedPhone: string,
+  timeoutMs: number
+): Promise<SmartPosBdVerificationData> {
+  const apiKey = process.env.SMARTPOSBD_FRAUD_API_KEY?.trim();
+  if (!apiKey) {
+    return emptySmartPosBd('unconfigured');
+  }
+
+  const cbOpen = await cacheGet<string>(SMARTPOSBD_CB_OPEN_KEY);
+  if (cbOpen) {
+    return emptySmartPosBd('circuit_open', 'SmartPOSBD paused (quota/auth)');
+  }
+
+  const res = await fetchJsonWithTimeout(
+    'https://fraudchecker.smartposbd.com/api/v1/fraud-check',
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey,
+      },
+      body: JSON.stringify({ phone: normalizedPhone }),
+    },
+    timeoutMs
+  );
+
+  if (res.timedOut) {
+    return emptySmartPosBd('timeout', res.error, res.ms);
+  }
+
+  if (res.status === 401 || res.status === 403 || res.status === 429) {
+    await cacheSet(SMARTPOSBD_CB_OPEN_KEY, `HTTP_${res.status}`, SMARTPOSBD_CB_TTL_SECONDS);
+    console.warn(`[CourierCheck] SmartPOSBD circuit breaker opened for 60m due to HTTP ${res.status}`);
+    return emptySmartPosBd('circuit_open', `HTTP_${res.status}`, res.ms);
+  }
+
+  if (!res.ok || !res.json || typeof res.json.response !== 'object' || !res.json.response) {
+    return emptySmartPosBd('error', res.error || 'INVALID_RESPONSE', res.ms);
+  }
+
+  const responseObj = res.json.response as Record<string, unknown>;
+  const steadfast = parseSmartPosBdCourier(responseObj.steadfast);
+  const pathao = parseSmartPosBdCourier(responseObj.pathao);
+  const redx = parseSmartPosBdCourier(responseObj.redx);
+  const carrybee = parseSmartPosBdCourier(responseObj.carrybee);
+  const paperfly = parseSmartPosBdCourier(responseObj.paperfly);
+
+  const communityReports = Array.isArray(res.json.community_reports)
+    ? res.json.community_reports
+    : [];
+
+  return {
+    status: 'ok',
+    source: typeof res.json.source === 'string' ? res.json.source : null,
+    score: toFiniteNumberOrNull(res.json.score),
+    riskStatus: typeof res.json.status === 'string' ? res.json.status : null,
+    totalParcels: toFiniteNumberOrNull(res.json.total_parcel) ?? 0,
+    successParcels: toFiniteNumberOrNull(res.json.success_parcel) ?? 0,
+    cancelParcels: toFiniteNumberOrNull(res.json.cancel_parcel) ?? 0,
+    unresolvedReports: toFiniteNumberOrNull(res.json.unresolved_reports) ?? 0,
+    communityReportsCount: communityReports.length,
+    customerNameHint: carrybee?.nameHint ?? null,
+    couriers: {
+      steadfast,
+      pathao,
+      redx,
+      carrybee,
+      paperfly,
+    },
+    responseMs: res.ms,
+  };
+}
+
+function mergeSmartPosBdEnrichment(
+  steadfast: SteadfastVerificationData,
+  pathao: PathaoVerificationData,
+  smartposbd: SmartPosBdVerificationData
+): { steadfast: SteadfastVerificationData; pathao: PathaoVerificationData } {
+  if (smartposbd.status !== 'ok') {
+    return { steadfast, pathao };
+  }
+
+  let mergedSf = steadfast;
+  const spSf = smartposbd.couriers.steadfast;
+  if (spSf) {
+    if (steadfast.status === 'ok') {
+      if (steadfast.totalParcels === null && spSf.total > 0) {
+        mergedSf = {
+          ...steadfast,
+          totalParcels: spSf.total,
+          deliveredCount: spSf.success,
+          cancelledCount: spSf.cancel,
+        };
+      }
+    } else if (spSf.total > 0 || spSf.deliveredPercentage !== null) {
+      mergedSf = {
+        ...steadfast,
+        status: 'ok',
+        deliveryRatio: spSf.deliveredPercentage,
+        cancellationRatio: spSf.returnPercentage,
+        returnRatio: spSf.returnPercentage,
+        volumeBand: spSf.volumeBand ?? null,
+        totalParcels: spSf.total,
+        deliveredCount: spSf.success,
+        cancelledCount: spSf.cancel,
+        totalReports: spSf.totalReports ?? 0,
+      };
+    }
+  }
+
+  let mergedPathao = pathao;
+  const spP = smartposbd.couriers.pathao;
+  if (spP) {
+    const computedRate =
+      spP.total > 0
+        ? Math.round((spP.success / spP.total) * 100)
+        : spP.deliveredPercentage;
+
+    if (pathao.status === 'ok') {
+      if (pathao.totalParcels === null && spP.total > 0) {
+        mergedPathao = {
+          ...pathao,
+          showCount: true,
+          totalParcels: spP.total,
+          deliveredCount: spP.success,
+          cancelledCount: spP.cancel,
+          successRate: computedRate,
+          customerRating: pathao.customerRating ?? spP.rating,
+          customerRatingLabel:
+            pathao.customerRatingLabel ?? formatPathaoRatingLabel(spP.rating),
+        };
+      }
+    } else if (spP.total > 0 || spP.rating) {
+      mergedPathao = {
+        ...pathao,
+        status: 'ok',
+        showCount: spP.total > 0,
+        totalParcels: spP.total > 0 ? spP.total : null,
+        deliveredCount: spP.total > 0 ? spP.success : null,
+        cancelledCount: spP.total > 0 ? spP.cancel : null,
+        successRate: spP.total > 0 ? computedRate : null,
+        customerRating: spP.rating,
+        customerRatingLabel: formatPathaoRatingLabel(spP.rating),
+      };
+    }
+  }
+
+  return { steadfast: mergedSf, pathao: mergedPathao };
+}
+
+// --- 4. Local Minsah Beauty Order History (Always Live, Excludes Current Order) ---
 
 async function queryLocalStoreHistory(
   normalizedPhone: string,
@@ -648,12 +902,13 @@ async function queryLocalStoreHistory(
   };
 }
 
-// ??? Informational Score Computation (Admin Always Decides From Raw Data) ???
+// --- Informational Score Computation (Admin Always Decides From Raw Data) ---
 
 function computeInformationalRiskScore(
   storeHistory: StoreOrderHistoryData,
   steadfast: SteadfastVerificationData,
-  pathao: PathaoVerificationData
+  pathao: PathaoVerificationData,
+  smartposbd: SmartPosBdVerificationData
 ): { score: number; level: 'LOW' | 'MEDIUM' | 'HIGH'; reason: string } {
   let score = 15;
   const reasons: string[] = [];
@@ -668,23 +923,25 @@ function computeInformationalRiskScore(
     }
   }
 
-  if (steadfast.status === 'ok') {
-    if (steadfast.totalReports >= 2) {
-      score = Math.max(score, 85);
-      reasons.push(`Steadfast ${steadfast.totalReports} merchant reports`);
-    } else if (steadfast.totalReports === 1) {
-      score = Math.max(score, 55);
-      reasons.push('Steadfast 1 merchant report');
-    }
+  const combinedReports =
+    (steadfast.status === 'ok' ? steadfast.totalReports : 0) +
+    (smartposbd.status === 'ok' ? smartposbd.unresolvedReports : 0);
 
-    if (steadfast.deliveryRatio !== null) {
-      if (steadfast.deliveryRatio < 60) {
-        score = Math.max(score, 85);
-        reasons.push(`Steadfast delivery ratio ${steadfast.deliveryRatio}%`);
-      } else if (steadfast.deliveryRatio < 85) {
-        score = Math.max(score, 50);
-        reasons.push(`Steadfast delivery ratio ${steadfast.deliveryRatio}%`);
-      }
+  if (combinedReports >= 2) {
+    score = Math.max(score, 85);
+    reasons.push(`${combinedReports} courier/community reports`);
+  } else if (combinedReports === 1) {
+    score = Math.max(score, 55);
+    reasons.push('1 courier/community report');
+  }
+
+  if (steadfast.status === 'ok' && steadfast.deliveryRatio !== null) {
+    if (steadfast.deliveryRatio < 60) {
+      score = Math.max(score, 85);
+      reasons.push(`Steadfast delivery ratio ${steadfast.deliveryRatio}%`);
+    } else if (steadfast.deliveryRatio < 85) {
+      score = Math.max(score, 50);
+      reasons.push(`Steadfast delivery ratio ${steadfast.deliveryRatio}%`);
     }
   }
 
@@ -715,14 +972,8 @@ function computeInformationalRiskScore(
   return { score, level, reason };
 }
 
-// ??? Main Public Entrypoint ?????????????????????????????????????????????????
+// --- Main Public Entrypoint ---
 
-/**
- * Evaluate customer courier & store delivery history by phone number.
- * - Uses 12-hour Redis cache for Steadfast + Pathao results (shared across replicas).
- * - Always fetches live local Minsah store history (excluding current order when provided).
- * - Strictly bounded by timeoutMs (default 4.5s) via parallel AbortController requests.
- */
 export async function evaluateCustomerFraudRisk(
   phone: string,
   options: EvaluateFraudRiskOptions = {}
@@ -736,12 +987,14 @@ export async function evaluateCustomerFraudRisk(
 
   let steadfast: SteadfastVerificationData;
   let pathao: PathaoVerificationData;
+  let smartposbd: SmartPosBdVerificationData;
   let checkedAt = new Date().toISOString();
   let cached = false;
 
   if (!validMobile) {
     steadfast = emptySteadfast('invalid_phone', 'Invalid BD mobile format');
     pathao = emptyPathao('invalid_phone', 'Invalid BD mobile format');
+    smartposbd = emptySmartPosBd('invalid_phone', 'Invalid BD mobile format');
   } else {
     const cachedExternal = !options.bypassCache
       ? await cacheGet<CachedExternalCouriers>(cacheKey)
@@ -750,30 +1003,40 @@ export async function evaluateCustomerFraudRisk(
     if (cachedExternal) {
       steadfast = cachedExternal.steadfast;
       pathao = cachedExternal.pathao;
+      smartposbd = cachedExternal.smartposbd ?? emptySmartPosBd('unconfigured');
       checkedAt = cachedExternal.checkedAt;
       cached = true;
     } else {
-      const [sfOutcome, pathaoOutcome] = await Promise.allSettled([
+      const [sfOutcome, pathaoOutcome, spOutcome] = await Promise.allSettled([
         querySteadfastFraudScore(normalizedPhone, timeoutMs),
         queryPathaoSuccessRate(normalizedPhone, timeoutMs),
+        querySmartPosBdFraudCheck(normalizedPhone, timeoutMs),
       ]);
 
-      steadfast =
+      const rawSteadfast =
         sfOutcome.status === 'fulfilled'
           ? sfOutcome.value
           : emptySteadfast('error', String(sfOutcome.reason));
 
-      pathao =
+      const rawPathao =
         pathaoOutcome.status === 'fulfilled'
           ? pathaoOutcome.value
           : emptyPathao('error', String(pathaoOutcome.reason));
 
+      smartposbd =
+        spOutcome.status === 'fulfilled'
+          ? spOutcome.value
+          : emptySmartPosBd('error', String(spOutcome.reason));
+
+      const merged = mergeSmartPosBdEnrichment(rawSteadfast, rawPathao, smartposbd);
+      steadfast = merged.steadfast;
+      pathao = merged.pathao;
       checkedAt = new Date().toISOString();
 
-      if (steadfast.status === 'ok' || pathao.status === 'ok') {
+      if (steadfast.status === 'ok' || pathao.status === 'ok' || smartposbd.status === 'ok') {
         await cacheSet<CachedExternalCouriers>(
           cacheKey,
-          { checkedAt, steadfast, pathao },
+          { checkedAt, steadfast, pathao, smartposbd },
           COURIER_CACHE_TTL_SECONDS
         );
       }
@@ -781,7 +1044,7 @@ export async function evaluateCustomerFraudRisk(
   }
 
   const storeHistory = await localHistoryPromise;
-  const computed = computeInformationalRiskScore(storeHistory, steadfast, pathao);
+  const computed = computeInformationalRiskScore(storeHistory, steadfast, pathao, smartposbd);
 
   const details: CustomerFraudRiskDetails = {
     totalOrders: storeHistory.totalOrders,
@@ -810,6 +1073,7 @@ export async function evaluateCustomerFraudRisk(
     cached,
     steadfast,
     pathao,
+    smartposbd,
     storeHistory,
   };
 

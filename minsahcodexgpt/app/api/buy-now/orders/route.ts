@@ -1,6 +1,7 @@
 import { snapshotOrderAttributionInTransaction, type AttributionDb } from '@/lib/attribution/repository';
 import { triggerEventDrivenCatalogSync } from '@/lib/meta-platform/domains/catalog/event-sync';
 import { NextRequest, NextResponse } from 'next/server';
+import { PathaoAreaAvailabilityError, verifyPathaoHomeDeliveryArea } from '@/lib/pathao-area-availability';
 import { recordProductOrderCreatedInTransaction } from '@/lib/analytics/product-metrics';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
@@ -43,7 +44,7 @@ interface BuyNowAddressInput {
   address?: string;
   city: string;
   zone?: string;
-  area: string;
+  area?: string;
   pathao_city_id?: number | null;
   pathao_zone_id?: number | null;
   pathao_area_id?: number | null;
@@ -106,12 +107,27 @@ export async function POST(request: NextRequest) {
       !shippingAddress?.name?.trim() ||
       !normalizedBuyNowPhone ||
       !shippingAddress.city?.trim() ||
-      !shippingAddress.area?.trim() ||
+      !shippingAddress.zone?.trim() ||
       !shippingAddress.pathao_city_id ||
-      !shippingAddress.pathao_zone_id ||
-      !shippingAddress.pathao_area_id
+      !shippingAddress.pathao_zone_id
     ) {
       return NextResponse.json({ error: 'Shipping address is incomplete' }, { status: 400 });
+    }
+
+    try {
+      await verifyPathaoHomeDeliveryArea({
+        pathaoZoneId: shippingAddress.pathao_zone_id,
+        pathaoAreaId: shippingAddress.pathao_area_id,
+        selectedAreaName: shippingAddress.area,
+      });
+    } catch (areaErr) {
+      if (areaErr instanceof PathaoAreaAvailabilityError) {
+        return NextResponse.json(
+          { error: areaErr.message, code: areaErr.code },
+          { status: areaErr.status },
+        );
+      }
+      throw areaErr;
     }
 
     const productIds = [...new Set(items.map((item) => item.productId))];
@@ -278,10 +294,10 @@ export async function POST(request: NextRequest) {
           firstName,
           lastName,
           phone: normalizedBuyNowPhone,
-          street1: shippingAddress.address?.trim() || shippingAddress.area.trim(),
-          street2: shippingAddress.zone?.trim() || shippingAddress.area.trim(),
+          street1: shippingAddress.address?.trim() || shippingAddress.area?.trim() || shippingAddress.zone?.trim() || shippingAddress.city.trim(),
+          street2: [shippingAddress.zone?.trim(), shippingAddress.area?.trim()].filter(Boolean).join(', ') || shippingAddress.city.trim(),
           city: shippingAddress.city.trim(),
-          state: shippingAddress.zone?.trim() || shippingAddress.area.trim(),
+          state: shippingAddress.zone?.trim() || shippingAddress.city.trim(),
           postalCode: '',
           country: 'Bangladesh',
           isDefault: false,
@@ -421,8 +437,8 @@ export async function POST(request: NextRequest) {
           customerPhone: normalizedBuyNowPhone,
           address: {
             city: shippingAddress.city.trim(),
-            zone: shippingAddress.zone?.trim() || null,
-            area: shippingAddress.area.trim(),
+            zone: [shippingAddress.zone?.trim(), shippingAddress.area?.trim()].filter(Boolean).join(', ') || null,
+            area: shippingAddress.address?.trim() || null,
           },
           items: orderItems.map((item) => ({
             name: item.productName,

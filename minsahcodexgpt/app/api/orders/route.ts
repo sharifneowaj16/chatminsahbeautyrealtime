@@ -912,7 +912,7 @@ export async function POST(request: NextRequest) {
             lastName,
             phone: addressData.phoneNumber,
             street1: addressData.streetAddress,
-            street2: `${addressData.zone}, ${addressData.area}`,
+            street2: addressData.area ? `${addressData.zone}, ${addressData.area}` : addressData.zone,
             city: addressData.city,
             state:
               addressData.provinceRegion ||

@@ -312,6 +312,7 @@ function CheckoutContent() {
   const [cities, setCities] = useState<DeliveryOption[]>([]);
   const [zones, setZones] = useState<DeliveryOption[]>([]);
   const [areas, setAreas] = useState<DeliveryAreaOption[]>([]);
+  const [areasLoadedForZoneId, setAreasLoadedForZoneId] = useState<number | null>(null);
   const [locationLoading, setLocationLoading] = useState<
     "cities" | "zones" | "areas" | null
   >(null);
@@ -388,21 +389,32 @@ function CheckoutContent() {
     [areas, shippingForm.pathao_area_id],
   );
 
-  const isAreaListPending = Boolean(
-    shippingForm.pathao_area_id &&
-    !selectedArea &&
-    (locationLoading === "areas" || areas.length === 0),
+  const hasLoadedAreasForZone = Boolean(
+    shippingForm.pathao_zone_id &&
+    areasLoadedForZoneId === shippingForm.pathao_zone_id &&
+    locationLoading !== "areas",
   );
 
-  const selectedAreaHomeDeliveryAvailable = Boolean(
-    selectedArea?.homeDeliveryAvailable,
+  const isZoneWithoutAreas = Boolean(
+    hasLoadedAreasForZone && areas.length === 0,
   );
+
+  const isAreaListPending = Boolean(
+    shippingForm.pathao_zone_id &&
+    (locationLoading === "areas" ||
+      (!hasLoadedAreasForZone && !locationError) ||
+      (shippingForm.pathao_area_id && !selectedArea && areas.length === 0)),
+  );
+
+  const selectedAreaHomeDeliveryAvailable = isZoneWithoutAreas
+    ? true
+    : Boolean(selectedArea?.homeDeliveryAvailable);
 
   const hasDeliveryLocation = Boolean(
     shippingForm.pathao_city_id &&
     shippingForm.pathao_zone_id &&
-    shippingForm.pathao_area_id &&
-    selectedAreaHomeDeliveryAvailable,
+    (isZoneWithoutAreas ||
+      (shippingForm.pathao_area_id && selectedAreaHomeDeliveryAvailable)),
   );
 
   const hasRequiredShippingFields = Boolean(
@@ -410,7 +422,7 @@ function CheckoutContent() {
     isValidBdMobileNumber(normalizedShippingPhone) &&
     shippingForm.city.trim() &&
     shippingForm.zone.trim() &&
-    shippingForm.area.trim() &&
+    (isZoneWithoutAreas || shippingForm.area.trim()) &&
     shippingForm.streetAddress.trim() &&
     hasDeliveryLocation,
   );
@@ -502,12 +514,14 @@ function CheckoutContent() {
       errors.zone = "Please select your zone / thana.";
     }
 
-    if (!shippingForm.pathao_area_id) {
-      errors.area = "Please select your delivery area.";
-    } else if (selectedArea && !selectedArea.homeDeliveryAvailable) {
-      errors.area = "Home delivery is not available in this area.";
-    } else if (!selectedArea && !isAreaListPending && areas.length > 0) {
-      errors.area = "Please re-select your delivery area.";
+    if (!isZoneWithoutAreas) {
+      if (!shippingForm.pathao_area_id) {
+        errors.area = "Please select your delivery area.";
+      } else if (selectedArea && !selectedArea.homeDeliveryAvailable) {
+        errors.area = "Home delivery is not available in this area.";
+      } else if (!selectedArea && !isAreaListPending && areas.length > 0) {
+        errors.area = "Please re-select your delivery area.";
+      }
     }
 
     if (!shippingForm.streetAddress.trim()) {
@@ -515,7 +529,7 @@ function CheckoutContent() {
     }
 
     return errors;
-  }, [areas.length, isAreaListPending, normalizedShippingPhone, selectedArea, shippingForm]);
+  }, [areas.length, isAreaListPending, isZoneWithoutAreas, normalizedShippingPhone, selectedArea, shippingForm]);
 
   const visibleFieldErrors = useMemo<CheckoutFieldErrors>(() => {
     const visibleErrors: CheckoutFieldErrors = {};
@@ -775,18 +789,21 @@ function CheckoutContent() {
   useEffect(() => {
     if (!shippingForm.pathao_zone_id) {
       setAreas([]);
+      setAreasLoadedForZoneId(null);
       return;
     }
 
+    const currentZoneId = shippingForm.pathao_zone_id;
     let isCancelled = false;
     const controller = new AbortController();
 
     const loadAreas = async () => {
       setLocationLoading("areas");
+      setAreasLoadedForZoneId(null);
       setLocationError(null);
       try {
         const response = await fetch(
-          `/api/shipping/pathao/areas?zone_id=${shippingForm.pathao_zone_id}`,
+          `/api/shipping/pathao/areas?zone_id=${currentZoneId}`,
           {
             cache: "no-store",
             signal: controller.signal,
@@ -794,7 +811,18 @@ function CheckoutContent() {
         );
         if (!response.ok) throw new Error("Could not load areas");
         const data = await response.json();
-        if (!isCancelled) setAreas(normalizeDeliveryAreas(data));
+        if (!isCancelled) {
+          const nextAreas = normalizeDeliveryAreas(data);
+          setAreas(nextAreas);
+          setAreasLoadedForZoneId(currentZoneId);
+          if (nextAreas.length === 0) {
+            setShippingForm((current) =>
+              current.pathao_zone_id === currentZoneId
+                ? { ...current, area: "", pathao_area_id: null }
+                : current,
+            );
+          }
+        }
       } catch {
         if (!isCancelled && !controller.signal.aborted) {
           setAreas([]);
@@ -1005,7 +1033,7 @@ function CheckoutContent() {
           addressData: {
             fullName: shippingForm.fullName.trim(),
             phoneNumber: normalizedShippingPhone,
-            address: shippingForm.area.trim(),
+            address: shippingForm.area.trim() || shippingForm.zone.trim(),
             area: shippingForm.area.trim(),
             streetAddress: shippingForm.streetAddress.trim(),
             street1: shippingForm.streetAddress.trim(),
@@ -1015,7 +1043,7 @@ function CheckoutContent() {
             landmark: "",
             pathao_city_id: shippingForm.pathao_city_id,
             pathao_zone_id: shippingForm.pathao_zone_id,
-            pathao_area_id: shippingForm.pathao_area_id,
+            pathao_area_id: isZoneWithoutAreas ? null : shippingForm.pathao_area_id,
           },
           paymentMethod: selectedPaymentMethod.type,
           couponCode: promoCode || undefined,
@@ -1652,12 +1680,12 @@ function CheckoutContent() {
                   <div className="relative">
                     <div
                       onClick={() => {
-                        if (!shippingForm.pathao_zone_id || locationLoading === "areas") return;
+                        if (!shippingForm.pathao_zone_id || locationLoading === "areas" || isZoneWithoutAreas) return;
                         setOpenDropdown(openDropdown === "area" ? null : "area");
                         setSearchQuery("");
                       }}
                       className={`relative flex items-center justify-between rounded-2xl border px-3.5 py-3.5 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                        !shippingForm.pathao_zone_id
+                        !shippingForm.pathao_zone_id || isZoneWithoutAreas
                           ? "cursor-not-allowed bg-gray-50 opacity-60 border-[#E2D9CF]"
                           : "cursor-pointer bg-white " +
                             (visibleFieldErrors.area
@@ -1686,7 +1714,7 @@ function CheckoutContent() {
                             : "left-3.5 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#8C7E74]"
                         }`}
                       >
-                        {locationLoading === "areas" ? "Loading areas..." : "Select Area"}
+                        {locationLoading === "areas" ? "Loading areas..." : isZoneWithoutAreas ? "No area required" : "Select Area"}
                       </label>
                     </div>
 

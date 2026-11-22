@@ -198,8 +198,8 @@ function normalizeAddressData(value: unknown): NormalizedAddressDataInput | unde
     );
   }
 
-  if (!city || !zone || !area) {
-    throw new OrderValidationError('City, zone and area are required', 'DELIVERY_LOCATION_REQUIRED');
+  if (!city || !zone) {
+    throw new OrderValidationError('City and zone are required', 'DELIVERY_LOCATION_REQUIRED');
   }
 
   if (!streetAddress) {
@@ -219,7 +219,7 @@ function normalizeAddressData(value: unknown): NormalizedAddressDataInput | unde
     zone,
     area,
     streetAddress,
-    address: area,
+    address: area || zone,
     street1: streetAddress,
     street2: zone,
     provinceRegion: cleanOptionalString(address.provinceRegion) ?? cleanOptionalString(address.state) ?? city,

@@ -53,6 +53,66 @@ interface BasicOrderNotification {
 
 type NewOrderNotification = DetailedOrderNotification | BasicOrderNotification;
 
+type TrustTier = "SAFE" | "CAUTION" | "DANGER";
+
+interface ComputedTrustSummary {
+  score: number;
+  tier: TrustTier;
+  isNewCustomer: boolean;
+  totalReports: number;
+  bar: string;
+  dotsLabel: string;
+  dots: string;
+  badgeEmoji: string;
+  tierLabel: string;
+  verdictEmoji: string;
+  verdictText: string;
+}
+
+const E = {
+  bag: "\u{1F6CD}",
+  newBadge: "\u{1F195}",
+  tag: "\u{1F516}",
+  clock: "\u{1F552}",
+  cash: "\u{1F4B5}",
+  user: "\u{1F464}",
+  phone: "\u{1F4DE}",
+  pin: "\u{1F4CD}",
+  shield: "\u{1F6E1}",
+  green: "\u{1F7E2}",
+  yellow: "\u{1F7E1}",
+  red: "\u{1F534}",
+  white: "\u26AA",
+  truck: "\u{1F69A}",
+  pathao: "\u{1F17F}\uFE0F",
+  star: "\u2B50",
+  store: "\u{1F3EA}",
+  flag: "\u{1F6A9}",
+  sparkle: "\u2728",
+  check: "\u2705",
+  warn: "\u26A0\uFE0F",
+  stop: "\u{1F6D1}",
+  siren: "\u{1F6A8}",
+  box: "\u{1F4E6}",
+  bolt: "\u26A1",
+  chat: "\u{1F4AC}",
+  copy: "\u{1F4CB}",
+  phoneOff: "\u{1F4F5}",
+  cancel: "\u274C",
+  taka: "\u09F3",
+  midDot: "\u00B7",
+  vPipe: "\u250A",
+  corner: "\u2570",
+  arrow: "\u2192",
+  tri: "\u25B8",
+  times: "\u00D7",
+  barFull: "\u25B0",
+  barEmpty: "\u25B1",
+  heavyLine: "\u2501",
+  dashLine: "\u2504",
+  thinLine: "\u2500",
+} as const;
+
 function isDetailedOrder(
   order: NewOrderNotification,
 ): order is DetailedOrderNotification {
@@ -67,11 +127,29 @@ function escapeHtml(value: unknown) {
 }
 
 function formatAmount(value: number) {
-  return Number.isFinite(value) ? Math.round(value).toString() : "0";
+  return Number.isFinite(value) ? Math.round(value).toLocaleString("en-US") : "0";
 }
 
-function amountOrFree(value: number) {
-  return value <= 0 ? "Free" : `BDT ${formatAmount(value)}`;
+function formatTaka(value: number) {
+  return `${E.taka}${formatAmount(value)}`;
+}
+
+function formatBangladeshDateTime(date: Date): { dateStr: string; timeStr: string } {
+  const dateStr = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Dhaka",
+  }).format(date);
+
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Dhaka",
+  }).format(date);
+
+  return { dateStr, timeStr };
 }
 
 function normalizeBangladeshPhoneDisplay(phone: string | null | undefined) {
@@ -87,6 +165,15 @@ function normalizeBangladeshPhoneDisplay(phone: string | null | undefined) {
   if (/^\d{8,15}$/.test(digits)) return `+${digits}`;
 
   return raw;
+}
+
+function normalizeLocalBangladeshPhone(phone: string | null | undefined): string | null {
+  const digits = String(phone ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  if (/^8801\d{9}$/.test(digits)) return digits.slice(2);
+  if (/^01\d{9}$/.test(digits)) return digits;
+  if (/^1\d{9}$/.test(digits)) return `0${digits}`;
+  return null;
 }
 
 function buildCustomerWhatsAppUrl(phone: string | null | undefined) {
@@ -107,189 +194,433 @@ function buildCustomerWhatsAppUrl(phone: string | null | undefined) {
   return null;
 }
 
-function deliverySourceLabel(source?: string | null) {
+function deliverySourceShortLabel(source?: string | null) {
   const normalized = String(source || "").toUpperCase();
   const labels: Record<string, string> = {
-    DEFAULT: "Default",
-    PATHAO: "Pathao quote",
-    STEADFAST: "Steadfast quote",
-    PRODUCT_OFFER: "Product offer",
+    DEFAULT: "Std",
+    PATHAO: "Pathao",
+    STEADFAST: "Steadfast",
+    PRODUCT_OFFER: "Offer",
     MANUAL: "Manual",
-    FALLBACK: "Fallback",
+    FALLBACK: "Est.",
   };
-  return labels[normalized] || normalized || "Not set";
+  return labels[normalized] || "Courier";
 }
 
-function deliveryOfferLabel(type?: string | null) {
-  const normalized = String(type || "").toUpperCase();
-  const labels: Record<string, string> = {
-    DEFAULT: "No product offer",
-    FREE: "Free delivery offer",
-    FIXED: "Fixed delivery offer",
-  };
-  return labels[normalized] || normalized || "No product offer";
+function paymentMethodDisplay(method?: string | null) {
+  const m = String(method || "COD").trim().toUpperCase();
+  if (m === "CASH_ON_DELIVERY") return "COD";
+  return m;
+}
+
+function buildProgressBar(pct: number): string {
+  const clamped = Math.max(0, Math.min(100, pct));
+  const filled = Math.round(clamped / 10);
+  return E.barFull.repeat(filled) + E.barEmpty.repeat(10 - filled);
 }
 
 function formatCourierStatusText(status: string): string {
   switch (status) {
     case "timeout":
-      return "Unavailable (Timeout)";
+      return "Timeout";
     case "circuit_open":
-      return "Paused (Auth/Rate limit)";
+      return "Paused (Quota/Auth)";
     case "unconfigured":
       return "Not configured";
     case "invalid_phone":
-      return "Invalid BD phone";
+      return "Invalid phone";
     default:
       return "Unavailable";
   }
 }
 
+function pathaoRatingToScore(rating: string | null | undefined): number | null {
+  if (!rating) return null;
+  const r = rating.toLowerCase();
+  if (r.includes("excellent")) return 90;
+  if (r.includes("good")) return 75;
+  if (r.includes("moderate") || r.includes("average") || r.includes("new")) return 50;
+  if (r.includes("risky") || r.includes("bad") || r.includes("fraud")) return 10;
+  return 50;
+}
+
+function formatPathaoBadge(label: string | null | undefined, rating: string | null | undefined): string {
+  const r = (rating || label || "").toLowerCase();
+  const cleanLabel = (label || "Checked").replace(/\s+Customer$/i, "");
+  if (r.includes("excellent") || r.includes("good")) return `${E.star} ${escapeHtml(cleanLabel)}`;
+  if (r.includes("risky") || r.includes("bad") || r.includes("fraud")) return `${E.red} ${escapeHtml(cleanLabel)}`;
+  if (r.includes("moderate") || r.includes("average")) return `${E.yellow} ${escapeHtml(cleanLabel)}`;
+  return escapeHtml(cleanLabel);
+}
+
+function computeTrustSummary(details?: CustomerFraudRiskDetails | null): ComputedTrustSummary {
+  if (!details) {
+    return {
+      score: 50,
+      tier: "CAUTION",
+      isNewCustomer: true,
+      totalReports: 0,
+      bar: buildProgressBar(50),
+      dotsLabel: "Safety",
+      dots: E.green.repeat(3) + E.white.repeat(2),
+      badgeEmoji: E.yellow,
+      tierLabel: "UNVERIFIED",
+      verdictEmoji: E.warn,
+      verdictText: "Call kore address nishchit korun",
+    };
+  }
+
+  const sf = details.steadfast;
+  const p = details.pathao;
+  const s = details.storeHistory;
+  const sp = details.smartposbd;
+
+  // 1. Steadfast (60%)
+  let sfScore = 50;
+  let hasSfSignal = false;
+  if (sf.status === "ok") {
+    if (sf.deliveryRatio !== null) {
+      sfScore = sf.deliveryRatio;
+      hasSfSignal = true;
+    } else if (sf.totalParcels !== null && sf.totalParcels > 0 && sf.deliveredCount !== null) {
+      sfScore = Math.round((sf.deliveredCount / sf.totalParcels) * 100);
+      hasSfSignal = true;
+    }
+  }
+
+  // 2. Pathao (25%)
+  let pathaoScore = 50;
+  let hasPathaoSignal = false;
+  if (p.status === "ok") {
+    if (p.successRate !== null && (p.totalParcels ?? 0) > 0) {
+      pathaoScore = p.successRate;
+      hasPathaoSignal = true;
+    } else {
+      const mapped = pathaoRatingToScore(p.customerRating);
+      if (mapped !== null) {
+        pathaoScore = mapped;
+        hasPathaoSignal = !String(p.customerRating || "").toLowerCase().includes("new");
+      }
+    }
+  }
+
+  // 3. Minsah history (15%) ? cancel/return excluded ratio; new customer = 50
+  let minsahScore = 50;
+  const hasMinsahSignal = s.totalOrders > 0;
+  if (s.totalOrders > 0) {
+    const cleanOrders = Math.max(0, s.totalOrders - s.cancelledCount - s.returnedCount);
+    minsahScore = Math.round((cleanOrders / s.totalOrders) * 100);
+  }
+
+  // 4. Fraud reports penalty (-5 each, plus safety caps for multi-reported accounts)
+  const totalReports =
+    (sf.status === "ok" ? sf.totalReports : 0) +
+    (sp?.status === "ok" ? sp.unresolvedReports : 0);
+
+  let rawScore = Math.round(sfScore * 0.6 + pathaoScore * 0.25 + minsahScore * 0.15 - 5 * totalReports);
+  if (totalReports >= 2) rawScore = Math.min(rawScore, 45);
+  else if (totalReports === 1) rawScore = Math.min(rawScore, 75);
+
+  const score = Math.max(0, Math.min(100, rawScore));
+  const isNewCustomer = !hasSfSignal && !hasPathaoSignal && !hasMinsahSignal && totalReports === 0;
+
+  if (score >= 80) {
+    const greenDots = Math.max(1, Math.min(5, Math.round(score / 20)));
+    return {
+      score,
+      tier: "SAFE",
+      isNewCustomer: false,
+      totalReports,
+      bar: buildProgressBar(score),
+      dotsLabel: "Safety",
+      dots: E.green.repeat(greenDots) + E.white.repeat(5 - greenDots),
+      badgeEmoji: E.green,
+      tierLabel: "VERY SAFE",
+      verdictEmoji: E.check,
+      verdictText: "Confirm korte nirapod",
+    };
+  }
+
+  if (score >= 50) {
+    const greenDots = Math.max(1, Math.min(5, Math.round(score / 20)));
+    return {
+      score,
+      tier: "CAUTION",
+      isNewCustomer,
+      totalReports,
+      bar: buildProgressBar(score),
+      dotsLabel: "Safety",
+      dots: E.green.repeat(greenDots) + E.white.repeat(5 - greenDots),
+      badgeEmoji: E.yellow,
+      tierLabel: isNewCustomer ? "NEW CUSTOMER" : "CAUTION",
+      verdictEmoji: E.warn,
+      verdictText: isNewCustomer
+        ? "Notun customer - call kore address nishchit korun"
+        : "Call kore address nishchit korun",
+    };
+  }
+
+  const riskDots = Math.max(1, Math.min(5, Math.round((100 - score) / 20)));
+  return {
+    score,
+    tier: "DANGER",
+    isNewCustomer: false,
+    totalReports,
+    bar: buildProgressBar(score),
+    dotsLabel: "Risk",
+    dots: E.red.repeat(riskDots) + E.white.repeat(5 - riskDots),
+    badgeEmoji: E.red,
+    tierLabel: "DANGER",
+    verdictEmoji: E.stop,
+    verdictText: "Advance chaile bhalo, na hole hold korun",
+  };
+}
+
 export function formatCourierHistoryForTelegram(
   details?: CustomerFraudRiskDetails | null,
 ): string {
-  const bullet = "\u2022";
+  const trust = computeTrustSummary(details);
+  const sep = E.dashLine.repeat(18);
+
   if (!details) {
     return (
-      `<b>Courier &amp; Store History</b>\n` +
-      `${bullet} Steadfast: Unavailable\n` +
-      `${bullet} Pathao: Unavailable`
+      `<blockquote>${E.shield} <b>TRUST SCORE</b>\n` +
+      `${E.yellow} <b>Unverified</b>\n` +
+      `${sep}\n` +
+      `${E.truck} <b>Steadfast</b>  Unavailable\n` +
+      `${E.pathao} <b>Pathao</b>  Unavailable\n` +
+      `${sep}\n` +
+      `${E.warn} <b>Verdict:</b> Call kore address nishchit korun</blockquote>`
     );
   }
 
-  let sfLine = formatCourierStatusText(details.steadfast.status);
-  if (details.steadfast.status === "ok") {
-    const sf = details.steadfast;
-    const parts: string[] = [];
-    if (sf.deliveryRatio !== null) parts.push(`Success ${sf.deliveryRatio}%`);
-    if (sf.cancellationRatio !== null) parts.push(`Cancelled ${sf.cancellationRatio}%`);
-    if (sf.volumeRange) {
-      parts.push(`Volume ${escapeHtml(sf.volumeRange)}`);
-    } else if (sf.totalParcels !== null) {
-      parts.push(`Parcels ${sf.totalParcels}`);
-    }
-    if (sf.deliveredCount !== null && sf.cancelledCount !== null) {
-      parts.push(`(${sf.deliveredCount} ok / ${sf.cancelledCount} cancel)`);
-    }
-    if (parts.length === 0) {
-      parts.push("No parcel history");
-    }
-    parts.push(
-      sf.totalReports > 0
-        ? `Reports: <b>${sf.totalReports}</b>`
-        : "Reports: 0",
-    );
-    if (sf.fraudCategories.length > 0) {
-      parts.push(`Flags: ${escapeHtml(sf.fraudCategories.join(", "))}`);
-    }
-    sfLine = parts.join(" | ");
-  }
+  const lines: string[] = [
+    `${E.shield} <b>TRUST SCORE</b>${details.cached ? " <i>(cached)</i>" : ""}`,
+    `${trust.badgeEmoji} <b>${trust.score}</b> / 100 ${E.midDot} <b>${trust.tierLabel}</b>`,
+    `<code>${trust.bar}</code>`,
+    `${trust.dotsLabel}  ${trust.dots}`,
+    sep,
+  ];
 
-  let pathaoLine = formatCourierStatusText(details.pathao.status);
-  if (details.pathao.status === "ok") {
-    const p = details.pathao;
-    const parts: string[] = [];
-    if (p.totalParcels !== null && p.deliveredCount !== null) {
-      parts.push(`Total ${p.totalParcels}`);
-      parts.push(
-        `Delivered ${p.deliveredCount}${p.successRate !== null ? ` (${p.successRate}%)` : ""}`,
+  // Steadfast line
+  const sf = details.steadfast;
+  if (sf.status === "ok") {
+    if (sf.deliveryRatio !== null) {
+      lines.push(
+        `${E.truck} <b>Steadfast</b>  <code>${buildProgressBar(sf.deliveryRatio)}</code>  <b>${sf.deliveryRatio}%</b>`,
       );
-      parts.push(`Cancelled ${p.cancelledCount ?? 0}`);
+    } else {
+      lines.push(`${E.truck} <b>Steadfast</b>  No parcel history`);
     }
-    if (p.customerRatingLabel) {
-      parts.push(escapeHtml(p.customerRatingLabel));
+    const sfSub: string[] = [];
+    if (sf.cancellationRatio !== null) sfSub.push(`${sf.cancellationRatio}% cancel`);
+    if (sf.totalParcels !== null && sf.deliveredCount !== null && sf.cancelledCount !== null) {
+      sfSub.push(`${sf.deliveredCount} ok / ${sf.cancelledCount} cancel (${sf.totalParcels})`);
+    } else if (sf.volumeRange) {
+      sfSub.push(`${escapeHtml(sf.volumeRange)} orders`);
     }
-    pathaoLine = parts.length > 0 ? parts.join(" | ") : "No parcel history";
+    if (sfSub.length > 0) {
+      lines.push(`${E.corner} ${sfSub.join(` ${E.midDot} `)}`);
+    }
+  } else {
+    lines.push(`${E.truck} <b>Steadfast</b>  ${escapeHtml(formatCourierStatusText(sf.status))}`);
   }
 
-  const s = details.storeHistory;
-  const storeLine =
-    s.totalOrders === 0
-      ? "0 (First order)"
-      : `Total ${s.totalOrders} | Delivered ${s.deliveredCount} | Cancelled ${s.cancelledCount} | Returned ${s.returnedCount}${s.pendingCount > 0 ? ` | Active ${s.pendingCount}` : ""}`;
+  // Pathao line (exact count when available via Direct or SmartPOSBD, rating always shown)
+  const p = details.pathao;
+  if (p.status === "ok") {
+    const ratingBadge = formatPathaoBadge(p.customerRatingLabel, p.customerRating);
+    if (p.totalParcels !== null && p.deliveredCount !== null && p.successRate !== null) {
+      lines.push(
+        `${E.pathao} <b>Pathao</b>  <code>${buildProgressBar(p.successRate)}</code>  <b>${p.successRate}%</b>`,
+      );
+      lines.push(
+        `${E.corner} ${p.deliveredCount} ok / ${p.cancelledCount ?? 0} cancel (${p.totalParcels}) ${E.midDot} ${ratingBadge}`,
+      );
+    } else {
+      lines.push(`${E.pathao} <b>Pathao</b>  ${ratingBadge}`);
+    }
+  } else {
+    lines.push(`${E.pathao} <b>Pathao</b>  ${escapeHtml(formatCourierStatusText(p.status))}`);
+  }
 
-  return (
-    `<b>Courier &amp; Store History</b>${details.cached ? " <i>(cached)</i>" : ""}\n` +
-    `${bullet} <b>Steadfast:</b> ${sfLine}\n` +
-    `${bullet} <b>Pathao:</b> ${pathaoLine}\n` +
-    `${bullet} <b>Minsah Prev Orders:</b> ${storeLine}`
-  );
+  // Extra couriers from SmartPOSBD (only shown if API key is configured and customer has parcels there)
+  const sp = details.smartposbd;
+  if (sp?.status === "ok") {
+    const extras: string[] = [];
+    if (sp.couriers.redx && sp.couriers.redx.total > 0) {
+      extras.push(`RedX ${sp.couriers.redx.success}/${sp.couriers.redx.total}`);
+    }
+    if (sp.couriers.carrybee && sp.couriers.carrybee.total > 0) {
+      extras.push(`CarryBee ${sp.couriers.carrybee.success}/${sp.couriers.carrybee.total}`);
+    }
+    if (sp.couriers.paperfly && sp.couriers.paperfly.total > 0) {
+      extras.push(`Paperfly ${sp.couriers.paperfly.success}/${sp.couriers.paperfly.total}`);
+    }
+    if (extras.length > 0) {
+      lines.push(`${E.box} <b>Other</b>  ${escapeHtml(extras.join(` ${E.midDot} `))}`);
+    }
+    if (sp.totalParcels > 0) {
+      const totalRate = Math.round((sp.successParcels / sp.totalParcels) * 100);
+      lines.push(
+        `${E.corner} All 5 Couriers: <b>${sp.successParcels}/${sp.totalParcels}</b> (${totalRate}%)`,
+      );
+    }
+  }
+
+  // Minsah previous orders
+  const s = details.storeHistory;
+  if (s.totalOrders === 0) {
+    lines.push(`${E.store} <b>Minsah</b>  Notun customer`);
+  } else {
+    const mParts = [`${s.totalOrders} orders`];
+    if (s.deliveredCount > 0) mParts.push(`${s.deliveredCount} ok`);
+    if (s.cancelledCount > 0) mParts.push(`${s.cancelledCount} cancel`);
+    if (s.returnedCount > 0) mParts.push(`${s.returnedCount} return`);
+    if (s.pendingCount > 0 && s.deliveredCount === 0 && s.cancelledCount === 0 && s.returnedCount === 0) {
+      mParts.push(`${s.pendingCount} active`);
+    }
+    lines.push(`${E.store} <b>Minsah</b>  ${mParts.join(` ${E.midDot} `)}`);
+  }
+
+  // Reports line
+  const flagTags =
+    sf.status === "ok" && sf.fraudCategories.length > 0
+      ? ` ${E.midDot} ` + sf.fraudCategories.map((c) => `<code>${escapeHtml(c)}</code>`).join(" ")
+      : "";
+  if (trust.totalReports > 0) {
+    lines.push(`${E.flag} <b>Reports</b>  ${E.red} <b>${trust.totalReports}</b>${flagTags}`);
+  } else {
+    lines.push(`${E.flag} <b>Reports</b>  <b>0</b> ${E.sparkle}`);
+  }
+
+  lines.push(sep);
+  lines.push(`${trust.verdictEmoji} <b>Verdict:</b> ${trust.verdictText}`);
+
+  return `<blockquote>${lines.join("\n")}</blockquote>`;
+}
+
+function buildReceiptLine(label: string, value: string, width = 26): string {
+  const pad = Math.max(1, width - label.length - value.length);
+  return label + " ".repeat(pad) + value;
 }
 
 function buildBasicMessage(order: BasicOrderNotification) {
   return (
-    `<b>New Order</b>\n\n` +
-    `Order: <b>${escapeHtml(order.orderNumber)}</b>\n` +
-    `Total: BDT ${formatAmount(order.total)}\n` +
-    `Payment: ${escapeHtml(order.paymentMethod)}\n` +
+    `${E.bag} <b>MINSAH BEAUTY</b>\n` +
+    `Order: <code>#${escapeHtml(order.orderNumber)}</code>\n` +
+    `Total: <b>${formatTaka(order.total)}</b> (${escapeHtml(paymentMethodDisplay(order.paymentMethod))})\n` +
     `Items: ${order.itemsCount}`
   );
 }
 
+function compactVariant(raw?: string | null): string | null {
+  if (!raw) return null;
+  const cleaned = raw
+    .replace(/Size\/Volume:\s*/gi, "")
+    .replace(/Color\/Shade:\s*/gi, "")
+    .replace(/\s*\/\s*/g, ` ${E.midDot} `)
+    .trim();
+  return cleaned || null;
+}
+
 function buildDetailedMessage(order: DetailedOrderNotification) {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const timeStr = now.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  const addressLine =
-    [order.address.city, order.address.zone, order.address.area]
-      .filter(Boolean)
-      .map(escapeHtml)
-      .join(" > ") || "N/A";
-
-  const itemLines = order.items
-    .map((item) => {
-      const variantLine = item.variant
-        ? `\n   Variant: ${escapeHtml(item.variant)}`
-        : "";
-      return (
-        `- ${escapeHtml(item.name)}${variantLine}\n` +
-        `   Qty: ${item.quantity} x BDT ${formatAmount(item.unitPrice)} = BDT ${formatAmount(item.total)}`
-      );
-    })
-    .join("\n\n");
-
+  const { dateStr, timeStr } = formatBangladeshDateTime(new Date());
+  const trust = computeTrustSummary(order.courierVerification);
+  const payLabel = paymentMethodDisplay(order.paymentMethod);
   const displayPhone = normalizeBangladeshPhoneDisplay(order.customerPhone);
-  const courierSection = order.courierVerification !== undefined
-    ? `${formatCourierHistoryForTelegram(order.courierVerification)}\n\n`
+
+  // Header
+  const headerTop =
+    trust.tier === "DANGER"
+      ? `${E.siren} <b>HIGH RISK</b> ${E.vPipe} ${E.newBadge} <b>Pending Call</b>\n` +
+        `${E.tag} <code>#${escapeHtml(order.orderNumber)}</code> ${E.midDot} ${dateStr} ${E.midDot} ${timeStr}`
+      : `${E.bag} <b>MINSAH BEAUTY</b>\n` +
+        `${E.heavyLine.repeat(20)}\n` +
+        `${E.newBadge} <b>Pending Call</b> ${E.vPipe} ${E.tag} <code>#${escapeHtml(order.orderNumber)}</code>\n` +
+        `${E.clock} ${dateStr} ${E.midDot} ${timeStr}`;
+
+  // Payment Hero Box
+  const paymentHero = `<blockquote>${E.cash} <b>${escapeHtml(payLabel)} ${E.midDot} ${formatTaka(order.total)}</b></blockquote>`;
+
+  // Customer Box
+  const locationParts = [order.address.zone, order.address.city]
+    .map((p) => (p || "").trim())
+    .filter(Boolean);
+  const locationLine = locationParts.length > 0 ? escapeHtml(locationParts.join(", ")) : "N/A";
+  const streetLine = order.address.area?.trim()
+    ? `\n${E.corner} ${escapeHtml(order.address.area.trim())}`
     : "";
 
+  const customerBox =
+    `<blockquote>${E.user} <b>${escapeHtml(order.customerName)}</b>\n` +
+    `${E.phone} <code>${escapeHtml(displayPhone)}</code>\n` +
+    `${E.pin} ${locationLine}${streetLine}</blockquote>`;
+
+  // Trust Score Box
+  const trustBox =
+    order.courierVerification !== undefined
+      ? `\n${formatCourierHistoryForTelegram(order.courierVerification)}`
+      : "";
+
+  // Items Box (auto-expandable when 3+ items)
+  const itemLines = order.items.map((item, idx) => {
+    const variant = compactVariant(item.variant);
+    const variantPart = variant ? `<code>${escapeHtml(variant)}</code> ` : "";
+    return (
+      `<b>${idx + 1}</b> ${E.tri} ${escapeHtml(item.name)}\n` +
+      `${E.corner} ${variantPart}${E.times} ${item.quantity} = <b>${formatTaka(item.total)}</b>`
+    );
+  });
+  const itemsTag = order.items.length >= 3 ? "<blockquote expandable>" : "<blockquote>";
+  const itemsBox =
+    `${itemsTag}${E.box} <b>ITEMS (${order.items.length})</b>\n` +
+    `${itemLines.join("\n") || "N/A"}</blockquote>`;
+
+  // Monospace Receipt Billing
+  const deliveryLabel = `Delivery (${deliverySourceShortLabel(order.deliveryPricingSource)})`;
+  const deliveryVal = order.shippingCost <= 0 ? "FREE" : formatTaka(order.shippingCost);
+  const receiptRows: string[] = [
+    buildReceiptLine("Subtotal", formatTaka(order.subtotal)),
+    buildReceiptLine(deliveryLabel, deliveryVal),
+  ];
+
+  if (
+    typeof order.courierDeliveryCharge === "number" &&
+    Math.round(order.courierDeliveryCharge) !== Math.round(order.shippingCost)
+  ) {
+    receiptRows.push(
+      buildReceiptLine("Courier Actual", formatTaka(order.courierDeliveryCharge)),
+    );
+  }
+  if ((order.deliveryDiscountAmount || 0) > 0) {
+    receiptRows.push(
+      buildReceiptLine("Subsidy", `-${formatTaka(order.deliveryDiscountAmount || 0)}`),
+    );
+  }
+
+  receiptRows.push(E.thinLine.repeat(26));
+  receiptRows.push(buildReceiptLine(`PAYABLE (${payLabel})`, formatTaka(order.total)));
+
+  const receiptBlock = `<pre>${escapeHtml(receiptRows.join("\n"))}</pre>`;
+
+  const offerNote = order.deliveryOfferBadgeText
+    ? `\n<i>Offer: ${escapeHtml(order.deliveryOfferBadgeText)}</i>`
+    : "";
+
+  const footer =
+    trust.tier === "DANGER"
+      ? `${E.bolt} <i>Advance na dile confirm korben na</i>`
+      : `${E.bolt} <i>Call korun ${E.arrow} Phone Confirmed chapun</i>`;
+
   return (
-    `<b>New Order - Minsah Beauty</b>\n\n` +
-    `Order: <b>#${escapeHtml(order.orderNumber)}</b>\n` +
-    `Time: ${dateStr}, ${timeStr}\n\n` +
-    `<b>Customer</b>\n` +
-    `Name: ${escapeHtml(order.customerName)}\n` +
-    `Phone: ${escapeHtml(displayPhone)}\n` +
-    `Address: ${addressLine}\n\n` +
-    courierSection +
-    `<b>Items</b>\n` +
-    `${itemLines || "N/A"}\n\n` +
-    `Subtotal: BDT ${formatAmount(order.subtotal)}\n` +
-    `Customer delivery paid: ${amountOrFree(order.shippingCost)}\n` +
-    (typeof order.courierDeliveryCharge === "number"
-      ? `Courier actual charge: BDT ${formatAmount(order.courierDeliveryCharge)}\n`
-      : "") +
-    ((order.deliveryDiscountAmount || 0) > 0
-      ? `Delivery subsidy: BDT ${formatAmount(order.deliveryDiscountAmount || 0)}\n`
-      : "") +
-    `Pricing source: ${escapeHtml(deliverySourceLabel(order.deliveryPricingSource))}\n` +
-    `Offer type: ${escapeHtml(deliveryOfferLabel(order.deliveryOfferType))}\n` +
-    (order.deliveryOfferBadgeText
-      ? `Offer badge: ${escapeHtml(order.deliveryOfferBadgeText)}\n`
-      : "") +
-    `<b>Total: BDT ${formatAmount(order.total)}</b>\n\n` +
-    `Payment: ${escapeHtml(order.paymentMethod)}\n\n` +
-    `Call the customer first. After phone confirmation, tap <b>Phone Confirmed</b>.\n` +
-    `Courier/Pathao sending is a separate next step.`
+    `${headerTop}\n` +
+    `${paymentHero}\n` +
+    `${customerBox}` +
+    `${trustBox}\n` +
+    `${itemsBox}\n` +
+    `${receiptBlock}${offerNote}\n` +
+    `${footer}`
   );
 }
 
@@ -315,6 +646,8 @@ async function sendTelegramMessage(body: Record<string, unknown>) {
 
 async function buildOrderActionButtons(orderId: string, customerPhone?: string | null) {
   const whatsAppUrl = buildCustomerWhatsAppUrl(customerPhone);
+  const localPhone = normalizeLocalBangladeshPhone(customerPhone);
+
   const [phoneConfirm, phoneOff, cancel] = await Promise.all([
     createTelegramActionToken({
       action: TELEGRAM_ORDER_ACTIONS.PHONE_CONFIRM,
@@ -330,38 +663,80 @@ async function buildOrderActionButtons(orderId: string, customerPhone?: string |
     }),
   ]);
 
+  const row2Styled: Array<Record<string, unknown>> = [];
+  if (whatsAppUrl) {
+    row2Styled.push({
+      text: `${E.chat} WhatsApp`,
+      url: whatsAppUrl,
+      style: "primary",
+    });
+  }
+  if (localPhone) {
+    row2Styled.push({
+      text: `${E.copy} Copy Phone`,
+      copy_text: { text: localPhone },
+    });
+  }
+
+  const styledMarkup = {
+    inline_keyboard: [
+      [
+        {
+          text: `${E.check} Phone Confirmed`,
+          callback_data: phoneConfirm.callbackData,
+          style: "success",
+        },
+      ],
+      ...(row2Styled.length > 0 ? [row2Styled] : []),
+      [
+        {
+          text: `${E.phoneOff} Phone Off`,
+          callback_data: phoneOff.callbackData,
+        },
+        {
+          text: `${E.cancel} Cancel`,
+          callback_data: cancel.callbackData,
+          style: "danger",
+        },
+      ],
+    ],
+  };
+
+  const standardMarkup = {
+    inline_keyboard: [
+      [
+        {
+          text: `${E.check} Phone Confirmed`,
+          callback_data: phoneConfirm.callbackData,
+        },
+      ],
+      ...(whatsAppUrl
+        ? [
+            [
+              {
+                text: `${E.chat} WhatsApp`,
+                url: whatsAppUrl,
+              },
+            ],
+          ]
+        : []),
+      [
+        {
+          text: `${E.phoneOff} Phone Off`,
+          callback_data: phoneOff.callbackData,
+        },
+        {
+          text: `${E.cancel} Cancel`,
+          callback_data: cancel.callbackData,
+        },
+      ],
+    ],
+  };
+
   return {
     tokenIds: [phoneConfirm.tokenId, phoneOff.tokenId, cancel.tokenId],
-    replyMarkup: {
-      inline_keyboard: [
-        ...(whatsAppUrl
-          ? [
-              [
-                {
-                  text: "💬 WhatsApp Customer",
-                  url: whatsAppUrl,
-                },
-              ],
-            ]
-          : []),
-        [
-          {
-            text: "📞 Phone Confirmed",
-            callback_data: phoneConfirm.callbackData,
-          },
-        ],
-        [
-          {
-            text: "📵 Phone Off",
-            callback_data: phoneOff.callbackData,
-          },
-          {
-            text: "❌ Cancel",
-            callback_data: cancel.callbackData,
-          },
-        ],
-      ],
-    },
+    styledMarkup,
+    standardMarkup,
   };
 }
 
@@ -476,7 +851,6 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
     return { ok: false, error: "TELEGRAM_NOT_CONFIGURED" };
   }
 
-  // Ensure webhook is registered once per server boot in background
   ensureTelegramWebhookRegistered().catch((err) => {
     console.warn("[TelegramNotify] Auto-webhook registration error:", err);
   });
@@ -486,27 +860,21 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
     : buildBasicMessage(order);
 
   let actionTokenIds: string[] = [];
-  let replyMarkup: Record<string, unknown> | undefined = undefined;
+  let styledMarkup: Record<string, unknown> | undefined = undefined;
+  let standardMarkup: Record<string, unknown> | undefined = undefined;
 
   if (isDetailedOrder(order)) {
     try {
       const buttons = await buildOrderActionButtons(order.orderId, order.customerPhone);
-      replyMarkup = buttons.replyMarkup;
+      styledMarkup = buttons.styledMarkup;
+      standardMarkup = buttons.standardMarkup;
       actionTokenIds = buttons.tokenIds;
     } catch (btnErr) {
       console.error("[TelegramNotify] Failed to build action buttons:", btnErr);
     }
   }
 
-  try {
-    const body: Record<string, unknown> = {
-      chat_id: config.chatId,
-      text: baseText,
-      parse_mode: "HTML",
-      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
-    };
-
-    const response = await sendTelegramMessage(body);
+  const attachTokensIfSent = async (response: unknown) => {
     const sentContext = extractTelegramSentMessageContext(response);
     if (sentContext && actionTokenIds.length) {
       await attachTelegramActionTokenContext({
@@ -515,26 +883,51 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
         messageId: sentContext.messageId,
       }).catch((err) => console.error("[TelegramNotify] attach context failed:", err));
     }
-    return { ok: true, messageId: sentContext?.messageId };
+    return sentContext?.messageId;
+  };
+
+  // Tier 1: Styled colored buttons + copy_text
+  try {
+    const response = await sendTelegramMessage({
+      chat_id: config.chatId,
+      text: baseText,
+      parse_mode: "HTML",
+      ...(styledMarkup ? { reply_markup: styledMarkup } : {}),
+    });
+    const messageId = await attachTokensIfSent(response);
+    return { ok: true, messageId };
   } catch (err) {
-    console.error("[TelegramNotify] Primary message failed, attempting plain fallback without buttons:", err);
-    if (replyMarkup) {
-      try {
-        const fallbackBody: Record<string, unknown> = {
-          chat_id: config.chatId,
-          text: baseText,
-          parse_mode: "HTML",
-        };
-        const response = await sendTelegramMessage(fallbackBody);
-        const sentContext = extractTelegramSentMessageContext(response);
-        return { ok: true, messageId: sentContext?.messageId };
-      } catch (fallbackErr) {
-        const errorMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
-        console.error("[TelegramNotify] Fallback plain message also failed:", errorMsg);
-        return { ok: false, error: errorMsg };
-      }
+    console.warn("[TelegramNotify] Styled button send failed, retrying with standard buttons:", err);
+  }
+
+  // Tier 2: Standard inline buttons (safe for any relay/older Bot API)
+  if (standardMarkup) {
+    try {
+      const response = await sendTelegramMessage({
+        chat_id: config.chatId,
+        text: baseText,
+        parse_mode: "HTML",
+        reply_markup: standardMarkup,
+      });
+      const messageId = await attachTokensIfSent(response);
+      return { ok: true, messageId };
+    } catch (stdErr) {
+      console.error("[TelegramNotify] Standard buttons failed, retrying plain HTML:", stdErr);
     }
-    const errorMsg = err instanceof Error ? err.message : String(err);
+  }
+
+  // Tier 3: Plain HTML without buttons
+  try {
+    const response = await sendTelegramMessage({
+      chat_id: config.chatId,
+      text: baseText,
+      parse_mode: "HTML",
+    });
+    const sentContext = extractTelegramSentMessageContext(response);
+    return { ok: true, messageId: sentContext?.messageId };
+  } catch (fallbackErr) {
+    const errorMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+    console.error("[TelegramNotify] Plain HTML fallback also failed:", errorMsg);
     return { ok: false, error: errorMsg };
   }
 }

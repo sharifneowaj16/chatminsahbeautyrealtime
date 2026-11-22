@@ -183,6 +183,7 @@ export default function OrderFraudAndReturnPanel({
 
   const sf = fraudDetails?.steadfast ?? null;
   const pathao = fraudDetails?.pathao ?? null;
+  const sp = fraudDetails?.smartposbd ?? null;
   const storeHist = fraudDetails?.storeHistory ?? (
     typeof fraudDetails?.totalOrders === "number"
       ? {
@@ -315,6 +316,29 @@ export default function OrderFraudAndReturnPanel({
                 </span>
               )}
             </div>
+
+            {/* SmartPOSBD 5-Courier Summary Row (optional enricher) */}
+            {sp?.status === "ok" && (
+              <div className="p-2.5 rounded-md bg-[#081320] border border-[#1f2f45] space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold text-slate-200">
+                    All 5 Couriers Summary
+                  </span>
+                  <span className="text-[11px] font-mono text-indigo-300">
+                    {sp.successParcels}/{sp.totalParcels} ok
+                    {sp.totalParcels > 0 ? ` (${Math.round((sp.successParcels / sp.totalParcels) * 100)}%)` : ""}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-mono text-slate-400">
+                  {sp.couriers?.redx && <span>RedX: {sp.couriers.redx.success}/{sp.couriers.redx.total}</span>}
+                  {sp.couriers?.carrybee && <span>CarryBee: {sp.couriers.carrybee.success}/{sp.couriers.carrybee.total}</span>}
+                  {sp.couriers?.paperfly && <span>Paperfly: {sp.couriers.paperfly.success}/{sp.couriers.paperfly.total}</span>}
+                  {sp.unresolvedReports > 0 && (
+                    <span className="text-rose-400 font-bold">Community Reports: {sp.unresolvedReports}</span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Minsah Store Previous Orders Row */}
             <div className="p-2.5 rounded-md bg-[#081320] border border-[#1f2f45] flex items-center justify-between gap-2">

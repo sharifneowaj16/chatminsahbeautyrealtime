@@ -248,6 +248,7 @@ export default function BuyNowModal({
   const [cities, setCities] = useState<DeliveryOption[]>([]);
   const [zones, setZones] = useState<DeliveryOption[]>([]);
   const [areas, setAreas] = useState<DeliveryAreaOption[]>([]);
+  const [areasLoadedForZoneId, setAreasLoadedForZoneId] = useState<number | null>(null);
   const [locationLoading, setLocationLoading] = useState<
     "cities" | "zones" | "areas" | null
   >(null);
@@ -511,18 +512,21 @@ export default function BuyNowModal({
   useEffect(() => {
     if (!isOpen || !shippingForm.pathao_zone_id) {
       setAreas([]);
+      setAreasLoadedForZoneId(null);
       return;
     }
 
+    const currentZoneId = shippingForm.pathao_zone_id;
     let active = true;
     const controller = new AbortController();
 
     const loadAreas = async () => {
       setLocationLoading("areas");
+      setAreasLoadedForZoneId(null);
       setLocationError(null);
       try {
         const response = await fetch(
-          `/api/shipping/pathao/areas?zone_id=${shippingForm.pathao_zone_id}`,
+          `/api/shipping/pathao/areas?zone_id=${currentZoneId}`,
           {
             cache: "no-store",
             signal: controller.signal,
@@ -530,7 +534,18 @@ export default function BuyNowModal({
         );
         if (!response.ok) throw new Error("Could not load areas");
         const data = await response.json();
-        if (active) setAreas(normalizeDeliveryAreas(data));
+        if (active) {
+          const nextAreas = normalizeDeliveryAreas(data);
+          setAreas(nextAreas);
+          setAreasLoadedForZoneId(currentZoneId);
+          if (nextAreas.length === 0) {
+            setShippingForm((current) =>
+              current.pathao_zone_id === currentZoneId
+                ? { ...current, area: "", pathao_area_id: null }
+                : current,
+            );
+          }
+        }
       } catch {
         if (active && !controller.signal.aborted) {
           setAreas([]);
@@ -622,13 +637,25 @@ export default function BuyNowModal({
   const hasSelectedCity = Boolean(
     shippingForm.pathao_city_id || shippingForm.city.trim(),
   );
+  const hasLoadedAreasForZone = Boolean(
+    shippingForm.pathao_zone_id &&
+    areasLoadedForZoneId === shippingForm.pathao_zone_id &&
+    locationLoading !== "areas",
+  );
+  const isZoneWithoutAreas = Boolean(hasLoadedAreasForZone && areas.length === 0);
+  const selectedBuyNowArea = useMemo(
+    () => areas.find((a) => a.id === shippingForm.pathao_area_id) ?? null,
+    [areas, shippingForm.pathao_area_id],
+  );
   const hasSelectedLocation = Boolean(
     shippingForm.city.trim() &&
     shippingForm.zone.trim() &&
-    shippingForm.area.trim() &&
     shippingForm.pathao_city_id &&
     shippingForm.pathao_zone_id &&
-    shippingForm.pathao_area_id,
+    (isZoneWithoutAreas ||
+      (shippingForm.area.trim() &&
+        shippingForm.pathao_area_id &&
+        (selectedBuyNowArea ? selectedBuyNowArea.homeDeliveryAvailable !== false : true))),
   );
   const hasProductFreeDelivery = deliveryQuote?.deliveryOfferType === "FREE";
   const buyNowFreeDeliveryUnlocked =
@@ -1375,18 +1402,24 @@ export default function BuyNowModal({
                 </Select>
                 <Select
                   id="buy-now-area"
-                  label="Area"
+                  label={isZoneWithoutAreas ? "Area (Not required)" : "Area"}
                   value={shippingForm.pathao_area_id ?? ""}
                   onChange={(event) => handleAreaChange(event.target.value)}
-                  disabled={!shippingForm.pathao_zone_id || locationLoading === "areas"}
+                  disabled={!shippingForm.pathao_zone_id || locationLoading === "areas" || isZoneWithoutAreas}
                   containerClassName="sm:col-span-2"
-                  required
+                  required={!isZoneWithoutAreas}
                 >
                   <option value="">
-                    {locationLoading === "areas" ? "Loading areas..." : "Select area"}
+                    {locationLoading === "areas"
+                      ? "Loading areas..."
+                      : isZoneWithoutAreas
+                        ? "No sub-area required for this zone"
+                        : "Select area"}
                   </option>
                   {areas.map((area) => (
-                    <option key={area.id} value={area.id}>{area.name}</option>
+                    <option key={area.id} value={area.id} disabled={area.homeDeliveryAvailable === false}>
+                      {area.name}{area.homeDeliveryAvailable === false ? " (Unavailable)" : ""}
+                    </option>
                   ))}
                 </Select>
                 <Textarea

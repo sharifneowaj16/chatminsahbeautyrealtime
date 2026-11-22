@@ -110,6 +110,7 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
   const [cities, setCities] = useState<DeliveryOption[]>([]);
   const [zones, setZones] = useState<DeliveryOption[]>([]);
   const [areas, setAreas] = useState<DeliveryAreaOption[]>([]);
+  const [areasLoadedForZoneId, setAreasLoadedForZoneId] = useState<number | null>(null);
   const [locationLoading, setLocationLoading] = useState<'cities' | 'zones' | 'areas' | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
@@ -198,14 +199,25 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
      Load areas on zone change
   ───────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    if (!form.pathao_zone_id) { setAreas([]); return; }
+    if (!form.pathao_zone_id) { setAreas([]); setAreasLoadedForZoneId(null); return; }
+    const currentZoneId = form.pathao_zone_id;
     let cancelled = false;
     const controller = new AbortController();
     setLocationLoading('areas');
+    setAreasLoadedForZoneId(null);
     setLocationError(null);
-    fetch(`/api/shipping/pathao/areas?zone_id=${form.pathao_zone_id}`, { cache: 'no-store', signal: controller.signal })
+    fetch(`/api/shipping/pathao/areas?zone_id=${currentZoneId}`, { cache: 'no-store', signal: controller.signal })
       .then(r => r.ok ? r.json() : Promise.reject('fail'))
-      .then(data => { if (!cancelled) setAreas(normalizeAreas(data)); })
+      .then(data => {
+        if (!cancelled) {
+          const nextAreas = normalizeAreas(data);
+          setAreas(nextAreas);
+          setAreasLoadedForZoneId(currentZoneId);
+          if (nextAreas.length === 0) {
+            setForm(f => f.pathao_zone_id === currentZoneId ? { ...f, area: '', pathao_area_id: null } : f);
+          }
+        }
+      })
       .catch(() => { if (!cancelled && !controller.signal.aborted) setLocationError('Could not load areas. Please retry.'); })
       .finally(() => { if (!cancelled) setLocationLoading(null); });
     return () => { cancelled = true; controller.abort(); };
@@ -259,6 +271,7 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
      Validation
   ───────────────────────────────────────────────────────────────────────── */
   const selectedArea = useMemo(() => areas.find(a => a.id === form.pathao_area_id) ?? null, [areas, form.pathao_area_id]);
+  const isZoneWithoutAreas = Boolean(form.pathao_zone_id && areasLoadedForZoneId === form.pathao_zone_id && locationLoading !== 'areas' && areas.length === 0);
 
   const fieldErrors = useMemo(() => {
     const e: Partial<Record<FieldKey, string>> = {};
@@ -266,11 +279,13 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
     if (!isValidBdPhone(form.phoneNumber)) e.phoneNumber = 'Enter a valid BD number (01XXXXXXXXX).';
     if (!form.pathao_city_id) e.city = 'Please select a city.';
     if (!form.pathao_zone_id) e.zone = 'Please select a zone.';
-    if (!form.pathao_area_id) e.area = 'Please select an area.';
-    else if (selectedArea && !selectedArea.homeDeliveryAvailable) e.area = 'Home delivery is unavailable in this area.';
+    if (!isZoneWithoutAreas) {
+      if (!form.pathao_area_id) e.area = 'Please select an area.';
+      else if (selectedArea && !selectedArea.homeDeliveryAvailable) e.area = 'Home delivery is unavailable in this area.';
+    }
     if (!form.streetAddress.trim()) e.streetAddress = 'Please enter street address.';
     return e;
-  }, [form, selectedArea]);
+  }, [form, selectedArea, isZoneWithoutAreas]);
 
   const visibleErrors = useMemo(() => {
     const v: typeof fieldErrors = {};
@@ -380,7 +395,7 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
           dropdownRef={dropdownRef}
           cities={cities} zones={zones} areas={areas}
           filteredCities={filteredCities} filteredZones={filteredZones} filteredAreas={filteredAreas}
-          locationLoading={locationLoading} locationError={locationError}
+          locationLoading={locationLoading} locationError={locationError} isZoneWithoutAreas={isZoneWithoutAreas}
           handleCityChange={handleCityChange} handleZoneChange={handleZoneChange} handleAreaChange={handleAreaChange}
           fieldBorder={fieldBorder} labelClass={labelClass}
           handleSave={handleSave} isFormValid={isFormValid} saveSuccess={saveSuccess}
@@ -416,7 +431,7 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
             dropdownRef={dropdownRef}
             cities={cities} zones={zones} areas={areas}
             filteredCities={filteredCities} filteredZones={filteredZones} filteredAreas={filteredAreas}
-            locationLoading={locationLoading} locationError={locationError}
+            locationLoading={locationLoading} locationError={locationError} isZoneWithoutAreas={isZoneWithoutAreas}
             handleCityChange={handleCityChange} handleZoneChange={handleZoneChange} handleAreaChange={handleAreaChange}
             fieldBorder={fieldBorder} labelClass={labelClass}
             handleSave={handleSave} isFormValid={isFormValid} saveSuccess={saveSuccess}
@@ -453,6 +468,7 @@ interface FlyoutContentProps {
   filteredAreas: DeliveryAreaOption[];
   locationLoading: 'cities' | 'zones' | 'areas' | null;
   locationError: string | null;
+  isZoneWithoutAreas: boolean;
   handleCityChange: (id: string) => void;
   handleZoneChange: (id: string) => void;
   handleAreaChange: (id: string) => void;
@@ -470,7 +486,7 @@ function FlyoutContent({
   openDropdown, setOpenDropdown, searchQuery, setSearchQuery,
   dropdownRef, cities, zones, areas,
   filteredCities, filteredZones, filteredAreas,
-  locationLoading, locationError,
+  locationLoading, locationError, isZoneWithoutAreas,
   handleCityChange, handleZoneChange, handleAreaChange,
   fieldBorder, labelClass,
   handleSave, isFormValid, saveSuccess, onClose,
@@ -635,9 +651,9 @@ function FlyoutContent({
           {/* Area */}
           <div className="relative col-span-1">
             <div
-              onClick={() => { if (!form.pathao_zone_id || locationLoading === 'areas') return; setOpenDropdown(openDropdown === 'area' ? null : 'area'); setSearchQuery(''); }}
+              onClick={() => { if (!form.pathao_zone_id || locationLoading === 'areas' || isZoneWithoutAreas) return; setOpenDropdown(openDropdown === 'area' ? null : 'area'); setSearchQuery(''); }}
               className={`relative flex items-center justify-between rounded-2xl border px-3 py-3.5 transition-all duration-200 ${
-                !form.pathao_zone_id
+                !form.pathao_zone_id || isZoneWithoutAreas
                   ? 'cursor-not-allowed bg-[#F4F0EC] opacity-60 border-[#E2D9CF]'
                   : `cursor-pointer bg-[#FAF6F2] ${fieldBorder('area', openDropdown === 'area')}`
               }`}
