@@ -564,8 +564,41 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
       ? `\n${formatCourierHistoryForTelegram(order.courierVerification)}`
       : "";
 
-  // Items Box (auto-expandable when 2+ items, with safe Telegram 4096-char guard)
-  const formatItemsBlock = (maxVisible: number) => {
+  // Combined Items & Subtotal/Billing Box (always minimized via expandable blockquote;
+  // uses <code> lines because Telegram HTML forbids <pre> inside <blockquote>)
+  const deliveryShort = deliverySourceShortLabel(order.deliveryPricingSource);
+  const deliveryLabel = `Delivery (${deliveryShort})`;
+  const deliveryVal = order.shippingCost <= 0 ? "FREE" : formatTaka(order.shippingCost);
+  const sep = E.dashLine.repeat(18);
+
+  const receiptRows: string[] = [
+    buildReceiptLine("Subtotal", formatTaka(order.subtotal), 24),
+    buildReceiptLine(deliveryLabel, deliveryVal, 24),
+  ];
+
+  if (
+    typeof order.courierDeliveryCharge === "number" &&
+    Math.round(order.courierDeliveryCharge) !== Math.round(order.shippingCost)
+  ) {
+    receiptRows.push(
+      buildReceiptLine("Courier Actual", formatTaka(order.courierDeliveryCharge), 24),
+    );
+  }
+  if ((order.deliveryDiscountAmount || 0) > 0) {
+    receiptRows.push(
+      buildReceiptLine("Subsidy", `-${formatTaka(order.deliveryDiscountAmount || 0)}`, 24),
+    );
+  }
+
+  receiptRows.push(E.thinLine.repeat(24));
+  receiptRows.push(buildReceiptLine(`PAYABLE (${payLabel})`, formatTaka(order.total), 24));
+
+  const receiptLinesHtml = receiptRows.map((row) => `<code>${escapeHtml(row)}</code>`).join("\n");
+  const offerLineHtml = order.deliveryOfferBadgeText
+    ? `\n<i>Offer: ${escapeHtml(order.deliveryOfferBadgeText)}</i>`
+    : "";
+
+  const formatOrderAndBillingBox = (maxVisible: number) => {
     const visibleItems = order.items.slice(0, maxVisible);
     const hiddenCount = order.items.length - visibleItems.length;
     const itemLines = visibleItems.map((item, idx) => {
@@ -581,64 +614,39 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
         `<i>... +${hiddenCount} more item${hiddenCount > 1 ? "s" : ""} (see Admin Panel)</i>`,
       );
     }
-    const itemsTag = order.items.length >= 2 ? "<blockquote expandable>" : "<blockquote>";
+
+    const headerSummary =
+      `${E.box} <b>ITEMS (${order.items.length}) &amp; BILLING</b>\n` +
+      `Subtotal <b>${formatTaka(order.subtotal)}</b> ${E.midDot} Del <b>${deliveryVal}</b> ${E.midDot} <b>${formatTaka(order.total)}</b>\n` +
+      `${sep}`;
+
     return (
-      `${itemsTag}${E.box} <b>ITEMS (${order.items.length})</b>\n` +
-      `${itemLines.join("\n") || "N/A"}</blockquote>`
+      `<blockquote expandable>${headerSummary}\n` +
+      `${itemLines.join("\n") || "N/A"}\n` +
+      `${sep}\n` +
+      `${receiptLinesHtml}${offerLineHtml}</blockquote>`
     );
   };
-
-  // Monospace Receipt Billing
-  const deliveryLabel = `Delivery (${deliverySourceShortLabel(order.deliveryPricingSource)})`;
-  const deliveryVal = order.shippingCost <= 0 ? "FREE" : formatTaka(order.shippingCost);
-  const receiptRows: string[] = [
-    buildReceiptLine("Subtotal", formatTaka(order.subtotal)),
-    buildReceiptLine(deliveryLabel, deliveryVal),
-  ];
-
-  if (
-    typeof order.courierDeliveryCharge === "number" &&
-    Math.round(order.courierDeliveryCharge) !== Math.round(order.shippingCost)
-  ) {
-    receiptRows.push(
-      buildReceiptLine("Courier Actual", formatTaka(order.courierDeliveryCharge)),
-    );
-  }
-  if ((order.deliveryDiscountAmount || 0) > 0) {
-    receiptRows.push(
-      buildReceiptLine("Subsidy", `-${formatTaka(order.deliveryDiscountAmount || 0)}`),
-    );
-  }
-
-  receiptRows.push(E.thinLine.repeat(26));
-  receiptRows.push(buildReceiptLine(`PAYABLE (${payLabel})`, formatTaka(order.total)));
-
-  const receiptBlock = `<pre>${escapeHtml(receiptRows.join("\n"))}</pre>`;
-
-  const offerNote = order.deliveryOfferBadgeText
-    ? `\n<i>Offer: ${escapeHtml(order.deliveryOfferBadgeText)}</i>`
-    : "";
 
   const footer =
     trust.tier === "DANGER"
       ? `${E.bolt} <i>Advance na dile confirm korben na</i>`
       : `${E.bolt} <i>Call korun ${E.arrow} Phone Confirmed chapun</i>`;
 
-  const compose = (itemsBlock: string) =>
+  const compose = (orderBillingBox: string) =>
     `${headerTop}\n` +
     `${paymentHero}\n` +
     `${customerBox}` +
     `${trustBox}\n` +
-    `${itemsBlock}\n` +
-    `${receiptBlock}${offerNote}\n` +
+    `${orderBillingBox}\n` +
     `${footer}`;
 
-  let message = compose(formatItemsBlock(15));
+  let message = compose(formatOrderAndBillingBox(15));
   if (message.length > 3950) {
-    message = compose(formatItemsBlock(5));
+    message = compose(formatOrderAndBillingBox(5));
   }
   if (message.length > 3950) {
-    message = compose(formatItemsBlock(2));
+    message = compose(formatOrderAndBillingBox(2));
   }
   return message;
 }
