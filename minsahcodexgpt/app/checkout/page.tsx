@@ -30,7 +30,6 @@ import {
 import { formatPrice } from "@/utils/currency";
 import { Button } from "@/components/ui/Button";
 import { OfferSlot } from "@/components/offer/OfferSlot";
-import dynamic from "next/dynamic";
 import {
   trackAddPaymentInfo,
   trackAddShippingInfo,
@@ -42,11 +41,6 @@ import {
   type PriceChangeItem,
   type PriceRevisionQuote,
 } from "@/components/checkout/PriceRevisionConsentModal";
-
-const SocialLoginModal = dynamic(
-  () => import("@/app/(storefront)/products/[id]/components/SocialLoginModal"),
-  { ssr: false, loading: () => null },
-);
 
 type DeliveryOption = {
   id: number;
@@ -293,7 +287,6 @@ function CheckoutContent() {
   >("address");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isRedirectingAfterOrder, setIsRedirectingAfterOrder] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [priceRevisionQuote, setPriceRevisionQuote] = useState<PriceRevisionQuote | null>(null);
   const [priceQuoteToken, setPriceQuoteToken] = useState<string | null>(null);
   const [priceChanges, setPriceChanges] = useState<PriceChangeItem[]>([]);
@@ -337,7 +330,6 @@ function CheckoutContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const pendingOrderRef = useRef(false);
   const submittingOrderRef = useRef(false);
   const checkoutIdempotencyKeyRef = useRef<string | null>(null);
   const initiateCheckoutTrackedRef = useRef(false);
@@ -423,7 +415,6 @@ function CheckoutContent() {
     shippingForm.city.trim() &&
     shippingForm.zone.trim() &&
     (isZoneWithoutAreas || shippingForm.area.trim()) &&
-    shippingForm.streetAddress.trim() &&
     hasDeliveryLocation,
   );
 
@@ -524,10 +515,6 @@ function CheckoutContent() {
       }
     }
 
-    if (!shippingForm.streetAddress.trim()) {
-      errors.streetAddress = "Please enter your house, road, or street address.";
-    }
-
     return errors;
   }, [areas.length, isAreaListPending, isZoneWithoutAreas, normalizedShippingPhone, selectedArea, shippingForm]);
 
@@ -574,7 +561,7 @@ function CheckoutContent() {
     items.length === 0 ||
     !selectedPaymentMethod ||
     finalTotal <= 0 ||
-    (Boolean(user) && deliveryState === "loading" && !checkoutFreeDeliveryUnlocked);
+    (deliveryState === "loading" && !checkoutFreeDeliveryUnlocked);
 
   const orderButtonLabel = useMemo(() => {
     if (isPlacingOrder) {
@@ -582,11 +569,10 @@ function CheckoutContent() {
         ? "Placing order..."
         : `Preparing ${selectedPaymentMethod?.name || "payment"}...`;
     }
-    if (!user) return "Login to Place Order";
     if (checkoutBlockReason) return "Complete checkout details";
     if (selectedPaymentMethod?.type === "cod") return "Confirm Order";
     return `Pay with ${selectedPaymentMethod?.name || "Payment"}`;
-  }, [checkoutBlockReason, isPlacingOrder, selectedPaymentMethod, user]);
+  }, [checkoutBlockReason, isPlacingOrder, selectedPaymentMethod]);
 
   const markFieldTouched = (field: CheckoutFieldKey) => {
     setTouchedFields((current) => ({ ...current, [field]: true }));
@@ -1121,21 +1107,7 @@ function CheckoutContent() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!user) {
-      pendingOrderRef.current = true;
-      setShowLoginModal(true);
-      return;
-    }
     await submitOrder();
-  };
-
-  const handleLoginSuccess = async (userId: string) => {
-    setShowLoginModal(false);
-    if (pendingOrderRef.current) {
-      pendingOrderRef.current = false;
-      await new Promise((resolve) => setTimeout(resolve, 350));
-      await submitOrder(userId);
-    }
   };
 
   const handleAcceptPriceRevision = async (token: string) => {
@@ -1828,7 +1800,7 @@ function CheckoutContent() {
                           streetAddress: event.target.value,
                         }))
                       }
-                      placeholder={focusedField === "streetAddress" ? "House, road, block, landmark" : ""}
+                      placeholder={focusedField === "streetAddress" ? "House, road, block, landmark (optional)" : ""}
                       className="w-full rounded-2xl border-0 border-none bg-transparent px-4 py-3.5 text-sm text-[#2D1F18] outline-none shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none placeholder:text-transparent focus:placeholder:text-[#B5AAA0]"
                     />
                     <label
@@ -1844,7 +1816,7 @@ function CheckoutContent() {
                           : "left-4 top-1/2 -translate-y-1/2 text-sm text-[#8C7E74]"
                       }`}
                     >
-                      Street address
+                      Street address (Optional)
                     </label>
                   </div>
                   {visibleFieldErrors.streetAddress && (
@@ -2216,24 +2188,6 @@ function CheckoutContent() {
           </p>
         )}
       </div>
-
-      {/* Auth Modal Integration */}
-      {showLoginModal && (
-        <div className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-opacity animate-in fade-in">
-          <div className="w-full max-w-full sm:max-w-sm rounded-t-[24px] sm:rounded-[24px] bg-white p-6 shadow-2xl animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 overflow-x-hidden no-scrollbar">
-            {/* Grab handle for mobile */}
-            <div className="w-12 h-1.5 rounded-full bg-[#B5C4BB]/70 mx-auto mb-4 sm:hidden" />
-            <SocialLoginModal
-              purpose="checkout"
-              onSuccess={handleLoginSuccess}
-              onClose={() => {
-                setShowLoginModal(false);
-                pendingOrderRef.current = false;
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Price Revision Consent Modal (Master Spec Section 11.2) */}
       <PriceRevisionConsentModal

@@ -283,7 +283,6 @@ export default function DeliveryFlyout({ open, onClose, anchorRef }: DeliveryFly
       if (!form.pathao_area_id) e.area = 'Please select an area.';
       else if (selectedArea && !selectedArea.homeDeliveryAvailable) e.area = 'Home delivery is unavailable in this area.';
     }
-    if (!form.streetAddress.trim()) e.streetAddress = 'Please enter street address.';
     return e;
   }, [form, selectedArea, isZoneWithoutAreas]);
 

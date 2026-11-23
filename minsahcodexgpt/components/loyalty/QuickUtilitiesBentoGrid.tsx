@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface QuickUtilitiesBentoGridProps {
   onOpenConcierge?: () => void;
@@ -32,13 +33,16 @@ export function QuickUtilitiesBentoGrid({
     }
   };
 
-  const handleSignOutClick = () => {
+  const { logout } = useAuth();
+
+  const handleSignOutClick = async () => {
     if (onSignOut) {
       onSignOut();
-    } else {
-      if (confirm("Are you sure you want to sign out from your Minsah Beauty account?")) {
-        window.location.href = "/";
-      }
+      return;
+    }
+    if (confirm("Are you sure you want to sign out from your Minsah Beauty account?")) {
+      await logout();
+      window.location.assign("/");
     }
   };
 

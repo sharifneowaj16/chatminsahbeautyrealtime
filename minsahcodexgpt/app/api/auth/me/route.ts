@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { getAuthenticatedUserId, serializeUserProfile, userProfileSelect } from '@/app/api/auth/_utils';
 
+export const dynamic = 'force-dynamic';
+
 const logger = createLogger('auth:me');
 
 export async function GET(request: NextRequest) {
@@ -39,7 +41,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ user: serializeUserProfile(user) });
+    return NextResponse.json(
+      { user: serializeUserProfile(user) },
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } }
+    );
 
   } catch (error) {
     logger.error('Error fetching user profile', error);

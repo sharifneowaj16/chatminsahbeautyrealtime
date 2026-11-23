@@ -3,6 +3,7 @@ import { recordProductOrderCreatedInTransaction } from "@/lib/analytics/product-
 import prisma from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@/generated/prisma/client";
 import { getAuthenticatedUserId } from "@/app/api/auth/_utils";
+import { resolveOrCreateGuestCheckoutUser } from "@/lib/auth/guest-checkout-user";
 import { generateDailyOrderNumber } from "@/lib/order-number";
 import { enqueueOrderTelegramNotification } from "@/lib/queue/orderTelegramQueue";
 import { readOrderAttribution } from "@/lib/tracking/order-attribution";
@@ -200,28 +201,37 @@ export async function POST(request: NextRequest) {
   } | null = null;
 
   try {
-    // 1. Auth — userId is required by Order schema
-    const userId = await getAuthenticatedUserId(request);
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Please log in to place an order.", code: "AUTH_REQUIRED" },
-        { status: 401 },
-      );
-    }
-
+    // 1. Resolve session (optional: guest checkout resolves/creates customer by phone)
+    const authenticatedUserId = await getAuthenticatedUserId(request);
+    const isAuthenticatedCheckout = Boolean(authenticatedUserId);
     const checkoutIdempotencyKey = readCheckoutIdempotencyKey(request);
 
     // 2. Parse & validate body. Security note: client couponDiscount is intentionally ignored.
     const body = await request.json();
+    const parsedOrder = validateAndNormalizeOrderRequest(body);
     const {
       items,
-      addressId,
       addressData,
       paymentMethod,
       couponCode,
       customerNote,
       priceQuoteToken,
-    } = validateAndNormalizeOrderRequest(body);
+    } = parsedOrder;
+    const addressId = isAuthenticatedCheckout ? parsedOrder.addressId : undefined;
+
+    if (!authenticatedUserId && !addressData) {
+      return NextResponse.json(
+        { error: "Shipping address details are required for guest checkout.", code: "SHIPPING_ADDRESS_REQUIRED" },
+        { status: 400 },
+      );
+    }
+
+    const userId =
+      authenticatedUserId ??
+      (await resolveOrCreateGuestCheckoutUser({
+        fullName: addressData!.fullName,
+        phone: addressData!.phoneNumber,
+      }));
 
     if (
       !isCodPaymentMethod(paymentMethod) &&
@@ -670,16 +680,6 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
-
-      if (!savedAccountingAddress.street1?.trim()) {
-        return NextResponse.json(
-          {
-            error: "Saved shipping address is missing street address.",
-            code: "SAVED_STREET_ADDRESS_REQUIRED",
-          },
-          { status: 400 },
-        );
-      }
     }
 
     if (addressData) {
@@ -911,7 +911,7 @@ export async function POST(request: NextRequest) {
             firstName,
             lastName,
             phone: addressData.phoneNumber,
-            street1: addressData.streetAddress,
+            street1: addressData.streetAddress || addressData.area || addressData.zone || addressData.city,
             street2: addressData.area ? `${addressData.zone}, ${addressData.area}` : addressData.zone,
             city: addressData.city,
             state:
@@ -1109,8 +1109,10 @@ export async function POST(request: NextRequest) {
         reason: orderTrackingExclusion.trackingFilteredReason ?? undefined,
       });
 
-      // 6g. Clear user cart
-      await tx.cartItem.deleteMany({ where: { userId } });
+      // 6g. Clear user cart (authenticated accounts only)
+      if (isAuthenticatedCheckout) {
+        await tx.cartItem.deleteMany({ where: { userId } });
+      }
 
       return newOrder;
     });
@@ -1155,7 +1157,7 @@ export async function POST(request: NextRequest) {
           address: {
             city: resolvedAddress?.city || "N/A",
             zone: resolvedAddress?.street2 || null,
-            area: resolvedAddress?.street1 || null,
+            area: addressData ? (addressData.streetAddress || null) : (resolvedAddress?.street1 || null),
           },
           items: notifyItems,
           subtotal,

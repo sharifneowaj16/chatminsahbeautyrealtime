@@ -202,13 +202,6 @@ function normalizeAddressData(value: unknown): NormalizedAddressDataInput | unde
     throw new OrderValidationError('City and zone are required', 'DELIVERY_LOCATION_REQUIRED');
   }
 
-  if (!streetAddress) {
-    throw new OrderValidationError(
-      'Street address is required.',
-      'STREET_ADDRESS_REQUIRED',
-    );
-  }
-
   return {
     fullName,
     firstName: cleanOptionalString(address.firstName),
@@ -220,7 +213,7 @@ function normalizeAddressData(value: unknown): NormalizedAddressDataInput | unde
     area,
     streetAddress,
     address: area || zone,
-    street1: streetAddress,
+    street1: streetAddress || area || zone || city,
     street2: zone,
     provinceRegion: cleanOptionalString(address.provinceRegion) ?? cleanOptionalString(address.state) ?? city,
     state: cleanOptionalString(address.state) ?? cleanOptionalString(address.provinceRegion) ?? city,

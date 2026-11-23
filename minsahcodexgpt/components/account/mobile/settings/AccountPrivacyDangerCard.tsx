@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { ShieldAlert, ChevronRight, Download, LogOut } from 'lucide-react';
 
 interface AccountPrivacyDangerCardProps {
@@ -13,6 +14,17 @@ export default function AccountPrivacyDangerCard({
   onDownloadData,
   onLogout,
 }: AccountPrivacyDangerCardProps) {
+  const { logout } = useAuth();
+
+  const handleLogoutClick = async () => {
+    if (onLogout) {
+      onLogout();
+      return;
+    }
+    await logout();
+    window.location.assign('/');
+  };
+
   return (
     <section className="w-full bg-[#F8FAF7] rounded-3xl p-5 shadow-xs space-y-4 border border-[#E2DED8]/60 pb-8">
       <div className="flex items-center gap-2">
@@ -59,7 +71,7 @@ export default function AccountPrivacyDangerCard({
       <div className="pt-2">
         <button
           type="button"
-          onClick={onLogout}
+          onClick={() => void handleLogoutClick()}
           className="w-full h-12 rounded-full bg-[#ffdad6] text-[#ba1a1a] text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-xs"
         >
           <LogOut className="w-4 h-4" />

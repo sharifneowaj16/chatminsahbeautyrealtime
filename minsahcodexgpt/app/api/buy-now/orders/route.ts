@@ -5,6 +5,7 @@ import { PathaoAreaAvailabilityError, verifyPathaoHomeDeliveryArea } from '@/lib
 import { recordProductOrderCreatedInTransaction } from '@/lib/analytics/product-metrics';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
+import { resolveOrCreateGuestCheckoutUser } from '@/lib/auth/guest-checkout-user';
 import {
   extractVariantWeightKg,
   parseWeightToKg,
@@ -52,14 +53,7 @@ interface BuyNowAddressInput {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getAuthenticatedUserId(request);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Please log in to place this order.', code: 'AUTH_REQUIRED' },
-        { status: 401 }
-      );
-    }
+    const authenticatedUserId = await getAuthenticatedUserId(request);
 
     const body = (await request.json()) as {
       items?: BuyNowItemInput[];
@@ -113,6 +107,13 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json({ error: 'Shipping address is incomplete' }, { status: 400 });
     }
+
+    const userId =
+      authenticatedUserId ??
+      (await resolveOrCreateGuestCheckoutUser({
+        fullName: shippingAddress.name.trim(),
+        phone: normalizedBuyNowPhone,
+      }));
 
     try {
       await verifyPathaoHomeDeliveryArea({

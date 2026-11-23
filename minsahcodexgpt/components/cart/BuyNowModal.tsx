@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOfferEngine } from "@/contexts/OfferEngineContext";
 import { normalizeBangladeshPhoneNumber, toAsciiDigits } from "@/lib/phone";
 import { formatPrice } from "@/utils/currency";
-import dynamic from "next/dynamic";
 import {
   trackAddPaymentInfo,
   trackAddShippingInfo,
@@ -26,11 +25,6 @@ import { Select } from "@/components/ui/Select";
 import { Spinner } from "@/components/ui/Spinner";
 import { SuccessState } from "@/components/ui/SuccessState";
 import { Textarea } from "@/components/ui/Textarea";
-
-const SocialLoginModal = dynamic(
-  () => import("@/app/(storefront)/products/[id]/components/SocialLoginModal"),
-  { ssr: false, loading: () => null },
-);
 
 export interface BuyNowVariantOption {
   id: string;
@@ -217,7 +211,6 @@ export default function BuyNowModal({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [resolvedProductName, setResolvedProductName] = useState(productName);
   const [resolvedProductImage, setResolvedProductImage] =
     useState(productImage);
@@ -290,7 +283,6 @@ export default function BuyNowModal({
     setDeliveryMessage(null);
     setDeliveryHardError(null);
     setSuccessPayload(null);
-    setShowLoginModal(false);
     setLocationError(null);
     setZones([]);
     setAreas([]);
@@ -709,8 +701,7 @@ export default function BuyNowModal({
   const hasRequiredShippingFields = Boolean(
     shippingForm.name.trim() &&
     normalizedBuyNowPhone &&
-    hasSelectedLocation &&
-    shippingForm.streetAddress.trim(),
+    hasSelectedLocation,
   );
   const selectedParcelWeightKg = Number(
     selectedItems.reduce((sum, item) => sum + item.totalWeightKg, 0).toFixed(3),
@@ -921,10 +912,6 @@ export default function BuyNowModal({
 
   const placeOrder = async () => {
     if (!canPlaceOrder) return;
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
 
     trackAddPaymentInfo(
       selectedItems.map((item) => ({
@@ -1008,11 +995,6 @@ export default function BuyNowModal({
         redirectURL?: string;
       };
 
-      if (response.status === 401) {
-        setShowLoginModal(true);
-        return;
-      }
-
       if (!response.ok || !data.orderNumber) {
         throw new Error(data.error || "Failed to place order");
       }
@@ -1032,10 +1014,6 @@ export default function BuyNowModal({
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleLoginSuccess = async () => {
-    setShowLoginModal(false);
   };
 
   const handleCityChange = (cityId: string) => {
@@ -1114,7 +1092,7 @@ export default function BuyNowModal({
           ) : (
             <ShoppingBag className="h-4 w-4" aria-hidden="true" />
           )}
-          {user ? "Place Order" : "Login to place order"}
+          Place Order
         </Button>
       </div>
     );
@@ -1424,15 +1402,14 @@ export default function BuyNowModal({
                 </Select>
                 <Textarea
                   id="buy-now-street-address"
-                  label="Street address"
+                  label="Street address (Optional)"
                   value={shippingForm.streetAddress}
                   onChange={(event) =>
                     setShippingForm((current) => ({ ...current, streetAddress: event.target.value }))
                   }
-                  placeholder="House, road, block, landmark"
+                  placeholder="House, road, block, landmark (optional)"
                   rows={3}
                   containerClassName="sm:col-span-2"
-                  required
                 />
               </div>
 
@@ -1440,12 +1417,6 @@ export default function BuyNowModal({
                 <Alert tone="danger" className="mt-3" announcement="polite">{locationError}</Alert>
               ) : null}
             </section>
-
-            {!user ? (
-              <Alert tone="warning">
-                You can review everything here. Sign in on the final button to place this order.
-              </Alert>
-            ) : null}
 
             <section className="rounded-3xl border border-minsah-border-default bg-minsah-surface-panel p-4">
               <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-minsah-text-muted">Payment</h3>
@@ -1517,21 +1488,6 @@ export default function BuyNowModal({
             }
           />
         )}
-      </Modal>
-
-      <Modal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        title="Sign in to place your order"
-        description="Choose a secure login method to continue checkout."
-        size="sm"
-        dismissible={!submitting}
-      >
-        <SocialLoginModal
-          purpose="checkout"
-          onSuccess={() => void handleLoginSuccess()}
-          onClose={() => setShowLoginModal(false)}
-        />
       </Modal>
     </>
   );

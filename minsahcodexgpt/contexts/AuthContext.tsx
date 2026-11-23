@@ -127,6 +127,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
+        cache: 'no-store',
       });
 
       return response.ok;
@@ -140,6 +141,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch('/api/auth/me', {
         credentials: 'include',
+        cache: 'no-store',
       });
 
       if (response.ok) {
@@ -153,6 +155,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
           // Retry fetching profile
           const retryResponse = await fetch('/api/auth/me', {
             credentials: 'include',
+            cache: 'no-store',
           });
           if (retryResponse.ok) {
             const data = await retryResponse.json();
@@ -231,29 +234,27 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     signIn(provider, { callbackUrl: '/' });
   };
 
-  // Logout
-  const logout = async (): Promise<void> => {
+  // Logout (always clears both custom JWT cookies and NextAuth session)
+  const logout = useCallback(async (): Promise<void> => {
     setLoading(true);
 
     try {
-      // Logout from custom auth
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
+        cache: 'no-store',
+      }).catch((err) => {
+        console.error('Custom logout error:', err);
       });
 
-      // Also logout from NextAuth if using it
-      if (session) {
-        await signOut({ redirect: false });
-      }
-
-      setUser(null);
-    } catch (err) {
-      console.error('Logout error:', err);
+      await signOut({ redirect: false }).catch((err) => {
+        console.error('NextAuth signOut error:', err);
+      });
     } finally {
+      setUser(null);
       setLoading(false);
     }
-  };
+  }, []);
 
   // Register new user
   const register = async (userData: RegisterData): Promise<{ success: boolean; error?: string }> => {
