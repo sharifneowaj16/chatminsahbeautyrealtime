@@ -304,7 +304,7 @@ function computeTrustSummary(details?: CustomerFraudRiskDetails | null): Compute
     }
   }
 
-  // 3. Minsah history (15%) ? cancel/return excluded ratio; new customer = 50
+  // 3. Minsah history (15%) - cancel/return excluded ratio; new customer = 50
   let minsahScore = 50;
   const hasMinsahSignal = s.totalOrders > 0;
   if (s.totalOrders > 0) {
@@ -384,21 +384,23 @@ export function formatCourierHistoryForTelegram(
 
   if (!details) {
     return (
-      `<blockquote>${E.shield} <b>TRUST SCORE</b>\n` +
-      `${E.yellow} <b>Unverified</b>\n` +
+      `<blockquote expandable>${E.shield} <b>TRUST SCORE</b> ${E.midDot} ${E.yellow} <b>Unverified</b>\n` +
+      `${E.warn} <b>Verdict:</b> Call kore address nishchit korun\n` +
       `${sep}\n` +
       `${E.truck} <b>Steadfast</b>  Unavailable\n` +
-      `${E.pathao} <b>Pathao</b>  Unavailable\n` +
-      `${sep}\n` +
-      `${E.warn} <b>Verdict:</b> Call kore address nishchit korun</blockquote>`
+      `${E.pathao} <b>Pathao</b>  Unavailable</blockquote>`
     );
   }
 
+  const reportPill =
+    trust.totalReports > 0
+      ? `  ${E.flag}${E.red}<b>${trust.totalReports}</b>`
+      : "";
+
   const lines: string[] = [
-    `${E.shield} <b>TRUST SCORE</b>${details.cached ? " <i>(cached)</i>" : ""}`,
-    `${trust.badgeEmoji} <b>${trust.score}</b> / 100 ${E.midDot} <b>${trust.tierLabel}</b>`,
-    `<code>${trust.bar}</code>`,
-    `${trust.dotsLabel}  ${trust.dots}`,
+    `${E.shield} <b>TRUST SCORE</b> ${E.midDot} ${trust.badgeEmoji} <b>${trust.score}</b>/100 ${E.midDot} <b>${trust.tierLabel}</b>${details.cached ? " <i>(cached)</i>" : ""}`,
+    `<code>${trust.bar}</code>  ${trust.dots}${reportPill}`,
+    `${trust.verdictEmoji} <b>Verdict:</b> ${trust.verdictText}`,
     sep,
   ];
 
@@ -494,10 +496,9 @@ export function formatCourierHistoryForTelegram(
     lines.push(`${E.flag} <b>Reports</b>  <b>0</b> ${E.sparkle}`);
   }
 
-  lines.push(sep);
-  lines.push(`${trust.verdictEmoji} <b>Verdict:</b> ${trust.verdictText}`);
-
-  return `<blockquote>${lines.join("\n")}</blockquote>`;
+  // Keep DANGER open by default so red flags are never missed; SAFE/CAUTION start minimized
+  const openTag = trust.tier === "DANGER" ? "<blockquote>" : "<blockquote expandable>";
+  return `${openTag}${lines.join("\n")}</blockquote>`;
 }
 
 function buildReceiptLine(label: string, value: string, width = 26): string {
@@ -563,19 +564,29 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
       ? `\n${formatCourierHistoryForTelegram(order.courierVerification)}`
       : "";
 
-  // Items Box (auto-expandable when 3+ items)
-  const itemLines = order.items.map((item, idx) => {
-    const variant = compactVariant(item.variant);
-    const variantPart = variant ? `<code>${escapeHtml(variant)}</code> ` : "";
+  // Items Box (auto-expandable when 2+ items, with safe Telegram 4096-char guard)
+  const formatItemsBlock = (maxVisible: number) => {
+    const visibleItems = order.items.slice(0, maxVisible);
+    const hiddenCount = order.items.length - visibleItems.length;
+    const itemLines = visibleItems.map((item, idx) => {
+      const variant = compactVariant(item.variant);
+      const variantPart = variant ? `<code>${escapeHtml(variant)}</code> ` : "";
+      return (
+        `<b>${idx + 1}</b> ${E.tri} ${escapeHtml(item.name)}\n` +
+        `${E.corner} ${variantPart}${E.times} ${item.quantity} = <b>${formatTaka(item.total)}</b>`
+      );
+    });
+    if (hiddenCount > 0) {
+      itemLines.push(
+        `<i>... +${hiddenCount} more item${hiddenCount > 1 ? "s" : ""} (see Admin Panel)</i>`,
+      );
+    }
+    const itemsTag = order.items.length >= 2 ? "<blockquote expandable>" : "<blockquote>";
     return (
-      `<b>${idx + 1}</b> ${E.tri} ${escapeHtml(item.name)}\n` +
-      `${E.corner} ${variantPart}${E.times} ${item.quantity} = <b>${formatTaka(item.total)}</b>`
+      `${itemsTag}${E.box} <b>ITEMS (${order.items.length})</b>\n` +
+      `${itemLines.join("\n") || "N/A"}</blockquote>`
     );
-  });
-  const itemsTag = order.items.length >= 3 ? "<blockquote expandable>" : "<blockquote>";
-  const itemsBox =
-    `${itemsTag}${E.box} <b>ITEMS (${order.items.length})</b>\n` +
-    `${itemLines.join("\n") || "N/A"}</blockquote>`;
+  };
 
   // Monospace Receipt Billing
   const deliveryLabel = `Delivery (${deliverySourceShortLabel(order.deliveryPricingSource)})`;
@@ -613,15 +624,23 @@ function buildDetailedMessage(order: DetailedOrderNotification) {
       ? `${E.bolt} <i>Advance na dile confirm korben na</i>`
       : `${E.bolt} <i>Call korun ${E.arrow} Phone Confirmed chapun</i>`;
 
-  return (
+  const compose = (itemsBlock: string) =>
     `${headerTop}\n` +
     `${paymentHero}\n` +
     `${customerBox}` +
     `${trustBox}\n` +
-    `${itemsBox}\n` +
+    `${itemsBlock}\n` +
     `${receiptBlock}${offerNote}\n` +
-    `${footer}`
-  );
+    `${footer}`;
+
+  let message = compose(formatItemsBlock(15));
+  if (message.length > 3950) {
+    message = compose(formatItemsBlock(5));
+  }
+  if (message.length > 3950) {
+    message = compose(formatItemsBlock(2));
+  }
+  return message;
 }
 
 async function sendTelegramMessage(body: Record<string, unknown>) {
@@ -886,7 +905,10 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
     return sentContext?.messageId;
   };
 
-  // Tier 1: Styled colored buttons + copy_text
+  const stripExpandable = (html: string) =>
+    html.replace(/<blockquote expandable>/g, "<blockquote>");
+
+  // Tier 1: Styled colored buttons + copy_text + expandable quotes
   try {
     const response = await sendTelegramMessage({
       chat_id: config.chatId,
@@ -900,7 +922,7 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
     console.warn("[TelegramNotify] Styled button send failed, retrying with standard buttons:", err);
   }
 
-  // Tier 2: Standard inline buttons (safe for any relay/older Bot API)
+  // Tier 2: Standard inline buttons + expandable quotes
   if (standardMarkup) {
     try {
       const response = await sendTelegramMessage({
@@ -912,15 +934,32 @@ export async function notifyNewOrder(order: NewOrderNotification): Promise<{
       const messageId = await attachTokensIfSent(response);
       return { ok: true, messageId };
     } catch (stdErr) {
-      console.error("[TelegramNotify] Standard buttons failed, retrying plain HTML:", stdErr);
+      console.warn("[TelegramNotify] Standard buttons failed, checking expandable fallback:", stdErr);
     }
   }
 
-  // Tier 3: Plain HTML without buttons
+  // Tier 3: Standard inline buttons + plain <blockquote> (if relay rejects expandable attr)
+  const compatText = stripExpandable(baseText);
+  if (standardMarkup && compatText !== baseText) {
+    try {
+      const response = await sendTelegramMessage({
+        chat_id: config.chatId,
+        text: compatText,
+        parse_mode: "HTML",
+        reply_markup: standardMarkup,
+      });
+      const messageId = await attachTokensIfSent(response);
+      return { ok: true, messageId };
+    } catch (compatErr) {
+      console.error("[TelegramNotify] Compat buttons failed, retrying plain HTML:", compatErr);
+    }
+  }
+
+  // Tier 4: Plain HTML without buttons
   try {
     const response = await sendTelegramMessage({
       chat_id: config.chatId,
-      text: baseText,
+      text: compatText,
       parse_mode: "HTML",
     });
     const sentContext = extractTelegramSentMessageContext(response);
@@ -952,6 +991,21 @@ export async function sendTelegramHtmlMessage(message: string): Promise<{
     const sentContext = extractTelegramSentMessageContext(response);
     return { ok: true, messageId: sentContext?.messageId };
   } catch (err) {
+    if (message.includes("<blockquote expandable>")) {
+      try {
+        const response = await sendTelegramMessage({
+          chat_id: config.chatId,
+          text: message.replace(/<blockquote expandable>/g, "<blockquote>"),
+          parse_mode: "HTML",
+        });
+        const sentContext = extractTelegramSentMessageContext(response);
+        return { ok: true, messageId: sentContext?.messageId };
+      } catch (retryErr) {
+        const retryMsg = retryErr instanceof Error ? retryErr.message : String(retryErr);
+        console.error("[TelegramNotify] sendTelegramHtmlMessage compat retry failed:", retryMsg);
+        return { ok: false, error: retryMsg };
+      }
+    }
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error("[TelegramNotify] sendTelegramHtmlMessage failed:", errorMsg);
     return { ok: false, error: errorMsg };
